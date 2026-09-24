@@ -26,6 +26,7 @@ on:
     - cron: "45 0 * * 1-5"
     - cron: "20 6 * * 1-5"
     - cron: "0 13 * * 1-5"
+    - cron: "0 14 * * 1-5"
 
 permissions:
   actions: read
@@ -107,13 +108,6 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
-      - name: Restore last immutable data release
-        run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data
-      - name: Capture prepared release base
-        id: prepared_base
-        run: |
-          git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
-          echo "data_release_sha=$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")" >> "$GITHUB_OUTPUT"
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
@@ -134,38 +128,69 @@ jobs:
           if [ -n "$DISPATCH_TRACE_ID" ]; then arguments+=(--dispatch-trace-id "$DISPATCH_TRACE_ID"); fi
           arguments+=(--schedule-contract-version "$SCHEDULE_CONTRACT_VERSION" --time-zone "$SCHEDULE_TIME_ZONE")
           python -m src.scheduled_brief "${arguments[@]}" >> "$GITHUB_OUTPUT"
-      - name: Prepare immutable market snapshot
-        if: steps.window.outputs.should_run == 'true'
-        id: prepare
-        env:
-          # Signed Worker observation export; scoped to collection only.
-          # Telegram credentials are injected only in the notify step below.
-          # Resolve the scoped export credential without exposing a delivery
-          # secret reference to the collection job's static contract checks.
-          PUBLIC_OBSERVATIONS_SHARED_SECRET: ${{ secrets['DELIVERY_RECEIPT_SHARED_SECRET'] || secrets['RAILWAY_STATUS_SHARED_SECRET'] || secrets['DELIVERY_STATUS_SHARED_SECRET'] }}
-          SLOT_CONTEXT: ${{ steps.window.outputs.context_json }}
-          # The post-close anchor may start before TWSE has published all
-          # official daily tables. Retry the official endpoints at 10-minute
-          # intervals for 30 minutes; other anchors remain one-pass.
-          TWSE_STATS_RETRY_ATTEMPTS: ${{ steps.window.outputs.slot == 'post_close' && '3' || '0' }}
-          TWSE_STATS_RETRY_WAIT_SECONDS: '600'
-        run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --prepare-only --slot-context "$SLOT_CONTEXT" --notification-requested "$NOTIFY" --snapshot "$SNAPSHOT_PATH" >> "$GITHUB_OUTPUT"
       - name: Wait for production writer queue
         id: writer_queue
-        if: steps.prepare.outputs.prepared == 'true'
+        if: steps.window.outputs.should_run == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python -m src.writer_queue
+      - name: Prepare immutable market snapshot
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.window.outputs.should_run == 'true'
+        id: prepare
+        continue-on-error: true
+        env:
+          PUBLIC_OBSERVATIONS_SHARED_SECRET: ${{ secrets['DELIVERY_RECEIPT_SHARED_SECRET'] || secrets['RAILWAY_STATUS_SHARED_SECRET'] || secrets['DELIVERY_STATUS_SHARED_SECRET'] }}
+          SLOT_CONTEXT: ${{ steps.window.outputs.context_json }}
+        run: |
+          set -euo pipefail
+          attempt_output="$(mktemp)"
+          trap 'rm -f "$attempt_output"' EXIT
+          restore_latest() {
+            python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data
+            git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
+          }
+          for attempt in 1 2; do
+            : > "$attempt_output"
+            restore_latest
+            base_sha="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"
+            GITHUB_OUTPUT="$attempt_output" python -m src.scheduled_delivery \
+              --slot "${{ steps.window.outputs.slot }}" --prepare-only \
+              --slot-context "$SLOT_CONTEXT" --notification-requested "$NOTIFY" \
+              --snapshot "$SNAPSHOT_PATH"
+            git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
+            current_sha="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"
+            if [ "$current_sha" = "$base_sha" ]; then
+              cat "$attempt_output" >> "$GITHUB_OUTPUT"
+              {
+                echo "data_release_sha=$base_sha"
+                echo "base_current=true"
+                echo "rebuild_attempts=$((attempt - 1))"
+              } >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "Base revision changed during same-slot preparation (attempt $attempt/2)."
+            if [ "$attempt" -eq 2 ]; then
+              {
+                echo "data_release_sha=$base_sha"
+                echo "base_current=false"
+                echo "rebuild_attempts=1"
+                echo "prepared=false"
+                echo "reason=base_changed_twice_during_prepare"
+                echo "notification_expected=true"
+              } >> "$GITHUB_OUTPUT"
+              exit 1
+            fi
+          done
       - name: Revalidate prepared release base
         id: prepared_release
         if: steps.writer_queue.outputs.should_continue == 'true'
         run: |
           git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
           current_sha="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"
-          if [ "$current_sha" != "${{ steps.prepared_base.outputs.data_release_sha }}" ]; then
+          if [ "${{ steps.prepare.outputs.base_current }}" != "true" ] || [ "$current_sha" != "${{ steps.prepare.outputs.data_release_sha }}" ]; then
             echo "current=false" >> "$GITHUB_OUTPUT"
-            echo "reason=stale_prepared_release" >> "$GITHUB_OUTPUT"
-            echo "::notice::Prepared snapshot was based on an older immutable release; publication deferred to the next scheduled run."
+            echo "reason=prepared_base_changed_after_bounded_rebuild" >> "$GITHUB_OUTPUT"
+            echo "::error::Prepared snapshot did not retain the current immutable base after one bounded rebuild."
           else
             echo "current=true" >> "$GITHUB_OUTPUT"
             echo "reason=prepared_release_current" >> "$GITHUB_OUTPUT"
@@ -231,7 +256,7 @@ jobs:
       - name: Capture private release preflight diagnostics
         if: always()
         env:
-          PRODUCTION_SHA: ${{ steps.prepared_base.outputs.data_release_sha }}
+          PRODUCTION_SHA: ${{ steps.prepare.outputs.data_release_sha }}
         run: >-
           python -m src.release_diagnostics
           --snapshot "$SNAPSHOT_PATH"
@@ -288,6 +313,9 @@ jobs:
         run: |
           python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
           python -m src.asset_contract --root site
+      - name: Verify immutable local release bundle before upload
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true'
+        run: python -m src.release_manifest --verify-only --root . --output "$MANIFEST_PATH"
       - name: Configure GitHub Pages
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true'
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
@@ -312,6 +340,8 @@ jobs:
           python -m src.pages_deployment
           --mode verify
           --expected-build-version "${{ steps.publish_snapshot.outputs.pages_build_version }}"
+          --deployment-id "${{ steps.deployment.outputs.deployment_id }}"
+          --status-url "${{ steps.deployment.outputs.deployment_status_url }}"
           >> "$GITHUB_OUTPUT"
       - name: Resolve research delivery policy
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true'
@@ -483,7 +513,7 @@ jobs:
           PREPARED_RELEASE_STATUS: ${{ steps.prepared_release.outputs.reason || 'not_required' }}
           PAGES_DEPLOYMENT_AVAILABLE: ${{ steps.deployment.outputs.available || 'false' }}
           PAGES_DEPLOYMENT_VERIFIED: ${{ steps.deployment_identity.outputs.verified || 'false' }}
-          PAGES_DEPLOYMENT_ID: ${{ steps.deployment_identity.outputs.deployment_id || '' }}
+          PAGES_DEPLOYMENT_ID: ${{ steps.deployment_identity.outputs.deployment_id || steps.deployment.outputs.deployment_id || '' }}
           PAGES_DEPLOYMENT_RUN_ID: ${{ steps.deployment_identity.outputs.workflow_run_id || github.run_id }}
           PAGES_DEPLOYMENT_ERROR: ${{ steps.deployment_identity.outputs.error || '' }}
           RELEASE_GATE_OUTCOME: ${{ steps.release_gate.outcome || 'not_run' }}
@@ -511,6 +541,9 @@ jobs:
           notification_status="$SEND_STATUS"
           notification_reason="$SEND_REASON"
           notification_expected="$NOTIFICATION_EXPECTED_VALUE"
+          if [ "$NOTIFICATION_REQUESTED" = "true" ] && [ "$WINDOW_DELIVERY_INTENT" = "notify_candidate" ]; then
+            notification_expected="true"
+          fi
           if [ "$NOTIFICATION_REQUESTED" != "true" ]; then
             notification_expected="false"
           fi
@@ -562,29 +595,25 @@ jobs:
           fi
           if [ "$PAGES_DEPLOYMENT_AVAILABLE" = "true" ] && [ "$PAGES_DEPLOYMENT_VERIFIED" != "true" ]; then
             scan_status="release_gate_failed"
-            notification_expected="false"
-            notification_status="blocked"
+            notification_status="failed"
             notification_reason="pages_deployment_identity_unverified"
           elif [ "$RELEASE_GATE_STATUS" = "superseded" ]; then
             scan_status="published_superseded"
-            notification_expected="false"
-            notification_status="suppressed"
+            notification_status="superseded"
             notification_reason="release_superseded_by_newer_valid_version"
           elif [ "$RELEASE_GATE_OUTCOME" = "failure" ]; then
             scan_status="release_gate_failed"
-            notification_expected="false"
-            notification_status="blocked"
+            notification_status="failed"
             notification_reason="release_gate_${RELEASE_GATE_ERROR_CATEGORY:-verification_failed}"
           fi
           if [ "$QUEUE_STATUS" = "superseded" ]; then
             scan_status="not_run"
-            notification_expected="false"
-            notification_status="suppressed"
+            notification_status="superseded"
             notification_reason="stale_workflow_superseded"
-          elif [ "$PREPARED_RELEASE_STATUS" = "stale_prepared_release" ]; then
-            notification_expected="false"
-            notification_status="suppressed"
-            notification_reason="stale_prepared_release"
+          elif [ "$PREPARED_RELEASE_STATUS" != "prepared_release_current" ] && [ "$WINDOW_DELIVERY_INTENT" = "notify_candidate" ] && [ "$NOTIFICATION_REQUESTED" = "true" ]; then
+            scan_status="prepared_release_failed"
+            notification_status="failed"
+            notification_reason="${PREPARED_RELEASE_STATUS:-prepared_release_not_verified}"
           fi
           {
             echo "## Scheduled brief notification decision"
@@ -707,6 +736,8 @@ jobs:
           python -m src.pages_deployment
           --mode verify
           --expected-build-version "${{ steps.persist_notification_ledger.outputs.pages_build_version }}"
+          --deployment-id "${{ steps.reconciled_deployment.outputs.deployment_id }}"
+          --status-url "${{ steps.reconciled_deployment.outputs.deployment_status_url }}"
           >> "$GITHUB_OUTPUT"
       - name: Verify reconciled public release
         if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success' && steps.reconciled_deployment.outputs.available == 'true' && steps.reconciled_deployment_identity.outputs.verified == 'true'
@@ -810,6 +841,33 @@ jobs:
         if: always() && steps.window.outputs.contract_status == 'invalid'
         run: |
           echo "Invalid scheduled-brief contract: ${{ steps.window.outputs.resolution_reason || steps.window.outputs.notification_reason }}"
+          exit 1
+      - name: Fail scheduled run when an expected report has no delivered receipt
+        if: always() && env.NOTIFY == 'true' && steps.window.outputs.delivery_intent == 'notify_candidate'
+        env:
+          SEND_OUTCOME: ${{ steps.send_brief.outcome || 'skipped' }}
+          SEND_STATUS: ${{ steps.send_brief.outputs.notification_status || '' }}
+          SEND_REASON: ${{ steps.send_brief.outputs.reason || '' }}
+          DELIVERY_STATUS: ${{ steps.send_brief.outputs.delivery_status || '' }}
+          DELIVERED_COUNT: ${{ steps.send_brief.outputs.delivered_count || '0' }}
+          FAILED_COUNT: ${{ steps.send_brief.outputs.failed_count || '0' }}
+          PREPARED_CURRENT: ${{ steps.prepared_release.outputs.current || 'false' }}
+          PREPARE_READY: ${{ steps.prepare.outputs.prepared || 'false' }}
+          GATE_ALLOWED: ${{ steps.release_gate.outputs.allowed || 'false' }}
+        run: |
+          set -euo pipefail
+          if [ "$SEND_STATUS" = "already_delivered" ] && [ "$SEND_REASON" = "already_delivered" ]; then
+            echo "The fixed anchor already has a durable successful receipt; no new send was made."
+            exit 0
+          fi
+          if [ "$SEND_OUTCOME" = "success" ] && [ "$SEND_STATUS" = "ready" ] \
+            && [ "$DELIVERY_STATUS" = "delivered" ] && [ "$DELIVERED_COUNT" -gt 0 ] \
+            && [ "$FAILED_COUNT" -eq 0 ] && [ "$PREPARED_CURRENT" = "true" ] \
+            && [ "$PREPARE_READY" = "true" ] && [ "$GATE_ALLOWED" = "true" ]; then
+            echo "Expected scheduled report has a complete delivered receipt."
+            exit 0
+          fi
+          echo "::error::Expected scheduled report did not reach a complete delivered receipt (status=${SEND_STATUS:-not_run}, reason=${SEND_REASON:-none}, delivery=${DELIVERY_STATUS:-none}, delivered=${DELIVERED_COUNT}, failed=${FAILED_COUNT}, prepared=${PREPARE_READY}, gate=${GATE_ALLOWED})."
           exit 1
 
 # - name: 設定 GitHub Pages

@@ -106,29 +106,34 @@ def test_missing_quote_rows_are_publicly_omitted_but_kept_as_detailed_gaps():
         "events": {"items": []},
     }, "post_close")
 
-    taiwan = next(item for item in briefing["morning_analysis"]["sections"] if item["title"] == "台股總經與盤面")
-    external = next(item for item in briefing["morning_analysis"]["sections"] if item["title"] == "利率、匯率與外部風險")
-    assert any("加權指數" in fact for fact in taiwan["facts"])
-    assert all("櫃買指數" not in fact for fact in taiwan["facts"])
-    assert "櫃買指數" not in taiwan["market_observation"]
-    assert all("本輪未取得可核對資料" not in fact for section in briefing["morning_analysis"]["sections"] for fact in section["facts"])
+    sections = briefing["morning_analysis"]["sections"]
+    titles = [item["title"] for item in sections]
+    assert titles == ["台股加權指數（現貨）", "台指期近月（日盤）", "台股輔助統計（官方）"]
+    taiex = sections[0]
+    txf = sections[1]
+    assert "加權指數現貨資料未取得" in taiex["facts"][0]
+    assert "台指期近月日盤資料未取得" in txf["facts"][0]
+    assert all("美股" not in fact and "Nasdaq" not in fact for section in sections for fact in section["facts"])
+    assert all("尚未公布或本輪未取得" in fact for fact in sections[2]["facts"][:2])
     gaps = briefing["morning_analysis"]["system_analysis"]["data_gaps"]
     gap_by_ticker = {gap["ticker"]: gap for gap in gaps if gap.get("kind") == "quote"}
-    assert gap_by_ticker["TPEx"]["reason"] == "quote_missing"
-    assert gap_by_ticker["US10Y"]["reason"] == "quote_missing"
-    assert gap_by_ticker["TPEx"]["checked_at"] == briefing["morning_analysis"]["evidence_as_of"]
-    assert external["market_observation"] == ""
+    assert gap_by_ticker["TAIEX"]["reason"] == "quote_unusable_or_time_unverified"
+    assert gap_by_ticker["TXF"]["reason"] == "quote_missing"
+    assert {gap["name"] for gap in gaps if gap.get("kind") == "supplementary_statistic"} == {
+        "上市市場成交金額", "市場廣度", "三大法人合計買賣超",
+    }
 
 
 def test_all_missing_quote_facts_do_not_leave_public_placeholder_or_observation():
     briefing = build_briefing_snapshot({"events": {"items": []}}, "post_close")
 
-    for section in briefing["morning_analysis"]["sections"][1:]:
-        assert section["facts"] == []
-        assert section["facts_structured"] == []
-        assert section["market_observation"] == ""
+    sections = briefing["morning_analysis"]["sections"]
+    assert "加權指數現貨資料未取得" in sections[0]["facts"][0]
+    assert "台指期近月日盤資料未取得" in sections[1]["facts"][0]
+    assert len(sections[2]["facts"]) == 3
+    assert all("尚未公布或本輪未取得" in fact for fact in sections[2]["facts"])
     assert {gap["ticker"] for gap in briefing["morning_analysis"]["system_analysis"]["data_gaps"] if gap.get("kind") == "quote"} >= {
-        "TAIEX", "TPEx", "US10Y"
+        "TAIEX", "TXF"
     }
 
 
@@ -142,20 +147,19 @@ def test_public_observations_add_structure_without_repeating_quote_lines():
         ],
         "quotes": [{"ticker": "2330", "price": 2380.0, "change_percent": -1.24, "quote_date": "2026-09-14"}],
         "taiwan_market_statistics": {
-            "turnover": {"trade_value": 3210.5, "unit": "億元"},
-            "breadth": {"scope_verified": True, "advancing": 410, "declining": 720, "unchanged": 85},
-            "institutional_flows": {"total_net": -45.2, "unit": "億元"},
+            "turnover": {"trade_value": 321_050_000_000, "unit": "元", "observed_date": "2026-09-14", "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK"},
+            "breadth": {"scope_verified": True, "advancing": 410, "declining": 720, "unchanged": 85, "observed_date": "2026-09-14", "source_url": "https://openapi.twse.com.tw/v1/opendata/twtazu_od"},
+            "institutional_flows": {"total_net": -4_520_000_000, "unit": "元", "observed_date": "2026-09-14", "source_url": "https://www.twse.com.tw/rwd/zh/fund/BFI82U"},
         },
         "events": {"items": []},
     }, "post_close")
 
     sections = briefing["morning_analysis"]["sections"]
-    taiwan = next(item for item in sections if item["title"] == "台股總經與盤面")
-    semiconductor = next(item for item in sections if item["title"] == "台積電／半導體與 AI")
-    assert "上漲 410 家、下跌 720 家" in taiwan["market_observation"]
-    assert "加權指數 45,862.52" not in taiwan["market_observation"]
-    assert "台積電 2,380.00" not in semiconductor["market_observation"]
-    assert "呈現分歧" in semiconductor["market_observation"]
+    statistics = next(item for item in sections if item["title"] == "台股輔助統計（官方）")
+    assert "上漲 410 家、下跌 720 家" in statistics["market_observation"]
+    assert "3,210.50 億元" in statistics["market_observation"]
+    assert "-45.20 億元" in statistics["market_observation"]
+    assert all(item["quote"].get("source_url") for item in statistics["facts_structured"])
 
 
 def test_observation_cards_follow_quote_led_digest_without_raw_publisher_tail():

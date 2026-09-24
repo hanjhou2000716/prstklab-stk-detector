@@ -32,9 +32,9 @@ def test_watchlist_has_expected_market_coverage():
 
 
 def test_market_indices_are_separate_from_research_watchlist():
-    assert len(MARKET_INDICES) == 13
+    assert len(MARKET_INDICES) == 16
     assert {item["ticker"] for item in MARKET_INDICES} == {
-        "TAIEX", "TPEx", "S&P 500", "NASDAQ", "DJIA", "SOX", "NIKKEI", "KOSPI", "BRENT", "WTI", "GOLD", "BTC", "ETH",
+        "TAIEX", "TPEx", "S&P 500", "NASDAQ", "DJIA", "SOX", "NIKKEI", "KOSPI", "BRENT", "WTI", "GOLD", "BTC", "ETH", "ES", "NQ", "YM",
     }
     assert not {item["symbol"] for item in MARKET_INDICES} & {item["symbol"] for item in WATCHLIST}
     labels = {item["ticker"]: item["name"] for item in MARKET_INDICES}

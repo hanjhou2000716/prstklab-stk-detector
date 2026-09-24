@@ -15,7 +15,7 @@ def test_parses_taifex_current_txf_observation():
     quote = parse_taifex_txf({
         "RtData": {"QuoteList": [
             {"SymbolID": "TXF-P", "CLastPrice": "", "CRefPrice": "41603.36", "CDate": "20260728", "CTime": ""},
-            {"SymbolID": "TXF-S", "CLastPrice": "40039", "CRefPrice": "41603.36", "CDate": "20260729", "CTime": "133315"},
+            {"SymbolID": "TXF-S", "CMonth": "202608", "CLastPrice": "40039", "CRefPrice": "41603.36", "CDate": "20260729", "CTime": "133315"},
         ]},
     })
     assert quote is not None

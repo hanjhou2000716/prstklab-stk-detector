@@ -44,6 +44,9 @@ MARKET_INDICES = (
     {"symbol": "^IXIC", "ticker": "NASDAQ", "name": "那斯達克綜合指數", "market": "us", "currency": "點"},
     {"symbol": "^DJI", "ticker": "DJIA", "name": "道瓊工業指數", "market": "us", "currency": "點"},
     {"symbol": "^SOX", "ticker": "SOX", "name": "費城半導體指數", "market": "us", "currency": "點"},
+    {"symbol": "ES=F", "ticker": "ES", "name": "S&P 500 E-mini 指數期貨", "market": "us", "currency": "點", "contract_basis": "continuous_contract"},
+    {"symbol": "NQ=F", "ticker": "NQ", "name": "Nasdaq-100 指數期貨", "market": "us", "currency": "點", "contract_basis": "continuous_contract"},
+    {"symbol": "YM=F", "ticker": "YM", "name": "道瓊 E-mini 指數期貨", "market": "us", "currency": "點", "contract_basis": "continuous_contract"},
     {"symbol": "^N225", "ticker": "NIKKEI", "name": "日經225", "market": "asia", "currency": "點"},
     {"symbol": "^KS11", "ticker": "KOSPI", "name": "韓國綜合", "market": "asia", "currency": "點"},
     {"symbol": "BZ=F", "ticker": "BRENT", "name": "Brent 原油", "market": "global", "currency": "USD"},
@@ -947,6 +950,30 @@ def build_market_snapshot() -> dict[str, Any]:
         tpex_fallback_fetcher=fetch_tpex_recent_close_fallback,
     )
     errors.extend(crosscheck_errors)
+    taipei_now = datetime.now(ZoneInfo("Asia/Taipei"))
+    if (
+        markets.get("taiwan", {}).get("is_trading_day") is True
+        and markets.get("taiwan", {}).get("session") == "收盤後"
+        and taipei_now.hour * 60 + taipei_now.minute >= 14 * 60 + 15
+    ):
+        try:
+            from src.taiwan_market_crosscheck import fetch_taifex_txf
+
+            txf = fetch_taifex_txf()
+            if txf:
+                indices.append(txf)
+            else:
+                errors.append({
+                    "ticker": "TXF",
+                    "message": "TAIFEX報價未提供可核對近月契約月份或日盤觀測，本輪不以連續報價代替。",
+                    "scope": "index",
+                })
+        except Exception as exc:
+            errors.append({
+                "ticker": "TXF",
+                "message": f"TAIFEX近月日盤資料暫時無法取得：{type(exc).__name__}",
+                "scope": "index",
+            })
     from src.taiwan_market_statistics import fetch_twse_market_statistics
     try:
         taiwan_market_statistics = fetch_twse_market_statistics(

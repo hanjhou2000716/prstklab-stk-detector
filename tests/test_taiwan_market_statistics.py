@@ -40,8 +40,11 @@ def test_parse_twse_official_statistics_converts_roc_dates_and_keeps_provenance(
     assert result["status"] == "complete"
     assert result["observed_date"] == "2026-09-07"
     assert result["turnover"]["trade_value"] == 456789000
+    assert result["turnover"]["unit"] == "元"
+    assert result["turnover"]["currency"] == "TWD"
     assert result["breadth"]["advancing"] == 500
     assert result["institutional_flows"]["foreign_net"] == 1000
+    assert result["institutional_flows"]["unit"] == "元"
     assert result["turnover"]["is_proxy"] is False
     assert result["institutional_flows"]["source_url"].endswith("response=json")
 
@@ -174,7 +177,7 @@ def test_fetch_resolves_latest_completed_date_and_uses_mi_index_breadth(monkeypa
     assert result["breadth"]["source_url"] == taiwan_statistics.TWSE_MI_INDEX_URL
 
 
-def test_fetch_retries_incomplete_official_payload_without_refreshing_data_time(monkeypatch) -> None:
+def test_fetch_does_not_retry_supplementary_statistics_or_delay_the_slot(monkeypatch) -> None:
     class Response:
         def __init__(self, payload):
             self.payload = payload
@@ -206,15 +209,10 @@ def test_fetch_retries_incomplete_official_payload_without_refreshing_data_time(
                 self.attempt += 1
             return Response(payload)
 
-    monkeypatch.setenv("TWSE_STATS_RETRY_ATTEMPTS", "1")
-    monkeypatch.setenv("TWSE_STATS_RETRY_WAIT_SECONDS", "0")
-    sleeps = []
-    monkeypatch.setattr(taiwan_statistics.time, "sleep", sleeps.append)
-
     result = taiwan_statistics.fetch_twse_market_statistics(
         now=datetime(2026, 9, 7), session=Session(),
     )
 
-    assert result["status"] == "complete"
-    assert result["retry_attempt"] == 1
-    assert sleeps == [0.0]
+    assert result["status"] != "complete"
+    assert result["retry_attempt"] == 0
+    assert result["retry_attempts_configured"] == 0

@@ -154,6 +154,8 @@ jobs:
           python -m src.pages_deployment
           --mode verify
           --expected-build-version "${{ steps.pages_version.outputs.pages_build_version }}"
+          --deployment-id "${{ steps.deployment.outputs.deployment_id }}"
+          --status-url "${{ steps.deployment.outputs.deployment_status_url }}"
           >> "$GITHUB_OUTPUT"
       - name: Verify exact public release after deployment
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true' && steps.deployment.outputs.available == 'true' && steps.deployment_identity.outputs.verified == 'true'
@@ -173,7 +175,7 @@ jobs:
         if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true'
         env:
           DEPLOYMENT_VERIFIED: ${{ steps.deployment_identity.outputs.verified || 'false' }}
-          DEPLOYMENT_ID: ${{ steps.deployment_identity.outputs.deployment_id || steps.pages_version.outputs.pages_build_version || '' }}
+          DEPLOYMENT_ID: ${{ steps.deployment_identity.outputs.deployment_id || steps.deployment.outputs.deployment_id || '' }}
           PUBLIC_GATE_OUTCOME: ${{ steps.public_release_gate.outcome || 'not_run' }}
           PUBLIC_GATE_ALLOWED: ${{ steps.public_release_gate.outputs.allowed || 'false' }}
           PUBLIC_GATE_STATUS: ${{ steps.public_release_gate.outputs.gate_status || 'not_run' }}
@@ -192,7 +194,7 @@ jobs:
             echo "## Pages release verification"
             echo "- workflow_run_id: ${GITHUB_RUN_ID}"
             echo "- deployment_verified: ${DEPLOYMENT_VERIFIED}"
-            echo "- pages_build_version: ${DEPLOYMENT_ID}"
+            echo "- pages_deployment_id: ${DEPLOYMENT_ID}"
             echo "- gate_outcome: ${PUBLIC_GATE_OUTCOME}"
             echo "- gate_status: ${PUBLIC_GATE_STATUS}"
             echo "- gate_allowed: ${PUBLIC_GATE_ALLOWED}"
@@ -210,7 +212,7 @@ jobs:
         if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true'
         env:
           GITHUB_RUN_ID: ${{ github.run_id }}
-          DEPLOYMENT_ID: ${{ steps.deployment_identity.outputs.deployment_id || steps.pages_version.outputs.pages_build_version || '' }}
+          DEPLOYMENT_ID: ${{ steps.deployment_identity.outputs.deployment_id || steps.deployment.outputs.deployment_id || '' }}
           DEPLOYMENT_VERIFIED: ${{ steps.deployment_identity.outputs.verified || 'false' }}
           DEPLOYMENT_ERROR: ${{ steps.deployment_identity.outputs.error || '' }}
           GATE_OUTCOME: ${{ steps.public_release_gate.outcome || 'not_run' }}

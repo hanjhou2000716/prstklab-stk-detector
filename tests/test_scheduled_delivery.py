@@ -33,6 +33,44 @@ def test_scheduled_brief_requires_three_factors_and_two_evidence_dimensions() ->
     assert _briefing_evidence_ready({"market_assessment": {"confidence": "medium", "factor_count": 3, "evidence_dimensions": ["equity"]}}) is False
 
 
+def test_market_anchor_deadlines_use_the_slot_market_timezone():
+    taiwan = {
+        "effective_slot": "post_close",
+        "slot_date": "2026-09-25",
+        "scheduled_for_at": "2026-09-25T14:20:00+08:00",
+    }
+    assert scheduled_delivery._scheduled_send_window(
+        "post_close", taiwan, datetime.fromisoformat("2026-09-25T14:49:00+08:00"),
+    ) == (True, "within_delivery_window")
+    assert scheduled_delivery._scheduled_send_window(
+        "post_close", taiwan, datetime.fromisoformat("2026-09-25T14:50:00+08:00"),
+    ) == (False, "delivery_deadline_passed")
+
+    us = {
+        "effective_slot": "us_premarket",
+        "slot_date": "2026-09-25",
+        "scheduled_for_at": "2026-09-25T09:00:00-04:00",
+    }
+    assert scheduled_delivery._scheduled_send_window(
+        "us_premarket", us, datetime.fromisoformat("2026-09-25T09:29:00-04:00"),
+    ) == (True, "within_delivery_window")
+    assert scheduled_delivery._scheduled_send_window(
+        "us_premarket", us, datetime.fromisoformat("2026-09-25T09:30:00-04:00"),
+    ) == (False, "delivery_deadline_passed")
+
+
+def test_routine_market_report_does_not_require_an_event_candidate():
+    assert scheduled_delivery._is_routine_market_report({
+        "scheduled_report": True, "market_scope_key": "taiwan",
+    }) is True
+    assert scheduled_delivery._is_routine_market_report({
+        "scheduled_report": True, "market_scope_key": "us",
+    }) is True
+    assert scheduled_delivery._is_routine_market_report({
+        "scheduled_report": False, "market_scope_key": "us",
+    }) is False
+
+
 def test_closed_non_morning_anchor_is_pages_only() -> None:
     context = {"delivery_intent": "notify_candidate", "slot_date": "2026-09-07"}
     result = _closed_market_slot_context(
@@ -265,6 +303,41 @@ def test_scheduled_delivery_blocks_when_manifest_is_not_ready(tmp_path, monkeypa
     text = output.read_text(encoding="utf-8")
     assert "sent=false" in text
     assert "reason=release_gate_blocked" in text
+
+
+def test_expected_report_release_gate_failure_is_not_recorded_as_no_notification(tmp_path, monkeypatch):
+    snapshot_path = tmp_path / "market.json"
+    manifest_path = tmp_path / "release-manifest.json"
+    output = tmp_path / "output"
+    _patch_ready(monkeypatch, output)
+    snapshot_path.write_text(json.dumps({
+        "snapshot_id": "market-12345678",
+        "indices": [], "quotes": [],
+        "briefing": {
+            "slot_context": {
+                "effective_slot": "post_close", "slot_date": "2026-09-25",
+                "scheduled_for_at": "2026-09-25T14:20:00+08:00",
+                "delivery_intent": "notify_candidate",
+            },
+            "schedule_decision": {"notification_requested": True},
+        },
+    }), encoding="utf-8")
+    manifest_path.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(scheduled_delivery, "verify_release_for_delivery", lambda **_kwargs: ReleaseGateResult(
+        False, release_id="release-older", snapshot_id="market-12345678",
+        errors=("public release identity mismatch",),
+    ))
+    monkeypatch.setattr(
+        scheduled_delivery, "send_text_briefs_audited",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("sender must not run")),
+    )
+
+    scheduled_delivery.send(snapshot_path, "post_close", manifest_path)
+
+    text = output.read_text(encoding="utf-8")
+    assert "notification_expected=true" in text
+    assert "notification_status=failed" in text
+    assert "last_receipt_status=not_attempted" in text
 
 
 def test_scheduled_delivery_never_sends_when_public_release_is_superseded(tmp_path, monkeypatch):

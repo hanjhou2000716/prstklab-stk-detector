@@ -166,7 +166,10 @@ def test_scheduled_release_gate_is_identity_bound_bounded_and_fail_closed():
         / "deploy-pages-retry"
         / "action.yml"
     ).read_text(encoding="utf-8")
-    assert action.count("GITHUB_SHA: ${{ inputs.build_version || github.sha }}") == 2
+    assert "GITHUB_SHA:" not in action
+    assert "PAGES_BUILD_VERSION: ${{ inputs.build_version || github.sha }}" in action
+    assert "--mode deploy" in action
+    assert "deployment_status_url" in action
     creator = workflow.split("- name: Send release-gated Creator notifications", 1)[1].split(
         "- name: Summarize Creator notification decision", 1
     )[0]

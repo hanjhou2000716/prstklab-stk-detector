@@ -34,11 +34,12 @@ def test_manual_run_uses_latest_report_name_even_when_stale_slot_is_requested():
     assert result["resolution_reason"] == "manual_actual_market_phase"
 
 
-def test_manual_us_premarket_after_midnight_keeps_previous_slot_date():
+def test_manual_run_after_us_open_is_not_labelled_premarket():
     now = datetime(2026, 9, 7, 1, 30, tzinfo=ZoneInfo("Asia/Taipei"))
     result = resolve_slot_context("auto", now, trigger_kind="workflow_dispatch")
-    assert result["effective_slot"] == "us_premarket"
-    assert result["slot_date"] == "2026-09-06"
+    assert result["effective_slot"] == "morning"
+    assert result["slot_date"] == "2026-09-07"
+    assert result["time_zone"] == "Asia/Taipei"
 
 
 def test_manual_market_phase_boundaries_are_stable():
@@ -60,7 +61,7 @@ def test_manual_market_phase_boundaries_are_stable():
     for clock, expected in cases:
         hour, minute = (int(value) for value in clock.split(":"))
         result = resolve_slot_context(
-            "morning", datetime(2026, 9, 7, hour, minute, tzinfo=ZoneInfo("Asia/Taipei")),
+            "morning", datetime(2026, 9, 8, hour, minute, tzinfo=ZoneInfo("Asia/Taipei")),
             trigger_kind="workflow_dispatch",
         )
         assert result is not None
@@ -85,16 +86,16 @@ def test_us_premarket_uses_2100_taiwan_during_new_york_dst():
     assert resolve_slot("auto", summer_2200) is None
 
 
-def test_us_premarket_stays_at_2100_taiwan_during_new_york_standard_time():
+def test_us_premarket_uses_2200_taiwan_during_new_york_standard_time():
     winter_2100 = datetime(2026, 1, 22, 21, 0, tzinfo=ZoneInfo("Asia/Taipei"))
     winter_2200 = datetime(2026, 1, 22, 22, 0, tzinfo=ZoneInfo("Asia/Taipei"))
-    assert resolve_slot("auto", winter_2100) == "us_premarket"
-    assert resolve_slot("auto", winter_2200) is None
+    assert resolve_slot("auto", winter_2100) is None
+    assert resolve_slot("auto", winter_2200) == "us_premarket"
 
 
-def test_external_dispatch_accepts_2100_us_premarket_all_year():
+def test_external_dispatch_accepts_exchange_local_us_premarket_all_year():
     summer = datetime(2026, 7, 27, 21, 0, tzinfo=ZoneInfo("Asia/Taipei"))
-    winter = datetime(2026, 1, 22, 21, 0, tzinfo=ZoneInfo("Asia/Taipei"))
+    winter = datetime(2026, 1, 22, 22, 0, tzinfo=ZoneInfo("Asia/Taipei"))
     assert resolve_slot("us_premarket", summer, strict_window=True) == "us_premarket"
     assert resolve_slot("us_premarket", winter, strict_window=True) == "us_premarket"
 
@@ -125,21 +126,21 @@ def test_delayed_cron_run_uses_declared_slot_instead_of_runner_time():
     assert int(context["delay_seconds"]) > 30 * 60
 
 
-def test_us_premarket_cron_accepts_the_fixed_2100_slot_all_year():
+def test_us_premarket_cron_accepts_the_correct_dst_candidate():
     summer = datetime(2026, 7, 27, 18, 30, tzinfo=ZoneInfo("Asia/Taipei"))
-    winter = datetime(2026, 1, 22, 18, 30, tzinfo=ZoneInfo("Asia/Taipei"))
+    winter = datetime(2026, 1, 22, 22, 0, tzinfo=ZoneInfo("Asia/Taipei"))
     assert resolve_slot("auto", summer, scheduled_cron="0 13 * * 1-5") == "us_premarket"
     assert resolve_slot("auto", summer, scheduled_cron="0 14 * * 1-5") is None
-    assert resolve_slot("auto", winter, scheduled_cron="0 13 * * 1-5") == "us_premarket"
-    assert resolve_slot("auto", winter, scheduled_cron="0 14 * * 1-5") is None
+    assert resolve_slot("auto", winter, scheduled_cron="0 13 * * 1-5") is None
+    assert resolve_slot("auto", winter, scheduled_cron="0 14 * * 1-5") == "us_premarket"
 
 
 def test_delayed_us_premarket_cron_keeps_previous_taipei_slot_date():
-    delayed = datetime(2026, 9, 8, 1, 30, tzinfo=ZoneInfo("Asia/Taipei"))
+    delayed = datetime(2026, 9, 9, 1, 30, tzinfo=ZoneInfo("Asia/Taipei"))
     context = resolve_slot_context("auto", delayed, scheduled_cron="0 13 * * 1-5")
     assert context is not None
     assert context["effective_slot"] == "us_premarket"
-    assert context["slot_date"] == "2026-09-07"
+    assert context["slot_date"] == "2026-09-08"
     assert context["delivery_intent"] == "publish_only"
 
 
