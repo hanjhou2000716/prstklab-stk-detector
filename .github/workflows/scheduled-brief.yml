@@ -664,7 +664,8 @@ jobs:
             --message "chore: persist scheduled notification ledger state"
           git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
           data_release_sha="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"
-          python - "$MANIFEST_PATH" >> "$GITHUB_OUTPUT" <<'PY'
+          {
+          python - "$MANIFEST_PATH" <<'PY'
           import json
           import sys
           from pathlib import Path
@@ -672,12 +673,12 @@ jobs:
           print(f"reconciled_release_id={manifest.get('release_id', '')}")
           print(f"reconciled_snapshot_id={manifest.get('market_snapshot_id', '')}")
           PY
-          printf 'reconciled_data_release_sha=%s\n' "$data_release_sha" >> "$GITHUB_OUTPUT"
+          printf 'reconciled_data_release_sha=%s\n' "$data_release_sha"
           python -m src.pages_deployment \
             --mode derive-version \
             --source-revision "$GITHUB_SHA" \
-            --manifest "$MANIFEST_PATH" \
-            >> "$GITHUB_OUTPUT"
+            --manifest "$MANIFEST_PATH"
+          } >> "$GITHUB_OUTPUT"
       - name: Prepare reconciled Pages artifact
         if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success'
         run: |
