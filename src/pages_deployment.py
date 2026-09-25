@@ -84,23 +84,62 @@ def _safe_status_url_shape(
     """Describe a returned status URL without logging its value."""
     if not str(value or "").strip():
         return "missing"
-    parsed = urlparse(str(value).strip())
-    api = urlparse(api_url)
-    expected_base = f"/repos/{repository}/pages/deployments/{deployment_id}"
-    if parsed.path == expected_base:
-        route = "deployment"
-    elif parsed.path == f"{expected_base}/status":
-        route = "deployment_status"
-    else:
-        route = "other"
+    try:
+        parsed = urlparse(str(value).strip())
+        api = urlparse(api_url)
+        route = _status_url_path_route(
+            path=parsed.path,
+            repository=repository,
+            deployment_id=deployment_id,
+        ) or "other"
+        same_api_host = parsed.netloc.casefold() == api.netloc.casefold()
+        has_userinfo = parsed.username is not None or parsed.password is not None
+    except ValueError:
+        return "scheme=invalid;host=other;route=other;userinfo=unknown;query=no;fragment=no"
     return ";".join((
         f"scheme={parsed.scheme.casefold() or 'missing'}",
-        f"host={'api' if parsed.netloc.casefold() == api.netloc.casefold() else 'other'}",
+        f"host={'api' if same_api_host else 'other'}",
         f"route={route}",
-        f"userinfo={'yes' if parsed.username is not None or parsed.password is not None else 'no'}",
+        f"userinfo={'yes' if has_userinfo else 'no'}",
         f"query={'yes' if parsed.query else 'no'}",
         f"fragment={'yes' if parsed.fragment else 'no'}",
     ))
+
+
+def _status_url_path_route(*, path: str, repository: str, deployment_id: str) -> str | None:
+    return {
+        f"/repos/{repository}/pages/deployments/{deployment_id}": "deployment",
+        f"/repos/{repository}/pages/deployments/{deployment_id}/status": "deployment_status",
+        f"/repos/{repository}/pages/deployment/status/{deployment_id}": "legacy_deployment_status",
+    }.get(path)
+
+
+def _status_url_route(
+    value: str, *, api_url: str, repository: str, deployment_id: str,
+) -> str | None:
+    """Return the name of a known GitHub Pages status URL shape, if trusted."""
+    try:
+        parsed_status = urlparse(str(value or "").strip())
+        parsed_api = urlparse(str(api_url or "").strip())
+        # Accessing parsed credentials validates malformed authority syntax.
+        has_userinfo = parsed_status.username is not None or parsed_status.password is not None
+    except ValueError:
+        return None
+    if (
+        parsed_api.scheme.casefold() != "https"
+        or not parsed_api.netloc
+        or parsed_status.scheme.casefold() != "https"
+        or parsed_status.netloc.casefold() != parsed_api.netloc.casefold()
+        or has_userinfo
+        or parsed_status.query
+        or parsed_status.fragment
+    ):
+        return None
+    return _status_url_path_route(
+        path=parsed_status.path,
+        repository=repository,
+        deployment_id=deployment_id,
+    )
 
 
 @dataclass(frozen=True)
@@ -205,21 +244,12 @@ def verify_deployment(
         raise PagesDeploymentError("repository, token, build version, and returned deployment ID are required")
     if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", str(deployment_id)):
         raise PagesDeploymentError("returned Pages deployment ID is invalid")
-    status_url = str(status_url or "").strip().rstrip("/")
-    expected_status_paths = {
-        f"/repos/{repository}/pages/deployments/{deployment_id}",
-        f"/repos/{repository}/pages/deployments/{deployment_id}/status",
-    }
-    parsed_status = urlparse(status_url)
-    parsed_api = urlparse(api_url)
-    if (
-        parsed_status.scheme != "https"
-        or parsed_status.netloc.casefold() != parsed_api.netloc.casefold()
-        or parsed_status.username is not None
-        or parsed_status.password is not None
-        or parsed_status.query
-        or parsed_status.fragment
-        or parsed_status.path not in expected_status_paths
+    status_url = str(status_url or "").strip()
+    if not _status_url_route(
+        status_url,
+        api_url=api_url,
+        repository=repository,
+        deployment_id=deployment_id,
     ):
         raise PagesDeploymentError("returned Pages status URL does not match the deployment ID")
     status_endpoint = f"{api_url.rstrip('/')}/repos/{repository}/pages/deployments/{deployment_id}"
@@ -398,26 +428,17 @@ def create_deployment(
     if not isinstance(created, dict):
         raise PagesDeploymentError("Pages deployment create response is invalid")
     deployment_id = str(created.get("id") or "").strip()
-    status_url = str(created.get("status_url") or "").strip().rstrip("/")
+    status_url = str(created.get("status_url") or "").strip()
     page_url = str(created.get("page_url") or "").strip()
     if not deployment_id or not status_url or not page_url:
         raise PagesDeploymentError("Pages deployment create response omitted its trusted identity")
     if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", deployment_id):
         raise PagesDeploymentError("Pages deployment create response returned an invalid deployment ID")
-    parsed_status = urlparse(status_url)
-    parsed_api = urlparse(api_url)
-    expected_status_paths = {
-        f"/repos/{repository}/pages/deployments/{deployment_id}",
-        f"/repos/{repository}/pages/deployments/{deployment_id}/status",
-    }
-    if (
-        parsed_status.scheme != "https"
-        or parsed_status.netloc.casefold() != parsed_api.netloc.casefold()
-        or parsed_status.username is not None
-        or parsed_status.password is not None
-        or parsed_status.query
-        or parsed_status.fragment
-        or parsed_status.path not in expected_status_paths
+    if not _status_url_route(
+        status_url,
+        api_url=api_url,
+        repository=repository,
+        deployment_id=deployment_id,
     ):
         shape = _safe_status_url_shape(
             status_url, api_url=api_url, repository=repository, deployment_id=deployment_id,
