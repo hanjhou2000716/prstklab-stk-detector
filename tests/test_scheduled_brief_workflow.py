@@ -116,12 +116,14 @@ def test_delivery_claim_persistence_reconciles_the_public_release():
     assert "artifact_name: github-pages-reconciled" in workflow
     assert "Verify reconciled public release" in workflow
     assert "steps.reconciled_deployment.outputs.recoverable == 'true'" in workflow
-    terminal = workflow.split("- name: Fail scheduled run when an expected report has no delivered receipt", 1)[1]
+    terminal = workflow.split("- name: Fail scheduled run when a required report has no delivered receipt", 1)[1]
     assert "RECONCILED_DEPLOYMENT_VERIFIED" in terminal
     assert "RECONCILED_GATE_ALLOWED" in terminal
     assert "LEDGER_PERSIST_OUTCOME" in terminal
     assert "RECEIPT_CALLBACK_OUTCOME" in terminal
     assert "do not resend" in terminal
+    assert 'steps.prepare.outputs.delivery_obligation == \'blocked\'' in terminal
+    assert 'steps.prepare.outputs.notification_expected == \'true\'' in terminal
 
 
 def test_pages_only_publisher_uses_the_shared_single_writer_queue():
@@ -201,4 +203,7 @@ def test_scheduled_brief_reports_pages_publish_only_failure_and_blocks_expected_
     assert "pages_deployment_${PAGES_DEPLOYMENT_ERROR_CODE:-unavailable}" in decision
     assert "scan_status=\"published_unverified\"" in decision
     assert "pages_publication_status:" in decision
-    assert 'if: always() && env.NOTIFY == \'true\' && steps.window.outputs.delivery_intent == \'notify_candidate\'' in workflow
+    assert 'if [ "$DELIVERY_OBLIGATION" = "expected_skip" ] || [ "$DELIVERY_OBLIGATION" = "late_publish_only" ]; then' in decision
+    assert 'if [ "$notification_expected" = "true" ] && [ "$DELIVERY_OBLIGATION" != "blocked" ] && [ "$PAGES_DEPLOYMENT_AVAILABLE" != "true" ]; then' in decision
+    assert 'echo "- source_health_status: ${SOURCE_HEALTH_STATUS}"' in decision
+    assert '&& [ "$DELIVERY_OBLIGATION" = "undetermined" ]' in decision

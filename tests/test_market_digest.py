@@ -387,6 +387,32 @@ def test_digest_deduplicates_public_themes_by_market_topic():
     assert "Yahoo股市" not in result["primary_theme"]["what_happened"]
 
 
+def test_morning_digest_discloses_taiwan_holiday_and_taiex_data_date():
+    result = build_market_digest({
+        "generated_at": "2026-09-25T22:00:00+00:00",
+        "markets": {
+            "taiwan": {"is_trading_day": False, "calendar_status": "confirmed_closed"},
+            "us": {"is_trading_day": True},
+        },
+        "indices": [
+            {
+                "ticker": "TAIEX", "name": "臺灣加權指數", "market": "taiwan",
+                "price": 26000, "change_percent": 0.2, "freshness": "recent_close",
+                "quote_date": "2026-09-24",
+            },
+            {
+                "ticker": "NASDAQ", "name": "那斯達克綜合指數", "market": "us",
+                "price": 21000, "change_percent": -0.1, "freshness": "recent_close",
+                "quote_date": "2026-09-24",
+            },
+        ],
+    }, "morning")
+
+    assert "台股休市" in result["public_short_message"]
+    assert "9/24" in result["public_short_message"]
+    assert result["market_assessment"]["market_session_state"] == "台股休市；加權行情資料日 9/24"
+
+
 def test_generic_event_detail_cannot_become_primary_event():
     result = build_market_digest(
         {

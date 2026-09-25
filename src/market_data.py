@@ -90,7 +90,21 @@ def get_market_status(market_key: str, today: date | None = None) -> dict[str, A
         "date": target_day.isoformat(),
     }
     if schedule.empty:
-        return {**base, "is_trading_day": False, "session": "休市"}
+        next_schedule = calendar.schedule(
+            start_date=target_day + timedelta(days=1),
+            end_date=target_day + timedelta(days=21),
+        )
+        next_trading_date = (
+            next_schedule.index[0].date().isoformat()
+            if not next_schedule.empty else None
+        )
+        return {
+            **base,
+            "is_trading_day": False,
+            "session": "休市",
+            "calendar_status": "confirmed_closed",
+            "next_trading_date": next_trading_date,
+        }
 
     market_open = schedule.iloc[0]["market_open"].to_pydatetime().astimezone(tz)
     market_close = schedule.iloc[0]["market_close"].to_pydatetime().astimezone(tz)
@@ -104,6 +118,7 @@ def get_market_status(market_key: str, today: date | None = None) -> dict[str, A
         **base,
         "is_trading_day": True,
         "session": session,
+        "calendar_status": "confirmed_open",
         "market_open": market_open.isoformat(),
         "market_close": market_close.isoformat(),
     }
@@ -899,6 +914,22 @@ def build_market_snapshot() -> dict[str, Any]:
     from src.market_backup import from_environment as market_backup_from_environment
     backup_store = market_backup_from_environment()
     markets = {key: get_market_status(key) for key in MARKETS}
+    taiwan_status = markets.get("taiwan")
+    if isinstance(taiwan_status, dict):
+        # Keep the cash and TAIFEX day-session decisions separately named in
+        # the published schedule contract.  XTAI is the shared baseline in
+        # this runtime; consumers must not infer that the two statuses came
+        # from independently queried calendars.
+        markets["taiwan_cash"] = {
+            **taiwan_status,
+            "market_component": "TWSE cash session",
+            "calendar_basis": "shared_XTAI_baseline",
+        }
+        markets["taiwan_futures"] = {
+            **taiwan_status,
+            "market_component": "TAIFEX Taiwan index futures day session",
+            "calendar_basis": "shared_XTAI_baseline",
+        }
     errors: list[dict[str, str]] = []
     quotes: list[dict[str, Any]] = []
     for item in WATCHLIST:

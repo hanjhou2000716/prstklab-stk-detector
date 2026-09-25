@@ -37,6 +37,7 @@ from src.financialjuice_release_contract import (
     validate_financialjuice_release,
 )
 from src.market_data import build_market_snapshot
+from src.market_digest import build_taiwan_holiday_notice_digest
 from src.notification_observability import decision_summary, merge_decision_health, write_summary
 from src.railway_observation_client import load_railway_observations
 from src.railway_secret import delivery_shared_secret
@@ -549,13 +550,7 @@ def _release_alert_ids(manifest_path: Path, manifest: dict[str, Any]) -> set[str
 def _closed_market_slot_context(
     snapshot: dict[str, Any], slot: str, context: dict[str, Any] | None,
 ) -> dict[str, Any] | None:
-    """Suppress routine non-morning anchors on exchange holidays.
-
-    The clock still determines the report label on a closed day, but only the
-    06:00 morning anchor is a routine delivery.  This check is intentionally
-    applied after the market snapshot is built so the Pages artifact retains
-    the closed-day evidence and the delivery decision remains auditable.
-    """
+    """Apply the fixed Taiwan holiday policy after market status is known."""
     if not isinstance(context, dict) or str(context.get("delivery_intent") or "").strip() != "notify_candidate":
         return context
     market_key = "us" if slot == "us_premarket" else "taiwan" if slot in {"pre_open", "post_close"} else ""
@@ -569,7 +564,58 @@ def _closed_market_slot_context(
         weekend = datetime.fromisoformat(slot_date).date().weekday() >= 5
     except ValueError:
         pass
-    if not weekend and (not isinstance(status, dict) or status.get("is_trading_day") is not False):
+    if weekend:
+        return {
+            **context,
+            "delivery_intent": "publish_only",
+            "suppression_reason": "closed_market_weekend_publish_only",
+            "resolution_reason": "closed_market_weekend_publish_only",
+        }
+    if slot in {"pre_open", "post_close"}:
+        cash = status
+        futures = status
+        if isinstance(markets, dict):
+            cash = markets.get("taiwan_cash") or status
+            futures = markets.get("taiwan_futures") or status
+        components = (cash, futures)
+        if any(
+            not isinstance(value, dict)
+            or not isinstance(value.get("is_trading_day"), bool)
+            or str(value.get("calendar_status") or "") not in {"confirmed_open", "confirmed_closed"}
+            or not str(value.get("calendar") or "").strip()
+            for value in components
+        ):
+            return {
+                **context,
+                "delivery_intent": "publish_only",
+                "suppression_reason": "market_calendar_unverified",
+                "resolution_reason": "market_calendar_unverified",
+            }
+        states = [value["is_trading_day"] for value in components]
+        if states == [False, False]:
+            if slot == "post_close":
+                return {
+                    **context,
+                    "delivery_intent": "publish_only",
+                    "suppression_reason": "closed_market_publish_only",
+                    "resolution_reason": "closed_market_publish_only",
+                }
+            return {
+                **context,
+                "holiday_notice_required": True,
+                "resolution_reason": "taiwan_holiday_notice_required",
+            }
+        if states[0] != states[1]:
+            return {**context, "resolution_reason": "taiwan_market_calendar_split"}
+        return context
+    if not isinstance(status, dict) or not isinstance(status.get("is_trading_day"), bool):
+        return {
+            **context,
+            "delivery_intent": "publish_only",
+            "suppression_reason": "market_calendar_unavailable",
+            "resolution_reason": "market_calendar_unavailable",
+        }
+    if status.get("is_trading_day") is True:
         return context
     return {
         **context,
@@ -577,6 +623,109 @@ def _closed_market_slot_context(
         "suppression_reason": "closed_market_publish_only",
         "resolution_reason": "closed_market_publish_only",
     }
+
+
+def _resolve_delivery_obligation(
+    snapshot: dict[str, Any],
+    slot: str,
+    context: dict[str, Any] | None,
+    *,
+    notification_requested: bool | None,
+) -> tuple[str, str, list[dict[str, Any]]]:
+    """Resolve the one post-prepare notification obligation used by all gates."""
+    ctx = context if isinstance(context, dict) else {}
+    reason = str(ctx.get("resolution_reason") or ctx.get("suppression_reason") or "")
+    if notification_requested is False:
+        return "expected_skip", "manual_notification_opt_in_required", []
+    if str(ctx.get("contract_status") or "") == "invalid":
+        return "blocked", reason or "invalid_schedule_context", []
+    if reason == "holiday_notice_calendar_unverifiable":
+        return "blocked", reason, []
+    if reason.startswith(("late_schedule", "late_dispatch")) or str(ctx.get("delivery_intent") or "") == "publish_only" and "late" in reason:
+        return "late_publish_only", reason or "late_schedule_publish_only", []
+
+    raw_date = str(ctx.get("slot_date") or "").strip()
+    try:
+        slot_day = datetime.fromisoformat(raw_date).date()
+    except ValueError:
+        return "blocked", "slot_date_unverifiable", []
+    if slot_day.weekday() >= 5 and slot in {"pre_open", "post_close", "us_premarket"}:
+        return "expected_skip", "closed_market_weekend_publish_only", []
+    markets = snapshot.get("markets") if isinstance(snapshot.get("markets"), dict) else {}
+    states: list[dict[str, Any]] = []
+    if slot == "us_premarket":
+        status = markets.get("us")
+        if (
+            not isinstance(status, dict)
+            or not isinstance(status.get("is_trading_day"), bool)
+            or str(status.get("calendar_status") or "")
+            not in {"confirmed_open", "confirmed_closed"}
+            or not str(status.get("calendar") or "").strip()
+        ):
+            return "blocked", "market_calendar_unverified", states
+        states.append({
+            "market": "us_equities",
+            "is_trading_day": status["is_trading_day"],
+            "calendar": str(status.get("calendar") or "unknown"),
+            "calendar_status": str(status.get("calendar_status") or "unknown"),
+            "calendar_basis": str(status.get("calendar_basis") or status.get("calendar") or "unknown"),
+            "next_trading_date": str(status.get("next_trading_date") or ""),
+        })
+        if not status["is_trading_day"]:
+            return "expected_skip", "us_market_closed_publish_only", states
+        return "report_required", "routine_market_report", states
+    if slot in {"morning", "pre_open", "post_close"}:
+        cash = markets.get("taiwan_cash") or markets.get("taiwan")
+        futures = markets.get("taiwan_futures") or markets.get("taiwan")
+        for name, value in (("taiwan_cash", cash), ("taiwan_index_futures_day", futures)):
+            if not isinstance(value, dict) or not isinstance(value.get("is_trading_day"), bool):
+                return "blocked", "market_calendar_unavailable", states
+            calendar_status = str(value.get("calendar_status") or "")
+            if (
+                calendar_status not in {"confirmed_open", "confirmed_closed"}
+                or not str(value.get("calendar") or "").strip()
+            ):
+                return "blocked", "market_calendar_unverified", states
+            states.append({
+                "market": name,
+                "is_trading_day": value["is_trading_day"],
+                "calendar": str(value.get("calendar") or "unknown"),
+                "calendar_status": str(value.get("calendar_status") or "unknown"),
+                "calendar_basis": str(value.get("calendar_basis") or value.get("calendar") or "unknown"),
+                "next_trading_date": str(value.get("next_trading_date") or ""),
+            })
+        if slot == "morning":
+            return "report_required", "routine_morning_report", states
+        cash_open = states[0]["is_trading_day"]
+        futures_open = states[1]["is_trading_day"]
+        if slot == "pre_open" and not cash_open and not futures_open:
+            next_dates = [
+                str(value.get("next_trading_date") or "")
+                for value in (cash, futures)
+                if isinstance(value, dict)
+            ]
+            if not all(next_dates) or len(set(next_dates)) != 1:
+                return "blocked", "next_trading_date_unverifiable", states
+            try:
+                next_day = datetime.fromisoformat(next_dates[0]).date()
+            except ValueError:
+                return "blocked", "next_trading_date_unverifiable", states
+            if next_day <= slot_day:
+                return "blocked", "next_trading_date_unverifiable", states
+            if any(
+                not str(value.get("calendar_basis") or value.get("calendar") or "").strip()
+                for value in (cash, futures)
+                if isinstance(value, dict)
+            ):
+                return "blocked", "holiday_calendar_basis_unverifiable", states
+            return "holiday_notice_required", "taiwan_exchange_holiday", states
+        if slot == "post_close" and not cash_open and not futures_open:
+            return "expected_skip", "closed_market_publish_only", states
+        return "report_required", "routine_market_report", states
+
+    if str(ctx.get("delivery_intent") or "") != "notify_candidate":
+        return "expected_skip", reason or "delivery_not_requested", states
+    return "report_required", "routine_market_report", states
 
 
 def _load_schedule_decision_history(snapshot_path: Path) -> list[dict[str, Any]]:
@@ -661,6 +810,9 @@ def _attach_schedule_decision(
 ) -> dict[str, Any]:
     """Persist the latest anchor production/notification decision in Pages."""
     ctx = context if isinstance(context, dict) else {}
+    delivery_obligation, obligation_reason, market_calendar_states = _resolve_delivery_obligation(
+        snapshot, slot, ctx, notification_requested=notification_requested,
+    )
     status, reason = _schedule_decision_category(
         ctx,
         briefing=briefing,
@@ -669,6 +821,22 @@ def _attach_schedule_decision(
         comparison_reason=comparison_reason,
         notification_requested=notification_requested,
     )
+    if delivery_obligation == "blocked":
+        status, reason = "blocked", obligation_reason
+    elif delivery_obligation == "holiday_notice_required":
+        status, reason = "notification_candidate", obligation_reason
+    elif delivery_obligation == "expected_skip":
+        if obligation_reason == "manual_notification_opt_in_required":
+            status, reason = "not_requested", obligation_reason
+        else:
+            status, reason = (
+                "market_closed"
+                if "closed_market" in obligation_reason or "taiwan_exchange_holiday" in obligation_reason
+                else "suppressed",
+                obligation_reason,
+            )
+    elif delivery_obligation == "late_publish_only":
+        status, reason = "late_schedule", obligation_reason
     row: dict[str, Any] = {
         "anchor_key": anchor_key(
             str(ctx.get("effective_slot") or slot),
@@ -693,6 +861,10 @@ def _attach_schedule_decision(
         "comparison_notification_key": comparison_notification_key,
         "material_changes": list(material_changes or []),
         "delivery_eligible": bool(delivery_eligible),
+        "delivery_obligation": delivery_obligation,
+        "obligation_reason": obligation_reason,
+        "notification_expected": delivery_obligation in {"report_required", "holiday_notice_required"},
+        "market_calendar_states": market_calendar_states,
         "notification_requested": notification_requested,
         "delivery_policy": delivery_policy,
         "notification_status": status,
@@ -723,7 +895,24 @@ def prepare(
 ) -> dict:
     """Create the exact snapshot that will later be deployed and delivered."""
     production_started_at = datetime.now(UTC).isoformat()
-    snapshot = build_market_snapshot()
+    try:
+        snapshot = build_market_snapshot()
+    except Exception as exc:
+        error_type = type(exc).__name__
+        _write_decision_output(
+            {
+                "prepared": "false",
+                "sent": "false",
+                "delivery_obligation": "blocked",
+                "obligation_reason": "market_snapshot_unavailable",
+                "source_health_status": "failed",
+                "source_health_error_type": error_type,
+            },
+            notification_status="blocked",
+            notification_reason="market_snapshot_unavailable",
+            notification_expected=False,
+        )
+        raise RuntimeError(f"market_snapshot_unavailable:{error_type}") from exc
     external_path = external_observations_path()
     local_observations, local_rejected = load_external_observations(external_path)
     remote_observations: list[dict] = []
@@ -842,6 +1031,50 @@ def prepare(
     effective_context = _closed_market_slot_context(snapshot, slot, slot_context)
     if isinstance(effective_context, dict):
         snapshot["briefing"]["slot_context"] = effective_context
+    if (
+        slot == "pre_open"
+        and isinstance(effective_context, dict)
+        and effective_context.get("holiday_notice_required") is True
+        and notification_requested is not False
+    ):
+        markets = snapshot.get("markets") if isinstance(snapshot.get("markets"), dict) else {}
+        cash_status = markets.get("taiwan_cash") or markets.get("taiwan")
+        futures_status = markets.get("taiwan_futures") or markets.get("taiwan")
+        next_dates = [
+            str(value.get("next_trading_date") or "")
+            for value in (cash_status, futures_status)
+            if isinstance(value, dict)
+        ]
+        try:
+            notice_digest = build_taiwan_holiday_notice_digest(
+                slot=slot,
+                slot_date=str(effective_context.get("slot_date") or ""),
+                next_trading_date=next_dates[0] if next_dates and len(set(next_dates)) == 1 else "",
+                cash_is_trading_day=(cash_status or {}).get("is_trading_day") is True,
+                futures_is_trading_day=(futures_status or {}).get("is_trading_day") is True,
+                calendar_basis=(
+                    "TWSE="
+                    f"{(cash_status or {}).get('calendar_basis') or (cash_status or {}).get('calendar', 'unknown')}; "
+                    "TAIFEX="
+                    f"{(futures_status or {}).get('calendar_basis') or (futures_status or {}).get('calendar', 'unknown')}"
+                ),
+            )
+        except (TypeError, ValueError):
+            effective_context = {
+                **effective_context,
+                "delivery_intent": "publish_only",
+                "holiday_notice_required": False,
+                "suppression_reason": "holiday_notice_calendar_unverifiable",
+                "resolution_reason": "holiday_notice_calendar_unverifiable",
+            }
+            snapshot["briefing"]["slot_context"] = effective_context
+        else:
+            snapshot["briefing"].update(notice_digest)
+            snapshot["briefing"]["slot_context"] = effective_context
+            snapshot["briefing"]["holiday_notice"] = notice_digest["holiday_notice"]
+            snapshot["briefing"]["notification_eligible"] = True
+            snapshot["briefing"]["status"] = "ready"
+            snapshot["briefing"]["notification_reason"] = "holiday_notice_required"
         if str(effective_context.get("delivery_intent") or "").strip() != "notify_candidate":
             # Keep the full briefing visible on Pages, but do not manufacture
             # an immutable alert artifact for a publish-only refresh.
@@ -870,6 +1103,7 @@ def prepare(
     if (
         isinstance(snapshot.get("briefing"), dict)
         and str((effective_context or {}).get("delivery_intent") or "notify_candidate") == "notify_candidate"
+        and not (snapshot["briefing"].get("holiday_notice") if isinstance(snapshot["briefing"], dict) else False)
         and not _briefing_evidence_ready(snapshot["briefing"])
     ):
         # Keep the full evidence record on Pages, but do not turn an
@@ -978,7 +1212,7 @@ def prepare(
     prepared_decision = decision_summary(
         event=decision_event,
         scan_status="completed",
-        notification_expected=bool(decision_event) and delivery_eligible,
+        notification_expected=bool(schedule_decision["notification_expected"]),
         notification_status=str(schedule_decision["notification_status"]),
         notification_reason=str(schedule_decision["suppression_reason"] or prepared_reason),
     )
@@ -1008,6 +1242,9 @@ def prepare(
     _write_decision_output(
         {
             "prepared": "true",
+            "notification_expected": "true" if schedule_decision["notification_expected"] else "false",
+            "delivery_obligation": schedule_decision["delivery_obligation"],
+            "obligation_reason": schedule_decision["obligation_reason"],
             "production_status": schedule_decision["production_status"],
             "schedule_contract_status": schedule_decision["contract_status"],
             "scheduled_slot": schedule_decision["scheduled_slot"],
@@ -1022,6 +1259,13 @@ def prepare(
             "comparison_notification_key": schedule_decision["comparison_notification_key"],
             "material_changes": schedule_decision["material_changes"],
             "delivery_eligible": schedule_decision["delivery_eligible"],
+            "market_calendar_states": schedule_decision["market_calendar_states"],
+            "source_health_status": str((snapshot.get("source_health") or {}).get("status") or "unknown"),
+            "source_health_checked_at": str((snapshot.get("source_health") or {}).get("checked_at") or ""),
+            "source_health_missing_count": int((snapshot.get("source_health") or {}).get("missing_source_count") or 0),
+            "source_health_runtime_failure_count": int((snapshot.get("source_health") or {}).get("runtime_failure_count") or 0),
+            "market_data_overall_state": str(snapshot.get("overall_state") or "unknown"),
+            "market_data_unavailable_count": int((snapshot.get("scan") or {}).get("unavailable_count") or 0),
             "suppression_reason": schedule_decision["suppression_reason"],
             "delivery_policy": schedule_decision["delivery_policy"],
             "financialjuice_release_status": fj_boundary["alert_projection_status"],
@@ -1032,6 +1276,7 @@ def prepare(
         event=decision_event,
         notification_status=prepared_decision["notification_status"],
         notification_reason=prepared_decision["notification_reason"],
+        notification_expected=bool(schedule_decision["notification_expected"]),
     )
     return snapshot
 
@@ -1068,10 +1313,53 @@ def send(
     slot_context: dict[str, Any] = context_value if isinstance(context_value, dict) else {}
     schedule_decision_value = briefing.get("schedule_decision")
     schedule_decision = schedule_decision_value if isinstance(schedule_decision_value, dict) else {}
-    notification_expected = bool(
-        str(slot_context.get("delivery_intent") or "") == "notify_candidate"
-        and schedule_decision.get("notification_requested") is not False
+    delivery_obligation = str(schedule_decision.get("delivery_obligation") or "").strip()
+    notification_expected = (
+        delivery_obligation in {"report_required", "holiday_notice_required", "already_delivered"}
+        if delivery_obligation
+        else bool(
+            str(slot_context.get("delivery_intent") or "") == "notify_candidate"
+            and schedule_decision.get("notification_requested") is not False
+        )
     )
+    if delivery_obligation in {"expected_skip", "late_publish_only"}:
+        reason = str(schedule_decision.get("obligation_reason") or delivery_obligation)
+        _write_decision_output(
+            {
+                "sent": "false",
+                "delivery_status": "suppressed",
+                "reason": reason,
+                "delivery_obligation": delivery_obligation,
+                "notification_expected": "false",
+                "notification_status": "suppressed",
+                "notification_reason": reason,
+                "last_receipt_status": "not_attempted",
+            },
+            notification_status="suppressed",
+            notification_reason=reason,
+            notification_expected=False,
+            last_receipt_status="not_attempted",
+        )
+        return
+    if delivery_obligation == "blocked":
+        reason = str(schedule_decision.get("obligation_reason") or "delivery_obligation_blocked")
+        _write_decision_output(
+            {
+                "sent": "false",
+                "delivery_status": "blocked",
+                "reason": reason,
+                "delivery_obligation": delivery_obligation,
+                "notification_expected": "false",
+                "notification_status": "blocked",
+                "notification_reason": reason,
+                "last_receipt_status": "not_attempted",
+            },
+            notification_status="blocked",
+            notification_reason=reason,
+            notification_expected=False,
+            last_receipt_status="not_attempted",
+        )
+        return
     gate = verify_release_for_delivery(
         manifest_path=manifest_path,
         expected_snapshot_id=snapshot_id,
