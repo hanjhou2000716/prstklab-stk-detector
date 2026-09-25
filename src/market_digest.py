@@ -1157,7 +1157,7 @@ def build_taiwan_holiday_notice_digest(
     next_trading_date: str,
     cash_is_trading_day: bool,
     futures_is_trading_day: bool,
-    calendar_basis: str,
+    calendar_evidence: list[dict[str, Any]],
 ) -> dict[str, Any]:
     """Build a release-bound, non-directional holiday notice for Taiwan."""
     if slot != "pre_open":
@@ -1168,36 +1168,73 @@ def build_taiwan_holiday_notice_digest(
     parsed_next = datetime.fromisoformat(next_trading_date).date()
     if parsed_next <= parsed_date:
         raise ValueError("next trading date must follow the holiday date")
-    if not str(calendar_basis or "").strip() or str(calendar_basis).strip().casefold() == "unknown":
-        raise ValueError("holiday notice requires a verified calendar basis")
+    if not isinstance(calendar_evidence, list) or len(calendar_evidence) != 2:
+        raise ValueError("holiday notice requires exactly two exchange calendar evidence rows")
+    evidence_by_market = {
+        str(item.get("market") or ""): item
+        for item in calendar_evidence
+        if isinstance(item, dict)
+    }
+    expected_markets = {"taiwan_cash", "taifex_taiwan_index_futures_day_session"}
+    if len(evidence_by_market) != 2 or set(evidence_by_market) != expected_markets:
+        raise ValueError("holiday notice requires unique exchange calendar evidence rows")
+    cash_evidence = evidence_by_market.get("taiwan_cash")
+    futures_evidence = evidence_by_market.get("taifex_taiwan_index_futures_day_session")
+    if not isinstance(cash_evidence, dict) or not isinstance(futures_evidence, dict):
+        raise ValueError("holiday notice requires both exchange calendar evidence rows")
+    if cash_evidence.get("is_trading_day") is not False or futures_evidence.get("is_trading_day") is not False:
+        raise ValueError("holiday calendar evidence must confirm both markets closed")
+    if any(str(item.get("date") or "") != parsed_date.isoformat() for item in (cash_evidence, futures_evidence)):
+        raise ValueError("holiday calendar evidence date mismatch")
+    if any(
+        str(item.get("next_trading_date") or "") != parsed_next.isoformat()
+        for item in (cash_evidence, futures_evidence)
+    ):
+        raise ValueError("holiday calendar next trading date mismatch")
+    cash_provider = str(cash_evidence.get("provider") or "").strip()
+    futures_provider = str(futures_evidence.get("provider") or "").strip()
+    cash_calendar = str(cash_evidence.get("calendar_id") or "").strip()
+    futures_calendar = str(futures_evidence.get("calendar_id") or "").strip().upper()
+    futures_urls = futures_evidence.get("source_urls")
+    futures_publication_dates = futures_evidence.get("source_published_on")
+    try:
+        coverage_start = datetime.fromisoformat(str(futures_evidence.get("coverage_start") or "")).date()
+        coverage_end = datetime.fromisoformat(str(futures_evidence.get("coverage_end") or "")).date()
+        datetime.fromisoformat(str(futures_evidence.get("verified_on") or "")).date()
+        if isinstance(futures_publication_dates, list):
+            for published_on in futures_publication_dates:
+                datetime.fromisoformat(str(published_on)).date()
+    except ValueError as exc:
+        raise ValueError("holiday notice requires dated official TAIFEX source metadata") from exc
+    if (
+        cash_provider.casefold() != "pandas_market_calendars"
+        or cash_calendar.upper() != "XTAI"
+        or futures_provider.upper() != "TAIFEX"
+        or futures_calendar != "TAIFEX"
+        or futures_evidence.get("calendar_version") != f"TAIFEX-{parsed_date.year}"
+        or coverage_start.year != parsed_date.year
+        or coverage_end.year != parsed_date.year
+        or coverage_start > parsed_date
+        or coverage_end < parsed_date
+        or not isinstance(futures_urls, list)
+        or not futures_urls
+        or any(not str(url).startswith("https://www.taifex.com.tw/") for url in futures_urls)
+        or not isinstance(futures_publication_dates, list)
+        or len(futures_publication_dates) != len(futures_urls)
+        or not str(futures_evidence.get("source_document") or "").strip()
+    ):
+        raise ValueError("holiday notice requires independent official TAIFEX calendar evidence")
+    if cash_provider.casefold() == futures_provider.casefold() and cash_calendar.casefold() == futures_calendar.casefold():
+        raise ValueError("holiday notice calendars are not independent")
 
     date_label = f"{parsed_next.month}/{parsed_next.day}"
     public_message = f"台股休市提醒｜現貨與台指期日盤休市；次一交易日 {date_label}"
     event_key = f"taiwan-holiday:{parsed_date.isoformat()}"
     source_evidence = [
-        {
-            "provider": "pandas_market_calendars",
-            "calendar_id": "XTAI",
-            "calendar_basis": str(calendar_basis),
-            "market": "taiwan_cash",
-            "date": parsed_date.isoformat(),
-            "is_trading_day": False,
-        },
-        {
-            "provider": "pandas_market_calendars",
-            "calendar_id": "XTAI",
-            "calendar_basis": str(calendar_basis),
-            "market": "taifex_taiwan_index_futures_day_session",
-            "date": parsed_date.isoformat(),
-            "is_trading_day": False,
-        },
-        {
-            "provider": "pandas_market_calendars",
-            "calendar_id": "XTAI",
-            "calendar_basis": str(calendar_basis),
-            "next_trading_date": parsed_next.isoformat(),
-        },
+        {**cash_evidence, "calendar_basis": str(cash_evidence.get("calendar_basis") or cash_calendar)},
+        {**futures_evidence, "calendar_basis": str(futures_evidence.get("calendar_basis") or futures_calendar)},
     ]
+    calendar_basis = f"TWSE={cash_calendar}; TAIFEX={futures_calendar}"
     primary_theme = {
         "title": "台股休市提醒",
         "market_topic": "taiwan_market",
@@ -1227,6 +1264,7 @@ def build_taiwan_holiday_notice_digest(
         "slot_date": parsed_date.isoformat(),
         "next_trading_date": parsed_next.isoformat(),
         "calendar_basis": str(calendar_basis),
+        "calendar_evidence": source_evidence,
         "cash_is_trading_day": cash_is_trading_day,
         "futures_is_trading_day": futures_is_trading_day,
         "public_short_message": public_message,

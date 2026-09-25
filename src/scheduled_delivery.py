@@ -577,7 +577,7 @@ def _closed_market_slot_context(
         futures = status
         if isinstance(markets, dict):
             cash = markets.get("taiwan_cash") or status
-            futures = markets.get("taiwan_futures") or status
+            futures = markets.get("taiwan_futures")
         if not isinstance(cash, dict) or not isinstance(futures, dict):
             return {
                 **context,
@@ -684,7 +684,7 @@ def _resolve_delivery_obligation(
         return "report_required", "routine_market_report", states
     if slot in {"morning", "pre_open", "post_close"}:
         cash = markets.get("taiwan_cash") or markets.get("taiwan")
-        futures = markets.get("taiwan_futures") or markets.get("taiwan")
+        futures = markets.get("taiwan_futures")
         for name, value in (("taiwan_cash", cash), ("taiwan_index_futures_day", futures)):
             if not isinstance(value, dict) or not isinstance(value.get("is_trading_day"), bool):
                 return "blocked", "market_calendar_unavailable", states
@@ -694,14 +694,66 @@ def _resolve_delivery_obligation(
                 or not str(value.get("calendar") or "").strip()
             ):
                 return "blocked", "market_calendar_unverified", states
+            calendar_provider = str(value.get("calendar_provider") or "").strip()
             states.append({
                 "market": name,
                 "is_trading_day": value["is_trading_day"],
                 "calendar": str(value.get("calendar") or "unknown"),
+                "calendar_provider": calendar_provider,
                 "calendar_status": str(value.get("calendar_status") or "unknown"),
                 "calendar_basis": str(value.get("calendar_basis") or value.get("calendar") or "unknown"),
                 "next_trading_date": str(value.get("next_trading_date") or ""),
+                "calendar_version": str(value.get("calendar_version") or ""),
+                "calendar_coverage_start": str(value.get("calendar_coverage_start") or ""),
+                "calendar_coverage_end": str(value.get("calendar_coverage_end") or ""),
+                "calendar_source_urls": list(value.get("calendar_source_urls") or []),
+                "calendar_source_published_on": list(value.get("calendar_source_published_on") or []),
+                "calendar_source_document": str(value.get("calendar_source_document") or ""),
+                "calendar_verified_on": str(value.get("calendar_verified_on") or ""),
             })
+        cash_provider = str((cash or {}).get("calendar_provider") or "").strip().casefold()
+        cash_calendar = str((cash or {}).get("calendar") or "").strip().casefold()
+        futures_provider = str((futures or {}).get("calendar_provider") or "").strip().upper()
+        futures_calendar = str((futures or {}).get("calendar") or "").strip().upper()
+        futures_sources = (futures or {}).get("calendar_source_urls")
+        if (
+            cash_provider != "pandas_market_calendars"
+            or cash_calendar != "xtai"
+            or (cash_provider, cash_calendar) == (futures_provider.casefold(), futures_calendar.casefold())
+        ):
+            return "blocked", "market_calendars_not_independent", states
+        try:
+            coverage_start = datetime.fromisoformat(
+                str((futures or {}).get("calendar_coverage_start") or "")
+            ).date()
+            coverage_end = datetime.fromisoformat(
+                str((futures or {}).get("calendar_coverage_end") or "")
+            ).date()
+        except ValueError:
+            return "blocked", "taifex_calendar_unverified", states
+        if (
+            futures_provider != "TAIFEX"
+            or futures_calendar != "TAIFEX"
+            or str((futures or {}).get("calendar_version") or "") != f"TAIFEX-{slot_day.year}"
+            or coverage_start.year != slot_day.year
+            or coverage_end.year != slot_day.year
+            or coverage_start > slot_day
+            or coverage_end < slot_day
+            or not isinstance(futures_sources, list)
+            or not futures_sources
+            or any(not str(url).startswith("https://www.taifex.com.tw/") for url in futures_sources)
+            or not str((futures or {}).get("calendar_source_document") or "").strip()
+        ):
+            return "blocked", "taifex_calendar_unverified", states
+        source_publication_dates = (futures or {}).get("calendar_source_published_on")
+        if not isinstance(source_publication_dates, list) or len(source_publication_dates) != len(futures_sources):
+            return "blocked", "taifex_calendar_unverified", states
+        try:
+            for published_on in source_publication_dates:
+                datetime.fromisoformat(str(published_on)).date()
+            datetime.fromisoformat(str((futures or {}).get("calendar_verified_on") or "")).date()
+        except ValueError:
+            return "blocked", "taifex_calendar_unverified", states
         if slot == "morning":
             return "report_required", "routine_morning_report", states
         cash_open = states[0]["is_trading_day"]
@@ -1048,7 +1100,7 @@ def prepare(
         markets_value = snapshot.get("markets")
         markets: dict[str, Any] = markets_value if isinstance(markets_value, dict) else {}
         cash_status = markets.get("taiwan_cash") or markets.get("taiwan")
-        futures_status = markets.get("taiwan_futures") or markets.get("taiwan")
+        futures_status = markets.get("taiwan_futures")
         next_dates = [
             str(value.get("next_trading_date") or "")
             for value in (cash_status, futures_status)
@@ -1061,12 +1113,40 @@ def prepare(
                 next_trading_date=next_dates[0] if next_dates and len(set(next_dates)) == 1 else "",
                 cash_is_trading_day=(cash_status or {}).get("is_trading_day") is True,
                 futures_is_trading_day=(futures_status or {}).get("is_trading_day") is True,
-                calendar_basis=(
-                    "TWSE="
-                    f"{(cash_status or {}).get('calendar_basis') or (cash_status or {}).get('calendar', 'unknown')}; "
-                    "TAIFEX="
-                    f"{(futures_status or {}).get('calendar_basis') or (futures_status or {}).get('calendar', 'unknown')}"
-                ),
+                calendar_evidence=[
+                    {
+                        "provider": (cash_status or {}).get("calendar_provider"),
+                        "calendar_id": (cash_status or {}).get("calendar"),
+                        "calendar_basis": (cash_status or {}).get("calendar_basis"),
+                        "source_urls": (cash_status or {}).get("calendar_source_urls") or [],
+                        "calendar_version": (cash_status or {}).get("calendar_version"),
+                        "coverage_start": (cash_status or {}).get("calendar_coverage_start"),
+                        "coverage_end": (cash_status or {}).get("calendar_coverage_end"),
+                        "source_published_on": (cash_status or {}).get("calendar_source_published_on") or [],
+                        "source_document": (cash_status or {}).get("calendar_source_document"),
+                        "verified_on": (cash_status or {}).get("calendar_verified_on"),
+                        "market": "taiwan_cash",
+                        "date": str(effective_context.get("slot_date") or ""),
+                        "is_trading_day": (cash_status or {}).get("is_trading_day"),
+                        "next_trading_date": (cash_status or {}).get("next_trading_date"),
+                    },
+                    {
+                        "provider": (futures_status or {}).get("calendar_provider"),
+                        "calendar_id": (futures_status or {}).get("calendar"),
+                        "calendar_basis": (futures_status or {}).get("calendar_basis"),
+                        "source_urls": (futures_status or {}).get("calendar_source_urls") or [],
+                        "calendar_version": (futures_status or {}).get("calendar_version"),
+                        "coverage_start": (futures_status or {}).get("calendar_coverage_start"),
+                        "coverage_end": (futures_status or {}).get("calendar_coverage_end"),
+                        "source_published_on": (futures_status or {}).get("calendar_source_published_on") or [],
+                        "source_document": (futures_status or {}).get("calendar_source_document"),
+                        "verified_on": (futures_status or {}).get("calendar_verified_on"),
+                        "market": "taifex_taiwan_index_futures_day_session",
+                        "date": str(effective_context.get("slot_date") or ""),
+                        "is_trading_day": (futures_status or {}).get("is_trading_day"),
+                        "next_trading_date": (futures_status or {}).get("next_trading_date"),
+                    },
+                ],
             )
         except (TypeError, ValueError):
             effective_context = {

@@ -909,28 +909,33 @@ def build_market_snapshot() -> dict[str, Any]:
     from src.research_cards import load_research_cards
     from src.risk_news import build_news_snapshot, build_risk_snapshot
     from src.source_health import build_source_health
+    from src.taifex_calendar import get_taifex_index_futures_status
 
     scan_started_at = datetime.now(ZoneInfo("Asia/Taipei"))
     from src.market_backup import from_environment as market_backup_from_environment
     backup_store = market_backup_from_environment()
     markets = {key: get_market_status(key) for key in MARKETS}
+    errors: list[dict[str, str]] = []
     taiwan_status = markets.get("taiwan")
     if isinstance(taiwan_status, dict):
-        # Keep the cash and TAIFEX day-session decisions separately named in
-        # the published schedule contract.  XTAI is the shared baseline in
-        # this runtime; consumers must not infer that the two statuses came
-        # from independently queried calendars.
+        # XTAI supplies only the TWSE cash calendar.  TAIFEX is resolved from
+        # its own reviewed official annual schedule and closure notices below.
         markets["taiwan_cash"] = {
             **taiwan_status,
             "market_component": "TWSE cash session",
-            "calendar_basis": "shared_XTAI_baseline",
+            "calendar_provider": "pandas_market_calendars",
+            "calendar_basis": "pandas_market_calendars:XTAI",
         }
-        markets["taiwan_futures"] = {
-            **taiwan_status,
-            "market_component": "TAIFEX Taiwan index futures day session",
-            "calendar_basis": "shared_XTAI_baseline",
-        }
-    errors: list[dict[str, str]] = []
+    taifex_status = get_taifex_index_futures_status(
+        today=scan_started_at.date(), now=scan_started_at,
+    )
+    markets["taiwan_futures"] = taifex_status
+    if taifex_status.get("calendar_status") != "confirmed_open" and taifex_status.get("calendar_status") != "confirmed_closed":
+        errors.append({
+            "ticker": "TAIFEX日曆",
+            "message": str(taifex_status.get("calendar_error") or "TAIFEX行事曆未涵蓋本日"),
+            "scope": "market_calendar",
+        })
     quotes: list[dict[str, Any]] = []
     for item in WATCHLIST:
         try:

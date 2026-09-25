@@ -16,6 +16,41 @@ from src.scheduled_delivery import (
 )
 from src.telegram_client import TextDeliveryReceipt, alert_mini_app_url
 
+TAIFEX_SOURCE_URLS = [
+    "https://www.taifex.com.tw/file/taifex/CHINESE/11/attach/%E5%8F%B0%E6%9C%9F%E4%BA%A4%E5%AD%97%E7%AC%AC1140003036%E8%99%9F%E5%87%BD.pdf",
+    "https://www.taifex.com.tw/cht/11/newsDetail?idx=17137&newsType=1",
+    "https://www.taifex.com.tw/file/taifex/CHINESE/11/attach/%E5%85%AC%E5%91%8A115%E5%B9%B4%E4%B8%AD%E7%A7%8B%E7%AF%80%20%E6%95%99%E5%B8%AB%E7%AF%80%E4%BC%91%E5%B8%82.pdf",
+]
+
+
+def _cash_calendar(is_trading_day: bool, *, next_trading_date: str | None = None) -> dict[str, object]:
+    return {
+        "is_trading_day": is_trading_day,
+        "calendar_status": "confirmed_open" if is_trading_day else "confirmed_closed",
+        "calendar": "XTAI",
+        "calendar_provider": "pandas_market_calendars",
+        "calendar_basis": "pandas_market_calendars:XTAI",
+        "next_trading_date": next_trading_date,
+    }
+
+
+def _taifex_calendar(is_trading_day: bool, *, next_trading_date: str | None = None) -> dict[str, object]:
+    return {
+        "is_trading_day": is_trading_day,
+        "calendar_status": "confirmed_open" if is_trading_day else "confirmed_closed",
+        "calendar": "TAIFEX",
+        "calendar_provider": "TAIFEX",
+        "calendar_basis": "TAIFEX_official_annual_schedule+official_closure_notices",
+        "calendar_version": "TAIFEX-2026",
+        "calendar_coverage_start": "2026-01-01",
+        "calendar_coverage_end": "2026-12-31",
+        "calendar_source_urls": TAIFEX_SOURCE_URLS,
+        "calendar_source_published_on": ["2025-10-30", "2026-07-09", "2026-09-18"],
+        "calendar_source_document": "台期交字第1140003036號函",
+        "calendar_verified_on": "2026-09-25",
+        "next_trading_date": next_trading_date,
+    }
+
 
 def test_creator_observations_are_projected_into_release_records() -> None:
     rows = _creator_records_from_observations([{
@@ -106,9 +141,11 @@ def test_routine_market_report_does_not_require_an_event_candidate():
 def test_closed_non_morning_anchor_is_pages_only() -> None:
     context = {"delivery_intent": "notify_candidate", "slot_date": "2026-09-07"}
     result = _closed_market_slot_context(
-        {"markets": {"taiwan": {
-            "is_trading_day": False, "calendar_status": "confirmed_closed", "calendar": "XTAI",
-        }}}, "post_close", context,
+        {"markets": {
+            "taiwan": {"is_trading_day": False, "calendar_status": "confirmed_closed", "calendar": "XTAI"},
+            "taiwan_cash": _cash_calendar(False),
+            "taiwan_futures": _taifex_calendar(False),
+        }}, "post_close", context,
     )
     assert result["delivery_intent"] == "publish_only"
     assert result["suppression_reason"] == "closed_market_publish_only"
@@ -125,9 +162,11 @@ def test_weekend_non_morning_anchor_fails_closed_without_market_status() -> None
 def test_open_anchor_keeps_notification_intent() -> None:
     context = {"delivery_intent": "notify_candidate", "slot_date": "2026-09-07"}
     result = _closed_market_slot_context(
-        {"markets": {"taiwan": {
-            "is_trading_day": True, "calendar_status": "confirmed_open", "calendar": "XTAI",
-        }}}, "post_close", context,
+        {"markets": {
+            "taiwan": {"is_trading_day": True, "calendar_status": "confirmed_open", "calendar": "XTAI"},
+            "taiwan_cash": _cash_calendar(True),
+            "taiwan_futures": _taifex_calendar(True),
+        }}, "post_close", context,
     )
     assert result == context
 
@@ -136,14 +175,8 @@ def test_prepared_obligation_matrix_separates_holiday_report_and_expected_skip()
     holiday = {
         "markets": {
             "taiwan": {"is_trading_day": False, "calendar_status": "confirmed_closed", "calendar": "XTAI"},
-            "taiwan_cash": {
-                "is_trading_day": False, "calendar_status": "confirmed_closed", "calendar": "XTAI",
-                "calendar_basis": "shared_XTAI_baseline", "next_trading_date": "2026-09-29",
-            },
-            "taiwan_futures": {
-                "is_trading_day": False, "calendar_status": "confirmed_closed", "calendar": "XTAI",
-                "calendar_basis": "shared_XTAI_baseline", "next_trading_date": "2026-09-29",
-            },
+            "taiwan_cash": _cash_calendar(False, next_trading_date="2026-09-29"),
+            "taiwan_futures": _taifex_calendar(False, next_trading_date="2026-09-29"),
         },
     }
     context = {
@@ -173,8 +206,8 @@ def test_prepared_obligation_blocks_unverified_calendar_and_preserves_market_spl
     )[:2] == ("blocked", "market_calendar_unverified")
     split = {"markets": {
         "taiwan": {"is_trading_day": True, "calendar_status": "confirmed_open", "calendar": "XTAI"},
-        "taiwan_cash": {"is_trading_day": True, "calendar_status": "confirmed_open", "calendar": "TWSE"},
-        "taiwan_futures": {"is_trading_day": False, "calendar_status": "confirmed_closed", "calendar": "TAIFEX"},
+        "taiwan_cash": _cash_calendar(True),
+        "taiwan_futures": _taifex_calendar(False),
     }}
     obligation, reason, states = _resolve_delivery_obligation(
         split, "pre_open", base_context, notification_requested=True,
@@ -188,6 +221,32 @@ def test_prepared_obligation_blocks_unverified_calendar_and_preserves_market_spl
     assert _resolve_delivery_obligation(
         split, "post_close", post_close, notification_requested=True,
     )[:2] == ("report_required", "routine_market_report")
+
+
+def test_prepared_obligation_rejects_shared_xtai_calendar_and_missing_futures_status():
+    context = {"slot_date": "2026-09-28", "delivery_intent": "notify_candidate"}
+    shared = {"markets": {
+        "taiwan_cash": _cash_calendar(False, next_trading_date="2026-09-29"),
+        "taiwan_futures": {
+            **_cash_calendar(False, next_trading_date="2026-09-29"),
+            "calendar_basis": "shared_XTAI_baseline",
+        },
+    }}
+    assert _resolve_delivery_obligation(
+        shared, "pre_open", context, notification_requested=True,
+    )[:2] == ("blocked", "market_calendars_not_independent")
+    assert _resolve_delivery_obligation(
+        {"markets": {"taiwan_cash": _cash_calendar(False)}},
+        "pre_open", context, notification_requested=True,
+    )[:2] == ("blocked", "market_calendar_unavailable")
+
+    stale_coverage = {"markets": {
+        "taiwan_cash": _cash_calendar(False),
+        "taiwan_futures": {**_taifex_calendar(False), "calendar_coverage_end": "2026-09-27"},
+    }}
+    assert _resolve_delivery_obligation(
+        stale_coverage, "pre_open", context, notification_requested=True,
+    )[:2] == ("blocked", "taifex_calendar_unverified")
 
 
 def test_us_premarket_calendar_failure_blocks_but_confirmed_holiday_skips():
@@ -208,16 +267,65 @@ def test_holiday_notice_is_ready_for_the_existing_scheduled_sender_contract():
     briefing = build_taiwan_holiday_notice_digest(
         slot="pre_open", slot_date="2026-09-28", next_trading_date="2026-09-29",
         cash_is_trading_day=False, futures_is_trading_day=False,
-        calendar_basis="XTAI+XTAI",
+        calendar_evidence=[
+            {
+                "provider": "pandas_market_calendars", "calendar_id": "XTAI",
+                "calendar_basis": "pandas_market_calendars:XTAI", "source_urls": [],
+                "market": "taiwan_cash", "date": "2026-09-28", "is_trading_day": False,
+                "next_trading_date": "2026-09-29",
+            },
+            {
+                "provider": "TAIFEX", "calendar_id": "TAIFEX",
+                "calendar_basis": "TAIFEX_official_annual_schedule+official_closure_notices",
+                "source_urls": TAIFEX_SOURCE_URLS,
+                "calendar_version": "TAIFEX-2026", "coverage_start": "2026-01-01",
+                "coverage_end": "2026-12-31", "source_published_on": ["2025-10-30", "2026-07-09", "2026-09-18"],
+                "source_document": "台期交字第1140003036號函", "verified_on": "2026-09-25",
+                "market": "taifex_taiwan_index_futures_day_session", "date": "2026-09-28",
+                "is_trading_day": False, "next_trading_date": "2026-09-29",
+            },
+        ],
     )
     assert _briefing_evidence_ready(briefing) is True
     assert briefing["source_evidence"][0]["provider"] == "pandas_market_calendars"
     assert briefing["source_evidence"][0]["calendar_id"] == "XTAI"
+    assert briefing["source_evidence"][1]["provider"] == "TAIFEX"
+    assert briefing["source_evidence"][1]["source_urls"] == TAIFEX_SOURCE_URLS
     snapshot = {"briefing": {**briefing, "slot_context": {"slot_date": "2026-09-28"}}}
     event = _briefing_delivery_event(snapshot, "pre_open")
     assert event is not None
     assert event["market_scope"] == "taiwan"
     assert "次一交易日 9/29" in event["public_short_message"]
+
+
+def test_holiday_notice_rejects_missing_or_conflicting_independent_evidence():
+    evidence = [
+        {
+            "provider": "pandas_market_calendars", "calendar_id": "XTAI",
+            "market": "taiwan_cash", "date": "2026-09-28", "is_trading_day": False,
+            "next_trading_date": "2026-09-29",
+        },
+        {
+            "provider": "TAIFEX", "calendar_id": "TAIFEX", "source_urls": TAIFEX_SOURCE_URLS,
+            "calendar_version": "TAIFEX-2026", "coverage_start": "2026-01-01",
+            "coverage_end": "2026-12-31", "source_published_on": ["2025-10-30", "2026-07-09", "2026-09-18"],
+            "source_document": "台期交字第1140003036號函", "verified_on": "2026-09-25",
+            "market": "taifex_taiwan_index_futures_day_session", "date": "2026-09-28",
+            "is_trading_day": False, "next_trading_date": "2026-09-29",
+        },
+    ]
+    with pytest.raises(ValueError, match="independent official TAIFEX"):
+        build_taiwan_holiday_notice_digest(
+            slot="pre_open", slot_date="2026-09-28", next_trading_date="2026-09-29",
+            cash_is_trading_day=False, futures_is_trading_day=False,
+            calendar_evidence=[evidence[0], {**evidence[1], "calendar_id": "XTAI"}],
+        )
+    with pytest.raises(ValueError, match="next trading date mismatch"):
+        build_taiwan_holiday_notice_digest(
+            slot="pre_open", slot_date="2026-09-28", next_trading_date="2026-09-29",
+            cash_is_trading_day=False, futures_is_trading_day=False,
+            calendar_evidence=[evidence[0], {**evidence[1], "next_trading_date": "2026-09-30"}],
+        )
 
 
 def test_market_snapshot_failure_is_reported_with_sanitized_blocked_decision(monkeypatch, tmp_path):
