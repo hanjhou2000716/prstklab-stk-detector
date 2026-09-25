@@ -16,6 +16,7 @@ BUILD_VERSION = "a" * 40
 DEPLOYMENT_ID = "pages-run-17"
 STATUS_URL = f"https://api.github.test/repos/owner/repo/pages/deployments/{DEPLOYMENT_ID}/status"
 DEPLOYMENT_URL = f"https://api.github.test/repos/owner/repo/pages/deployments/{DEPLOYMENT_ID}"
+LEGACY_STATUS_URL = f"https://api.github.test/repos/owner/repo/pages/deployment/status/{DEPLOYMENT_ID}"
 
 
 def test_post_request_sends_json_content_type(monkeypatch):
@@ -88,7 +89,7 @@ def test_derive_version_cli_reads_release_identity_from_manifest(tmp_path, monke
     assert f"pages_build_version={derive_build_version(source_revision='c' * 40, release_id='release-cli-test')}" in text
 
 
-@pytest.mark.parametrize("status_url", [STATUS_URL, DEPLOYMENT_URL])
+@pytest.mark.parametrize("status_url", [STATUS_URL, DEPLOYMENT_URL, LEGACY_STATUS_URL])
 def test_verify_checks_returned_identity_but_queries_official_deployment_id_endpoint(status_url):
     urls = []
 
@@ -206,6 +207,19 @@ def test_status_url_diagnostics_record_only_sanitized_shape():
     assert "secret-fragment" not in shape
 
 
+def test_status_url_diagnostics_identify_legacy_official_action_route_without_leaking_url():
+    from src.pages_deployment import _safe_status_url_shape
+
+    shape = _safe_status_url_shape(
+        LEGACY_STATUS_URL,
+        api_url="https://api.github.test",
+        repository="owner/repo",
+        deployment_id=DEPLOYMENT_ID,
+    )
+    assert shape == "scheme=https;host=api;route=legacy_deployment_status;userinfo=no;query=no;fragment=no"
+    assert LEGACY_STATUS_URL not in shape
+
+
 def test_verify_rejects_path_injection_in_deployment_id_before_network_access():
     calls = []
     with pytest.raises(PagesDeploymentError, match="deployment ID is invalid"):
@@ -227,6 +241,11 @@ def test_verify_rejects_path_injection_in_deployment_id_before_network_access():
     STATUS_URL + "?token=secret",
     STATUS_URL + "#fragment",
     "http://api.github.test/repos/owner/repo/pages/deployments/pages-run-17/status",
+    STATUS_URL + "/extra",
+    STATUS_URL + "/",
+    STATUS_URL.replace("pages-run-17", "other-id"),
+    STATUS_URL.replace("/repos/owner/repo/", "/repos/owner%2Frepo/"),
+    "https://api.github.test/repos/owner/repo/pages/deployments/pages-run-17/../status",
 ])
 def test_verify_rejects_untrusted_or_ambiguous_status_url_without_network(status_url):
     calls = []
@@ -336,6 +355,76 @@ def test_create_accepts_official_status_url_shape_without_status_suffix():
 
     assert deployment.deployment_id == DEPLOYMENT_ID
     assert deployment.status_url == DEPLOYMENT_URL
+
+
+def test_create_accepts_legacy_official_action_status_url_and_queries_by_trusted_id():
+    calls = []
+
+    def request_json(url, **_kwargs):
+        calls.append(url)
+        if "actions/runs/17/artifacts" in url:
+            return {"artifacts": [{"id": 202, "name": "github-pages", "expired": False}]}
+        if url == "https://oidc.actions.test/token":
+            return {"value": "oidc"}
+        if url.endswith("/pages/deployments"):
+            return {"id": DEPLOYMENT_ID, "status_url": LEGACY_STATUS_URL, "page_url": "https://dashboard.example.test"}
+        if url == DEPLOYMENT_URL:
+            return {"status": "succeed"}
+        raise AssertionError(url)
+
+    deployment = create_deployment(
+        api_url="https://api.github.test",
+        repository="owner/repo",
+        token="github-token",
+        run_id="17",
+        artifact_name="github-pages",
+        source_revision=BUILD_VERSION,
+        build_version=BUILD_VERSION,
+        oidc_request_url="https://oidc.actions.test/token",
+        oidc_request_token="request-token",
+        request_json=request_json,
+    )
+
+    assert deployment.status_url == LEGACY_STATUS_URL
+    assert calls.count("https://api.github.test/repos/owner/repo/pages/deployments") == 1
+    assert calls[-1] == DEPLOYMENT_URL
+
+
+def test_create_rejects_unknown_status_url_after_one_create_without_status_poll():
+    calls = []
+    unknown_status_url = f"https://api.github.test/repos/owner/repo/pages/deployment/status/{DEPLOYMENT_ID}/extra"
+
+    def request_json(url, **_kwargs):
+        calls.append(url)
+        if "actions/runs/17/artifacts" in url:
+            return {"artifacts": [{"id": 202, "name": "github-pages", "expired": False}]}
+        if url == "https://oidc.actions.test/token":
+            return {"value": "oidc"}
+        if url.endswith("/pages/deployments"):
+            return {"id": DEPLOYMENT_ID, "status_url": unknown_status_url, "page_url": "https://dashboard.example.test"}
+        raise AssertionError(url)
+
+    with pytest.raises(PagesDeploymentError, match="unexpected status URL") as captured:
+        create_deployment(
+            api_url="https://api.github.test",
+            repository="owner/repo",
+            token="github-token",
+            run_id="17",
+            artifact_name="github-pages",
+            source_revision=BUILD_VERSION,
+            build_version=BUILD_VERSION,
+            oidc_request_url="https://oidc.actions.test/token",
+            oidc_request_token="request-token",
+            request_json=request_json,
+        )
+
+    assert captured.value.request_outcome == "created"
+    assert captured.value.deployment_id == DEPLOYMENT_ID
+    assert captured.value.recoverable is False
+    assert "route=other" in captured.value.status_url_shape
+    assert unknown_status_url not in str(captured.value)
+    assert calls.count("https://api.github.test/repos/owner/repo/pages/deployments") == 1
+    assert DEPLOYMENT_URL not in calls
 
 
 def test_create_preserves_trusted_identity_for_one_safe_status_recovery():
