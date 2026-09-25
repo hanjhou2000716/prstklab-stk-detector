@@ -64,8 +64,10 @@ def test_refresh_dashboard_enables_private_market_backup_without_delivery_secret
 
 def test_quality_requires_actions_syntax_and_real_local_supabase_integration():
     workflow = (ROOT / ".github/workflows/quality.yml").read_text(encoding="utf-8")
+    preflight = (ROOT / "scripts/quality_preflight.py").read_text(encoding="utf-8")
 
-    assert "rhysd/actionlint:1.7.7" in workflow
+    assert "scripts/quality_preflight.py --static" in workflow
+    assert "rhysd/actionlint:1.7.7" in preflight
     assert "scripts/local_supabase_migration_test.py" in workflow
     assert "supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520" in workflow
 

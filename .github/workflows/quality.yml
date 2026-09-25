@@ -22,6 +22,8 @@ jobs:
       RAILWAY_STATUS_SHARED_SECRET: ""
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.11"
@@ -30,54 +32,55 @@ jobs:
           python -m pip install -r requirements.txt pytest
           python -m pip install uv
           uv sync --locked --all-groups
-          uv run python -m playwright install --with-deps chromium
+      - name: Run shared workflow, Ruff, and Mypy preflight
+        id: static_preflight
+        run: uv run python scripts/quality_preflight.py --static
+      - name: Install Playwright browser for integration tests
+        run: uv run python -m playwright install --with-deps chromium
       - name: Install pinned Supabase CLI
         uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v2
         with:
           version: 2.39.2
-      - name: Reset coverage data
-        run: uv run coverage erase
-      - name: Run full unit tests and publish coverage report
-        # CLI wrappers are covered by subprocess/E2E jobs; library modules
-        # remain in the project-wide 80% floor configured in pyproject.toml.
-        run: uv run pytest -q --cov=src --cov-report=term-missing --cov-report=xml --cov-fail-under=80
-      - name: Enforce core release and delivery coverage gate
-        # The full pytest run above already populated .coverage for every
-        # source module.  Reporting a filtered subset enforces the stricter
-        # core floor without executing the complete suite a second time.
-        run: >-
-          uv run coverage report
-          --include=src/alert_budget.py,src/alert_caption.py,src/alert_contract.py,src/alert_lifecycle.py,src/material_change.py,src/alert_card_renderer.py,src/telegram_client.py,src/deep_link_router.py,src/artifact_contract.py,src/release_manifest.py,src/release_gate.py,src/system_dry_run.py
-          --fail-under=90
-      - name: Ruff full source and test gate
-        run: uv run ruff check src tests
+      - name: Run changed tests and full unit coverage gates
+        id: test_preflight
+        env:
+          QUALITY_PREFLIGHT_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '' }}
+        run: uv run python scripts/quality_preflight.py --tests
       - name: Verify Railway shared classifier bundle
+        id: classifier_bundle
         run: python scripts/sync_railway_shared_classifier.py --check
       - name: Verify Railway canonical external-parser bundle
+        id: parser_bundle
         run: python scripts/sync_railway_canonical_parser.py --check
       - name: Verify canonical overlap and generated bundle provenance
+        id: overlap_provenance
         run: python scripts/verify_canonical_overlap.py
       - name: Verify Gate-Driven requirement and evidence registry
+        id: gate_evidence
         run: python scripts/verify_gate_evidence.py
       - name: Verify offline Supabase migration contract without production credentials
+        id: migration_contract
         run: python scripts/validate_local_migration_contract.py
-      - name: Validate GitHub Actions workflow syntax
-        run: docker run --rm -w /repo -v "$GITHUB_WORKSPACE:/repo" rhysd/actionlint:1.7.7 .github/workflows/*.yml
       - name: Run disposable local Supabase migration integration test
+        id: migration_integration
         run: python scripts/local_supabase_migration_test.py
       - name: Verify Creator, FinancialJuice and news intelligence contracts
+        id: intelligence_contracts
         run: python scripts/verify_intelligence_contracts.py
-      - name: Mypy full source gate
-        run: uv run mypy src
       - name: Compile Python modules
+        id: compile_python
         run: python -m compileall -q src railway-monitor
       - name: Validate checked-in Mini App artifacts
+        id: runtime_audit
         run: python -m src.runtime_audit
       - name: Validate Telegram delivery configuration without network access
+        id: delivery_smoke
         run: python -m src.delivery_smoke_test
       - name: Offline release-to-delivery dry run
+        id: release_dry_run
         run: python -m src.system_dry_run
       - name: Offline production release-to-delivery acceptance
+        id: production_e2e
         # Use the locked environment that installed Chromium above.  Running
         # the system Python here can load a different Playwright version and
         # fail to find the matching browser even though installation passed.
@@ -89,7 +92,29 @@ jobs:
             echo "## CI provenance"
             echo "- trigger: ${{ github.event_name }}"
             echo "- run_id: ${{ github.run_id }}"
-            echo "- run_sha: ${{ github.sha }}"
+            echo "- run_attempt: ${{ github.run_attempt }}"
+            echo "- workflow_tested_sha: ${{ github.sha }}"
             echo "- ref: ${{ github.ref }}"
             echo "- pull_request: ${{ github.event.pull_request.number || 'none' }}"
+            echo "- pull_request_head_sha: ${{ github.event.pull_request.head.sha || 'none' }}"
+            echo "- pull_request_base_sha: ${{ github.event.pull_request.base.sha || 'none' }}"
+            echo "- static_preflight_outcome: ${{ steps.static_preflight.outcome || 'not_run' }}"
+            echo "- static_preflight_failed_gate: ${{ steps.static_preflight.outputs.failed_gate || 'unknown' }}"
+            echo "- unit_test_preflight_outcome: ${{ steps.test_preflight.outcome || 'not_run' }}"
+            echo "- unit_test_preflight_failed_gate: ${{ steps.test_preflight.outputs.failed_gate || 'unknown' }}"
+            echo "- classifier_bundle_outcome: ${{ steps.classifier_bundle.outcome || 'not_run' }}"
+            echo "- parser_bundle_outcome: ${{ steps.parser_bundle.outcome || 'not_run' }}"
+            echo "- overlap_provenance_outcome: ${{ steps.overlap_provenance.outcome || 'not_run' }}"
+            echo "- gate_evidence_outcome: ${{ steps.gate_evidence.outcome || 'not_run' }}"
+            echo "- migration_contract_outcome: ${{ steps.migration_contract.outcome || 'not_run' }}"
+            echo "- migration_integration_outcome: ${{ steps.migration_integration.outcome || 'not_run' }}"
+            echo "- intelligence_contracts_outcome: ${{ steps.intelligence_contracts.outcome || 'not_run' }}"
+            echo "- compile_outcome: ${{ steps.compile_python.outcome || 'not_run' }}"
+            echo "- runtime_audit_outcome: ${{ steps.runtime_audit.outcome || 'not_run' }}"
+            echo "- delivery_smoke_outcome: ${{ steps.delivery_smoke.outcome || 'not_run' }}"
+            echo "- release_dry_run_outcome: ${{ steps.release_dry_run.outcome || 'not_run' }}"
+            echo "- production_e2e_outcome: ${{ steps.production_e2e.outcome || 'not_run' }}"
+            echo "- job_outcome: ${{ job.status }}"
+            echo "- run_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}"
+            echo "- read_only_run_triage: uv run python scripts/inspect_quality_run.py --repo ${{ github.repository }} --run-id ${{ github.run_id }}"
           } >> "$GITHUB_STEP_SUMMARY"
