@@ -460,3 +460,14 @@ h1 { font-size: clamp(1.1rem, 5.2vw, 1.55rem); }
 .morning-analysis-fact.market-up { color: var(--negative) !important; }
 .morning-analysis-fact.market-down { color: var(--positive) !important; }
 .morning-analysis-fact.flat { color: #263f57 !important; }
+
+.taiwan-market-card-facts { display: grid; gap: 3px; min-width: 0; }
+.taiwan-market-pair .taiwan-market-card-facts > p { margin: 3px 0; padding: 7px 0; border-bottom: 1px solid #dfe3df; }
+.taiwan-market-pair .taiwan-market-card-facts > p:last-child { border-bottom: 0; }
+.taiwan-market-stats .taiwan-market-card-facts { grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 6px 12px; }
+.taiwan-market-stats .taiwan-market-card-facts > p { margin: 3px 0; padding: 6px 8px; border-radius: 8px; background: #fff; font-size: .74rem; }
+.taiwan-market-takeaway { margin: 7px 0 0 !important; padding-top: 7px; border-top: 1px solid #dfe3df; color: #465565 !important; font-size: .74rem !important; font-weight: 600; }
+.taiwan-market-takeaway b { color: #263f57 !important; }
+@media (max-width: 520px) {
+  .taiwan-market-stats .taiwan-market-card-facts { grid-template-columns: 1fr; }
+}

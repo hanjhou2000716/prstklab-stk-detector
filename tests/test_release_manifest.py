@@ -299,6 +299,34 @@ def test_scheduled_briefing_projection_preserves_primary_semantics_and_real_quot
     assert verify_release_files(manifest, root=tmp_path / "site") == []
 
 
+def test_taiwan_card_projection_is_bound_to_immutable_release_and_snapshot():
+    artifact = _briefing_projection(
+        {
+            "slot": "post_close",
+            "briefing_id": "briefing-taiwan-cards",
+            "public_short_message": "📊 台股盤後｜現貨與期貨分列觀察。",
+            "canonical_content_hash": "f" * 64,
+            "market_card_projection": {
+                "version": "taiwan-market-cards-v2",
+                "market_scope": "taiwan",
+                "slot": "post_close",
+                "market_date": "2026-09-24",
+                "instruments": [{"ticker": "TAIEX"}, {"ticker": "TXF"}],
+            },
+            "primary_theme": {"what_happened": "現貨與期貨資料已核對。", "quote_evidence": []},
+        },
+        release_id="release-fixed-123",
+        market_snapshot_id="snapshot-fixed-456",
+        created_at="2026-09-25T06:00:00Z",
+    )
+    projection = artifact["briefing"]["market_card_projection"]
+    assert projection["version"] == "taiwan-market-cards-v2"
+    assert projection["market_scope"] == "taiwan"
+    assert projection["release_id"] == "release-fixed-123"
+    assert projection["snapshot_id"] == "snapshot-fixed-456"
+    assert projection["market_date"] == "2026-09-24"
+
+
 def test_scheduled_briefing_projection_carries_decision_comparison_contract(tmp_path):
     _artifacts(tmp_path)
     market_path = tmp_path / "site" / "data" / "market.json"

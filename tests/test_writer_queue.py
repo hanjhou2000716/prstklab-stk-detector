@@ -1,8 +1,17 @@
+import json
 import sys
+from datetime import datetime
 
 import pytest
 
-from src.writer_queue import WriterQueueError, blocking_runs, evaluate_production_revision, main, wait_for_slot
+from src.writer_queue import (
+    QueueResult,
+    WriterQueueError,
+    blocking_runs,
+    evaluate_production_revision,
+    main,
+    wait_for_slot,
+)
 
 
 def _run(run_id: int, status: str = "in_progress", name: str = "Refresh market dashboard") -> dict[str, object]:
@@ -140,3 +149,70 @@ def test_writer_queue_cli_stops_before_publication_when_main_moves(monkeypatch, 
     assert "stale_workflow_superseded" in output
     assert "queue_status=superseded" in output_path.read_text(encoding="utf-8")
     assert "should_continue=false" in output_path.read_text(encoding="utf-8")
+
+
+def test_us_premarket_superseded_run_dispatches_one_fixed_slot_successor(monkeypatch, capsys, tmp_path):
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+    monkeypatch.setenv("GITHUB_TOKEN", "test-token")
+    monkeypatch.setenv("GITHUB_SHA", "old-sha")
+    monkeypatch.setenv("HANDOFF_PARENT_RUN_ID", "")
+    monkeypatch.setenv("SLOT_CONTEXT", json.dumps({
+        "scheduled_slot": "us_premarket",
+        "scheduled_for_at": "2026-09-25T09:00:00-04:00",
+        "contract_status": "valid",
+        "delivery_intent": "notify_candidate",
+        "dispatch_trace_id": "same-slot-trace",
+    }))
+    monkeypatch.setattr("src.writer_queue._fetch_main_revision", lambda **_kwargs: "new-main-sha")
+    monkeypatch.setattr("src.writer_queue.wait_for_slot", lambda **_kwargs: None)
+    monkeypatch.setattr("src.scheduled_handoff._utc_now", lambda: datetime.fromisoformat("2026-09-25T13:05:00+00:00"))
+    calls = []
+
+    def dispatch(*args, **kwargs):
+        calls.append((args, kwargs))
+        return {"status": "delivered", "reason": "handoff_child_completed", "handoff_id": "us_premarket-2026-09-25-11", "child_run_id": 12, "request_outcome": "accepted"}
+
+    monkeypatch.setattr("src.scheduled_handoff.dispatch_and_wait", dispatch)
+    monkeypatch.setattr(sys, "argv", ["writer_queue", "--run-id", "11", "--settle-seconds", "0"])
+    output_path = tmp_path / "github-output"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output_path))
+
+    assert main() == 0
+    output = output_path.read_text(encoding="utf-8")
+    assert "queue_status=handoff_completed" in output
+    assert "handoff_status=delivered" in output
+    assert "handoff_run_id=12" in output
+    assert len(calls) == 1
+    assert "stale_workflow_superseded" not in capsys.readouterr().out
+
+
+def test_handoff_child_cannot_start_a_second_successor(monkeypatch, capsys, tmp_path):
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+    monkeypatch.setenv("GITHUB_TOKEN", "test-token")
+    monkeypatch.setenv("GITHUB_SHA", "old-sha")
+    monkeypatch.setenv("HANDOFF_PARENT_RUN_ID", "10")
+    monkeypatch.setenv("SLOT_CONTEXT", json.dumps({
+        "scheduled_slot": "us_premarket", "scheduled_for_at": "2026-09-25T09:00:00-04:00",
+        "contract_status": "valid", "delivery_intent": "notify_candidate",
+    }))
+    observed = {}
+
+    def superseded(**kwargs):
+        observed.update(kwargs)
+        return QueueResult(12, 3, (), status="superseded", reason="stale_workflow_revision", run_sha="old-sha", main_sha="new-main-sha")
+
+    monkeypatch.setattr("src.writer_queue.wait_for_slot", superseded)
+    monkeypatch.setattr(
+        "src.scheduled_handoff.dispatch_and_wait",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("a handoff child must never re-dispatch")),
+    )
+    monkeypatch.setattr(sys, "argv", ["writer_queue", "--run-id", "20", "--settle-seconds", "0"])
+    output_path = tmp_path / "github-output"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output_path))
+
+    assert main() == 0
+    output = output_path.read_text(encoding="utf-8")
+    assert observed["ignored_run_ids"] == (10,)
+    assert "queue_status=superseded" in output
+    assert "handoff_status=not_attempted" in output
+    assert "handoff_status=delivered" not in output

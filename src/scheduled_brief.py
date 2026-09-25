@@ -20,6 +20,7 @@ from src.schedule_contract import (
     NEW_YORK,
     SCHEDULE_CONTRACT_VERSION,
     SCHEDULE_TIMEZONE,
+    scheduled_anchor_key,
     timezone_for_slot,
     us_premarket_anchor,
     us_session_bounds,
@@ -120,7 +121,7 @@ def anchor_market(slot: str) -> str:
 
 def anchor_key(slot: str, slot_date: str) -> str:
     """Build the stable market/date/anchor identity for a scheduled brief."""
-    return f"{anchor_market(slot)}:{slot_date}:{slot}"
+    return scheduled_anchor_key(slot, slot_date)
 
 
 def _scheduled_time_for_cron(local_now: datetime, cron: str) -> datetime | None:

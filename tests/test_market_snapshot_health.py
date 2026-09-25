@@ -29,6 +29,8 @@ def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatc
             "https://www.taifex.com.tw/file/taifex/CHINESE/11/attach/2026.pdf",
         ],
     })
+    monkeypatch.setattr("src.taifex_daily.fetch_latest_verified_txf", lambda **_kwargs: None)
+    monkeypatch.setattr("src.taifex_daily.validated_txf_backup", lambda *_args, **_kwargs: None)
     monkeypatch.setattr("src.risk_news.build_risk_snapshot", lambda: {
         "taiwan": {"label": "台股", "errors": ["台指波動率資料暫時無法取得"]},
         "us": {"label": "美股", "errors": []},
@@ -78,11 +80,14 @@ def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatc
     assert snapshot["data_status"] == "即時"
     assert snapshot["scan"]["scope"] == "公開市場定時掃描"
     assert snapshot["scan"]["completed_at"] == snapshot["generated_at"]
-    assert snapshot["errors"] == [{
+    assert len(snapshot["errors"]) == 2
+    assert {row.get("scope") for row in snapshot["errors"]} == {"index", "risk"}
+    assert next(row for row in snapshot["errors"] if row.get("scope") == "risk") == {
         "ticker": "台股風險指標",
         "message": "台指波動率資料暫時無法取得",
         "scope": "risk",
-    }]
+    }
+    assert "TAIFEX" in next(row["message"] for row in snapshot["errors"] if row.get("scope") == "index")
     assert snapshot["markets"]["taiwan_cash"]["calendar_provider"] == "pandas_market_calendars"
     assert snapshot["markets"]["taiwan_cash"]["calendar"] == "XTAI"
     assert snapshot["markets"]["taiwan_futures"]["calendar_provider"] == "TAIFEX"

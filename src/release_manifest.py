@@ -255,6 +255,16 @@ def _briefing_projection(
     if primary.get("canonical_event_key") and primary["canonical_event_key"] not in displayed_event_keys:
         displayed_event_keys.insert(0, str(primary["canonical_event_key"]))
     primary_event = str(primary.get("what_happened") or briefing.get("assessment_summary") or briefing.get("overview") or public_message)
+    market_card_projection = briefing.get("market_card_projection")
+    if isinstance(market_card_projection, dict):
+        market_card_projection = {
+            **market_card_projection,
+            "release_id": release_id,
+            "snapshot_id": str(market_snapshot_id),
+            "slot": str(briefing.get("slot") or market_card_projection.get("slot") or ""),
+        }
+    else:
+        market_card_projection = None
     return {
         "schema_version": "1.0",
         "kind": "market_briefing",
@@ -295,6 +305,7 @@ def _briefing_projection(
             "displayed_event_keys": displayed_event_keys,
             "observations": briefing.get("observations") or [],
             "morning_analysis": briefing.get("morning_analysis") or {},
+            "market_card_projection": market_card_projection,
             "evidence": briefing.get("evidence") or [],
             "source_evidence": source_evidence,
             "quote_evidence": primary_quote_evidence,
