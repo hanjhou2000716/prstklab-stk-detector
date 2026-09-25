@@ -31,6 +31,9 @@ outputs:
   recoverable:
     description: Whether this run has a trusted deployment ID that may be rechecked without creating another deployment.
     value: ${{ steps.select-url.outputs.recoverable }}
+  request_outcome:
+    description: Whether the deployment create request was not started, rejected, unknown, or created.
+    value: ${{ steps.select-url.outputs.request_outcome }}
   reason:
     description: Stable reason when Pages is temporarily unavailable.
     value: ${{ steps.select-url.outputs.reason }}
