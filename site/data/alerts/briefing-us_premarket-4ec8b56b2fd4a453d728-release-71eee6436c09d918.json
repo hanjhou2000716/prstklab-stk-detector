@@ -1,0 +1,2149 @@
+{
+  "schema_version": "1.0",
+  "kind": "market_briefing",
+  "source": "PRStK 多來源市場判讀",
+  "source_key": "scheduled_brief",
+  "notification_id": "briefing-us_premarket-4ec8b56b2fd4a453d728",
+  "alert_id": "briefing-us_premarket-4ec8b56b2fd4a453d728",
+  "event_cluster_key": "briefing-us_premarket-4ec8b56b2fd4a453d728",
+  "release_id": "release-71eee6436c09d918",
+  "snapshot_id": "7c08c86744ec84cb",
+  "observation_id": null,
+  "created_at": "2026-09-25T17:05:23.363726+00:00",
+  "canonical_content_hash": "4ec8b56b2fd4a453d7288d6253fb8fc49b4862226c49448c1792123846af97ce",
+  "canonical_hash_version": 2,
+  "title": "🟡 美股盤前",
+  "brief_title": "🟡 美股盤前",
+  "public_short_message": "🟡 美股盤前",
+  "short_label": "市場判讀",
+  "event": "S&P 5007,741.68+0.49%、那斯達克27,088.09+0.55%、道瓊51,767.46+0.81%。",
+  "linked_markets": [
+    "S&P 500",
+    "NASDAQ"
+  ],
+  "why_important": "價格資料提供目前市場狀態，仍需搭配事件與資料時間判讀。",
+  "possible_linkage": "各市場若同向可作為價格確認；若分歧，暫不推論跨市場因果。",
+  "stock_observation": "持續核對費半、那斯達克、道瓊與台股主要指數是否延續。",
+  "market_assessment": {
+    "stance": "insufficient_evidence",
+    "stance_label": "資料不足",
+    "confidence": "low",
+    "market_scope": "美股",
+    "dominant_driver": "美股科技與大盤同步偏強",
+    "dominant_driver_key": null,
+    "supporting_theme_keys": [],
+    "conflict_flags": [],
+    "summary_sections": {
+      "summary": "美股休市、使用最近收盤資料",
+      "market_highlights": "標普500+0.49%、那斯達克綜合+0.55%、道瓊+0.81%；缺漏 S&P 500 E-mini期貨、Nasdaq-100期貨、道瓊期貨",
+      "risk": "有效因子不足，暫不把新聞或單一行情視為方向確認。"
+    },
+    "joint_market_signal": {
+      "version": "joint-market-signal-v1",
+      "status": "insufficient_evidence",
+      "label": "資料不足，台美狀態待確認",
+      "base_label": "資料不足，台美狀態待確認",
+      "taiwan": {
+        "label": "資料不足",
+        "score": null,
+        "directions": [],
+        "valid_factors": 0
+      },
+      "us": {
+        "label": "偏多",
+        "score": 1.0,
+        "directions": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "valid_factors": 4
+      },
+      "price_score": null,
+      "valid_factor_count": 4,
+      "minimum_factor_count": 3,
+      "risk_adjustments": [],
+      "divergent": false,
+      "evidence": {
+        "taiwan": [],
+        "us": [
+          {
+            "ticker": "NASDAQ",
+            "name": "那斯達克綜合指數",
+            "price": 27088.09,
+            "change_percent": 0.55,
+            "currency": "點",
+            "freshness": "live",
+            "data_status": "盤中",
+            "quote_date": "2026-09-25",
+            "quote_time": "2026-09-25T13:00:00-04:00",
+            "source_label": "Yahoo",
+            "source_url": "https://finance.yahoo.com/quote/^IXIC"
+          },
+          {
+            "ticker": "SOX",
+            "name": "費城半導體指數",
+            "price": 12709.99,
+            "change_percent": 1.74,
+            "currency": "點",
+            "freshness": "live",
+            "data_status": "盤中",
+            "quote_date": "2026-09-25",
+            "quote_time": "2026-09-25T13:00:00-04:00",
+            "source_label": "Yahoo",
+            "source_url": "https://finance.yahoo.com/quote/^SOX"
+          },
+          {
+            "ticker": "DJIA",
+            "name": "道瓊工業指數",
+            "price": 51767.46,
+            "change_percent": 0.81,
+            "currency": "點",
+            "freshness": "live",
+            "data_status": "盤中",
+            "quote_date": "2026-09-25",
+            "quote_time": "2026-09-25T13:00:00-04:00",
+            "source_label": "Yahoo",
+            "source_url": "https://finance.yahoo.com/quote/^DJI"
+          },
+          {
+            "ticker": "S&P 500",
+            "name": "標普 500",
+            "price": 7741.68,
+            "change_percent": 0.49,
+            "currency": "點",
+            "freshness": "live",
+            "data_status": "盤中",
+            "quote_date": "2026-09-25",
+            "quote_time": "2026-09-25T13:00:00-04:00",
+            "source_label": "Yahoo",
+            "source_url": "https://finance.yahoo.com/quote/^GSPC"
+          }
+        ]
+      },
+      "excluded_factors": [],
+      "confidence": "low"
+    },
+    "evidence_as_of": "2026-09-25T17:05:08.568657+00:00",
+    "factor_count": 4,
+    "evidence_dimensions": [
+      "us_equity"
+    ],
+    "evidence_groups": {
+      "us_tech": [
+        1
+      ],
+      "us_broad": [
+        1
+      ]
+    },
+    "score": 2.75,
+    "factor_source": "quote_factors",
+    "weekend_market": false,
+    "directional_quote_count": 4,
+    "market_scope_key": "us",
+    "scheduled_report": true,
+    "quote_gaps": [
+      {
+        "ticker": "ES",
+        "reason": "quote_missing_or_unusable"
+      },
+      {
+        "ticker": "NQ",
+        "reason": "quote_missing_or_unusable"
+      },
+      {
+        "ticker": "YM",
+        "reason": "quote_missing_or_unusable"
+      }
+    ]
+  },
+  "market_evidence": [
+    {
+      "ticker": "S&P 500",
+      "name": "標普 500",
+      "market": "us",
+      "instrument_master_id": "instrument-43f1043a745204fa",
+      "price": 7741.68,
+      "change": 37.55,
+      "change_percent": 0.49,
+      "currency": "點",
+      "quote_date": "2026-09-25",
+      "quote_time": "2026-09-25T13:00:00-04:00",
+      "fetched_at": "2026-09-25T17:02:41.897824+00:00",
+      "freshness": "live",
+      "data_status": "盤中",
+      "source_label": "Yahoo",
+      "quote_source": "Yahoo Finance public 5-minute quote",
+      "source_domain": "finance.yahoo.com",
+      "source_url": "https://finance.yahoo.com/quote/^GSPC",
+      "cross_checked": false,
+      "quote_delayed": false,
+      "stale_used": false
+    },
+    {
+      "ticker": "NASDAQ",
+      "name": "那斯達克綜合指數",
+      "market": "us",
+      "instrument_id": "us:nasdaq",
+      "instrument_master_id": "instrument-43f1043a745204fa",
+      "price": 27088.09,
+      "change": 148.72,
+      "change_percent": 0.55,
+      "currency": "點",
+      "quote_date": "2026-09-25",
+      "quote_time": "2026-09-25T13:00:00-04:00",
+      "fetched_at": "2026-09-25T17:02:42.060554+00:00",
+      "freshness": "live",
+      "data_status": "盤中",
+      "source_label": "Yahoo",
+      "quote_source": "Yahoo Finance public 5-minute quote",
+      "source_domain": "finance.yahoo.com",
+      "source_url": "https://finance.yahoo.com/quote/^IXIC",
+      "cross_checked": false,
+      "quote_delayed": false,
+      "stale_used": false
+    }
+  ],
+  "source_evidence": [
+    {
+      "source": "Yahoo",
+      "ticker": "S&P 500",
+      "quote_time": "2026-09-25T13:00:00-04:00",
+      "freshness": "live"
+    },
+    {
+      "source": "Yahoo",
+      "ticker": "NASDAQ",
+      "quote_time": "2026-09-25T13:00:00-04:00",
+      "freshness": "live"
+    },
+    {
+      "source": "Yahoo",
+      "ticker": "DJIA",
+      "quote_time": "2026-09-25T13:00:00-04:00",
+      "freshness": "live"
+    }
+  ],
+  "briefing": {
+    "slot": "us_premarket",
+    "slot_context": {},
+    "as_of": "2026-09-26T01:05:08.568657+08:00",
+    "themes": [
+      {
+        "title": "市場價格",
+        "market_topic": "global_market",
+        "normalization_complete": true,
+        "what_happened": "S&P 5007,741.68+0.49%、那斯達克27,088.09+0.55%、道瓊51,767.46+0.81%。",
+        "why_important": "價格資料提供目前市場狀態，仍需搭配事件與資料時間判讀。",
+        "market_implication": "各市場若同向可作為價格確認；若分歧，暫不推論跨市場因果。",
+        "stock_observation": "持續核對費半、那斯達克、道瓊與台股主要指數是否延續。",
+        "evidence": [
+          {
+            "source": "Yahoo",
+            "ticker": "S&P 500",
+            "quote_time": "2026-09-25T13:00:00-04:00",
+            "freshness": "live"
+          },
+          {
+            "source": "Yahoo",
+            "ticker": "NASDAQ",
+            "quote_time": "2026-09-25T13:00:00-04:00",
+            "freshness": "live"
+          },
+          {
+            "source": "Yahoo",
+            "ticker": "DJIA",
+            "quote_time": "2026-09-25T13:00:00-04:00",
+            "freshness": "live"
+          }
+        ],
+        "source_evidence": [
+          {
+            "source": "Yahoo",
+            "ticker": "S&P 500",
+            "quote_time": "2026-09-25T13:00:00-04:00",
+            "freshness": "live"
+          },
+          {
+            "source": "Yahoo",
+            "ticker": "NASDAQ",
+            "quote_time": "2026-09-25T13:00:00-04:00",
+            "freshness": "live"
+          },
+          {
+            "source": "Yahoo",
+            "ticker": "DJIA",
+            "quote_time": "2026-09-25T13:00:00-04:00",
+            "freshness": "live"
+          }
+        ],
+        "quote_evidence": [
+          {
+            "ticker": "S&P 500",
+            "name": "標普 500",
+            "market": "us",
+            "instrument_master_id": "instrument-43f1043a745204fa",
+            "price": 7741.68,
+            "change": 37.55,
+            "change_percent": 0.49,
+            "currency": "點",
+            "quote_date": "2026-09-25",
+            "quote_time": "2026-09-25T13:00:00-04:00",
+            "fetched_at": "2026-09-25T17:02:41.897824+00:00",
+            "freshness": "live",
+            "data_status": "盤中",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public 5-minute quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^GSPC",
+            "cross_checked": false,
+            "quote_delayed": false,
+            "stale_used": false
+          },
+          {
+            "ticker": "NASDAQ",
+            "name": "那斯達克綜合指數",
+            "market": "us",
+            "instrument_id": "us:nasdaq",
+            "instrument_master_id": "instrument-43f1043a745204fa",
+            "price": 27088.09,
+            "change": 148.72,
+            "change_percent": 0.55,
+            "currency": "點",
+            "quote_date": "2026-09-25",
+            "quote_time": "2026-09-25T13:00:00-04:00",
+            "fetched_at": "2026-09-25T17:02:42.060554+00:00",
+            "freshness": "live",
+            "data_status": "盤中",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public 5-minute quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^IXIC",
+            "cross_checked": false,
+            "quote_delayed": false,
+            "stale_used": false
+          },
+          {
+            "ticker": "DJIA",
+            "name": "道瓊工業指數",
+            "market": "us",
+            "instrument_id": "us:djia",
+            "instrument_master_id": "instrument-43f1043a745204fa",
+            "price": 51767.46,
+            "change": 417.48,
+            "change_percent": 0.81,
+            "currency": "點",
+            "quote_date": "2026-09-25",
+            "quote_time": "2026-09-25T13:00:00-04:00",
+            "fetched_at": "2026-09-25T17:02:42.330199+00:00",
+            "freshness": "live",
+            "data_status": "盤中",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public 5-minute quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^DJI",
+            "cross_checked": false,
+            "quote_delayed": false,
+            "stale_used": false
+          }
+        ],
+        "event_key": "01efb991b9770f5a6f95",
+        "canonical_event_key": "01efb991b9770f5a6f95",
+        "source": "市場報價",
+        "published_at": "2026-09-25T13:00:00-04:00",
+        "detail_eligible": true
+      }
+    ],
+    "primary_theme": {
+      "title": "市場價格",
+      "market_topic": "global_market",
+      "normalization_complete": true,
+      "what_happened": "S&P 5007,741.68+0.49%、那斯達克27,088.09+0.55%、道瓊51,767.46+0.81%。",
+      "why_important": "價格資料提供目前市場狀態，仍需搭配事件與資料時間判讀。",
+      "market_implication": "各市場若同向可作為價格確認；若分歧，暫不推論跨市場因果。",
+      "stock_observation": "持續核對費半、那斯達克、道瓊與台股主要指數是否延續。",
+      "evidence": [
+        {
+          "source": "Yahoo",
+          "ticker": "S&P 500",
+          "quote_time": "2026-09-25T13:00:00-04:00",
+          "freshness": "live"
+        },
+        {
+          "source": "Yahoo",
+          "ticker": "NASDAQ",
+          "quote_time": "2026-09-25T13:00:00-04:00",
+          "freshness": "live"
+        },
+        {
+          "source": "Yahoo",
+          "ticker": "DJIA",
+          "quote_time": "2026-09-25T13:00:00-04:00",
+          "freshness": "live"
+        }
+      ],
+      "source_evidence": [
+        {
+          "source": "Yahoo",
+          "ticker": "S&P 500",
+          "quote_time": "2026-09-25T13:00:00-04:00",
+          "freshness": "live"
+        },
+        {
+          "source": "Yahoo",
+          "ticker": "NASDAQ",
+          "quote_time": "2026-09-25T13:00:00-04:00",
+          "freshness": "live"
+        },
+        {
+          "source": "Yahoo",
+          "ticker": "DJIA",
+          "quote_time": "2026-09-25T13:00:00-04:00",
+          "freshness": "live"
+        }
+      ],
+      "quote_evidence": [
+        {
+          "ticker": "S&P 500",
+          "name": "標普 500",
+          "market": "us",
+          "instrument_master_id": "instrument-43f1043a745204fa",
+          "price": 7741.68,
+          "change": 37.55,
+          "change_percent": 0.49,
+          "currency": "點",
+          "quote_date": "2026-09-25",
+          "quote_time": "2026-09-25T13:00:00-04:00",
+          "fetched_at": "2026-09-25T17:02:41.897824+00:00",
+          "freshness": "live",
+          "data_status": "盤中",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public 5-minute quote",
+          "source_domain": "finance.yahoo.com",
+          "source_url": "https://finance.yahoo.com/quote/^GSPC",
+          "cross_checked": false,
+          "quote_delayed": false,
+          "stale_used": false
+        },
+        {
+          "ticker": "NASDAQ",
+          "name": "那斯達克綜合指數",
+          "market": "us",
+          "instrument_id": "us:nasdaq",
+          "instrument_master_id": "instrument-43f1043a745204fa",
+          "price": 27088.09,
+          "change": 148.72,
+          "change_percent": 0.55,
+          "currency": "點",
+          "quote_date": "2026-09-25",
+          "quote_time": "2026-09-25T13:00:00-04:00",
+          "fetched_at": "2026-09-25T17:02:42.060554+00:00",
+          "freshness": "live",
+          "data_status": "盤中",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public 5-minute quote",
+          "source_domain": "finance.yahoo.com",
+          "source_url": "https://finance.yahoo.com/quote/^IXIC",
+          "cross_checked": false,
+          "quote_delayed": false,
+          "stale_used": false
+        },
+        {
+          "ticker": "DJIA",
+          "name": "道瓊工業指數",
+          "market": "us",
+          "instrument_id": "us:djia",
+          "instrument_master_id": "instrument-43f1043a745204fa",
+          "price": 51767.46,
+          "change": 417.48,
+          "change_percent": 0.81,
+          "currency": "點",
+          "quote_date": "2026-09-25",
+          "quote_time": "2026-09-25T13:00:00-04:00",
+          "fetched_at": "2026-09-25T17:02:42.330199+00:00",
+          "freshness": "live",
+          "data_status": "盤中",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public 5-minute quote",
+          "source_domain": "finance.yahoo.com",
+          "source_url": "https://finance.yahoo.com/quote/^DJI",
+          "cross_checked": false,
+          "quote_delayed": false,
+          "stale_used": false
+        }
+      ],
+      "event_key": "01efb991b9770f5a6f95",
+      "canonical_event_key": "01efb991b9770f5a6f95",
+      "source": "市場報價",
+      "published_at": "2026-09-25T13:00:00-04:00",
+      "detail_eligible": true
+    },
+    "secondary_signals": [],
+    "displayed_event_keys": [
+      "01efb991b9770f5a6f95"
+    ],
+    "observations": [
+      {
+        "title": "美股主要現貨最近收盤",
+        "event": "標普500現貨收盤 行情 7,741.68；漲跌 +37.55 點；+0.49%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘；Nasdaq Composite現貨收盤 行情 27,088.09；漲跌 +148.72 點；+0.55%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘；道瓊現貨收盤 行情 51,767.46；漲跌 +417.48 點；+0.81%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘",
+        "importance": "標普500、Nasdaq Composite 與道瓊是三項分開標示的美股現貨基準。",
+        "market_impact": "現貨欄只採各指數最近已完成交易日；不以期貨替代現貨收盤。",
+        "watch": "核對美股當日開盤後現貨走勢是否延續或背離盤前期貨。",
+        "source_note": "https://finance.yahoo.com/quote/^GSPC；https://finance.yahoo.com/quote/^IXIC；https://finance.yahoo.com/quote/^DJI",
+        "data_as_of": "2026-09-26T01:05:08.568657+08:00"
+      },
+      {
+        "title": "美股指數期貨盤前",
+        "event": "ES（S&P 500 E-mini 指數期貨），連續合約，未標示特定到期月 行情 7,797.25；漲跌 +30.25 點；+0.39%；觀測 2026-09-25 12:50:00；recent_close；來源延遲；盤中延遲報價；NQ（Nasdaq-100 指數期貨，與 Nasdaq Composite 不同），連續合約，未標示特定到期月 行情 30,887.75；漲跌 +121.00 點；+0.39%；觀測 2026-09-25 12:50:00；recent_close；來源延遲；盤中延遲報價；YM（道瓊 E-mini 指數期貨），連續合約，未標示特定到期月 行情 52,090.00；漲跌 +373.00 點；+0.72%；觀測 2026-09-25 12:50:00；recent_close；來源延遲；盤中延遲報價",
+        "importance": "ES、NQ、YM 分別對應標普500、Nasdaq-100、道瓊指數期貨；NQ 不是 Nasdaq Composite。",
+        "market_impact": "期貨按自身來源、觀測時間與連續／指定合約口徑呈現，不與現貨點位混算。",
+        "watch": "美股開盤時停止盤前通知；開盤後行情不回填為盤前即時資料。",
+        "source_note": "https://finance.yahoo.com/quote/ES=F；https://finance.yahoo.com/quote/NQ=F；https://finance.yahoo.com/quote/YM=F",
+        "data_as_of": "2026-09-26T01:05:08.568657+08:00"
+      },
+      {
+        "title": "費城半導體指數（輔助）",
+        "event": "費半最近收盤（輔助） 行情 12,709.99；漲跌 +217.45 點；+1.74%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘",
+        "importance": "費半作為美國半導體產業背景，不替代三大現貨指數或指數期貨。",
+        "market_impact": "只作為獨立輔助觀察，不將台股／台積電行情塞入美股卡。",
+        "watch": "以最近完成交易日資料更新。",
+        "source_note": "https://finance.yahoo.com/quote/^SOX",
+        "data_as_of": "2026-09-26T01:05:08.568657+08:00"
+      }
+    ],
+    "morning_analysis": {
+      "ruleset": "market_scoped_card_v1",
+      "narrative_version": "four-report-narrative-v2",
+      "market_scope": "us",
+      "evidence_as_of": "2026-09-26T01:05:08.568657+08:00",
+      "overall_stance": "market_specific_observation",
+      "confidence": "medium",
+      "sections": [
+        {
+          "title": "美股主要現貨最近收盤",
+          "facts": [
+            "標普500現貨收盤 行情 7,741.68；漲跌 +37.55 點；+0.49%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘",
+            "Nasdaq Composite現貨收盤 行情 27,088.09；漲跌 +148.72 點；+0.55%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘",
+            "道瓊現貨收盤 行情 51,767.46；漲跌 +417.48 點；+0.81%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘"
+          ],
+          "facts_structured": [
+            {
+              "ticker": "S&P 500",
+              "name": "標普500現貨收盤",
+              "text": "標普500現貨收盤 行情 7,741.68；漲跌 +37.55 點；+0.49%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘",
+              "quote": {
+                "ticker": "S&P 500",
+                "name": "標普 500",
+                "price": 7741.68,
+                "change_percent": 0.49,
+                "quote_date": "2026-09-25",
+                "quote_time": "2026-09-25T13:00:00-04:00",
+                "freshness": "live",
+                "data_status": "盤中",
+                "quote_basis": "盤中 5 分鐘",
+                "quote_source": "Yahoo Finance public 5-minute quote",
+                "source_label": "Yahoo",
+                "source_url": "https://finance.yahoo.com/quote/^GSPC"
+              }
+            },
+            {
+              "ticker": "NASDAQ",
+              "name": "Nasdaq Composite現貨收盤",
+              "text": "Nasdaq Composite現貨收盤 行情 27,088.09；漲跌 +148.72 點；+0.55%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘",
+              "quote": {
+                "ticker": "NASDAQ",
+                "name": "那斯達克綜合指數",
+                "price": 27088.09,
+                "change_percent": 0.55,
+                "quote_date": "2026-09-25",
+                "quote_time": "2026-09-25T13:00:00-04:00",
+                "freshness": "live",
+                "data_status": "盤中",
+                "quote_basis": "盤中 5 分鐘",
+                "quote_source": "Yahoo Finance public 5-minute quote",
+                "source_label": "Yahoo",
+                "source_url": "https://finance.yahoo.com/quote/^IXIC"
+              }
+            },
+            {
+              "ticker": "DJIA",
+              "name": "道瓊現貨收盤",
+              "text": "道瓊現貨收盤 行情 51,767.46；漲跌 +417.48 點；+0.81%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘",
+              "quote": {
+                "ticker": "DJIA",
+                "name": "道瓊工業指數",
+                "price": 51767.46,
+                "change_percent": 0.81,
+                "quote_date": "2026-09-25",
+                "quote_time": "2026-09-25T13:00:00-04:00",
+                "freshness": "live",
+                "data_status": "盤中",
+                "quote_basis": "盤中 5 分鐘",
+                "quote_source": "Yahoo Finance public 5-minute quote",
+                "source_label": "Yahoo",
+                "source_url": "https://finance.yahoo.com/quote/^DJI"
+              }
+            }
+          ],
+          "why_it_matters": "標普500、Nasdaq Composite 與道瓊是三項分開標示的美股現貨基準。",
+          "transmission": "現貨欄只採各指數最近已完成交易日；不以期貨替代現貨收盤。",
+          "market_observation": "標普500現貨收盤 行情 7,741.68；漲跌 +37.55 點；+0.49%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘；Nasdaq Composite現貨收盤 行情 27,088.09；漲跌 +148.72 點；+0.55%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘；道瓊現貨收盤 行情 51,767.46；漲跌 +417.48 點；+0.81%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘",
+          "next_catalyst": "核對美股當日開盤後現貨走勢是否延續或背離盤前期貨。",
+          "evidence": [
+            {
+              "ticker": "S&P 500",
+              "name": "標普 500",
+              "price": 7741.68,
+              "change_percent": 0.49,
+              "quote_date": "2026-09-25",
+              "quote_time": "2026-09-25T13:00:00-04:00",
+              "freshness": "live",
+              "data_status": "盤中",
+              "quote_basis": "盤中 5 分鐘",
+              "quote_source": "Yahoo Finance public 5-minute quote",
+              "source_label": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/^GSPC"
+            },
+            {
+              "ticker": "NASDAQ",
+              "name": "那斯達克綜合指數",
+              "price": 27088.09,
+              "change_percent": 0.55,
+              "quote_date": "2026-09-25",
+              "quote_time": "2026-09-25T13:00:00-04:00",
+              "freshness": "live",
+              "data_status": "盤中",
+              "quote_basis": "盤中 5 分鐘",
+              "quote_source": "Yahoo Finance public 5-minute quote",
+              "source_label": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/^IXIC"
+            },
+            {
+              "ticker": "DJIA",
+              "name": "道瓊工業指數",
+              "price": 51767.46,
+              "change_percent": 0.81,
+              "quote_date": "2026-09-25",
+              "quote_time": "2026-09-25T13:00:00-04:00",
+              "freshness": "live",
+              "data_status": "盤中",
+              "quote_basis": "盤中 5 分鐘",
+              "quote_source": "Yahoo Finance public 5-minute quote",
+              "source_label": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/^DJI"
+            }
+          ],
+          "freshness": "逐項標示觀測日期與資料狀態",
+          "confidence": "medium",
+          "narrative": {
+            "version": "four-report-narrative-v2",
+            "slot": "us_premarket",
+            "section": "us_market",
+            "as_of": "2026-09-26T01:05:08.568657+08:00",
+            "focus": "台亞收盤、已發布總經資料、美國日程與科技事件",
+            "highlights": [
+              "本輪沒有合格事件，以可核對行情與統計資料整理。",
+              "標普500現貨收盤 行情 7,741.68；漲跌 +37.55 點；+0.49%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘；Nasdaq Composite現貨收盤 行情 27,088.09；漲跌 +148.72 點；+0.55%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘；道瓊現貨收盤 行情 51,767.46；漲跌 +417.48 點；+0.81%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘",
+              "下一步核對台亞收盤、已發布總經資料、美國日程與科技事件的同口徑資料是否延續或出現分歧。"
+            ],
+            "details": [
+              {
+                "label": "發生什麼",
+                "text": "本輪沒有合格事件，以可核對行情與統計資料整理。",
+                "evidence_refs": [
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/^GSPC",
+                    "ticker": "S&P 500",
+                    "name": "標普 500",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T13:00:00-04:00",
+                    "freshness": "live",
+                    "data_status": "盤中"
+                  },
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/^IXIC",
+                    "ticker": "NASDAQ",
+                    "name": "那斯達克綜合指數",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T13:00:00-04:00",
+                    "freshness": "live",
+                    "data_status": "盤中"
+                  },
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/^DJI",
+                    "ticker": "DJIA",
+                    "name": "道瓊工業指數",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T13:00:00-04:00",
+                    "freshness": "live",
+                    "data_status": "盤中"
+                  }
+                ]
+              },
+              {
+                "label": "為何重要",
+                "text": "美股現貨與指數期貨各自代表不同交易工具，需分開核對來源、日期與合約口徑。",
+                "evidence_refs": [
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/^GSPC",
+                    "ticker": "S&P 500",
+                    "name": "標普 500",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T13:00:00-04:00",
+                    "freshness": "live",
+                    "data_status": "盤中"
+                  },
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/^IXIC",
+                    "ticker": "NASDAQ",
+                    "name": "那斯達克綜合指數",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T13:00:00-04:00",
+                    "freshness": "live",
+                    "data_status": "盤中"
+                  },
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/^DJI",
+                    "ticker": "DJIA",
+                    "name": "道瓊工業指數",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T13:00:00-04:00",
+                    "freshness": "live",
+                    "data_status": "盤中"
+                  }
+                ]
+              },
+              {
+                "label": "可能傳導",
+                "text": "美股現貨、指數期貨與費半各自依自身資料時間判讀，不混用點位或推論因果。",
+                "evidence_refs": [
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/^GSPC",
+                    "ticker": "S&P 500",
+                    "name": "標普 500",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T13:00:00-04:00",
+                    "freshness": "live",
+                    "data_status": "盤中"
+                  },
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/^IXIC",
+                    "ticker": "NASDAQ",
+                    "name": "那斯達克綜合指數",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T13:00:00-04:00",
+                    "freshness": "live",
+                    "data_status": "盤中"
+                  },
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/^DJI",
+                    "ticker": "DJIA",
+                    "name": "道瓊工業指數",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T13:00:00-04:00",
+                    "freshness": "live",
+                    "data_status": "盤中"
+                  }
+                ]
+              },
+              {
+                "label": "下一項催化劑",
+                "text": "下一步核對台亞收盤、已發布總經資料、美國日程與科技事件的同口徑資料是否延續或出現分歧。",
+                "evidence_refs": [
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/^GSPC",
+                    "ticker": "S&P 500",
+                    "name": "標普 500",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T13:00:00-04:00",
+                    "freshness": "live",
+                    "data_status": "盤中"
+                  },
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/^IXIC",
+                    "ticker": "NASDAQ",
+                    "name": "那斯達克綜合指數",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T13:00:00-04:00",
+                    "freshness": "live",
+                    "data_status": "盤中"
+                  },
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/^DJI",
+                    "ticker": "DJIA",
+                    "name": "道瓊工業指數",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T13:00:00-04:00",
+                    "freshness": "live",
+                    "data_status": "盤中"
+                  }
+                ]
+              }
+            ],
+            "evidence_refs": [
+              {
+                "source_label": "Yahoo",
+                "quote_source": "Yahoo Finance public 5-minute quote",
+                "source_url": "https://finance.yahoo.com/quote/^GSPC",
+                "ticker": "S&P 500",
+                "name": "標普 500",
+                "quote_date": "2026-09-25",
+                "quote_time": "2026-09-25T13:00:00-04:00",
+                "freshness": "live",
+                "data_status": "盤中"
+              },
+              {
+                "source_label": "Yahoo",
+                "quote_source": "Yahoo Finance public 5-minute quote",
+                "source_url": "https://finance.yahoo.com/quote/^IXIC",
+                "ticker": "NASDAQ",
+                "name": "那斯達克綜合指數",
+                "quote_date": "2026-09-25",
+                "quote_time": "2026-09-25T13:00:00-04:00",
+                "freshness": "live",
+                "data_status": "盤中"
+              },
+              {
+                "source_label": "Yahoo",
+                "quote_source": "Yahoo Finance public 5-minute quote",
+                "source_url": "https://finance.yahoo.com/quote/^DJI",
+                "ticker": "DJIA",
+                "name": "道瓊工業指數",
+                "quote_date": "2026-09-25",
+                "quote_time": "2026-09-25T13:00:00-04:00",
+                "freshness": "live",
+                "data_status": "盤中"
+              }
+            ],
+            "limitations": []
+          },
+          "highlights": [
+            "本輪沒有合格事件，以可核對行情與統計資料整理。",
+            "標普500現貨收盤 行情 7,741.68；漲跌 +37.55 點；+0.49%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘；Nasdaq Composite現貨收盤 行情 27,088.09；漲跌 +148.72 點；+0.55%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘；道瓊現貨收盤 行情 51,767.46；漲跌 +417.48 點；+0.81%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘",
+            "下一步核對台亞收盤、已發布總經資料、美國日程與科技事件的同口徑資料是否延續或出現分歧。"
+          ],
+          "details": [
+            {
+              "label": "發生什麼",
+              "text": "本輪沒有合格事件，以可核對行情與統計資料整理。",
+              "evidence_refs": [
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/^GSPC",
+                  "ticker": "S&P 500",
+                  "name": "標普 500",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T13:00:00-04:00",
+                  "freshness": "live",
+                  "data_status": "盤中"
+                },
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/^IXIC",
+                  "ticker": "NASDAQ",
+                  "name": "那斯達克綜合指數",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T13:00:00-04:00",
+                  "freshness": "live",
+                  "data_status": "盤中"
+                },
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/^DJI",
+                  "ticker": "DJIA",
+                  "name": "道瓊工業指數",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T13:00:00-04:00",
+                  "freshness": "live",
+                  "data_status": "盤中"
+                }
+              ]
+            },
+            {
+              "label": "為何重要",
+              "text": "美股現貨與指數期貨各自代表不同交易工具，需分開核對來源、日期與合約口徑。",
+              "evidence_refs": [
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/^GSPC",
+                  "ticker": "S&P 500",
+                  "name": "標普 500",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T13:00:00-04:00",
+                  "freshness": "live",
+                  "data_status": "盤中"
+                },
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/^IXIC",
+                  "ticker": "NASDAQ",
+                  "name": "那斯達克綜合指數",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T13:00:00-04:00",
+                  "freshness": "live",
+                  "data_status": "盤中"
+                },
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/^DJI",
+                  "ticker": "DJIA",
+                  "name": "道瓊工業指數",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T13:00:00-04:00",
+                  "freshness": "live",
+                  "data_status": "盤中"
+                }
+              ]
+            },
+            {
+              "label": "可能傳導",
+              "text": "美股現貨、指數期貨與費半各自依自身資料時間判讀，不混用點位或推論因果。",
+              "evidence_refs": [
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/^GSPC",
+                  "ticker": "S&P 500",
+                  "name": "標普 500",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T13:00:00-04:00",
+                  "freshness": "live",
+                  "data_status": "盤中"
+                },
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/^IXIC",
+                  "ticker": "NASDAQ",
+                  "name": "那斯達克綜合指數",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T13:00:00-04:00",
+                  "freshness": "live",
+                  "data_status": "盤中"
+                },
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/^DJI",
+                  "ticker": "DJIA",
+                  "name": "道瓊工業指數",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T13:00:00-04:00",
+                  "freshness": "live",
+                  "data_status": "盤中"
+                }
+              ]
+            },
+            {
+              "label": "下一項催化劑",
+              "text": "下一步核對台亞收盤、已發布總經資料、美國日程與科技事件的同口徑資料是否延續或出現分歧。",
+              "evidence_refs": [
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/^GSPC",
+                  "ticker": "S&P 500",
+                  "name": "標普 500",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T13:00:00-04:00",
+                  "freshness": "live",
+                  "data_status": "盤中"
+                },
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/^IXIC",
+                  "ticker": "NASDAQ",
+                  "name": "那斯達克綜合指數",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T13:00:00-04:00",
+                  "freshness": "live",
+                  "data_status": "盤中"
+                },
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/^DJI",
+                  "ticker": "DJIA",
+                  "name": "道瓊工業指數",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T13:00:00-04:00",
+                  "freshness": "live",
+                  "data_status": "盤中"
+                }
+              ]
+            }
+          ],
+          "limitations": []
+        },
+        {
+          "title": "美股指數期貨盤前",
+          "facts": [
+            "ES（S&P 500 E-mini 指數期貨），連續合約，未標示特定到期月 行情 7,797.25；漲跌 +30.25 點；+0.39%；觀測 2026-09-25 12:50:00；recent_close；來源延遲；盤中延遲報價",
+            "NQ（Nasdaq-100 指數期貨，與 Nasdaq Composite 不同），連續合約，未標示特定到期月 行情 30,887.75；漲跌 +121.00 點；+0.39%；觀測 2026-09-25 12:50:00；recent_close；來源延遲；盤中延遲報價",
+            "YM（道瓊 E-mini 指數期貨），連續合約，未標示特定到期月 行情 52,090.00；漲跌 +373.00 點；+0.72%；觀測 2026-09-25 12:50:00；recent_close；來源延遲；盤中延遲報價"
+          ],
+          "facts_structured": [
+            {
+              "ticker": "ES",
+              "name": "ES（S&P 500 E-mini 指數期貨）",
+              "text": "ES（S&P 500 E-mini 指數期貨），連續合約，未標示特定到期月 行情 7,797.25；漲跌 +30.25 點；+0.39%；觀測 2026-09-25 12:50:00；recent_close；來源延遲；盤中延遲報價",
+              "quote": {
+                "ticker": "ES",
+                "name": "S&P 500 E-mini 指數期貨",
+                "price": 7797.25,
+                "change_percent": 0.39,
+                "quote_date": "2026-09-25",
+                "quote_time": "2026-09-25T12:50:00-04:00",
+                "freshness": "recent_close",
+                "data_status": "最近收盤",
+                "quote_basis": "盤中延遲報價",
+                "quote_source": "Yahoo Finance public 5-minute quote",
+                "source_label": "Yahoo",
+                "source_url": "https://finance.yahoo.com/quote/ES=F",
+                "contract_basis": "continuous_contract"
+              }
+            },
+            {
+              "ticker": "NQ",
+              "name": "NQ（Nasdaq-100 指數期貨，與 Nasdaq Composite 不同）",
+              "text": "NQ（Nasdaq-100 指數期貨，與 Nasdaq Composite 不同），連續合約，未標示特定到期月 行情 30,887.75；漲跌 +121.00 點；+0.39%；觀測 2026-09-25 12:50:00；recent_close；來源延遲；盤中延遲報價",
+              "quote": {
+                "ticker": "NQ",
+                "name": "Nasdaq-100 指數期貨",
+                "price": 30887.75,
+                "change_percent": 0.39,
+                "quote_date": "2026-09-25",
+                "quote_time": "2026-09-25T12:50:00-04:00",
+                "freshness": "recent_close",
+                "data_status": "最近收盤",
+                "quote_basis": "盤中延遲報價",
+                "quote_source": "Yahoo Finance public 5-minute quote",
+                "source_label": "Yahoo",
+                "source_url": "https://finance.yahoo.com/quote/NQ=F",
+                "contract_basis": "continuous_contract"
+              }
+            },
+            {
+              "ticker": "YM",
+              "name": "YM（道瓊 E-mini 指數期貨）",
+              "text": "YM（道瓊 E-mini 指數期貨），連續合約，未標示特定到期月 行情 52,090.00；漲跌 +373.00 點；+0.72%；觀測 2026-09-25 12:50:00；recent_close；來源延遲；盤中延遲報價",
+              "quote": {
+                "ticker": "YM",
+                "name": "道瓊 E-mini 指數期貨",
+                "price": 52090.0,
+                "change_percent": 0.72,
+                "quote_date": "2026-09-25",
+                "quote_time": "2026-09-25T12:50:00-04:00",
+                "freshness": "recent_close",
+                "data_status": "最近收盤",
+                "quote_basis": "盤中延遲報價",
+                "quote_source": "Yahoo Finance public 5-minute quote",
+                "source_label": "Yahoo",
+                "source_url": "https://finance.yahoo.com/quote/YM=F",
+                "contract_basis": "continuous_contract"
+              }
+            }
+          ],
+          "why_it_matters": "ES、NQ、YM 分別對應標普500、Nasdaq-100、道瓊指數期貨；NQ 不是 Nasdaq Composite。",
+          "transmission": "期貨按自身來源、觀測時間與連續／指定合約口徑呈現，不與現貨點位混算。",
+          "market_observation": "ES（S&P 500 E-mini 指數期貨），連續合約，未標示特定到期月 行情 7,797.25；漲跌 +30.25 點；+0.39%；觀測 2026-09-25 12:50:00；recent_close；來源延遲；盤中延遲報價；NQ（Nasdaq-100 指數期貨，與 Nasdaq Composite 不同），連續合約，未標示特定到期月 行情 30,887.75；漲跌 +121.00 點；+0.39%；觀測 2026-09-25 12:50:00；recent_close；來源延遲；盤中延遲報價；YM（道瓊 E-mini 指數期貨），連續合約，未標示特定到期月 行情 52,090.00；漲跌 +373.00 點；+0.72%；觀測 2026-09-25 12:50:00；recent_close；來源延遲；盤中延遲報價",
+          "next_catalyst": "美股開盤時停止盤前通知；開盤後行情不回填為盤前即時資料。",
+          "evidence": [
+            {
+              "ticker": "ES",
+              "name": "S&P 500 E-mini 指數期貨",
+              "price": 7797.25,
+              "change_percent": 0.39,
+              "quote_date": "2026-09-25",
+              "quote_time": "2026-09-25T12:50:00-04:00",
+              "freshness": "recent_close",
+              "data_status": "最近收盤",
+              "quote_basis": "盤中延遲報價",
+              "quote_source": "Yahoo Finance public 5-minute quote",
+              "source_label": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/ES=F",
+              "contract_basis": "continuous_contract"
+            },
+            {
+              "ticker": "NQ",
+              "name": "Nasdaq-100 指數期貨",
+              "price": 30887.75,
+              "change_percent": 0.39,
+              "quote_date": "2026-09-25",
+              "quote_time": "2026-09-25T12:50:00-04:00",
+              "freshness": "recent_close",
+              "data_status": "最近收盤",
+              "quote_basis": "盤中延遲報價",
+              "quote_source": "Yahoo Finance public 5-minute quote",
+              "source_label": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/NQ=F",
+              "contract_basis": "continuous_contract"
+            },
+            {
+              "ticker": "YM",
+              "name": "道瓊 E-mini 指數期貨",
+              "price": 52090.0,
+              "change_percent": 0.72,
+              "quote_date": "2026-09-25",
+              "quote_time": "2026-09-25T12:50:00-04:00",
+              "freshness": "recent_close",
+              "data_status": "最近收盤",
+              "quote_basis": "盤中延遲報價",
+              "quote_source": "Yahoo Finance public 5-minute quote",
+              "source_label": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/YM=F",
+              "contract_basis": "continuous_contract"
+            }
+          ],
+          "freshness": "逐項標示來源觀測時間、延遲與合約口徑",
+          "confidence": "medium",
+          "narrative": {
+            "version": "four-report-narrative-v2",
+            "slot": "us_premarket",
+            "section": "us_market",
+            "as_of": "2026-09-26T01:05:08.568657+08:00",
+            "focus": "台亞收盤、已發布總經資料、美國日程與科技事件",
+            "highlights": [
+              "本輪沒有合格事件，以可核對行情與統計資料整理。",
+              "ES（S&P 500 E-mini 指數期貨），連續合約，未標示特定到期月 行情 7,797.25；漲跌 +30.25 點；+0.39%；觀測 2026-09-25 12:50:00；recent_close；來源延遲；盤中延遲報價；NQ（Nasdaq-100 指數期貨，與 Nasdaq Composite 不同），連續合約，未標示特定到期月 行情 30,887.75；漲跌 +121.00 點；+0.39%；觀測 2026-09-25 12:50:00；recent_close；來源延遲；盤中延遲報價；YM（道瓊 E-mini 指數期貨），連續合約，未標示特定到期月 行情 52,090.00；漲跌 +373.00 點；+0.72%；觀測 2026-09-25 12:50:00；recent_close；來源延遲；盤中延遲報價",
+              "下一步核對台亞收盤、已發布總經資料、美國日程與科技事件的同口徑資料是否延續或出現分歧。"
+            ],
+            "details": [
+              {
+                "label": "發生什麼",
+                "text": "本輪沒有合格事件，以可核對行情與統計資料整理。",
+                "evidence_refs": [
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/ES=F",
+                    "ticker": "ES",
+                    "name": "S&P 500 E-mini 指數期貨",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T12:50:00-04:00",
+                    "freshness": "recent_close",
+                    "data_status": "最近收盤"
+                  },
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/NQ=F",
+                    "ticker": "NQ",
+                    "name": "Nasdaq-100 指數期貨",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T12:50:00-04:00",
+                    "freshness": "recent_close",
+                    "data_status": "最近收盤"
+                  },
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/YM=F",
+                    "ticker": "YM",
+                    "name": "道瓊 E-mini 指數期貨",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T12:50:00-04:00",
+                    "freshness": "recent_close",
+                    "data_status": "最近收盤"
+                  }
+                ]
+              },
+              {
+                "label": "為何重要",
+                "text": "美股現貨與指數期貨各自代表不同交易工具，需分開核對來源、日期與合約口徑。",
+                "evidence_refs": [
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/ES=F",
+                    "ticker": "ES",
+                    "name": "S&P 500 E-mini 指數期貨",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T12:50:00-04:00",
+                    "freshness": "recent_close",
+                    "data_status": "最近收盤"
+                  },
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/NQ=F",
+                    "ticker": "NQ",
+                    "name": "Nasdaq-100 指數期貨",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T12:50:00-04:00",
+                    "freshness": "recent_close",
+                    "data_status": "最近收盤"
+                  },
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/YM=F",
+                    "ticker": "YM",
+                    "name": "道瓊 E-mini 指數期貨",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T12:50:00-04:00",
+                    "freshness": "recent_close",
+                    "data_status": "最近收盤"
+                  }
+                ]
+              },
+              {
+                "label": "可能傳導",
+                "text": "美股現貨、指數期貨與費半各自依自身資料時間判讀，不混用點位或推論因果。",
+                "evidence_refs": [
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/ES=F",
+                    "ticker": "ES",
+                    "name": "S&P 500 E-mini 指數期貨",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T12:50:00-04:00",
+                    "freshness": "recent_close",
+                    "data_status": "最近收盤"
+                  },
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/NQ=F",
+                    "ticker": "NQ",
+                    "name": "Nasdaq-100 指數期貨",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T12:50:00-04:00",
+                    "freshness": "recent_close",
+                    "data_status": "最近收盤"
+                  },
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/YM=F",
+                    "ticker": "YM",
+                    "name": "道瓊 E-mini 指數期貨",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T12:50:00-04:00",
+                    "freshness": "recent_close",
+                    "data_status": "最近收盤"
+                  }
+                ]
+              },
+              {
+                "label": "下一項催化劑",
+                "text": "下一步核對台亞收盤、已發布總經資料、美國日程與科技事件的同口徑資料是否延續或出現分歧。",
+                "evidence_refs": [
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/ES=F",
+                    "ticker": "ES",
+                    "name": "S&P 500 E-mini 指數期貨",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T12:50:00-04:00",
+                    "freshness": "recent_close",
+                    "data_status": "最近收盤"
+                  },
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/NQ=F",
+                    "ticker": "NQ",
+                    "name": "Nasdaq-100 指數期貨",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T12:50:00-04:00",
+                    "freshness": "recent_close",
+                    "data_status": "最近收盤"
+                  },
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/YM=F",
+                    "ticker": "YM",
+                    "name": "道瓊 E-mini 指數期貨",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T12:50:00-04:00",
+                    "freshness": "recent_close",
+                    "data_status": "最近收盤"
+                  }
+                ]
+              }
+            ],
+            "evidence_refs": [
+              {
+                "source_label": "Yahoo",
+                "quote_source": "Yahoo Finance public 5-minute quote",
+                "source_url": "https://finance.yahoo.com/quote/ES=F",
+                "ticker": "ES",
+                "name": "S&P 500 E-mini 指數期貨",
+                "quote_date": "2026-09-25",
+                "quote_time": "2026-09-25T12:50:00-04:00",
+                "freshness": "recent_close",
+                "data_status": "最近收盤"
+              },
+              {
+                "source_label": "Yahoo",
+                "quote_source": "Yahoo Finance public 5-minute quote",
+                "source_url": "https://finance.yahoo.com/quote/NQ=F",
+                "ticker": "NQ",
+                "name": "Nasdaq-100 指數期貨",
+                "quote_date": "2026-09-25",
+                "quote_time": "2026-09-25T12:50:00-04:00",
+                "freshness": "recent_close",
+                "data_status": "最近收盤"
+              },
+              {
+                "source_label": "Yahoo",
+                "quote_source": "Yahoo Finance public 5-minute quote",
+                "source_url": "https://finance.yahoo.com/quote/YM=F",
+                "ticker": "YM",
+                "name": "道瓊 E-mini 指數期貨",
+                "quote_date": "2026-09-25",
+                "quote_time": "2026-09-25T12:50:00-04:00",
+                "freshness": "recent_close",
+                "data_status": "最近收盤"
+              }
+            ],
+            "limitations": []
+          },
+          "highlights": [
+            "本輪沒有合格事件，以可核對行情與統計資料整理。",
+            "ES（S&P 500 E-mini 指數期貨），連續合約，未標示特定到期月 行情 7,797.25；漲跌 +30.25 點；+0.39%；觀測 2026-09-25 12:50:00；recent_close；來源延遲；盤中延遲報價；NQ（Nasdaq-100 指數期貨，與 Nasdaq Composite 不同），連續合約，未標示特定到期月 行情 30,887.75；漲跌 +121.00 點；+0.39%；觀測 2026-09-25 12:50:00；recent_close；來源延遲；盤中延遲報價；YM（道瓊 E-mini 指數期貨），連續合約，未標示特定到期月 行情 52,090.00；漲跌 +373.00 點；+0.72%；觀測 2026-09-25 12:50:00；recent_close；來源延遲；盤中延遲報價",
+            "下一步核對台亞收盤、已發布總經資料、美國日程與科技事件的同口徑資料是否延續或出現分歧。"
+          ],
+          "details": [
+            {
+              "label": "發生什麼",
+              "text": "本輪沒有合格事件，以可核對行情與統計資料整理。",
+              "evidence_refs": [
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/ES=F",
+                  "ticker": "ES",
+                  "name": "S&P 500 E-mini 指數期貨",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T12:50:00-04:00",
+                  "freshness": "recent_close",
+                  "data_status": "最近收盤"
+                },
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/NQ=F",
+                  "ticker": "NQ",
+                  "name": "Nasdaq-100 指數期貨",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T12:50:00-04:00",
+                  "freshness": "recent_close",
+                  "data_status": "最近收盤"
+                },
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/YM=F",
+                  "ticker": "YM",
+                  "name": "道瓊 E-mini 指數期貨",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T12:50:00-04:00",
+                  "freshness": "recent_close",
+                  "data_status": "最近收盤"
+                }
+              ]
+            },
+            {
+              "label": "為何重要",
+              "text": "美股現貨與指數期貨各自代表不同交易工具，需分開核對來源、日期與合約口徑。",
+              "evidence_refs": [
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/ES=F",
+                  "ticker": "ES",
+                  "name": "S&P 500 E-mini 指數期貨",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T12:50:00-04:00",
+                  "freshness": "recent_close",
+                  "data_status": "最近收盤"
+                },
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/NQ=F",
+                  "ticker": "NQ",
+                  "name": "Nasdaq-100 指數期貨",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T12:50:00-04:00",
+                  "freshness": "recent_close",
+                  "data_status": "最近收盤"
+                },
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/YM=F",
+                  "ticker": "YM",
+                  "name": "道瓊 E-mini 指數期貨",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T12:50:00-04:00",
+                  "freshness": "recent_close",
+                  "data_status": "最近收盤"
+                }
+              ]
+            },
+            {
+              "label": "可能傳導",
+              "text": "美股現貨、指數期貨與費半各自依自身資料時間判讀，不混用點位或推論因果。",
+              "evidence_refs": [
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/ES=F",
+                  "ticker": "ES",
+                  "name": "S&P 500 E-mini 指數期貨",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T12:50:00-04:00",
+                  "freshness": "recent_close",
+                  "data_status": "最近收盤"
+                },
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/NQ=F",
+                  "ticker": "NQ",
+                  "name": "Nasdaq-100 指數期貨",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T12:50:00-04:00",
+                  "freshness": "recent_close",
+                  "data_status": "最近收盤"
+                },
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/YM=F",
+                  "ticker": "YM",
+                  "name": "道瓊 E-mini 指數期貨",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T12:50:00-04:00",
+                  "freshness": "recent_close",
+                  "data_status": "最近收盤"
+                }
+              ]
+            },
+            {
+              "label": "下一項催化劑",
+              "text": "下一步核對台亞收盤、已發布總經資料、美國日程與科技事件的同口徑資料是否延續或出現分歧。",
+              "evidence_refs": [
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/ES=F",
+                  "ticker": "ES",
+                  "name": "S&P 500 E-mini 指數期貨",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T12:50:00-04:00",
+                  "freshness": "recent_close",
+                  "data_status": "最近收盤"
+                },
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/NQ=F",
+                  "ticker": "NQ",
+                  "name": "Nasdaq-100 指數期貨",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T12:50:00-04:00",
+                  "freshness": "recent_close",
+                  "data_status": "最近收盤"
+                },
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/YM=F",
+                  "ticker": "YM",
+                  "name": "道瓊 E-mini 指數期貨",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T12:50:00-04:00",
+                  "freshness": "recent_close",
+                  "data_status": "最近收盤"
+                }
+              ]
+            }
+          ],
+          "limitations": []
+        },
+        {
+          "title": "費城半導體指數（輔助）",
+          "facts": [
+            "費半最近收盤（輔助） 行情 12,709.99；漲跌 +217.45 點；+1.74%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘"
+          ],
+          "facts_structured": [
+            {
+              "ticker": "SOX",
+              "name": "費半最近收盤（輔助）",
+              "text": "費半最近收盤（輔助） 行情 12,709.99；漲跌 +217.45 點；+1.74%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘",
+              "quote": {
+                "ticker": "SOX",
+                "name": "費城半導體指數",
+                "price": 12709.99,
+                "change_percent": 1.74,
+                "quote_date": "2026-09-25",
+                "quote_time": "2026-09-25T13:00:00-04:00",
+                "freshness": "live",
+                "data_status": "盤中",
+                "quote_basis": "盤中 5 分鐘",
+                "quote_source": "Yahoo Finance public 5-minute quote",
+                "source_label": "Yahoo",
+                "source_url": "https://finance.yahoo.com/quote/^SOX"
+              }
+            }
+          ],
+          "why_it_matters": "費半作為美國半導體產業背景，不替代三大現貨指數或指數期貨。",
+          "transmission": "只作為獨立輔助觀察，不將台股／台積電行情塞入美股卡。",
+          "market_observation": "費半最近收盤（輔助） 行情 12,709.99；漲跌 +217.45 點；+1.74%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘",
+          "next_catalyst": "以最近完成交易日資料更新。",
+          "evidence": [
+            {
+              "ticker": "SOX",
+              "name": "費城半導體指數",
+              "price": 12709.99,
+              "change_percent": 1.74,
+              "quote_date": "2026-09-25",
+              "quote_time": "2026-09-25T13:00:00-04:00",
+              "freshness": "live",
+              "data_status": "盤中",
+              "quote_basis": "盤中 5 分鐘",
+              "quote_source": "Yahoo Finance public 5-minute quote",
+              "source_label": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/^SOX"
+            }
+          ],
+          "freshness": "live",
+          "confidence": "medium",
+          "narrative": {
+            "version": "four-report-narrative-v2",
+            "slot": "us_premarket",
+            "section": "us_market",
+            "as_of": "2026-09-26T01:05:08.568657+08:00",
+            "focus": "台亞收盤、已發布總經資料、美國日程與科技事件",
+            "highlights": [
+              "本輪沒有合格事件，以可核對行情與統計資料整理。",
+              "費半最近收盤（輔助） 行情 12,709.99；漲跌 +217.45 點；+1.74%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘",
+              "下一步核對台亞收盤、已發布總經資料、美國日程與科技事件的同口徑資料是否延續或出現分歧。"
+            ],
+            "details": [
+              {
+                "label": "發生什麼",
+                "text": "本輪沒有合格事件，以可核對行情與統計資料整理。",
+                "evidence_refs": [
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/^SOX",
+                    "ticker": "SOX",
+                    "name": "費城半導體指數",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T13:00:00-04:00",
+                    "freshness": "live",
+                    "data_status": "盤中"
+                  }
+                ]
+              },
+              {
+                "label": "為何重要",
+                "text": "美股現貨與指數期貨各自代表不同交易工具，需分開核對來源、日期與合約口徑。",
+                "evidence_refs": [
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/^SOX",
+                    "ticker": "SOX",
+                    "name": "費城半導體指數",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T13:00:00-04:00",
+                    "freshness": "live",
+                    "data_status": "盤中"
+                  }
+                ]
+              },
+              {
+                "label": "可能傳導",
+                "text": "美股現貨、指數期貨與費半各自依自身資料時間判讀，不混用點位或推論因果。",
+                "evidence_refs": [
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/^SOX",
+                    "ticker": "SOX",
+                    "name": "費城半導體指數",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T13:00:00-04:00",
+                    "freshness": "live",
+                    "data_status": "盤中"
+                  }
+                ]
+              },
+              {
+                "label": "下一項催化劑",
+                "text": "下一步核對台亞收盤、已發布總經資料、美國日程與科技事件的同口徑資料是否延續或出現分歧。",
+                "evidence_refs": [
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public 5-minute quote",
+                    "source_url": "https://finance.yahoo.com/quote/^SOX",
+                    "ticker": "SOX",
+                    "name": "費城半導體指數",
+                    "quote_date": "2026-09-25",
+                    "quote_time": "2026-09-25T13:00:00-04:00",
+                    "freshness": "live",
+                    "data_status": "盤中"
+                  }
+                ]
+              }
+            ],
+            "evidence_refs": [
+              {
+                "source_label": "Yahoo",
+                "quote_source": "Yahoo Finance public 5-minute quote",
+                "source_url": "https://finance.yahoo.com/quote/^SOX",
+                "ticker": "SOX",
+                "name": "費城半導體指數",
+                "quote_date": "2026-09-25",
+                "quote_time": "2026-09-25T13:00:00-04:00",
+                "freshness": "live",
+                "data_status": "盤中"
+              }
+            ],
+            "limitations": []
+          },
+          "highlights": [
+            "本輪沒有合格事件，以可核對行情與統計資料整理。",
+            "費半最近收盤（輔助） 行情 12,709.99；漲跌 +217.45 點；+1.74%；觀測 2026-09-25 13:00:00；live；盤中 5 分鐘",
+            "下一步核對台亞收盤、已發布總經資料、美國日程與科技事件的同口徑資料是否延續或出現分歧。"
+          ],
+          "details": [
+            {
+              "label": "發生什麼",
+              "text": "本輪沒有合格事件，以可核對行情與統計資料整理。",
+              "evidence_refs": [
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/^SOX",
+                  "ticker": "SOX",
+                  "name": "費城半導體指數",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T13:00:00-04:00",
+                  "freshness": "live",
+                  "data_status": "盤中"
+                }
+              ]
+            },
+            {
+              "label": "為何重要",
+              "text": "美股現貨與指數期貨各自代表不同交易工具，需分開核對來源、日期與合約口徑。",
+              "evidence_refs": [
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/^SOX",
+                  "ticker": "SOX",
+                  "name": "費城半導體指數",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T13:00:00-04:00",
+                  "freshness": "live",
+                  "data_status": "盤中"
+                }
+              ]
+            },
+            {
+              "label": "可能傳導",
+              "text": "美股現貨、指數期貨與費半各自依自身資料時間判讀，不混用點位或推論因果。",
+              "evidence_refs": [
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/^SOX",
+                  "ticker": "SOX",
+                  "name": "費城半導體指數",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T13:00:00-04:00",
+                  "freshness": "live",
+                  "data_status": "盤中"
+                }
+              ]
+            },
+            {
+              "label": "下一項催化劑",
+              "text": "下一步核對台亞收盤、已發布總經資料、美國日程與科技事件的同口徑資料是否延續或出現分歧。",
+              "evidence_refs": [
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public 5-minute quote",
+                  "source_url": "https://finance.yahoo.com/quote/^SOX",
+                  "ticker": "SOX",
+                  "name": "費城半導體指數",
+                  "quote_date": "2026-09-25",
+                  "quote_time": "2026-09-25T13:00:00-04:00",
+                  "freshness": "live",
+                  "data_status": "盤中"
+                }
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "missing_evidence": [],
+      "system_analysis": {
+        "data_gaps": [],
+        "note": "行情缺漏逐項揭露；不以舊值或其他市場替代。",
+        "financialjuice_alert_quarantine": {
+          "status": "degraded",
+          "issue": "optional_fj_alert_quarantined",
+          "count": 99,
+          "reasons": [
+            "non_publishable_fj_event",
+            "public_summary_not_ready"
+          ],
+          "summary_versions": [
+            "public-summary-v3"
+          ],
+          "checked_at": "2026-09-26T01:05:08.568657+08:00"
+        }
+      }
+    },
+    "evidence": [
+      {
+        "source": "Yahoo",
+        "ticker": "S&P 500",
+        "quote_time": "2026-09-25T13:00:00-04:00",
+        "freshness": "live"
+      },
+      {
+        "source": "Yahoo",
+        "ticker": "NASDAQ",
+        "quote_time": "2026-09-25T13:00:00-04:00",
+        "freshness": "live"
+      },
+      {
+        "source": "Yahoo",
+        "ticker": "DJIA",
+        "quote_time": "2026-09-25T13:00:00-04:00",
+        "freshness": "live"
+      }
+    ],
+    "source_evidence": [
+      {
+        "source": "Yahoo",
+        "ticker": "S&P 500",
+        "quote_time": "2026-09-25T13:00:00-04:00",
+        "freshness": "live"
+      },
+      {
+        "source": "Yahoo",
+        "ticker": "NASDAQ",
+        "quote_time": "2026-09-25T13:00:00-04:00",
+        "freshness": "live"
+      },
+      {
+        "source": "Yahoo",
+        "ticker": "DJIA",
+        "quote_time": "2026-09-25T13:00:00-04:00",
+        "freshness": "live"
+      }
+    ],
+    "quote_evidence": [
+      {
+        "ticker": "S&P 500",
+        "name": "標普 500",
+        "market": "us",
+        "instrument_master_id": "instrument-43f1043a745204fa",
+        "price": 7741.68,
+        "change": 37.55,
+        "change_percent": 0.49,
+        "currency": "點",
+        "quote_date": "2026-09-25",
+        "quote_time": "2026-09-25T13:00:00-04:00",
+        "fetched_at": "2026-09-25T17:02:41.897824+00:00",
+        "freshness": "live",
+        "data_status": "盤中",
+        "source_label": "Yahoo",
+        "quote_source": "Yahoo Finance public 5-minute quote",
+        "source_domain": "finance.yahoo.com",
+        "source_url": "https://finance.yahoo.com/quote/^GSPC",
+        "cross_checked": false,
+        "quote_delayed": false,
+        "stale_used": false
+      },
+      {
+        "ticker": "NASDAQ",
+        "name": "那斯達克綜合指數",
+        "market": "us",
+        "instrument_id": "us:nasdaq",
+        "instrument_master_id": "instrument-43f1043a745204fa",
+        "price": 27088.09,
+        "change": 148.72,
+        "change_percent": 0.55,
+        "currency": "點",
+        "quote_date": "2026-09-25",
+        "quote_time": "2026-09-25T13:00:00-04:00",
+        "fetched_at": "2026-09-25T17:02:42.060554+00:00",
+        "freshness": "live",
+        "data_status": "盤中",
+        "source_label": "Yahoo",
+        "quote_source": "Yahoo Finance public 5-minute quote",
+        "source_domain": "finance.yahoo.com",
+        "source_url": "https://finance.yahoo.com/quote/^IXIC",
+        "cross_checked": false,
+        "quote_delayed": false,
+        "stale_used": false
+      }
+    ],
+    "market_assessment": {
+      "stance": "insufficient_evidence",
+      "stance_label": "資料不足",
+      "confidence": "low",
+      "market_scope": "美股",
+      "dominant_driver": "美股科技與大盤同步偏強",
+      "dominant_driver_key": null,
+      "supporting_theme_keys": [],
+      "conflict_flags": [],
+      "summary_sections": {
+        "summary": "美股休市、使用最近收盤資料",
+        "market_highlights": "標普500+0.49%、那斯達克綜合+0.55%、道瓊+0.81%；缺漏 S&P 500 E-mini期貨、Nasdaq-100期貨、道瓊期貨",
+        "risk": "有效因子不足，暫不把新聞或單一行情視為方向確認。"
+      },
+      "joint_market_signal": {
+        "version": "joint-market-signal-v1",
+        "status": "insufficient_evidence",
+        "label": "資料不足，台美狀態待確認",
+        "base_label": "資料不足，台美狀態待確認",
+        "taiwan": {
+          "label": "資料不足",
+          "score": null,
+          "directions": [],
+          "valid_factors": 0
+        },
+        "us": {
+          "label": "偏多",
+          "score": 1.0,
+          "directions": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "valid_factors": 4
+        },
+        "price_score": null,
+        "valid_factor_count": 4,
+        "minimum_factor_count": 3,
+        "risk_adjustments": [],
+        "divergent": false,
+        "evidence": {
+          "taiwan": [],
+          "us": [
+            {
+              "ticker": "NASDAQ",
+              "name": "那斯達克綜合指數",
+              "price": 27088.09,
+              "change_percent": 0.55,
+              "currency": "點",
+              "freshness": "live",
+              "data_status": "盤中",
+              "quote_date": "2026-09-25",
+              "quote_time": "2026-09-25T13:00:00-04:00",
+              "source_label": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/^IXIC"
+            },
+            {
+              "ticker": "SOX",
+              "name": "費城半導體指數",
+              "price": 12709.99,
+              "change_percent": 1.74,
+              "currency": "點",
+              "freshness": "live",
+              "data_status": "盤中",
+              "quote_date": "2026-09-25",
+              "quote_time": "2026-09-25T13:00:00-04:00",
+              "source_label": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/^SOX"
+            },
+            {
+              "ticker": "DJIA",
+              "name": "道瓊工業指數",
+              "price": 51767.46,
+              "change_percent": 0.81,
+              "currency": "點",
+              "freshness": "live",
+              "data_status": "盤中",
+              "quote_date": "2026-09-25",
+              "quote_time": "2026-09-25T13:00:00-04:00",
+              "source_label": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/^DJI"
+            },
+            {
+              "ticker": "S&P 500",
+              "name": "標普 500",
+              "price": 7741.68,
+              "change_percent": 0.49,
+              "currency": "點",
+              "freshness": "live",
+              "data_status": "盤中",
+              "quote_date": "2026-09-25",
+              "quote_time": "2026-09-25T13:00:00-04:00",
+              "source_label": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/^GSPC"
+            }
+          ]
+        },
+        "excluded_factors": [],
+        "confidence": "low"
+      },
+      "evidence_as_of": "2026-09-25T17:05:08.568657+00:00",
+      "factor_count": 4,
+      "evidence_dimensions": [
+        "us_equity"
+      ],
+      "evidence_groups": {
+        "us_tech": [
+          1
+        ],
+        "us_broad": [
+          1
+        ]
+      },
+      "score": 2.75,
+      "factor_source": "quote_factors",
+      "weekend_market": false,
+      "directional_quote_count": 4,
+      "market_scope_key": "us",
+      "scheduled_report": true,
+      "quote_gaps": [
+        {
+          "ticker": "ES",
+          "reason": "quote_missing_or_unusable"
+        },
+        {
+          "ticker": "NQ",
+          "reason": "quote_missing_or_unusable"
+        },
+        {
+          "ticker": "YM",
+          "reason": "quote_missing_or_unusable"
+        }
+      ]
+    },
+    "decision_fingerprint": "9efd98dbd793f21e5d83bfdffbd5f6005f9b0bbe6d30032078a93fe2f15e19ed",
+    "decision_material": {},
+    "evidence_fingerprint": "b9d91766d8f6a3253e444979a493109ade285444f7487aa1a16be7bffd091027",
+    "evidence_material": {
+      "quotes": [
+        {
+          "ticker": "DJIA",
+          "price": 51767.46,
+          "change_percent": 0.81,
+          "quote_date": "2026-09-25",
+          "quote_time": "2026-09-25T13:00:00-04:00",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public 5-minute quote"
+        },
+        {
+          "ticker": "NASDAQ",
+          "price": 27088.09,
+          "change_percent": 0.55,
+          "quote_date": "2026-09-25",
+          "quote_time": "2026-09-25T13:00:00-04:00",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public 5-minute quote"
+        },
+        {
+          "ticker": "S&P 500",
+          "price": 7741.68,
+          "change_percent": 0.49,
+          "quote_date": "2026-09-25",
+          "quote_time": "2026-09-25T13:00:00-04:00",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public 5-minute quote"
+        },
+        {
+          "ticker": "SOX",
+          "price": 12709.99,
+          "change_percent": 1.74,
+          "quote_date": "2026-09-25",
+          "quote_time": "2026-09-25T13:00:00-04:00",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public 5-minute quote"
+        }
+      ],
+      "events": [
+        {
+          "canonical_event_key": "01efb991b9770f5a6f95",
+          "published_at": "2026-09-25T13:00:00-04:00",
+          "source_evidence": [
+            {
+              "source": "Yahoo",
+              "ticker": "S&P 500",
+              "quote_time": "2026-09-25T13:00:00-04:00",
+              "freshness": "live"
+            },
+            {
+              "source": "Yahoo",
+              "ticker": "NASDAQ",
+              "quote_time": "2026-09-25T13:00:00-04:00",
+              "freshness": "live"
+            },
+            {
+              "source": "Yahoo",
+              "ticker": "DJIA",
+              "quote_time": "2026-09-25T13:00:00-04:00",
+              "freshness": "live"
+            }
+          ]
+        }
+      ]
+    },
+    "summary_facts": [
+      {
+        "key": "market_status",
+        "label": "美股市場狀態",
+        "value": "美股休市、使用最近收盤資料",
+        "evidence_refs": [
+          {
+            "ticker": "S&P 500",
+            "name": "標普 500",
+            "market": "us",
+            "instrument_master_id": "instrument-43f1043a745204fa",
+            "price": 7741.68,
+            "change": 37.55,
+            "change_percent": 0.49,
+            "currency": "點",
+            "quote_date": "2026-09-25",
+            "quote_time": "2026-09-25T13:00:00-04:00",
+            "fetched_at": "2026-09-25T17:02:41.897824+00:00",
+            "freshness": "live",
+            "data_status": "盤中",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public 5-minute quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^GSPC",
+            "cross_checked": false,
+            "quote_delayed": false,
+            "stale_used": false
+          },
+          {
+            "ticker": "NASDAQ",
+            "name": "那斯達克綜合指數",
+            "market": "us",
+            "instrument_id": "us:nasdaq",
+            "instrument_master_id": "instrument-43f1043a745204fa",
+            "price": 27088.09,
+            "change": 148.72,
+            "change_percent": 0.55,
+            "currency": "點",
+            "quote_date": "2026-09-25",
+            "quote_time": "2026-09-25T13:00:00-04:00",
+            "fetched_at": "2026-09-25T17:02:42.060554+00:00",
+            "freshness": "live",
+            "data_status": "盤中",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public 5-minute quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^IXIC",
+            "cross_checked": false,
+            "quote_delayed": false,
+            "stale_used": false
+          }
+        ]
+      },
+      {
+        "key": "quote_comparison",
+        "label": "行情比較",
+        "value": "標普500+0.49%、那斯達克綜合+0.55%、道瓊+0.81%；缺漏 S&P 500 E-mini期貨、Nasdaq-100期貨、道瓊期貨",
+        "evidence_refs": [
+          {
+            "ticker": "S&P 500",
+            "name": "標普 500",
+            "market": "us",
+            "instrument_master_id": "instrument-43f1043a745204fa",
+            "price": 7741.68,
+            "change": 37.55,
+            "change_percent": 0.49,
+            "currency": "點",
+            "quote_date": "2026-09-25",
+            "quote_time": "2026-09-25T13:00:00-04:00",
+            "fetched_at": "2026-09-25T17:02:41.897824+00:00",
+            "freshness": "live",
+            "data_status": "盤中",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public 5-minute quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^GSPC",
+            "cross_checked": false,
+            "quote_delayed": false,
+            "stale_used": false
+          },
+          {
+            "ticker": "NASDAQ",
+            "name": "那斯達克綜合指數",
+            "market": "us",
+            "instrument_id": "us:nasdaq",
+            "instrument_master_id": "instrument-43f1043a745204fa",
+            "price": 27088.09,
+            "change": 148.72,
+            "change_percent": 0.55,
+            "currency": "點",
+            "quote_date": "2026-09-25",
+            "quote_time": "2026-09-25T13:00:00-04:00",
+            "fetched_at": "2026-09-25T17:02:42.060554+00:00",
+            "freshness": "live",
+            "data_status": "盤中",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public 5-minute quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^IXIC",
+            "cross_checked": false,
+            "quote_delayed": false,
+            "stale_used": false
+          }
+        ]
+      }
+    ],
+    "comparison_notification_key": "",
+    "material_changes": [],
+    "delivery_eligible": null,
+    "suppression_reason": ""
+  },
+  "notification_status": null,
+  "notification_reason": "candidate_ready"
+}
