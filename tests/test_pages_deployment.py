@@ -15,6 +15,7 @@ from src.pages_deployment import (
 BUILD_VERSION = "a" * 40
 DEPLOYMENT_ID = "pages-run-17"
 STATUS_URL = f"https://api.github.test/repos/owner/repo/pages/deployments/{DEPLOYMENT_ID}/status"
+DEPLOYMENT_URL = f"https://api.github.test/repos/owner/repo/pages/deployments/{DEPLOYMENT_ID}"
 
 
 def test_post_request_sends_json_content_type(monkeypatch):
@@ -87,7 +88,8 @@ def test_derive_version_cli_reads_release_identity_from_manifest(tmp_path, monke
     assert f"pages_build_version={derive_build_version(source_revision='c' * 40, release_id='release-cli-test')}" in text
 
 
-def test_verify_uses_only_the_api_returned_deployment_id_and_status_url():
+@pytest.mark.parametrize("status_url", [STATUS_URL, DEPLOYMENT_URL])
+def test_verify_checks_returned_identity_but_queries_official_deployment_id_endpoint(status_url):
     urls = []
 
     def request_json(url, **_kwargs):
@@ -100,15 +102,15 @@ def test_verify_uses_only_the_api_returned_deployment_id_and_status_url():
         token="token",
         expected_build_version=BUILD_VERSION,
         deployment_id=DEPLOYMENT_ID,
-        status_url=STATUS_URL,
+        status_url=status_url,
         request_json=request_json,
     )
 
     assert result.deployment_id == DEPLOYMENT_ID
     assert result.build_version == BUILD_VERSION
     assert result.status == "succeed"
-    assert result.status_url == STATUS_URL
-    assert urls == [STATUS_URL]
+    assert result.status_url == status_url
+    assert urls == [DEPLOYMENT_URL]
 
 
 def test_verify_retries_temporarily_missing_pages_deployment_status():
@@ -189,6 +191,58 @@ def test_verify_rejects_untrusted_status_url_before_network_access():
     assert calls == []
 
 
+def test_status_url_diagnostics_record_only_sanitized_shape():
+    from src.pages_deployment import _safe_status_url_shape
+
+    shape = _safe_status_url_shape(
+        STATUS_URL + "?signature=must-not-appear#secret-fragment",
+        api_url="https://api.github.test",
+        repository="owner/repo",
+        deployment_id=DEPLOYMENT_ID,
+    )
+    assert shape == "scheme=https;host=api;route=deployment_status;userinfo=no;query=yes;fragment=yes"
+    assert "signature" not in shape
+    assert "must-not-appear" not in shape
+    assert "secret-fragment" not in shape
+
+
+def test_verify_rejects_path_injection_in_deployment_id_before_network_access():
+    calls = []
+    with pytest.raises(PagesDeploymentError, match="deployment ID is invalid"):
+        verify_deployment(
+            api_url="https://api.github.test",
+            repository="owner/repo",
+            token="token",
+            expected_build_version=BUILD_VERSION,
+            deployment_id="../../other/repo",
+            status_url="https://api.github.test/repos/other/repo/pages/deployments/17",
+            request_json=lambda *_args, **_kwargs: calls.append(True),
+        )
+    assert calls == []
+
+
+@pytest.mark.parametrize("status_url", [
+    "https://attacker.test/repos/owner/repo/pages/deployments/pages-run-17/status",
+    "https://api.github.test/repos/other/repo/pages/deployments/pages-run-17/status",
+    STATUS_URL + "?token=secret",
+    STATUS_URL + "#fragment",
+    "http://api.github.test/repos/owner/repo/pages/deployments/pages-run-17/status",
+])
+def test_verify_rejects_untrusted_or_ambiguous_status_url_without_network(status_url):
+    calls = []
+    with pytest.raises(PagesDeploymentError, match="does not match the deployment ID"):
+        verify_deployment(
+            api_url="https://api.github.test",
+            repository="owner/repo",
+            token="token",
+            expected_build_version=BUILD_VERSION,
+            deployment_id=DEPLOYMENT_ID,
+            status_url=status_url,
+            request_json=lambda *_args, **_kwargs: calls.append(True),
+        )
+    assert calls == []
+
+
 def test_verify_does_not_retry_permanent_pages_permission_error():
     calls = []
 
@@ -230,7 +284,7 @@ def test_create_selects_one_run_artifact_and_uses_deployment_response_identity()
             assert kwargs["payload"]["oidc_token"] == "sensitive-oidc-token"
             assert "environment" not in kwargs["payload"]
             return {"id": DEPLOYMENT_ID, "status_url": STATUS_URL, "page_url": "https://dashboard.example.test"}
-        if url == STATUS_URL:
+        if url == DEPLOYMENT_URL:
             return {"status": "succeed"}
         raise AssertionError(url)
 
@@ -252,7 +306,135 @@ def test_create_selects_one_run_artifact_and_uses_deployment_response_identity()
     assert deployment.deployment_id == DEPLOYMENT_ID
     assert deployment.artifact_id == "202"
     assert deployment.page_url == "https://dashboard.example.test"
-    assert [url for url, _ in calls][-1] == STATUS_URL
+    assert [url for url, _ in calls][-1] == DEPLOYMENT_URL
+
+
+def test_create_accepts_official_status_url_shape_without_status_suffix():
+    def request_json(url, **_kwargs):
+        if "actions/runs/17/artifacts" in url:
+            return {"artifacts": [{"id": 202, "name": "github-pages", "expired": False}]}
+        if url == "https://oidc.actions.test/token":
+            return {"value": "oidc"}
+        if url.endswith("/pages/deployments"):
+            return {"id": DEPLOYMENT_ID, "status_url": DEPLOYMENT_URL, "page_url": "https://dashboard.example.test"}
+        if url == DEPLOYMENT_URL:
+            return {"status": "succeed"}
+        raise AssertionError(url)
+
+    deployment = create_deployment(
+        api_url="https://api.github.test",
+        repository="owner/repo",
+        token="github-token",
+        run_id="17",
+        artifact_name="github-pages",
+        source_revision=BUILD_VERSION,
+        build_version=BUILD_VERSION,
+        oidc_request_url="https://oidc.actions.test/token",
+        oidc_request_token="request-token",
+        request_json=request_json,
+    )
+
+    assert deployment.deployment_id == DEPLOYMENT_ID
+    assert deployment.status_url == DEPLOYMENT_URL
+
+
+def test_create_preserves_trusted_identity_for_one_safe_status_recovery():
+    creates = []
+    now = [0.0]
+
+    def request_json(url, **_kwargs):
+        if "actions/runs/17/artifacts" in url:
+            return {"artifacts": [{"id": 202, "name": "github-pages", "expired": False}]}
+        if url == "https://oidc.actions.test/token":
+            return {"value": "oidc"}
+        if url.endswith("/pages/deployments"):
+            creates.append(True)
+            return {"id": DEPLOYMENT_ID, "status_url": STATUS_URL, "page_url": "https://dashboard.example.test"}
+        if url == DEPLOYMENT_URL:
+            return {"status": "in_progress"}
+        raise AssertionError(url)
+
+    with pytest.raises(PagesDeploymentError, match="not observed before timeout") as captured:
+        create_deployment(
+            api_url="https://api.github.test",
+            repository="owner/repo",
+            token="github-token",
+            run_id="17",
+            artifact_name="github-pages",
+            source_revision=BUILD_VERSION,
+            build_version=BUILD_VERSION,
+            oidc_request_url="https://oidc.actions.test/token",
+            oidc_request_token="request-token",
+            timeout_seconds=3,
+            poll_seconds=2,
+            request_json=request_json,
+            sleeper=lambda delay: now.__setitem__(0, now[0] + delay),
+            monotonic=lambda: now[0],
+        )
+
+    error = captured.value
+    assert error.recoverable is True
+    assert error.request_outcome == "created"
+    assert error.deployment_id == DEPLOYMENT_ID
+    assert error.status_url == STATUS_URL
+    assert error.page_url == "https://dashboard.example.test"
+    assert error.artifact_id == "202"
+    assert len(creates) == 1
+
+
+def test_deploy_cli_exports_only_the_trusted_identity_needed_for_recovery(tmp_path, monkeypatch):
+    from src import pages_deployment
+
+    output = tmp_path / "github-output"
+
+    def fail_after_create(**_kwargs):
+        raise PagesDeploymentError(
+            "status polling timed out",
+            retryable=True,
+            error_code="pages_deployment_status_timeout",
+            request_outcome="created",
+            deployment_id=DEPLOYMENT_ID,
+            status_url=STATUS_URL,
+            page_url="https://dashboard.example.test",
+            artifact_id="202",
+            recoverable=True,
+        )
+
+    monkeypatch.setattr(pages_deployment, "create_deployment", fail_after_create)
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    monkeypatch.setenv("GITHUB_SHA", BUILD_VERSION)
+    monkeypatch.setattr("sys.argv", ["pages_deployment", "--mode", "deploy"])
+
+    assert pages_deployment.main() == 1
+    result = output.read_text(encoding="utf-8")
+    assert "available=false" in result
+    assert "recoverable=true" in result
+    assert "request_outcome=created" in result
+    assert f"deployment_id={DEPLOYMENT_ID}" in result
+    assert f"deployment_status_url={STATUS_URL}" in result
+    assert "artifact_id=202" in result
+
+
+def test_verify_cli_never_exports_untrusted_deployment_id_or_signed_url(tmp_path, monkeypatch):
+    from src import pages_deployment
+
+    output = tmp_path / "github-output"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    monkeypatch.setenv("GITHUB_TOKEN", "github-token")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+    monkeypatch.setattr("sys.argv", [
+        "pages_deployment", "--mode", "verify",
+        "--deployment-id", "../../other/repo",
+        "--status-url", "https://api.github.com/status?signature=secret-value",
+    ])
+
+    assert pages_deployment.main() == 1
+    result = output.read_text(encoding="utf-8")
+    assert "deployment_id=\n" in result
+    assert "deployment_status_url=\n" in result
+    assert "signature" not in result
+    assert "secret-value" not in result
+    assert "deployment_status_url_shape=" in result
 
 
 @pytest.mark.parametrize("artifacts", [

@@ -115,6 +115,13 @@ def test_delivery_claim_persistence_reconciles_the_public_release():
     assert "name: github-pages-reconciled" in workflow
     assert "artifact_name: github-pages-reconciled" in workflow
     assert "Verify reconciled public release" in workflow
+    assert "steps.reconciled_deployment.outputs.recoverable == 'true'" in workflow
+    terminal = workflow.split("- name: Fail scheduled run when an expected report has no delivered receipt", 1)[1]
+    assert "RECONCILED_DEPLOYMENT_VERIFIED" in terminal
+    assert "RECONCILED_GATE_ALLOWED" in terminal
+    assert "LEDGER_PERSIST_OUTCOME" in terminal
+    assert "RECEIPT_CALLBACK_OUTCOME" in terminal
+    assert "do not resend" in terminal
 
 
 def test_pages_only_publisher_uses_the_shared_single_writer_queue():
@@ -134,6 +141,7 @@ def test_pages_only_publisher_uses_the_shared_single_writer_queue():
     assert "--expected-release-id" in workflow
     assert "--expected-snapshot-id" in workflow
     assert "pages-release-gate-diagnostics-${{ github.run_id }}" in workflow
+    assert "Fail Pages publication unless the exact release was verified" in workflow
 
 
 def test_scheduled_release_gate_is_identity_bound_bounded_and_fail_closed():
@@ -148,6 +156,10 @@ def test_scheduled_release_gate_is_identity_bound_bounded_and_fail_closed():
     assert "--public-timeout-seconds 180" in gate
     assert "--public-max-delay 20" in gate
     assert "steps.deployment_identity.outputs.verified == 'true'" in gate
+    assert "Bound deployment recovery to the original delivery window" in workflow
+    assert "scheduled_send_window_remaining_seconds" in workflow
+    assert "steps.deployment_recovery_window.outputs.timeout_seconds" in workflow
+    assert "steps.deployment_recovery_window.outputs.allowed == 'true'" in workflow
     assert "steps.publish_snapshot.outputs.pages_build_version" in workflow
     assert "steps.persist_notification_ledger.outputs.pages_build_version" in workflow
     assert "reconciled_data_release_sha" in workflow

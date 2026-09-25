@@ -26,11 +26,23 @@ class PagesDeploymentError(RuntimeError):
         retryable: bool = False,
         error_code: str = "pages_deployment_error",
         request_outcome: str = "not_started",
+        deployment_id: str = "",
+        status_url: str = "",
+        page_url: str = "",
+        artifact_id: str = "",
+        recoverable: bool = False,
+        status_url_shape: str = "",
     ) -> None:
         super().__init__(message)
         self.retryable = retryable
         self.error_code = error_code
         self.request_outcome = request_outcome
+        self.deployment_id = deployment_id
+        self.status_url = status_url
+        self.page_url = page_url
+        self.artifact_id = artifact_id
+        self.recoverable = recoverable
+        self.status_url_shape = status_url_shape
 
 
 def _safe_error_detail(raw: bytes, secrets: tuple[str, ...] = ()) -> str:
@@ -64,6 +76,31 @@ def _safe_error_detail(raw: bytes, secrets: tuple[str, ...] = ()) -> str:
     detail = re.sub(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", "[email]", detail)
     detail = re.sub(r"\s+", " ", detail).strip()
     return detail[:240]
+
+
+def _safe_status_url_shape(
+    value: str, *, api_url: str, repository: str, deployment_id: str,
+) -> str:
+    """Describe a returned status URL without logging its value."""
+    if not str(value or "").strip():
+        return "missing"
+    parsed = urlparse(str(value).strip())
+    api = urlparse(api_url)
+    expected_base = f"/repos/{repository}/pages/deployments/{deployment_id}"
+    if parsed.path == expected_base:
+        route = "deployment"
+    elif parsed.path == f"{expected_base}/status":
+        route = "deployment_status"
+    else:
+        route = "other"
+    return ";".join((
+        f"scheme={parsed.scheme.casefold() or 'missing'}",
+        f"host={'api' if parsed.netloc.casefold() == api.netloc.casefold() else 'other'}",
+        f"route={route}",
+        f"userinfo={'yes' if parsed.username is not None or parsed.password is not None else 'no'}",
+        f"query={'yes' if parsed.query else 'no'}",
+        f"fragment={'yes' if parsed.fragment else 'no'}",
+    ))
 
 
 @dataclass(frozen=True)
@@ -154,7 +191,11 @@ def verify_deployment(
     sleeper: Callable[[float], None] = time.sleep,
     monotonic: Callable[[], float] = time.monotonic,
 ) -> PagesDeployment:
-    """Poll only the deployment identity and status URL returned by GitHub."""
+    """Poll a trusted deployment ID through GitHub's official status endpoint.
+
+    The create response's ``status_url`` is checked as an identity assertion;
+    GitHub's status API itself is addressed by deployment ID.
+    """
     if (
         not repository
         or not token
@@ -162,20 +203,45 @@ def verify_deployment(
         or not str(deployment_id or "").strip()
     ):
         raise PagesDeploymentError("repository, token, build version, and returned deployment ID are required")
-    expected_status_url = f"{api_url.rstrip('/')}/repos/{repository}/pages/deployments/{deployment_id}/status"
-    if str(status_url or "").rstrip("/") != expected_status_url:
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", str(deployment_id)):
+        raise PagesDeploymentError("returned Pages deployment ID is invalid")
+    status_url = str(status_url or "").strip().rstrip("/")
+    expected_status_paths = {
+        f"/repos/{repository}/pages/deployments/{deployment_id}",
+        f"/repos/{repository}/pages/deployments/{deployment_id}/status",
+    }
+    parsed_status = urlparse(status_url)
+    parsed_api = urlparse(api_url)
+    if (
+        parsed_status.scheme != "https"
+        or parsed_status.netloc.casefold() != parsed_api.netloc.casefold()
+        or parsed_status.username is not None
+        or parsed_status.password is not None
+        or parsed_status.query
+        or parsed_status.fragment
+        or parsed_status.path not in expected_status_paths
+    ):
         raise PagesDeploymentError("returned Pages status URL does not match the deployment ID")
+    status_endpoint = f"{api_url.rstrip('/')}/repos/{repository}/pages/deployments/{deployment_id}"
     started = monotonic()
     deadline = started + max(0.0, timeout_seconds)
     delay = max(0.0, poll_seconds)
     while True:
         remaining = deadline - monotonic()
         if remaining <= 0:
-            raise PagesDeploymentError("successful Pages deployment status was not observed before timeout")
+            raise PagesDeploymentError(
+                "successful Pages deployment status was not observed before timeout",
+                retryable=True,
+                error_code="pages_deployment_status_timeout",
+                request_outcome="created",
+                deployment_id=deployment_id,
+                status_url=status_url,
+                recoverable=True,
+            )
         status_available = False
         try:
             status_payload = request_json(
-                expected_status_url,
+                status_endpoint,
                 token=token,
                 timeout=min(15.0, remaining),
             )
@@ -189,7 +255,7 @@ def verify_deployment(
                 raise PagesDeploymentError("GitHub Pages deployment status is invalid")
             status = str(status_payload.get("status") or "").strip().casefold()
             if status == "succeed":
-                return PagesDeployment(deployment_id, status, expected_build_version, expected_status_url)
+                return PagesDeployment(deployment_id, status, expected_build_version, status_url)
             if status in {
                 "error", "failure", "inactive", "deployment_failed",
                 "deployment_perms_error", "deployment_content_failed",
@@ -198,13 +264,17 @@ def verify_deployment(
                 raise PagesDeploymentError(f"GitHub Pages deployment ended with status {status}")
         remaining = deadline - monotonic()
         if remaining <= 0:
-            raise PagesDeploymentError("successful Pages deployment status was not observed before timeout")
+            raise PagesDeploymentError(
+                "successful Pages deployment status was not observed before timeout",
+                retryable=True,
+                error_code="pages_deployment_status_timeout",
+                request_outcome="created",
+                deployment_id=deployment_id,
+                status_url=status_url,
+                recoverable=True,
+            )
         sleeper(min(delay, remaining))
         delay = min(15.0, max(1.0, delay * 2))
-
-
-def _pages_status_url(api_url: str, repository: str, deployment_id: str) -> str:
-    return f"{api_url.rstrip('/')}/repos/{repository}/pages/deployments/{deployment_id}/status"
 
 
 def _get_oidc_token(
@@ -332,14 +402,35 @@ def create_deployment(
     page_url = str(created.get("page_url") or "").strip()
     if not deployment_id or not status_url or not page_url:
         raise PagesDeploymentError("Pages deployment create response omitted its trusted identity")
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", deployment_id):
+        raise PagesDeploymentError("Pages deployment create response returned an invalid deployment ID")
     parsed_status = urlparse(status_url)
     parsed_api = urlparse(api_url)
+    expected_status_paths = {
+        f"/repos/{repository}/pages/deployments/{deployment_id}",
+        f"/repos/{repository}/pages/deployments/{deployment_id}/status",
+    }
     if (
         parsed_status.scheme != "https"
         or parsed_status.netloc.casefold() != parsed_api.netloc.casefold()
-        or status_url != _pages_status_url(api_url, repository, deployment_id)
+        or parsed_status.username is not None
+        or parsed_status.password is not None
+        or parsed_status.query
+        or parsed_status.fragment
+        or parsed_status.path not in expected_status_paths
     ):
-        raise PagesDeploymentError("Pages deployment returned an unexpected status URL")
+        shape = _safe_status_url_shape(
+            status_url, api_url=api_url, repository=repository, deployment_id=deployment_id,
+        )
+        raise PagesDeploymentError(
+            f"Pages deployment returned an unexpected status URL (shape: {shape})",
+            error_code="pages_status_url_identity_mismatch",
+            request_outcome="created",
+            deployment_id=deployment_id,
+            page_url=page_url,
+            artifact_id=artifact_id,
+            status_url_shape=shape,
+        )
     parsed_page = urlparse(page_url if "://" in page_url else f"https://{page_url}")
     if (
         parsed_page.scheme != "https"
@@ -349,19 +440,32 @@ def create_deployment(
     ):
         raise PagesDeploymentError("Pages deployment returned an invalid public page URL")
     page_url = parsed_page.geturl()
-    verified = verify_deployment(
-        api_url=api_url,
-        repository=repository,
-        token=token,
-        expected_build_version=build_version,
-        deployment_id=deployment_id,
-        status_url=status_url,
-        timeout_seconds=timeout_seconds,
-        poll_seconds=poll_seconds,
-        request_json=request_json,
-        sleeper=sleeper,
-        monotonic=monotonic,
-    )
+    try:
+        verified = verify_deployment(
+            api_url=api_url,
+            repository=repository,
+            token=token,
+            expected_build_version=build_version,
+            deployment_id=deployment_id,
+            status_url=status_url,
+            timeout_seconds=timeout_seconds,
+            poll_seconds=poll_seconds,
+            request_json=request_json,
+            sleeper=sleeper,
+            monotonic=monotonic,
+        )
+    except PagesDeploymentError as exc:
+        raise PagesDeploymentError(
+            str(exc),
+            retryable=exc.retryable,
+            error_code=exc.error_code,
+            request_outcome="created",
+            deployment_id=deployment_id,
+            status_url=status_url,
+            page_url=page_url,
+            artifact_id=artifact_id,
+            recoverable=exc.recoverable or exc.retryable,
+        ) from exc
     return PagesDeployment(
         verified.deployment_id,
         verified.status,
@@ -446,8 +550,16 @@ def main() -> int:
             _write_outputs({
                 "available": True,
                 "verified": True,
+                "recoverable": False,
+                "request_outcome": "created",
                 "deployment_id": deployment.deployment_id,
                 "deployment_status_url": deployment.status_url,
+                "deployment_status_url_shape": _safe_status_url_shape(
+                    deployment.status_url,
+                    api_url=args.api_url,
+                    repository=args.repository,
+                    deployment_id=deployment.deployment_id,
+                ),
                 "deployment_status": deployment.status,
                 "deployment_build_version": deployment.build_version,
                 "artifact_id": deployment.artifact_id,
@@ -468,17 +580,41 @@ def main() -> int:
         )
         _write_outputs({
             "verified": True,
+            "recoverable": False,
+            "request_outcome": "created",
             "deployment_id": deployment.deployment_id,
             "deployment_status": deployment.status,
             "deployment_build_version": deployment.build_version,
             "deployment_status_url": deployment.status_url,
+            "deployment_status_url_shape": _safe_status_url_shape(
+                deployment.status_url,
+                api_url=args.api_url,
+                repository=args.repository,
+                deployment_id=deployment.deployment_id,
+            ),
             "workflow_run_id": os.getenv("GITHUB_RUN_ID", ""),
             "error": "",
         })
     except PagesDeploymentError as exc:
+        candidate_id = exc.deployment_id or (args.deployment_id if args.mode == "verify" else "")
+        deployment_id = candidate_id if re.fullmatch(r"[A-Za-z0-9._-]{1,128}", candidate_id) else ""
+        status_url_for_shape = exc.status_url or (args.status_url if args.mode == "verify" else "")
+        status_url_shape = exc.status_url_shape or _safe_status_url_shape(
+            status_url_for_shape,
+            api_url=args.api_url,
+            repository=args.repository,
+            deployment_id=deployment_id,
+        )
         _write_outputs({
             "available": False,
             "verified": False,
+            "recoverable": exc.recoverable,
+            "request_outcome": exc.request_outcome,
+            "deployment_id": deployment_id,
+            "deployment_status_url": exc.status_url,
+            "deployment_status_url_shape": status_url_shape,
+            "page_url": exc.page_url,
+            "artifact_id": exc.artifact_id,
             "deployment_status": "unknown",
             "error": str(exc),
             "error_code": exc.error_code,

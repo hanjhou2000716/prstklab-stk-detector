@@ -127,6 +127,29 @@ def _scheduled_send_window(slot: str, context: dict[str, Any], now: datetime) ->
     return True, "within_delivery_window"
 
 
+def scheduled_send_window_remaining_seconds(
+    slot: str, context: dict[str, Any], now: datetime,
+) -> int:
+    """Return the remaining immutable delivery window, or zero when closed.
+
+    Recovery checks use this to ensure status polling never extends beyond the
+    original slot's delivery deadline.  The final send still independently
+    calls ``_scheduled_send_window`` immediately before contacting Telegram.
+    """
+    allowed, _reason = _scheduled_send_window(slot, context, now)
+    if not allowed:
+        return 0
+    slot_name = str(context.get("effective_slot") or slot or "").strip()
+    slot_date = str(context.get("slot_date") or "").strip()
+    expected = fixed_scheduled_for(slot_name, slot_date)
+    if slot_name == "us_premarket":
+        deadline, _market_close = us_session_bounds(expected.astimezone(NEW_YORK).date())
+    else:
+        deadline = expected + timedelta(minutes=30)
+    remaining = (deadline.astimezone(UTC) - now.astimezone(UTC)).total_seconds()
+    return max(0, int(remaining))
+
+
 def _briefing_delivery_event(snapshot: dict[str, Any], slot: str) -> dict[str, Any] | None:
     """Project the shared digest into the existing notification contract."""
     briefing = snapshot.get("briefing")

@@ -146,7 +146,7 @@ jobs:
           build_version: ${{ steps.pages_version.outputs.pages_build_version }}
           fallback_url: ${{ vars.DASHBOARD_URL }}
       - name: Verify completed Pages deployment identity
-        if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true' && steps.deployment.outputs.available == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true' && (steps.deployment.outputs.available == 'true' || steps.deployment.outputs.recoverable == 'true')
         id: deployment_identity
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -158,7 +158,7 @@ jobs:
           --status-url "${{ steps.deployment.outputs.deployment_status_url }}"
           >> "$GITHUB_OUTPUT"
       - name: Verify exact public release after deployment
-        if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true' && steps.deployment.outputs.available == 'true' && steps.deployment_identity.outputs.verified == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true' && steps.deployment_identity.outputs.verified == 'true'
         id: public_release_gate
         run: >-
           python -m src.release_gate
@@ -269,3 +269,15 @@ jobs:
           path: pages-release-gate-diagnostics.json
           if-no-files-found: error
           retention-days: 14
+      - name: Fail Pages publication unless the exact release was verified
+        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true'
+        env:
+          DEPLOYMENT_VERIFIED: ${{ steps.deployment_identity.outputs.verified || 'false' }}
+          PUBLIC_GATE_ALLOWED: ${{ steps.public_release_gate.outputs.allowed || 'false' }}
+          DEPLOYMENT_ID: ${{ steps.deployment_identity.outputs.deployment_id || steps.deployment.outputs.deployment_id || '' }}
+          DEPLOYMENT_ERROR: ${{ steps.deployment_identity.outputs.error || steps.deployment.outputs.error || '' }}
+        run: |
+          if [ "$DEPLOYMENT_VERIFIED" != "true" ] || [ "$PUBLIC_GATE_ALLOWED" != "true" ]; then
+            echo "::error::Pages publication is not verified (deployment_id=${DEPLOYMENT_ID:-unknown}, deployment_error=${DEPLOYMENT_ERROR:-none}, public_gate=${PUBLIC_GATE_ALLOWED})."
+            exit 1
+          fi
