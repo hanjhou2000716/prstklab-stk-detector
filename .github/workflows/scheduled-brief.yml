@@ -331,8 +331,38 @@ jobs:
         with:
           build_version: ${{ steps.publish_snapshot.outputs.pages_build_version }}
           fallback_url: ${{ env.DASHBOARD_URL }}
+      - name: Bound deployment recovery to the original delivery window
+        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.deployment.outputs.recoverable == 'true' && steps.window.outputs.delivery_intent == 'notify_candidate'
+        id: deployment_recovery_window
+        env:
+          SLOT: ${{ steps.window.outputs.effective_slot }}
+          SLOT_DATE: ${{ steps.window.outputs.slot_date }}
+          SCHEDULED_FOR_AT: ${{ steps.window.outputs.scheduled_for_at }}
+        run: |
+          python - <<'PY'
+          import os
+          from datetime import UTC, datetime
+          from pathlib import Path
+
+          from src.scheduled_delivery import scheduled_send_window_remaining_seconds
+
+          context = {
+              "effective_slot": os.environ["SLOT"],
+              "slot_date": os.environ["SLOT_DATE"],
+              "scheduled_for_at": os.environ["SCHEDULED_FOR_AT"],
+          }
+          remaining = scheduled_send_window_remaining_seconds(
+              os.environ["SLOT"], context, datetime.now(UTC),
+          )
+          timeout = min(180, remaining)
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write(f"allowed={'true' if timeout > 0 else 'false'}\n")
+              output.write(f"timeout_seconds={timeout}\n")
+          print(f"recovery_allowed={'true' if timeout > 0 else 'false'}")
+          print(f"recovery_timeout_seconds={timeout}")
+          PY
       - name: Verify completed Pages deployment identity
-        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.deployment.outputs.available == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && (steps.deployment.outputs.available == 'true' || (steps.deployment.outputs.recoverable == 'true' && steps.deployment_recovery_window.outputs.allowed == 'true'))
         id: deployment_identity
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -342,6 +372,7 @@ jobs:
           --expected-build-version "${{ steps.publish_snapshot.outputs.pages_build_version }}"
           --deployment-id "${{ steps.deployment.outputs.deployment_id }}"
           --status-url "${{ steps.deployment.outputs.deployment_status_url }}"
+          --timeout-seconds "${{ steps.deployment_recovery_window.outputs.timeout_seconds || '180' }}"
           >> "$GITHUB_OUTPUT"
       - name: Resolve research delivery policy
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true'
@@ -365,7 +396,7 @@ jobs:
               print("::warning::Research is stale or unverified; market delivery continues without research claims.")
           PY
       - name: Verify deployed release before delivery
-        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.deployment.outputs.available == 'true' && steps.deployment_identity.outputs.verified == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.deployment_identity.outputs.verified == 'true'
         id: release_gate
         run: |
           arguments=(--manifest "$MANIFEST_PATH" --expected-release-id "${{ steps.release_manifest.outputs.release_id }}" --expected-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" --public-url "${{ steps.deployment.outputs.page_url }}" --deployment-id "${{ steps.deployment_identity.outputs.deployment_id }}" --expected-notification-id "${{ steps.prepare.outputs.notification_id }}" --expected-alert-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" --expected-alert-observation-id "${{ steps.prepare.outputs.observation_id }}" --public-timeout-seconds 180 --public-delay 2 --public-max-delay 20)
@@ -472,7 +503,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Record delivery gate when Pages is unavailable
-        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && (steps.release_policy.outputs.publish != 'true' || steps.deployment.outputs.available != 'true')
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && (steps.release_policy.outputs.publish != 'true' || steps.deployment_identity.outputs.verified != 'true')
         run: echo "Release is not fresh or Pages is unavailable; Telegram delivery intentionally skipped (fail closed)."
       - name: Send Telegram brief after successful publication
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true' && steps.window.outputs.delivery_intent == 'notify_candidate'
@@ -512,12 +543,14 @@ jobs:
           QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'not_required' }}
           QUEUE_REASON: ${{ steps.writer_queue.outputs.reason || '' }}
           PREPARED_RELEASE_STATUS: ${{ steps.prepared_release.outputs.reason || 'not_required' }}
-          PAGES_DEPLOYMENT_AVAILABLE: ${{ steps.deployment.outputs.available || 'false' }}
+          PAGES_DEPLOYMENT_AVAILABLE: ${{ steps.deployment_identity.outputs.verified || 'false' }}
           PAGES_DEPLOYMENT_VERIFIED: ${{ steps.deployment_identity.outputs.verified || 'false' }}
           PAGES_DEPLOYMENT_ID: ${{ steps.deployment_identity.outputs.deployment_id || steps.deployment.outputs.deployment_id || '' }}
           PAGES_DEPLOYMENT_RUN_ID: ${{ steps.deployment_identity.outputs.workflow_run_id || github.run_id }}
-          PAGES_DEPLOYMENT_ERROR: ${{ steps.deployment_identity.outputs.error || '' }}
+          PAGES_DEPLOYMENT_ERROR: ${{ steps.deployment_identity.outputs.error || steps.deployment.outputs.error || '' }}
           PAGES_DEPLOYMENT_ERROR_CODE: ${{ steps.deployment.outputs.error_code || steps.deployment_identity.outputs.error_code || '' }}
+          PAGES_DEPLOYMENT_STATUS_URL_SHAPE: ${{ steps.deployment.outputs.deployment_status_url_shape || steps.deployment_identity.outputs.deployment_status_url_shape || 'unknown' }}
+          PAGES_DEPLOYMENT_REQUEST_OUTCOME: ${{ steps.deployment.outputs.request_outcome || steps.deployment_identity.outputs.request_outcome || 'unknown' }}
           RELEASE_GATE_OUTCOME: ${{ steps.release_gate.outcome || 'not_run' }}
           RELEASE_GATE_STATUS: ${{ steps.release_gate.outputs.gate_status || 'not_run' }}
           RELEASE_GATE_ERROR_CATEGORY: ${{ steps.release_gate.outputs.error_category || '' }}
@@ -652,8 +685,11 @@ jobs:
             echo "- writer_queue_reason: ${QUEUE_REASON:-none}"
             echo "- prepared_release_status: ${PREPARED_RELEASE_STATUS:-not_required}"
             echo "- pages_deployment_verified: ${PAGES_DEPLOYMENT_VERIFIED}"
+            echo "- pages_deployment_recovery_attempted: ${{ steps.deployment.outputs.recoverable == 'true' }}"
             echo "- pages_deployment_id: ${PAGES_DEPLOYMENT_ID:-unknown}"
             echo "- pages_deployment_run_id: ${PAGES_DEPLOYMENT_RUN_ID:-unknown}"
+            echo "- pages_deployment_status_url_shape: ${PAGES_DEPLOYMENT_STATUS_URL_SHAPE:-unknown}"
+            echo "- pages_deployment_request_outcome: ${PAGES_DEPLOYMENT_REQUEST_OUTCOME:-unknown}"
             echo "- pages_deployment_error: ${PAGES_DEPLOYMENT_ERROR:-none}"
             echo "- pages_deployment_error_code: ${PAGES_DEPLOYMENT_ERROR_CODE:-none}"
             echo "- pages_publication_status: $([ "$PAGES_DEPLOYMENT_VERIFIED" = "true" ] && echo published_and_verified || echo not_published_or_unverified)"
@@ -665,6 +701,7 @@ jobs:
             echo "- release_gate_deployment_id: ${RELEASE_GATE_DEPLOYMENT_ID:-unknown}"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Persist scheduled-brief delivery receipt
+        id: persist_scheduled_receipt
         # Persist failed attempts as well as successful attempts.  This keeps
         # the existing claim/receipt chain aware of retryable recipients.
         # A suppressed/idempotent decision has no Telegram attempt and hence
@@ -742,7 +779,7 @@ jobs:
           build_version: ${{ steps.persist_notification_ledger.outputs.pages_build_version }}
           fallback_url: ${{ env.DASHBOARD_URL }}
       - name: Verify reconciled Pages deployment identity
-        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success' && steps.reconciled_deployment.outputs.available == 'true'
+        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success' && (steps.reconciled_deployment.outputs.available == 'true' || steps.reconciled_deployment.outputs.recoverable == 'true')
         id: reconciled_deployment_identity
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -754,7 +791,7 @@ jobs:
           --status-url "${{ steps.reconciled_deployment.outputs.deployment_status_url }}"
           >> "$GITHUB_OUTPUT"
       - name: Verify reconciled public release
-        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success' && steps.reconciled_deployment.outputs.available == 'true' && steps.reconciled_deployment_identity.outputs.verified == 'true'
+        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success' && steps.reconciled_deployment_identity.outputs.verified == 'true'
         id: reconciled_release_gate
         run: >-
           python -m src.release_gate
@@ -868,6 +905,11 @@ jobs:
           PREPARED_CURRENT: ${{ steps.prepared_release.outputs.current || 'false' }}
           PREPARE_READY: ${{ steps.prepare.outputs.prepared || 'false' }}
           GATE_ALLOWED: ${{ steps.release_gate.outputs.allowed || 'false' }}
+          RECEIPT_CALLBACK_OUTCOME: ${{ steps.persist_scheduled_receipt.outcome || 'skipped' }}
+          RECEIPT_ENDPOINT_CONFIGURED: ${{ (vars.RECEIPT_CALLBACK_URL != '' || vars.RAILWAY_STATUS_URL != '') && 'true' || 'false' }}
+          LEDGER_PERSIST_OUTCOME: ${{ steps.persist_notification_ledger.outcome || 'skipped' }}
+          RECONCILED_DEPLOYMENT_VERIFIED: ${{ steps.reconciled_deployment_identity.outputs.verified || 'false' }}
+          RECONCILED_GATE_ALLOWED: ${{ steps.reconciled_release_gate.outputs.allowed || 'false' }}
         run: |
           set -euo pipefail
           if [ "$SEND_STATUS" = "already_delivered" ] && [ "$SEND_REASON" = "already_delivered" ]; then
@@ -878,7 +920,17 @@ jobs:
             && [ "$DELIVERY_STATUS" = "delivered" ] && [ "$DELIVERED_COUNT" -gt 0 ] \
             && [ "$FAILED_COUNT" -eq 0 ] && [ "$PREPARED_CURRENT" = "true" ] \
             && [ "$PREPARE_READY" = "true" ] && [ "$GATE_ALLOWED" = "true" ]; then
-            echo "Expected scheduled report has a complete delivered receipt."
+            if [ "$LEDGER_PERSIST_OUTCOME" != "success" ] \
+              || [ "$RECONCILED_DEPLOYMENT_VERIFIED" != "true" ] \
+              || [ "$RECONCILED_GATE_ALLOWED" != "true" ]; then
+              echo "::error::Telegram delivery succeeded, but durable recipient receipt publication is incomplete; do not resend (ledger=${LEDGER_PERSIST_OUTCOME}, reconciled_deployment=${RECONCILED_DEPLOYMENT_VERIFIED}, reconciled_gate=${RECONCILED_GATE_ALLOWED})."
+              exit 1
+            fi
+            if [ "$RECEIPT_ENDPOINT_CONFIGURED" = "true" ] && [ "$RECEIPT_CALLBACK_OUTCOME" != "success" ]; then
+              echo "::error::Telegram delivery and release ledger succeeded, but the configured receipt callback failed; do not resend (callback=${RECEIPT_CALLBACK_OUTCOME})."
+              exit 1
+            fi
+            echo "Expected scheduled report has a delivered recipient receipt in the reconciled public release."
             exit 0
           fi
           echo "::error::Expected scheduled report did not reach a complete delivered receipt (status=${SEND_STATUS:-not_run}, reason=${SEND_REASON:-none}, delivery=${DELIVERY_STATUS:-none}, delivered=${DELIVERED_COUNT}, failed=${FAILED_COUNT}, prepared=${PREPARE_READY}, gate=${GATE_ALLOWED})."

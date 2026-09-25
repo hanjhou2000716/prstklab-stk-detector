@@ -20,6 +20,10 @@ def test_pages_deploy_wrapper_uses_exact_identity_and_fails_closed():
     assert "pages_deployment_unavailable" in action
     assert "deployment_id" in action
     assert "deployment_status_url" in action
+    assert "deployment_status_url_shape" in action
+    assert "pages_deployment_status_url_shape" in action
+    assert "recoverable:" in action
+    assert "DEPLOY_RECOVERABLE" in action
     assert "source_revision" in action
     assert "GITHUB_SHA:" not in action
     assert "actions/deploy-pages@" not in action

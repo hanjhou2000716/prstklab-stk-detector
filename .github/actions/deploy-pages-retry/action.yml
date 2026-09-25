@@ -28,6 +28,9 @@ outputs:
   available:
     description: Whether a Pages deployment completed successfully.
     value: ${{ steps.select-url.outputs.available }}
+  recoverable:
+    description: Whether this run has a trusted deployment ID that may be rechecked without creating another deployment.
+    value: ${{ steps.select-url.outputs.recoverable }}
   reason:
     description: Stable reason when Pages is temporarily unavailable.
     value: ${{ steps.select-url.outputs.reason }}
@@ -43,6 +46,9 @@ outputs:
   deployment_status_url:
     description: Status URL returned by the GitHub Pages create API.
     value: ${{ steps.select-url.outputs.deployment_status_url }}
+  deployment_status_url_shape:
+    description: Sanitized shape of the returned status URL, without logging its value.
+    value: ${{ steps.select-url.outputs.deployment_status_url_shape }}
   artifact_id:
     description: Unique Pages artifact ID selected from this workflow run.
     value: ${{ steps.select-url.outputs.artifact_id }}
@@ -77,9 +83,12 @@ runs:
       env:
         DEPLOY_OUTCOME: ${{ steps.deployment.outcome }}
         DEPLOY_AVAILABLE: ${{ steps.deployment.outputs.available || 'false' }}
+        DEPLOY_RECOVERABLE: ${{ steps.deployment.outputs.recoverable || 'false' }}
+        DEPLOY_REQUEST_OUTCOME: ${{ steps.deployment.outputs.request_outcome || 'unknown' }}
         DEPLOY_URL: ${{ steps.deployment.outputs.page_url || '' }}
         DEPLOY_ID: ${{ steps.deployment.outputs.deployment_id || '' }}
         DEPLOY_STATUS_URL: ${{ steps.deployment.outputs.deployment_status_url || '' }}
+        DEPLOY_STATUS_URL_SHAPE: ${{ steps.deployment.outputs.deployment_status_url_shape || '' }}
         DEPLOY_ARTIFACT_ID: ${{ steps.deployment.outputs.artifact_id || '' }}
         DEPLOY_BUILD_VERSION: ${{ steps.deployment.outputs.deployment_build_version || inputs.build_version || github.sha }}
         DEPLOY_SOURCE_REVISION: ${{ steps.deployment.outputs.source_revision || github.sha }}
@@ -99,16 +108,20 @@ runs:
         page_url="${deployed_url:-$FALLBACK_URL}"
         printf 'page_url=%s\n' "$page_url" >> "$GITHUB_OUTPUT"
         printf 'available=%s\n' "$([ -n "$deployed_url" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+        printf 'recoverable=%s\n' "$([ "$DEPLOY_RECOVERABLE" = "true" ] && [ -n "$DEPLOY_ID" ] && [ -n "$DEPLOY_STATUS_URL" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+        printf 'request_outcome=%s\n' "$DEPLOY_REQUEST_OUTCOME" >> "$GITHUB_OUTPUT"
         printf 'reason=%s\n' "$reason" >> "$GITHUB_OUTPUT"
         printf 'error_code=%s\n' "$([ -n "$deployed_url" ] && echo '' || echo "${DEPLOY_ERROR_CODE:-pages_deployment_unavailable}")" >> "$GITHUB_OUTPUT"
         printf 'error=%s\n' "${DEPLOY_ERROR:-}" >> "$GITHUB_OUTPUT"
         printf 'deployment_id=%s\n' "$DEPLOY_ID" >> "$GITHUB_OUTPUT"
         printf 'deployment_status_url=%s\n' "$DEPLOY_STATUS_URL" >> "$GITHUB_OUTPUT"
+        printf 'deployment_status_url_shape=%s\n' "${DEPLOY_STATUS_URL_SHAPE:-unknown}" >> "$GITHUB_OUTPUT"
         printf 'artifact_id=%s\n' "$DEPLOY_ARTIFACT_ID" >> "$GITHUB_OUTPUT"
         printf 'build_version=%s\n' "$DEPLOY_BUILD_VERSION" >> "$GITHUB_OUTPUT"
         printf 'source_revision=%s\n' "$DEPLOY_SOURCE_REVISION" >> "$GITHUB_OUTPUT"
         echo "pages_deploy_outcome=${DEPLOY_OUTCOME:-unknown}"
         echo "pages_deploy_available=$([ -n "$deployed_url" ] && echo true || echo false)"
+        echo "pages_deployment_status_url_shape=${DEPLOY_STATUS_URL_SHAPE:-unknown}"
 
     - name: Record degraded Pages status
       if: steps.select-url.outputs.available != 'true'

@@ -59,6 +59,35 @@ def test_market_anchor_deadlines_use_the_slot_market_timezone():
     ) == (False, "delivery_deadline_passed")
 
 
+def test_deployment_recovery_budget_is_clamped_to_the_original_market_window():
+    taiwan = {
+        "effective_slot": "post_close",
+        "slot_date": "2026-09-25",
+        "scheduled_for_at": "2026-09-25T14:20:00+08:00",
+    }
+    assert scheduled_delivery.scheduled_send_window_remaining_seconds(
+        "post_close", taiwan, datetime.fromisoformat("2026-09-25T14:29:00+08:00"),
+    ) == 1260
+    assert scheduled_delivery.scheduled_send_window_remaining_seconds(
+        "post_close", taiwan, datetime.fromisoformat("2026-09-25T14:49:30+08:00"),
+    ) == 30
+    assert scheduled_delivery.scheduled_send_window_remaining_seconds(
+        "post_close", taiwan, datetime.fromisoformat("2026-09-25T14:50:00+08:00"),
+    ) == 0
+
+    us = {
+        "effective_slot": "us_premarket",
+        "slot_date": "2026-09-25",
+        "scheduled_for_at": "2026-09-25T09:00:00-04:00",
+    }
+    assert scheduled_delivery.scheduled_send_window_remaining_seconds(
+        "us_premarket", us, datetime.fromisoformat("2026-09-25T09:29:30-04:00"),
+    ) == 30
+    assert scheduled_delivery.scheduled_send_window_remaining_seconds(
+        "us_premarket", us, datetime.fromisoformat("2026-09-25T09:30:00-04:00"),
+    ) == 0
+
+
 def test_routine_market_report_does_not_require_an_event_candidate():
     assert scheduled_delivery._is_routine_market_report({
         "scheduled_report": True, "market_scope_key": "taiwan",
