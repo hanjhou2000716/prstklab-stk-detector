@@ -1,0 +1,1406 @@
+{
+  "schema_version": "1.0",
+  "kind": "market_briefing",
+  "source": "PRStK 多來源市場判讀",
+  "source_key": "scheduled_brief",
+  "notification_id": "briefing-post_close-8ec58bf8781e9ee1c572",
+  "alert_id": "briefing-post_close-8ec58bf8781e9ee1c572",
+  "event_cluster_key": "briefing-post_close-8ec58bf8781e9ee1c572",
+  "release_id": "release-d9e87f262c859627",
+  "snapshot_id": "b1b97bac8e88790c",
+  "observation_id": null,
+  "created_at": "2026-09-25T12:39:34.598453+00:00",
+  "canonical_content_hash": "8ec58bf8781e9ee1c57291a315fc7c481d207e40231f3d2a003982d98c75658b",
+  "canonical_hash_version": 2,
+  "title": "🟡 台股盤後，加權指數-0.28%；缺漏 台指期",
+  "brief_title": "🟡 台股盤後，加權指數-0.28%；缺漏 台指期",
+  "public_short_message": "🟡 台股盤後，加權指數-0.28%；缺漏 台指期",
+  "short_label": "市場判讀",
+  "event": "AI供應鏈引爆擴產潮，3大次產業最新營收頻創新高，日月光投控訂單滿載。",
+  "linked_markets": [
+    "TAIEX"
+  ],
+  "why_important": "財報與展望可能改變 AI／半導體需求預期，但單一公司消息不代表整體產業。",
+  "possible_linkage": "可能連動費半、Nasdaq、台積電與台股半導體權值。",
+  "stock_observation": "觀察費半與台美半導體權值是否以成交與價格同步確認趨勢。",
+  "market_assessment": {
+    "stance": "insufficient_evidence",
+    "stance_label": "資料不足",
+    "confidence": "low",
+    "market_scope": "台股",
+    "dominant_driver": "台股核心指數偏弱",
+    "dominant_driver_key": null,
+    "supporting_theme_keys": [
+      "evt-a9cfd404ffe48da67dc418ff",
+      "evt-1db16dc65f83e56b7773f27d"
+    ],
+    "conflict_flags": [],
+    "summary_sections": {
+      "summary": "台股休市，以下為最近可核對資料",
+      "market_highlights": "最近收盤加權指數-0.28%；缺漏 台指期",
+      "risk": "有效因子不足，暫不把新聞或單一行情視為方向確認。"
+    },
+    "joint_market_signal": {
+      "version": "joint-market-signal-v1",
+      "status": "insufficient_evidence",
+      "label": "資料不足，台美狀態待確認",
+      "base_label": "資料不足，台美狀態待確認",
+      "taiwan": {
+        "label": "偏弱",
+        "score": -1.0,
+        "directions": [
+          -1
+        ],
+        "valid_factors": 1
+      },
+      "us": {
+        "label": "資料不足",
+        "score": null,
+        "directions": [],
+        "valid_factors": 0
+      },
+      "price_score": null,
+      "valid_factor_count": 1,
+      "minimum_factor_count": 3,
+      "risk_adjustments": [
+        "taiwan情緒：恐慌",
+        "taiwan波動：恐慌"
+      ],
+      "divergent": false,
+      "evidence": {
+        "taiwan": [
+          {
+            "ticker": "TAIEX",
+            "name": "臺灣加權指數",
+            "price": 48024.6,
+            "change_percent": -0.28,
+            "currency": "點",
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "quote_date": "2026-09-24",
+            "source_label": "Yahoo",
+            "source_url": "https://finance.yahoo.com/quote/^TWII"
+          }
+        ],
+        "us": []
+      },
+      "excluded_factors": [],
+      "confidence": "low"
+    },
+    "evidence_as_of": "2026-09-25T12:39:19.913432+00:00",
+    "factor_count": 1,
+    "evidence_dimensions": [
+      "taiwan_equity"
+    ],
+    "evidence_groups": {
+      "taiwan_core": [
+        -1
+      ]
+    },
+    "score": -2.0,
+    "factor_source": "quote_factors",
+    "weekend_market": false,
+    "directional_quote_count": 1,
+    "market_scope_key": "taiwan",
+    "scheduled_report": true,
+    "quote_gaps": [
+      {
+        "ticker": "TXF",
+        "reason": "quote_missing_or_unusable"
+      }
+    ]
+  },
+  "market_evidence": [
+    {
+      "ticker": "TAIEX",
+      "name": "臺灣加權指數",
+      "market": "taiwan",
+      "instrument_id": "twse:taiex",
+      "instrument_master_id": "instrument-43f1043a745204fa",
+      "price": 48024.6,
+      "change": -132.69,
+      "change_percent": -0.28,
+      "currency": "點",
+      "quote_date": "2026-09-24",
+      "quote_time": null,
+      "fetched_at": "2026-09-25T12:31:57.356987+00:00",
+      "freshness": "recent_close",
+      "data_status": "最近收盤",
+      "source_label": "Yahoo",
+      "quote_source": "Yahoo Finance public daily quote",
+      "source_domain": "finance.yahoo.com",
+      "source_url": "https://finance.yahoo.com/quote/^TWII",
+      "cross_checked": false,
+      "stale_used": false
+    }
+  ],
+  "source_evidence": [
+    {
+      "source": "Google News｜台股線索",
+      "source_key": "Google News｜台股線索",
+      "observation_id": null,
+      "notification_id": null,
+      "published_at": "2026-09-24T20:44:54+00:00",
+      "source_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNSWtTN0JsallRdGY3YnlFTEN3bE1FMGZ0T3RSZmNYZVh6UlRRSVU4YTNqcFo0UDVlQkRoZ0NJSGhQZi02c3ItdWJISE5QYm11SzRpSmZjek9SQy1mWWRybVQ3aXhaQklpLWFiVWVyVWwxQVM1dHF5Ym84TzBpSHZnZy1B",
+      "source_domain": "news.google.com"
+    }
+  ],
+  "briefing": {
+    "slot": "post_close",
+    "slot_context": {},
+    "as_of": "2026-09-25T20:39:19.913432+08:00",
+    "themes": [
+      {
+        "title": "台積電、半導體與 AI 供應鏈",
+        "market_topic": "semiconductor_ai",
+        "what_happened": "AI供應鏈引爆擴產潮，3大次產業最新營收頻創新高，日月光投控訂單滿載。",
+        "why_important": "財報與展望可能改變 AI／半導體需求預期，但單一公司消息不代表整體產業。",
+        "market_implication": "可能連動費半、Nasdaq、台積電與台股半導體權值。",
+        "stock_observation": "觀察費半與台美半導體權值是否以成交與價格同步確認趨勢。",
+        "detail_eligible": true,
+        "evidence": [
+          {
+            "source": "Google News｜台股線索",
+            "source_key": "Google News｜台股線索",
+            "observation_id": null,
+            "notification_id": null,
+            "published_at": "2026-09-24T20:44:54+00:00",
+            "source_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNSWtTN0JsallRdGY3YnlFTEN3bE1FMGZ0T3RSZmNYZVh6UlRRSVU4YTNqcFo0UDVlQkRoZ0NJSGhQZi02c3ItdWJISE5QYm11SzRpSmZjek9SQy1mWWRybVQ3aXhaQklpLWFiVWVyVWwxQVM1dHF5Ym84TzBpSHZnZy1B",
+            "source_domain": "news.google.com"
+          }
+        ],
+        "source_evidence": [
+          {
+            "source": "Google News｜台股線索",
+            "source_key": "Google News｜台股線索",
+            "observation_id": null,
+            "notification_id": null,
+            "published_at": "2026-09-24T20:44:54+00:00",
+            "source_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNSWtTN0JsallRdGY3YnlFTEN3bE1FMGZ0T3RSZmNYZVh6UlRRSVU4YTNqcFo0UDVlQkRoZ0NJSGhQZi02c3ItdWJISE5QYm11SzRpSmZjek9SQy1mWWRybVQ3aXhaQklpLWFiVWVyVWwxQVM1dHF5Ym84TzBpSHZnZy1B",
+            "source_domain": "news.google.com"
+          }
+        ],
+        "quote_evidence": [
+          {
+            "ticker": "TAIEX",
+            "name": "臺灣加權指數",
+            "market": "taiwan",
+            "instrument_id": "twse:taiex",
+            "instrument_master_id": "instrument-43f1043a745204fa",
+            "price": 48024.6,
+            "change": -132.69,
+            "change_percent": -0.28,
+            "currency": "點",
+            "quote_date": "2026-09-24",
+            "quote_time": null,
+            "fetched_at": "2026-09-25T12:31:57.356987+00:00",
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^TWII",
+            "cross_checked": false,
+            "stale_used": false
+          }
+        ],
+        "event_key": "evt-a9cfd404ffe48da67dc418ff",
+        "canonical_event_key": "evt-a9cfd404ffe48da67dc418ff",
+        "source_event_keys": [
+          "evt-a9cfd404ffe48da67dc418ff"
+        ],
+        "source": "Google News｜台股線索",
+        "published_at": "2026-09-24T20:44:54+00:00",
+        "notification_status": "eligible",
+        "prstk_risk_level": "R2",
+        "vendor_importance": null,
+        "raw_title": "AI供應鏈引爆擴產潮！3大次產業最新營收頻創新高，日月光投控訂單滿載-財經焦點情報站 - CMoney投資網誌",
+        "normalized_fact": "AI供應鏈引爆擴產潮，3大次產業最新營收頻創新高，日月光投控訂單滿載。",
+        "linked_markets": [
+          "TAIEX",
+          "TXF"
+        ],
+        "linked_market_details": [
+          {
+            "ticker": "TAIEX",
+            "role": "market_index",
+            "match_basis": "explicit_market",
+            "matched_entity": "",
+            "market": "taiwan",
+            "quote_available": true,
+            "market_sync_confirmed": false
+          },
+          {
+            "ticker": "TXF",
+            "role": "futures",
+            "match_basis": "taiwan_market_baseline",
+            "matched_entity": "",
+            "market": "taiwan",
+            "quote_available": false,
+            "market_sync_confirmed": false
+          }
+        ],
+        "market_linkage_status": "resolved",
+        "actor_role": "",
+        "actor_name": "",
+        "headline_actor": "",
+        "byline_removed": false,
+        "publisher_removed": true,
+        "normalization_ruleset": "market_headline_normalizer_v1",
+        "normalization_complete": true,
+        "official_confirmed": false,
+        "market_sync_confirmed": false
+      },
+      {
+        "title": "能源、航運與地緣風險",
+        "market_topic": "energy_geopolitics",
+        "what_happened": "貿易逆差驟減能源戰升溫 美中稀土爭奪牽動全球供應。",
+        "why_important": "已核對公開來源；請查看完整內容與市場後續反應。",
+        "market_implication": "",
+        "stock_observation": "",
+        "detail_eligible": false,
+        "evidence": [
+          {
+            "source": "Yahoo Taiwan Finance",
+            "source_key": "Yahoo Taiwan Finance",
+            "observation_id": null,
+            "notification_id": null,
+            "published_at": "2026-09-25T11:42:33+00:00",
+            "source_url": "https://tw.stock.yahoo.com/news/%E8%B2%BF%E6%98%93%E9%80%86%E5%B7%AE%E9%A9%9F%E6%B8%9B%E8%83%BD%E6%BA%90%E6%88%B0%E5%8D%87%E6%BA%AB-%E7%BE%8E%E4%B8%AD%E7%A8%80%E5%9C%9F%E7%88%AD%E5%A5%AA%E7%89%BD%E5%8B%95%E5%85%A8%E7%90%83%E4%BE%9B%E6%87%89-114233263.html",
+            "source_domain": "tw.stock.yahoo.com"
+          }
+        ],
+        "source_evidence": [
+          {
+            "source": "Yahoo Taiwan Finance",
+            "source_key": "Yahoo Taiwan Finance",
+            "observation_id": null,
+            "notification_id": null,
+            "published_at": "2026-09-25T11:42:33+00:00",
+            "source_url": "https://tw.stock.yahoo.com/news/%E8%B2%BF%E6%98%93%E9%80%86%E5%B7%AE%E9%A9%9F%E6%B8%9B%E8%83%BD%E6%BA%90%E6%88%B0%E5%8D%87%E6%BA%AB-%E7%BE%8E%E4%B8%AD%E7%A8%80%E5%9C%9F%E7%88%AD%E5%A5%AA%E7%89%BD%E5%8B%95%E5%85%A8%E7%90%83%E4%BE%9B%E6%87%89-114233263.html",
+            "source_domain": "tw.stock.yahoo.com"
+          }
+        ],
+        "quote_evidence": [
+          {
+            "ticker": "TAIEX",
+            "name": "臺灣加權指數",
+            "market": "taiwan",
+            "instrument_id": "twse:taiex",
+            "instrument_master_id": "instrument-43f1043a745204fa",
+            "price": 48024.6,
+            "change": -132.69,
+            "change_percent": -0.28,
+            "currency": "點",
+            "quote_date": "2026-09-24",
+            "quote_time": null,
+            "fetched_at": "2026-09-25T12:31:57.356987+00:00",
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^TWII",
+            "cross_checked": false,
+            "stale_used": false
+          }
+        ],
+        "event_key": "evt-1db16dc65f83e56b7773f27d",
+        "canonical_event_key": "evt-1db16dc65f83e56b7773f27d",
+        "source_event_keys": [
+          "evt-1db16dc65f83e56b7773f27d"
+        ],
+        "source": "Yahoo Taiwan Finance",
+        "published_at": "2026-09-25T11:42:33+00:00",
+        "notification_status": "eligible",
+        "prstk_risk_level": "R2",
+        "vendor_importance": null,
+        "raw_title": "貿易逆差驟減能源戰升溫 美中稀土爭奪牽動全球供應",
+        "normalized_fact": "貿易逆差驟減能源戰升溫 美中稀土爭奪牽動全球供應。",
+        "linked_markets": [
+          "TAIEX",
+          "TXF"
+        ],
+        "linked_market_details": [
+          {
+            "ticker": "TAIEX",
+            "role": "market_index",
+            "match_basis": "explicit_market",
+            "matched_entity": "",
+            "market": "taiwan",
+            "quote_available": true,
+            "market_sync_confirmed": false
+          },
+          {
+            "ticker": "TXF",
+            "role": "futures",
+            "match_basis": "taiwan_market_baseline",
+            "matched_entity": "",
+            "market": "taiwan",
+            "quote_available": false,
+            "market_sync_confirmed": false
+          }
+        ],
+        "market_linkage_status": "resolved",
+        "actor_role": "",
+        "actor_name": "",
+        "headline_actor": "",
+        "byline_removed": false,
+        "publisher_removed": false,
+        "normalization_ruleset": "market_headline_normalizer_v1",
+        "normalization_complete": true,
+        "official_confirmed": false,
+        "market_sync_confirmed": false
+      }
+    ],
+    "primary_theme": {
+      "title": "台積電、半導體與 AI 供應鏈",
+      "market_topic": "semiconductor_ai",
+      "what_happened": "AI供應鏈引爆擴產潮，3大次產業最新營收頻創新高，日月光投控訂單滿載。",
+      "why_important": "財報與展望可能改變 AI／半導體需求預期，但單一公司消息不代表整體產業。",
+      "market_implication": "可能連動費半、Nasdaq、台積電與台股半導體權值。",
+      "stock_observation": "觀察費半與台美半導體權值是否以成交與價格同步確認趨勢。",
+      "detail_eligible": true,
+      "evidence": [
+        {
+          "source": "Google News｜台股線索",
+          "source_key": "Google News｜台股線索",
+          "observation_id": null,
+          "notification_id": null,
+          "published_at": "2026-09-24T20:44:54+00:00",
+          "source_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNSWtTN0JsallRdGY3YnlFTEN3bE1FMGZ0T3RSZmNYZVh6UlRRSVU4YTNqcFo0UDVlQkRoZ0NJSGhQZi02c3ItdWJISE5QYm11SzRpSmZjek9SQy1mWWRybVQ3aXhaQklpLWFiVWVyVWwxQVM1dHF5Ym84TzBpSHZnZy1B",
+          "source_domain": "news.google.com"
+        }
+      ],
+      "source_evidence": [
+        {
+          "source": "Google News｜台股線索",
+          "source_key": "Google News｜台股線索",
+          "observation_id": null,
+          "notification_id": null,
+          "published_at": "2026-09-24T20:44:54+00:00",
+          "source_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNSWtTN0JsallRdGY3YnlFTEN3bE1FMGZ0T3RSZmNYZVh6UlRRSVU4YTNqcFo0UDVlQkRoZ0NJSGhQZi02c3ItdWJISE5QYm11SzRpSmZjek9SQy1mWWRybVQ3aXhaQklpLWFiVWVyVWwxQVM1dHF5Ym84TzBpSHZnZy1B",
+          "source_domain": "news.google.com"
+        }
+      ],
+      "quote_evidence": [
+        {
+          "ticker": "TAIEX",
+          "name": "臺灣加權指數",
+          "market": "taiwan",
+          "instrument_id": "twse:taiex",
+          "instrument_master_id": "instrument-43f1043a745204fa",
+          "price": 48024.6,
+          "change": -132.69,
+          "change_percent": -0.28,
+          "currency": "點",
+          "quote_date": "2026-09-24",
+          "quote_time": null,
+          "fetched_at": "2026-09-25T12:31:57.356987+00:00",
+          "freshness": "recent_close",
+          "data_status": "最近收盤",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public daily quote",
+          "source_domain": "finance.yahoo.com",
+          "source_url": "https://finance.yahoo.com/quote/^TWII",
+          "cross_checked": false,
+          "stale_used": false
+        }
+      ],
+      "event_key": "evt-a9cfd404ffe48da67dc418ff",
+      "canonical_event_key": "evt-a9cfd404ffe48da67dc418ff",
+      "source_event_keys": [
+        "evt-a9cfd404ffe48da67dc418ff"
+      ],
+      "source": "Google News｜台股線索",
+      "published_at": "2026-09-24T20:44:54+00:00",
+      "notification_status": "eligible",
+      "prstk_risk_level": "R2",
+      "vendor_importance": null,
+      "raw_title": "AI供應鏈引爆擴產潮！3大次產業最新營收頻創新高，日月光投控訂單滿載-財經焦點情報站 - CMoney投資網誌",
+      "normalized_fact": "AI供應鏈引爆擴產潮，3大次產業最新營收頻創新高，日月光投控訂單滿載。",
+      "linked_markets": [
+        "TAIEX",
+        "TXF"
+      ],
+      "linked_market_details": [
+        {
+          "ticker": "TAIEX",
+          "role": "market_index",
+          "match_basis": "explicit_market",
+          "matched_entity": "",
+          "market": "taiwan",
+          "quote_available": true,
+          "market_sync_confirmed": false
+        },
+        {
+          "ticker": "TXF",
+          "role": "futures",
+          "match_basis": "taiwan_market_baseline",
+          "matched_entity": "",
+          "market": "taiwan",
+          "quote_available": false,
+          "market_sync_confirmed": false
+        }
+      ],
+      "market_linkage_status": "resolved",
+      "actor_role": "",
+      "actor_name": "",
+      "headline_actor": "",
+      "byline_removed": false,
+      "publisher_removed": true,
+      "normalization_ruleset": "market_headline_normalizer_v1",
+      "normalization_complete": true,
+      "official_confirmed": false,
+      "market_sync_confirmed": false
+    },
+    "secondary_signals": [
+      {
+        "canonical_event_key": "evt-1db16dc65f83e56b7773f27d",
+        "event_key": "evt-1db16dc65f83e56b7773f27d",
+        "title": "能源、航運與地緣風險",
+        "what_happened": "貿易逆差驟減能源戰升溫 美中稀土爭奪牽動全球供應。",
+        "public_short_message": "貿易逆差驟減能源戰升溫 美中稀土爭奪牽動全球供應。",
+        "source": "Yahoo Taiwan Finance",
+        "published_at": "2026-09-25T11:42:33+00:00",
+        "prstk_risk_level": "R2",
+        "notification_status": "eligible",
+        "vendor_importance": null,
+        "detail_eligible": false,
+        "official_confirmed": false,
+        "market_sync_confirmed": false,
+        "source_event_keys": [
+          "evt-1db16dc65f83e56b7773f27d"
+        ],
+        "rank_reason": "重要度／核對狀態／發布時間／穩定事件鍵"
+      }
+    ],
+    "displayed_event_keys": [
+      "evt-a9cfd404ffe48da67dc418ff",
+      "evt-1db16dc65f83e56b7773f27d"
+    ],
+    "observations": [
+      {
+        "title": "台股加權指數（現貨）",
+        "event": "加權指數現貨 行情 48,024.60；漲跌 -132.69 點；-0.28%；觀測 2026-09-24；recent_close；日線收盤",
+        "importance": "加權指數描述台灣上市股票現貨市場，不等同於期貨契約。",
+        "market_impact": "現貨指數與期貨分列；不以期貨點位替代現貨，也不計算不同觀測時間的即時基差。",
+        "watch": "等待下一個可核對的台股現貨交易日收盤。",
+        "source_note": "https://finance.yahoo.com/quote/^TWII",
+        "data_as_of": "2026-09-25T20:39:19.913432+08:00"
+      },
+      {
+        "title": "台指期近月（日盤）",
+        "event": "台指期近月日盤資料未取得或口徑未核實",
+        "importance": "台指期是獨立的期貨契約；必須確認近月契約月份與日盤資料口徑。",
+        "market_impact": "僅說明期貨自身漲跌，不與不同收盤時間的加權指數計算即時基差。",
+        "watch": "結算日後由官方契約月份切換規則確認近月；未核實月份時維持缺漏。",
+        "data_as_of": "2026-09-25T20:39:19.913432+08:00"
+      },
+      {
+        "title": "台股輔助統計（官方）",
+        "event": "上市市場成交金額：7,755.91 億元；資料日 2026-09-24；來源 TWSE FMTQIK official daily market statistics。；市場廣度：上漲 386 家、下跌 546 家、平盤 140 家；資料日 2026-09-24；來源 TWSE MI_INDEX official stock breadth。；三大法人合計買賣超：-444.49 億元；資料日 2026-09-24；來源 TWSE BFI82U official institution trading statistics。",
+        "importance": "成交金額、市場漲跌家數與三大法人僅作加權指數／台指期的輔助脈絡，不取代兩項主體行情。",
+        "market_impact": "各欄保留資料日與官方來源；未公布或未取得即標示缺漏，不估算、不等待後續更新。",
+        "watch": "後續資料更新只更新資訊卡，不因此對同一時段再次發送 Telegram。",
+        "source_note": "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK；https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX；https://www.twse.com.tw/rwd/zh/fund/BFI82U?dayDate=20260924&response=json",
+        "data_as_of": "2026-09-25T20:39:19.913432+08:00"
+      }
+    ],
+    "morning_analysis": {
+      "ruleset": "market_scoped_card_v1",
+      "narrative_version": "four-report-narrative-v2",
+      "market_scope": "taiwan",
+      "evidence_as_of": "2026-09-25T20:39:19.913432+08:00",
+      "overall_stance": "insufficient_evidence",
+      "confidence": "low",
+      "sections": [
+        {
+          "title": "台股加權指數（現貨）",
+          "facts": [
+            "加權指數現貨 行情 48,024.60；漲跌 -132.69 點；-0.28%；觀測 2026-09-24；recent_close；日線收盤"
+          ],
+          "facts_structured": [
+            {
+              "ticker": "TAIEX",
+              "name": "加權指數現貨",
+              "text": "加權指數現貨 行情 48,024.60；漲跌 -132.69 點；-0.28%；觀測 2026-09-24；recent_close；日線收盤",
+              "quote": {
+                "ticker": "TAIEX",
+                "name": "臺灣加權指數",
+                "price": 48024.6,
+                "change_percent": -0.28,
+                "quote_date": "2026-09-24",
+                "freshness": "recent_close",
+                "data_status": "最近收盤",
+                "quote_basis": "日線收盤",
+                "quote_source": "Yahoo Finance public daily quote",
+                "source_label": "Yahoo",
+                "source_url": "https://finance.yahoo.com/quote/^TWII"
+              }
+            }
+          ],
+          "why_it_matters": "加權指數描述台灣上市股票現貨市場，不等同於期貨契約。",
+          "transmission": "現貨指數與期貨分列；不以期貨點位替代現貨，也不計算不同觀測時間的即時基差。",
+          "market_observation": "加權指數現貨 行情 48,024.60；漲跌 -132.69 點；-0.28%；觀測 2026-09-24；recent_close；日線收盤",
+          "next_catalyst": "等待下一個可核對的台股現貨交易日收盤。",
+          "evidence": [
+            {
+              "ticker": "TAIEX",
+              "name": "臺灣加權指數",
+              "price": 48024.6,
+              "change_percent": -0.28,
+              "quote_date": "2026-09-24",
+              "freshness": "recent_close",
+              "data_status": "最近收盤",
+              "quote_basis": "日線收盤",
+              "quote_source": "Yahoo Finance public daily quote",
+              "source_label": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/^TWII"
+            }
+          ],
+          "freshness": "recent_close",
+          "confidence": "medium",
+          "narrative": {
+            "version": "four-report-narrative-v2",
+            "slot": "post_close",
+            "section": "taiwan",
+            "as_of": "2026-09-25T20:39:19.913432+08:00",
+            "focus": "當日價格結構、成交廣度、法人與收盤事件",
+            "highlights": [
+              "本輪沒有合格事件，以可核對行情與統計資料整理。",
+              "加權指數現貨 行情 48,024.60；漲跌 -132.69 點；-0.28%；觀測 2026-09-24；recent_close；日線收盤",
+              "下一步核對當日價格結構、成交廣度、法人與收盤事件的同口徑資料是否延續或出現分歧。"
+            ],
+            "details": [
+              {
+                "label": "發生什麼",
+                "text": "本輪沒有合格事件，以可核對行情與統計資料整理。",
+                "evidence_refs": [
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public daily quote",
+                    "source_url": "https://finance.yahoo.com/quote/^TWII",
+                    "ticker": "TAIEX",
+                    "name": "臺灣加權指數",
+                    "quote_date": "2026-09-24",
+                    "freshness": "recent_close",
+                    "data_status": "最近收盤"
+                  }
+                ]
+              },
+              {
+                "label": "為何重要",
+                "text": "加權與櫃買的相對方向，搭配成交值、廣度與法人資料，可分辨權值股與中小型股是否同向。",
+                "evidence_refs": [
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public daily quote",
+                    "source_url": "https://finance.yahoo.com/quote/^TWII",
+                    "ticker": "TAIEX",
+                    "name": "臺灣加權指數",
+                    "quote_date": "2026-09-24",
+                    "freshness": "recent_close",
+                    "data_status": "最近收盤"
+                  }
+                ]
+              },
+              {
+                "label": "可能傳導",
+                "text": "行情與事件未同步時維持待確認，單一指標不取代交叉核對。",
+                "evidence_refs": [
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public daily quote",
+                    "source_url": "https://finance.yahoo.com/quote/^TWII",
+                    "ticker": "TAIEX",
+                    "name": "臺灣加權指數",
+                    "quote_date": "2026-09-24",
+                    "freshness": "recent_close",
+                    "data_status": "最近收盤"
+                  }
+                ]
+              },
+              {
+                "label": "下一項催化劑",
+                "text": "下一步核對當日價格結構、成交廣度、法人與收盤事件的同口徑資料是否延續或出現分歧。",
+                "evidence_refs": [
+                  {
+                    "source_label": "Yahoo",
+                    "quote_source": "Yahoo Finance public daily quote",
+                    "source_url": "https://finance.yahoo.com/quote/^TWII",
+                    "ticker": "TAIEX",
+                    "name": "臺灣加權指數",
+                    "quote_date": "2026-09-24",
+                    "freshness": "recent_close",
+                    "data_status": "最近收盤"
+                  }
+                ]
+              }
+            ],
+            "evidence_refs": [
+              {
+                "source_label": "Yahoo",
+                "quote_source": "Yahoo Finance public daily quote",
+                "source_url": "https://finance.yahoo.com/quote/^TWII",
+                "ticker": "TAIEX",
+                "name": "臺灣加權指數",
+                "quote_date": "2026-09-24",
+                "freshness": "recent_close",
+                "data_status": "最近收盤"
+              }
+            ],
+            "limitations": []
+          },
+          "highlights": [
+            "本輪沒有合格事件，以可核對行情與統計資料整理。",
+            "加權指數現貨 行情 48,024.60；漲跌 -132.69 點；-0.28%；觀測 2026-09-24；recent_close；日線收盤",
+            "下一步核對當日價格結構、成交廣度、法人與收盤事件的同口徑資料是否延續或出現分歧。"
+          ],
+          "details": [
+            {
+              "label": "發生什麼",
+              "text": "本輪沒有合格事件，以可核對行情與統計資料整理。",
+              "evidence_refs": [
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public daily quote",
+                  "source_url": "https://finance.yahoo.com/quote/^TWII",
+                  "ticker": "TAIEX",
+                  "name": "臺灣加權指數",
+                  "quote_date": "2026-09-24",
+                  "freshness": "recent_close",
+                  "data_status": "最近收盤"
+                }
+              ]
+            },
+            {
+              "label": "為何重要",
+              "text": "加權與櫃買的相對方向，搭配成交值、廣度與法人資料，可分辨權值股與中小型股是否同向。",
+              "evidence_refs": [
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public daily quote",
+                  "source_url": "https://finance.yahoo.com/quote/^TWII",
+                  "ticker": "TAIEX",
+                  "name": "臺灣加權指數",
+                  "quote_date": "2026-09-24",
+                  "freshness": "recent_close",
+                  "data_status": "最近收盤"
+                }
+              ]
+            },
+            {
+              "label": "可能傳導",
+              "text": "行情與事件未同步時維持待確認，單一指標不取代交叉核對。",
+              "evidence_refs": [
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public daily quote",
+                  "source_url": "https://finance.yahoo.com/quote/^TWII",
+                  "ticker": "TAIEX",
+                  "name": "臺灣加權指數",
+                  "quote_date": "2026-09-24",
+                  "freshness": "recent_close",
+                  "data_status": "最近收盤"
+                }
+              ]
+            },
+            {
+              "label": "下一項催化劑",
+              "text": "下一步核對當日價格結構、成交廣度、法人與收盤事件的同口徑資料是否延續或出現分歧。",
+              "evidence_refs": [
+                {
+                  "source_label": "Yahoo",
+                  "quote_source": "Yahoo Finance public daily quote",
+                  "source_url": "https://finance.yahoo.com/quote/^TWII",
+                  "ticker": "TAIEX",
+                  "name": "臺灣加權指數",
+                  "quote_date": "2026-09-24",
+                  "freshness": "recent_close",
+                  "data_status": "最近收盤"
+                }
+              ]
+            }
+          ],
+          "limitations": []
+        },
+        {
+          "title": "台指期近月（日盤）",
+          "facts": [
+            "台指期近月日盤資料未取得或口徑未核實"
+          ],
+          "facts_structured": [
+            {
+              "ticker": "TXF",
+              "name": "台指期近月日盤",
+              "text": "台指期近月日盤資料未取得或口徑未核實",
+              "quote": {
+                "ticker": "TXF",
+                "name": "台指期近月日盤",
+                "data_status": "unavailable",
+                "quote_date": null,
+                "quote_time": null,
+                "source": null,
+                "contract_month": null
+              }
+            }
+          ],
+          "why_it_matters": "台指期是獨立的期貨契約；必須確認近月契約月份與日盤資料口徑。",
+          "transmission": "僅說明期貨自身漲跌，不與不同收盤時間的加權指數計算即時基差。",
+          "market_observation": "近月契約月份或日盤行情未核實，故不列期貨方向。",
+          "next_catalyst": "結算日後由官方契約月份切換規則確認近月；未核實月份時維持缺漏。",
+          "evidence": [],
+          "freshness": "unavailable",
+          "confidence": "low",
+          "narrative": {
+            "version": "four-report-narrative-v2",
+            "slot": "post_close",
+            "section": "taiwan",
+            "as_of": "2026-09-25T20:39:19.913432+08:00",
+            "focus": "當日價格結構、成交廣度、法人與收盤事件",
+            "highlights": [
+              "本輪沒有合格事件，以可核對行情與統計資料整理。",
+              "台指期近月日盤資料未取得或口徑未核實",
+              "下一步核對當日價格結構、成交廣度、法人與收盤事件的同口徑資料是否延續或出現分歧。"
+            ],
+            "details": [
+              {
+                "label": "發生什麼",
+                "text": "本輪沒有合格事件，以可核對行情與統計資料整理。",
+                "evidence_refs": []
+              },
+              {
+                "label": "為何重要",
+                "text": "加權與櫃買的相對方向，搭配成交值、廣度與法人資料，可分辨權值股與中小型股是否同向。",
+                "evidence_refs": []
+              },
+              {
+                "label": "可能傳導",
+                "text": "行情與事件未同步時維持待確認，單一指標不取代交叉核對。",
+                "evidence_refs": []
+              },
+              {
+                "label": "下一項催化劑",
+                "text": "下一步核對當日價格結構、成交廣度、法人與收盤事件的同口徑資料是否延續或出現分歧。",
+                "evidence_refs": []
+              }
+            ],
+            "evidence_refs": [],
+            "limitations": [
+              "台指期近月日盤",
+              "本輪沒有可供展開的來源引用。"
+            ]
+          },
+          "highlights": [
+            "本輪沒有合格事件，以可核對行情與統計資料整理。",
+            "台指期近月日盤資料未取得或口徑未核實",
+            "下一步核對當日價格結構、成交廣度、法人與收盤事件的同口徑資料是否延續或出現分歧。"
+          ],
+          "details": [
+            {
+              "label": "發生什麼",
+              "text": "本輪沒有合格事件，以可核對行情與統計資料整理。",
+              "evidence_refs": []
+            },
+            {
+              "label": "為何重要",
+              "text": "加權與櫃買的相對方向，搭配成交值、廣度與法人資料，可分辨權值股與中小型股是否同向。",
+              "evidence_refs": []
+            },
+            {
+              "label": "可能傳導",
+              "text": "行情與事件未同步時維持待確認，單一指標不取代交叉核對。",
+              "evidence_refs": []
+            },
+            {
+              "label": "下一項催化劑",
+              "text": "下一步核對當日價格結構、成交廣度、法人與收盤事件的同口徑資料是否延續或出現分歧。",
+              "evidence_refs": []
+            }
+          ],
+          "limitations": [
+            "台指期近月日盤",
+            "本輪沒有可供展開的來源引用。"
+          ]
+        },
+        {
+          "title": "台股輔助統計（官方）",
+          "facts": [
+            "上市市場成交金額：7,755.91 億元；資料日 2026-09-24；來源 TWSE FMTQIK official daily market statistics。",
+            "市場廣度：上漲 386 家、下跌 546 家、平盤 140 家；資料日 2026-09-24；來源 TWSE MI_INDEX official stock breadth。",
+            "三大法人合計買賣超：-444.49 億元；資料日 2026-09-24；來源 TWSE BFI82U official institution trading statistics。"
+          ],
+          "facts_structured": [
+            {
+              "ticker": "TW_STATS_TURNOVER",
+              "name": "成交金額",
+              "text": "上市市場成交金額：7,755.91 億元；資料日 2026-09-24；來源 TWSE FMTQIK official daily market statistics。",
+              "quote": {
+                "observed_date": "2026-09-24",
+                "trade_volume": 8626109510,
+                "trade_value": 775591428171,
+                "unit": "元",
+                "currency": "TWD",
+                "transactions": 3880761,
+                "taiex": "48024.60",
+                "change": "-132.69",
+                "source": "TWSE FMTQIK official daily market statistics",
+                "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK",
+                "is_proxy": false,
+                "raw_value": 775591428171.0,
+                "raw_unit": "元",
+                "display_unit": "億元",
+                "display_value": 7755.91428171
+              }
+            },
+            {
+              "ticker": "TW_STATS_BREADTH",
+              "name": "市場廣度",
+              "text": "市場廣度：上漲 386 家、下跌 546 家、平盤 140 家；資料日 2026-09-24；來源 TWSE MI_INDEX official stock breadth。",
+              "quote": {
+                "observed_date": "2026-09-24",
+                "advancing": 386,
+                "limit_up": 11,
+                "declining": 546,
+                "limit_down": 1,
+                "unchanged": 140,
+                "untraded": 6,
+                "scope": "整體市場",
+                "scope_verified": true,
+                "source": "TWSE MI_INDEX official stock breadth",
+                "source_url": "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX",
+                "is_proxy": false
+              }
+            },
+            {
+              "ticker": "TW_STATS_INSTITUTIONS",
+              "name": "三大法人",
+              "text": "三大法人合計買賣超：-444.49 億元；資料日 2026-09-24；來源 TWSE BFI82U official institution trading statistics。",
+              "quote": {
+                "observed_date": "2026-09-24",
+                "foreign_net": -32964613655,
+                "investment_trust_net": -12823263300,
+                "dealer_net": 4235536088,
+                "total_net": -44449446534,
+                "unit": "元",
+                "currency": "TWD",
+                "source": "TWSE BFI82U official institution trading statistics",
+                "source_url": "https://www.twse.com.tw/rwd/zh/fund/BFI82U?dayDate=20260924&response=json",
+                "is_proxy": false,
+                "raw_value": -44449446534.0,
+                "raw_unit": "元",
+                "display_unit": "億元",
+                "display_value": -444.49446534
+              }
+            }
+          ],
+          "why_it_matters": "成交金額、市場漲跌家數與三大法人僅作加權指數／台指期的輔助脈絡，不取代兩項主體行情。",
+          "transmission": "各欄保留資料日與官方來源；未公布或未取得即標示缺漏，不估算、不等待後續更新。",
+          "market_observation": "上市市場成交金額：7,755.91 億元；資料日 2026-09-24；來源 TWSE FMTQIK official daily market statistics。；市場廣度：上漲 386 家、下跌 546 家、平盤 140 家；資料日 2026-09-24；來源 TWSE MI_INDEX official stock breadth。；三大法人合計買賣超：-444.49 億元；資料日 2026-09-24；來源 TWSE BFI82U official institution trading statistics。",
+          "next_catalyst": "後續資料更新只更新資訊卡，不因此對同一時段再次發送 Telegram。",
+          "evidence": [
+            {
+              "observed_date": "2026-09-24",
+              "trade_volume": 8626109510,
+              "trade_value": 775591428171,
+              "unit": "元",
+              "currency": "TWD",
+              "transactions": 3880761,
+              "taiex": "48024.60",
+              "change": "-132.69",
+              "source": "TWSE FMTQIK official daily market statistics",
+              "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK",
+              "is_proxy": false,
+              "raw_value": 775591428171.0,
+              "raw_unit": "元",
+              "display_unit": "億元",
+              "display_value": 7755.91428171
+            },
+            {
+              "observed_date": "2026-09-24",
+              "advancing": 386,
+              "limit_up": 11,
+              "declining": 546,
+              "limit_down": 1,
+              "unchanged": 140,
+              "untraded": 6,
+              "scope": "整體市場",
+              "scope_verified": true,
+              "source": "TWSE MI_INDEX official stock breadth",
+              "source_url": "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX",
+              "is_proxy": false
+            },
+            {
+              "observed_date": "2026-09-24",
+              "foreign_net": -32964613655,
+              "investment_trust_net": -12823263300,
+              "dealer_net": 4235536088,
+              "total_net": -44449446534,
+              "unit": "元",
+              "currency": "TWD",
+              "source": "TWSE BFI82U official institution trading statistics",
+              "source_url": "https://www.twse.com.tw/rwd/zh/fund/BFI82U?dayDate=20260924&response=json",
+              "is_proxy": false,
+              "raw_value": -44449446534.0,
+              "raw_unit": "元",
+              "display_unit": "億元",
+              "display_value": -444.49446534
+            }
+          ],
+          "freshness": "各統計欄逐項標示資料日與來源",
+          "confidence": "medium",
+          "narrative": {
+            "version": "four-report-narrative-v2",
+            "slot": "post_close",
+            "section": "taiwan",
+            "as_of": "2026-09-25T20:39:19.913432+08:00",
+            "focus": "當日價格結構、成交廣度、法人與收盤事件",
+            "highlights": [
+              "本輪沒有合格事件，以可核對行情與統計資料整理。",
+              "上市市場成交金額：7,755.91 億元；資料日 2026-09-24；來源 TWSE FMTQIK official daily market statistics。；市場廣度：上漲 386 家、下跌 546 家、平盤 140 家；資料日 2026-09-24；來源 TWSE MI_INDEX official stock breadth。；三大法人合計買賣超：-444.49 億元；資料日 2026-09-24；來源 TWSE BFI82U official institution trading statistics。；成交值 775,591,428,171.00元；上漲 386 家、下跌 546 家、平盤 140 家；三大法人合計淨額 -44,449,446,534.00元",
+              "下一步核對當日價格結構、成交廣度、法人與收盤事件的同口徑資料是否延續或出現分歧。"
+            ],
+            "details": [
+              {
+                "label": "發生什麼",
+                "text": "本輪沒有合格事件，以可核對行情與統計資料整理。",
+                "evidence_refs": [
+                  {
+                    "source": "TWSE FMTQIK official daily market statistics",
+                    "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK"
+                  },
+                  {
+                    "source": "TWSE MI_INDEX official stock breadth",
+                    "source_url": "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX"
+                  },
+                  {
+                    "source": "TWSE BFI82U official institution trading statistics",
+                    "source_url": "https://www.twse.com.tw/rwd/zh/fund/BFI82U?dayDate=20260924&response=json"
+                  }
+                ]
+              },
+              {
+                "label": "為何重要",
+                "text": "加權與櫃買的相對方向，搭配成交值、廣度與法人資料，可分辨權值股與中小型股是否同向。",
+                "evidence_refs": [
+                  {
+                    "source": "TWSE FMTQIK official daily market statistics",
+                    "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK"
+                  },
+                  {
+                    "source": "TWSE MI_INDEX official stock breadth",
+                    "source_url": "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX"
+                  },
+                  {
+                    "source": "TWSE BFI82U official institution trading statistics",
+                    "source_url": "https://www.twse.com.tw/rwd/zh/fund/BFI82U?dayDate=20260924&response=json"
+                  }
+                ]
+              },
+              {
+                "label": "可能傳導",
+                "text": "行情與事件未同步時維持待確認，單一指標不取代交叉核對。",
+                "evidence_refs": [
+                  {
+                    "source": "TWSE FMTQIK official daily market statistics",
+                    "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK"
+                  },
+                  {
+                    "source": "TWSE MI_INDEX official stock breadth",
+                    "source_url": "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX"
+                  },
+                  {
+                    "source": "TWSE BFI82U official institution trading statistics",
+                    "source_url": "https://www.twse.com.tw/rwd/zh/fund/BFI82U?dayDate=20260924&response=json"
+                  }
+                ]
+              },
+              {
+                "label": "下一項催化劑",
+                "text": "下一步核對當日價格結構、成交廣度、法人與收盤事件的同口徑資料是否延續或出現分歧。",
+                "evidence_refs": [
+                  {
+                    "source": "TWSE FMTQIK official daily market statistics",
+                    "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK"
+                  },
+                  {
+                    "source": "TWSE MI_INDEX official stock breadth",
+                    "source_url": "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX"
+                  },
+                  {
+                    "source": "TWSE BFI82U official institution trading statistics",
+                    "source_url": "https://www.twse.com.tw/rwd/zh/fund/BFI82U?dayDate=20260924&response=json"
+                  }
+                ]
+              }
+            ],
+            "evidence_refs": [
+              {
+                "source": "TWSE FMTQIK official daily market statistics",
+                "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK"
+              },
+              {
+                "source": "TWSE MI_INDEX official stock breadth",
+                "source_url": "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX"
+              },
+              {
+                "source": "TWSE BFI82U official institution trading statistics",
+                "source_url": "https://www.twse.com.tw/rwd/zh/fund/BFI82U?dayDate=20260924&response=json"
+              }
+            ],
+            "limitations": []
+          },
+          "highlights": [
+            "本輪沒有合格事件，以可核對行情與統計資料整理。",
+            "上市市場成交金額：7,755.91 億元；資料日 2026-09-24；來源 TWSE FMTQIK official daily market statistics。；市場廣度：上漲 386 家、下跌 546 家、平盤 140 家；資料日 2026-09-24；來源 TWSE MI_INDEX official stock breadth。；三大法人合計買賣超：-444.49 億元；資料日 2026-09-24；來源 TWSE BFI82U official institution trading statistics。；成交值 775,591,428,171.00元；上漲 386 家、下跌 546 家、平盤 140 家；三大法人合計淨額 -44,449,446,534.00元",
+            "下一步核對當日價格結構、成交廣度、法人與收盤事件的同口徑資料是否延續或出現分歧。"
+          ],
+          "details": [
+            {
+              "label": "發生什麼",
+              "text": "本輪沒有合格事件，以可核對行情與統計資料整理。",
+              "evidence_refs": [
+                {
+                  "source": "TWSE FMTQIK official daily market statistics",
+                  "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK"
+                },
+                {
+                  "source": "TWSE MI_INDEX official stock breadth",
+                  "source_url": "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX"
+                },
+                {
+                  "source": "TWSE BFI82U official institution trading statistics",
+                  "source_url": "https://www.twse.com.tw/rwd/zh/fund/BFI82U?dayDate=20260924&response=json"
+                }
+              ]
+            },
+            {
+              "label": "為何重要",
+              "text": "加權與櫃買的相對方向，搭配成交值、廣度與法人資料，可分辨權值股與中小型股是否同向。",
+              "evidence_refs": [
+                {
+                  "source": "TWSE FMTQIK official daily market statistics",
+                  "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK"
+                },
+                {
+                  "source": "TWSE MI_INDEX official stock breadth",
+                  "source_url": "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX"
+                },
+                {
+                  "source": "TWSE BFI82U official institution trading statistics",
+                  "source_url": "https://www.twse.com.tw/rwd/zh/fund/BFI82U?dayDate=20260924&response=json"
+                }
+              ]
+            },
+            {
+              "label": "可能傳導",
+              "text": "行情與事件未同步時維持待確認，單一指標不取代交叉核對。",
+              "evidence_refs": [
+                {
+                  "source": "TWSE FMTQIK official daily market statistics",
+                  "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK"
+                },
+                {
+                  "source": "TWSE MI_INDEX official stock breadth",
+                  "source_url": "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX"
+                },
+                {
+                  "source": "TWSE BFI82U official institution trading statistics",
+                  "source_url": "https://www.twse.com.tw/rwd/zh/fund/BFI82U?dayDate=20260924&response=json"
+                }
+              ]
+            },
+            {
+              "label": "下一項催化劑",
+              "text": "下一步核對當日價格結構、成交廣度、法人與收盤事件的同口徑資料是否延續或出現分歧。",
+              "evidence_refs": [
+                {
+                  "source": "TWSE FMTQIK official daily market statistics",
+                  "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK"
+                },
+                {
+                  "source": "TWSE MI_INDEX official stock breadth",
+                  "source_url": "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX"
+                },
+                {
+                  "source": "TWSE BFI82U official institution trading statistics",
+                  "source_url": "https://www.twse.com.tw/rwd/zh/fund/BFI82U?dayDate=20260924&response=json"
+                }
+              ]
+            }
+          ],
+          "limitations": []
+        }
+      ],
+      "missing_evidence": [
+        "台指期近月日盤"
+      ],
+      "system_analysis": {
+        "data_gaps": [
+          {
+            "kind": "quote",
+            "ticker": "TXF",
+            "name": "台指期近月日盤",
+            "reason": "quote_missing",
+            "checked_at": "2026-09-25T20:39:19.913432+08:00"
+          }
+        ],
+        "note": "行情缺漏逐項揭露；不以舊值或其他市場替代。",
+        "financialjuice_alert_quarantine": {
+          "status": "degraded",
+          "issue": "optional_fj_alert_quarantined",
+          "count": 99,
+          "reasons": [
+            "non_publishable_fj_event",
+            "public_summary_not_ready"
+          ],
+          "summary_versions": [
+            "public-summary-v3"
+          ],
+          "checked_at": "2026-09-25T20:39:19.913432+08:00"
+        }
+      }
+    },
+    "evidence": [
+      {
+        "source": "Google News｜台股線索",
+        "source_key": "Google News｜台股線索",
+        "observation_id": null,
+        "notification_id": null,
+        "published_at": "2026-09-24T20:44:54+00:00",
+        "source_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNSWtTN0JsallRdGY3YnlFTEN3bE1FMGZ0T3RSZmNYZVh6UlRRSVU4YTNqcFo0UDVlQkRoZ0NJSGhQZi02c3ItdWJISE5QYm11SzRpSmZjek9SQy1mWWRybVQ3aXhaQklpLWFiVWVyVWwxQVM1dHF5Ym84TzBpSHZnZy1B",
+        "source_domain": "news.google.com"
+      },
+      {
+        "source": "Yahoo Taiwan Finance",
+        "source_key": "Yahoo Taiwan Finance",
+        "observation_id": null,
+        "notification_id": null,
+        "published_at": "2026-09-25T11:42:33+00:00",
+        "source_url": "https://tw.stock.yahoo.com/news/%E8%B2%BF%E6%98%93%E9%80%86%E5%B7%AE%E9%A9%9F%E6%B8%9B%E8%83%BD%E6%BA%90%E6%88%B0%E5%8D%87%E6%BA%AB-%E7%BE%8E%E4%B8%AD%E7%A8%80%E5%9C%9F%E7%88%AD%E5%A5%AA%E7%89%BD%E5%8B%95%E5%85%A8%E7%90%83%E4%BE%9B%E6%87%89-114233263.html",
+        "source_domain": "tw.stock.yahoo.com"
+      }
+    ],
+    "source_evidence": [
+      {
+        "source": "Google News｜台股線索",
+        "source_key": "Google News｜台股線索",
+        "observation_id": null,
+        "notification_id": null,
+        "published_at": "2026-09-24T20:44:54+00:00",
+        "source_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNSWtTN0JsallRdGY3YnlFTEN3bE1FMGZ0T3RSZmNYZVh6UlRRSVU4YTNqcFo0UDVlQkRoZ0NJSGhQZi02c3ItdWJISE5QYm11SzRpSmZjek9SQy1mWWRybVQ3aXhaQklpLWFiVWVyVWwxQVM1dHF5Ym84TzBpSHZnZy1B",
+        "source_domain": "news.google.com"
+      }
+    ],
+    "quote_evidence": [
+      {
+        "ticker": "TAIEX",
+        "name": "臺灣加權指數",
+        "market": "taiwan",
+        "instrument_id": "twse:taiex",
+        "instrument_master_id": "instrument-43f1043a745204fa",
+        "price": 48024.6,
+        "change": -132.69,
+        "change_percent": -0.28,
+        "currency": "點",
+        "quote_date": "2026-09-24",
+        "quote_time": null,
+        "fetched_at": "2026-09-25T12:31:57.356987+00:00",
+        "freshness": "recent_close",
+        "data_status": "最近收盤",
+        "source_label": "Yahoo",
+        "quote_source": "Yahoo Finance public daily quote",
+        "source_domain": "finance.yahoo.com",
+        "source_url": "https://finance.yahoo.com/quote/^TWII",
+        "cross_checked": false,
+        "stale_used": false
+      }
+    ],
+    "market_assessment": {
+      "stance": "insufficient_evidence",
+      "stance_label": "資料不足",
+      "confidence": "low",
+      "market_scope": "台股",
+      "dominant_driver": "台股核心指數偏弱",
+      "dominant_driver_key": null,
+      "supporting_theme_keys": [
+        "evt-a9cfd404ffe48da67dc418ff",
+        "evt-1db16dc65f83e56b7773f27d"
+      ],
+      "conflict_flags": [],
+      "summary_sections": {
+        "summary": "台股休市，以下為最近可核對資料",
+        "market_highlights": "最近收盤加權指數-0.28%；缺漏 台指期",
+        "risk": "有效因子不足，暫不把新聞或單一行情視為方向確認。"
+      },
+      "joint_market_signal": {
+        "version": "joint-market-signal-v1",
+        "status": "insufficient_evidence",
+        "label": "資料不足，台美狀態待確認",
+        "base_label": "資料不足，台美狀態待確認",
+        "taiwan": {
+          "label": "偏弱",
+          "score": -1.0,
+          "directions": [
+            -1
+          ],
+          "valid_factors": 1
+        },
+        "us": {
+          "label": "資料不足",
+          "score": null,
+          "directions": [],
+          "valid_factors": 0
+        },
+        "price_score": null,
+        "valid_factor_count": 1,
+        "minimum_factor_count": 3,
+        "risk_adjustments": [
+          "taiwan情緒：恐慌",
+          "taiwan波動：恐慌"
+        ],
+        "divergent": false,
+        "evidence": {
+          "taiwan": [
+            {
+              "ticker": "TAIEX",
+              "name": "臺灣加權指數",
+              "price": 48024.6,
+              "change_percent": -0.28,
+              "currency": "點",
+              "freshness": "recent_close",
+              "data_status": "最近收盤",
+              "quote_date": "2026-09-24",
+              "source_label": "Yahoo",
+              "source_url": "https://finance.yahoo.com/quote/^TWII"
+            }
+          ],
+          "us": []
+        },
+        "excluded_factors": [],
+        "confidence": "low"
+      },
+      "evidence_as_of": "2026-09-25T12:39:19.913432+00:00",
+      "factor_count": 1,
+      "evidence_dimensions": [
+        "taiwan_equity"
+      ],
+      "evidence_groups": {
+        "taiwan_core": [
+          -1
+        ]
+      },
+      "score": -2.0,
+      "factor_source": "quote_factors",
+      "weekend_market": false,
+      "directional_quote_count": 1,
+      "market_scope_key": "taiwan",
+      "scheduled_report": true,
+      "quote_gaps": [
+        {
+          "ticker": "TXF",
+          "reason": "quote_missing_or_unusable"
+        }
+      ]
+    },
+    "decision_fingerprint": "e88e74221f417e9f3c4d6d908de9db02bfce6586718576413c91a17e78ab8558",
+    "decision_material": {},
+    "evidence_fingerprint": "1dffcd89a3e4aaf8a28212298fd2e4715a4882c4c4df6b6b35c4bd6580418e66",
+    "evidence_material": {
+      "quotes": [
+        {
+          "ticker": "TAIEX",
+          "price": 48024.6,
+          "change_percent": -0.28,
+          "quote_date": "2026-09-24",
+          "source_label": "Yahoo",
+          "quote_source": "Yahoo Finance public daily quote"
+        }
+      ],
+      "events": [
+        {
+          "canonical_event_key": "evt-a9cfd404ffe48da67dc418ff",
+          "published_at": "2026-09-24T20:44:54+00:00",
+          "source_evidence": [
+            {
+              "source": "Google News｜台股線索",
+              "source_key": "Google News｜台股線索",
+              "observation_id": null,
+              "notification_id": null,
+              "published_at": "2026-09-24T20:44:54+00:00",
+              "source_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNSWtTN0JsallRdGY3YnlFTEN3bE1FMGZ0T3RSZmNYZVh6UlRRSVU4YTNqcFo0UDVlQkRoZ0NJSGhQZi02c3ItdWJISE5QYm11SzRpSmZjek9SQy1mWWRybVQ3aXhaQklpLWFiVWVyVWwxQVM1dHF5Ym84TzBpSHZnZy1B",
+              "source_domain": "news.google.com"
+            }
+          ]
+        }
+      ]
+    },
+    "summary_facts": [
+      {
+        "key": "market_status",
+        "label": "台股市場狀態",
+        "value": "台股休市，以下為最近可核對資料",
+        "evidence_refs": [
+          {
+            "ticker": "TAIEX",
+            "name": "臺灣加權指數",
+            "market": "taiwan",
+            "instrument_id": "twse:taiex",
+            "instrument_master_id": "instrument-43f1043a745204fa",
+            "price": 48024.6,
+            "change": -132.69,
+            "change_percent": -0.28,
+            "currency": "點",
+            "quote_date": "2026-09-24",
+            "quote_time": null,
+            "fetched_at": "2026-09-25T12:31:57.356987+00:00",
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^TWII",
+            "cross_checked": false,
+            "stale_used": false
+          }
+        ]
+      },
+      {
+        "key": "quote_comparison",
+        "label": "行情比較",
+        "value": "最近收盤加權指數-0.28%；缺漏 台指期",
+        "evidence_refs": [
+          {
+            "ticker": "TAIEX",
+            "name": "臺灣加權指數",
+            "market": "taiwan",
+            "instrument_id": "twse:taiex",
+            "instrument_master_id": "instrument-43f1043a745204fa",
+            "price": 48024.6,
+            "change": -132.69,
+            "change_percent": -0.28,
+            "currency": "點",
+            "quote_date": "2026-09-24",
+            "quote_time": null,
+            "fetched_at": "2026-09-25T12:31:57.356987+00:00",
+            "freshness": "recent_close",
+            "data_status": "最近收盤",
+            "source_label": "Yahoo",
+            "quote_source": "Yahoo Finance public daily quote",
+            "source_domain": "finance.yahoo.com",
+            "source_url": "https://finance.yahoo.com/quote/^TWII",
+            "cross_checked": false,
+            "stale_used": false
+          }
+        ]
+      }
+    ],
+    "comparison_notification_key": "",
+    "material_changes": [],
+    "delivery_eligible": null,
+    "suppression_reason": ""
+  },
+  "notification_status": null,
+  "notification_reason": "candidate_ready"
+}
