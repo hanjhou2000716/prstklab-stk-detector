@@ -13,7 +13,22 @@ def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatc
             "quote_time": datetime.now(ZoneInfo("Asia/Taipei")).isoformat(),
         },
     )
-    monkeypatch.setattr("src.market_data.get_market_status", lambda market: {"label": market})
+    monkeypatch.setattr("src.market_data.get_market_status", lambda market: {
+        "label": market,
+        "calendar": "XTAI" if market == "taiwan" else "NYSE",
+        "calendar_status": "confirmed_open",
+        "is_trading_day": True,
+    })
+    monkeypatch.setattr("src.taifex_calendar.get_taifex_index_futures_status", lambda **_kwargs: {
+        "label": "台指期日盤", "calendar": "TAIFEX", "calendar_provider": "TAIFEX",
+        "calendar_status": "confirmed_open", "is_trading_day": True,
+        "calendar_version": "TAIFEX-2026", "calendar_coverage_start": "2026-01-01",
+        "calendar_coverage_end": "2026-12-31", "calendar_source_published_on": ["2025-10-30"],
+        "calendar_source_document": "台期交字第1140003036號函", "calendar_verified_on": "2026-09-25",
+        "calendar_source_urls": [
+            "https://www.taifex.com.tw/file/taifex/CHINESE/11/attach/2026.pdf",
+        ],
+    })
     monkeypatch.setattr("src.risk_news.build_risk_snapshot", lambda: {
         "taiwan": {"label": "台股", "errors": ["台指波動率資料暫時無法取得"]},
         "us": {"label": "美股", "errors": []},
@@ -68,6 +83,11 @@ def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatc
         "message": "台指波動率資料暫時無法取得",
         "scope": "risk",
     }]
+    assert snapshot["markets"]["taiwan_cash"]["calendar_provider"] == "pandas_market_calendars"
+    assert snapshot["markets"]["taiwan_cash"]["calendar"] == "XTAI"
+    assert snapshot["markets"]["taiwan_futures"]["calendar_provider"] == "TAIFEX"
+    assert snapshot["markets"]["taiwan_futures"]["calendar"] == "TAIFEX"
+    assert snapshot["markets"]["taiwan_cash"]["calendar"] != snapshot["markets"]["taiwan_futures"]["calendar"]
     assert "allocation" not in snapshot
     candidate = snapshot["research_report"]["candidates"][0]
     assert candidate["ticker"] == "2330"
