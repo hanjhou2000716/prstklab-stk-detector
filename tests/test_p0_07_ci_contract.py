@@ -16,16 +16,19 @@ def test_reproducible_python_environment_is_locked():
 
 def test_quality_workflow_runs_full_quality_and_coverage_gates():
     workflow = (ROOT / ".github" / "workflows" / "quality.yml").read_text(encoding="utf-8")
+    preflight = (ROOT / "scripts" / "quality_preflight.py").read_text(encoding="utf-8")
+    assert "scripts/quality_preflight.py --static" in workflow
+    assert "scripts/quality_preflight.py --tests" in workflow
     for required in (
         "uv sync --locked --all-groups",
         "--cov=src",
         "--cov-fail-under=80",
         "--fail-under=90",
-        "uv run ruff check src tests",
-        "uv run mypy src",
+        'ruff", "check", "src", "tests", "scripts',
+        'mypy", "src", "scripts/quality_preflight.py',
         "python -m compileall -q src railway-monitor",
     ):
-        assert required in workflow
+        assert required in workflow or required in preflight
 
 
 def test_all_workflow_actions_are_immutable_sha_pinned():
