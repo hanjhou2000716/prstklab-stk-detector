@@ -908,6 +908,85 @@ def build_market_digest(
             )
         overview = project_overview(assessment, DASHBOARD_SUMMARY_MAX_CHARS)
 
+    # A routine morning brief still goes out on Taiwan holidays and weekends.
+    # State the local market closure and the actual TAIEX observation date in
+    # the same release-bound summary instead of letting recent US data obscure
+    # why Taiwan quotes are from an earlier session.
+    markets = snapshot.get("markets") if isinstance(snapshot.get("markets"), dict) else {}
+    taiwan_status = markets.get("taiwan") if isinstance(markets, dict) else None
+    cash_status = markets.get("taiwan_cash") if isinstance(markets, dict) else None
+    futures_status = markets.get("taiwan_futures") if isinstance(markets, dict) else None
+    cash_open = cash_status.get("is_trading_day") if isinstance(cash_status, dict) else None
+    futures_open = futures_status.get("is_trading_day") if isinstance(futures_status, dict) else None
+    cash_calendar_verified = (
+        isinstance(cash_status, dict)
+        and cash_status.get("calendar_status")
+        == ("confirmed_open" if cash_open is True else "confirmed_closed" if cash_open is False else "")
+    )
+    futures_calendar_verified = (
+        isinstance(futures_status, dict)
+        and futures_status.get("calendar_status")
+        == ("confirmed_open" if futures_open is True else "confirmed_closed" if futures_open is False else "")
+    )
+    if slot == "morning" and (
+        (
+            cash_calendar_verified and futures_calendar_verified
+            and (cash_open is False or futures_open is False)
+        )
+        or (
+            cash_open is None and futures_open is None
+            and isinstance(taiwan_status, dict)
+            and taiwan_status.get("is_trading_day") is False
+            and taiwan_status.get("calendar_status") == "confirmed_closed"
+        )
+    ):
+        indices_value = snapshot.get("indices")
+        taiwan_indices: list[Any] = indices_value if isinstance(indices_value, list) else []
+        taiex = next(
+            (
+                item for item in taiwan_indices
+                if isinstance(item, dict) and _normalise_ticker(item.get("ticker")) == "TAIEX"
+            ),
+            None,
+        )
+        observed = ""
+        if isinstance(taiex, dict):
+            raw_observed = str(taiex.get("quote_date") or taiex.get("quote_time") or "").strip()
+            try:
+                observed_date = datetime.fromisoformat(raw_observed.replace("Z", "+00:00")).date()
+                observed = f"{observed_date.month}/{observed_date.day}"
+            except (ValueError, OverflowError):
+                pass
+        if cash_open is False and futures_open is False:
+            market_state = "台股現貨與台指期日盤休市"
+        elif cash_open is False and futures_open is True:
+            market_state = "台股現貨休市、台指期日盤交易"
+        elif cash_open is True and futures_open is False:
+            market_state = "台股現貨交易、台指期日盤休市"
+        else:
+            market_state = "台股休市"
+        session_disclosure = (
+            f"{market_state}；加權行情資料日 {observed}"
+            if observed else f"{market_state}；加權行情資料日未取得"
+        )
+        from src.telegram_client import canonical_short_message
+
+        public_message = canonical_short_message(
+            f"晨報｜{session_disclosure}；{public_message or '今日市場行情與觀察'}",
+            limit=PUBLIC_MESSAGE_MAX_CHARS,
+        )
+        sections = assessment.get("summary_sections")
+        if not isinstance(sections, dict):
+            sections = {}
+            assessment["summary_sections"] = sections
+        existing_highlights = str(sections.get("market_highlights") or "").strip()
+        sections["market_highlights"] = "；".join(
+            part for part in (session_disclosure, existing_highlights) if part
+        )
+        sections["market_session"] = session_disclosure
+        assessment["market_session_state"] = session_disclosure
+        overview = project_overview(assessment, DASHBOARD_SUMMARY_MAX_CHARS)
+
     canonical_material = {
         # Slot labels are presentation metadata.  Cross-anchor delivery
         # coalescing uses ``decision_fingerprint`` below, so changing from
@@ -1068,4 +1147,144 @@ def build_market_digest(
         "lookback_hours": 24,
         "as_of": generated or as_of.isoformat(),
         "slot": slot,
+    }
+
+
+def build_taiwan_holiday_notice_digest(
+    *,
+    slot: str,
+    slot_date: str,
+    next_trading_date: str,
+    cash_is_trading_day: bool,
+    futures_is_trading_day: bool,
+    calendar_basis: str,
+) -> dict[str, Any]:
+    """Build a release-bound, non-directional holiday notice for Taiwan."""
+    if slot != "pre_open":
+        raise ValueError("Taiwan holiday notices are only valid for the pre-open slot")
+    if cash_is_trading_day or futures_is_trading_day:
+        raise ValueError("holiday notice requires both Taiwan day markets to be closed")
+    parsed_date = datetime.fromisoformat(slot_date).date()
+    parsed_next = datetime.fromisoformat(next_trading_date).date()
+    if parsed_next <= parsed_date:
+        raise ValueError("next trading date must follow the holiday date")
+    if not str(calendar_basis or "").strip() or str(calendar_basis).strip().casefold() == "unknown":
+        raise ValueError("holiday notice requires a verified calendar basis")
+
+    date_label = f"{parsed_next.month}/{parsed_next.day}"
+    public_message = f"台股休市提醒｜現貨與台指期日盤休市；次一交易日 {date_label}"
+    event_key = f"taiwan-holiday:{parsed_date.isoformat()}"
+    source_evidence = [
+        {
+            "provider": "pandas_market_calendars",
+            "calendar_id": "XTAI",
+            "calendar_basis": str(calendar_basis),
+            "market": "taiwan_cash",
+            "date": parsed_date.isoformat(),
+            "is_trading_day": False,
+        },
+        {
+            "provider": "pandas_market_calendars",
+            "calendar_id": "XTAI",
+            "calendar_basis": str(calendar_basis),
+            "market": "taifex_taiwan_index_futures_day_session",
+            "date": parsed_date.isoformat(),
+            "is_trading_day": False,
+        },
+        {
+            "provider": "pandas_market_calendars",
+            "calendar_id": "XTAI",
+            "calendar_basis": str(calendar_basis),
+            "next_trading_date": parsed_next.isoformat(),
+        },
+    ]
+    primary_theme = {
+        "title": "台股休市提醒",
+        "market_topic": "taiwan_market",
+        "what_happened": public_message,
+        "why_important": "今日台股現貨及台指期日盤休市，行情卡不代表今日有成交。",
+        "market_implication": "下一個台灣共同交易日為 " + parsed_next.isoformat() + "。",
+        "stock_observation": "下一交易日再核對加權指數與台指期近月日盤資料。",
+        "canonical_event_key": event_key,
+        "event_key": event_key,
+        "source_evidence": source_evidence,
+        "quote_evidence": [],
+        "detail_eligible": True,
+    }
+    market_assessment = {
+        "market_scope": "taiwan",
+        "market_scope_key": "taiwan",
+        "scheduled_report": True,
+        "stance": "not_applicable",
+        "confidence": "not_applicable",
+        "factor_count": 0,
+        "evidence_dimensions": ["exchange_calendar"],
+        "summary_sections": {"summary": public_message, "risk": "市場休市，不提供當日方向判讀。"},
+    }
+    canonical_material = {
+        "kind": "taiwan_holiday_notice",
+        "slot": slot,
+        "slot_date": parsed_date.isoformat(),
+        "next_trading_date": parsed_next.isoformat(),
+        "calendar_basis": str(calendar_basis),
+        "cash_is_trading_day": cash_is_trading_day,
+        "futures_is_trading_day": futures_is_trading_day,
+        "public_short_message": public_message,
+        "market_assessment": market_assessment,
+    }
+    canonical_json = json.dumps(
+        canonical_material, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+    )
+    content_hash = hashlib.sha256(canonical_json.encode("utf-8")).hexdigest()
+    briefing_id = f"briefing-{slot}-{content_hash[:20]}"
+    decision_material = {"kind": "taiwan_holiday_notice", "event_key": event_key}
+    evidence_material = {"source_evidence": source_evidence}
+    decision_fingerprint = hashlib.sha256(
+        json.dumps(decision_material, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    evidence_fingerprint = hashlib.sha256(
+        json.dumps(evidence_material, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    return {
+        "status": "ready",
+        "digest_status": "ready",
+        "notification_eligible": True,
+        "notification_reason": "holiday_notice_required",
+        "briefing_id": briefing_id,
+        "notification_key": f"scheduled_brief:{slot}:{briefing_id}",
+        "observation_id": f"briefing-observation-{content_hash[:20]}",
+        "trace_id": f"briefing-trace-{slot}-{content_hash[:16]}",
+        "canonical_content_hash": content_hash,
+        "canonical_hash_version": 2,
+        "decision_fingerprint": decision_fingerprint,
+        "evidence_fingerprint": evidence_fingerprint,
+        "decision_material": decision_material,
+        "evidence_material": evidence_material,
+        "assessment_summary": public_message,
+        "overview": public_message,
+        "market_assessment": market_assessment,
+        "market_scope_key": "taiwan",
+        "scheduled_report": True,
+        "data_gap_status": "not_applicable",
+        "public_short_message": public_message,
+        "public_summary_version": PUBLIC_SUMMARY_VERSION,
+        "public_summary_evidence_fields": ["exchange_calendar", "next_trading_date"],
+        "public_summary_reason": "",
+        "themes": [primary_theme],
+        "primary_theme": primary_theme,
+        "secondary_signals": [],
+        "displayed_event_keys": [event_key],
+        "evidence": source_evidence,
+        "source_evidence": source_evidence,
+        "quote_evidence": [],
+        "lookback_hours": 0,
+        "as_of": parsed_date.isoformat(),
+        "slot": slot,
+        "holiday_notice": {
+            "date": parsed_date.isoformat(),
+            "next_trading_date": parsed_next.isoformat(),
+            "calendar_basis": str(calendar_basis),
+            "cash_is_trading_day": cash_is_trading_day,
+            "futures_is_trading_day": futures_is_trading_day,
+        },
     }

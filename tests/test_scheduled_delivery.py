@@ -4,12 +4,15 @@ from datetime import UTC, datetime
 import pytest
 
 from src import scheduled_delivery
+from src.market_digest import build_taiwan_holiday_notice_digest
 from src.release_gate import ReleaseGateResult
 from src.scheduled_delivery import (
+    _briefing_delivery_event,
     _briefing_evidence_ready,
     _closed_market_slot_context,
     _creator_records_from_observations,
     _load_creator_records,
+    _resolve_delivery_obligation,
 )
 from src.telegram_client import TextDeliveryReceipt, alert_mini_app_url
 
@@ -103,7 +106,9 @@ def test_routine_market_report_does_not_require_an_event_candidate():
 def test_closed_non_morning_anchor_is_pages_only() -> None:
     context = {"delivery_intent": "notify_candidate", "slot_date": "2026-09-07"}
     result = _closed_market_slot_context(
-        {"markets": {"taiwan": {"is_trading_day": False}}}, "post_close", context,
+        {"markets": {"taiwan": {
+            "is_trading_day": False, "calendar_status": "confirmed_closed", "calendar": "XTAI",
+        }}}, "post_close", context,
     )
     assert result["delivery_intent"] == "publish_only"
     assert result["suppression_reason"] == "closed_market_publish_only"
@@ -114,15 +119,152 @@ def test_weekend_non_morning_anchor_fails_closed_without_market_status() -> None
         {}, "post_close", {"delivery_intent": "notify_candidate", "slot_date": "2026-09-06"},
     )
     assert result["delivery_intent"] == "publish_only"
-    assert result["suppression_reason"] == "closed_market_publish_only"
+    assert result["suppression_reason"] == "closed_market_weekend_publish_only"
 
 
 def test_open_anchor_keeps_notification_intent() -> None:
     context = {"delivery_intent": "notify_candidate", "slot_date": "2026-09-07"}
     result = _closed_market_slot_context(
-        {"markets": {"taiwan": {"is_trading_day": True}}}, "post_close", context,
+        {"markets": {"taiwan": {
+            "is_trading_day": True, "calendar_status": "confirmed_open", "calendar": "XTAI",
+        }}}, "post_close", context,
     )
     assert result == context
+
+
+def test_prepared_obligation_matrix_separates_holiday_report_and_expected_skip():
+    holiday = {
+        "markets": {
+            "taiwan": {"is_trading_day": False, "calendar_status": "confirmed_closed", "calendar": "XTAI"},
+            "taiwan_cash": {
+                "is_trading_day": False, "calendar_status": "confirmed_closed", "calendar": "XTAI",
+                "calendar_basis": "shared_XTAI_baseline", "next_trading_date": "2026-09-29",
+            },
+            "taiwan_futures": {
+                "is_trading_day": False, "calendar_status": "confirmed_closed", "calendar": "XTAI",
+                "calendar_basis": "shared_XTAI_baseline", "next_trading_date": "2026-09-29",
+            },
+        },
+    }
+    context = {
+        "slot_date": "2026-09-28", "delivery_intent": "notify_candidate",
+        "resolution_reason": "taiwan_holiday_notice_required",
+    }
+    assert _resolve_delivery_obligation(
+        holiday, "morning", context, notification_requested=True,
+    )[:2] == ("report_required", "routine_morning_report")
+    assert _resolve_delivery_obligation(
+        holiday, "pre_open", context, notification_requested=True,
+    )[:2] == ("holiday_notice_required", "taiwan_exchange_holiday")
+    assert _resolve_delivery_obligation(
+        holiday, "post_close", context, notification_requested=True,
+    )[:2] == ("expected_skip", "closed_market_publish_only")
+    assert _resolve_delivery_obligation(
+        {}, "pre_open", {"slot_date": "2026-09-27", "delivery_intent": "publish_only"},
+        notification_requested=True,
+    )[:2] == ("expected_skip", "closed_market_weekend_publish_only")
+
+
+def test_prepared_obligation_blocks_unverified_calendar_and_preserves_market_split():
+    base_context = {"slot_date": "2026-09-28", "delivery_intent": "notify_candidate"}
+    unknown = {"markets": {"taiwan": {"is_trading_day": False}}}
+    assert _resolve_delivery_obligation(
+        unknown, "pre_open", base_context, notification_requested=True,
+    )[:2] == ("blocked", "market_calendar_unverified")
+    split = {"markets": {
+        "taiwan": {"is_trading_day": True, "calendar_status": "confirmed_open", "calendar": "XTAI"},
+        "taiwan_cash": {"is_trading_day": True, "calendar_status": "confirmed_open", "calendar": "TWSE"},
+        "taiwan_futures": {"is_trading_day": False, "calendar_status": "confirmed_closed", "calendar": "TAIFEX"},
+    }}
+    obligation, reason, states = _resolve_delivery_obligation(
+        split, "pre_open", base_context, notification_requested=True,
+    )
+    assert (obligation, reason) == ("report_required", "routine_market_report")
+    assert [row["is_trading_day"] for row in states] == [True, False]
+    post_close_context = {**base_context, "resolution_reason": "taiwan_market_calendar_split"}
+    post_close = _closed_market_slot_context(split, "post_close", post_close_context)
+    assert post_close["delivery_intent"] == "notify_candidate"
+    assert post_close["resolution_reason"] == "taiwan_market_calendar_split"
+    assert _resolve_delivery_obligation(
+        split, "post_close", post_close, notification_requested=True,
+    )[:2] == ("report_required", "routine_market_report")
+
+
+def test_us_premarket_calendar_failure_blocks_but_confirmed_holiday_skips():
+    context = {"slot_date": "2026-09-28", "delivery_intent": "notify_candidate"}
+    assert _resolve_delivery_obligation(
+        {"markets": {"us": {"is_trading_day": False}}},
+        "us_premarket", context, notification_requested=True,
+    )[:2] == ("blocked", "market_calendar_unverified")
+    assert _resolve_delivery_obligation(
+        {"markets": {"us": {
+            "is_trading_day": False, "calendar_status": "confirmed_closed", "calendar": "NYSE",
+        }}},
+        "us_premarket", context, notification_requested=True,
+    )[:2] == ("expected_skip", "us_market_closed_publish_only")
+
+
+def test_holiday_notice_is_ready_for_the_existing_scheduled_sender_contract():
+    briefing = build_taiwan_holiday_notice_digest(
+        slot="pre_open", slot_date="2026-09-28", next_trading_date="2026-09-29",
+        cash_is_trading_day=False, futures_is_trading_day=False,
+        calendar_basis="XTAI+XTAI",
+    )
+    assert _briefing_evidence_ready(briefing) is True
+    assert briefing["source_evidence"][0]["provider"] == "pandas_market_calendars"
+    assert briefing["source_evidence"][0]["calendar_id"] == "XTAI"
+    snapshot = {"briefing": {**briefing, "slot_context": {"slot_date": "2026-09-28"}}}
+    event = _briefing_delivery_event(snapshot, "pre_open")
+    assert event is not None
+    assert event["market_scope"] == "taiwan"
+    assert "次一交易日 9/29" in event["public_short_message"]
+
+
+def test_market_snapshot_failure_is_reported_with_sanitized_blocked_decision(monkeypatch, tmp_path):
+    captured = {}
+
+    def fail_snapshot():
+        raise ValueError("provider response included sensitive detail")
+
+    monkeypatch.setattr(scheduled_delivery, "build_market_snapshot", fail_snapshot)
+    monkeypatch.setattr(
+        scheduled_delivery,
+        "_write_decision_output",
+        lambda values, **kwargs: captured.update(values=values, kwargs=kwargs),
+    )
+    with pytest.raises(RuntimeError, match="market_snapshot_unavailable:ValueError"):
+        scheduled_delivery.prepare("morning", tmp_path / "market.json")
+    assert captured["values"]["delivery_obligation"] == "blocked"
+    assert captured["values"]["source_health_status"] == "failed"
+    assert "sensitive detail" not in str(captured)
+
+
+def test_expected_skip_send_stops_before_release_gate_or_sender(monkeypatch, tmp_path):
+    snapshot_path = tmp_path / "market.json"
+    snapshot_path.write_text(json.dumps({
+        "snapshot_id": "snapshot-holiday",
+        "briefing": {
+            "slot_context": {"delivery_intent": "publish_only", "slot_date": "2026-09-28"},
+            "schedule_decision": {
+                "delivery_obligation": "expected_skip",
+                "obligation_reason": "closed_market_publish_only",
+            },
+        },
+    }), encoding="utf-8")
+    captured = {}
+    monkeypatch.setattr(
+        scheduled_delivery,
+        "verify_release_for_delivery",
+        lambda *args, **kwargs: pytest.fail("release gate must not run for an expected skip"),
+    )
+    monkeypatch.setattr(
+        scheduled_delivery,
+        "_write_decision_output",
+        lambda values, **kwargs: captured.update(values=values, kwargs=kwargs),
+    )
+    scheduled_delivery.send(snapshot_path, "post_close", tmp_path / "missing-manifest.json")
+    assert captured["values"]["delivery_status"] == "suppressed"
+    assert captured["values"]["delivery_obligation"] == "expected_skip"
 
 
 def test_manual_notify_false_is_a_public_not_requested_decision() -> None:

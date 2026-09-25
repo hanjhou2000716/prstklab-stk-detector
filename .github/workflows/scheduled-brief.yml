@@ -332,7 +332,7 @@ jobs:
           build_version: ${{ steps.publish_snapshot.outputs.pages_build_version }}
           fallback_url: ${{ env.DASHBOARD_URL }}
       - name: Bound deployment recovery to the original delivery window
-        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.deployment.outputs.recoverable == 'true' && steps.window.outputs.delivery_intent == 'notify_candidate'
+        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.deployment.outputs.recoverable == 'true' && steps.prepare.outputs.notification_expected == 'true'
         id: deployment_recovery_window
         env:
           SLOT: ${{ steps.window.outputs.effective_slot }}
@@ -506,7 +506,7 @@ jobs:
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && (steps.release_policy.outputs.publish != 'true' || steps.deployment_identity.outputs.verified != 'true')
         run: echo "Release is not fresh or Pages is unavailable; Telegram delivery intentionally skipped (fail closed)."
       - name: Send Telegram brief after successful publication
-        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true' && steps.window.outputs.delivery_intent == 'notify_candidate'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true' && steps.prepare.outputs.notification_expected == 'true'
         id: send_brief
         env:
           # Notification credentials are scoped to this step; collection and
@@ -522,6 +522,15 @@ jobs:
           PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
           CANDIDATE_TYPE: ${{ steps.prepare.outputs.candidate_type || 'none' }}
           NOTIFICATION_EXPECTED_VALUE: ${{ steps.prepare.outputs.notification_expected || 'false' }}
+          DELIVERY_OBLIGATION: ${{ steps.prepare.outputs.delivery_obligation || 'undetermined' }}
+          OBLIGATION_REASON: ${{ steps.prepare.outputs.obligation_reason || '' }}
+          MARKET_CALENDAR_STATES: ${{ steps.prepare.outputs.market_calendar_states || '[]' }}
+          SOURCE_HEALTH_STATUS: ${{ steps.prepare.outputs.source_health_status || 'unknown' }}
+          SOURCE_HEALTH_CHECKED_AT: ${{ steps.prepare.outputs.source_health_checked_at || 'unknown' }}
+          SOURCE_HEALTH_MISSING_COUNT: ${{ steps.prepare.outputs.source_health_missing_count || '0' }}
+          SOURCE_HEALTH_RUNTIME_FAILURE_COUNT: ${{ steps.prepare.outputs.source_health_runtime_failure_count || '0' }}
+          MARKET_DATA_OVERALL_STATE: ${{ steps.prepare.outputs.market_data_overall_state || 'unknown' }}
+          MARKET_DATA_UNAVAILABLE_COUNT: ${{ steps.prepare.outputs.market_data_unavailable_count || '0' }}
           NOTIFICATION_REQUESTED: ${{ env.NOTIFY }}
           PUBLISH_REQUESTED: ${{ steps.release_policy.outputs.publish || 'false' }}
           SEND_STATUS: ${{ steps.send_brief.outputs.notification_status || '' }}
@@ -576,14 +585,18 @@ jobs:
           notification_status="$SEND_STATUS"
           notification_reason="$SEND_REASON"
           notification_expected="$NOTIFICATION_EXPECTED_VALUE"
-          if [ "$NOTIFICATION_REQUESTED" = "true" ] && [ "$WINDOW_DELIVERY_INTENT" = "notify_candidate" ]; then
+          if [ "$PREPARE_OUTCOME" = "failure" ] && [ "$NOTIFICATION_REQUESTED" = "true" ] && [ "$WINDOW_DELIVERY_INTENT" = "notify_candidate" ] && [ "$DELIVERY_OBLIGATION" = "undetermined" ]; then
             notification_expected="true"
           fi
           if [ "$NOTIFICATION_REQUESTED" != "true" ]; then
             notification_expected="false"
           fi
           if [ -z "$notification_status" ]; then
-            if [ "$WINDOW_CONTRACT_STATUS" = "invalid" ]; then
+            if [ "$DELIVERY_OBLIGATION" = "expected_skip" ] || [ "$DELIVERY_OBLIGATION" = "late_publish_only" ]; then
+              notification_status="suppressed"
+            elif [ "$DELIVERY_OBLIGATION" = "blocked" ]; then
+              notification_status="blocked"
+            elif [ "$WINDOW_CONTRACT_STATUS" = "invalid" ]; then
               notification_status="blocked"
             elif [ "$PREPARE_OUTCOME" = "failure" ]; then
               notification_status="failed"
@@ -598,7 +611,9 @@ jobs:
             fi
           fi
           if [ -z "$notification_reason" ]; then
-            if [ "$WINDOW_CONTRACT_STATUS" = "invalid" ]; then
+            if [ "$DELIVERY_OBLIGATION" = "expected_skip" ] || [ "$DELIVERY_OBLIGATION" = "late_publish_only" ] || [ "$DELIVERY_OBLIGATION" = "blocked" ]; then
+              notification_reason="$OBLIGATION_REASON"
+            elif [ "$WINDOW_CONTRACT_STATUS" = "invalid" ]; then
               notification_reason="$WINDOW_NOTIFICATION_REASON"
             elif [ "$PREPARE_OUTCOME" = "failure" ]; then
               notification_reason="production_failed"
@@ -628,17 +643,20 @@ jobs:
               notification_reason="optional_fj_alert_quarantined"
             fi
           fi
-          if [ "$NOTIFICATION_REQUESTED" = "true" ] && [ "$WINDOW_DELIVERY_INTENT" = "notify_candidate" ] && [ "$PAGES_DEPLOYMENT_AVAILABLE" != "true" ]; then
+          if [ "$notification_expected" = "true" ] && [ "$DELIVERY_OBLIGATION" != "blocked" ] && [ "$PAGES_DEPLOYMENT_AVAILABLE" != "true" ]; then
             scan_status="delivery_blocked"
             notification_status="failed"
             notification_reason="pages_deployment_${PAGES_DEPLOYMENT_ERROR_CODE:-unavailable}"
-          elif [ "$NOTIFICATION_REQUESTED" = "true" ] && [ "$WINDOW_DELIVERY_INTENT" = "notify_candidate" ] && [ "$PAGES_DEPLOYMENT_VERIFIED" != "true" ]; then
+          elif [ "$notification_expected" = "true" ] && [ "$DELIVERY_OBLIGATION" != "blocked" ] && [ "$PAGES_DEPLOYMENT_VERIFIED" != "true" ]; then
             scan_status="release_gate_failed"
             notification_status="failed"
             notification_reason="pages_deployment_identity_unverified"
           elif [ "$PUBLISH_REQUESTED" = "true" ] && [ "$PAGES_DEPLOYMENT_AVAILABLE" != "true" ]; then
             scan_status="published_unverified"
-            if [ "$notification_expected" != "true" ]; then
+            if [ "$notification_expected" != "true" ] \
+              && [ "$DELIVERY_OBLIGATION" != "expected_skip" ] \
+              && [ "$DELIVERY_OBLIGATION" != "late_publish_only" ] \
+              && [ "$DELIVERY_OBLIGATION" != "blocked" ]; then
               notification_status="not_applicable"
               notification_reason="pages_publication_${PAGES_DEPLOYMENT_ERROR_CODE:-unavailable}"
             fi
@@ -648,20 +666,36 @@ jobs:
             notification_reason="release_superseded_by_newer_valid_version"
           elif [ "$RELEASE_GATE_OUTCOME" = "failure" ]; then
             scan_status="release_gate_failed"
-            notification_status="failed"
-            notification_reason="release_gate_${RELEASE_GATE_ERROR_CATEGORY:-verification_failed}"
+            if [ "$notification_expected" = "true" ] && [ "$DELIVERY_OBLIGATION" != "blocked" ]; then
+              notification_status="failed"
+              notification_reason="release_gate_${RELEASE_GATE_ERROR_CATEGORY:-verification_failed}"
+            elif [ "$DELIVERY_OBLIGATION" != "expected_skip" ] \
+              && [ "$DELIVERY_OBLIGATION" != "late_publish_only" ] \
+              && [ "$DELIVERY_OBLIGATION" != "blocked" ]; then
+              notification_status="not_applicable"
+              notification_reason="release_gate_${RELEASE_GATE_ERROR_CATEGORY:-verification_failed}"
+            fi
           fi
           if [ "$QUEUE_STATUS" = "superseded" ]; then
             scan_status="not_run"
             notification_status="superseded"
             notification_reason="stale_workflow_superseded"
-          elif [ "$PREPARED_RELEASE_STATUS" != "prepared_release_current" ] && [ "$WINDOW_DELIVERY_INTENT" = "notify_candidate" ] && [ "$NOTIFICATION_REQUESTED" = "true" ]; then
+          elif [ "$PREPARED_RELEASE_STATUS" != "prepared_release_current" ] && [ "$notification_expected" = "true" ] && [ "$DELIVERY_OBLIGATION" != "blocked" ]; then
             scan_status="prepared_release_failed"
             notification_status="failed"
             notification_reason="${PREPARED_RELEASE_STATUS:-prepared_release_not_verified}"
           fi
           {
             echo "## Scheduled brief notification decision"
+            echo "- delivery_obligation: ${DELIVERY_OBLIGATION}"
+            echo "- obligation_reason: ${OBLIGATION_REASON:-none}"
+            echo "- market_calendar_states: ${MARKET_CALENDAR_STATES}"
+            echo "- source_health_status: ${SOURCE_HEALTH_STATUS}"
+            echo "- source_health_checked_at: ${SOURCE_HEALTH_CHECKED_AT}"
+            echo "- source_health_missing_count: ${SOURCE_HEALTH_MISSING_COUNT}"
+            echo "- source_health_runtime_failure_count: ${SOURCE_HEALTH_RUNTIME_FAILURE_COUNT}"
+            echo "- market_data_overall_state: ${MARKET_DATA_OVERALL_STATE}"
+            echo "- market_data_unavailable_count: ${MARKET_DATA_UNAVAILABLE_COUNT}"
             echo "- scan_status: ${scan_status}"
             echo "- candidate_type: ${CANDIDATE_TYPE:-none}"
             echo "- notification_expected: ${notification_expected:-false}"
@@ -805,7 +839,7 @@ jobs:
           --public-max-delay 20
           >> "$GITHUB_OUTPUT"
       - name: Send release-gated Creator notifications
-        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.reconciled_release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true' && steps.window.outputs.delivery_intent == 'notify_candidate'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.reconciled_release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true' && steps.prepare.outputs.notification_expected == 'true'
         id: creator_dispatch
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -893,9 +927,12 @@ jobs:
         run: |
           echo "Invalid scheduled-brief contract: ${{ steps.window.outputs.resolution_reason || steps.window.outputs.notification_reason }}"
           exit 1
-      - name: Fail scheduled run when an expected report has no delivered receipt
-        if: always() && env.NOTIFY == 'true' && steps.window.outputs.delivery_intent == 'notify_candidate'
+      - name: Fail scheduled run when a required report has no delivered receipt
+        if: always() && env.NOTIFY == 'true' && (steps.prepare.outputs.notification_expected == 'true' || steps.prepare.outputs.delivery_obligation == 'blocked' || (steps.prepare.outcome != 'success' && steps.window.outputs.delivery_intent == 'notify_candidate'))
         env:
+          PREPARE_OUTCOME: ${{ steps.prepare.outcome || 'unknown' }}
+          DELIVERY_OBLIGATION: ${{ steps.prepare.outputs.delivery_obligation || 'undetermined' }}
+          OBLIGATION_REASON: ${{ steps.prepare.outputs.obligation_reason || '' }}
           SEND_OUTCOME: ${{ steps.send_brief.outcome || 'skipped' }}
           SEND_STATUS: ${{ steps.send_brief.outputs.notification_status || '' }}
           SEND_REASON: ${{ steps.send_brief.outputs.reason || '' }}
@@ -912,6 +949,18 @@ jobs:
           RECONCILED_GATE_ALLOWED: ${{ steps.reconciled_release_gate.outputs.allowed || 'false' }}
         run: |
           set -euo pipefail
+          if [ "$DELIVERY_OBLIGATION" = "expected_skip" ] || [ "$DELIVERY_OBLIGATION" = "late_publish_only" ]; then
+            echo "Scheduled delivery was not required by the prepared market-calendar policy (${DELIVERY_OBLIGATION}: ${OBLIGATION_REASON:-no additional detail})."
+            exit 0
+          fi
+          if [ "$DELIVERY_OBLIGATION" = "blocked" ]; then
+            echo "::error::Scheduled delivery was blocked because its required calendar or slot evidence could not be verified (${OBLIGATION_REASON:-unknown})."
+            exit 1
+          fi
+          if [ "$DELIVERY_OBLIGATION" = "undetermined" ] && [ "$PREPARE_OUTCOME" = "success" ]; then
+            echo "::error::Prepared run did not publish a canonical delivery obligation."
+            exit 1
+          fi
           if [ "$SEND_STATUS" = "already_delivered" ] && [ "$SEND_REASON" = "already_delivered" ]; then
             echo "The fixed anchor already has a durable successful receipt; no new send was made."
             exit 0
