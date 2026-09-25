@@ -25501,7 +25501,7 @@
       "location_fingerprint": "",
       "action_fingerprint": "",
       "first_discovered_at": "2026-09-25T21:39:13.123011+00:00",
-      "last_reminded_at": null,
+      "last_reminded_at": "2026-09-25T21:39:51.300121+00:00",
       "escalated": false,
       "risk_level": "持續觀察",
       "risk_rank": 0,
@@ -25511,9 +25511,72 @@
       "last_title": "USGS M7.0 地震：68 km ENE of Tadine, New Caledonia",
       "compound_item_id": null,
       "compound_event_cluster_key": null,
-      "last_decision": null,
-      "decision_history": [],
-      "updated_at": "2026-09-25T21:39:13.123011+00:00"
+      "last_decision": {
+        "recorded_at": "2026-09-25T21:39:48.674929+00:00",
+        "allowed": true,
+        "status": "eligible",
+        "reason": "new_theme",
+        "reasons": [],
+        "notification_theme_key": "usgs-50e55f4d4c",
+        "event_key": "efa34bf6e3bfc94621d5c91d87c72d2a",
+        "risk": "R1",
+        "theme_window": 7200,
+        "material_state_changed": true,
+        "last_notified_at": null,
+        "taiwan_priority": 4
+      },
+      "decision_history": [
+        {
+          "recorded_at": "2026-09-25T21:39:48.674929+00:00",
+          "allowed": true,
+          "status": "eligible",
+          "reason": "new_theme",
+          "reasons": [],
+          "notification_theme_key": "usgs-50e55f4d4c",
+          "event_key": "efa34bf6e3bfc94621d5c91d87c72d2a",
+          "risk": "R1",
+          "theme_window": 7200,
+          "material_state_changed": true,
+          "last_notified_at": null,
+          "taiwan_priority": 4
+        }
+      ],
+      "updated_at": "2026-09-25T21:39:51.300121+00:00",
+      "delivery_history": [
+        {
+          "event_key": "efa34bf6e3bfc94621d5c91d87c72d2a",
+          "notification_id": "efa34bf6e3bfc94621d5c91d87c72d2a",
+          "sent_at": "2026-09-25T21:39:51.300121+00:00",
+          "importance": "high-risk",
+          "alert_type": "disaster",
+          "lifecycle_state": "confirmed",
+          "reason": "official_event_monitor",
+          "notification_theme_key": "usgs-50e55f4d4c",
+          "risk": "R1",
+          "taiwan_priority": 4,
+          "material_state_changed": true,
+          "release_id": "release-aa8c21a5e50597d4",
+          "snapshot_id": "d41615f0a501d10e",
+          "delivery_status": "delivered",
+          "event_cluster_key": "evt-b54c59d8da6b2c07e42a2ca1",
+          "prstk_risk": {
+            "prstk_risk_level": "R1",
+            "source": "event_alerts"
+          },
+          "release_ready_at": "2026-09-25T21:39:49.388701+00:00",
+          "telegram_attempted_at": "2026-09-25T21:39:49.463592+00:00",
+          "delivery_result": "delivered",
+          "delay_reason": "none",
+          "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/pt26268000",
+          "source_domain": "earthquake.usgs.gov",
+          "alert_lane": "event",
+          "market_scope": "global",
+          "event_policy_reason": "event_materiality_available",
+          "trace_id": "official-484565c8b0db2b1e"
+        }
+      ],
+      "last_theme_notification_at": "2026-09-25T21:39:51.300121+00:00",
+      "last_notified_at": "2026-09-25T21:39:51.300121+00:00"
     }
   },
   "delivery_claims": {
@@ -28992,6 +29055,32 @@
       "updated_at": "2026-09-25T16:50:01.882229+00:00",
       "failed_recipient_hashes": [],
       "delivered_at": "2026-09-25T16:50:01.882229+00:00"
+    },
+    "efa34bf6e3bfc94621d5c91d87c72d2a": {
+      "notification_key": "efa34bf6e3bfc94621d5c91d87c72d2a",
+      "slot_key": "",
+      "status": "delivered",
+      "recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d"
+      ],
+      "delivered_recipient_hashes": [
+        "5b1d66aae79d",
+        "7a30574fc065",
+        "d36bbcc2cd2d"
+      ],
+      "attempted_recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d"
+      ],
+      "claimed_at": "2026-09-25T21:39:49.397009+00:00",
+      "lease_until": null,
+      "run_id_hash": "a31625a14755",
+      "updated_at": "2026-09-25T21:39:51.231339+00:00",
+      "failed_recipient_hashes": [],
+      "delivered_at": "2026-09-25T21:39:51.231339+00:00"
     }
   }
 }
