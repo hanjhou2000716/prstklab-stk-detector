@@ -596,7 +596,8 @@ def main() -> int:
             "error": "",
         })
     except PagesDeploymentError as exc:
-        deployment_id = exc.deployment_id or (args.deployment_id if args.mode == "verify" else "")
+        candidate_id = exc.deployment_id or (args.deployment_id if args.mode == "verify" else "")
+        deployment_id = candidate_id if re.fullmatch(r"[A-Za-z0-9._-]{1,128}", candidate_id) else ""
         status_url_for_shape = exc.status_url or (args.status_url if args.mode == "verify" else "")
         status_url_shape = exc.status_url_shape or _safe_status_url_shape(
             status_url_for_shape,

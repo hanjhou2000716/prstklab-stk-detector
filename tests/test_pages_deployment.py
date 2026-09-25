@@ -415,6 +415,28 @@ def test_deploy_cli_exports_only_the_trusted_identity_needed_for_recovery(tmp_pa
     assert "artifact_id=202" in result
 
 
+def test_verify_cli_never_exports_untrusted_deployment_id_or_signed_url(tmp_path, monkeypatch):
+    from src import pages_deployment
+
+    output = tmp_path / "github-output"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    monkeypatch.setenv("GITHUB_TOKEN", "github-token")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+    monkeypatch.setattr("sys.argv", [
+        "pages_deployment", "--mode", "verify",
+        "--deployment-id", "../../other/repo",
+        "--status-url", "https://api.github.com/status?signature=secret-value",
+    ])
+
+    assert pages_deployment.main() == 1
+    result = output.read_text(encoding="utf-8")
+    assert "deployment_id=\n" in result
+    assert "deployment_status_url=\n" in result
+    assert "signature" not in result
+    assert "secret-value" not in result
+    assert "deployment_status_url_shape=" in result
+
+
 @pytest.mark.parametrize("artifacts", [
     [],
     [
