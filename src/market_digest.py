@@ -940,7 +940,8 @@ def build_market_digest(
             and taiwan_status.get("calendar_status") == "confirmed_closed"
         )
     ):
-        taiwan_indices = snapshot.get("indices") if isinstance(snapshot.get("indices"), list) else []
+        indices_value = snapshot.get("indices")
+        taiwan_indices: list[Any] = indices_value if isinstance(indices_value, list) else []
         taiex = next(
             (
                 item for item in taiwan_indices

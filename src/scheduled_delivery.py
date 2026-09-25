@@ -556,7 +556,8 @@ def _closed_market_slot_context(
     market_key = "us" if slot == "us_premarket" else "taiwan" if slot in {"pre_open", "post_close"} else ""
     if not market_key:
         return context
-    markets = snapshot.get("markets")
+    markets_value = snapshot.get("markets")
+    markets: dict[str, Any] = markets_value if isinstance(markets_value, dict) else {}
     status = markets.get(market_key) if isinstance(markets, dict) else None
     slot_date = str(context.get("slot_date") or "").strip()
     weekend = False
@@ -577,10 +578,16 @@ def _closed_market_slot_context(
         if isinstance(markets, dict):
             cash = markets.get("taiwan_cash") or status
             futures = markets.get("taiwan_futures") or status
+        if not isinstance(cash, dict) or not isinstance(futures, dict):
+            return {
+                **context,
+                "delivery_intent": "publish_only",
+                "suppression_reason": "market_calendar_unverified",
+                "resolution_reason": "market_calendar_unverified",
+            }
         components = (cash, futures)
         if any(
-            not isinstance(value, dict)
-            or not isinstance(value.get("is_trading_day"), bool)
+            not isinstance(value.get("is_trading_day"), bool)
             or str(value.get("calendar_status") or "") not in {"confirmed_open", "confirmed_closed"}
             or not str(value.get("calendar") or "").strip()
             for value in components
@@ -591,7 +598,7 @@ def _closed_market_slot_context(
                 "suppression_reason": "market_calendar_unverified",
                 "resolution_reason": "market_calendar_unverified",
             }
-        states = [value["is_trading_day"] for value in components]
+        states = [cash["is_trading_day"], futures["is_trading_day"]]
         if states == [False, False]:
             if slot == "post_close":
                 return {
@@ -651,7 +658,8 @@ def _resolve_delivery_obligation(
         return "blocked", "slot_date_unverifiable", []
     if slot_day.weekday() >= 5 and slot in {"pre_open", "post_close", "us_premarket"}:
         return "expected_skip", "closed_market_weekend_publish_only", []
-    markets = snapshot.get("markets") if isinstance(snapshot.get("markets"), dict) else {}
+    markets_value = snapshot.get("markets")
+    markets: dict[str, Any] = markets_value if isinstance(markets_value, dict) else {}
     states: list[dict[str, Any]] = []
     if slot == "us_premarket":
         status = markets.get("us")
@@ -1037,7 +1045,8 @@ def prepare(
         and effective_context.get("holiday_notice_required") is True
         and notification_requested is not False
     ):
-        markets = snapshot.get("markets") if isinstance(snapshot.get("markets"), dict) else {}
+        markets_value = snapshot.get("markets")
+        markets: dict[str, Any] = markets_value if isinstance(markets_value, dict) else {}
         cash_status = markets.get("taiwan_cash") or markets.get("taiwan")
         futures_status = markets.get("taiwan_futures") or markets.get("taiwan")
         next_dates = [
