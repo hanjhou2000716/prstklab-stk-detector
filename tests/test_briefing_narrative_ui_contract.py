@@ -20,3 +20,15 @@ def test_narrative_css_wraps_long_evidence_for_narrow_cards() -> None:
     assert ".morning-analysis-highlights" not in styles
     assert ".morning-analysis-details" not in styles
     assert "overflow-wrap: anywhere" in styles
+
+
+def test_taiwan_cash_futures_and_official_statistics_use_two_compact_cards() -> None:
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
+    assert 'item.layout === "taiwan_pair_v2"' in app
+    assert 'item.layout === "taiwan_stats_v2"' in app
+    assert "marketCardProjection.instruments" in app
+    assert ".taiwan-market-pair" in styles
+    assert ".taiwan-market-stats" in styles
+    assert ".taiwan-market-takeaway" in styles
+    assert "@media (max-width: 520px)" in styles

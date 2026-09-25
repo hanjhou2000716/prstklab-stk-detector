@@ -108,13 +108,13 @@ def test_missing_quote_rows_are_publicly_omitted_but_kept_as_detailed_gaps():
 
     sections = briefing["morning_analysis"]["sections"]
     titles = [item["title"] for item in sections]
-    assert titles == ["台股加權指數（現貨）", "台指期近月（日盤）", "台股輔助統計（官方）"]
-    taiex = sections[0]
-    txf = sections[1]
-    assert "加權指數現貨資料未取得" in taiex["facts"][0]
-    assert "台指期近月日盤資料未取得" in txf["facts"][0]
+    assert titles == ["台股現貨與台指期", "台股輔助統計（官方）"]
+    pair = sections[0]
+    assert pair["layout"] == "taiwan_pair_v2"
+    assert "加權現貨：未取得可核對資料" in pair["facts"][0]
+    assert "台指期近月日盤：未取得可核對資料" in pair["facts"][1]
     assert all("美股" not in fact and "Nasdaq" not in fact for section in sections for fact in section["facts"])
-    assert all("尚未公布或本輪未取得" in fact for fact in sections[2]["facts"][:2])
+    assert all("未公布或本輪未取得" in fact for fact in sections[1]["facts"])
     gaps = briefing["morning_analysis"]["system_analysis"]["data_gaps"]
     gap_by_ticker = {gap["ticker"]: gap for gap in gaps if gap.get("kind") == "quote"}
     assert gap_by_ticker["TAIEX"]["reason"] == "quote_unusable_or_time_unverified"
@@ -128,10 +128,10 @@ def test_all_missing_quote_facts_do_not_leave_public_placeholder_or_observation(
     briefing = build_briefing_snapshot({"events": {"items": []}}, "post_close")
 
     sections = briefing["morning_analysis"]["sections"]
-    assert "加權指數現貨資料未取得" in sections[0]["facts"][0]
-    assert "台指期近月日盤資料未取得" in sections[1]["facts"][0]
-    assert len(sections[2]["facts"]) == 3
-    assert all("尚未公布或本輪未取得" in fact for fact in sections[2]["facts"])
+    assert "加權現貨：未取得可核對資料" in sections[0]["facts"][0]
+    assert "台指期近月日盤：未取得可核對資料" in sections[0]["facts"][1]
+    assert len(sections[1]["facts"]) == 3
+    assert all("未公布或本輪未取得" in fact for fact in sections[1]["facts"])
     assert {gap["ticker"] for gap in briefing["morning_analysis"]["system_analysis"]["data_gaps"] if gap.get("kind") == "quote"} >= {
         "TAIEX", "TXF"
     }
@@ -140,7 +140,8 @@ def test_all_missing_quote_facts_do_not_leave_public_placeholder_or_observation(
 def test_public_observations_add_structure_without_repeating_quote_lines():
     briefing = build_briefing_snapshot({
         "indices": [
-            {"ticker": "TAIEX", "price": 45862.52, "change_percent": -0.70, "quote_date": "2026-09-14"},
+            {"ticker": "TAIEX", "price": 45862.52, "change_percent": -0.70, "quote_date": "2026-09-14", "quote_time": "2026-09-14T13:30:00+08:00", "freshness": "recent_close"},
+            {"ticker": "TXF", "price": 45890, "change": -310, "change_percent": -0.67, "quote_date": "2026-09-14", "quote_time": "2026-09-14T13:45:00+08:00", "freshness": "recent_close", "contract_month": "202610", "quote_basis": "TAIFEX_TXF_DAY|contract=202610|session=regular", "source_url": "https://openapi.taifex.com.tw/v1/DailyMarketReportFut"},
             {"ticker": "TPEx", "price": 394.41, "change_percent": -0.28, "quote_date": "2026-09-14"},
             {"ticker": "NASDAQ", "price": 26333.04, "change_percent": 0.96, "quote_date": "2026-09-14"},
             {"ticker": "SOX", "price": 11824.00, "change_percent": 1.81, "quote_date": "2026-09-14"},
@@ -155,10 +156,18 @@ def test_public_observations_add_structure_without_repeating_quote_lines():
     }, "post_close")
 
     sections = briefing["morning_analysis"]["sections"]
+    assert [item["title"] for item in sections] == ["台股現貨與台指期", "台股輔助統計（官方）"]
+    assert sections[0]["layout"] == "taiwan_pair_v2"
+    assert "同日收盤方向" in sections[0]["takeaway"]
+    projection = briefing["market_card_projection"]
+    assert projection["version"] == "taiwan-market-cards-v2"
+    assert projection["market_scope"] == "taiwan"
+    assert projection["market_date"] == "2026-09-14"
+    assert [item["ticker"] for item in projection["instruments"]] == ["TAIEX", "TXF"]
     statistics = next(item for item in sections if item["title"] == "台股輔助統計（官方）")
-    assert "上漲 410 家、下跌 720 家" in statistics["market_observation"]
+    assert "上漲 410／下跌 720" in statistics["market_observation"]
     assert "3,210.50 億元" in statistics["market_observation"]
-    assert "-45.20 億元" in statistics["market_observation"]
+    assert "賣超 45.20 億元" in statistics["market_observation"]
     assert all(item["quote"].get("source_url") for item in statistics["facts_structured"])
 
 

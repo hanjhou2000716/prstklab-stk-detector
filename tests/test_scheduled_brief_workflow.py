@@ -207,3 +207,36 @@ def test_scheduled_brief_reports_pages_publish_only_failure_and_blocks_expected_
     assert 'if [ "$notification_expected" = "true" ] && [ "$DELIVERY_OBLIGATION" != "blocked" ] && [ "$PAGES_DEPLOYMENT_AVAILABLE" != "true" ]; then' in decision
     assert 'echo "- source_health_status: ${SOURCE_HEALTH_STATUS}"' in decision
     assert '&& [ "$DELIVERY_OBLIGATION" = "undetermined" ]' in decision
+
+
+def test_us_premarket_stale_revision_handoff_is_single_use_and_receipt_audited():
+    workflow = (
+        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"
+    ).read_text(encoding="utf-8")
+    assert "scheduled-brief-handoff" in workflow
+    assert "HANDOFF_PARENT_RUN_ID" in workflow
+    assert "GITHUB_SHA: ${{ github.sha }}" in workflow
+    assert "Validate scheduled handoff parent" in workflow
+    assert "steps.writer_queue.outputs.handoff_status != 'delivered'" in workflow
+    queue = (Path(__file__).resolve().parents[1] / "src" / "writer_queue.py").read_text(encoding="utf-8")
+    assert "handoff_superseded_run(result, eligible=not is_handoff)" in queue
+    assert "not is_handoff" in queue
+    assert '"handoff_status": "failed"' in queue
+    handoff = (Path(__file__).resolve().parents[1] / "src" / "scheduled_handoff.py").read_text(encoding="utf-8")
+    assert '"handoff_attempt": 1' in handoff
+    assert "handoff_window_expired" in handoff
+    assert "handoff_child_revision_mismatch" in handoff
+
+
+def test_premarket_receipt_watchdog_is_read_only_and_dst_aware():
+    root = Path(__file__).resolve().parents[1]
+    workflow = (root / ".github" / "workflows" / "scheduled-brief-slot-audit.yml").read_text(encoding="utf-8")
+    audit = (root / "src" / "scheduled_slot_audit.py").read_text(encoding="utf-8")
+    assert 'cron: "45 13 * * 1-5"' in workflow
+    assert 'cron: "45 14 * * 1-5"' in workflow
+    assert "contents: read" in workflow
+    assert "persist-credentials: false" in workflow
+    assert "--ledger receipt-ledger/site/data/event-ledger.json" in workflow
+    assert "complete recipient receipt" in audit or "fully_delivered" in audit
+    assert "read_only" in audit
+    assert "dispatch" not in audit.lower() or "no dispatch" in audit.lower()

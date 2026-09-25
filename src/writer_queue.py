@@ -74,14 +74,16 @@ def blocking_runs(
     *,
     current_run_id: int,
     current_created_at: datetime | None = None,
+    ignored_run_ids: Iterable[int] = (),
 ) -> list[dict[str, object]]:
     """Return older active production writers in deterministic order."""
+    ignored = {int(value) for value in ignored_run_ids}
     blockers: list[dict[str, object]] = []
     for run in runs:
         if not isinstance(run, Mapping):
             continue
         run_id = _run_id(run)
-        if run_id is None or run_id == current_run_id:
+        if run_id is None or run_id == current_run_id or run_id in ignored:
             continue
         if run.get("name") not in WRITER_WORKFLOW_NAMES:
             continue
@@ -234,6 +236,7 @@ def wait_for_slot(
     sleeper=time.sleep,
     run_sha: str | None = None,
     revision_fetcher: Callable[..., str] | None = None,
+    ignored_run_ids: Iterable[int] = (),
 ) -> QueueResult:
     """Wait until all older production writer runs have left active states."""
     resolved_api_url: str = api_url or os.getenv("GITHUB_API_URL") or "https://api.github.com"
@@ -262,6 +265,7 @@ def wait_for_slot(
             fetcher(api_url=resolved_api_url, repository=resolved_repository, token=resolved_token),
             current_run_id=current_run_id,
             current_created_at=current_created_at,
+            ignored_run_ids=ignored_run_ids,
         )
         elapsed = int(max(0, time.monotonic() - started))
         revision = _queue_revision(
@@ -316,7 +320,81 @@ def main() -> int:
             for key, value in values.items():
                 handle.write(f"{key}={value}\n")
 
+    def handoff_superseded_run(result: QueueResult, *, eligible: bool) -> bool:
+        """Attempt one bounded successor only for an in-window US premarket obligation."""
+        if not eligible or result.status != "superseded":
+            return False
+        if (
+            str(slot_context.get("scheduled_slot") or slot_context.get("effective_slot") or "") != "us_premarket"
+            or str(slot_context.get("delivery_intent") or "") != "notify_candidate"
+        ):
+            return False
+        from src.scheduled_handoff import HandoffError, build_handoff_payload, dispatch_and_wait, handoff_deadline
+
+        try:
+            payload = build_handoff_payload(
+                slot_context,
+                parent_run_id=args.run_id,
+                parent_sha=run_sha,
+                target_sha=result.main_sha,
+            )
+            client_payload = payload["client_payload"]
+            assert isinstance(client_payload, Mapping)
+            handoff_state = dispatch_and_wait(
+                payload,
+                repository=os.getenv("GITHUB_REPOSITORY", ""),
+                token=os.getenv("GITHUB_TOKEN", ""),
+                api_url=os.getenv("GITHUB_API_URL", "https://api.github.com"),
+                deadline=handoff_deadline(slot_context),
+            )
+            handoff_status = str(handoff_state.get("status") or "unconfirmed")
+            write_outputs({
+                "queue_status": "handoff_completed" if handoff_status == "delivered" else "handoff_failed",
+                "should_continue": "false",
+                "reason": str(handoff_state.get("reason") or "handoff_unconfirmed"),
+                "waited_seconds": result.waited_seconds,
+                "blocker_run_ids": ",".join(str(item) for item in result.blockers),
+                "run_sha": result.run_sha,
+                "main_sha": result.main_sha,
+                "handoff_status": handoff_status,
+                "handoff_run_id": handoff_state.get("child_run_id", ""),
+                "handoff_id": handoff_state.get("handoff_id", client_payload.get("handoff_id", "")),
+                "handoff_request_outcome": handoff_state.get("request_outcome", "unknown"),
+            })
+            print(json.dumps({"writer_queue": "handoff", **handoff_state}, sort_keys=True))
+        except HandoffError as exc:
+            write_outputs({
+                "queue_status": "handoff_failed",
+                "should_continue": "false",
+                "reason": str(exc),
+                "waited_seconds": result.waited_seconds,
+                "blocker_run_ids": ",".join(str(item) for item in result.blockers),
+                "run_sha": result.run_sha,
+                "main_sha": result.main_sha,
+                "handoff_status": "failed",
+                "handoff_run_id": "",
+                "handoff_id": "",
+                "handoff_request_outcome": "rejected_or_unknown",
+            })
+            print(f"::error::scheduled_handoff_failed:{exc}")
+        return True
+
     try:
+        context_raw = os.getenv("SLOT_CONTEXT", "{}")
+        try:
+            slot_context = json.loads(context_raw)
+        except ValueError:
+            slot_context = {}
+        if not isinstance(slot_context, Mapping):
+            slot_context = {}
+        ignored_parent: tuple[int, ...] = ()
+        raw_parent = os.getenv("HANDOFF_PARENT_RUN_ID", "").strip()
+        is_handoff = bool(raw_parent)
+        if is_handoff:
+            try:
+                ignored_parent = (int(raw_parent),)
+            except ValueError as exc:
+                raise WriterQueueError("handoff_parent_id_invalid") from exc
         result = wait_for_slot(
             current_run_id=args.run_id,
             current_created_at=created,
@@ -325,8 +403,11 @@ def main() -> int:
             settle_seconds=max(0, args.settle_seconds),
             run_sha=run_sha,
             revision_fetcher=_fetch_main_revision,
+            ignored_run_ids=ignored_parent,
         )
         if result is not None and result.status == "superseded":
+            if handoff_superseded_run(result, eligible=not is_handoff):
+                return 0
             write_outputs({
                 "queue_status": result.status,
                 "should_continue": "false",
@@ -335,6 +416,7 @@ def main() -> int:
                 "blocker_run_ids": ",".join(str(item) for item in result.blockers),
                 "run_sha": result.run_sha,
                 "main_sha": result.main_sha,
+                "handoff_status": "not_attempted",
             })
             print("::notice::stale_workflow_superseded; Telegram and data publication skipped")
             return 0
@@ -351,6 +433,12 @@ def main() -> int:
         if not revision["allowed"]:
             reason = str(revision["reason"])
             if reason == "stale_workflow_revision":
+                late_result = QueueResult(
+                    waited_seconds, result.checks if result is not None else 0, (),
+                    status="superseded", reason=reason, run_sha=run_sha, main_sha=main_revision,
+                )
+                if handoff_superseded_run(late_result, eligible=not is_handoff):
+                    return 0
                 write_outputs({
                     "queue_status": "superseded",
                     "should_continue": "false",

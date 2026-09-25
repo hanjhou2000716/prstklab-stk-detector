@@ -115,6 +115,13 @@ def us_premarket_anchor(day: date) -> datetime:
     return _exchange_session_open(day) - timedelta(minutes=30)
 
 
+def scheduled_anchor_key(slot: str, slot_date: str) -> str:
+    """Canonical market/date/slot key shared by delivery and read-only audits."""
+    normalized_slot = str(slot).strip()
+    market = "us" if normalized_slot == "us_premarket" else "taiwan"
+    return f"{market}:{str(slot_date).strip()}:{normalized_slot}"
+
+
 def timezone_for_slot(slot: str) -> str:
     return "America/New_York" if str(slot).strip() == "us_premarket" else SCHEDULE_TIMEZONE
 

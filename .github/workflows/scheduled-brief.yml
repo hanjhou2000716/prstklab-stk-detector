@@ -1,4 +1,5 @@
 name: Scheduled market brief
+run-name: Scheduled market brief / ${{ github.event.client_payload.handoff_id || github.event.client_payload.scheduled_slot || github.event.schedule || github.event_name }}
 
 on:
   workflow_dispatch:
@@ -20,7 +21,7 @@ on:
         default: false
         type: boolean
   repository_dispatch:
-    types: [scheduled-brief]
+    types: [scheduled-brief, scheduled-brief-handoff]
   schedule:
     - cron: "0 22 * * *"
     - cron: "45 0 * * 1-5"
@@ -67,6 +68,7 @@ jobs:
       DISPATCH_TRACE_ID: ${{ github.event.client_payload.trace_id || '' }}
       SCHEDULE_CONTRACT_VERSION: ${{ github.event.client_payload.schedule_contract_version || github.event.client_payload.contract_version || '' }}
       SCHEDULE_TIME_ZONE: ${{ github.event.client_payload.time_zone || '' }}
+      HANDOFF_PARENT_RUN_ID: ${{ github.event.client_payload.handoff_parent_run_id || '' }}
       FORCE: ${{ inputs.force || github.event.client_payload.force || 'false' }}
       # Manual runs publish and verify by default but never send production
       # notifications unless the operator explicitly opts in. Scheduled runs
@@ -116,8 +118,18 @@ jobs:
         run: pip install -r requirements-production.txt
       - name: Install Chromium for formal card renderer
         run: python -m playwright install --with-deps chromium
+      - name: Validate scheduled handoff parent
+        id: validate_handoff_parent
+        if: github.event.client_payload.handoff_parent_run_id != ''
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_SHA: ${{ github.sha }}
+          HANDOFF_CLIENT_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+        run: python -m src.scheduled_handoff validate
       - name: Resolve scheduled slot
         id: window
+        if: ${{ !github.event.client_payload.handoff_parent_run_id || steps.validate_handoff_parent.outputs.valid == 'true' }}
         run: |
           arguments=(--slot "$SLOT" --print-window)
           arguments+=(--trigger-kind "$GITHUB_EVENT_NAME")
@@ -133,6 +145,9 @@ jobs:
         if: steps.window.outputs.should_run == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_EVENT_ACTION: ${{ github.event.action || '' }}
+          HANDOFF_PARENT_RUN_ID: ${{ env.HANDOFF_PARENT_RUN_ID }}
+          SLOT_CONTEXT: ${{ steps.window.outputs.context_json || '{}' }}
         run: python -m src.writer_queue
       - name: Prepare immutable market snapshot
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.window.outputs.should_run == 'true'
@@ -551,6 +566,10 @@ jobs:
           FAILED_COUNT: ${{ steps.send_brief.outputs.failed_count || '' }}
           QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'not_required' }}
           QUEUE_REASON: ${{ steps.writer_queue.outputs.reason || '' }}
+          HANDOFF_STATUS: ${{ steps.writer_queue.outputs.handoff_status || 'not_attempted' }}
+          HANDOFF_RUN_ID: ${{ steps.writer_queue.outputs.handoff_run_id || '' }}
+          HANDOFF_ID: ${{ steps.writer_queue.outputs.handoff_id || '' }}
+          HANDOFF_REQUEST_OUTCOME: ${{ steps.writer_queue.outputs.handoff_request_outcome || 'not_attempted' }}
           PREPARED_RELEASE_STATUS: ${{ steps.prepared_release.outputs.reason || 'not_required' }}
           PAGES_DEPLOYMENT_AVAILABLE: ${{ steps.deployment_identity.outputs.verified || 'false' }}
           PAGES_DEPLOYMENT_VERIFIED: ${{ steps.deployment_identity.outputs.verified || 'false' }}
@@ -680,6 +699,16 @@ jobs:
             scan_status="not_run"
             notification_status="superseded"
             notification_reason="stale_workflow_superseded"
+          elif [ "$QUEUE_STATUS" = "handoff_completed" ] && [ "$HANDOFF_STATUS" = "delivered" ]; then
+            scan_status="delivered_via_new_main_handoff"
+            notification_expected="true"
+            notification_status="delivered"
+            notification_reason="revision_handoff_delivered"
+          elif [ "$QUEUE_STATUS" = "handoff_failed" ]; then
+            scan_status="handoff_failed"
+            notification_expected="true"
+            notification_status="failed"
+            notification_reason="${QUEUE_REASON:-handoff_not_confirmed}"
           elif [ "$PREPARED_RELEASE_STATUS" != "prepared_release_current" ] && [ "$notification_expected" = "true" ] && [ "$DELIVERY_OBLIGATION" != "blocked" ]; then
             scan_status="prepared_release_failed"
             notification_status="failed"
@@ -717,6 +746,10 @@ jobs:
             echo "- failed_count: ${FAILED_COUNT:-unknown}"
             echo "- writer_queue_status: ${QUEUE_STATUS:-not_required}"
             echo "- writer_queue_reason: ${QUEUE_REASON:-none}"
+            echo "- revision_handoff_status: ${HANDOFF_STATUS:-not_attempted}"
+            echo "- revision_handoff_id: ${HANDOFF_ID:-none}"
+            echo "- revision_handoff_run_id: ${HANDOFF_RUN_ID:-none}"
+            echo "- revision_handoff_request_outcome: ${HANDOFF_REQUEST_OUTCOME:-not_attempted}"
             echo "- prepared_release_status: ${PREPARED_RELEASE_STATUS:-not_required}"
             echo "- pages_deployment_verified: ${PAGES_DEPLOYMENT_VERIFIED}"
             echo "- pages_deployment_recovery_attempted: ${{ steps.deployment.outputs.recoverable == 'true' }}"
@@ -927,8 +960,15 @@ jobs:
         run: |
           echo "Invalid scheduled-brief contract: ${{ steps.window.outputs.resolution_reason || steps.window.outputs.notification_reason }}"
           exit 1
+      - name: Fail closed for invalid revision handoff
+        if: always() && github.event.client_payload.handoff_parent_run_id != '' && steps.validate_handoff_parent.outputs.valid != 'true'
+        env:
+          HANDOFF_VALIDATION_REASON: ${{ steps.validate_handoff_parent.outputs.reason || 'handoff_parent_not_verified' }}
+        run: |
+          echo "::error::Scheduled premarket handoff was blocked (${HANDOFF_VALIDATION_REASON})."
+          exit 1
       - name: Fail scheduled run when a required report has no delivered receipt
-        if: always() && env.NOTIFY == 'true' && (steps.prepare.outputs.notification_expected == 'true' || steps.prepare.outputs.delivery_obligation == 'blocked' || (steps.prepare.outcome != 'success' && steps.window.outputs.delivery_intent == 'notify_candidate'))
+        if: always() && env.NOTIFY == 'true' && steps.writer_queue.outputs.handoff_status != 'delivered' && (steps.prepare.outputs.notification_expected == 'true' || steps.prepare.outputs.delivery_obligation == 'blocked' || (steps.prepare.outcome != 'success' && steps.window.outputs.delivery_intent == 'notify_candidate'))
         env:
           PREPARE_OUTCOME: ${{ steps.prepare.outcome || 'unknown' }}
           DELIVERY_OBLIGATION: ${{ steps.prepare.outputs.delivery_obligation || 'undetermined' }}

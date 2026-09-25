@@ -490,6 +490,18 @@ def _apply_supabase_backup(
         if freshness not in {"stale", "unavailable", "unknown"}:
             result.append(item)
             continue
+        if str(item.get("ticker") or "").upper() == "TXF":
+            # The shared observation table predates session/month columns.
+            # TXF continuity is allowed only through the strict TAIFEX daily
+            # evidence contract, never through its generic ticker-only row.
+            try:
+                from src.taifex_daily import validated_txf_backup
+
+                backup = validated_txf_backup(store, now=reference)
+            except Exception:
+                backup = None
+            result.append({**item, **backup} if isinstance(backup, dict) else item)
+            continue
         try:
             expected = _latest_completed_session_date(item, reference)
             row = store.latest_quote(str(item.get("ticker") or ""), before_or_on=expected.isoformat())
@@ -987,21 +999,20 @@ def build_market_snapshot() -> dict[str, Any]:
     )
     errors.extend(crosscheck_errors)
     taipei_now = datetime.now(ZoneInfo("Asia/Taipei"))
-    if (
-        markets.get("taiwan", {}).get("is_trading_day") is True
-        and markets.get("taiwan", {}).get("session") == "收盤後"
-        and taipei_now.hour * 60 + taipei_now.minute >= 14 * 60 + 15
-    ):
+    if taifex_status.get("calendar_status") in {"confirmed_open", "confirmed_closed"}:
         try:
-            from src.taiwan_market_crosscheck import fetch_taifex_txf
+            from src.taifex_daily import fetch_latest_verified_txf, validated_txf_backup
 
-            txf = fetch_taifex_txf()
-            if txf:
+            txf = fetch_latest_verified_txf(now=taipei_now)
+            if txf is None:
+                txf = validated_txf_backup(backup_store, now=taipei_now)
+            indices = [item for item in indices if str(item.get("ticker") or "") != "TXF"]
+            if txf is not None:
                 indices.append(txf)
             else:
                 errors.append({
                     "ticker": "TXF",
-                    "message": "TAIFEX報價未提供可核對近月契約月份或日盤觀測，本輪不以連續報價代替。",
+                    "message": "TAIFEX日盤 OpenAPI／官方日盤表及具完整契約證據的最近快照均未取得；未以夜盤或連續合約補值。",
                     "scope": "index",
                 })
         except Exception as exc:
@@ -1010,6 +1021,12 @@ def build_market_snapshot() -> dict[str, Any]:
                 "message": f"TAIFEX近月日盤資料暫時無法取得：{type(exc).__name__}",
                 "scope": "index",
             })
+    else:
+        errors.append({
+            "ticker": "TXF",
+            "message": "TAIFEX獨立日曆未確認，停止推定最近日盤契約。",
+            "scope": "index",
+        })
     from src.taiwan_market_statistics import fetch_twse_market_statistics
     try:
         taiwan_market_statistics = fetch_twse_market_statistics(

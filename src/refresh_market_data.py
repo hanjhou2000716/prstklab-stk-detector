@@ -98,6 +98,29 @@ def _attach_observation_provenance(payload: dict) -> None:
             trace["observation_id"] = observation_id
             event["source_trace"] = trace
 
+    briefing = payload.get("briefing")
+    projection = briefing.get("market_card_projection") if isinstance(briefing, dict) else None
+    instruments = projection.get("instruments") if isinstance(projection, dict) else None
+    if isinstance(projection, dict) and isinstance(instruments, list):
+        projection["snapshot_id"] = snapshot_id
+        rows = {
+            str(row.get("ticker") or ""): row
+            for row in payload.get("indices", [])
+            if isinstance(row, dict)
+        }
+        for instrument in instruments:
+            if not isinstance(instrument, dict):
+                continue
+            row = rows.get(str(instrument.get("ticker") or ""))
+            if not isinstance(row, dict):
+                continue
+            instrument["snapshot_id"] = snapshot_id
+            instrument["observation_id"] = row.get("observation_id")
+            quote = instrument.get("quote")
+            if isinstance(quote, dict):
+                quote["snapshot_id"] = snapshot_id
+                quote["observation_id"] = row.get("observation_id")
+
 
 def write_snapshot(snapshot: dict, destination: Path | str | None = None) -> bool:
     """Atomically publish a versioned snapshot, refusing stale overwrites."""

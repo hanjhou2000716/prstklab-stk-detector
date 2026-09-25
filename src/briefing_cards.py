@@ -973,9 +973,10 @@ def _scoped_quote_detail(
     evidence = {
         key: row.get(key)
         for key in (
-            "ticker", "name", "price", "change_percent", "quote_date", "quote_time",
+            "ticker", "name", "price", "change", "change_percent", "quote_date", "quote_time",
             "freshness", "data_status", "quote_basis", "quote_source", "source_label",
-            "source_url", "session", "contract_month", "contract_basis",
+            "source_url", "session", "contract_month", "contract_basis", "quote_delayed",
+            "backup_used", "official_fallback_used",
         )
         if row.get(key) not in (None, "")
     }
@@ -1004,6 +1005,7 @@ def _scoped_morning_analysis(
             data_gaps.append({"kind": "quote", **gap, "checked_at": as_of})
     supplementary_section: dict[str, Any] | None = None
     supplementary_gaps: list[dict[str, Any]] = []
+    market_card_projection: dict[str, Any] | None = None
     if scope == "taiwan":
         statistics = taiwan_market_statistics if isinstance(taiwan_market_statistics, dict) else {}
         turnover_value = statistics.get("turnover")
@@ -1037,7 +1039,7 @@ def _scoped_morning_analysis(
                 "source": source,
                 "source_url": source_url,
             }
-            return f"{label}：{amount:,.2f} 億元；資料日 {observed}；來源 {source}。", evidence
+            return f"{label} {amount:,.2f} 億元（{observed}）", evidence
 
         turnover_text, turnover_evidence = amount_fact(
             "上市市場成交金額", turnover, "trade_value",
@@ -1053,12 +1055,12 @@ def _scoped_morning_analysis(
         declining = _finite_number(breadth.get("declining"))
         if breadth.get("scope_verified") is True and advancing is not None and declining is not None:
             unchanged = _finite_number(breadth.get("unchanged"))
-            breadth_text = f"市場廣度：上漲 {advancing:.0f} 家、下跌 {declining:.0f} 家"
+            breadth_text = f"市場廣度：上漲 {advancing:.0f}／下跌 {declining:.0f}"
             if unchanged is not None:
-                breadth_text += f"、平盤 {unchanged:.0f} 家"
+                breadth_text += f"／平盤 {unchanged:.0f}"
             breadth_source = str(breadth.get("source") or "TWSE 官方上市市場漲跌家數統計")
             breadth_date = str(breadth.get("observed_date") or "日期未提供")
-            breadth_text += f"；資料日 {breadth_date}；來源 {breadth_source}。"
+            breadth_text += f"（{breadth_date}）"
             breadth_evidence = {
                 **breadth,
                 "source": breadth_source,
@@ -1075,13 +1077,14 @@ def _scoped_morning_analysis(
         ]
         supplementary_section = {
             "title": "台股輔助統計（官方）",
+            "layout": "taiwan_stats_v2",
             "facts": [entry[2] for entry in stat_facts],
             "facts_structured": [
                 {"ticker": f"TW_STATS_{key.upper()}", "name": name, "text": text, "quote": evidence or {}}
                 for key, name, text, evidence in stat_facts
             ],
-            "why_it_matters": "成交金額、市場漲跌家數與三大法人僅作加權指數／台指期的輔助脈絡，不取代兩項主體行情。",
-            "transmission": "各欄保留資料日與官方來源；未公布或未取得即標示缺漏，不估算、不等待後續更新。",
+            "why_it_matters": "成交金額、漲跌家數與三大法人是盤面背景，不取代加權指數與台指期行情。",
+            "transmission": "逐項標示資料日；缺漏就說明，不估算或延後簡報。",
             "market_observation": "；".join(entry[2] for entry in stat_facts),
             "next_catalyst": "後續資料更新只更新資訊卡，不因此對同一時段再次發送 Telegram。",
             "evidence": [entry[3] for entry in stat_facts if isinstance(entry[3], dict)],
@@ -1149,6 +1152,129 @@ def _scoped_morning_analysis(
                 "confidence": "low" if any(g.get("ticker") == "SOX" for g in data_gaps) else "medium",
             },
         ]
+    if scope == "taiwan" and supplementary_section is not None:
+        source_pair = [sections[0]["facts_structured"][0], sections[1]["facts_structured"][0]]
+        pair_facts: list[dict[str, Any]] = []
+        for fact in source_pair:
+            quote = fact.get("quote") if isinstance(fact.get("quote"), dict) else {}
+            ticker = str(fact.get("ticker") or "")
+            name = "加權現貨" if ticker == "TAIEX" else "台指期近月日盤"
+            price = _finite_number(quote.get("price"))
+            point_change = _finite_number(quote.get("change"))
+            percent = _finite_number(quote.get("change_percent"))
+            observed = str(quote.get("quote_date") or "")[:10]
+            if price is None or percent is None:
+                text = f"{name}：未取得可核對資料"
+            else:
+                point_change_text = f"{point_change:+,.2f} 點" if point_change is not None else "漲跌點數未提供"
+                text = f"{name} {price:,.2f} 點｜{point_change_text}（{percent:+.2f}%）｜{observed or '資料日未確認'}"
+                if ticker == "TXF":
+                    month = str(quote.get("contract_month") or "")
+                    text += f"｜契約 {month or '月份未核實'}"
+                    if quote.get("quote_delayed") is True or (observed and observed != str(as_of or "")[:10]):
+                        text += "｜最近已核實日盤，非今日／非即時"
+            pair_facts.append({**fact, "text": text, "quote": quote})
+
+        pair_dates = [str(item.get("quote", {}).get("quote_date") or "")[:10] for item in pair_facts]
+        if pair_dates[0] and pair_dates[0] == pair_dates[1]:
+            first_move = _finite_number(pair_facts[0]["quote"].get("change_percent"))
+            second_move = _finite_number(pair_facts[1]["quote"].get("change_percent"))
+            if first_move is None or second_move is None:
+                pair_takeaway = "同日資料仍有缺項，現貨與期貨先分開看，不比較方向。"
+            elif first_move * second_move < 0:
+                pair_takeaway = "同日漲跌方向不同，分別解讀；不以兩者點位差當即時基差。"
+            else:
+                direction = "同漲" if first_move > 0 else "同跌" if first_move < 0 else "現貨持平"
+                pair_takeaway = f"同日收盤方向{direction}；兩者仍是不同商品，不比較點位差。"
+        elif pair_dates[0] or pair_dates[1]:
+            pair_takeaway = "現貨與期貨資料日不同，不合併判讀；各自數值與日期分列。"
+        else:
+            pair_takeaway = "現貨或期貨資料未核實，暫不比較方向。"
+        pair_section = {
+            "title": "台股現貨與台指期",
+            "layout": "taiwan_pair_v2",
+            "facts": [item["text"] for item in pair_facts],
+            "facts_structured": pair_facts,
+            "takeaway": pair_takeaway,
+            "why_it_matters": "加權指數是上市現貨；台指期是獨立近月契約。",
+            "transmission": "分列各自漲跌與交易日；不同日期不合併判讀，也不計算不同收盤時間的即時基差。",
+            "market_observation": "；".join(item["text"] for item in pair_facts),
+            "next_catalyst": "下一個可核實的台股現貨與台指期日盤收盤。",
+            "evidence": [item["quote"] for item in pair_facts if item["quote"].get("price") is not None],
+            "freshness": "現貨與期貨分別標示資料日期與來源",
+            "confidence": "low" if data_gaps else "medium",
+        }
+        stats_records: list[tuple[str, str, dict[str, Any] | None]] = [
+            ("turnover", "上市成交金額", turnover_evidence),
+            ("breadth", "上市漲跌家數", breadth_evidence),
+            ("institutions", "三大法人合計", institution_evidence),
+        ]
+        compact_stats: list[dict[str, Any]] = []
+        for key, name, compact_evidence in stats_records:
+            if not isinstance(compact_evidence, dict):
+                text = f"{name}：未公布或本輪未取得"
+                quote = {}
+            elif key == "turnover":
+                text = f"{name} {float(compact_evidence['display_value']):,.2f} 億元（{compact_evidence.get('observed_date') or '日期未提供'}）"
+                quote = compact_evidence
+            elif key == "breadth":
+                advancing = _finite_number(compact_evidence.get("advancing"))
+                declining = _finite_number(compact_evidence.get("declining"))
+                unchanged = _finite_number(compact_evidence.get("unchanged"))
+                text = f"上漲 {advancing:.0f}／下跌 {declining:.0f}" if advancing is not None and declining is not None else "漲跌家數：未核實"
+                if unchanged is not None:
+                    text += f"／平盤 {unchanged:.0f}"
+                text += f"（{compact_evidence.get('observed_date') or '日期未提供'}）"
+                quote = compact_evidence
+            else:
+                display_value = compact_evidence.get("display_value")
+                net = float(display_value if display_value is not None else float(compact_evidence["raw_value"]) / 100_000_000)
+                text = f"{name} {'買超' if net > 0 else '賣超' if net < 0 else '相抵'} {abs(net):,.2f} 億元（{compact_evidence.get('observed_date') or '日期未提供'}）"
+                quote = compact_evidence
+            compact_stats.append({"ticker": f"TW_STATS_{key.upper()}", "name": name, "text": text, "quote": quote})
+        stat_dates = {
+            str(row.get("observed_date") or "")
+            for _key, _name, row in stats_records
+            if isinstance(row, dict) and row.get("observed_date")
+        }
+        if len(stat_dates) > 1:
+            stats_takeaway = "統計資料日不同，請分項閱讀，不合併推論。"
+        elif isinstance(breadth_evidence, dict):
+            advancing = _finite_number(breadth_evidence.get("advancing"))
+            declining = _finite_number(breadth_evidence.get("declining"))
+            flow = _finite_number(institutions.get("total_net"))
+            breadth_note = (
+                "下跌家數較多" if advancing is not None and declining is not None and declining > advancing
+                else "上漲家數較多" if advancing is not None and declining is not None and advancing > declining
+                else "上漲與下跌家數相同" if advancing is not None and declining is not None
+                else "盤面廣度未核實"
+            )
+            flow_note = (
+                f"；三大法人合計{'買超' if flow > 0 else '賣超' if flow < 0 else '買賣相抵'} {abs(flow) / 100_000_000:,.2f} 億元"
+                if flow is not None else ""
+            )
+            stats_takeaway = f"{breadth_note}{flow_note}；只作盤面背景，不單獨推論指數方向。"
+        else:
+            stats_takeaway = "官方統計只作輔助背景；缺項不估算，也不延後簡報。"
+        stats_section = {
+            **supplementary_section,
+            "layout": "taiwan_stats_v2",
+            "facts": [item["text"] for item in compact_stats],
+            "facts_structured": compact_stats,
+            "takeaway": stats_takeaway,
+            "market_observation": "；".join(item["text"] for item in compact_stats),
+            "evidence": [item["quote"] for item in compact_stats if item["quote"]],
+        }
+        sections = [pair_section, stats_section]
+        market_card_projection = {
+            "version": "taiwan-market-cards-v2",
+            "market_scope": "taiwan",
+            "slot": slot,
+            "market_date": pair_dates[0] if pair_dates[0] and pair_dates[0] == pair_dates[1] else None,
+            "instruments": pair_facts,
+            "takeaway": pair_takeaway,
+        }
+
     narrative_section = "taiwan" if scope == "taiwan" else "us_market"
     for section in sections:
         section_evidence = [
@@ -1178,9 +1304,10 @@ def _scoped_morning_analysis(
         section["details"] = section["narrative"].get("details", [])
         section["limitations"] = section["narrative"].get("limitations", [])
     return {
-        "ruleset": "market_scoped_card_v1",
+        "ruleset": "market_scoped_card_v2" if scope == "taiwan" else "market_scoped_card_v1",
         "narrative_version": NARRATIVE_VERSION,
         "market_scope": scope,
+        "market_card_projection": market_card_projection,
         "evidence_as_of": as_of,
         "overall_stance": "insufficient_evidence" if data_gaps else "market_specific_observation",
         "confidence": "low" if data_gaps else "medium",
@@ -1422,6 +1549,10 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         "assessment_summary": digest.get("assessment_summary", ""),
         "market_assessment": digest.get("market_assessment", {}),
         "morning_analysis": morning_analysis,
+        "market_card_projection": (
+            morning_analysis.get("market_card_projection")
+            if isinstance(morning_analysis, dict) and market_scope == "taiwan" else None
+        ),
         "summary_facts": _briefing_summary_facts(digest),
         "public_short_message": digest.get("public_short_message", ""),
         "public_summary_version": digest.get("public_summary_version", "public-summary-v2"),

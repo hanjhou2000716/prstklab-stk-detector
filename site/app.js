@@ -579,6 +579,7 @@ const primaryBriefingEvent = (snapshot) => {
     snapshot_id: briefing.snapshot_id || snapshot.snapshot_id || snapshot.market_snapshot_id,
     observation_id: briefing.observation_id,
     trace_id: briefing.trace_id,
+    market_card_projection: briefing.market_card_projection,
     brief_title: briefing.public_short_message,
     public_short_message: briefing.public_short_message,
     title: briefing.public_short_message,
@@ -637,6 +638,8 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
       ? primaryTheme.quote_evidence : projectedEvent.market_evidence,
     canonical_event_key: primaryTheme.canonical_event_key || primaryTheme.event_key || projectedEvent.canonical_event_key,
   } : projectedEvent;
+  const marketCardProjection = event?.briefing?.market_card_projection
+    || event?.market_card_projection || null;
   const card = document.getElementById("alert-card");
   if (!card) return;
   const pendingNode = document.getElementById("alert-pending");
@@ -735,7 +738,9 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
   setText("alert-summary", nativeShortFact || event.event || event.summary || event.title || "公開市場事件更新。");
   setText("alert-trigger", nativeTrigger || event.importance_detail || event.why_important || event.ai_commentary || event.trigger || "已核對公開訊號，等待後續市場反應。");
   setText("alert-context", event.market_impact || event.market_context || event.possible_linkage || event.possible_impact || "已連動市場待後續公開報價確認。");
-  setText("alert-stock-observation", event.watch || event.stock_observation || event.follow_up_observation || "觀察已連動市場是否出現可核對的同步變化。");
+  setText("alert-stock-observation", marketCardProjection?.market_scope === "taiwan"
+    ? (marketCardProjection.takeaway || event.stock_observation || "台股現貨與期貨分列觀察。")
+    : event.watch || event.stock_observation || event.follow_up_observation || "觀察已連動市場是否出現可核對的同步變化。");
   setText("alert-reminder", event.friendly_reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");
   const quoteItems = [];
   const quoteTickers = new Set();
@@ -746,7 +751,14 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
       name: alertLinkedMarketNames[String(detail.ticker || "").toUpperCase()] || detail.ticker,
       data_status: detail.quote_available ? undefined : "unavailable",
     })) : [];
-  for (const item of [event.instrument, ...(Array.isArray(event.related) ? event.related : []), ...alertMarketEvidence(event, snapshot), ...linkagePlaceholders]) {
+  const projectedTaiwanQuotes = marketCardProjection?.market_scope === "taiwan"
+    && Array.isArray(marketCardProjection.instruments)
+    ? marketCardProjection.instruments.map((item) => ({
+      ...(item && typeof item === "object" ? item : {}),
+      ...(item?.quote && typeof item.quote === "object" ? item.quote : {}),
+    }))
+    : [];
+  for (const item of [...projectedTaiwanQuotes, event.instrument, ...(Array.isArray(event.related) ? event.related : []), ...alertMarketEvidence(event, snapshot), ...linkagePlaceholders]) {
     const ticker = String(item?.ticker || "").toUpperCase();
     if (!quoteHasValues(item) || (ticker && quoteTickers.has(ticker))) continue;
     if (ticker) quoteTickers.add(ticker);
@@ -1418,6 +1430,23 @@ const renderBriefing = (briefing, generatedAt) => {
       const factsMarkup = index === 0 && summaryFacts.length
         ? renderSummaryFacts()
         : visibleStructuredFacts.length ? renderStructuredFacts() : visibleFacts.slice(0, 5).map((fact) => `<p class="morning-analysis-fact">${escapeHtml(String(fact))}</p>`).join("");
+      if (item.layout === "taiwan_pair_v2" || item.layout === "taiwan_stats_v2") {
+        const cardClass = item.layout === "taiwan_pair_v2" ? "taiwan-market-pair" : "taiwan-market-stats";
+        const compactFacts = visibleStructuredFacts.length
+          ? visibleStructuredFacts.map((fact) => {
+            const quote = fact && fact.quote && typeof fact.quote === "object" ? fact.quote : null;
+            const movement = quoteMovement(quote?.change_percent);
+            return '<p class="morning-analysis-fact ' + movement.state + '">' + (quote ? quoteMovementPrefix(quote.change_percent) : "") + escapeHtml(String(fact?.text || "")) + "</p>";
+          }).join("")
+          : visibleFacts.map((fact) => '<p class="morning-analysis-fact">' + escapeHtml(String(fact)) + "</p>").join("");
+        const takeaway = String(item.takeaway || "").trim();
+        const title = escapeHtml(item.title || "台股市場資訊");
+        const evidence = renderEvidence(item.evidence);
+        const takeawayMarkup = takeaway
+          ? '<p class="taiwan-market-takeaway"><b>簡要觀察：</b>' + escapeHtml(takeaway) + "</p>"
+          : "";
+        return '<article class="morning-analysis-section ' + cardClass + '"><div class="morning-analysis-section-heading"><h3>' + title + '</h3></div><div class="taiwan-market-card-facts">' + (compactFacts || '<p class="morning-analysis-fact">本輪未取得可核對資料。</p>') + "</div>" + takeawayMarkup + evidence + "</article>";
+      }
       const labeledItems = [
         ["為何重要", item.why_it_matters],
         ["可能傳導", item.transmission],
