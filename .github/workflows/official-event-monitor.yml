@@ -205,6 +205,7 @@ jobs:
           PREPARED_RELEASE_STATUS: ${{ steps.prepared_release.outputs.reason || 'not_required' }}
           SHOULD_SEND: ${{ steps.status.outputs.should_send || 'false' }}
           IDEMPOTENCY_CACHE_HIT: ${{ steps.idempotency.outputs.cache-hit || 'false' }}
+          DURABLE_RECEIPT_VERIFIED: ${{ steps.status.outputs.durable_receipt_verified || 'false' }}
           DEPLOYMENT_AVAILABLE: ${{ steps.deployment.outputs.available || 'false' }}
           DEPLOYMENT_ERROR_CODE: ${{ steps.deployment.outputs.error_code || '' }}
           RELEASE_GATE_ALLOWED: ${{ steps.release_gate.outputs.allowed || 'false' }}
@@ -220,6 +221,10 @@ jobs:
           fi
           notification_status="${NOTIFICATION_STATUS:-not_attempted}"
           notification_reason="${NOTIFICATION_REASON:-not_attempted}"
+          if [ "${DURABLE_RECEIPT_VERIFIED:-false}" = "true" ]; then
+            notification_status="already_delivered"
+            notification_reason="durable_recipient_receipt_verified"
+          fi
           if [ "${NOTIFICATION_REQUESTED:-false}" = "true" ] && [ "${SHOULD_SEND:-false}" = "true" ] \
             && [ "${QUEUE_STATUS:-}" != "superseded" ] && [ "${PREPARED_RELEASE_STATUS:-}" = "prepared_release_current" ]; then
             if [ "${IDEMPOTENCY_CACHE_HIT:-false}" = "true" ]; then
@@ -241,9 +246,10 @@ jobs:
             fi
           fi
           {
-            echo "## Official event / price sender stage (receipt persistence pending)"
+            echo "## Official event / price notification outcome"
             echo "- scan_status: ${scan_status}"
             echo "- candidate_type: ${CANDIDATE_TYPE:-none}"
+            echo "- durable_receipt_verified: ${DURABLE_RECEIPT_VERIFIED:-false}"
             if [ "${NOTIFICATION_REQUESTED:-false}" != "true" ]; then
               echo "- notification_expected: false"
               echo "- notification_status: not_requested"
