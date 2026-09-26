@@ -74,6 +74,23 @@ def test_official_theme_suppression_has_a_reason_and_is_not_a_delivery() -> None
     assert result["failure"] is False
 
 
+def test_official_preflight_policy_suppression_without_sender_is_not_a_failure() -> None:
+    result = evaluate_official_terminal(official(
+        SHOULD_SEND="false",
+        NOTIFICATION_EXPECTED="false",
+        NOTIFICATION_STATUS="policy_suppressed",
+        NOTIFICATION_REASON="theme:same_theme_unchanged",
+        SEND_NOTIFICATION_EXPECTED="true",
+        SEND_STATUS="",
+        SEND_OUTCOME="skipped",
+    ))
+
+    assert result["status"] == "policy_suppressed"
+    assert result["reason"] == "theme:same_theme_unchanged"
+    assert result["expected"] is False
+    assert result["failure"] is False
+
+
 def test_official_idempotency_cache_is_not_a_receipt() -> None:
     result = evaluate_official_terminal(official(IDEMPOTENCY_CACHE_HIT="true"))
 
