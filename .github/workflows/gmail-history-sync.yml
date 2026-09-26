@@ -114,12 +114,16 @@ jobs:
           dispatch_required="$(jq -r '.should_dispatch' <<< "$decision_json")"
           dispatch_reason="$(jq -r '.reason' <<< "$decision_json")"
           payload_reason="$(jq -r '.payload_reason' <<< "$decision_json")"
-          echo "required=$dispatch_required" >> "$GITHUB_OUTPUT"
-          echo "reason=$dispatch_reason" >> "$GITHUB_OUTPUT"
-          echo "triggered=false" >> "$GITHUB_OUTPUT"
+          dispatch_triggered=false
+          write_dispatch_outputs() {
+            {
+              printf 'required=%s\n' "$dispatch_required"
+              printf 'reason=%s\n' "$dispatch_reason"
+              printf 'triggered=%s\n' "$dispatch_triggered"
+            } >> "$GITHUB_OUTPUT"
+          }
+          trap write_dispatch_outputs EXIT
           if [ "$dispatch_required" = "true" ]; then
-            material_candidates="$(jq -r 'if (.material_candidate_count | type) == "number" then .material_candidate_count else 0 end' gmail-sync-result.json)"
-            priority_candidates="$(jq -r 'if (.priority_candidate_count | type) == "number" then .priority_candidate_count else 0 end' gmail-sync-result.json)"
             priority_detected="$(jq -r 'if ((.candidate_diagnostics.counts.priority_candidate_detected // 0) | type) == "number" then (.candidate_diagnostics.counts.priority_candidate_detected // 0) else 0 end' gmail-sync-result.json)"
             pending_refs="$(jq -c '.priority_pending_refs // .candidate_diagnostics.priority_pending_refs // []' gmail-sync-result.json)"
             event_refs="$(jq -c '.priority_event_refs // .candidate_diagnostics.priority_event_refs // []' gmail-sync-result.json)"
@@ -130,7 +134,7 @@ jobs:
               -f "client_payload[priority_candidate_detected]=$priority_detected" \
               -f "client_payload[priority_pending_refs]=$pending_refs" \
               -f "client_payload[priority_event_refs]=$event_refs"
-            echo "triggered=true" >> "$GITHUB_OUTPUT"
+            dispatch_triggered=true
           fi
       - name: Publish Gmail notification decision
         if: always()
