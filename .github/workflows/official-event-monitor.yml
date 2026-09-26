@@ -87,10 +87,16 @@ jobs:
           DISPATCH_PRIORITY_PENDING_REFS: ${{ github.event.client_payload.priority_pending_refs || '[]' }}
           DISPATCH_PRIORITY_EVENT_REFS: ${{ github.event.client_payload.priority_event_refs || '[]' }}
         run: python -m src.official_event_monitor --write-status
-      - name: Fail on priority candidate contract mismatch
+      - name: Fail on blocked notification preflight
         if: steps.status.outputs.hard_failure == 'true'
+        env:
+          PREFLIGHT_REASON: ${{ steps.status.outputs.hard_failure_reason || steps.status.outputs.notification_reason || 'priority_candidate_contract_mismatch' }}
+          CANDIDATE_CONTENT_STATUS: ${{ steps.status.outputs.candidate_content_status || 'not_applicable' }}
         run: |
-          echo "Priority candidate contract mismatch: no safe delivery decision was produced."
+          echo "- notification_preflight_status: blocked" >> "$GITHUB_STEP_SUMMARY"
+          echo "- notification_preflight_reason: ${PREFLIGHT_REASON}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- candidate_content_status: ${CANDIDATE_CONTENT_STATUS}" >> "$GITHUB_STEP_SUMMARY"
+          echo "::error::Official notification preflight blocked (${PREFLIGHT_REASON}; content=${CANDIDATE_CONTENT_STATUS}); nothing was sent."
           exit 1
       - name: Wait for production writer queue
         id: writer_queue
@@ -338,6 +344,8 @@ jobs:
           EVENT_KEY: ${{ steps.status.outputs.key || '' }}
           SCAN_OUTCOME: ${{ steps.status.outcome || 'not_run' }}
           HARD_FAILURE: ${{ steps.status.outputs.hard_failure || 'false' }}
+          HARD_FAILURE_REASON: ${{ steps.status.outputs.hard_failure_reason || '' }}
+          CANDIDATE_CONTENT_STATUS: ${{ steps.status.outputs.candidate_content_status || 'not_applicable' }}
           NOTIFICATION_EXPECTED: ${{ steps.status.outputs.notification_expected || 'false' }}
           NOTIFICATION_STATUS: ${{ steps.send.outputs.notification_status || steps.status.outputs.notification_status || 'not_attempted' }}
           NOTIFICATION_REASON: ${{ steps.send.outputs.reason || steps.status.outputs.notification_reason || 'not_attempted' }}
@@ -426,9 +434,11 @@ jobs:
               "scan": {
                   "outcome": value("SCAN_OUTCOME", "not_run"),
                   "hard_failure": value("HARD_FAILURE", "false"),
+                  "hard_failure_reason": value("HARD_FAILURE_REASON"),
               },
               "priority": {
                   "notification_expected": value("NOTIFICATION_EXPECTED", "false"),
+                  "candidate_content_status": value("CANDIDATE_CONTENT_STATUS", "not_applicable"),
                   "notification_status": notification_status,
                   "notification_reason": notification_reason,
                   "pending_count": count("PENDING_COUNT"),

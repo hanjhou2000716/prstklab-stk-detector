@@ -28,6 +28,10 @@ def test_official_event_workflow_is_dispatchable_and_idempotent():
     assert "DEPLOYMENT_ERROR_CODE" in workflow
     assert "expected_delivery_or_recipient_receipt_missing" in workflow
     assert "Do not resend this event" in workflow
+    assert "Fail on blocked notification preflight" in workflow
+    assert "steps.status.outputs.hard_failure == 'true'" in workflow
+    assert "notification_preflight_reason" in workflow
+    assert "candidate_content_status" in workflow
 
 
 def test_expected_official_notification_only_skips_for_existing_successful_receipt():

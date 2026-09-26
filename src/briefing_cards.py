@@ -986,6 +986,7 @@ def _scoped_quote_detail(
 def _scoped_morning_analysis(
     items: dict[str, dict[str, Any]], scope: str, as_of: Any, slot: str,
     taiwan_market_statistics: dict[str, Any] | None = None,
+    *, release_id: str = "", snapshot_id: str = "",
 ) -> dict[str, Any]:
     """Build only the market-specific explanations required for these slots."""
     specs = (
@@ -1117,41 +1118,197 @@ def _scoped_morning_analysis(
             supplementary_section,
         ]
     else:
-        sections = [
-            {
-                "title": "美股主要現貨最近收盤",
-                "facts": [fact["text"] for fact in facts[:3]], "facts_structured": facts[:3],
-                "why_it_matters": "標普500、Nasdaq Composite 與道瓊是三項分開標示的美股現貨基準。",
-                "transmission": "現貨欄只採各指數最近已完成交易日；不以期貨替代現貨收盤。",
-                "market_observation": "；".join(fact["text"] for fact in facts[:3]),
-                "next_catalyst": "核對美股當日開盤後現貨走勢是否延續或背離盤前期貨。",
-                "evidence": [fact["quote"] for fact in facts[:3] if fact["quote"].get("price") is not None],
-                "freshness": "逐項標示觀測日期與資料狀態",
-                "confidence": "low" if any(g.get("ticker") in {"S&P 500", "NASDAQ", "DJIA"} for g in data_gaps) else "medium",
-            },
-            {
-                "title": "美股指數期貨盤前",
-                "facts": [fact["text"] for fact in facts[3:6]], "facts_structured": facts[3:6],
-                "why_it_matters": "ES、NQ、YM 分別對應標普500、Nasdaq-100、道瓊指數期貨；NQ 不是 Nasdaq Composite。",
-                "transmission": "期貨按自身來源、觀測時間與連續／指定合約口徑呈現，不與現貨點位混算。",
-                "market_observation": "；".join(fact["text"] for fact in facts[3:6]),
-                "next_catalyst": "美股開盤時停止盤前通知；開盤後行情不回填為盤前即時資料。",
-                "evidence": [fact["quote"] for fact in facts[3:6] if fact["quote"].get("price") is not None],
-                "freshness": "逐項標示來源觀測時間、延遲與合約口徑",
-                "confidence": "low" if any(g.get("ticker") in {"ES", "NQ", "YM"} for g in data_gaps) else "medium",
-            },
-            {
-                "title": "費城半導體指數（輔助）",
-                "facts": [facts[6]["text"]], "facts_structured": [facts[6]],
-                "why_it_matters": "費半作為美國半導體產業背景，不替代三大現貨指數或指數期貨。",
-                "transmission": "只作為獨立輔助觀察，不將台股／台積電行情塞入美股卡。",
-                "market_observation": facts[6]["text"],
-                "next_catalyst": "以最近完成交易日資料更新。",
-                "evidence": [facts[6]["quote"]] if facts[6]["quote"].get("price") is not None else [],
-                "freshness": facts[6]["quote"].get("freshness", "unavailable"),
-                "confidence": "low" if any(g.get("ticker") == "SOX" for g in data_gaps) else "medium",
-            },
+        cash_names = ("標普500", "那斯達克綜合", "道瓊")
+        cash_facts: list[dict[str, Any]] = []
+        cash_dates: list[str] = []
+        for fact, name in zip(facts[:3], cash_names, strict=True):
+            quote_value = fact.get("quote")
+            cash_quote: dict[str, Any] = quote_value if isinstance(quote_value, dict) else {}
+            price = _finite_number(cash_quote.get("price"))
+            percent = _finite_number(cash_quote.get("change_percent"))
+            quote_date = str(cash_quote.get("quote_date") or cash_quote.get("quote_time") or "")[:10]
+            is_recent_close = (
+                price is not None and percent is not None and bool(quote_date)
+                and str(cash_quote.get("freshness") or cash_quote.get("data_status") or "").casefold() == "recent_close"
+            )
+            if is_recent_close:
+                cash_dates.append(quote_date)
+            text = f"{name} {percent:+.2f}%" if is_recent_close else f"{name}：最近收盤行情未取得"
+            cash_facts.append({
+                **fact,
+                "name": name,
+                "text": text,
+                "display_change_percent": percent if is_recent_close else None,
+                "display_state": "recent_close_reference" if is_recent_close else "unavailable",
+                "quote": cash_quote,
+            })
+        distinct_cash_dates = sorted(set(cash_dates))
+        if len(distinct_cash_dates) == 1 and len(cash_dates) == 3:
+            cash_header_note = f"資料日 {distinct_cash_dates[0]}"
+        elif distinct_cash_dates:
+            cash_header_note = "各指數資料日不同，逐項標示"
+            date_by_ticker = {
+                str(fact.get("ticker") or ""): str((fact.get("quote") or {}).get("quote_date") or (fact.get("quote") or {}).get("quote_time") or "")[:10]
+                for fact in cash_facts
+            }
+            for fact in cash_facts:
+                per_ticker_date = date_by_ticker.get(str(fact.get("ticker") or ""))
+                if per_ticker_date and "行情未取得" not in fact["text"]:
+                    fact["text"] += f"（{per_ticker_date}）"
+        else:
+            cash_header_note = "資料日未齊，見資料依據"
+        cash_changes = [
+            _finite_number(fact.get("display_change_percent"))
+            for fact in cash_facts
         ]
+        available_cash_changes = [value for value in cash_changes if value is not None]
+        if len(available_cash_changes) == 3 and all(value > 0 for value in available_cash_changes):
+            cash_takeaway = "三大指數最近收盤同向收漲，僅作市場背景，不代表盤前走勢。"
+        elif len(available_cash_changes) == 3 and all(value < 0 for value in available_cash_changes):
+            cash_takeaway = "三大指數最近收盤同向收跌，僅作市場背景，不代表盤前走勢。"
+        elif available_cash_changes:
+            cash_takeaway = "指數表現分別呈現，避免用單一指數代表整體美股。"
+        else:
+            cash_takeaway = "行情不足，暫不合併判讀三大指數。"
+        cash_section = {
+            "title": "美股三大指數｜最近收盤",
+            "layout": "us_cash_v2",
+            "header_note": cash_header_note,
+            "facts": [fact["text"] for fact in cash_facts],
+            "facts_structured": cash_facts,
+            "takeaway": cash_takeaway,
+            "why_it_matters": "標普500、那斯達克綜合與道瓊各自代表不同的美股現貨指數。",
+            "transmission": "現貨收盤只作已完成交易日參考，不以期貨替代。",
+            "market_observation": cash_takeaway,
+            "next_catalyst": "下一個美股交易時段的現貨行情。",
+            "evidence": [fact["quote"] for fact in cash_facts if fact["quote"]],
+            "freshness": "最近收盤；各指數日期與來源保留於資料依據",
+            "confidence": "low" if any(g.get("ticker") in {"S&P 500", "NASDAQ", "DJIA"} for g in data_gaps) else "medium",
+        }
+
+        def is_verified_premarket_quote(quote: dict[str, Any]) -> bool:
+            if (
+                str(quote.get("freshness") or quote.get("data_status") or "").casefold() != "live"
+                or quote.get("quote_delayed") is True
+                or quote.get("stale_used") is True
+                or str(quote.get("session") or "").casefold().replace("-", "_").replace(" ", "_") not in {"premarket", "pre_market", "pre"}
+                or _finite_number(quote.get("price")) is None
+                or _finite_number(quote.get("change_percent")) is None
+                or not str(quote.get("quote_source") or quote.get("source_label") or quote.get("source") or "").strip()
+            ):
+                return False
+            contract_basis = str(quote.get("contract_basis") or "").casefold()
+            contract_month = str(quote.get("contract_month") or "")
+            if contract_basis != "continuous_contract" and not re.fullmatch(r"\d{6}", contract_month):
+                return False
+            raw_time = str(quote.get("quote_time") or "")
+            try:
+                observed = datetime.fromisoformat(raw_time.replace("Z", "+00:00"))
+                snapshot_time = datetime.fromisoformat(str(as_of).replace("Z", "+00:00"))
+                if observed.tzinfo is None or snapshot_time.tzinfo is None:
+                    return False
+                new_york = ZoneInfo("America/New_York")
+                observed = observed.astimezone(new_york)
+                snapshot_day = snapshot_time.astimezone(new_york).date()
+            except (TypeError, ValueError, OverflowError):
+                return False
+            return observed.date() == snapshot_day and (
+                4 <= observed.hour < 9
+                or (observed.hour == 9 and observed.minute < 30)
+            )
+
+        futures_names = {
+            "ES": "ES（S&P 500 指數期貨）",
+            "NQ": "NQ（Nasdaq-100 指數期貨）",
+            "YM": "YM（道瓊指數期貨）",
+        }
+        live_futures: list[dict[str, Any]] = []
+        reference_futures: list[dict[str, Any]] = []
+        futures_projection: list[dict[str, Any]] = []
+        futures_evidence: list[dict[str, Any]] = []
+        for fact in facts[3:6]:
+            quote_value = fact.get("quote")
+            futures_quote: dict[str, Any] = quote_value if isinstance(quote_value, dict) else {}
+            ticker = str(fact.get("ticker") or "")
+            name = futures_names.get(ticker, ticker)
+            price = _finite_number(futures_quote.get("price"))
+            change = _finite_number(futures_quote.get("change"))
+            percent = _finite_number(futures_quote.get("change_percent"))
+            quote_date = str(futures_quote.get("quote_date") or futures_quote.get("quote_time") or "")[:10]
+            if futures_quote:
+                futures_evidence.append(futures_quote)
+            if is_verified_premarket_quote(futures_quote) and price is not None and percent is not None:
+                point_text = f"（{change:+,.2f} 點，{percent:+.2f}%）" if change is not None else f"（{percent:+.2f}%）"
+                live_futures.append({
+                    **fact, "name": name, "text": f"{name}：{price:,.2f}{point_text}",
+                    "display_change_percent": percent, "quote": futures_quote,
+                })
+                futures_projection.append({**live_futures[-1], "display_state": "verified_premarket"})
+            else:
+                live_futures.append({
+                    **fact, "name": name, "text": f"{name}：盤前行情未取得",
+                    "display_change_percent": None, "quote": {},
+                })
+                if (
+                    price is not None and percent is not None and quote_date
+                    and str(futures_quote.get("freshness") or futures_quote.get("data_status") or "").casefold() == "recent_close"
+                ):
+                    point_text = f"{change:+,.2f} 點，" if change is not None else ""
+                    reference_futures.append({
+                        **fact,
+                        "name": name,
+                        "text": f"{name}最近收盤：{price:,.2f}（{point_text}{percent:+.2f}%）｜資料日 {quote_date}",
+                        "display_change_percent": percent,
+                        "quote": futures_quote,
+                    })
+                    futures_projection.append({**reference_futures[-1], "display_state": "recent_close_reference"})
+                else:
+                    futures_projection.append({
+                        **live_futures[-1],
+                        "evidence": futures_quote,
+                        "display_state": "premarket_unavailable",
+                    })
+
+        sox_quote_value = facts[6].get("quote")
+        sox_quote: dict[str, Any] = sox_quote_value if isinstance(sox_quote_value, dict) else {}
+        sox_price = _finite_number(sox_quote.get("price"))
+        sox_change = _finite_number(sox_quote.get("change"))
+        sox_percent = _finite_number(sox_quote.get("change_percent"))
+        sox_date = str(sox_quote.get("quote_date") or sox_quote.get("quote_time") or "")[:10]
+        if sox_price is not None and sox_percent is not None and sox_date:
+            sox_point_text = f"{sox_change:+,.2f} 點，" if sox_change is not None else ""
+            sox_text = f"費半最近收盤：{sox_price:,.2f} 點（{sox_point_text}{sox_percent:+.2f}%）｜資料日 {sox_date}"
+            sox_display_change = sox_percent
+        else:
+            sox_text = "費半最近收盤行情未取得"
+            sox_display_change = None
+        sox_fact = {
+            **facts[6], "name": "費城半導體指數（輔助）", "text": sox_text,
+            "display_change_percent": sox_display_change, "quote": sox_quote,
+            "display_state": "recent_close_auxiliary" if sox_price is not None and sox_percent is not None and sox_date else "unavailable",
+        }
+        futures_takeaway = (
+            "盤前期貨與費半最近收盤分開閱讀；觀測時段不同，不合併推論。"
+            if not reference_futures else
+            "僅有最近收盤的期貨數值列為參考；盤前即時方向尚未核實。"
+        )
+        futures_section = {
+            "title": "美股盤前期貨與半導體參考",
+            "layout": "us_futures_sox_v2",
+            "facts": [fact["text"] for fact in live_futures],
+            "facts_structured": live_futures,
+            "reference_facts": reference_futures,
+            "supplementary_facts": [sox_fact],
+            "takeaway": futures_takeaway,
+            "why_it_matters": "ES、NQ、YM 是各自標的指數的期貨；NQ 對應 Nasdaq-100，不是那斯達克綜合。",
+            "transmission": "期貨只呈現有明確盤前時段與時間戳的行情；費半只作最近收盤的半導體背景。",
+            "market_observation": futures_takeaway,
+            "next_catalyst": "美股開盤後以現貨資料確認市場表現。",
+            "evidence": [*futures_evidence, sox_quote] if sox_quote else futures_evidence,
+            "freshness": "期貨盤前資格與費半收盤日期逐項核實",
+            "confidence": "low" if any(g.get("ticker") in {"ES", "NQ", "YM", "SOX"} for g in data_gaps) else "medium",
+        }
+        sections = [cash_section, futures_section]
     if scope == "taiwan" and supplementary_section is not None:
         source_pair = [sections[0]["facts_structured"][0], sections[1]["facts_structured"][0]]
         pair_facts: list[dict[str, Any]] = []
@@ -1271,8 +1428,28 @@ def _scoped_morning_analysis(
             "market_scope": "taiwan",
             "slot": slot,
             "market_date": pair_dates[0] if pair_dates[0] and pair_dates[0] == pair_dates[1] else None,
+            "release_id": release_id,
+            "snapshot_id": snapshot_id,
             "instruments": pair_facts,
             "takeaway": pair_takeaway,
+            "cards": sections,
+        }
+    elif scope == "us":
+        cash_date = distinct_cash_dates[0] if len(distinct_cash_dates) == 1 and len(cash_dates) == 3 else None
+        market_card_projection = {
+            "version": "us-market-cards-v2",
+            "market_scope": "us",
+            "slot": slot,
+            "market_date": cash_date,
+            "release_id": release_id,
+            "snapshot_id": snapshot_id,
+            "instruments": [
+                *cash_facts,
+                *futures_projection,
+                {**sox_fact, "display_state": "recent_close_auxiliary"},
+            ],
+            "takeaway": "；".join([cash_takeaway, futures_takeaway]),
+            "cards": sections,
         }
 
     narrative_section = "taiwan" if scope == "taiwan" else "us_market"
@@ -1304,7 +1481,7 @@ def _scoped_morning_analysis(
         section["details"] = section["narrative"].get("details", [])
         section["limitations"] = section["narrative"].get("limitations", [])
     return {
-        "ruleset": "market_scoped_card_v2" if scope == "taiwan" else "market_scoped_card_v1",
+        "ruleset": "market_scoped_card_v2" if scope in {"taiwan", "us"} else "market_scoped_card_v1",
         "narrative_version": NARRATIVE_VERSION,
         "market_scope": scope,
         "market_card_projection": market_card_projection,
@@ -1321,7 +1498,9 @@ def _scoped_morning_analysis(
 
 
 def _scoped_observations(analysis: dict[str, Any]) -> list[dict[str, str]]:
-    sections = analysis.get("sections")
+    projection = analysis.get("market_card_projection")
+    projected_cards = projection.get("cards") if isinstance(projection, dict) else None
+    sections = projected_cards if isinstance(projected_cards, list) else analysis.get("sections")
     if not isinstance(sections, list):
         return []
     cards: list[dict[str, str]] = []
@@ -1329,13 +1508,23 @@ def _scoped_observations(analysis: dict[str, Any]) -> list[dict[str, str]]:
         if not isinstance(section, dict):
             continue
         facts = [str(item).strip() for item in section.get("facts", []) if str(item).strip()]
+        for field in ("reference_facts", "supplementary_facts"):
+            facts.extend(
+                str(item.get("text") or "").strip()
+                for item in section.get(field, [])
+                if isinstance(item, dict) and str(item.get("text") or "").strip()
+            )
         source_parts = []
-        for fact in section.get("facts_structured", []):
-            quote = fact.get("quote") if isinstance(fact, dict) else None
-            if isinstance(quote, dict):
-                source = quote.get("source_url") or quote.get("source") or quote.get("quote_source")
-                if source:
-                    source_parts.append(str(source))
+        for field in ("facts_structured", "reference_facts", "supplementary_facts"):
+            for fact in section.get(field, []):
+                quote = fact.get("quote") if isinstance(fact, dict) else None
+                if isinstance(quote, dict):
+                    source = (
+                        quote.get("source_url") or quote.get("source") or quote.get("quote_source")
+                        or quote.get("source_label") or quote.get("source_name")
+                    )
+                    if source:
+                        source_parts.append(str(source))
         cards.append(_card(
             str(section.get("title") or "市場觀察"),
             "；".join(facts) or "本輪未取得可核對資料。",
@@ -1389,9 +1578,8 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         dynamic_markets = []
     elif market_scope == "us":
         market_topics = [
-            {"title": "美股現貨最近收盤", "items": cards[:3]},
-            {"title": "美股指數期貨盤前", "items": cards[3:6]},
-            {"title": "美股半導體輔助", "items": cards[6:]},
+            {"title": "美股三大指數｜最近收盤", "items": cards[:3]},
+            {"title": "美股盤前期貨與半導體參考", "items": cards[3:]},
         ]
         dynamic_markets = []
     lead = events[0] if events else (observations[0] if observations else {"title": "市場資料狀態"})
@@ -1523,6 +1711,8 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
     morning_analysis = _scoped_morning_analysis(
         all_items, market_scope, briefing_data_as_of, slot,
         snapshot.get("taiwan_market_statistics") if market_scope == "taiwan" else None,
+        release_id=str(snapshot.get("release_id") or ""),
+        snapshot_id=str(snapshot.get("snapshot_id") or snapshot.get("market_snapshot_id") or ""),
     ) if market_scope else _morning_analysis(
         all_items,
         risk,
@@ -1551,7 +1741,7 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         "morning_analysis": morning_analysis,
         "market_card_projection": (
             morning_analysis.get("market_card_projection")
-            if isinstance(morning_analysis, dict) and market_scope == "taiwan" else None
+            if isinstance(morning_analysis, dict) and market_scope in {"taiwan", "us"} else None
         ),
         "summary_facts": _briefing_summary_facts(digest),
         "public_short_message": digest.get("public_short_message", ""),

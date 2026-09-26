@@ -468,18 +468,30 @@ def write_status_output(
     snapshot: dict[str, Any] | None = None,
 ) -> None:
     """Write GitHub Actions outputs without mixing provider diagnostics into them."""
+    content_status = "not_applicable"
+    content_blocked = False
+    if event:
+        try:
+            candidate_caption = build_official_event_brief(event)
+        except (TypeError, ValueError):
+            candidate_caption = ""
+        content_blocked = content_is_incomplete(event, candidate_caption)
+        content_status = "incomplete" if content_blocked else "complete"
     ledger_record = _observe_event(event)
     # A fresh, complete FJ 9/10+ event is its own delivery policy.  It must not
     # be starved by the generic event-theme cooldown; the final recipient claim
     # still provides replay safety.
     priority_event = is_financialjuice_priority_event(event)
-    should_send = bool(event and (priority_event or ledger_record.get("should_remind", True)))
+    should_send = bool(
+        event and not content_blocked
+        and (priority_event or ledger_record.get("should_remind", True))
+    )
     suppressed_candidates = 0
     # The durable ledger is authoritative, but the first selected candidate
     # can already be known and suppressed while a later candidate is new. Do
     # not let that top candidate prevent the workflow from considering the
     # rest of the same queue (especially a previously delivered FJ item).
-    if event and not should_send and isinstance(snapshot, dict):
+    if event and not should_send and not content_blocked and isinstance(snapshot, dict):
         excluded = {event_key(event)}
         # Consider every candidate in this immutable snapshot.  A stale or
         # suppressed first row must not starve a later native signal or an
@@ -569,12 +581,17 @@ def write_status_output(
         isinstance(snapshot, dict)
         and snapshot.get("financialjuice_priority_durable_source_missing_refs")
     )
+    hard_failure_reason = ""
     if contract_mismatch:
         reason = "priority_candidate_contract_mismatch"
         status = "contract_mismatch"
     elif durable_source_missing:
         reason = "priority_durable_observation_missing"
         status = "contract_mismatch"
+    elif content_blocked:
+        reason = "content_incomplete_quarantined"
+        status = "content_incomplete"
+        hard_failure_reason = reason
     elif should_send and event:
         reason = "candidate_ready"
         status = "candidate_ready"
@@ -592,13 +609,13 @@ def write_status_output(
     summary = decision_summary(
         event=diagnostic_event,
         scan_status="completed",
-        notification_expected=bool(event or pending_events or contract_mismatch),
+        notification_expected=bool((event and not content_blocked) or pending_events or contract_mismatch),
         notification_status=status,
         notification_reason=reason,
         last_candidate_at=last_candidate_at,
     )
     summary["priority_dispatch_legacy_rescan"] = legacy_dispatch_rescued
-    if suppressed_candidates and not contract_mismatch and not durable_source_missing and not pending_timeout:
+    if suppressed_candidates and not contract_mismatch and not durable_source_missing and not pending_timeout and not content_blocked:
         summary["notification_reason"] = "top_candidate_suppressed_later_candidate_considered"
     lines = [
         f"should_send={'true' if should_send else 'false'}",
@@ -617,7 +634,9 @@ def write_status_output(
         f"priority_dispatch_missing_ref_count={len(missing_dispatch_refs)}",
         f"priority_dispatch_legacy_rescan={'true' if legacy_dispatch_rescued else 'false'}",
         f"priority_pending_age_seconds={pending_age_seconds}",
-        f"hard_failure={'true' if contract_mismatch or durable_source_missing or (pending_timeout and not should_send) else 'false'}",
+        f"candidate_content_status={content_status}",
+        f"hard_failure_reason={hard_failure_reason or ('priority_candidate_contract_mismatch' if contract_mismatch else 'priority_durable_observation_missing' if durable_source_missing else 'priority_summary_timeout' if pending_timeout and not should_send else '')}",
+        f"hard_failure={'true' if contract_mismatch or durable_source_missing or content_blocked or (pending_timeout and not should_send) else 'false'}",
         f"last_processed_at={summary['last_processed_at']}",
         f"last_candidate_at={summary['last_candidate_at'] or ''}",
     ]

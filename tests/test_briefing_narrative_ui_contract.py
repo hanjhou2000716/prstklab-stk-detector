@@ -32,3 +32,23 @@ def test_taiwan_cash_futures_and_official_statistics_use_two_compact_cards() -> 
     assert ".taiwan-market-stats" in styles
     assert ".taiwan-market-takeaway" in styles
     assert "@media (max-width: 520px)" in styles
+
+
+def test_us_cards_use_compact_market_scoped_layout_and_keep_quote_evidence():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
+    cards = (ROOT / "src" / "briefing_cards.py").read_text(encoding="utf-8")
+    assert 'item.layout === "us_cash_v2"' in app
+    assert 'item.layout === "us_futures_sox_v2"' in app
+    assert '"version": "us-market-cards-v2"' in cards
+    assert '"market_scope": "us"' in cards
+    assert '"reference_facts": reference_futures' in cards
+    assert '"supplementary_facts": [sox_fact]' in cards
+    assert ".us-market-cash" in styles
+    assert ".us-market-reference" in styles
+    assert ".us-market-sox" in styles
+    assert "contract_basis" in app
+    assert "quoteMovementPrefix(rawPercent)" in app
+    assert "projectionCards ||" in app
+    assert '["taiwan", "us"].includes(marketCardProjection?.market_scope)' in app
+    assert "marketCardProjection.market_scope === \"taiwan\"" in app

@@ -239,6 +239,92 @@ def test_briefing_markets_include_djia_alongside_nasdaq_and_sox():
     assert {item["ticker"] for item in us_topic["items"]} == {"NASDAQ", "SOX", "DJIA"}
 
 
+def test_us_premarket_cards_combine_cash_futures_and_sox_without_relabeling_closes():
+    quote_date = "2026-09-25"
+    rows = [
+        {"ticker": "S&P 500", "price": 7743.41, "change": 39.28, "change_percent": 0.51, "quote_date": quote_date, "quote_time": f"{quote_date}T16:00:00-04:00", "freshness": "recent_close", "source_label": "Yahoo", "source_url": "https://finance.example/spx"},
+        {"ticker": "NASDAQ", "price": 27068.72, "change": 129.35, "change_percent": 0.48, "quote_date": quote_date, "quote_time": f"{quote_date}T16:00:00-04:00", "freshness": "recent_close", "source_label": "Yahoo"},
+        {"ticker": "DJIA", "price": 51828.62, "change": 478.64, "change_percent": 0.93, "quote_date": quote_date, "quote_time": f"{quote_date}T16:00:00-04:00", "freshness": "recent_close", "source_label": "Yahoo"},
+        {"ticker": "ES", "price": 7805.75, "change": 38.75, "change_percent": 0.50, "quote_date": quote_date, "freshness": "recent_close", "contract_basis": "continuous_contract", "source_label": "Yahoo"},
+        {"ticker": "NQ", "price": 30921.75, "change": 155.00, "change_percent": 0.50, "quote_date": quote_date, "freshness": "recent_close", "contract_basis": "continuous_contract", "source_label": "Yahoo"},
+        {"ticker": "YM", "price": 52180.00, "change": 463.00, "change_percent": 0.90, "quote_date": quote_date, "freshness": "recent_close", "contract_basis": "continuous_contract", "source_label": "Yahoo"},
+        {"ticker": "SOX", "price": 12668.93, "change": 176.39, "change_percent": 1.41, "quote_date": quote_date, "freshness": "recent_close", "source_label": "Yahoo"},
+        {"ticker": "TAIEX", "price": 48024.6, "change_percent": -0.28, "quote_date": quote_date, "freshness": "recent_close"},
+    ]
+    briefing = build_briefing_snapshot({
+        "as_of": "2026-09-25T08:20:00-04:00",
+        "release_id": "release-us-1",
+        "snapshot_id": "snapshot-us-1",
+        "indices": rows,
+        "quotes": [],
+        "events": {"items": []},
+    }, "us_premarket")
+
+    sections = briefing["morning_analysis"]["sections"]
+    assert [section["layout"] for section in sections] == ["us_cash_v2", "us_futures_sox_v2"]
+    cash, futures = sections
+    assert [fact["text"] for fact in cash["facts_structured"]] == [
+        "標普500 +0.51%", "那斯達克綜合 +0.48%", "道瓊 +0.93%",
+    ]
+    assert cash["header_note"] == f"資料日 {quote_date}"
+    assert [fact["text"] for fact in futures["facts_structured"]] == [
+        "ES（S&P 500 指數期貨）：盤前行情未取得",
+        "NQ（Nasdaq-100 指數期貨）：盤前行情未取得",
+        "YM（道瓊指數期貨）：盤前行情未取得",
+    ]
+    assert len(futures["reference_facts"]) == 3
+    assert all("最近收盤" in row["text"] and "資料日 2026-09-25" in row["text"] for row in futures["reference_facts"])
+    assert "費半最近收盤" in futures["supplementary_facts"][0]["text"]
+    projection = briefing["market_card_projection"]
+    assert projection["version"] == "us-market-cards-v2"
+    assert projection["market_scope"] == "us"
+    assert projection["slot"] == "us_premarket"
+    assert projection["market_date"] == quote_date
+    assert projection["release_id"] == "release-us-1"
+    assert projection["snapshot_id"] == "snapshot-us-1"
+    assert projection["cards"] == sections
+    assert all(item["source_note"] for item in briefing["observations"])
+    assert [topic["title"] for topic in briefing["market_topics"]] == [
+        "美股三大指數｜最近收盤", "美股盤前期貨與半導體參考",
+    ]
+    assert not any("TAIEX" in str(topic) for topic in briefing["market_topics"])
+
+
+def test_us_futures_only_show_as_premarket_with_verified_session_timestamp_and_contract():
+    row = {
+        "ticker": "ES", "price": 7805.75, "change": 38.75, "change_percent": 0.50,
+        "quote_date": "2026-09-25", "quote_time": "2026-09-25T08:20:00-04:00",
+        "freshness": "live", "session": "premarket", "contract_basis": "continuous_contract",
+        "quote_source": "Yahoo", "source_url": "https://finance.example/es",
+    }
+    briefing = build_briefing_snapshot({
+        "as_of": "2026-09-25T08:21:00-04:00",
+        "indices": [row], "quotes": [], "events": {"items": []},
+    }, "us_premarket")
+    futures = briefing["morning_analysis"]["sections"][1]
+    assert futures["facts_structured"][0]["text"] == "ES（S&P 500 指數期貨）：7,805.75（+38.75 點，+0.50%）"
+    assert futures["facts_structured"][0]["display_change_percent"] == 0.5
+    assert futures["reference_facts"] == []
+    assert briefing["market_card_projection"]["instruments"][3]["display_state"] == "verified_premarket"
+
+
+def test_us_delayed_or_out_of_session_futures_never_appear_as_premarket_quotes():
+    rows = [
+        {"ticker": "ES", "price": 7805.75, "change_percent": 0.5, "quote_time": "2026-09-25T08:20:00-04:00", "freshness": "live", "contract_basis": "continuous_contract", "source_label": "Yahoo"},
+        {"ticker": "NQ", "price": 30921.75, "change_percent": 0.5, "quote_time": "2026-09-25T08:20:00-04:00", "freshness": "live", "session": "premarket", "quote_delayed": True, "contract_basis": "continuous_contract", "source_label": "Yahoo"},
+        {"ticker": "YM", "price": 52180.00, "change_percent": 0.9, "quote_time": "2026-09-25T09:30:00-04:00", "freshness": "live", "session": "premarket", "contract_basis": "continuous_contract", "source_label": "Yahoo"},
+    ]
+    briefing = build_briefing_snapshot({
+        "as_of": "2026-09-25T08:21:00-04:00",
+        "indices": rows, "quotes": [], "events": {"items": []},
+    }, "us_premarket")
+
+    futures = briefing["morning_analysis"]["sections"][1]
+    assert all(fact["text"].endswith("盤前行情未取得") for fact in futures["facts_structured"])
+    assert futures["reference_facts"] == []
+    assert all(item["display_state"] == "premarket_unavailable" for item in briefing["market_card_projection"]["instruments"][3:6])
+
+
 def test_midday_briefing_explains_cross_market_move_and_technical_location():
     context = {"window_days": 20, "long_window_days": 60, "low": 100, "high": 120, "long_low": 90, "long_high": 130, "position_pct": 90, "zone": "接近20日壓力區", "as_of": "2026-08-03", "status": "ok"}
     snapshot = {

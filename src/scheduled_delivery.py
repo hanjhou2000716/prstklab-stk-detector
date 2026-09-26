@@ -681,6 +681,12 @@ def _resolve_delivery_obligation(
         })
         if not status["is_trading_day"]:
             return "expected_skip", "us_market_closed_publish_only", states
+        # The slot resolver marks a US premarket run publish-only once the
+        # fixed 09:00 New York anchor has passed its 30-minute delivery
+        # window. A trading-day calendar alone must not turn that expired
+        # slot back into a required report.
+        if str(ctx.get("delivery_intent") or "") != "notify_candidate":
+            return "late_publish_only", "us_premarket_delivery_window_expired", states
         return "report_required", "routine_market_report", states
     if slot in {"morning", "pre_open", "post_close"}:
         cash = markets.get("taiwan_cash") or markets.get("taiwan")

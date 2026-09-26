@@ -738,7 +738,7 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
   setText("alert-summary", nativeShortFact || event.event || event.summary || event.title || "公開市場事件更新。");
   setText("alert-trigger", nativeTrigger || event.importance_detail || event.why_important || event.ai_commentary || event.trigger || "已核對公開訊號，等待後續市場反應。");
   setText("alert-context", event.market_impact || event.market_context || event.possible_linkage || event.possible_impact || "已連動市場待後續公開報價確認。");
-  setText("alert-stock-observation", marketCardProjection?.market_scope === "taiwan"
+  setText("alert-stock-observation", ["taiwan", "us"].includes(marketCardProjection?.market_scope)
     ? (marketCardProjection.takeaway || event.stock_observation || "台股現貨與期貨分列觀察。")
     : event.watch || event.stock_observation || event.follow_up_observation || "觀察已連動市場是否出現可核對的同步變化。");
   setText("alert-reminder", event.friendly_reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");
@@ -751,14 +751,17 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
       name: alertLinkedMarketNames[String(detail.ticker || "").toUpperCase()] || detail.ticker,
       data_status: detail.quote_available ? undefined : "unavailable",
     })) : [];
-  const projectedTaiwanQuotes = marketCardProjection?.market_scope === "taiwan"
+  const projectedMarketQuotes = ["taiwan", "us"].includes(marketCardProjection?.market_scope)
     && Array.isArray(marketCardProjection.instruments)
-    ? marketCardProjection.instruments.map((item) => ({
+    ? marketCardProjection.instruments
+      .filter((item) => marketCardProjection.market_scope === "taiwan"
+        || ["recent_close_reference", "verified_premarket", "recent_close_auxiliary"].includes(item?.display_state))
+      .map((item) => ({
       ...(item && typeof item === "object" ? item : {}),
       ...(item?.quote && typeof item.quote === "object" ? item.quote : {}),
     }))
     : [];
-  for (const item of [...projectedTaiwanQuotes, event.instrument, ...(Array.isArray(event.related) ? event.related : []), ...alertMarketEvidence(event, snapshot), ...linkagePlaceholders]) {
+  for (const item of [...projectedMarketQuotes, event.instrument, ...(Array.isArray(event.related) ? event.related : []), ...alertMarketEvidence(event, snapshot), ...linkagePlaceholders]) {
     const ticker = String(item?.ticker || "").toUpperCase();
     if (!quoteHasValues(item) || (ticker && quoteTickers.has(ticker))) continue;
     if (ticker) quoteTickers.add(ticker);
@@ -1343,8 +1346,10 @@ const renderBriefing = (briefing, generatedAt) => {
   if (!container) return;
   const morningAnalysis = report.morning_analysis && typeof report.morning_analysis === "object"
     ? report.morning_analysis : null;
-  const morningSections = Array.isArray(morningAnalysis?.sections)
-    ? morningAnalysis.sections.filter((item) => item && typeof item === "object") : [];
+  const marketProjection = morningAnalysis?.market_card_projection;
+  const projectionCards = Array.isArray(marketProjection?.cards) ? marketProjection.cards : null;
+  const morningSections = (projectionCards || (Array.isArray(morningAnalysis?.sections) ? morningAnalysis.sections : []))
+    .filter((item) => item && typeof item === "object");
   if (morningSections.length) {
     const confidenceLabel = (value) => ({ high: "高", medium: "中", low: "低" }[String(value || "").toLowerCase()] || String(value || "低"));
     const evidenceTime = (item) => String(
@@ -1381,7 +1386,15 @@ const renderBriefing = (briefing, generatedAt) => {
         const time = evidenceTime(item);
         const proxy = item.is_proxy === true ? "代理資料" : item.is_proxy === false ? "官方／原始資料" : "";
         const url = String(item.source_url || item.url || "").trim();
-        const label = [identity, source, time, proxy].filter(Boolean).join("｜");
+        const hasNumber = (value) => value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value));
+        const price = hasNumber(item.price) ? `行情 ${formatNumber(Number(item.price))}` : "";
+        const change = hasNumber(item.change) ? `漲跌 ${Number(item.change) > 0 ? "+" : ""}${formatNumber(Number(item.change))} 點` : "";
+        const percent = hasNumber(item.change_percent) ? `漲跌幅 ${signedPercent(Number(item.change_percent))}` : "";
+        const freshness = String(item.freshness || item.data_status || "").trim();
+        const session = String(item.session || "").trim();
+        const contract = [item.contract_month, item.contract_basis].filter(Boolean).join("／");
+        const delay = item.quote_delayed === true ? "延遲行情" : "";
+        const label = [identity, source, time, price, change, percent, freshness, session, contract, delay, proxy].filter(Boolean).join("｜");
         return `<li>${url.startsWith("https://") ? `<a href="${escapeHtml(url)}" target="_blank" rel="noreferrer">${escapeHtml(label)}</a>` : escapeHtml(label)}</li>`;
       }).join("");
       return `<details class="briefing-evidence"><summary>${escapeHtml(summary)}</summary><ul>${detailRows}</ul></details>`;
@@ -1420,6 +1433,35 @@ const renderBriefing = (briefing, generatedAt) => {
       const structuredFacts = Array.isArray(item.facts_structured) ? item.facts_structured : [];
       const visibleStructuredFacts = cleanQuoteFacts(structuredFacts);
       const visibleFacts = cleanQuoteLines(facts);
+      if (item.layout === "us_cash_v2" || item.layout === "us_futures_sox_v2") {
+        const renderUsFact = (fact) => {
+          const rawPercent = fact?.display_change_percent;
+          const movement = quoteMovement(rawPercent);
+          return `<p class="morning-analysis-fact ${movement.state}">${rawPercent === null || rawPercent === undefined ? "" : quoteMovementPrefix(rawPercent)}${escapeHtml(String(fact?.text || ""))}</p>`;
+        };
+        const title = escapeHtml(item.title || "美股市場資訊");
+        const headerNote = String(item.header_note || "").trim();
+        const headerNoteMarkup = headerNote ? `<span>${escapeHtml(headerNote)}</span>` : "";
+        const takeaway = String(item.takeaway || "").trim();
+        const takeawayMarkup = takeaway
+          ? `<p class="us-market-takeaway"><b>簡要觀察：</b>${escapeHtml(takeaway)}</p>` : "";
+        const evidence = renderEvidence(item.evidence);
+        if (item.layout === "us_cash_v2") {
+          const rows = visibleStructuredFacts.map(renderUsFact).join("");
+          return `<article class="morning-analysis-section us-market-card us-market-cash"><div class="morning-analysis-section-heading"><h3>${title}</h3>${headerNoteMarkup}</div><div class="us-market-facts">${rows || '<p class="morning-analysis-fact">本輪未取得可核對資料。</p>'}</div>${takeawayMarkup}${evidence}</article>`;
+        }
+        const references = Array.isArray(item.reference_facts) ? item.reference_facts : [];
+        const supplements = Array.isArray(item.supplementary_facts) ? item.supplementary_facts : [];
+        const primaryRows = visibleStructuredFacts.map(renderUsFact).join("");
+        const referenceRows = references.map(renderUsFact).join("");
+        const supplementaryRows = supplements.map(renderUsFact).join("");
+        const group = (label, rows, className) => rows
+          ? `<section class="us-market-subgroup ${className}"><h4>${escapeHtml(label)}</h4><div class="us-market-facts">${rows}</div></section>` : "";
+        const body = group("盤前觀測", primaryRows || '<p class="morning-analysis-fact">本輪未取得可核對資料。</p>', "us-market-primary")
+          + group("最近收盤參考（非盤前即時）", referenceRows, "us-market-reference")
+          + group("半導體參考｜最近收盤", supplementaryRows, "us-market-sox");
+        return `<article class="morning-analysis-section us-market-card us-market-futures"><div class="morning-analysis-section-heading"><h3>${title}</h3></div>${body}${takeawayMarkup}${evidence}</article>`;
+      }
       const renderStructuredFacts = () => visibleStructuredFacts.slice(0, 6).map((fact) => {
         const quote = fact && fact.quote && typeof fact.quote === "object" ? fact.quote : null;
         const rawChange = quote?.change_percent;
