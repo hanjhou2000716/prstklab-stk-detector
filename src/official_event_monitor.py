@@ -531,7 +531,11 @@ def write_status_output(
                     elif any(status in {"in_flight", "uncertain"} for status in claim_statuses):
                         candidate_should_send = False
                         candidate_unknown_suppression = True
-                        candidate_reason = "notification_claim_in_flight_or_uncertain"
+                        candidate_reason = (
+                            "notification_claim_uncertain"
+                            if "uncertain" in claim_statuses
+                            else "notification_claim_in_flight"
+                        )
                     elif any(status == "delivered" for status in claim_statuses):
                         if any(status != "delivered" for status in claim_statuses):
                             candidate_should_send = False
