@@ -12,6 +12,7 @@ from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+
 def fetch_created_at(repository: str, run_id: str, token: str, *, opener: Callable[..., Any] = urlopen) -> str:
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository):
         raise ValueError("workflow_run_identity_invalid")
