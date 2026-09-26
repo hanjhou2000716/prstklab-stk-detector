@@ -108,6 +108,7 @@ def test_official_durable_receipt_suppresses_duplicate_delivery() -> None:
         NOTIFICATION_REASON="already_delivered",
         SEND_STATUS="",
         SEND_OUTCOME="skipped",
+        IDEMPOTENCY_CACHE_HIT="true",
         DURABLE_RECEIPT_VERIFIED="true",
     ))
 
