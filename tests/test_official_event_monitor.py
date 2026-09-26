@@ -773,3 +773,104 @@ def test_already_delivered_candidate_requires_complete_durable_receipts(monkeypa
     assert "notification_status=blocked" in partial
     assert "notification_reason=delivered_claim_missing_recipient_receipts" in partial
     assert "hard_failure=true" in partial
+
+
+
+def test_terminal_notification_projection_is_written_before_public_snapshot(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    event = {
+        "source_key": "official",
+        "event_type": "disaster",
+        "title": "Previously reported event",
+        "source_url": "https://example.test/event",
+    }
+    snapshot = {
+        "events": {"items": [event]},
+        "source_health": {"notification_observability": {"scheduled_brief": {"notification_status": "no_event"}}},
+    }
+    monkeypatch.setattr(monitor, "build_official_event_brief", lambda _event: "complete brief")
+    monkeypatch.setattr(monitor, "content_is_incomplete", lambda *_args: False)
+    monkeypatch.setattr(monitor, "_observe_event", lambda *_args, **_kwargs: {"should_remind": True, "changed": True})
+    monkeypatch.setattr(monitor, "select_official_event", lambda *_args, **_kwargs: None)
+
+    class FakeLedger:
+        delivery_claims = {}
+
+        def save(self):
+            return None
+
+        def theme_decision(self, _event):
+            return {"allowed": False, "reason": "same_theme_unchanged"}
+
+    monkeypatch.setattr(monitor, "EventLedger", FakeLedger)
+    published = {}
+
+    def capture_snapshot(value):
+        published["lane"] = value["source_health"]["notification_observability"]["official_event_monitor"]
+        return True
+
+    monkeypatch.setattr(monitor, "write_snapshot", capture_snapshot)
+    monitor.write_status_output(event, snapshot, publish_snapshot=True)
+
+    lane = published["lane"]
+    assert lane["notification_expected"] is False
+    assert lane["notification_status"] == "policy_suppressed"
+    assert lane["notification_reason"] == "theme:same_theme_unchanged"
+    assert snapshot["source_health"]["notification_observability"]["scheduled_brief"]["notification_status"] == "no_event"
+    text = output.read_text(encoding="utf-8")
+    assert "should_send=false" in text
+    assert "notification_expected=false" in text
+    assert "notification_status=policy_suppressed" in text
+    assert "snapshot_publish_failed=false" in text
+
+
+def test_official_candidate_is_blocked_when_terminal_snapshot_cannot_be_published(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    event = {
+        "source_key": "official",
+        "event_type": "macro",
+        "title": "Current official release",
+        "source_url": "https://example.test/release",
+    }
+    snapshot = {"events": {"items": [event]}, "source_health": {}}
+    monkeypatch.setattr(monitor, "build_official_event_brief", lambda _event: "complete brief")
+    monkeypatch.setattr(monitor, "content_is_incomplete", lambda *_args: False)
+    monkeypatch.setattr(monitor, "_observe_event", lambda *_args, **_kwargs: {"should_remind": True, "changed": True})
+    monkeypatch.setattr(monitor, "select_official_event", lambda *_args, **_kwargs: None)
+
+    class FakeLedger:
+        delivery_claims = {}
+
+        def save(self):
+            return None
+
+        def theme_decision(self, _event):
+            return {"allowed": True, "reason": "new_theme"}
+
+    monkeypatch.setattr(monitor, "EventLedger", FakeLedger)
+    monkeypatch.setattr(monitor, "write_snapshot", lambda _value: False)
+    monitor.write_status_output(event, snapshot, publish_snapshot=True)
+
+    text = output.read_text(encoding="utf-8")
+    assert "should_send=false" in text
+    assert "snapshot_publish_failed=true" in text
+    assert "notification_status=blocked" in text
+    assert "notification_reason=official_notification_snapshot_publish_blocked" in text
+    assert "hard_failure=true" in text
+
+
+def test_prepare_snapshot_can_defer_publication_until_terminal_decision(monkeypatch):
+    event = {"source_key": "official", "event_type": "disaster", "title": "event"}
+    snapshot = {"events": {"items": [event]}}
+    monkeypatch.setattr(monitor, "build_market_snapshot", lambda: snapshot)
+    monkeypatch.setattr(monitor, "_attach_realtime_external_events", lambda value: value)
+    monkeypatch.setattr(monitor, "select_official_event", lambda *_args, **_kwargs: event)
+    monkeypatch.setattr(monitor, "write_snapshot", lambda _value: (_ for _ in ()).throw(AssertionError("must defer")))
+
+    result_snapshot, selected = monitor.prepare_snapshot(publish=False)
+
+    assert result_snapshot is snapshot
+    assert selected is event
+    assert "notification_observability" not in result_snapshot.get("source_health", {})
