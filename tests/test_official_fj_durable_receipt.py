@@ -85,7 +85,7 @@ def test_fj_preflight_finds_sender_key_and_alias_and_verifies_all_receipts(
                 "recipient_hashes": ["recipient-a", "recipient-b"],
                 "delivered_recipient_hashes": ["recipient-a"],
             },
-            "notification_claim_in_flight_or_uncertain",
+            "notification_claim_uncertain",
         ),
     ],
 )
