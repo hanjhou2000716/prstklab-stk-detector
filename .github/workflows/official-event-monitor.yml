@@ -341,6 +341,7 @@ jobs:
           path: .official-event-lock
           key: official-event-${{ steps.status.outputs.key }}
       - name: Save official event diagnostic
+        id: terminal_diagnostic
         if: always()
         env:
           EVENT_KEY: ${{ steps.status.outputs.key || '' }}
