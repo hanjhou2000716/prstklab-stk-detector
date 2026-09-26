@@ -194,7 +194,8 @@ def _briefing_delivery_event(snapshot: dict[str, Any], slot: str) -> dict[str, A
         "slot": slot,
         "alert_lane": "scheduled_brief",
         "anchor_key": anchor_key(
-            slot,
+            str((briefing.get("slot_context") or {}).get("scheduled_slot") or slot)
+            if isinstance(briefing.get("slot_context"), dict) else slot,
             str(((briefing.get("slot_context") or {}).get("slot_date") if isinstance(briefing.get("slot_context"), dict) else "") or datetime.now().astimezone().date().isoformat()),
         ),
         "notification_key": briefing.get("notification_key"),
@@ -905,13 +906,14 @@ def _attach_schedule_decision(
         status, reason = "late_schedule", obligation_reason
     row: dict[str, Any] = {
         "anchor_key": anchor_key(
-            str(ctx.get("effective_slot") or slot),
+            str(ctx.get("scheduled_slot") or slot),
             str(ctx.get("slot_date") or datetime.now().astimezone().date().isoformat()),
         ),
         "scheduled_slot": str(ctx.get("scheduled_slot") or slot),
         "effective_market_phase": str(ctx.get("effective_market_phase") or ctx.get("effective_slot") or slot),
         "slot_date": str(ctx.get("slot_date") or ""),
         "scheduled_for_at": str(ctx.get("scheduled_for_at") or ""),
+        "run_created_at": str(ctx.get("run_created_at") or ""),
         "dispatch_unix": str(ctx.get("dispatch_unix") or ""),
         "dispatch_trace_id": str(ctx.get("dispatch_trace_id") or ""),
         "arrival_at": str(ctx.get("arrival_at") or ctx.get("run_started_at") or ""),
@@ -1216,7 +1218,7 @@ def prepare(
     comparison_delivery_eligible = False
     comparison_reason = ""
     if isinstance(briefing_for_comparison, dict) and isinstance(effective_context, dict):
-        comparison_slot = str(effective_context.get("effective_slot") or slot or "").strip()
+        comparison_slot = str(effective_context.get("scheduled_slot") or slot or "").strip()
         comparison_date = str(effective_context.get("slot_date") or "").strip()
         comparison_fingerprint = str(briefing_for_comparison.get("decision_fingerprint") or "").strip()
         assessment_for_comparison = briefing_for_comparison.get("market_assessment")
@@ -1582,6 +1584,7 @@ def send(
     effective_slot_key = str(
         slot_key
         or os.getenv("SCHEDULED_SLOT_KEY")
+        or str(event.get("anchor_key") or "")
         or anchor_key(slot, datetime.now().astimezone().date().isoformat())
     )
     effective_run_id = str(run_id or os.getenv("GITHUB_RUN_ID", ""))

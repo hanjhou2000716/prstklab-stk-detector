@@ -2,9 +2,11 @@ name: Scheduled brief slot receipt audit
 
 on:
   schedule:
-    # Exactly 09:45 America/New_York across DST, 15 minutes after the send
-    # deadline to allow durable receipt publication. The non-applicable UTC
-    # candidate exits read-only without evaluating a different local time.
+    # UTC triggers correspond to the exchange-local read-only receipt deadlines.
+    - cron: "45 22 * * *"
+    - cron: "30 1 * * 1-5"
+    - cron: "5 7 * * 1-5"
+    # NYSE daylight and standard-time candidates; the non-applicable one exits quietly.
     - cron: "45 13 * * 1-5"
     - cron: "45 14 * * 1-5"
 
@@ -18,7 +20,7 @@ concurrency:
 
 jobs:
   audit:
-    name: Verify durable premarket receipt
+    name: Verify scheduled slot receipt (read-only)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout audit code
@@ -36,12 +38,21 @@ jobs:
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.11"
-      - name: Install calendar dependency
-        run: pip install "pandas-market-calendars>=4.4"
-      - name: Audit this NYSE premarket slot
+      - name: Install read-only audit dependencies
+        run: pip install -r requirements-production.txt
+      - name: Capture immutable audit run creation time
+        id: run_context
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: python -m src.workflow_run_context >> "$GITHUB_OUTPUT"
+      - name: Audit scheduled slot receipt without dispatch or mutation
         env:
           GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule }}
+          RUN_CREATED_AT: ${{ steps.run_context.outputs.created_at }}
         run: >-
           python -m src.scheduled_slot_audit
           --ledger receipt-ledger/site/data/event-ledger.json
           --schedule "$GITHUB_EVENT_SCHEDULE"
+          --run-created-at "$RUN_CREATED_AT"

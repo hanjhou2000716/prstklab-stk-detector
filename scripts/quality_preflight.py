@@ -58,45 +58,19 @@ def _changed_test_files(base_sha: str | None) -> list[str]:
 
 def static_commands() -> list[tuple[str, list[str]]]:
     workflows = _workflow_files()
-    actionlint = shutil.which("actionlint")
-    actionlint_command: list[str]
-    if actionlint:
-        version = subprocess.run([actionlint, "-version"], cwd=ROOT, check=False, capture_output=True, text=True)
-        if version.returncode == 0 and "1.7.7" in f"{version.stdout}\n{version.stderr}":
-            actionlint_command = [actionlint, *workflows]
-        else:
-            actionlint_command = [
-                "docker",
-                "run",
-                "--rm",
-                "-w",
-                "/repo",
-                "-v",
-                f"{ROOT.as_posix()}:/repo",
-                "rhysd/actionlint:1.7.7",
-                *workflows,
-            ]
-    else:
-        actionlint_command = [
-            "docker",
-            "run",
-            "--rm",
-            "-w",
-            "/repo",
-            "-v",
-            f"{ROOT.as_posix()}:/repo",
-            "rhysd/actionlint:1.7.7",
-            *workflows,
-        ]
+    actionlint = shutil.which("actionlint") or "actionlint"
     return [
-        ("GitHub Actions workflow syntax", actionlint_command),
+        (
+            "Pinned actionlint/ShellCheck versions and SC2129 regression",
+            [sys.executable, str(ROOT / "scripts" / "check_quality_tools.py")],
+        ),
+        ("GitHub Actions workflow syntax and embedded shell checks", [actionlint, *workflows]),
         ("Ruff source, tests, and quality tooling", ["uv", "run", "ruff", "check", "src", "tests", "scripts"]),
         (
             "Mypy source and quality tooling",
             ["uv", "run", "mypy", "src", "scripts/quality_preflight.py", "scripts/inspect_quality_run.py"],
         ),
     ]
-
 
 def test_commands(base_sha: str | None) -> list[tuple[str, list[str]]]:
     commands: list[tuple[str, list[str]]] = [("Reset coverage data", ["uv", "run", "coverage", "erase"])]

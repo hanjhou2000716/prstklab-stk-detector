@@ -218,3 +218,48 @@ def test_scheduled_delivery_uses_shared_budget_for_repeated_event():
     )
     assert result["allowed"] is False
     assert result["reason"] == "cooldown"
+
+
+
+def test_delayed_morning_cron_keeps_original_local_day_after_utc_midnight():
+    runner = datetime(2026, 9, 26, 8, 23, tzinfo=ZoneInfo("Asia/Taipei"))
+    context = resolve_slot_context(
+        "auto",
+        runner,
+        scheduled_cron="0 22 * * *",
+        run_created_at="2026-09-26T00:23:53Z",
+    )
+    assert context is not None
+    assert context["scheduled_slot"] == "morning"
+    assert context["slot_date"] == "2026-09-26"
+    assert context["scheduled_for_at"] == "2026-09-26T06:00:00+08:00"
+    assert context["delivery_intent"] == "publish_only"
+    assert context["resolution_reason"] == "late_schedule_publish_only"
+    assert context["run_created_at"] == "2026-09-26T00:23:53Z"
+
+
+def test_morning_cron_occurrence_deadline_boundary_and_no_future_anchor():
+    from src.scheduled_brief import _scheduled_time_for_cron
+
+    at_anchor = datetime(2026, 9, 25, 22, 0, tzinfo=ZoneInfo("UTC"))
+    resolved = _scheduled_time_for_cron(at_anchor, "0 22 * * *", "2026-09-25T22:00:00Z")
+    assert resolved is not None
+    assert resolved.isoformat() == "2026-09-26T06:00:00+08:00"
+
+    deadline = datetime(2026, 9, 26, 8, 0, tzinfo=ZoneInfo("Asia/Taipei"))
+    exact = resolve_slot_context(
+        "auto", deadline, scheduled_cron="0 22 * * *",
+        run_created_at="2026-09-25T22:00:00Z",
+    )
+    assert exact is not None
+    assert exact["delay_seconds"] == str(30 * 60)
+    assert exact["delivery_intent"] == "publish_only"
+
+    not_yet_due = datetime(2026, 9, 25, 21, 59, tzinfo=ZoneInfo("Asia/Taipei"))
+    future = resolve_slot_context(
+        "auto", not_yet_due, scheduled_cron="0 22 * * *",
+        run_created_at="2026-09-25T22:00:00Z",
+    )
+    assert future is not None
+    assert future["contract_status"] == "invalid"
+    assert future["resolution_reason"] == "scheduled_anchor_in_future"

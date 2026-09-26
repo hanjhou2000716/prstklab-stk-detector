@@ -32,6 +32,28 @@ jobs:
           python -m pip install -r requirements.txt pytest
           python -m pip install uv
           uv sync --locked --all-groups
+      - name: Install pinned actionlint and ShellCheck
+        run: |
+          set -euo pipefail
+          temp_dir="$(mktemp -d)"
+          trap 'rm -rf "$temp_dir"' EXIT
+          action_version="1.7.7"
+          action_archive="actionlint_${action_version}_linux_amd64.tar.gz"
+          action_base="https://github.com/rhysd/actionlint/releases/download/v${action_version}"
+          curl -fsSL "$action_base/$action_archive" -o "$temp_dir/$action_archive"
+          curl -fsSL "$action_base/actionlint_${action_version}_checksums.txt" -o "$temp_dir/checksums.txt"
+          action_hash="$(awk -v file="$action_archive" '$NF == file { print $1; exit }' "$temp_dir/checksums.txt")"
+          test -n "$action_hash"
+          printf '%s  %s\n' "$action_hash" "$temp_dir/$action_archive" | sha256sum --check -
+          tar -xzf "$temp_dir/$action_archive" -C "$temp_dir"
+          sudo install "$temp_dir/actionlint" /usr/local/bin/actionlint
+          shell_archive="shellcheck-v0.11.0.linux.x86_64.tar.xz"
+          curl -fsSL "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/$shell_archive" -o "$temp_dir/$shell_archive"
+          printf '%s  %s\n' "8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198" "$temp_dir/$shell_archive" | sha256sum --check -
+          tar -xJf "$temp_dir/$shell_archive" -C "$temp_dir"
+          sudo install "$temp_dir/shellcheck-v0.11.0/shellcheck" /usr/local/bin/shellcheck
+          actionlint -version
+          shellcheck --version
       - name: Run shared workflow, Ruff, and Mypy preflight
         id: static_preflight
         run: uv run python scripts/quality_preflight.py --static

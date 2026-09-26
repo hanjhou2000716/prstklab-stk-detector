@@ -124,18 +124,29 @@ def anchor_key(slot: str, slot_date: str) -> str:
     return scheduled_anchor_key(slot, slot_date)
 
 
-def _scheduled_time_for_cron(local_now: datetime, cron: str) -> datetime | None:
-    """Return the Taipei execution time represented by a GitHub UTC cron."""
+def _scheduled_time_for_cron(local_now: datetime, cron: str, run_created_at: str | None = None) -> datetime | None:
+    """Resolve the latest UTC cron occurrence no later than immutable run creation."""
     parts = str(cron or "").split()
     if len(parts) != 5 or parts[2] != "*" or parts[3] != "*" or parts[4] not in {"*", "1-5"}:
         return None
     try:
         minute, hour = int(parts[0]), int(parts[1])
-    except ValueError:
+        reference = datetime.fromisoformat(str(run_created_at).replace("Z", "+00:00")) if run_created_at else local_now
+        if reference.tzinfo is None or reference.utcoffset() is None:
+            return None
+        reference = reference.astimezone(UTC)
+    except (TypeError, ValueError):
         return None
-    utc_date = local_now.astimezone(UTC).date()
-    return datetime(utc_date.year, utc_date.month, utc_date.day, hour, minute, tzinfo=UTC).astimezone(TAIPEI)
-
+    # GitHub cron weekdays are evaluated in UTC. Search backwards so delayed
+    # runners never reinterpret yesterday's invocation as tomorrow's slot.
+    for offset in range(8):
+        day = reference.date() - timedelta(days=offset)
+        if parts[4] == "1-5" and day.weekday() >= 5:
+            continue
+        candidate = datetime(day.year, day.month, day.day, hour, minute, tzinfo=UTC)
+        if candidate <= reference:
+            return candidate.astimezone(TAIPEI)
+    return None
 
 def _phase_at(local_now: datetime) -> tuple[str, str]:
     """Resolve the current market phase without treating after-open as premarket."""
@@ -175,9 +186,9 @@ def _strict_slot_at(now: datetime) -> str | None:
     return None
 
 
-def _us_premarket_cron_matches(now: datetime, scheduled_cron: str) -> bool:
-    """Accept only the UTC candidate matching today's NYSE open minus 30m."""
-    candidate = _scheduled_time_for_cron(now, scheduled_cron)
+def _us_premarket_cron_matches(now: datetime, scheduled_cron: str, run_created_at: str | None = None) -> bool:
+    """Accept only the run's UTC cron occurrence matching NYSE open minus 30m."""
+    candidate = _scheduled_time_for_cron(now, scheduled_cron, run_created_at)
     if candidate is None:
         return False
     try:
@@ -256,6 +267,7 @@ def resolve_schedule_diagnostic(
     time_zone: str | None = None,
     dispatch_unix: str | None = None,
     dispatch_trace_id: str | None = None,
+    run_created_at: str | None = None,
 ) -> dict[str, object]:
     """Resolve a scheduled run and retain a diagnostic for invalid context.
 
@@ -275,6 +287,7 @@ def resolve_schedule_diagnostic(
         time_zone=time_zone,
         dispatch_unix=dispatch_unix,
         dispatch_trace_id=dispatch_trace_id,
+        run_created_at=run_created_at,
     )
     if context is not None:
         return {"context": context, "valid": context.get("contract_status") != "invalid", "reason": context.get("resolution_reason", "")}
@@ -316,6 +329,7 @@ def resolve_slot_context(
     time_zone: str | None = None,
     dispatch_unix: str | None = None,
     dispatch_trace_id: str | None = None,
+    run_created_at: str | None = None,
 ) -> dict[str, str] | None:
     """Resolve slot plus identity metadata without trusting stale manual input."""
     local_now = now or datetime.now(ZoneInfo("Asia/Taipei"))
@@ -326,9 +340,9 @@ def resolve_slot_context(
     cron_slot = CRON_SLOT_MAP.get(cron_text)
     if cron_slot:
         if cron_slot == "us_premarket":
-            if not _us_premarket_cron_matches(local_now, cron_text):
+            if not _us_premarket_cron_matches(local_now, cron_text, run_created_at):
                 return None
-        scheduled_at = _scheduled_time_for_cron(local_now, cron_text)
+        scheduled_at = _scheduled_time_for_cron(local_now, cron_text, run_created_at)
         if scheduled_for_at:
             try:
                 parsed = datetime.fromisoformat(str(scheduled_for_at).replace("Z", "+00:00"))
@@ -342,28 +356,42 @@ def resolve_slot_context(
                 scheduled_at = us_premarket_anchor(scheduled_at.astimezone(NEW_YORK).date())
             except ValueError:
                 return None
-        delay_seconds = max(0, int((local_now - scheduled_at).total_seconds()))
-        late = delay_seconds > MAX_SCHEDULE_DELAY_SECONDS
+        delay_seconds = int((local_now - scheduled_at).total_seconds())
+        if delay_seconds < 0:
+            slot_day = scheduled_at.astimezone(NEW_YORK if cron_slot == "us_premarket" else TAIPEI).date()
+            return {
+                "requested_slot": requested,
+                "scheduled_slot": cron_slot,
+                "effective_slot": cron_slot,
+                "effective_market_phase": cron_slot,
+                "slot_date": slot_day.isoformat(),
+                "scheduled_for_at": scheduled_at.isoformat(),
+                "run_created_at": str(run_created_at or ""),
+                "run_started_at": local_now.isoformat(),
+                "arrival_at": local_now.isoformat(),
+                "delay_seconds": str(delay_seconds),
+                "delivery_intent": "publish_only",
+                "resolution_reason": "scheduled_anchor_in_future",
+                "trigger_kind": "schedule" if trigger == "compatibility" else trigger,
+                "schedule_contract_version": SCHEDULE_CONTRACT_VERSION,
+                "time_zone": timezone_for_slot(cron_slot),
+                "contract_status": "invalid",
+            }
+        late = delay_seconds >= MAX_SCHEDULE_DELAY_SECONDS
         market_closed = cron_slot == "us_premarket" and local_now.astimezone(NEW_YORK) >= scheduled_at + timedelta(minutes=30)
-        actual_phase, actual_date = _phase_at(local_now)
-        slot_date = local_now.date()
-        # The 13:00 UTC weekday cron is the 21:00 Taipei report.  If GitHub
-        # starts that run after midnight Taipei time, keep the slot identity
-        # on the previous local date instead of creating a second report for
-        # the new calendar day.
-        if cron_slot == "us_premarket" and local_now.hour < 6:
-            slot_date -= timedelta(days=1)
-        if cron_slot == "us_premarket":
-            slot_date = scheduled_at.astimezone(NEW_YORK).date()
-        resolved_slot = actual_phase if late and cron_slot != "us_premarket" else cron_slot
-        resolved_date = actual_date if late and cron_slot != "us_premarket" else slot_date.isoformat()
+        actual_phase, _actual_date = _phase_at(local_now)
+        slot_date = scheduled_at.astimezone(
+            NEW_YORK if cron_slot == "us_premarket" else TAIPEI
+        ).date().isoformat()
+        resolved_slot = actual_phase if late or market_closed else cron_slot
         return {
             "requested_slot": requested,
             "scheduled_slot": cron_slot,
             "effective_slot": resolved_slot,
             "effective_market_phase": resolved_slot,
-            "slot_date": resolved_date,
+            "slot_date": slot_date,
             "scheduled_for_at": scheduled_at.isoformat(),
+            "run_created_at": str(run_created_at or ""),
             "run_started_at": local_now.isoformat(),
             "arrival_at": local_now.isoformat(),
             "delay_seconds": str(delay_seconds),
@@ -718,6 +746,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--time-zone", default="")
     parser.add_argument("--dispatch-unix", default="")
     parser.add_argument("--dispatch-trace-id", default="")
+    parser.add_argument("--run-created-at", default="")
     return parser.parse_args()
 
 
@@ -735,6 +764,7 @@ def main() -> None:
         time_zone=args.time_zone,
         dispatch_unix=args.dispatch_unix,
         dispatch_trace_id=args.dispatch_trace_id,
+        run_created_at=args.run_created_at,
     )
     raw_context = diagnostic.get("context")
     context: dict[str, str] | None = raw_context if isinstance(raw_context, dict) else None
@@ -750,6 +780,7 @@ def main() -> None:
         print(f"scheduled_for_at={(context or {}).get('scheduled_for_at', '')}")
         print(f"dispatch_unix={(context or {}).get('dispatch_unix', '')}")
         print(f"dispatch_trace_id={(context or {}).get('dispatch_trace_id', '')}")
+        print(f"run_created_at={(context or {}).get('run_created_at', args.run_created_at)}")
         print(f"run_started_at={(context or {}).get('run_started_at', now.isoformat())}")
         print(f"delay_seconds={(context or {}).get('delay_seconds', '0')}")
         print(f"delivery_intent={(context or {}).get('delivery_intent', 'event_only')}")
@@ -760,7 +791,8 @@ def main() -> None:
         print(f"time_zone={(context or {}).get('time_zone', SCHEDULE_TIMEZONE)}")
         print(f"notification_status={(context or {}).get('notification_status', 'blocked' if not diagnostic.get('valid', False) and slot else 'not_attempted')}")
         print(f"notification_reason={(context or {}).get('suppression_reason') or diagnostic.get('reason') or ('outside_window' if not slot else '')}")
-        print(f"key={anchor_key(slot or 'skip', (context or {}).get('slot_date', now.date().isoformat())) if slot else 'skip'}")
+        key_slot = (context or {}).get("scheduled_slot") or slot
+        print(f"key={anchor_key(key_slot or 'skip', (context or {}).get('slot_date', now.date().isoformat())) if key_slot else 'skip'}")
         if context:
             _write_output({"context_json": context})
         return

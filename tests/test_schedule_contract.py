@@ -248,3 +248,32 @@ def test_v3_dispatch_requires_trace_id_after_timestamp_validation():
     )
 
     assert result["reason"] == "invalid_schedule_context:missing_trace_id"
+
+
+
+def test_scheduled_dispatch_deadline_is_half_open_at_exactly_thirty_minutes():
+    scheduled = "2026-09-28T08:45:00+08:00"
+    exact_deadline = datetime(2026, 9, 28, 9, 15, tzinfo=TAIPEI)
+    result = validate_scheduled_context(
+        slot="pre_open",
+        scheduled_for_at=scheduled,
+        now=exact_deadline,
+        contract_version=EXPLICIT_TIMESTAMP_SCHEDULE_CONTRACT_VERSION,
+        time_zone="Asia/Taipei",
+    )
+    assert result["contract_status"] == "valid"
+    assert result["delay_seconds"] == 30 * 60
+    assert result["reason"] == "late_schedule_publish_only"
+
+
+
+def test_future_schedule_anchor_is_rejected_instead_of_clamped_to_zero_delay():
+    result = validate_scheduled_context(
+        slot="pre_open",
+        scheduled_for_at="2026-09-28T08:45:00+08:00",
+        now=datetime(2026, 9, 28, 8, 44, 59, tzinfo=TAIPEI),
+        contract_version=EXPLICIT_TIMESTAMP_SCHEDULE_CONTRACT_VERSION,
+        time_zone="Asia/Taipei",
+    )
+    assert result["contract_status"] == "invalid"
+    assert result["reason"] == "invalid_schedule_context:future_scheduled_for_at"

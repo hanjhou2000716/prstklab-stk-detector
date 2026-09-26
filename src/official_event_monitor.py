@@ -470,52 +470,112 @@ def write_status_output(
     """Write GitHub Actions outputs without mixing provider diagnostics into them."""
     content_status = "not_applicable"
     content_blocked = False
-    if event:
-        try:
-            candidate_caption = build_official_event_brief(event)
-        except (TypeError, ValueError):
-            candidate_caption = ""
-        content_blocked = content_is_incomplete(event, candidate_caption)
-        content_status = "incomplete" if content_blocked else "complete"
-    ledger_record = _observe_event(event)
-    # A fresh, complete FJ 9/10+ event is its own delivery policy.  It must not
-    # be starved by the generic event-theme cooldown; the final recipient claim
-    # still provides replay safety.
-    priority_event = is_financialjuice_priority_event(event)
-    should_send = bool(
-        event and not content_blocked
-        and (priority_event or ledger_record.get("should_remind", True))
-    )
+    policy_suppressed = False
+    unknown_suppression = False
+    suppression_reason = ""
+    ledger_record: dict[str, Any] = {}
+    priority_event = False
+    should_send = False
     suppressed_candidates = 0
-    # The durable ledger is authoritative, but the first selected candidate
-    # can already be known and suppressed while a later candidate is new. Do
-    # not let that top candidate prevent the workflow from considering the
-    # rest of the same queue (especially a previously delivered FJ item).
-    if event and not should_send and not content_blocked and isinstance(snapshot, dict):
-        excluded = {event_key(event)}
-        # Consider every candidate in this immutable snapshot.  A stale or
-        # suppressed first row must not starve a later native signal or an
-        # eligible FJ row merely because the old compatibility loop stopped
-        # after eight attempts.
-        candidate_limit = max(
-            1,
-            len(snapshot.get("events", {}).get("items", []))
-            if isinstance(snapshot.get("events"), dict)
-            else 1,
-        ) + 1
+    if event:
+        excluded: set[str] = set()
+        candidates_value = (
+            snapshot.get("events", {}).get("items", [])
+            if isinstance(snapshot, dict) and isinstance(snapshot.get("events"), dict)
+            else []
+        )
+        candidate_limit = max(1, len(candidates_value) if isinstance(candidates_value, list) else 1) + 1
+        candidate = event
         for _ in range(candidate_limit):
-            next_event = select_official_event(snapshot, excluded_event_keys=excluded)
+            try:
+                candidate_caption = build_official_event_brief(candidate)
+            except (TypeError, ValueError):
+                candidate_caption = ""
+            candidate_incomplete = content_is_incomplete(candidate, candidate_caption)
+            if candidate_incomplete:
+                content_blocked = True
+                content_status = "incomplete"
+            else:
+                content_blocked = False
+                content_status = "complete"
+                candidate_record = _observe_event(candidate)
+                candidate_priority = is_financialjuice_priority_event(candidate)
+                candidate_should_send = bool(
+                    candidate_priority or candidate_record.get("should_remind", True)
+                )
+                candidate_suppressed = False
+                candidate_unknown_suppression = False
+                candidate_reason = ""
+                try:
+                    theme_ledger = EventLedger()
+                    claim = getattr(theme_ledger, "delivery_claims", {}).get(event_key(candidate), {})
+                    claim_status = str(claim.get("status") or "") if isinstance(claim, dict) else ""
+                    if claim_status in {"in_flight", "uncertain"}:
+                        candidate_should_send = False
+                        candidate_unknown_suppression = True
+                        candidate_reason = f"notification_claim_{claim_status}"
+                    elif claim_status == "delivered":
+                        configured = {
+                            str(value) for value in claim.get("recipient_hashes", []) if str(value)
+                        } if isinstance(claim, dict) else set()
+                        delivered = {
+                            str(value) for value in claim.get("delivered_recipient_hashes", []) if str(value)
+                        } if isinstance(claim, dict) else set()
+                        if configured and configured.issubset(delivered):
+                            candidate_should_send = False
+                            candidate_suppressed = True
+                            candidate_reason = "already_delivered"
+                        else:
+                            candidate_should_send = False
+                            candidate_unknown_suppression = True
+                            candidate_reason = "delivered_claim_missing_recipient_receipts"
+                    elif not candidate_priority and hasattr(theme_ledger, "theme_decision"):
+                        theme = theme_ledger.theme_decision(candidate)
+                        if hasattr(theme_ledger, "save"):
+                            theme_ledger.save()
+                        theme_reason = str(theme.get("reason") or "theme_decision_unavailable")
+                        if not theme.get("allowed", False):
+                            candidate_should_send = False
+                            if theme_reason in {"same_theme_within_2h", "same_theme_unchanged"}:
+                                candidate_suppressed = True
+                                candidate_reason = f"theme:{theme_reason}"
+                            else:
+                                candidate_unknown_suppression = True
+                                candidate_reason = f"theme:{theme_reason}"
+                        elif not candidate_should_send:
+                            candidate_unknown_suppression = True
+                            candidate_reason = "preflight_sender_policy_disagreement"
+                    elif not candidate_priority and not candidate_should_send:
+                        candidate_unknown_suppression = True
+                        candidate_reason = "theme_preflight_unavailable"
+                except (OSError, RuntimeError, TypeError, ValueError):
+                    candidate_unknown_suppression = True
+                    candidate_should_send = False
+                    candidate_reason = "theme_preflight_unavailable"
+                event = candidate
+                ledger_record = candidate_record
+                priority_event = candidate_priority
+                if candidate_should_send:
+                    should_send = True
+                    content_blocked = False
+                    policy_suppressed = False
+                    unknown_suppression = False
+                    break
+                policy_suppressed = candidate_suppressed
+                unknown_suppression = candidate_unknown_suppression
+                suppression_reason = candidate_reason
+                if candidate_unknown_suppression:
+                    event = candidate
+                    break
+            identity = event_key(candidate)
+            if identity:
+                excluded.add(identity)
+            next_event = select_official_event(snapshot, excluded_event_keys=excluded) if isinstance(snapshot, dict) else None
             if next_event is None:
+                event = candidate
                 break
             suppressed_candidates += 1
-            next_record = _observe_event(next_event)
-            event = next_event
-            ledger_record = next_record
-            priority_event = is_financialjuice_priority_event(next_event)
-            should_send = bool(priority_event or next_record.get("should_remind", True))
-            excluded.add(event_key(next_event))
-            if should_send:
-                break
+            candidate = next_event
     pending_value = (
         snapshot.get("financialjuice_priority_pending_events")
         if isinstance(snapshot, dict) else []
@@ -598,6 +658,13 @@ def write_status_output(
     elif pending_events:
         reason = "priority_summary_timeout" if pending_timeout else "summary_semantics_incomplete"
         status = "summary_timeout" if pending_timeout else "summary_pending"
+    elif policy_suppressed and not unknown_suppression:
+        reason = suppression_reason or "policy_suppressed"
+        status = "already_delivered" if suppression_reason == "already_delivered" else "policy_suppressed"
+    elif unknown_suppression:
+        reason = suppression_reason or "notification_policy_unresolved"
+        status = "blocked"
+        hard_failure_reason = reason
     else:
         reason = "candidate_ready" if should_send else "no_new_eligible_candidate" if event else "no_event"
         status = "candidate_ready" if should_send else "suppressed" if event else "no_event"
@@ -609,13 +676,13 @@ def write_status_output(
     summary = decision_summary(
         event=diagnostic_event,
         scan_status="completed",
-        notification_expected=bool((event and not content_blocked) or pending_events or contract_mismatch),
+        notification_expected=bool((event and should_send) or pending_events or contract_mismatch or unknown_suppression),
         notification_status=status,
         notification_reason=reason,
         last_candidate_at=last_candidate_at,
     )
     summary["priority_dispatch_legacy_rescan"] = legacy_dispatch_rescued
-    if suppressed_candidates and not contract_mismatch and not durable_source_missing and not pending_timeout and not content_blocked:
+    if should_send and suppressed_candidates and not contract_mismatch and not durable_source_missing and not pending_timeout and not content_blocked:
         summary["notification_reason"] = "top_candidate_suppressed_later_candidate_considered"
     lines = [
         f"should_send={'true' if should_send else 'false'}",
@@ -636,7 +703,7 @@ def write_status_output(
         f"priority_pending_age_seconds={pending_age_seconds}",
         f"candidate_content_status={content_status}",
         f"hard_failure_reason={hard_failure_reason or ('priority_candidate_contract_mismatch' if contract_mismatch else 'priority_durable_observation_missing' if durable_source_missing else 'priority_summary_timeout' if pending_timeout and not should_send else '')}",
-        f"hard_failure={'true' if contract_mismatch or durable_source_missing or content_blocked or (pending_timeout and not should_send) else 'false'}",
+        f"hard_failure={'true' if contract_mismatch or durable_source_missing or content_blocked or unknown_suppression or (pending_timeout and not should_send) else 'false'}",
         f"last_processed_at={summary['last_processed_at']}",
         f"last_candidate_at={summary['last_candidate_at'] or ''}",
     ]
@@ -720,6 +787,7 @@ def write_send_output(
     failure_classes: list[str] | tuple[str, ...] | None = None,
     last_telegram_attempt_at: str | None = None,
     last_receipt_status: str | None = None,
+    notification_expected: bool | None = None,
 ) -> None:
     """Expose delivery result to GitHub Actions without failing a safe skip."""
     lines = [f"sent={'true' if sent else 'false'}", f"reason={reason}"]
@@ -727,7 +795,7 @@ def write_send_output(
     summary = decision_summary(
         event=event,
         scan_status="completed",
-        notification_expected=bool(event),
+        notification_expected=bool(event) if notification_expected is None else notification_expected,
         notification_status=status,
         notification_reason=reason,
         delivered_count=delivered_count,
@@ -957,7 +1025,8 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
                 False,
                 f"theme:{theme.get('reason', 'same_theme_unchanged')}",
                 event=event,
-                notification_status="suppressed",
+                notification_status="policy_suppressed",
+                notification_expected=False,
             )
             print(f"Official event suppressed by notification theme: {theme.get('reason', 'same_theme_unchanged')}")
             return False
