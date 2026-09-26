@@ -72,7 +72,11 @@ def test_gmail_history_dispatches_realtime_monitor_after_new_reviewed_rows():
     assert "priority_event_refs" in workflow
     assert "client_payload[priority_event_refs]" in workflow
     assert "priority_recovery_scan_status" in workflow
-    assert "gmail-reviewed-observation-or-recovery" in workflow
+    dispatcher = (root / "scripts" / "official_monitor_dispatch.py").read_text(encoding="utf-8")
+    assert "scripts/official_monitor_dispatch.py" in workflow
+    assert "gmail-reviewed-observation-or-recovery" in dispatcher
+    assert "scheduled_monitor_poll" in dispatcher
+    assert "repository_dispatch_monitor_poll" in dispatcher
 
 
 def test_worker_deploy_publishes_revision_for_health_reconciliation():
