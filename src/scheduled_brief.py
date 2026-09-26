@@ -421,15 +421,15 @@ def resolve_slot_context(
             return None
         scheduled_at = check["scheduled"]
         delay_seconds = max(0, int((local_now - scheduled_at).total_seconds()))
-        late = delay_seconds >= MAX_SCHEDULE_DELAY_SECONDS
+        late = delay_seconds > MAX_SCHEDULE_DELAY_SECONDS
         market_closed = declared == "us_premarket" and check.get("reason") == "market_closed"
-        actual_phase, _ = _phase_at(local_now)
+        actual_phase, actual_date = _phase_at(local_now)
         return {
             "requested_slot": requested,
             "scheduled_slot": declared,
             "effective_slot": actual_phase if late and declared != "us_premarket" else declared,
             "effective_market_phase": actual_phase if late and declared != "us_premarket" else declared,
-            "slot_date": check.get("slot_date", scheduled_at.date().isoformat()),
+            "slot_date": actual_date if late and declared != "us_premarket" else check.get("slot_date", scheduled_at.date().isoformat()),
             "scheduled_for_at": scheduled_at.isoformat(),
             "dispatch_unix": str(dispatch_unix or ""),
             "dispatch_trace_id": str(dispatch_trace_id or ""),
