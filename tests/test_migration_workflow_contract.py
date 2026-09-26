@@ -62,12 +62,16 @@ def test_refresh_dashboard_enables_private_market_backup_without_delivery_secret
     assert "TELEGRAM_BOT_TOKEN" not in workflow
 
 
-def test_quality_requires_actions_syntax_and_real_local_supabase_integration():
+def test_quality_requires_pinned_actions_syntax_tools_and_local_supabase_integration():
     workflow = (ROOT / ".github/workflows/quality.yml").read_text(encoding="utf-8")
     preflight = (ROOT / "scripts/quality_preflight.py").read_text(encoding="utf-8")
+    tool_check = (ROOT / "scripts/check_quality_tools.py").read_text(encoding="utf-8")
 
     assert "scripts/quality_preflight.py --static" in workflow
-    assert "rhysd/actionlint:1.7.7" in preflight
+    assert "Install pinned actionlint and ShellCheck" in workflow
+    assert "scripts/check_quality_tools.py" in preflight
+    assert 'ACTIONLINT_VERSION = "1.7.7"' in tool_check
+    assert 'SHELLCHECK_VERSION = "0.11.0"' in tool_check
     assert "scripts/local_supabase_migration_test.py" in workflow
     assert "supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520" in workflow
 
