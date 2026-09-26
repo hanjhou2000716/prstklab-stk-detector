@@ -108,10 +108,31 @@ def test_official_durable_receipt_suppresses_duplicate_delivery() -> None:
         NOTIFICATION_REASON="already_delivered",
         SEND_STATUS="",
         SEND_OUTCOME="skipped",
+        DURABLE_RECEIPT_VERIFIED="true",
     ))
 
     assert result["status"] == "already_delivered"
     assert result["failure"] is False
+
+
+
+def test_official_already_delivered_without_receipt_proof_fails_closed() -> None:
+    result = evaluate_official_terminal(official(
+        SHOULD_SEND="false",
+        NOTIFICATION_EXPECTED="false",
+        NOTIFICATION_STATUS="already_delivered",
+        NOTIFICATION_REASON="already_delivered",
+        SEND_STATUS="",
+        SEND_OUTCOME="skipped",
+        IDEMPOTENCY_CACHE_HIT="true",
+        DURABLE_RECEIPT_VERIFIED="false",
+    ))
+
+    assert result["status"] == "failed"
+    assert result["reason"] == "already_delivered_without_durable_recipient_receipt"
+    assert result["expected"] is True
+    assert result["failure"] is True
+    assert result["no_resend"] is True
 
 
 def test_official_delivery_requires_every_persistent_stage() -> None:
