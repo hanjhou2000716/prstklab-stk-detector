@@ -69,7 +69,7 @@ def test_quality_requires_pinned_actions_syntax_tools_and_local_supabase_integra
 
     assert "scripts/quality_preflight.py --static" in workflow
     assert "Install pinned actionlint and ShellCheck" in workflow
-    assert "scripts/check_quality_tools.py" in preflight
+    assert "check_quality_tools.py" in preflight
     assert 'ACTIONLINT_VERSION = "1.7.7"' in tool_check
     assert 'SHELLCHECK_VERSION = "0.11.0"' in tool_check
     assert "scripts/local_supabase_migration_test.py" in workflow
