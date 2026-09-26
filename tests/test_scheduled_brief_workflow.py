@@ -116,14 +116,19 @@ def test_delivery_claim_persistence_reconciles_the_public_release():
     assert "artifact_name: github-pages-reconciled" in workflow
     assert "Verify reconciled public release" in workflow
     assert "steps.reconciled_deployment.outputs.recoverable == 'true'" in workflow
-    terminal = workflow.split("- name: Fail scheduled run when a required report has no delivered receipt", 1)[1]
+    terminal = workflow.split("- name: Resolve scheduled notification terminal state", 1)[1]
+    classifier = (
+        Path(__file__).resolve().parents[1] / "src" / "notification_terminal.py"
+    ).read_text(encoding="utf-8")
+    assert "if: always()" in terminal
+    assert "python -m src.notification_terminal --workflow scheduled" in terminal
     assert "RECONCILED_DEPLOYMENT_VERIFIED" in terminal
     assert "RECONCILED_GATE_ALLOWED" in terminal
     assert "LEDGER_PERSIST_OUTCOME" in terminal
     assert "RECEIPT_CALLBACK_OUTCOME" in terminal
-    assert "do not resend" in terminal
-    assert 'steps.prepare.outputs.delivery_obligation == \'blocked\'' in terminal
-    assert 'steps.prepare.outputs.notification_expected == \'true\'' in terminal
+    assert "do_not_resend" in classifier
+    assert "DELIVERY_OBLIGATION" in terminal
+    assert "NOTIFICATION_EXPECTED" in terminal
 
 
 def test_pages_only_publisher_uses_the_shared_single_writer_queue():

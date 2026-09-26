@@ -115,21 +115,31 @@ def _write_failed_gate(label: str) -> None:
             output.write(f"failed_gate={label}\n")
 
 
-def run_commands(commands: Sequence[tuple[str, list[str]]], runner=subprocess.run) -> int:
+def run_commands(
+    commands: Sequence[tuple[str, list[str]]],
+    runner=subprocess.run,
+    *,
+    continue_on_failure: bool = False,
+) -> int:
+    failed_labels: list[str] = []
+    first_failure = 0
     for label, command in commands:
         print(f"\n==> {label}", flush=True)
         try:
             completed = runner(command, cwd=ROOT, check=False)
+            returncode = int(completed.returncode)
         except OSError as exc:
-            _write_failed_gate(label)
+            returncode = 127
             print(f"FAILED: {label} could not start ({type(exc).__name__})", file=sys.stderr, flush=True)
-            return 127
-        if completed.returncode:
-            _write_failed_gate(label)
-            print(f"FAILED: {label} (exit {completed.returncode})", file=sys.stderr, flush=True)
-            return completed.returncode
-    _write_failed_gate("none")
-    return 0
+        if returncode:
+            failed_labels.append(label)
+            if first_failure == 0:
+                first_failure = returncode
+            print(f"FAILED: {label} (exit {returncode})", file=sys.stderr, flush=True)
+            if not continue_on_failure:
+                break
+    _write_failed_gate(" | ".join(failed_labels) if failed_labels else "none")
+    return first_failure
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -153,7 +163,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
         print(f"FAILED: could not prepare quality preflight ({type(exc).__name__})", file=sys.stderr)
         return 2
-    return run_commands(commands)
+    return run_commands(commands, continue_on_failure=args.static)
 
 
 if __name__ == "__main__":
