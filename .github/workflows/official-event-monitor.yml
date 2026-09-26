@@ -369,7 +369,6 @@ jobs:
           FAILED_COUNT: ${{ steps.send.outputs.failed_count || '' }}
           RECEIPT_OUTCOME: ${{ steps.persist_receipt.outcome || 'skipped' }}
           SEND_SENT: ${{ steps.send.outputs.sent || 'false' }}
-          NOTIFICATION_REASON: ${{ steps.send.outputs.reason || steps.status.outputs.notification_reason || 'policy_suppressed' }}
           SEND_NOTIFICATION_EXPECTED: ${{ steps.send.outputs.notification_expected || 'true' }}
           SEND_STATUS: ${{ steps.send.outputs.notification_status || '' }}
           LEDGER_OUTCOME: ${{ steps.persist_notification_ledger.outcome || 'skipped' }}
