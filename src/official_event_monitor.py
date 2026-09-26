@@ -436,26 +436,16 @@ def build_official_event_brief(event: dict[str, Any]) -> str:
     return text
 
 
-def prepare_snapshot() -> tuple[dict[str, Any], dict[str, Any] | None]:
-    """Refresh the public snapshot before the Mini App button is sent."""
+def prepare_snapshot(*, publish: bool = True) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    """Build a snapshot and optionally publish it before a direct send."""
     snapshot = build_market_snapshot()
     snapshot = _attach_realtime_external_events(snapshot)
-    # Select before publishing so the immutable snapshot carries the same
-    # candidate decision that the workflow will inspect.  The ledger remains
-    # the single durable source of truth; this is only a safe public summary.
+    # Do not publish notification observability here: finding a candidate is
+    # not yet the final send decision.  The workflow's status preflight adds
+    # the policy/content result before its single immutable snapshot write.
     baseline_official = os.getenv("OFFICIAL_EVENT_BASELINE_READY") == "false"
     event = select_official_event(snapshot, baseline_official=baseline_official)
-    summary = decision_summary(
-        event=event,
-        scan_status="completed",
-        notification_expected=bool(event),
-        notification_status="candidate_ready" if event else "no_event",
-        notification_reason="candidate_ready" if event else "no_event",
-    )
-    snapshot["source_health"] = merge_decision_health(
-        snapshot.get("source_health"), "official_event_monitor", summary,
-    )
-    if not write_snapshot(snapshot):
+    if publish and not write_snapshot(snapshot):
         # Never evaluate or deliver an event from a run that lost the
         # freshness race with a newer published snapshot.
         print("Snapshot publish skipped; suppressing event delivery.")
@@ -466,6 +456,8 @@ def prepare_snapshot() -> tuple[dict[str, Any], dict[str, Any] | None]:
 def write_status_output(
     event: dict[str, Any] | None,
     snapshot: dict[str, Any] | None = None,
+    *,
+    publish_snapshot: bool = False,
 ) -> None:
     """Write GitHub Actions outputs without mixing provider diagnostics into them."""
     content_status = "not_applicable"
@@ -476,6 +468,7 @@ def write_status_output(
     ledger_record: dict[str, Any] = {}
     should_send = False
     suppressed_candidates = 0
+    snapshot_publish_failed = False
     if event:
         excluded: set[str] = set()
         candidates_value = (
@@ -682,9 +675,33 @@ def write_status_output(
     summary["priority_dispatch_legacy_rescan"] = legacy_dispatch_rescued
     if should_send and suppressed_candidates and not contract_mismatch and not durable_source_missing and not pending_timeout and not content_blocked:
         summary["notification_reason"] = "top_candidate_suppressed_later_candidate_considered"
+    if isinstance(snapshot, dict):
+        snapshot["source_health"] = merge_decision_health(
+            snapshot.get("source_health"), "official_event_monitor", summary,
+        )
+        if publish_snapshot and not write_snapshot(snapshot):
+            # A candidate cannot be eligible for delivery unless this exact
+            # terminal decision is part of the snapshot that will be released.
+            snapshot_publish_failed = True
+            hard_failure_reason = hard_failure_reason or "official_notification_snapshot_publish_blocked"
+            should_send = False
+            status = "blocked"
+            reason = "official_notification_snapshot_publish_blocked"
+            summary = decision_summary(
+                event=diagnostic_event,
+                scan_status="completed",
+                notification_expected=bool(summary.get("notification_expected")),
+                notification_status=status,
+                notification_reason=reason,
+                last_candidate_at=last_candidate_at,
+            )
+            snapshot["source_health"] = merge_decision_health(
+                snapshot.get("source_health"), "official_event_monitor", summary,
+            )
     lines = [
         f"should_send={'true' if should_send else 'false'}",
         f"key={event_key(event) if event else ''}",
+        f"snapshot_publish_failed={'true' if snapshot_publish_failed else 'false'}",
         f"notification_id={event.get('notification_id', '') if event else ''}",
         f"snapshot_id={event.get('snapshot_id', '') if event else ''}",
         f"observation_id={event.get('observation_id', '') if event else ''}",
@@ -701,7 +718,7 @@ def write_status_output(
         f"priority_pending_age_seconds={pending_age_seconds}",
         f"candidate_content_status={content_status}",
         f"hard_failure_reason={hard_failure_reason or ('priority_candidate_contract_mismatch' if contract_mismatch else 'priority_durable_observation_missing' if durable_source_missing else 'priority_summary_timeout' if pending_timeout and not should_send else '')}",
-        f"hard_failure={'true' if contract_mismatch or durable_source_missing or content_blocked or unknown_suppression or (pending_timeout and not should_send) else 'false'}",
+        f"hard_failure={'true' if snapshot_publish_failed or contract_mismatch or durable_source_missing or content_blocked or unknown_suppression or (pending_timeout and not should_send) else 'false'}",
         f"last_processed_at={summary['last_processed_at']}",
         f"last_candidate_at={summary['last_candidate_at'] or ''}",
     ]
@@ -1320,8 +1337,8 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     if args.write_status:
-        snapshot, event = prepare_snapshot()
-        write_status_output(event, snapshot)
+        snapshot, event = prepare_snapshot(publish=False)
+        write_status_output(event, snapshot, publish_snapshot=True)
     if args.send:
         send_current_event(args.expected_key, prepared=args.prepared)
     if not args.write_status and not args.send:
