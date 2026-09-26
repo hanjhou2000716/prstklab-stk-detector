@@ -980,12 +980,19 @@ jobs:
         run: |
           echo "::error::Scheduled premarket handoff was blocked (${HANDOFF_VALIDATION_REASON})."
           exit 1
-      - name: Fail scheduled run when a required report has no delivered receipt
-        if: always() && env.NOTIFY == 'true' && steps.writer_queue.outputs.handoff_status != 'delivered' && (steps.prepare.outputs.notification_expected == 'true' || steps.prepare.outputs.delivery_obligation == 'blocked' || (steps.prepare.outcome != 'success' && steps.window.outputs.delivery_intent == 'notify_candidate'))
+      - name: Resolve scheduled notification terminal state
+        if: always()
         env:
-          PREPARE_OUTCOME: ${{ steps.prepare.outcome || 'unknown' }}
+          NOTIFICATION_REQUESTED: ${{ env.NOTIFY }}
+          NOTIFICATION_EXPECTED: ${{ steps.prepare.outputs.notification_expected || 'false' }}
           DELIVERY_OBLIGATION: ${{ steps.prepare.outputs.delivery_obligation || 'undetermined' }}
           OBLIGATION_REASON: ${{ steps.prepare.outputs.obligation_reason || '' }}
+          WINDOW_DELIVERY_INTENT: ${{ steps.window.outputs.delivery_intent || 'unknown' }}
+          SCHEDULED_SLOT: ${{ steps.window.outputs.scheduled_slot || steps.window.outputs.effective_slot || 'unknown' }}
+          SCHEDULED_FOR_AT: ${{ steps.window.outputs.scheduled_for_at || '' }}
+          RUN_CREATED_AT: ${{ steps.run_context.outputs.created_at || '' }}
+          PREPARE_OUTCOME: ${{ steps.prepare.outcome || 'unknown' }}
+          PREPARE_READY: ${{ steps.prepare.outputs.prepared || 'false' }}
           SEND_OUTCOME: ${{ steps.send_brief.outcome || 'skipped' }}
           SEND_STATUS: ${{ steps.send_brief.outputs.notification_status || '' }}
           SEND_REASON: ${{ steps.send_brief.outputs.reason || '' }}
@@ -993,49 +1000,17 @@ jobs:
           DELIVERED_COUNT: ${{ steps.send_brief.outputs.delivered_count || '0' }}
           FAILED_COUNT: ${{ steps.send_brief.outputs.failed_count || '0' }}
           PREPARED_CURRENT: ${{ steps.prepared_release.outputs.current || 'false' }}
-          PREPARE_READY: ${{ steps.prepare.outputs.prepared || 'false' }}
           GATE_ALLOWED: ${{ steps.release_gate.outputs.allowed || 'false' }}
+          PAGES_DEPLOYMENT_AVAILABLE: ${{ steps.deployment.outputs.available || 'false' }}
+          PAGES_DEPLOYMENT_ERROR_CODE: ${{ steps.deployment.outputs.error_code || '' }}
           RECEIPT_CALLBACK_OUTCOME: ${{ steps.persist_scheduled_receipt.outcome || 'skipped' }}
           RECEIPT_ENDPOINT_CONFIGURED: ${{ (vars.RECEIPT_CALLBACK_URL != '' || vars.RAILWAY_STATUS_URL != '') && 'true' || 'false' }}
           LEDGER_PERSIST_OUTCOME: ${{ steps.persist_notification_ledger.outcome || 'skipped' }}
           RECONCILED_DEPLOYMENT_VERIFIED: ${{ steps.reconciled_deployment_identity.outputs.verified || 'false' }}
           RECONCILED_GATE_ALLOWED: ${{ steps.reconciled_release_gate.outputs.allowed || 'false' }}
-        run: |
-          set -euo pipefail
-          if [ "$DELIVERY_OBLIGATION" = "expected_skip" ] || [ "$DELIVERY_OBLIGATION" = "late_publish_only" ]; then
-            echo "Scheduled delivery was not required by the prepared market-calendar policy (${DELIVERY_OBLIGATION}: ${OBLIGATION_REASON:-no additional detail})."
-            exit 0
-          fi
-          if [ "$DELIVERY_OBLIGATION" = "blocked" ]; then
-            echo "::error::Scheduled delivery was blocked because its required calendar or slot evidence could not be verified (${OBLIGATION_REASON:-unknown})."
-            exit 1
-          fi
-          if [ "$DELIVERY_OBLIGATION" = "undetermined" ] && [ "$PREPARE_OUTCOME" = "success" ]; then
-            echo "::error::Prepared run did not publish a canonical delivery obligation."
-            exit 1
-          fi
-          if [ "$SEND_STATUS" = "already_delivered" ] && [ "$SEND_REASON" = "already_delivered" ]; then
-            echo "The fixed anchor already has a durable successful receipt; no new send was made."
-            exit 0
-          fi
-          if [ "$SEND_OUTCOME" = "success" ] && [ "$SEND_STATUS" = "ready" ] \
-            && [ "$DELIVERY_STATUS" = "delivered" ] && [ "$DELIVERED_COUNT" -gt 0 ] \
-            && [ "$FAILED_COUNT" -eq 0 ] && [ "$PREPARED_CURRENT" = "true" ] \
-            && [ "$PREPARE_READY" = "true" ] && [ "$GATE_ALLOWED" = "true" ]; then
-            if [ "$LEDGER_PERSIST_OUTCOME" != "success" ] \
-              || [ "$RECONCILED_DEPLOYMENT_VERIFIED" != "true" ] \
-              || [ "$RECONCILED_GATE_ALLOWED" != "true" ]; then
-              echo "::error::Telegram delivery succeeded, but durable recipient receipt publication is incomplete; do not resend (ledger=${LEDGER_PERSIST_OUTCOME}, reconciled_deployment=${RECONCILED_DEPLOYMENT_VERIFIED}, reconciled_gate=${RECONCILED_GATE_ALLOWED})."
-              exit 1
-            fi
-            if [ "$RECEIPT_ENDPOINT_CONFIGURED" = "true" ] && [ "$RECEIPT_CALLBACK_OUTCOME" != "success" ]; then
-              echo "::error::Telegram delivery and release ledger succeeded, but the configured receipt callback failed; do not resend (callback=${RECEIPT_CALLBACK_OUTCOME})."
-              exit 1
-            fi
-            echo "Expected scheduled report has a delivered recipient receipt in the reconciled public release."
-            exit 0
-          fi
-          echo "::error::Expected scheduled report did not reach a complete delivered receipt (status=${SEND_STATUS:-not_run}, reason=${SEND_REASON:-none}, delivery=${DELIVERY_STATUS:-none}, delivered=${DELIVERED_COUNT}, failed=${FAILED_COUNT}, prepared=${PREPARE_READY}, gate=${GATE_ALLOWED})."
-          exit 1
+          HANDOFF_STATUS: ${{ steps.writer_queue.outputs.handoff_status || 'not_attempted' }}
+          HANDOFF_RUN_ID: ${{ steps.writer_queue.outputs.handoff_run_id || '' }}
+          WRITER_QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'not_required' }}
+        run: python -m src.notification_terminal --workflow scheduled
 
 # - name: 設定 GitHub Pages

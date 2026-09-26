@@ -79,7 +79,7 @@ def test_scheduled_workflow_has_only_four_fixed_production_anchors():
     assert 'cron: "45 3 * * 1-5"' not in workflow
     assert 'cron: "15 5 * * 1-5"' not in workflow
     assert 'SCHEDULED_FOR_AT' in workflow
-    assert 'steps.window.outputs.delivery_intent == \'notify_candidate\'' in workflow
+    assert "WINDOW_DELIVERY_INTENT" in workflow
 
 
 def test_scheduled_workflow_exposes_only_sanitized_external_observations_path():

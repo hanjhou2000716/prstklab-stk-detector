@@ -3,7 +3,7 @@ from __future__ import annotations
 from scripts import inspect_quality_run, quality_preflight
 
 
-def test_mypy_failure_stops_before_targeted_and_full_tests() -> None:
+def test_static_preflight_collects_every_gate_failure() -> None:
     invoked: list[str] = []
 
     class Result:
@@ -13,19 +13,20 @@ def test_mypy_failure_stops_before_targeted_and_full_tests() -> None:
     def runner(command, **_kwargs):
         if any("check_quality_tools.py" in str(part) for part in command):
             invoked.append("tool-versions")
-        elif "rhysd/actionlint:1.7.7" in command:
+            return Result(1)
+        if command and command[0].lower().endswith(("actionlint", "actionlint.exe")):
             invoked.append("workflow-lint")
-        elif command and command[0].lower().endswith(("actionlint", "actionlint.exe")):
-            invoked.append("workflow-lint")
-        elif "mypy" in command:
+            return Result(2)
+        if "mypy" in command:
             invoked.append("mypy")
-        else:
-            invoked.append("ruff")
-        return Result(1 if "mypy" in command else 0)
+            return Result(1)
+        invoked.append("ruff")
+        return Result(1)
 
     code = quality_preflight.run_commands(
-        [*quality_preflight.static_commands(), *quality_preflight.test_commands(None)],
+        quality_preflight.static_commands(),
         runner=runner,
+        continue_on_failure=True,
     )
 
     assert code == 1
@@ -133,3 +134,39 @@ def test_unmerged_current_pr_head_failure_is_actionable() -> None:
     )
 
     assert classification == "current_failure"
+
+
+def test_pr_1018_intermediate_failures_are_superseded_by_the_merged_head() -> None:
+    failing_commits = (
+        "d7939f3ab75febda235eca672b3b1718de364cc3",
+        "5c76f6e57b171d3d0de595a00eade82d4b7a5b0b",
+        "11e207b0e19731e3224c711d87f63921d70824ff",
+        "2639c355fbebccbea565bccf36368866b136bd1f",
+        "408b6b2a36cb0f8b576bb66f70e17447796ddbaf",
+        "b7aa421bc790d77c489c2d7139b56823c198953d",
+        "3400261dba3a4c2eaba8cf8e31c96fd92e165ab9",
+        "fa9e765e0081449bc0ecfa490c98e2e066eefe16",
+        "150292bc1c79e49a9ec44092d6b930465b908c33",
+    )
+    merged_head = "3b334ead60c15629bbce0ca3b493aaed4a5606cb"
+    pull_request = {"number": 1018, "merged": True, "head": {"sha": merged_head}}
+    successful_run = {
+        "id": 36214686212,
+        "workflow_id": 325438414,
+        "event": "pull_request",
+        "conclusion": "success",
+        "created_at": "2026-09-26T03:55:00Z",
+        "pull_requests": [{"number": 1018, "head": {"sha": merged_head}}],
+    }
+
+    for failed_sha in failing_commits:
+        classification, message = inspect_quality_run.classify_pr_failure(
+            source_run={
+                "workflow_id": 325438414,
+                "pull_requests": [{"number": 1018, "head": {"sha": failed_sha}}],
+            },
+            pull_request=pull_request,
+            related_runs=[successful_run],
+        )
+        assert classification == "merged_latest_success"
+        assert "已合併" in message

@@ -4,6 +4,7 @@ from pathlib import Path
 def test_official_event_workflow_is_dispatchable_and_idempotent():
     root = Path(__file__).resolve().parents[1]
     workflow = (root / ".github" / "workflows" / "official-event-monitor.yml").read_text(encoding="utf-8")
+    terminal = (root / "src" / "notification_terminal.py").read_text(encoding="utf-8")
 
     assert "official-event-check" in workflow
     assert "official-event-${{ steps.status.outputs.key }}" in workflow
@@ -26,32 +27,37 @@ def test_official_event_workflow_is_dispatchable_and_idempotent():
     assert "Fail expected official notification without delivered receipt" in workflow
     assert "steps.status.outputs.should_send == 'true'" in workflow
     assert "DEPLOYMENT_ERROR_CODE" in workflow
-    assert "expected_delivery_or_recipient_receipt_missing" in workflow
-    assert "Do not resend this event" in workflow
+    assert "expected_delivery_or_persistent_recipient_receipt_missing" in terminal
+    assert "post_send_public_release_not_reconciled_do_not_resend" in terminal
     assert "Fail on blocked notification preflight" in workflow
     assert "steps.status.outputs.hard_failure == 'true'" in workflow
     assert "notification_preflight_reason" in workflow
     assert "candidate_content_status" in workflow
 
 
-def test_expected_official_notification_only_skips_for_existing_successful_receipt():
-    workflow = (
-        Path(__file__).resolve().parents[1]
-        / ".github"
-        / "workflows"
-        / "official-event-monitor.yml"
-    ).read_text(encoding="utf-8")
+def test_official_workflow_uses_shared_terminal_classifier_and_durable_receipts():
+    root = Path(__file__).resolve().parents[1]
+    workflow = (root / ".github" / "workflows" / "official-event-monitor.yml").read_text(encoding="utf-8")
+    terminal = (root / "src" / "notification_terminal.py").read_text(encoding="utf-8")
+
+    diagnostic = workflow.split("- name: Save official event diagnostic", 1)[1].split(
+        "- name: Upload official event diagnostic", 1
+    )[0]
     guard = workflow.split(
         "- name: Fail expected official notification without delivered receipt", 1
     )[1]
 
-    assert guard.index('if [ "$CACHE_HIT" = "true" ]') < guard.index(
-        'if [ "$QUEUE_STATUS" = "superseded" ] || [ "$PREPARED_CURRENT" != "true" ]'
-    )
-    assert 'notification_terminal_status: failed' in guard
-    assert "expected_notification_superseded_or_stale_without_prior_receipt" in guard
-    assert 'echo "::error::Expected official notification was not delivered;' in guard
-    assert "exit 1" in guard
+    assert "id: terminal_diagnostic" in diagnostic
+    assert "evaluate_official_terminal" in diagnostic
+    assert "IDEMPOTENCY_CACHE_HIT" in diagnostic
+    assert "SCAN_STATUS:" in diagnostic
+    assert "RECEIPT_OUTCOME" in diagnostic
+    assert "LEDGER_OUTCOME" in diagnostic
+    assert "RECONCILED_RELEASE_GATE_OUTCOME" in diagnostic
+    assert "idempotency_cache_without_durable_recipient_receipt" in terminal
+    assert "expected_delivery_or_persistent_recipient_receipt_missing" in terminal
+    assert "steps.terminal_diagnostic.outputs.terminal_failure == 'true'" in guard
+    assert "$NOTIFICATION_REASON" not in guard
 
 
 def test_gmail_history_dispatches_realtime_monitor_after_new_reviewed_rows():

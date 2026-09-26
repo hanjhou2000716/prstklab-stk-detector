@@ -116,14 +116,19 @@ def test_delivery_claim_persistence_reconciles_the_public_release():
     assert "artifact_name: github-pages-reconciled" in workflow
     assert "Verify reconciled public release" in workflow
     assert "steps.reconciled_deployment.outputs.recoverable == 'true'" in workflow
-    terminal = workflow.split("- name: Fail scheduled run when a required report has no delivered receipt", 1)[1]
+    terminal = workflow.split("- name: Resolve scheduled notification terminal state", 1)[1]
+    classifier = (
+        Path(__file__).resolve().parents[1] / "src" / "notification_terminal.py"
+    ).read_text(encoding="utf-8")
+    assert "if: always()" in terminal
+    assert "python -m src.notification_terminal --workflow scheduled" in terminal
     assert "RECONCILED_DEPLOYMENT_VERIFIED" in terminal
     assert "RECONCILED_GATE_ALLOWED" in terminal
     assert "LEDGER_PERSIST_OUTCOME" in terminal
     assert "RECEIPT_CALLBACK_OUTCOME" in terminal
-    assert "do not resend" in terminal
-    assert 'steps.prepare.outputs.delivery_obligation == \'blocked\'' in terminal
-    assert 'steps.prepare.outputs.notification_expected == \'true\'' in terminal
+    assert "do_not_resend" in classifier
+    assert "DELIVERY_OBLIGATION" in terminal
+    assert "NOTIFICATION_EXPECTED" in terminal
 
 
 def test_pages_only_publisher_uses_the_shared_single_writer_queue():
@@ -210,19 +215,21 @@ def test_scheduled_brief_reports_pages_publish_only_failure_and_blocks_expected_
 
 
 def test_us_premarket_stale_revision_handoff_is_single_use_and_receipt_audited():
-    workflow = (
-        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"
-    ).read_text(encoding="utf-8")
+    root = Path(__file__).resolve().parents[1]
+    workflow = (root / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
+    terminal = (root / "src" / "notification_terminal.py").read_text(encoding="utf-8")
     assert "scheduled-brief-handoff" in workflow
     assert "HANDOFF_PARENT_RUN_ID" in workflow
     assert "GITHUB_SHA: ${{ github.sha }}" in workflow
     assert "Validate scheduled handoff parent" in workflow
-    assert "steps.writer_queue.outputs.handoff_status != 'delivered'" in workflow
-    queue = (Path(__file__).resolve().parents[1] / "src" / "writer_queue.py").read_text(encoding="utf-8")
+    assert "HANDOFF_STATUS: ${{ steps.writer_queue.outputs.handoff_status || 'not_attempted' }}" in workflow
+    assert 'status="completed_by_handoff"' in terminal
+    assert "handoff_run_id" in workflow
+    queue = (root / "src" / "writer_queue.py").read_text(encoding="utf-8")
     assert "handoff_superseded_run(result, eligible=not is_handoff)" in queue
     assert "not is_handoff" in queue
     assert '"handoff_status": "failed"' in queue
-    handoff = (Path(__file__).resolve().parents[1] / "src" / "scheduled_handoff.py").read_text(encoding="utf-8")
+    handoff = (root / "src" / "scheduled_handoff.py").read_text(encoding="utf-8")
     assert '"handoff_attempt": 1' in handoff
     assert "handoff_window_expired" in handoff
     assert "handoff_child_revision_mismatch" in handoff
