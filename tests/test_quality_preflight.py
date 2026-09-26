@@ -11,7 +11,7 @@ def test_mypy_failure_stops_before_targeted_and_full_tests() -> None:
             self.returncode = returncode
 
     def runner(command, **_kwargs):
-        if "check_quality_tools.py" in command:
+        if any("check_quality_tools.py" in str(part) for part in command):
             invoked.append("tool-versions")
         elif "rhysd/actionlint:1.7.7" in command:
             invoked.append("workflow-lint")

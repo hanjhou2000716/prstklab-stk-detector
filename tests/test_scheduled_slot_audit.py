@@ -133,8 +133,14 @@ def test_taiwan_holiday_preopen_is_required_and_postclose_is_expected_skip(monke
 
 
 def test_unverified_calendar_blocks_and_does_not_treat_missing_claim_as_success(monkeypatch, tmp_path):
+    unverifiable_cash = {
+        "is_trading_day": True,
+        "calendar_status": "unknown",
+        "calendar": "XTAI",
+        "calendar_provider": "pandas_market_calendars",
+    }
     monkeypatch.setattr(audit, "_calendar_snapshot", lambda *_args: {
-        "markets": {"taiwan_cash": {}, "taiwan_futures": _futures(False)}
+        "markets": {"taiwan_cash": unverifiable_cash, "taiwan_futures": _futures(False)}
     })
     blocked = audit.audit_slot(
         ledger_path=tmp_path / "unused.json", schedule="30 1 * * 1-5",

@@ -127,7 +127,7 @@ def test_delayed_cron_run_uses_declared_slot_instead_of_runner_time():
 
 
 def test_us_premarket_cron_accepts_the_correct_dst_candidate():
-    summer = datetime(2026, 7, 27, 18, 30, tzinfo=ZoneInfo("Asia/Taipei"))
+    summer = datetime(2026, 7, 27, 21, 0, tzinfo=ZoneInfo("Asia/Taipei"))
     winter = datetime(2026, 1, 22, 22, 0, tzinfo=ZoneInfo("Asia/Taipei"))
     assert resolve_slot("auto", summer, scheduled_cron="0 13 * * 1-5") == "us_premarket"
     assert resolve_slot("auto", summer, scheduled_cron="0 14 * * 1-5") is None
@@ -139,7 +139,8 @@ def test_delayed_us_premarket_cron_keeps_previous_taipei_slot_date():
     delayed = datetime(2026, 9, 9, 1, 30, tzinfo=ZoneInfo("Asia/Taipei"))
     context = resolve_slot_context("auto", delayed, scheduled_cron="0 13 * * 1-5")
     assert context is not None
-    assert context["effective_slot"] == "us_premarket"
+    assert context["scheduled_slot"] == "us_premarket"
+    assert context["effective_slot"] == "us_open"
     assert context["slot_date"] == "2026-09-08"
     assert context["delivery_intent"] == "publish_only"
 
@@ -246,7 +247,7 @@ def test_morning_cron_occurrence_deadline_boundary_and_no_future_anchor():
     assert resolved is not None
     assert resolved.isoformat() == "2026-09-26T06:00:00+08:00"
 
-    deadline = datetime(2026, 9, 26, 8, 0, tzinfo=ZoneInfo("Asia/Taipei"))
+    deadline = datetime(2026, 9, 26, 6, 30, tzinfo=ZoneInfo("Asia/Taipei"))
     exact = resolve_slot_context(
         "auto", deadline, scheduled_cron="0 22 * * *",
         run_created_at="2026-09-25T22:00:00Z",
@@ -254,6 +255,14 @@ def test_morning_cron_occurrence_deadline_boundary_and_no_future_anchor():
     assert exact is not None
     assert exact["delay_seconds"] == str(30 * 60)
     assert exact["delivery_intent"] == "publish_only"
+
+    delayed_to_0800 = resolve_slot_context(
+        "auto", datetime(2026, 9, 26, 8, 0, tzinfo=ZoneInfo("Asia/Taipei")),
+        scheduled_cron="0 22 * * *", run_created_at="2026-09-25T22:00:00Z",
+    )
+    assert delayed_to_0800 is not None
+    assert delayed_to_0800["delay_seconds"] == str(2 * 60 * 60)
+    assert delayed_to_0800["delivery_intent"] == "publish_only"
 
     not_yet_due = datetime(2026, 9, 25, 21, 59, tzinfo=ZoneInfo("Asia/Taipei"))
     future = resolve_slot_context(
