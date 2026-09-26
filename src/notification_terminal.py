@@ -88,6 +88,16 @@ def evaluate_official_terminal(values: Mapping[str, str]) -> dict[str, Any]:
             values, "official", status="blocked", reason=reason or "official_preflight_blocked",
             expected=expected, failure=True,
         )
+    if status == "policy_suppressed" and not should_send and not expected:
+        if reason in _SAFE_SUPPRESSIONS:
+            return _result(
+                values, "official", status="policy_suppressed", reason=reason,
+                expected=False,
+            )
+        return _result(
+            values, "official", status="blocked", reason="unrecognized_policy_suppression",
+            expected=False, failure=True,
+        )
     if status == "policy_suppressed" and not _flag(values, "SEND_NOTIFICATION_EXPECTED", expected):
         if reason in _SAFE_SUPPRESSIONS:
             return _result(
