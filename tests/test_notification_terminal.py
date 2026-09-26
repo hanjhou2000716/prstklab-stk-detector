@@ -89,6 +89,7 @@ def test_official_durable_receipt_suppresses_duplicate_delivery() -> None:
         NOTIFICATION_EXPECTED="false",
         NOTIFICATION_STATUS="already_delivered",
         NOTIFICATION_REASON="already_delivered",
+        SEND_STATUS="",
         SEND_OUTCOME="skipped",
     ))
 

@@ -215,19 +215,21 @@ def test_scheduled_brief_reports_pages_publish_only_failure_and_blocks_expected_
 
 
 def test_us_premarket_stale_revision_handoff_is_single_use_and_receipt_audited():
-    workflow = (
-        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"
-    ).read_text(encoding="utf-8")
+    root = Path(__file__).resolve().parents[1]
+    workflow = (root / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
+    terminal = (root / "src" / "notification_terminal.py").read_text(encoding="utf-8")
     assert "scheduled-brief-handoff" in workflow
     assert "HANDOFF_PARENT_RUN_ID" in workflow
     assert "GITHUB_SHA: ${{ github.sha }}" in workflow
     assert "Validate scheduled handoff parent" in workflow
-    assert "steps.writer_queue.outputs.handoff_status != 'delivered'" in workflow
-    queue = (Path(__file__).resolve().parents[1] / "src" / "writer_queue.py").read_text(encoding="utf-8")
+    assert "HANDOFF_STATUS: ${{ steps.writer_queue.outputs.handoff_status || 'not_attempted' }}" in workflow
+    assert 'status="completed_by_handoff"' in terminal
+    assert "handoff_run_id" in workflow
+    queue = (root / "src" / "writer_queue.py").read_text(encoding="utf-8")
     assert "handoff_superseded_run(result, eligible=not is_handoff)" in queue
     assert "not is_handoff" in queue
     assert '"handoff_status": "failed"' in queue
-    handoff = (Path(__file__).resolve().parents[1] / "src" / "scheduled_handoff.py").read_text(encoding="utf-8")
+    handoff = (root / "src" / "scheduled_handoff.py").read_text(encoding="utf-8")
     assert '"handoff_attempt": 1' in handoff
     assert "handoff_window_expired" in handoff
     assert "handoff_child_revision_mismatch" in handoff
