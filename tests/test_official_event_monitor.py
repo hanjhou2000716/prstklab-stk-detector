@@ -422,6 +422,26 @@ def test_monitor_escalates_pending_summary_after_ten_minutes(monkeypatch, tmp_pa
     assert "hard_failure=true" in text
 
 
+def test_incomplete_official_candidate_is_quarantined_before_sender_decision(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    event = {"kind": "market_signal", "source": "official", "title": "Incomplete semiconductor signal"}
+    monkeypatch.setattr(monitor, "build_official_event_brief", lambda _event: "資訊待核對")
+    monkeypatch.setattr(monitor, "content_is_incomplete", lambda *_args: True)
+    monkeypatch.setattr(monitor, "_observe_event", lambda *_args, **_kwargs: {"should_remind": True})
+
+    monitor.write_status_output(event, {"events": {"items": [event]}})
+
+    text = output.read_text(encoding="utf-8")
+    assert "should_send=false" in text
+    assert "notification_expected=false" in text
+    assert "notification_status=content_incomplete" in text
+    assert "notification_reason=content_incomplete_quarantined" in text
+    assert "candidate_content_status=incomplete" in text
+    assert "hard_failure_reason=content_incomplete_quarantined" in text
+    assert "hard_failure=true" in text
+
+
 def test_financialjuice_event_uses_immediate_text_lane_and_records_receipt(monkeypatch, tmp_path):
     output = tmp_path / "github-output.txt"
     monkeypatch.setenv("GITHUB_OUTPUT", str(output))

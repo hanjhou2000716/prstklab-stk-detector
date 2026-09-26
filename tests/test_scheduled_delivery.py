@@ -263,6 +263,23 @@ def test_us_premarket_calendar_failure_blocks_but_confirmed_holiday_skips():
     )[:2] == ("expected_skip", "us_market_closed_publish_only")
 
 
+def test_us_premarket_expired_publish_only_does_not_revert_to_required_report():
+    context = {
+        "slot_date": "2026-09-25",
+        "delivery_intent": "publish_only",
+        "resolution_reason": "market_closed",
+    }
+    snapshot = {"markets": {"us": {
+        "is_trading_day": True,
+        "calendar_status": "confirmed_open",
+        "calendar": "NYSE",
+    }}}
+
+    assert _resolve_delivery_obligation(
+        snapshot, "us_premarket", context, notification_requested=True,
+    )[:2] == ("late_publish_only", "us_premarket_delivery_window_expired")
+
+
 def test_holiday_notice_is_ready_for_the_existing_scheduled_sender_contract():
     briefing = build_taiwan_holiday_notice_digest(
         slot="pre_open", slot_date="2026-09-28", next_trading_date="2026-09-29",
@@ -347,15 +364,19 @@ def test_market_snapshot_failure_is_reported_with_sanitized_blocked_decision(mon
     assert "sensitive detail" not in str(captured)
 
 
-def test_expected_skip_send_stops_before_release_gate_or_sender(monkeypatch, tmp_path):
+@pytest.mark.parametrize(("obligation", "reason"), [
+    ("expected_skip", "closed_market_publish_only"),
+    ("late_publish_only", "us_premarket_delivery_window_expired"),
+])
+def test_non_delivery_obligation_stops_before_release_gate_or_sender(monkeypatch, tmp_path, obligation, reason):
     snapshot_path = tmp_path / "market.json"
     snapshot_path.write_text(json.dumps({
         "snapshot_id": "snapshot-holiday",
         "briefing": {
             "slot_context": {"delivery_intent": "publish_only", "slot_date": "2026-09-28"},
             "schedule_decision": {
-                "delivery_obligation": "expected_skip",
-                "obligation_reason": "closed_market_publish_only",
+                "delivery_obligation": obligation,
+                "obligation_reason": reason,
             },
         },
     }), encoding="utf-8")
@@ -370,9 +391,11 @@ def test_expected_skip_send_stops_before_release_gate_or_sender(monkeypatch, tmp
         "_write_decision_output",
         lambda values, **kwargs: captured.update(values=values, kwargs=kwargs),
     )
-    scheduled_delivery.send(snapshot_path, "post_close", tmp_path / "missing-manifest.json")
+    scheduled_delivery.send(snapshot_path, "us_premarket", tmp_path / "missing-manifest.json")
     assert captured["values"]["delivery_status"] == "suppressed"
-    assert captured["values"]["delivery_obligation"] == "expected_skip"
+    assert captured["values"]["delivery_obligation"] == obligation
+    assert captured["values"]["notification_expected"] == "false"
+    assert captured["values"]["reason"] == reason
 
 
 def test_manual_notify_false_is_a_public_not_requested_decision() -> None:
