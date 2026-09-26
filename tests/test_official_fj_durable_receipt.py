@@ -107,7 +107,7 @@ def test_workflow_carries_durable_proof_to_both_outcome_summaries() -> None:
         Path(__file__).parents[1] / ".github" / "workflows" / "official-event-monitor.yml"
     ).read_text(encoding="utf-8")
 
-    assert workflow.count("DURABLE_RECEIPT_VERIFIED:") == 2
+    assert workflow.count("DURABLE_RECEIPT_VERIFIED: ${{") == 2
     assert workflow.count("steps.status.outputs.durable_receipt_verified") == 2
     assert "durable_receipt_verified: ${{ steps.status.outputs.durable_receipt_verified" in workflow
     assert "durable_recipient_receipt_verified" in workflow
