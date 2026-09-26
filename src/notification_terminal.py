@@ -75,7 +75,14 @@ def evaluate_official_terminal(values: Mapping[str, str]) -> dict[str, Any]:
     status = _text(values, "SEND_STATUS", _text(values, "NOTIFICATION_STATUS", "not_attempted"))
     reason = _text(values, "NOTIFICATION_REASON", _text(values, "HARD_FAILURE_REASON", ""))
     hard_failure = _flag(values, "HARD_FAILURE")
+    scan_outcome = _text(values, "SCAN_STATUS")
 
+    if requested and scan_outcome != "success":
+        return _result(
+            values, "official", status="failed",
+            reason=f"official_preflight_{scan_outcome or 'not_run'}",
+            expected=expected, failure=True,
+        )
     if hard_failure:
         return _result(
             values, "official", status="blocked", reason=reason or "official_preflight_blocked",

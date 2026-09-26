@@ -12,6 +12,7 @@ def official(**updates: str) -> dict[str, str]:
         "NOTIFICATION_REQUESTED": "true",
         "NOTIFICATION_EXPECTED": "true",
         "NOTIFICATION_STATUS": "candidate_ready",
+        "SCAN_STATUS": "success",
         "SHOULD_SEND": "true",
         "PREPARED_RELEASE_STATUS": "prepared_release_current",
         "DEPLOYMENT_AVAILABLE": "true",
@@ -108,6 +109,19 @@ def test_official_delivery_requires_every_persistent_stage() -> None:
     assert missing_receipt["no_resend"] is True
     assert incomplete_reconciliation["status"] == "delivered_reconciliation_incomplete"
     assert incomplete_reconciliation["no_resend"] is True
+
+
+def test_official_failed_scan_cannot_be_reported_as_no_event() -> None:
+    result = evaluate_official_terminal(official(
+        SCAN_STATUS="failure",
+        SHOULD_SEND="false",
+        NOTIFICATION_EXPECTED="false",
+        NOTIFICATION_STATUS="not_attempted",
+    ))
+
+    assert result["status"] == "failed"
+    assert result["failure"] is True
+    assert result["reason"] == "official_preflight_failure"
 
 
 def test_official_incomplete_candidate_remains_blocked() -> None:
