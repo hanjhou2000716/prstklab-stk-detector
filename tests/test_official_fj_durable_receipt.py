@@ -5,18 +5,32 @@ from pathlib import Path
 import pytest
 
 import src.official_event_monitor as monitor
+from src.financialjuice_notification import (
+    financialjuice_notification_aliases,
+    financialjuice_notification_key,
+)
 
 
-def _status_for_claim(monkeypatch, tmp_path, claim_key: str, claim: dict[str, object]) -> str:
+def _status_for_claim(monkeypatch, tmp_path, claim_variant: str, claim: dict[str, object]) -> str:
     output = tmp_path / "status.txt"
     monkeypatch.setenv("GITHUB_OUTPUT", str(output))
     event = {
         "source_key": "financialjuice",
-        "event_key": "canonical-event",
+        "canonical_fact_key": "fact:inflation-rate",
+        "material_fact_version": "version-1",
+        "event_cluster_key": "cluster-1",
+        "item_id": "item-1",
+        "observation_id": "observation-1",
         "notification_id": "fj-event-1",
-        "title": "Verified official event",
+        "title": "Federal Reserve holds interest rates steady as inflation cools",
+        "original_headline": "Federal Reserve holds interest rates steady as inflation cools",
+        "possible_impact": "Markets may reassess the rate path.",
         "source_url": "https://example.test/event",
     }
+    aliases = financialjuice_notification_aliases(event)
+    assert len(aliases) >= 2
+    assert aliases[0] == financialjuice_notification_key(event)
+    claim_key = aliases[0] if claim_variant == "current" else aliases[-1]
     claims = {claim_key: claim}
 
     class FakeLedger:
@@ -24,13 +38,6 @@ def _status_for_claim(monkeypatch, tmp_path, claim_key: str, claim: dict[str, ob
             self.delivery_claims = claims
 
     monkeypatch.setattr(monitor, "EventLedger", FakeLedger)
-    monkeypatch.setattr(monitor, "event_key", lambda _event: "canonical-event")
-    monkeypatch.setattr(monitor, "notification_key_for_event", lambda _event: "financialjuice:current")
-    monkeypatch.setattr(
-        monitor,
-        "financialjuice_notification_aliases",
-        lambda _event: ("financialjuice:current", "financialjuice:legacy"),
-    )
     monkeypatch.setattr(monitor, "is_financialjuice_priority_event", lambda _event: True)
     monkeypatch.setattr(monitor, "build_official_event_brief", lambda _event: "Complete factual brief.")
     monkeypatch.setattr(monitor, "content_is_incomplete", lambda *_args: False)
@@ -46,14 +53,14 @@ def _status_for_claim(monkeypatch, tmp_path, claim_key: str, claim: dict[str, ob
     return output.read_text(encoding="utf-8")
 
 
-@pytest.mark.parametrize("claim_key", ["financialjuice:current", "financialjuice:legacy"])
+@pytest.mark.parametrize("claim_variant", ["current", "legacy"])
 def test_fj_preflight_finds_sender_key_and_alias_and_verifies_all_receipts(
-    monkeypatch, tmp_path, claim_key: str
+    monkeypatch, tmp_path, claim_variant: str
 ) -> None:
     output = _status_for_claim(
         monkeypatch,
         tmp_path,
-        claim_key,
+        claim_variant,
         {
             "status": "delivered",
             "recipient_hashes": ["recipient-a", "recipient-b"],
@@ -92,7 +99,7 @@ def test_fj_preflight_finds_sender_key_and_alias_and_verifies_all_receipts(
 def test_fj_partial_or_uncertain_claim_never_becomes_delivered(
     monkeypatch, tmp_path, claim: dict[str, object], reason: str
 ) -> None:
-    output = _status_for_claim(monkeypatch, tmp_path, "financialjuice:legacy", claim)
+    output = _status_for_claim(monkeypatch, tmp_path, "legacy", claim)
 
     assert "should_send=false" in output
     assert "notification_expected=true" in output
