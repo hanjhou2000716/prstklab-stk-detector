@@ -103,36 +103,41 @@ jobs:
             echo "FinancialJuice durable recovery scan failed; refusing silent loss."
             exit 1
           fi
-      - name: Trigger realtime event monitor for new reviewed email
+      - name: Trigger Official event monitor for candidate or periodic poll
         if: success()
         id: dispatch
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          material_candidates="$(jq -r 'if (.material_candidate_count | type) == "number" then .material_candidate_count else 0 end' gmail-sync-result.json)"
-          priority_candidates="$(jq -r 'if (.priority_candidate_count | type) == "number" then .priority_candidate_count else 0 end' gmail-sync-result.json)"
-          priority_detected="$(jq -r 'if ((.candidate_diagnostics.counts.priority_candidate_detected // 0) | type) == "number" then (.candidate_diagnostics.counts.priority_candidate_detected // 0) else 0 end' gmail-sync-result.json)"
-          pending_refs="$(jq -c '.priority_pending_refs // .candidate_diagnostics.priority_pending_refs // []' gmail-sync-result.json)"
-          event_refs="$(jq -c '.priority_event_refs // .candidate_diagnostics.priority_event_refs // []' gmail-sync-result.json)"
-          candidate_ready="false"
-          if [ "$material_candidates" -gt 0 ] || [ "$priority_candidates" -gt 0 ] || [ "$priority_detected" -gt 0 ] || [ "$pending_refs" != "[]" ] || [ "$event_refs" != "[]" ]; then candidate_ready="true"; fi
-          if [ "$candidate_ready" = "true" ] && [ "$NOTIFY" = "true" ] && [ "${{ inputs.latest_financialjuice || github.event.client_payload.latest_financialjuice || false }}" != "true" ]; then
+          decision_json="$(python scripts/official_monitor_dispatch.py gmail-sync-result.json)"
+          dispatch_required="$(jq -r '.should_dispatch' <<< "$decision_json")"
+          dispatch_reason="$(jq -r '.reason' <<< "$decision_json")"
+          payload_reason="$(jq -r '.payload_reason' <<< "$decision_json")"
+          echo "required=$dispatch_required" >> "$GITHUB_OUTPUT"
+          echo "reason=$dispatch_reason" >> "$GITHUB_OUTPUT"
+          echo "triggered=false" >> "$GITHUB_OUTPUT"
+          if [ "$dispatch_required" = "true" ]; then
+            material_candidates="$(jq -r 'if (.material_candidate_count | type) == "number" then .material_candidate_count else 0 end' gmail-sync-result.json)"
+            priority_candidates="$(jq -r 'if (.priority_candidate_count | type) == "number" then .priority_candidate_count else 0 end' gmail-sync-result.json)"
+            priority_detected="$(jq -r 'if ((.candidate_diagnostics.counts.priority_candidate_detected // 0) | type) == "number" then (.candidate_diagnostics.counts.priority_candidate_detected // 0) else 0 end' gmail-sync-result.json)"
+            pending_refs="$(jq -c '.priority_pending_refs // .candidate_diagnostics.priority_pending_refs // []' gmail-sync-result.json)"
+            event_refs="$(jq -c '.priority_event_refs // .candidate_diagnostics.priority_event_refs // []' gmail-sync-result.json)"
             gh api --method POST "repos/$GH_REPO/dispatches" \
               -f event_type=official-event-check \
-              -f "client_payload[reason]=gmail-reviewed-observation-or-recovery" \
+              -f "client_payload[reason]=$payload_reason" \
               -f 'client_payload[notify]=true' \
               -f "client_payload[priority_candidate_detected]=$priority_detected" \
               -f "client_payload[priority_pending_refs]=$pending_refs" \
               -f "client_payload[priority_event_refs]=$event_refs"
             echo "triggered=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "triggered=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Publish Gmail notification decision
         if: always()
         env:
           DISPATCH_TRIGGERED: ${{ steps.dispatch.outputs.triggered || 'false' }}
+          DISPATCH_REQUIRED: ${{ steps.dispatch.outputs.required || 'false' }}
+          DISPATCH_REASON: ${{ steps.dispatch.outputs.reason || 'none' }}
           DISPATCH_OUTCOME: ${{ steps.dispatch.outcome || 'skipped' }}
           RESULT_CONTRACT_OUTCOME: ${{ steps.contract.outcome || 'skipped' }}
         run: |
@@ -200,15 +205,25 @@ jobs:
           elif [ "$recovery_status" = "persistent_failure" ] || [ "$status" = "cursor_read_failed" ]; then
             notification_status="failed"
             notification_reason="${escalation_reason:-${diagnostic_reason:-gmail_cursor_read_failed}}:${storage_error:-unknown}"
+          elif [ "$DISPATCH_OUTCOME" = "failure" ]; then
+            notification_status="failed"
+            if [ "$DISPATCH_REQUIRED" = "true" ]; then
+              notification_reason="downstream_dispatch_failure"
+            else
+              notification_reason="dispatch_policy_resolution_failure"
+            fi
           elif [ "$NOTIFY" != "true" ]; then
             notification_status="not_requested"
             notification_reason="manual_notification_opt_in_required"
           elif [ "${{ inputs.latest_financialjuice || github.event.client_payload.latest_financialjuice || false }}" = "true" ] || [ "$manual_replay" -gt 0 ]; then
             notification_status="diagnostic_only"
             notification_reason="manual_replay"
-          elif [ "$DISPATCH_TRIGGERED" = true ]; then
+          elif [ "$DISPATCH_TRIGGERED" = true ] && [ "$DISPATCH_REASON" = "reviewed_candidate" ]; then
             notification_status="dispatch_requested"
             notification_reason="reviewed_email_or_durable_recovery_pending"
+          elif [ "$DISPATCH_TRIGGERED" = true ]; then
+            notification_status="monitor_poll_requested"
+            notification_reason="automatic_monitor_poll:$DISPATCH_REASON"
           elif [ "$recovery_status" = "retry_pending" ]; then
             notification_status="degraded"
             notification_reason="transient_sync_failure_retry_pending"
@@ -272,6 +287,15 @@ jobs:
             echo "- escalation_reason: ${escalation_reason:-none}"
             echo "- workflow_run_id: $GITHUB_RUN_ID"
             echo "- workflow_sha: $GITHUB_SHA"
+            if [ "$DISPATCH_OUTCOME" = "failure" ]; then
+              official_monitor_dispatch="failed"
+            elif [ "$DISPATCH_TRIGGERED" = "true" ]; then
+              official_monitor_dispatch="requested"
+            else
+              official_monitor_dispatch="not_requested"
+            fi
+            echo "- official_monitor_dispatch: ${official_monitor_dispatch}"
+            echo "- official_monitor_dispatch_reason: ${DISPATCH_REASON}"
             echo "- storage_error: ${storage_error:-none}"
             echo "- diagnostic_reason: ${diagnostic_reason:-none}"
             echo "- priority_pending_state_errors: ${pending_state_errors}"
