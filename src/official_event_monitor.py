@@ -474,7 +474,6 @@ def write_status_output(
     unknown_suppression = False
     suppression_reason = ""
     ledger_record: dict[str, Any] = {}
-    priority_event = False
     should_send = False
     suppressed_candidates = 0
     if event:
@@ -554,7 +553,6 @@ def write_status_output(
                     candidate_reason = "theme_preflight_unavailable"
                 event = candidate
                 ledger_record = candidate_record
-                priority_event = candidate_priority
                 if candidate_should_send:
                     should_send = True
                     content_blocked = False

@@ -6,6 +6,18 @@ import json
 import os
 import re
 import sys
+from collections.abc import Callable
+from datetime import datetime
+from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import sys
 from datetime import datetime
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
