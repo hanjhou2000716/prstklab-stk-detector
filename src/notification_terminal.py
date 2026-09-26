@@ -53,6 +53,7 @@ def _result(
         "reason": reason[:200],
         "failure": failure,
         "no_resend": no_resend,
+        "durable_receipt_verified": _flag(values, "DURABLE_RECEIPT_VERIFIED"),
         "sender_status": _text(values, "SEND_STATUS", "not_attempted") or "not_attempted",
         "receipt_status": _text(values, "RECEIPT_OUTCOME", _text(values, "RECEIPT_CALLBACK_OUTCOME", "not_attempted")) or "not_attempted",
         "delivered_count": _count(values, "DELIVERED_COUNT"),
@@ -109,9 +110,15 @@ def evaluate_official_terminal(values: Mapping[str, str]) -> dict[str, Any]:
             expected=expected, failure=True,
         )
     if status == "already_delivered" and not should_send:
+        if not _flag(values, "DURABLE_RECEIPT_VERIFIED"):
+            return _result(
+                values, "official", status="failed",
+                reason="already_delivered_without_durable_recipient_receipt",
+                expected=True, failure=True, no_resend=True,
+            )
         return _result(
             values, "official", status="already_delivered",
-            reason=reason or "durable_recipient_receipt_verified", expected=False,
+            reason="durable_recipient_receipt_verified", expected=False, no_resend=True,
         )
     if not requested:
         return _result(
@@ -370,6 +377,7 @@ def append_summary(path: str, terminal: Mapping[str, Any]) -> None:
         f"- sender_status / receipt_status: {terminal.get('sender_status', 'unknown')} / {terminal.get('receipt_status', 'unknown')}\n",
         f"- delivered / failed recipients: {terminal.get('delivered_count', 'unknown')} / {terminal.get('failed_count', 'unknown')}\n",
         f"- no_resend: {str(bool(terminal.get('no_resend'))).lower()}\n",
+        f"- durable_receipt_verified: {str(bool(terminal.get('durable_receipt_verified'))).lower()}\n",
     ]
     with Path(path).open("a", encoding="utf-8") as summary:
         summary.writelines(lines)

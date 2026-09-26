@@ -27,7 +27,10 @@ from src.external_observation_input import (
     load_external_observations,
     merge_external_source_health,
 )
-from src.financialjuice_notification import deliver_financialjuice_event
+from src.financialjuice_notification import (
+    deliver_financialjuice_event,
+    financialjuice_notification_aliases,
+)
 from src.financialjuice_priority import (
     bind_financialjuice_semantic_views,
     is_financialjuice_priority_event,
@@ -469,6 +472,7 @@ def write_status_output(
     should_send = False
     suppressed_candidates = 0
     snapshot_publish_failed = False
+    durable_receipt_verified = False
     if event:
         excluded: set[str] = set()
         candidates_value = (
@@ -479,6 +483,7 @@ def write_status_output(
         candidate_limit = max(1, len(candidates_value) if isinstance(candidates_value, list) else 1) + 1
         candidate = event
         for _ in range(candidate_limit):
+            candidate_durable_receipt_verified = False
             try:
                 candidate_caption = build_official_event_brief(candidate)
             except (TypeError, ValueError):
@@ -500,27 +505,69 @@ def write_status_output(
                 candidate_reason = ""
                 try:
                     theme_ledger = EventLedger()
-                    claim = getattr(theme_ledger, "delivery_claims", {}).get(event_key(candidate), {})
-                    claim_status = str(claim.get("status") or "") if isinstance(claim, dict) else ""
-                    if claim_status in {"in_flight", "uncertain"}:
+                    claims = getattr(theme_ledger, "delivery_claims", {})
+                    claim_keys = [event_key(candidate), notification_key_for_event(candidate)]
+                    source_key = str(candidate.get("source_key") or candidate.get("source") or "").strip().casefold()
+                    if source_key == "financialjuice":
+                        claim_keys.extend(financialjuice_notification_aliases(candidate))
+                    matching_claims = [
+                        claims[key]
+                        for key in dict.fromkeys(claim_keys)
+                        if key and isinstance(claims, dict) and key in claims
+                    ]
+                    claim_statuses = [
+                        str(claim.get("status") or "").strip().casefold()
+                        if isinstance(claim, dict) else ""
+                        for claim in matching_claims
+                    ]
+                    unknown_claim = any(
+                        status not in {"delivered", "in_flight", "uncertain", "retryable"}
+                        for status in claim_statuses
+                    )
+                    if matching_claims and unknown_claim:
                         candidate_should_send = False
                         candidate_unknown_suppression = True
-                        candidate_reason = f"notification_claim_{claim_status}"
-                    elif claim_status == "delivered":
-                        configured = {
-                            str(value) for value in claim.get("recipient_hashes", []) if str(value)
-                        } if isinstance(claim, dict) else set()
-                        delivered = {
-                            str(value) for value in claim.get("delivered_recipient_hashes", []) if str(value)
-                        } if isinstance(claim, dict) else set()
-                        if configured and configured.issubset(delivered):
-                            candidate_should_send = False
-                            candidate_suppressed = True
-                            candidate_reason = "already_delivered"
-                        else:
+                        candidate_reason = "notification_claim_state_unrecognized"
+                    elif any(status in {"in_flight", "uncertain"} for status in claim_statuses):
+                        candidate_should_send = False
+                        candidate_unknown_suppression = True
+                        candidate_reason = (
+                            "notification_claim_uncertain"
+                            if "uncertain" in claim_statuses
+                            else "notification_claim_in_flight"
+                        )
+                    elif any(status == "delivered" for status in claim_statuses):
+                        if any(status != "delivered" for status in claim_statuses):
                             candidate_should_send = False
                             candidate_unknown_suppression = True
-                            candidate_reason = "delivered_claim_missing_recipient_receipts"
+                            candidate_reason = "notification_claim_state_conflict"
+                        else:
+                            complete_receipts = True
+                            for matched_claim in matching_claims:
+                                configured_values = matched_claim.get("recipient_hashes")
+                                delivered_values = matched_claim.get("delivered_recipient_hashes")
+                                configured = {
+                                    str(value).strip()
+                                    for value in configured_values
+                                    if str(value).strip()
+                                } if isinstance(configured_values, (list, tuple, set)) else set()
+                                delivered = {
+                                    str(value).strip()
+                                    for value in delivered_values
+                                    if str(value).strip()
+                                } if isinstance(delivered_values, (list, tuple, set)) else set()
+                                if not configured or not configured.issubset(delivered):
+                                    complete_receipts = False
+                                    break
+                            if complete_receipts:
+                                candidate_should_send = False
+                                candidate_suppressed = True
+                                candidate_durable_receipt_verified = True
+                                candidate_reason = "already_delivered"
+                            else:
+                                candidate_should_send = False
+                                candidate_unknown_suppression = True
+                                candidate_reason = "delivered_claim_missing_recipient_receipts"
                     elif not candidate_priority and hasattr(theme_ledger, "theme_decision"):
                         theme = theme_ledger.theme_decision(candidate)
                         if hasattr(theme_ledger, "save"):
@@ -546,6 +593,7 @@ def write_status_output(
                     candidate_reason = "theme_preflight_unavailable"
                 event = candidate
                 ledger_record = candidate_record
+                durable_receipt_verified = candidate_durable_receipt_verified
                 if candidate_should_send:
                     should_send = True
                     content_blocked = False
@@ -676,6 +724,7 @@ def write_status_output(
     if should_send and suppressed_candidates and not contract_mismatch and not durable_source_missing and not pending_timeout and not content_blocked:
         summary["notification_reason"] = "top_candidate_suppressed_later_candidate_considered"
     if isinstance(snapshot, dict):
+        summary["durable_receipt_verified"] = durable_receipt_verified
         snapshot["source_health"] = merge_decision_health(
             snapshot.get("source_health"), "official_event_monitor", summary,
         )
@@ -695,6 +744,7 @@ def write_status_output(
                 notification_reason=reason,
                 last_candidate_at=last_candidate_at,
             )
+            summary["durable_receipt_verified"] = durable_receipt_verified
             snapshot["source_health"] = merge_decision_health(
                 snapshot.get("source_health"), "official_event_monitor", summary,
             )
@@ -709,6 +759,7 @@ def write_status_output(
         f"notification_expected={'true' if summary['notification_expected'] else 'false'}",
         f"notification_status={summary['notification_status']}",
         f"notification_reason={summary['notification_reason']}",
+        f"durable_receipt_verified={'true' if durable_receipt_verified else 'false'}",
         f"priority_pending_count={len(pending_events)}",
         f"priority_dispatch_ref_count={len(dispatch_refs)}",
         f"priority_event_ref_count={len(projected_event_refs)}",
