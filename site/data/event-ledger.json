@@ -26308,7 +26308,7 @@
       "location_fingerprint": "d4328f17fc46dfde",
       "action_fingerprint": "",
       "first_discovered_at": "2026-09-26T13:51:09.442193+00:00",
-      "last_reminded_at": null,
+      "last_reminded_at": "2026-09-26T13:51:43.637727+00:00",
       "escalated": false,
       "risk_level": "R0",
       "risk_rank": 0,
@@ -26320,7 +26320,93 @@
       "compound_event_cluster_key": null,
       "last_decision": null,
       "decision_history": [],
-      "updated_at": "2026-09-26T13:51:09.442193+00:00"
+      "updated_at": "2026-09-26T13:51:43.637727+00:00",
+      "delivery_history": [
+        {
+          "event_key": "7c1d54fe1d3f1b93a0e529f4f0ab9ab7",
+          "notification_id": "fj-item-2ca7747a1cf1f366ea48",
+          "sent_at": "2026-09-26T13:51:43.637727+00:00",
+          "importance": "R0",
+          "alert_type": "unknown",
+          "lifecycle_state": "pending_confirmation",
+          "reason": "financialjuice_realtime_monitor",
+          "notification_theme_key": "financialjuice-cluster:fj-cluster-f067f725f4c5d27d5c33e26d",
+          "risk": "R0",
+          "taiwan_priority": 4,
+          "material_state_changed": true,
+          "release_id": "release-5833d9cc935a0fe4",
+          "snapshot_id": "ef33d808d3a8e563",
+          "delivery_status": "delivered",
+          "observation_id_hash": "119131bdb692c9d29554d0a42c89360cfc77eea76c099c41fa93e46680100bee",
+          "item_id": "fj-item-2ca7747a1cf1f366ea48",
+          "event_cluster_key": "fj-cluster-f067f725f4c5d27d5c33e26d",
+          "vendor_importance": 10,
+          "prstk_risk": {
+            "prstk_risk_level": "R0",
+            "risk_rank": 0,
+            "risk_reason": "non_material_or_unclassified",
+            "vendor_importance": 10,
+            "official_confirmed": false,
+            "market_sync_confirmed": false,
+            "freshness_blocked": false,
+            "freshness_reason": null,
+            "notification_eligible": false,
+            "high_priority": false
+          },
+          "notification_reason": "vendor_priority_importance_ge_9、risk_threshold_not_reached",
+          "parser_version": "financialjuice-v1",
+          "received_at": "2026-09-26T13:49:59+00:00",
+          "notification_key": "financialjuice:b0bcec310ce76283d08adacf",
+          "delivery_receipts": [
+            {
+              "notification_key": "financialjuice:b0bcec310ce76283d08adacf",
+              "recipient_hash": "7a30574fc065",
+              "delivery_status": "delivered",
+              "message_id": 1386,
+              "error_class": null,
+              "release_id": "release-5833d9cc935a0fe4",
+              "snapshot_id": "ef33d808d3a8e563",
+              "observation_id": "fj-item-2ca7747a1cf1f366ea48",
+              "telegram_file_id_hash": null
+            },
+            {
+              "notification_key": "financialjuice:b0bcec310ce76283d08adacf",
+              "recipient_hash": "d36bbcc2cd2d",
+              "delivery_status": "delivered",
+              "message_id": 1387,
+              "error_class": null,
+              "release_id": "release-5833d9cc935a0fe4",
+              "snapshot_id": "ef33d808d3a8e563",
+              "observation_id": "fj-item-2ca7747a1cf1f366ea48",
+              "telegram_file_id_hash": null
+            },
+            {
+              "notification_key": "financialjuice:b0bcec310ce76283d08adacf",
+              "recipient_hash": "5b1d66aae79d",
+              "delivery_status": "delivered",
+              "message_id": 1388,
+              "error_class": null,
+              "release_id": "release-5833d9cc935a0fe4",
+              "snapshot_id": "ef33d808d3a8e563",
+              "observation_id": "fj-item-2ca7747a1cf1f366ea48",
+              "telegram_file_id_hash": null
+            }
+          ],
+          "ingested_at": "2026-09-26T13:50:42.237435+00:00",
+          "candidate_at": "2026-09-26T13:51:08.609031+00:00",
+          "release_ready_at": "2026-09-26T13:51:41.854333+00:00",
+          "telegram_attempted_at": "2026-09-26T13:51:43.637550+00:00",
+          "delivery_result": "delivered",
+          "delay_reason": "none",
+          "source_url": "https://www.financialjuice.com/",
+          "alert_lane": "event",
+          "market_scope": "global",
+          "event_policy_reason": "fj_priority_independent",
+          "trace_id": "official-fj-item-2ca7747a1cf1f366ea48"
+        }
+      ],
+      "last_theme_notification_at": "2026-09-26T13:51:43.637727+00:00",
+      "last_notified_at": "2026-09-26T13:51:43.637727+00:00"
     }
   },
   "delivery_claims": {
@@ -29825,6 +29911,32 @@
       "updated_at": "2026-09-25T21:39:51.231339+00:00",
       "failed_recipient_hashes": [],
       "delivered_at": "2026-09-25T21:39:51.231339+00:00"
+    },
+    "financialjuice:b0bcec310ce76283d08adacf": {
+      "notification_key": "financialjuice:b0bcec310ce76283d08adacf",
+      "slot_key": "",
+      "status": "delivered",
+      "recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d"
+      ],
+      "delivered_recipient_hashes": [
+        "5b1d66aae79d",
+        "7a30574fc065",
+        "d36bbcc2cd2d"
+      ],
+      "attempted_recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d"
+      ],
+      "claimed_at": "2026-09-26T13:51:41.867057+00:00",
+      "lease_until": null,
+      "run_id_hash": "1c13812f6799",
+      "updated_at": "2026-09-26T13:51:43.571674+00:00",
+      "failed_recipient_hashes": [],
+      "delivered_at": "2026-09-26T13:51:43.571674+00:00"
     }
   }
 }
