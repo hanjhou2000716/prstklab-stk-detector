@@ -93,9 +93,11 @@ jobs:
           PREFLIGHT_REASON: ${{ steps.status.outputs.hard_failure_reason || steps.status.outputs.notification_reason || 'priority_candidate_contract_mismatch' }}
           CANDIDATE_CONTENT_STATUS: ${{ steps.status.outputs.candidate_content_status || 'not_applicable' }}
         run: |
-          echo "- notification_preflight_status: blocked" >> "$GITHUB_STEP_SUMMARY"
-          echo "- notification_preflight_reason: ${PREFLIGHT_REASON}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- candidate_content_status: ${CANDIDATE_CONTENT_STATUS}" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "- notification_preflight_status: blocked"
+            echo "- notification_preflight_reason: ${PREFLIGHT_REASON}"
+            echo "- candidate_content_status: ${CANDIDATE_CONTENT_STATUS}"
+          } >> "$GITHUB_STEP_SUMMARY"
           echo "::error::Official notification preflight blocked (${PREFLIGHT_REASON}; content=${CANDIDATE_CONTENT_STATUS}); nothing was sent."
           exit 1
       - name: Wait for production writer queue
