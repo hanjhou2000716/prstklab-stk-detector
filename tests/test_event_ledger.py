@@ -419,3 +419,20 @@ def test_save_recovers_stale_lock(tmp_path):
     assert path.exists()
     assert not lock.exists()
 
+
+
+
+def test_unnotified_observation_does_not_suppress_its_first_theme_delivery(tmp_path):
+    ledger = EventLedger(tmp_path / "ledger.json")
+    event = {
+        "notification_theme_key": "rates-market",
+        "title": "Rate decision",
+        "event_cluster_key": "rates-1",
+        "risk_level": "R2",
+        "source_url": "https://example.test/rates",
+    }
+    now = datetime(2026, 9, 26, 1, 0, tzinfo=UTC)
+    ledger.observe(event, now=now)
+    decision = ledger.theme_decision(event, now=now)
+    assert decision["allowed"] is True
+    assert decision["reason"] == "new_theme"

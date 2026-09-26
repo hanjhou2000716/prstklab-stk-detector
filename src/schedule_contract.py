@@ -277,7 +277,7 @@ def validate_scheduled_context(
     else:  # guarded above; keeps type checkers aware that scheduled is assigned
         raise AssertionError("unreachable schedule contract version")
     local_now = now.astimezone(TAIPEI)
-    if scheduled - local_now > timedelta(seconds=MAX_CLOCK_SKEW_SECONDS):
+    if scheduled > local_now:
         result["reason"] = "invalid_schedule_context:future_scheduled_for_at"
         return result
     anchor_day = scheduled.astimezone(NEW_YORK).date() if name == "us_premarket" else scheduled.astimezone(TAIPEI).date()
@@ -323,7 +323,7 @@ def validate_scheduled_context(
         return result
     result.update({
         "contract_status": "valid",
-        "reason": "late_schedule_publish_only" if delay > MAX_SCHEDULE_DELAY_SECONDS else "dispatch_anchor_on_time",
+        "reason": "late_schedule_publish_only" if delay >= MAX_SCHEDULE_DELAY_SECONDS else "dispatch_anchor_on_time",
         "scheduled": scheduled,
         "dispatch_at": dispatch_at,
         "delay_seconds": delay,

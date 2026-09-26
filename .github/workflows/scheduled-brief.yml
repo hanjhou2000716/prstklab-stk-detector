@@ -127,14 +127,25 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
           HANDOFF_CLIENT_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
         run: python -m src.scheduled_handoff validate
+      - name: Capture immutable workflow run creation time
+        id: run_context
+        if: github.event_name == 'schedule'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: python -m src.workflow_run_context >> "$GITHUB_OUTPUT"
       - name: Resolve scheduled slot
         id: window
         if: ${{ !github.event.client_payload.handoff_parent_run_id || steps.validate_handoff_parent.outputs.valid == 'true' }}
+        env:
+          RUN_CREATED_AT: ${{ steps.run_context.outputs.created_at || '' }}
         run: |
           arguments=(--slot "$SLOT" --print-window)
           arguments+=(--trigger-kind "$GITHUB_EVENT_NAME")
           if [ "$STRICT_WINDOW" = "true" ]; then arguments+=(--strict-window); fi
           if [ -n "$SCHEDULE_CRON" ]; then arguments+=(--scheduled-cron "$SCHEDULE_CRON"); fi
+          if [ -n "$RUN_CREATED_AT" ]; then arguments+=(--run-created-at "$RUN_CREATED_AT"); fi
           if [ -n "$SCHEDULED_FOR_AT" ]; then arguments+=(--scheduled-for "$SCHEDULED_FOR_AT"); fi
           if [ -n "$DISPATCH_UNIX" ]; then arguments+=(--dispatch-unix "$DISPATCH_UNIX"); fi
           if [ -n "$DISPATCH_TRACE_ID" ]; then arguments+=(--dispatch-trace-id "$DISPATCH_TRACE_ID"); fi
@@ -559,6 +570,7 @@ jobs:
           SCHEDULED_SLOT: ${{ steps.window.outputs.scheduled_slot || '' }}
           EFFECTIVE_MARKET_PHASE: ${{ steps.window.outputs.effective_market_phase || '' }}
           SCHEDULED_FOR_AT: ${{ steps.window.outputs.scheduled_for_at || '' }}
+          RUN_CREATED_AT: ${{ steps.window.outputs.run_created_at || '' }}
           RUN_STARTED_AT: ${{ steps.window.outputs.run_started_at || '' }}
           DELAY_SECONDS: ${{ steps.window.outputs.delay_seconds || '0' }}
           TRIGGER_KIND: ${{ steps.window.outputs.trigger_kind || github.event_name }}
@@ -739,6 +751,7 @@ jobs:
             echo "- scheduled_slot: ${SCHEDULED_SLOT:-unknown}"
             echo "- effective_market_phase: ${EFFECTIVE_MARKET_PHASE:-unknown}"
             echo "- scheduled_for_at: ${SCHEDULED_FOR_AT:-unknown}"
+            echo "- run_created_at: ${RUN_CREATED_AT:-unknown}"
             echo "- run_started_at: ${RUN_STARTED_AT:-unknown}"
             echo "- delay_seconds: ${DELAY_SECONDS:-unknown}"
             echo "- trigger_kind: ${TRIGGER_KIND:-unknown}"

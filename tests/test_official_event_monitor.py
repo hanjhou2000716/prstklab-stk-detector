@@ -660,3 +660,116 @@ def test_duplicate_top_candidate_does_not_starve_later_valid_candidate(monkeypat
     monkeypatch.setattr(monitor, "send_text_briefs_audited", sender)
     assert monitor.send_current_event(expected_key=monitor.event_key(later)) is True
     assert captured["alert_id"] == "official-next"
+
+
+
+def test_safe_same_theme_suppression_is_not_reported_as_missing_receipt(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    event = {
+        "event_key": "theme-1",
+        "event_cluster_key": "theme-1",
+        "source_key": "official",
+        "title": "Repeated market theme",
+        "source_url": "https://example.test/theme",
+        "risk_level": "R1",
+    }
+    monkeypatch.setattr(monitor, "build_official_event_brief", lambda _event: "complete brief")
+    monkeypatch.setattr(monitor, "content_is_incomplete", lambda *_args: False)
+    monkeypatch.setattr(monitor, "_observe_event", lambda *_args, **_kwargs: {"should_remind": True, "changed": False})
+    monkeypatch.setattr(monitor, "select_official_event", lambda *_args, **_kwargs: None)
+
+    class FakeLedger:
+        delivery_claims = {}
+
+        def theme_decision(self, _event):
+            return {"allowed": False, "reason": "same_theme_unchanged"}
+
+        def save(self):
+            return None
+
+    monkeypatch.setattr(monitor, "EventLedger", FakeLedger)
+    monitor.write_status_output(event, {"events": {"items": [event]}})
+    text = output.read_text(encoding="utf-8")
+    assert "should_send=false" in text
+    assert "notification_expected=false" in text
+    assert "notification_status=policy_suppressed" in text
+    assert "notification_reason=theme:same_theme_unchanged" in text
+    assert "hard_failure=false" in text
+
+
+
+def test_unknown_candidate_suppression_is_a_hard_failure(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    event = {
+        "event_key": "unknown-suppress-1",
+        "event_cluster_key": "unknown-suppress-1",
+        "source_key": "official",
+        "title": "Unknown suppression",
+        "source_url": "https://example.test/unknown",
+        "risk_level": "R1",
+    }
+    monkeypatch.setattr(monitor, "build_official_event_brief", lambda _event: "complete brief")
+    monkeypatch.setattr(monitor, "content_is_incomplete", lambda *_args: False)
+    monkeypatch.setattr(monitor, "_observe_event", lambda *_args, **_kwargs: {"should_remind": False, "changed": False})
+    monkeypatch.setattr(monitor, "select_official_event", lambda *_args, **_kwargs: None)
+
+    class FakeLedger:
+        delivery_claims = {}
+
+        def theme_decision(self, _event):
+            return {"allowed": True, "reason": "new_theme"}
+
+        def save(self):
+            return None
+
+    monkeypatch.setattr(monitor, "EventLedger", FakeLedger)
+    monitor.write_status_output(event, {"events": {"items": [event]}})
+    text = output.read_text(encoding="utf-8")
+    assert "notification_status=blocked" in text
+    assert "notification_reason=preflight_sender_policy_disagreement" in text
+    assert "hard_failure=true" in text
+
+
+
+def test_already_delivered_candidate_requires_complete_durable_receipts(monkeypatch, tmp_path):
+    def run_with_claim(delivered):
+        output = tmp_path / f"claim-{len(delivered)}.txt"
+        monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+        event = {
+            "event_key": "claim-1",
+            "event_cluster_key": "claim-1",
+            "source_key": "official",
+            "title": "Prior event",
+            "source_url": "https://example.test/prior",
+            "risk_level": "R1",
+        }
+        monkeypatch.setattr(monitor, "event_key", lambda _event: "claim-1")
+        monkeypatch.setattr(monitor, "build_official_event_brief", lambda _event: "complete brief")
+        monkeypatch.setattr(monitor, "content_is_incomplete", lambda *_args: False)
+        monkeypatch.setattr(monitor, "_observe_event", lambda *_args, **_kwargs: {"should_remind": False, "changed": False})
+        monkeypatch.setattr(monitor, "select_official_event", lambda *_args, **_kwargs: None)
+
+        class FakeLedger:
+            delivery_claims = {
+                "claim-1": {
+                    "status": "delivered",
+                    "recipient_hashes": ["r1", "r2"],
+                    "delivered_recipient_hashes": delivered,
+                }
+            }
+
+        monkeypatch.setattr(monitor, "EventLedger", FakeLedger)
+        monitor.write_status_output(event, {"events": {"items": [event]}})
+        return output.read_text(encoding="utf-8")
+
+    complete = run_with_claim(["r1", "r2"])
+    assert "notification_status=already_delivered" in complete
+    assert "notification_expected=false" in complete
+    assert "hard_failure=false" in complete
+
+    partial = run_with_claim(["r1"])
+    assert "notification_status=blocked" in partial
+    assert "notification_reason=delivered_claim_missing_recipient_receipts" in partial
+    assert "hard_failure=true" in partial

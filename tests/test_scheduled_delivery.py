@@ -1398,3 +1398,28 @@ def test_prepare_keeps_local_fallback_when_railway_export_fails(tmp_path, monkey
     assert published["external_observations"] == []
     assert published["external_source_health"]["status"] == "partial"
     assert published["external_source_health"]["issues"] == ["http_503"]
+
+
+
+def test_delayed_brief_event_anchor_keeps_the_original_scheduled_slot():
+    event = scheduled_delivery._briefing_delivery_event(
+        {
+            "briefing": {
+                "notification_eligible": True,
+                "scheduled_report": True,
+                "market_scope_key": "taiwan",
+                "digest_status": "ready",
+                "public_short_message": "晨報摘要",
+                "briefing_id": "brief-cross-day-1",
+                "slot_context": {
+                    "scheduled_slot": "morning",
+                    "effective_slot": "pre_open",
+                    "slot_date": "2026-09-26",
+                },
+                "primary_theme": {},
+            }
+        },
+        "pre_open",
+    )
+    assert event is not None
+    assert event["anchor_key"] == "taiwan:2026-09-26:morning"

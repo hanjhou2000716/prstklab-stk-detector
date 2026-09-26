@@ -11,7 +11,9 @@ def test_mypy_failure_stops_before_targeted_and_full_tests() -> None:
             self.returncode = returncode
 
     def runner(command, **_kwargs):
-        if "rhysd/actionlint:1.7.7" in command:
+        if any("check_quality_tools.py" in str(part) for part in command):
+            invoked.append("tool-versions")
+        elif "rhysd/actionlint:1.7.7" in command:
             invoked.append("workflow-lint")
         elif command and command[0].lower().endswith(("actionlint", "actionlint.exe")):
             invoked.append("workflow-lint")
@@ -27,7 +29,7 @@ def test_mypy_failure_stops_before_targeted_and_full_tests() -> None:
     )
 
     assert code == 1
-    assert invoked == ["workflow-lint", "ruff", "mypy"]
+    assert invoked == ["tool-versions", "workflow-lint", "ruff", "mypy"]
 
 
 def test_changed_tests_precede_full_suite(monkeypatch) -> None:

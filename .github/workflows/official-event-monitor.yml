@@ -197,7 +197,7 @@ jobs:
           SCAN_STATUS: ${{ steps.status.outcome }}
           NOTIFICATION_REQUESTED: ${{ env.NOTIFY }}
           CANDIDATE_TYPE: ${{ steps.status.outputs.candidate_type || 'none' }}
-          NOTIFICATION_EXPECTED: ${{ steps.status.outputs.notification_expected || 'false' }}
+          NOTIFICATION_EXPECTED: ${{ steps.send.outputs.notification_expected || steps.status.outputs.notification_expected || 'false' }}
           NOTIFICATION_STATUS: ${{ steps.send.outputs.notification_status || steps.status.outputs.notification_status || 'not_attempted' }}
           NOTIFICATION_REASON: ${{ steps.send.outputs.reason || steps.status.outputs.notification_reason || 'not_attempted' }}
           QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'not_required' }}
@@ -348,7 +348,7 @@ jobs:
           HARD_FAILURE: ${{ steps.status.outputs.hard_failure || 'false' }}
           HARD_FAILURE_REASON: ${{ steps.status.outputs.hard_failure_reason || '' }}
           CANDIDATE_CONTENT_STATUS: ${{ steps.status.outputs.candidate_content_status || 'not_applicable' }}
-          NOTIFICATION_EXPECTED: ${{ steps.status.outputs.notification_expected || 'false' }}
+          NOTIFICATION_EXPECTED: ${{ steps.send.outputs.notification_expected || steps.status.outputs.notification_expected || 'false' }}
           NOTIFICATION_STATUS: ${{ steps.send.outputs.notification_status || steps.status.outputs.notification_status || 'not_attempted' }}
           NOTIFICATION_REASON: ${{ steps.send.outputs.reason || steps.status.outputs.notification_reason || 'not_attempted' }}
           NOTIFICATION_REQUESTED: ${{ env.NOTIFY }}
@@ -369,6 +369,8 @@ jobs:
           FAILED_COUNT: ${{ steps.send.outputs.failed_count || '' }}
           RECEIPT_OUTCOME: ${{ steps.persist_receipt.outcome || 'skipped' }}
           SEND_SENT: ${{ steps.send.outputs.sent || 'false' }}
+          SEND_NOTIFICATION_EXPECTED: ${{ steps.send.outputs.notification_expected || 'true' }}
+          SEND_STATUS: ${{ steps.send.outputs.notification_status || '' }}
           LEDGER_OUTCOME: ${{ steps.persist_notification_ledger.outcome || 'skipped' }}
           RECONCILED_DEPLOYMENT_AVAILABLE: ${{ steps.reconciled_deployment.outputs.available || 'false' }}
           RECONCILED_RELEASE_GATE_OUTCOME: ${{ steps.reconciled_release_gate.outcome || 'skipped' }}
@@ -392,7 +394,10 @@ jobs:
 
           notification_status = value("NOTIFICATION_STATUS", "not_attempted")
           notification_reason = value("NOTIFICATION_REASON", "not_attempted")
-          if value("NOTIFICATION_REQUESTED") == "true" and value("SHOULD_SEND") == "true":
+          if value("SEND_STATUS") == "policy_suppressed" and value("SEND_NOTIFICATION_EXPECTED") == "false":
+              notification_status = "policy_suppressed"
+              notification_reason = value("NOTIFICATION_REASON", "theme_policy_suppressed")
+          elif value("NOTIFICATION_REQUESTED") == "true" and value("SHOULD_SEND") == "true":
               if value("QUEUE_STATUS") == "superseded" or value("PREPARED_RELEASE_STATUS") != "prepared_release_current":
                   notification_status = "suppressed_or_deferred"
                   notification_reason = "writer_queue_or_prepared_release_guard"
@@ -486,41 +491,61 @@ jobs:
           FAILED_COUNT: ${{ steps.send.outputs.failed_count || '0' }}
           RECEIPT_OUTCOME: ${{ steps.persist_receipt.outcome || 'skipped' }}
           SEND_SENT: ${{ steps.send.outputs.sent || 'false' }}
+          SEND_NOTIFICATION_EXPECTED: ${{ steps.send.outputs.notification_expected || 'true' }}
+          SEND_STATUS: ${{ steps.send.outputs.notification_status || '' }}
           LEDGER_OUTCOME: ${{ steps.persist_notification_ledger.outcome || 'skipped' }}
           RECONCILED_AVAILABLE: ${{ steps.reconciled_deployment.outputs.available || 'false' }}
           RECONCILED_GATE_OUTCOME: ${{ steps.reconciled_release_gate.outcome || 'skipped' }}
         run: |
           set -euo pipefail
           if [ "$CACHE_HIT" = "true" ]; then
-            echo "- notification_terminal_status: already_delivered" >> "$GITHUB_STEP_SUMMARY"
+            { echo "- notification_terminal_status: already_delivered"; } >> "$GITHUB_STEP_SUMMARY"
             echo "A prior successful delivery lock exists; no additional send was made."
             exit 0
           fi
+          if [ "$SEND_STATUS" = "policy_suppressed" ] && [ "$SEND_NOTIFICATION_EXPECTED" = "false" ]; then
+            {
+              echo "- notification_expected: false"
+              echo "- notification_terminal_status: policy_suppressed"
+              echo "- notification_terminal_reason: $NOTIFICATION_REASON"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           if [ "$QUEUE_STATUS" = "superseded" ] || [ "$PREPARED_CURRENT" != "true" ]; then
-            echo "- notification_terminal_status: failed" >> "$GITHUB_STEP_SUMMARY"
-            echo "- notification_terminal_reason: expected_notification_superseded_or_stale_without_prior_receipt" >> "$GITHUB_STEP_SUMMARY"
+            {
+              echo "- notification_terminal_status: failed"
+              echo "- notification_terminal_reason: expected_notification_superseded_or_stale_without_prior_receipt"
+            } >> "$GITHUB_STEP_SUMMARY"
             echo "::error::Expected official notification was not delivered; this run was superseded or its prepared release became stale."
             exit 1
           fi
           if [ "$DEPLOYMENT_AVAILABLE" != "true" ] || [ "$GATE_ALLOWED" != "true" ]; then
-            echo "- notification_terminal_status: failed" >> "$GITHUB_STEP_SUMMARY"
-            echo "- notification_terminal_reason: pages_deployment_or_release_gate_failed" >> "$GITHUB_STEP_SUMMARY"
+            {
+              echo "- notification_terminal_status: failed"
+              echo "- notification_terminal_reason: pages_deployment_or_release_gate_failed"
+            } >> "$GITHUB_STEP_SUMMARY"
             echo "::error::Expected official notification was not delivered: Pages deployment or release verification failed (${DEPLOYMENT_ERROR_CODE})."
             exit 1
           fi
           if [ "$SEND_OUTCOME" != "success" ] || [ "$DELIVERY_STATUS" != "delivered" ] \
             || [ "$DELIVERED_COUNT" -le 0 ] || [ "$FAILED_COUNT" -ne 0 ] \
             || [ "$RECEIPT_OUTCOME" != "success" ]; then
-            echo "- notification_terminal_status: failed" >> "$GITHUB_STEP_SUMMARY"
-            echo "- notification_terminal_reason: missing_delivery_or_persistent_recipient_receipt" >> "$GITHUB_STEP_SUMMARY"
+            {
+              echo "- notification_terminal_status: failed"
+              echo "- notification_terminal_reason: missing_delivery_or_persistent_recipient_receipt"
+            } >> "$GITHUB_STEP_SUMMARY"
             echo "::error::Expected official notification has no complete delivered recipient receipt."
             exit 1
           fi
           if [ "$SEND_SENT" = "true" ] && { [ "$LEDGER_OUTCOME" != "success" ] || [ "$RECONCILED_AVAILABLE" != "true" ] || [ "$RECONCILED_GATE_OUTCOME" != "success" ]; }; then
-            echo "- notification_terminal_status: delivered_reconciliation_incomplete" >> "$GITHUB_STEP_SUMMARY"
-            echo "- notification_terminal_reason: post_send_public_release_not_reconciled_do_not_resend" >> "$GITHUB_STEP_SUMMARY"
+            {
+              echo "- notification_terminal_status: delivered_reconciliation_incomplete"
+              echo "- notification_terminal_reason: post_send_public_release_not_reconciled_do_not_resend"
+            } >> "$GITHUB_STEP_SUMMARY"
             echo "::error::Telegram delivered, but the post-send public release was not reconciled. Do not resend this event."
             exit 1
           fi
-          echo "- notification_terminal_status: delivered" >> "$GITHUB_STEP_SUMMARY"
-          echo "- notification_terminal_reason: recipient_receipt_and_public_release_reconciled" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "- notification_terminal_status: delivered"
+            echo "- notification_terminal_reason: recipient_receipt_and_public_release_reconciled"
+          } >> "$GITHUB_STEP_SUMMARY"

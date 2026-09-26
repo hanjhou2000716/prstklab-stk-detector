@@ -529,7 +529,9 @@ class EventLedger:
         state = _material_state(event)
         candidates = [
             record for record in self.records.values()
-            if isinstance(record, dict) and record.get("notification_theme_key") == theme
+            if isinstance(record, dict)
+            and record.get("notification_theme_key") == theme
+            and (record.get("last_theme_notification_at") or record.get("last_reminded_at"))
         ]
         latest: dict[str, Any] | None = None
         latest_time = datetime.min.replace(tzinfo=UTC)
