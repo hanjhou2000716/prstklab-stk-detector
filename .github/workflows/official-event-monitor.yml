@@ -346,6 +346,7 @@ jobs:
         env:
           EVENT_KEY: ${{ steps.status.outputs.key || '' }}
           SCAN_OUTCOME: ${{ steps.status.outcome || 'not_run' }}
+          SCAN_STATUS: ${{ steps.status.outcome || 'not_run' }}
           HARD_FAILURE: ${{ steps.status.outputs.hard_failure || 'false' }}
           HARD_FAILURE_REASON: ${{ steps.status.outputs.hard_failure_reason || '' }}
           CANDIDATE_CONTENT_STATUS: ${{ steps.status.outputs.candidate_content_status || 'not_applicable' }}

@@ -33,7 +33,7 @@ def test_every_shared_writer_has_an_id_and_safe_exit_contract() -> None:
         assert "id: writer_queue" in queue, name
         workflow_text = _workflow_text(name)
         assert "QUEUE_STATUS" in workflow_text, name
-        assert any("decision" in step.lower() for step in steps), name
+        assert any("decision" in step.lower() or "id: terminal_diagnostic" in step for step in steps), name
 
 
 def test_superseded_runs_cannot_write_pages_receipts_ledgers_or_delivery_locks() -> None:

@@ -50,6 +50,7 @@ def test_official_workflow_uses_shared_terminal_classifier_and_durable_receipts(
     assert "id: terminal_diagnostic" in diagnostic
     assert "evaluate_official_terminal" in diagnostic
     assert "IDEMPOTENCY_CACHE_HIT" in diagnostic
+    assert "SCAN_STATUS:" in diagnostic
     assert "RECEIPT_OUTCOME" in diagnostic
     assert "LEDGER_OUTCOME" in diagnostic
     assert "RECONCILED_RELEASE_GATE_OUTCOME" in diagnostic
