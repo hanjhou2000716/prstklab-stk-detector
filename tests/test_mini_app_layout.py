@@ -375,3 +375,14 @@ def test_value_research_cards_reuse_explainability_renderer():
     marker = 'const explanation = researchExplainability(item);'
     assert marker in app
     assert app.index(marker) > app.index("const renderValueResearch")
+
+
+def test_market_quote_cards_render_group_freshness_without_repeating_dates_in_rows():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
+
+    assert "renderDateGroupedRows" in app
+    assert "quote-group-status" in app
+    assert "item.status_notes" in app
+    assert ".taiwan-market-status" in styles
+    assert ".quote-group-status" in styles

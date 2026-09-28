@@ -749,3 +749,32 @@ def test_expired_history_cursor_is_cleared_and_reported_as_gap(tmp_path) -> None
     assert cursor["last_history_id"] is None
     assert cursor["watch_expiration"] is None
     assert cursor["watch_error"] == "history_cursor_expired"
+
+
+def test_gmail_workflow_bounds_dependency_install_and_reports_phase_outcomes() -> None:
+    workflow = (
+        Path(__file__).parents[1] / ".github" / "workflows" / "gmail-history-sync.yml"
+    ).read_text(encoding="utf-8")
+
+    install = workflow.split("- name: Install parser dependencies", 1)[1].split(
+        "- name: Sync bounded history into canonical parser", 1
+    )[0]
+    assert "id: dependencies" in install
+    assert "timeout-minutes: 4" in install
+    assert 'PIP_DEFAULT_TIMEOUT: "30"' in install
+    assert 'PIP_RETRIES: "5"' in install
+    assert "python -m pip install -r requirements-production.txt" in install
+
+    sync = workflow.split("- name: Sync bounded history into canonical parser", 1)[1].split(
+        "- name: Validate Gmail sync result contract", 1
+    )[0]
+    assert "id: sync" in sync
+    job = workflow.split("jobs:", 1)[1].split("steps:", 1)[0]
+    assert "timeout-minutes: 10" in job
+    assert "DEPENDENCY_INSTALL_OUTCOME: ${{ steps.dependencies.outcome || 'skipped' }}" in workflow
+    assert "GMAIL_SYNC_OUTCOME: ${{ steps.sync.outcome || 'skipped' }}" in workflow
+    assert "dependency_install_failed_sync_not_started" in workflow
+    assert 'source_health_state="not_checked"' in workflow
+    assert 'cursor_state="not_touched"' in workflow
+    assert 'notification_expected="not_evaluated"' in workflow
+    assert 'processed_summary="not_checked"' in workflow
