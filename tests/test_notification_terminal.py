@@ -217,6 +217,27 @@ def test_scheduled_delivery_requires_receipt_and_public_reconciliation() -> None
     assert partial["no_resend"] is True
 
 
+def test_holiday_notice_obligation_is_a_required_deliverable() -> None:
+    result = evaluate_scheduled_terminal(scheduled(
+        DELIVERY_OBLIGATION="holiday_notice_required",
+    ))
+
+    assert result["status"] == "delivered"
+    assert result["expected"] is True
+    assert result["failure"] is False
+
+
+def test_holiday_notice_partial_delivery_remains_failed_without_resend() -> None:
+    result = evaluate_scheduled_terminal(scheduled(
+        DELIVERY_OBLIGATION="holiday_notice_required",
+        FAILED_COUNT="1",
+    ))
+
+    assert result["status"] == "failed"
+    assert result["failure"] is True
+    assert result["no_resend"] is True
+
+
 def test_scheduled_preparation_and_expectation_mismatch_is_not_green() -> None:
     missing_obligation = evaluate_scheduled_terminal(scheduled(
         DELIVERY_OBLIGATION="undetermined",

@@ -11,6 +11,17 @@ from typing import Any
 
 _TRUE = {"1", "true", "yes", "on"}
 _SAFE_SUPPRESSIONS = {"theme:same_theme_unchanged", "theme:same_theme_within_2h"}
+_SAFE_RECONCILED_GATE_CATEGORIES = {
+    "contract_mismatch",
+    "deployed_artifact_mismatch",
+    "local_artifact_mismatch",
+    "local_release_identity_mismatch",
+    "none",
+    "pages_unavailable",
+    "parallel_publish_superseded",
+    "public_content_mismatch",
+    "public_manifest_stale",
+}
 
 
 def _text(values: Mapping[str, str], key: str, default: str = "") -> str:
@@ -29,6 +40,35 @@ def _count(values: Mapping[str, str], key: str) -> int | None:
     except (TypeError, ValueError):
         return None
     return parsed if parsed >= 0 else None
+
+
+def _reconciliation_evidence(values: Mapping[str, str]) -> dict[str, Any]:
+    """Return bounded, non-sensitive evidence about post-send release checks."""
+    raw_category = _text(values, "RECONCILED_GATE_ERROR_CATEGORY", "")
+    category = raw_category if raw_category in _SAFE_RECONCILED_GATE_CATEGORIES else (
+        "unknown" if raw_category else "not_available"
+    )
+
+    def identity_matches(expected_key: str, actual_key: str) -> bool | None:
+        expected = _text(values, expected_key)
+        actual = _text(values, actual_key)
+        return expected == actual if expected and actual else None
+
+    return {
+        "deployment_available": _text(values, "RECONCILED_DEPLOYMENT_AVAILABLE", "unknown"),
+        "gate_outcome": _text(values, "RECONCILED_RELEASE_GATE_OUTCOME", "not_run"),
+        "error_category": category,
+        "http_status": _count(values, "RECONCILED_GATE_HTTP_STATUS"),
+        "attempt_count": _count(values, "RECONCILED_GATE_ATTEMPT_COUNT"),
+        "release_identity_matches": identity_matches(
+            "RECONCILED_GATE_EXPECTED_RELEASE_ID",
+            "RECONCILED_GATE_ACTUAL_RELEASE_ID",
+        ),
+        "snapshot_identity_matches": identity_matches(
+            "RECONCILED_GATE_EXPECTED_SNAPSHOT_ID",
+            "RECONCILED_GATE_ACTUAL_SNAPSHOT_ID",
+        ),
+    }
 
 
 def _result(
@@ -54,6 +94,7 @@ def _result(
         "failure": failure,
         "no_resend": no_resend,
         "durable_receipt_verified": _flag(values, "DURABLE_RECEIPT_VERIFIED"),
+        "reconciliation": _reconciliation_evidence(values),
         "sender_status": _text(values, "SEND_STATUS", "not_attempted") or "not_attempted",
         "receipt_status": _text(values, "RECEIPT_OUTCOME", _text(values, "RECEIPT_CALLBACK_OUTCOME", "not_attempted")) or "not_attempted",
         "delivered_count": _count(values, "DELIVERED_COUNT"),
@@ -270,7 +311,7 @@ def evaluate_scheduled_terminal(values: Mapping[str, str]) -> dict[str, Any]:
             values, "scheduled", status="not_required",
             reason="no_scheduled_notification_obligation", expected=False,
         )
-    if obligation != "report_required":
+    if obligation not in {"report_required", "holiday_notice_required"}:
         return _result(
             values, "scheduled", status="failed",
             reason=f"unknown_delivery_obligation_{obligation or 'empty'}",

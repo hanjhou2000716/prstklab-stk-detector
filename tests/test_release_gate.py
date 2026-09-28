@@ -5,11 +5,13 @@ import pytest
 import requests
 
 from src.release_gate import (
+    ReleaseGateResult,
     _fetch_public_release_artifacts,
     _http_status,
     _is_retryable_http_error,
     _load_release_artifacts,
     _request_timeout,
+    _safe_diagnostic_outputs,
     _utc_timestamp,
     _validate_bootstrap_artifact,
     _validate_public_alert_target,
@@ -92,6 +94,39 @@ def _public_artifact_response(manifest, data, url):
         body = json.dumps(manifest, ensure_ascii=False).encode("utf-8")
         return _public_response(body, manifest)
     return _public_response((data / name).read_bytes())
+
+
+def test_release_gate_exposes_safe_reconciled_diagnostics_without_urls():
+    result = ReleaseGateResult(
+        allowed=False,
+        error_category="public_manifest_stale",
+        http_status=200,
+        attempts=({
+            "error_category": "public_manifest_stale",
+            "http_status": 200,
+            "manifest_url": "https://example.invalid/private?signature=must-not-leak",
+            "error": "public manifest release_id does not match local release",
+        },),
+    )
+
+    diagnostics = _safe_diagnostic_outputs(result)
+
+    assert diagnostics == {
+        "attempt_count": "1",
+        "last_attempt_error_category": "public_manifest_stale",
+        "last_attempt_http_status": "200",
+    }
+    assert "signature" not in repr(diagnostics)
+    assert "example.invalid" not in repr(diagnostics)
+
+
+def test_release_gate_rejects_unrecognized_diagnostic_category():
+    result = ReleaseGateResult(
+        allowed=False,
+        error_category="https://untrusted.invalid/private",
+    )
+
+    assert _safe_diagnostic_outputs(result)["last_attempt_error_category"] == "unknown"
 
 
 def test_release_gate_accepts_ready_matching_snapshot(tmp_path):

@@ -118,4 +118,6 @@ def test_workflow_carries_durable_proof_to_both_outcome_summaries() -> None:
         "DURABLE_RECEIPT_VERIFIED: ${{ steps.status.outputs.durable_receipt_verified || 'false' }}"
     ) == 2
     assert "durable_recipient_receipt_verified" in workflow
+    assert "RECONCILED_GATE_ERROR_CATEGORY: ${{ steps.reconciled_release_gate.outputs.error_category" in workflow
+    assert "reconciled_public_release_gate" in workflow
     assert "Official event / price notification outcome" in workflow

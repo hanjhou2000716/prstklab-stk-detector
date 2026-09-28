@@ -383,6 +383,13 @@ jobs:
           LEDGER_OUTCOME: ${{ steps.persist_notification_ledger.outcome || 'skipped' }}
           RECONCILED_DEPLOYMENT_AVAILABLE: ${{ steps.reconciled_deployment.outputs.available || 'false' }}
           RECONCILED_RELEASE_GATE_OUTCOME: ${{ steps.reconciled_release_gate.outcome || 'skipped' }}
+          RECONCILED_GATE_ERROR_CATEGORY: ${{ steps.reconciled_release_gate.outputs.error_category || 'not_available' }}
+          RECONCILED_GATE_HTTP_STATUS: ${{ steps.reconciled_release_gate.outputs.last_attempt_http_status || '' }}
+          RECONCILED_GATE_ATTEMPT_COUNT: ${{ steps.reconciled_release_gate.outputs.attempt_count || '' }}
+          RECONCILED_GATE_EXPECTED_RELEASE_ID: ${{ steps.reconciled_release_gate.outputs.expected_release_id || '' }}
+          RECONCILED_GATE_ACTUAL_RELEASE_ID: ${{ steps.reconciled_release_gate.outputs.actual_release_id || '' }}
+          RECONCILED_GATE_EXPECTED_SNAPSHOT_ID: ${{ steps.reconciled_release_gate.outputs.expected_snapshot_id || '' }}
+          RECONCILED_GATE_ACTUAL_SNAPSHOT_ID: ${{ steps.reconciled_release_gate.outputs.actual_snapshot_id || '' }}
         run: |
           python - <<'PY'
           from datetime import UTC, datetime
@@ -455,6 +462,22 @@ jobs:
                   summary.write(f"- sender: {terminal['sender_status']}\n")
                   summary.write(f"- durable_receipt: {terminal['receipt_status']}\n")
                   summary.write(f"- no_resend: {str(terminal['no_resend']).lower()}\n")
+                  reconciliation = terminal["reconciliation"]
+                  summary.write(
+                      "- reconciled_public_release_gate: "
+                      f"outcome={reconciliation['gate_outcome']}; "
+                      f"category={reconciliation['error_category']}; "
+                      f"http_status={reconciliation['http_status']}; "
+                      f"attempts={reconciliation['attempt_count']}\n"
+                  )
+                  summary.write(
+                      "- reconciled_release_identity_matches: "
+                      f"{reconciliation['release_identity_matches']}\n"
+                  )
+                  summary.write(
+                      "- reconciled_snapshot_identity_matches: "
+                      f"{reconciliation['snapshot_identity_matches']}\n"
+                  )
           output_path = os.environ.get("GITHUB_OUTPUT", "")
           if output_path:
               with Path(output_path).open("a", encoding="utf-8") as output:
@@ -474,6 +497,7 @@ jobs:
         if: always() && steps.terminal_diagnostic.outputs.terminal_failure == 'true'
         env:
           TERMINAL_REASON: ${{ steps.terminal_diagnostic.outputs.terminal_reason || 'notification_terminal_state_unresolved' }}
+          RECONCILED_GATE_ERROR_CATEGORY: ${{ steps.reconciled_release_gate.outputs.error_category || 'not_available' }}
         run: |
-          echo "::error::Official notification terminal check failed (${TERMINAL_REASON})."
+          echo "::error::Official notification terminal check failed (${TERMINAL_REASON}; reconciled_gate=${RECONCILED_GATE_ERROR_CATEGORY})."
           exit 1
