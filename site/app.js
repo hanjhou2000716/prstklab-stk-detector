@@ -1446,21 +1446,42 @@ const renderBriefing = (briefing, generatedAt) => {
         const takeawayMarkup = takeaway
           ? `<p class="us-market-takeaway"><b>簡要觀察：</b>${escapeHtml(takeaway)}</p>` : "";
         const evidence = renderEvidence(item.evidence);
+        const quoteDate = (fact) => String(fact?.quote?.quote_date || fact?.quote?.quote_time || "").slice(0, 10);
+        const renderDateGroupedRows = (label, facts, className, defaultStatus) => {
+          if (!facts.length) return "";
+          const grouped = new Map();
+          facts.forEach((fact) => {
+            const date = quoteDate(fact) || "日期未確認";
+            if (!grouped.has(date)) grouped.set(date, []);
+            grouped.get(date).push(fact);
+          });
+          return Array.from(grouped.entries()).map(([date, groupFacts]) => {
+            const status = date === "日期未確認" ? defaultStatus : `資料日 ${date}`;
+            return `<section class="us-market-subgroup ${className}"><h4>${escapeHtml(label)}</h4><small class="quote-group-status">${escapeHtml(status || date)}</small><div class="us-market-facts">${groupFacts.map(renderUsFact).join("")}</div></section>`;
+          }).join("");
+        };
         if (item.layout === "us_cash_v2") {
-          const rows = visibleStructuredFacts.map(renderUsFact).join("");
-          return `<article class="morning-analysis-section us-market-card us-market-cash"><div class="morning-analysis-section-heading"><h3>${title}</h3>${headerNoteMarkup}</div><div class="us-market-facts">${rows || '<p class="morning-analysis-fact">本輪未取得可核對資料。</p>'}</div>${takeawayMarkup}${evidence}</article>`;
+          const dateGroups = new Set(visibleStructuredFacts.map((fact) => quoteDate(fact) || "日期未確認"));
+          const splitByDate = dateGroups.size > 1;
+          const rows = splitByDate
+            ? renderDateGroupedRows("最近收盤", visibleStructuredFacts, "us-market-date-group", "資料日期未確認")
+            : `<div class="us-market-facts">${visibleStructuredFacts.map(renderUsFact).join("")}</div>`;
+          return `<article class="morning-analysis-section us-market-card us-market-cash"><div class="morning-analysis-section-heading"><h3>${title}</h3>${splitByDate ? "" : headerNoteMarkup}</div>${rows || '<p class="morning-analysis-fact">本輪未取得可核對資料。</p>'}${takeawayMarkup}${evidence}</article>`;
         }
         const references = Array.isArray(item.reference_facts) ? item.reference_facts : [];
         const supplements = Array.isArray(item.supplementary_facts) ? item.supplementary_facts : [];
-        const primaryRows = visibleStructuredFacts.map(renderUsFact).join("");
-        const referenceRows = references.map(renderUsFact).join("");
-        const supplementaryRows = supplements.map(renderUsFact).join("");
-        const group = (label, rows, className) => rows
-          ? `<section class="us-market-subgroup ${className}"><h4>${escapeHtml(label)}</h4><div class="us-market-facts">${rows}</div></section>` : "";
-        const body = group("盤前觀測", primaryRows || '<p class="morning-analysis-fact">本輪未取得可核對資料。</p>', "us-market-primary")
-          + group("最近收盤參考（非盤前即時）", referenceRows, "us-market-reference")
-          + group("半導體參考｜最近收盤", supplementaryRows, "us-market-sox");
-        return `<article class="morning-analysis-section us-market-card us-market-futures"><div class="morning-analysis-section-heading"><h3>${title}</h3></div>${body}${takeawayMarkup}${evidence}</article>`;
+        const group = (label, facts, className, statusNote) =>
+          renderDateGroupedRows(label, facts, className, statusNote);
+        const body = group(
+          "盤前觀測",
+          visibleStructuredFacts,
+          "us-market-primary",
+          headerNote || "盤前行情未取得可核實時間",
+        ) || '<section class="us-market-subgroup us-market-primary"><h4>盤前觀測</h4><small class="quote-group-status">本輪未取得可核對資料</small><div class="us-market-facts"><p class="morning-analysis-fact">本輪未取得可核對資料。</p></div></section>';
+        const groupedBody = body
+          + group("最近收盤參考（非盤前即時）", references, "us-market-reference", String(item.reference_header_note || "最近收盤日期未確認"))
+          + group("半導體參考｜最近收盤", supplements, "us-market-sox", String(item.sox_header_note || "費半最近收盤資料未取得"));
+        return `<article class="morning-analysis-section us-market-card us-market-futures"><div class="morning-analysis-section-heading"><h3>${title}</h3></div>${groupedBody}${takeawayMarkup}${evidence}</article>`;
       }
       const renderStructuredFacts = () => visibleStructuredFacts.slice(0, 6).map((fact) => {
         const quote = fact && fact.quote && typeof fact.quote === "object" ? fact.quote : null;
@@ -1484,10 +1505,16 @@ const renderBriefing = (briefing, generatedAt) => {
         const takeaway = String(item.takeaway || "").trim();
         const title = escapeHtml(item.title || "台股市場資訊");
         const evidence = renderEvidence(item.evidence);
+        const statusNotes = Array.isArray(item.status_notes)
+          ? item.status_notes.filter((note) => String(note || "").trim())
+          : String(item.header_note || "").split("；").filter(Boolean);
+        const statusMarkup = statusNotes.length
+          ? '<div class="taiwan-market-status">' + statusNotes.map((note) => '<span>' + escapeHtml(String(note)) + "</span>").join("") + "</div>"
+          : "";
         const takeawayMarkup = takeaway
           ? '<p class="taiwan-market-takeaway"><b>簡要觀察：</b>' + escapeHtml(takeaway) + "</p>"
           : "";
-        return '<article class="morning-analysis-section ' + cardClass + '"><div class="morning-analysis-section-heading"><h3>' + title + '</h3></div><div class="taiwan-market-card-facts">' + (compactFacts || '<p class="morning-analysis-fact">本輪未取得可核對資料。</p>') + "</div>" + takeawayMarkup + evidence + "</article>";
+        return '<article class="morning-analysis-section ' + cardClass + '"><div class="morning-analysis-section-heading"><h3>' + title + '</h3></div>' + statusMarkup + '<div class="taiwan-market-card-facts">' + (compactFacts || '<p class="morning-analysis-fact">本輪未取得可核對資料。</p>') + "</div>" + takeawayMarkup + evidence + "</article>";
       }
       const labeledItems = [
         ["為何重要", item.why_it_matters],
