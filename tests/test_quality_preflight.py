@@ -170,3 +170,147 @@ def test_pr_1018_intermediate_failures_are_superseded_by_the_merged_head() -> No
         )
         assert classification == "merged_latest_success"
         assert "已合併" in message
+
+def test_quality_run_without_pull_request_array_resolves_by_exact_commit_association(monkeypatch) -> None:
+    repository = "example/repo"
+    source_sha = "a" * 40
+    final_sha = "b" * 40
+    main_sha = "c" * 40
+    calls: list[str] = []
+    source = {
+        "id": 900,
+        "name": inspect_quality_run.QUALITY_WORKFLOW_NAME,
+        "workflow_id": 325438414,
+        "event": "pull_request",
+        "conclusion": "failure",
+        "head_branch": "deleted-feature-branch",
+        "head_sha": source_sha,
+        "pull_requests": [],
+        "html_url": "https://github.com/example/run/900",
+    }
+    pr = {
+        "number": 1026,
+        "state": "closed",
+        "merged": True,
+        "head": {"sha": final_sha, "ref": "deleted-feature-branch"},
+        "merge_commit_sha": "d" * 40,
+        "html_url": "https://github.com/example/pull/1026",
+    }
+    final_run = {
+        "id": 901,
+        "workflow_id": 325438414,
+        "event": "pull_request",
+        "conclusion": "success",
+        "head_sha": final_sha,
+        "created_at": "2026-09-28T14:40:00Z",
+        "pull_requests": [],
+        "html_url": "https://github.com/example/run/901",
+    }
+    main_run = {
+        "id": 902,
+        "workflow_id": 325438414,
+        "event": "push",
+        "conclusion": "success",
+        "head_sha": main_sha,
+        "created_at": "2026-09-28T14:45:00Z",
+        "html_url": "https://github.com/example/run/902",
+    }
+
+    def fake_gh_json(path: str, *, runner) -> object:
+        calls.append(path)
+        if path == "repos/example/repo/actions/runs/900":
+            return source
+        if path == "repos/example/repo/actions/runs/900/jobs?per_page=100":
+            return {"jobs": [{
+                "name": "test-and-dry-run",
+                "conclusion": "failure",
+                "steps": [
+                    {"name": "Checkout", "conclusion": "success"},
+                    {"name": "Type check", "conclusion": "failure"},
+                ],
+            }]}
+        if path == f"repos/{repository}/commits/{source_sha}/pulls?per_page=100":
+            return [{
+                "number": 1026,
+                "base": {"repo": {"full_name": repository}},
+            }]
+        if path == f"repos/{repository}/pulls/1026":
+            return pr
+        if path.startswith(f"repos/{repository}/actions/runs?head_sha={final_sha}"):
+            return {"workflow_runs": [final_run]}
+        if path == f"repos/{repository}/branches/main":
+            return {"commit": {"sha": main_sha}}
+        if path.startswith(f"repos/{repository}/actions/runs?head_sha={main_sha}"):
+            return {"workflow_runs": [main_run]}
+        raise AssertionError(f"unexpected GitHub API path: {path}")
+
+    monkeypatch.setattr(inspect_quality_run, "_gh_json", fake_gh_json)
+    result = inspect_quality_run.inspect("example/repo", 900, runner=lambda *args, **kwargs: None)
+
+    assert result["classification"] == "merged_latest_success"
+    assert result["failed_gates"] == [{"job": "test-and-dry-run", "step": "Type check"}]
+    assert result["pr_number"] == 1026
+    assert result["run_sha"] == source_sha
+    assert result["pr_head_sha"] == final_sha
+    assert result["latest_quality_run_id"] == 901
+    assert result["main_quality_classification"] == "success"
+    assert result["three_evidence_summary"]["failed_run"]["sha"] == source_sha
+    assert result["three_evidence_summary"]["pr_last_commit"]["run_id"] == 901
+    assert result["three_evidence_summary"]["current_main"]["sha"] == main_sha
+    assert any(f"/commits/{source_sha}/pulls?" in path for path in calls)
+    assert any(f"head_sha={final_sha}" in path for path in calls)
+
+
+def test_quality_run_with_ambiguous_commit_pr_association_stays_unknown(monkeypatch) -> None:
+    repository = "example/repo"
+    source_sha = "e" * 40
+    source = {
+        "id": 903,
+        "name": inspect_quality_run.QUALITY_WORKFLOW_NAME,
+        "workflow_id": 325438414,
+        "event": "pull_request",
+        "conclusion": "failure",
+        "head_branch": "feature",
+        "head_sha": source_sha,
+        "pull_requests": [],
+    }
+
+    def fake_gh_json(path: str, *, runner) -> object:
+        if path == "repos/example/repo/actions/runs/903":
+            return source
+        if path == "repos/example/repo/actions/runs/903/jobs?per_page=100":
+            return {"jobs": []}
+        if path == f"repos/{repository}/commits/{source_sha}/pulls?per_page=100":
+            return [
+                {"number": 12, "base": {"repo": {"full_name": repository}}},
+                {"number": 13, "base": {"repo": {"full_name": repository}}},
+            ]
+        raise AssertionError(f"unexpected GitHub API path: {path}")
+
+    monkeypatch.setattr(inspect_quality_run, "_gh_json", fake_gh_json)
+    result = inspect_quality_run.inspect("example/repo", 903, runner=lambda *args, **kwargs: None)
+
+    assert result["classification"] == "unknown"
+    assert "多個 PR" in result["message"]
+
+
+def test_latest_quality_classification_uses_exact_full_sha_without_pr_metadata() -> None:
+    sha = "f" * 40
+    source_run = {"head_sha": "a" * 40, "workflow_id": 325438414}
+    pull_request = {"number": 44, "merged": False, "head": {"sha": sha}}
+    related_run = {
+        "workflow_id": 325438414,
+        "event": "pull_request",
+        "conclusion": "failure",
+        "head_sha": sha,
+        "pull_requests": [],
+    }
+
+    classification, _ = inspect_quality_run.classify_pr_failure(
+        source_run=source_run,
+        pull_request=pull_request,
+        related_runs=[related_run],
+    )
+
+    assert classification == "latest_head_failing"
+

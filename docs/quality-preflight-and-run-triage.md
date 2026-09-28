@@ -14,6 +14,6 @@ To classify a failed GitHub Actions email against the PR's current state, use it
 uv run python scripts/inspect_quality_run.py --repo hanjhou2000716/prstklab-stk-detector --run-id 36119891343
 ```
 
-The command uses authenticated, read-only GitHub CLI requests. It compares the run's PR and commit with the PR's latest commit and quality run. Exit code `0` means the failure is superseded or the latest check passed; `1` means a current or unverified failure needs attention; `2` means the run could not be classified. It never reruns workflows or changes GitHub state.
+The command uses authenticated, read-only GitHub CLI requests. If an Actions run omits `pull_requests`, it resolves the full `head_sha` through the commit-associated-PR endpoint and proceeds only when one same-repository PR can be identified; it never guesses from an ordinary branch name. It compares quality runs by exact commit SHA and workflow identity, then reports the source failure, the PR's last-commit check, and current `main` check separately. Exit code `0` means all applicable latest checks are successful; `1` means a current failure or pending/unverified check needs attention; `2` means the run could not be classified uniquely. It never reruns workflows or changes GitHub state.
 
 The workflow summary records its run URL and attempt, PR head and base commits, tested commit, static and unit-test outcomes, and the read-only triage command. GitHub's normal failure emails remain enabled.

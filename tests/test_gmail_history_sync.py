@@ -1,6 +1,11 @@
 import asyncio
 import base64
+import json
+import os
+import shutil
+import subprocess
 import sys
+import textwrap
 from datetime import UTC, datetime, timedelta
 from email.utils import format_datetime
 from pathlib import Path
@@ -778,3 +783,172 @@ def test_gmail_workflow_bounds_dependency_install_and_reports_phase_outcomes() -
     assert 'cursor_state="not_touched"' in workflow
     assert 'notification_expected="not_evaluated"' in workflow
     assert 'processed_summary="not_checked"' in workflow
+
+def _run_actual_gmail_summary_shell(
+    tmp_path: Path,
+    *,
+    dependency_outcome: str,
+    sync_outcome: str,
+    contract_outcome: str,
+    result: dict | None = None,
+) -> tuple[int, str]:
+    import pytest
+
+    bash = shutil.which("bash")
+    if bash is None:
+        pytest.skip("Bash is required to exercise the workflow's actual summary shell on this host")
+    workflow = (
+        Path(__file__).parents[1] / ".github" / "workflows" / "gmail-history-sync.yml"
+    ).read_text(encoding="utf-8")
+    marker = "- name: Publish Gmail notification decision"
+    step = workflow.split(marker, 1)[1]
+    run_marker = "        run: |\n"
+    if run_marker not in step:
+        raise AssertionError("summary step no longer contains a literal Bash run block")
+    shell = textwrap.dedent(step.split(run_marker, 1)[1])
+    shell = shell.replace(
+        "${{ inputs.latest_financialjuice || github.event.client_payload.latest_financialjuice || false }}",
+        "false",
+    )
+    if result is not None:
+        (tmp_path / "gmail-sync-result.json").write_text(
+            json.dumps(result), encoding="utf-8",
+        )
+    summary_path = tmp_path / "step-summary.md"
+    env = os.environ.copy()
+    env.update({
+        "GITHUB_STEP_SUMMARY": str(summary_path),
+        "GITHUB_RUN_ID": "36437000000",
+        "GITHUB_SHA": "1076505dba02acf4ecacfd36edc2396df37e04da",
+        "NOTIFY": "true",
+        "DISPATCH_TRIGGERED": "false",
+        "DISPATCH_REQUIRED": "false",
+        "DISPATCH_REASON": "none",
+        "DISPATCH_OUTCOME": "skipped",
+        "RESULT_CONTRACT_OUTCOME": contract_outcome,
+        "DEPENDENCY_INSTALL_OUTCOME": dependency_outcome,
+        "GMAIL_SYNC_OUTCOME": sync_outcome,
+    })
+    completed = subprocess.run(
+        [bash, "-e", "-o", "pipefail", "-c", shell],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return completed.returncode, summary_path.read_text(encoding="utf-8") if summary_path.exists() else completed.stdout
+
+
+def test_gmail_workflow_summary_shell_reports_dependency_failure_as_not_started(tmp_path) -> None:
+    exit_code, summary = _run_actual_gmail_summary_shell(
+        tmp_path,
+        dependency_outcome="failure",
+        sync_outcome="skipped",
+        contract_outcome="skipped",
+    )
+
+    assert exit_code == 0
+    assert "dependency_install: failure" in summary
+    assert "parser_sync: not_started" in summary
+    assert "source_health: not_checked" in summary
+    assert "cursor_state: not_touched" in summary
+    assert "notification_reason: dependency_install_failed_sync_not_started" in summary
+    assert "processed_count: not_checked" in summary
+
+
+def test_gmail_workflow_summary_shell_reports_install_timeout_and_sync_failure(tmp_path) -> None:
+    timeout_dir = tmp_path / "timeout"
+    timeout_dir.mkdir()
+    timeout_code, timeout_summary = _run_actual_gmail_summary_shell(
+        timeout_dir,
+        dependency_outcome="cancelled",
+        sync_outcome="skipped",
+        contract_outcome="skipped",
+    )
+    assert timeout_code == 0
+    assert "cursor_state: not_touched" in timeout_summary
+    assert "processed_count: not_checked" in timeout_summary
+    assert "notification_reason: dependency_install_not_started_sync_not_started" in timeout_summary
+
+    sync_dir = tmp_path / "sync-failure"
+    sync_dir.mkdir()
+    sync_code, sync_summary = _run_actual_gmail_summary_shell(
+        sync_dir,
+        dependency_outcome="success",
+        sync_outcome="failure",
+        contract_outcome="skipped",
+    )
+    assert sync_code == 0
+    assert "parser_sync: failed" in sync_summary
+    assert "source_health: not_confirmed" in sync_summary
+    assert "cursor_state: unknown" in sync_summary
+    assert "notification_reason: gmail_sync_step_failed" in sync_summary
+    assert "processed_count: not_checked" in sync_summary
+
+
+def test_gmail_workflow_summary_shell_distinguishes_missing_result_from_success(tmp_path) -> None:
+    contract_dir = tmp_path / "invalid-contract"
+    contract_dir.mkdir()
+    contract_code, contract_summary = _run_actual_gmail_summary_shell(
+        contract_dir,
+        dependency_outcome="success",
+        sync_outcome="success",
+        contract_outcome="failure",
+    )
+    assert contract_code == 0
+    assert "source_health: not_confirmed" in contract_summary
+    assert "cursor_state: unknown_after_sync" in contract_summary
+    assert "notification_reason: sync_result_contract_invalid" in contract_summary
+    assert "processed_count: not_checked" in contract_summary
+
+    missing_dir = tmp_path / "missing-result"
+    missing_dir.mkdir()
+    missing_code, missing_summary = _run_actual_gmail_summary_shell(
+        missing_dir,
+        dependency_outcome="success",
+        sync_outcome="success",
+        contract_outcome="success",
+    )
+    assert missing_code == 0
+    assert "parser_sync: completed" in missing_summary
+    assert "cursor_state: unknown_after_sync" in missing_summary
+    assert "notification_reason: sync_result_missing" in missing_summary
+    assert "processed_count: not_checked" in missing_summary
+
+    success_dir = tmp_path / "success"
+    success_dir.mkdir()
+    result = {
+        "status": "healthy",
+        "processed": 2,
+        "accepted_new_count": 1,
+        "material_candidate_count": 0,
+        "priority_candidate_count": 0,
+        "duplicate_count": 1,
+        "failed": 0,
+        "priority_recovery_scan_status": "healthy",
+        "priority_pending_count": 0,
+        "candidate_diagnostics": {
+            "primary_reason": "below_notification_gate",
+            "counts": {
+                "priority_candidate_detected": 0,
+                "summary_semantics_incomplete": 0,
+                "priority_pending_state_error": 0,
+                "manual_replay": 0,
+            },
+        },
+    }
+    success_code, success_summary = _run_actual_gmail_summary_shell(
+        success_dir,
+        dependency_outcome="success",
+        sync_outcome="success",
+        contract_outcome="success",
+        result=result,
+    )
+    assert success_code == 0
+    assert "parser_sync: completed" in success_summary
+    assert "source_health: checked" in success_summary
+    assert "cursor_state: sync_completed" in success_summary
+    assert "processed_count: 2" in success_summary
+    assert "duplicate_count: 1" in success_summary
+
