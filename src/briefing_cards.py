@@ -50,6 +50,33 @@ def _finite_number(value: Any) -> float | None:
     return number if math.isfinite(number) else None
 
 
+def _format_compact_market_quote(
+    name: str,
+    price: float | None,
+    point_change: float | None,
+    percent_change: float | None,
+) -> str:
+    """Format one index or index-futures row without repeating group metadata."""
+    if price is None:
+        price_text = "行情未取得"
+    else:
+        price_text = f"{price:,.2f} 點"
+
+    def signed(value: float | None, unit: str, missing: str) -> str:
+        if value is None:
+            return missing
+        rounded = round(value, 2)
+        if rounded == 0:
+            rounded = 0.0
+        return f"{rounded:+,.2f}{unit}"
+
+    point_text = signed(point_change, " 點", "漲跌點數未提供")
+    percent_text = signed(percent_change, "%", "漲跌幅未提供")
+    if price is None:
+        return f"{name}：{price_text}｜{point_text}（{percent_text}）"
+    return f"{name} {price_text}｜{point_text}（{percent_text}）"
+
+
 def _usable_change(item: dict[str, Any] | None) -> float | None:
     """Return a change only when its quote is usable for regime evidence."""
     if not item or item.get("change_percent") in (None, ""):
@@ -1125,15 +1152,17 @@ def _scoped_morning_analysis(
             quote_value = fact.get("quote")
             cash_quote: dict[str, Any] = quote_value if isinstance(quote_value, dict) else {}
             price = _finite_number(cash_quote.get("price"))
+            change = _finite_number(cash_quote.get("change"))
             percent = _finite_number(cash_quote.get("change_percent"))
             quote_date = str(cash_quote.get("quote_date") or cash_quote.get("quote_time") or "")[:10]
-            is_recent_close = (
-                price is not None and percent is not None and bool(quote_date)
-                and str(cash_quote.get("freshness") or cash_quote.get("data_status") or "").casefold() == "recent_close"
-            )
+            freshness = str(cash_quote.get("freshness") or cash_quote.get("data_status") or "").casefold()
+            is_recent_close = price is not None and bool(quote_date) and freshness == "recent_close"
             if is_recent_close:
                 cash_dates.append(quote_date)
-            text = f"{name} {percent:+.2f}%" if is_recent_close else f"{name}：最近收盤行情未取得"
+            text = (
+                _format_compact_market_quote(name, price, change, percent)
+                if is_recent_close else f"{name}：最近收盤行情未取得"
+            )
             cash_facts.append({
                 **fact,
                 "name": name,
@@ -1143,20 +1172,19 @@ def _scoped_morning_analysis(
                 "quote": cash_quote,
             })
         distinct_cash_dates = sorted(set(cash_dates))
+        all_cash_dates = sorted({
+            str((fact.get("quote") or {}).get("quote_date") or (fact.get("quote") or {}).get("quote_time") or "")[:10]
+            for fact in cash_facts
+            if str((fact.get("quote") or {}).get("quote_date") or (fact.get("quote") or {}).get("quote_time") or "")[:10]
+        })
         if len(distinct_cash_dates) == 1 and len(cash_dates) == 3:
-            cash_header_note = f"資料日 {distinct_cash_dates[0]}"
-        elif distinct_cash_dates:
-            cash_header_note = "各指數資料日不同，逐項標示"
-            date_by_ticker = {
-                str(fact.get("ticker") or ""): str((fact.get("quote") or {}).get("quote_date") or (fact.get("quote") or {}).get("quote_time") or "")[:10]
-                for fact in cash_facts
-            }
-            for fact in cash_facts:
-                per_ticker_date = date_by_ticker.get(str(fact.get("ticker") or ""))
-                if per_ticker_date and "行情未取得" not in fact["text"]:
-                    fact["text"] += f"（{per_ticker_date}）"
+            cash_header_note = f"最近收盤｜資料日 {distinct_cash_dates[0]}"
+        elif len(all_cash_dates) == 1:
+            cash_header_note = f"最近收盤｜可用資料日 {all_cash_dates[0]}；缺項見列"
+        elif len(all_cash_dates) > 1:
+            cash_header_note = "最近收盤｜各日期分組標示"
         else:
-            cash_header_note = "資料日未齊，見資料依據"
+            cash_header_note = "最近收盤｜資料日未齊，見資料依據"
         cash_changes = [
             _finite_number(fact.get("display_change_percent"))
             for fact in cash_facts
@@ -1238,10 +1266,12 @@ def _scoped_morning_analysis(
             if futures_quote:
                 futures_evidence.append(futures_quote)
             if is_verified_premarket_quote(futures_quote) and price is not None and percent is not None:
-                point_text = f"（{change:+,.2f} 點，{percent:+.2f}%）" if change is not None else f"（{percent:+.2f}%）"
                 live_futures.append({
-                    **fact, "name": name, "text": f"{name}：{price:,.2f}{point_text}",
-                    "display_change_percent": percent, "quote": futures_quote,
+                    **fact,
+                    "name": name,
+                    "text": _format_compact_market_quote(name, price, change, percent),
+                    "display_change_percent": percent,
+                    "quote": futures_quote,
                 })
                 futures_projection.append({**live_futures[-1], "display_state": "verified_premarket"})
             else:
@@ -1253,11 +1283,10 @@ def _scoped_morning_analysis(
                     price is not None and percent is not None and quote_date
                     and str(futures_quote.get("freshness") or futures_quote.get("data_status") or "").casefold() == "recent_close"
                 ):
-                    point_text = f"{change:+,.2f} 點，" if change is not None else ""
                     reference_futures.append({
                         **fact,
                         "name": name,
-                        "text": f"{name}最近收盤：{price:,.2f}（{point_text}{percent:+.2f}%）｜資料日 {quote_date}",
+                        "text": _format_compact_market_quote(name, price, change, percent),
                         "display_change_percent": percent,
                         "quote": futures_quote,
                     })
@@ -1276,8 +1305,7 @@ def _scoped_morning_analysis(
         sox_percent = _finite_number(sox_quote.get("change_percent"))
         sox_date = str(sox_quote.get("quote_date") or sox_quote.get("quote_time") or "")[:10]
         if sox_price is not None and sox_percent is not None and sox_date:
-            sox_point_text = f"{sox_change:+,.2f} 點，" if sox_change is not None else ""
-            sox_text = f"費半最近收盤：{sox_price:,.2f} 點（{sox_point_text}{sox_percent:+.2f}%）｜資料日 {sox_date}"
+            sox_text = _format_compact_market_quote("費半", sox_price, sox_change, sox_percent)
             sox_display_change = sox_percent
         else:
             sox_text = "費半最近收盤行情未取得"
@@ -1287,6 +1315,27 @@ def _scoped_morning_analysis(
             "display_change_percent": sox_display_change, "quote": sox_quote,
             "display_state": "recent_close_auxiliary" if sox_price is not None and sox_percent is not None and sox_date else "unavailable",
         }
+        def group_quote_status(rows: list[dict[str, Any]], label: str, fallback: str) -> str:
+            dates = sorted({
+                str((row.get("quote") or {}).get("quote_date") or (row.get("quote") or {}).get("quote_time") or "")[:10]
+                for row in rows
+                if str((row.get("quote") or {}).get("quote_date") or (row.get("quote") or {}).get("quote_time") or "")[:10]
+            })
+            if len(dates) == 1:
+                return f"{label}｜資料日 {dates[0]}"
+            if len(dates) > 1:
+                return f"{label}｜各日期分組標示"
+            return fallback
+
+        primary_status_note = group_quote_status(
+            live_futures, "盤前觀測", "盤前行情未取得可核實時間",
+        )
+        reference_status_note = group_quote_status(
+            reference_futures, "最近收盤參考｜非盤前即時", "最近收盤日期未確認",
+        )
+        sox_status_note = group_quote_status(
+            [sox_fact], "半導體參考｜最近收盤", "費半最近收盤資料未取得",
+        )
         futures_takeaway = (
             "盤前期貨與費半最近收盤分開閱讀；觀測時段不同，不合併推論。"
             if not reference_futures else
@@ -1295,9 +1344,12 @@ def _scoped_morning_analysis(
         futures_section = {
             "title": "美股盤前期貨與半導體參考",
             "layout": "us_futures_sox_v2",
+            "header_note": primary_status_note,
             "facts": [fact["text"] for fact in live_futures],
             "facts_structured": live_futures,
+            "reference_header_note": reference_status_note,
             "reference_facts": reference_futures,
+            "sox_header_note": sox_status_note,
             "supplementary_facts": [sox_fact],
             "takeaway": futures_takeaway,
             "why_it_matters": "ES、NQ、YM 是各自標的指數的期貨；NQ 對應 Nasdaq-100，不是那斯達克綜合。",
@@ -1319,18 +1371,27 @@ def _scoped_morning_analysis(
             price = _finite_number(quote.get("price"))
             point_change = _finite_number(quote.get("change"))
             percent = _finite_number(quote.get("change_percent"))
-            observed = str(quote.get("quote_date") or "")[:10]
-            if price is None or percent is None:
-                text = f"{name}：未取得可核對資料"
+            observed = str(quote.get("quote_date") or quote.get("quote_time") or "")[:10]
+            text = (
+                _format_compact_market_quote(name, price, point_change, percent)
+                if price is not None else f"{name}：未取得可核對資料"
+            )
+            freshness = str(quote.get("freshness") or quote.get("data_status") or "").casefold()
+            if ticker == "TAIEX":
+                if freshness == "recent_close":
+                    freshness_note = "最近收盤"
+                elif freshness == "live" and quote.get("quote_delayed") is not True:
+                    freshness_note = "盤中行情"
+                elif freshness in _UNUSABLE_FRESHNESS or quote.get("quote_delayed") is True:
+                    freshness_note = "最近可用行情，非即時"
+                else:
+                    freshness_note = "行情狀態未確認"
+                status_note = f"現貨｜{freshness_note}｜資料日 {observed}" if observed else f"現貨｜{freshness_note}｜資料日期未確認"
+            elif freshness == "recent_close" or freshness in _UNUSABLE_FRESHNESS or quote.get("quote_delayed") is True:
+                status_note = f"期貨｜最近已核實日盤｜資料日 {observed}｜非即時" if observed else "期貨｜最近已核實日盤｜資料日期未確認｜非即時"
             else:
-                point_change_text = f"{point_change:+,.2f} 點" if point_change is not None else "漲跌點數未提供"
-                text = f"{name} {price:,.2f} 點｜{point_change_text}（{percent:+.2f}%）｜{observed or '資料日未確認'}"
-                if ticker == "TXF":
-                    month = str(quote.get("contract_month") or "")
-                    text += f"｜契約 {month or '月份未核實'}"
-                    if quote.get("quote_delayed") is True or (observed and observed != str(as_of or "")[:10]):
-                        text += "｜最近已核實日盤，非今日／非即時"
-            pair_facts.append({**fact, "text": text, "quote": quote})
+                status_note = f"期貨｜日盤資料｜資料日 {observed}" if observed else "期貨｜資料日期未確認"
+            pair_facts.append({**fact, "text": text, "quote": quote, "status_note": status_note})
 
         pair_dates = [str(item.get("quote", {}).get("quote_date") or "")[:10] for item in pair_facts]
         if pair_dates[0] and pair_dates[0] == pair_dates[1]:
@@ -1352,6 +1413,8 @@ def _scoped_morning_analysis(
             "layout": "taiwan_pair_v2",
             "facts": [item["text"] for item in pair_facts],
             "facts_structured": pair_facts,
+            "status_notes": [item["status_note"] for item in pair_facts],
+            "header_note": "；".join(item["status_note"] for item in pair_facts),
             "takeaway": pair_takeaway,
             "why_it_matters": "加權指數是上市現貨；台指期是獨立近月契約。",
             "transmission": "分列各自漲跌與交易日；不同日期不合併判讀，也不計算不同收盤時間的即時基差。",
