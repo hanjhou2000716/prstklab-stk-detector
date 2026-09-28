@@ -38,6 +38,46 @@ const quoteMovementPrefix = (rawValue) => {
   return movement.icon ? `${movement.icon} ` : "";
 };
 
+const isValidMarketDate = (value) => {
+  const date = String(value || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+  const [year, month, day] = date.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day;
+};
+
+const verifiedPairChange = (fact) => {
+  const quote = fact?.quote && typeof fact.quote === "object" ? fact.quote : null;
+  if (!quote) return null;
+  if (Object.prototype.hasOwnProperty.call(fact, "display_change_percent")
+    || Object.prototype.hasOwnProperty.call(fact, "display_state")) {
+    const state = String(fact.display_state || "");
+    const value = fact.display_change_percent;
+    if (!["live", "recent_close", "recent_close_reference"].includes(state)
+      || value === null || value === undefined || value === "" || typeof value === "boolean") return null;
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+  }
+  // Historical projection compatibility: do not infer direction from raw
+  // evidence unless its date, price, freshness, and (for TXF) contract verify.
+  const date = quote.quote_date || quote.quote_time;
+  const freshness = String(quote.freshness || quote.data_status || "").toLowerCase();
+  const rawPrice = quote.price;
+  const price = typeof rawPrice === "boolean" || rawPrice === null || rawPrice === undefined || rawPrice === ""
+    ? NaN : Number(rawPrice);
+  const change = quote.change_percent;
+  const percent = typeof change === "boolean" || change === null || change === undefined || change === ""
+    ? NaN : Number(change);
+  if (!isValidMarketDate(date) || !Number.isFinite(price)
+    || !["live", "recent_close"].includes(freshness)
+    || quote.quote_delayed === true || quote.stale_used === true
+    || !Number.isFinite(percent)
+    || (String(fact.ticker || quote.ticker || "") === "TXF" && !/^\d{6}$/.test(String(quote.contract_month || "")))) {
+    return null;
+  }
+  return percent;
+};
+
 const renderMarkets = (markets) => {
   const text = ["taiwan", "us"].map((key) => {
     const market = markets[key];
@@ -1498,8 +1538,10 @@ const renderBriefing = (briefing, generatedAt) => {
         const compactFacts = visibleStructuredFacts.length
           ? visibleStructuredFacts.map((fact) => {
             const quote = fact && fact.quote && typeof fact.quote === "object" ? fact.quote : null;
-            const movement = quoteMovement(quote?.change_percent);
-            return '<p class="morning-analysis-fact ' + movement.state + '">' + (quote ? quoteMovementPrefix(quote.change_percent) : "") + escapeHtml(String(fact?.text || "")) + "</p>";
+            const pairQuote = item.layout === "taiwan_pair_v2";
+            const displayChange = pairQuote ? verifiedPairChange(fact) : quote?.change_percent;
+            const movement = quoteMovement(displayChange);
+            return '<p class="morning-analysis-fact ' + movement.state + '">' + (displayChange === null || displayChange === undefined ? "" : quoteMovementPrefix(displayChange)) + escapeHtml(String(fact?.text || "")) + "</p>";
           }).join("")
           : visibleFacts.map((fact) => '<p class="morning-analysis-fact">' + escapeHtml(String(fact)) + "</p>").join("");
         const takeaway = String(item.takeaway || "").trim();

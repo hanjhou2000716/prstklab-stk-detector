@@ -11,6 +11,8 @@ from pathlib import Path
 
 import pytest
 
+from src.briefing_cards import build_briefing_snapshot
+
 try:  # Keep local/offline unit runs usable when Chromium is not installed.
     from playwright.sync_api import sync_playwright
 except ImportError:  # pragma: no cover - minimal environments
@@ -427,3 +429,137 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
         server.shutdown()
         server.server_close()
         thread.join(timeout=2)
+
+@pytest.mark.skipif(sync_playwright is None, reason="Playwright is not installed")
+def test_mini_app_taiwan_pair_uses_verified_projection_for_quote_direction() -> None:
+    """The visible icon and color must follow the projection, not raw evidence."""
+
+    briefing = build_briefing_snapshot({
+        "snapshot_id": "market-tw-quote-display-20260928",
+        "generated_at": "2026-09-28T07:00:00+08:00",
+        "indices": [
+            {"ticker": "TAIEX", "price": 48024.60, "change": -187.00, "change_percent": -0.39, "quote_date": "2026-09-25", "freshness": "recent_close"},
+            {"ticker": "TXF", "price": 48123.00, "change": -189.00, "change_percent": -0.51, "quote_date": "2026-09-25", "freshness": "recent_close", "contract_month": "202610", "quote_basis": "TAIFEX_TXF_DAY|contract=202610|session=regular"},
+        ],
+        "quotes": [],
+        "macro_quotes": [],
+        "events": {"items": []},
+    }, "post_close")
+    pair = briefing["morning_analysis"]["market_card_projection"]["cards"][0]
+    facts = pair["facts_structured"]
+    # Deliberately make the raw evidence disagree with the immutable display
+    # projection. The renderer must use the latter for symbol and color.
+    facts[0]["quote"]["change_percent"] = 0.51
+    facts[1]["display_state"] = "unavailable"
+    facts[1]["display_change_percent"] = None
+    legacy_card = {
+        "title": "舊版台股行情卡",
+        "layout": "taiwan_pair_v2",
+        "facts_structured": [
+            {
+                "ticker": "TAIEX",
+                "text": "舊版未核實現貨列",
+                "quote": {
+                    "price": 48000.0,
+                    "change_percent": -1.25,
+                    "quote_date": "2026-09-25",
+                    "freshness": "unknown",
+                },
+            },
+            {
+                "ticker": "TXF",
+                "text": "舊版已核實期貨列",
+                "quote": {
+                    "price": 48100.0,
+                    "change_percent": -0.80,
+                    "quote_date": "2026-09-25",
+                    "freshness": "recent_close",
+                    "contract_month": "202610",
+                },
+            },
+        ],
+        "status_notes": [],
+        "evidence": [],
+    }
+    briefing["morning_analysis"]["market_card_projection"]["cards"].append(legacy_card)
+
+    market = {
+        "snapshot_id": "market-tw-quote-display-20260928",
+        "generated_at": "2026-09-28T07:00:00+08:00",
+        "data_status": "資料可用",
+        "markets": {},
+        "indices": [],
+        "quotes": [],
+        "events": {"items": []},
+        "briefing": briefing,
+        "source_health": {"sources": []},
+    }
+    market_text = json.dumps(market, ensure_ascii=False, separators=(",", ":"))
+    manifest = {
+        "release_id": "release-tw-quote-display-20260928",
+        "status": "ready",
+        "created_at": market["generated_at"],
+        "market_snapshot_id": market["snapshot_id"],
+        "artifact_hashes": {"market.json": hashlib.sha256(market_text.encode()).hexdigest()},
+        "artifact_paths": {"market.json": "data/market.json"},
+    }
+    manifest_text = json.dumps(manifest, ensure_ascii=False, separators=(",", ":"))
+    handler = functools.partial(_QuietHandler, directory=str(SITE_ROOT))
+    server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.route("**/telegram.org/**", lambda route: route.abort())
+
+            def fulfill_release(route) -> None:  # type: ignore[no-untyped-def]
+                url = route.request.url
+                if "/data/release-manifest.json" in url:
+                    route.fulfill(status=200, content_type="application/json", body=manifest_text)
+                elif "/data/market.json" in url:
+                    route.fulfill(status=200, content_type="application/json", body=market_text)
+                else:
+                    route.continue_()
+
+            page.route("**/data/**", fulfill_release)
+            page.goto(
+                f"http://127.0.0.1:{server.server_port}/index.html?e2e=verified-taiwan-quote",
+                wait_until="domcontentloaded",
+            )
+            page.wait_for_selector("#briefing-observations .taiwan-market-pair", state="attached")
+            rows = page.locator("#briefing-observations .taiwan-market-pair .taiwan-market-card-facts p")
+            taiex_row = rows.filter(has_text="加權現貨")
+            txf_row = rows.filter(has_text="台指期近月日盤")
+            assert taiex_row.count() == 1
+            assert txf_row.count() == 1
+            first_class = taiex_row.get_attribute("class") or ""
+            first_text = taiex_row.text_content() or ""
+            assert "market-down" in first_class
+            assert "🍂" in first_text
+            second_class = txf_row.get_attribute("class") or ""
+            second_text = txf_row.text_content() or ""
+            assert "market-down" not in second_class
+            assert "🍂" not in second_text
+
+            legacy_rows = page.locator("#briefing-observations .taiwan-market-pair").nth(1).locator(
+                ".taiwan-market-card-facts p",
+            )
+            assert legacy_rows.count() == 2
+            legacy_unverified = legacy_rows.nth(0)
+            assert "market-down" not in (legacy_unverified.get_attribute("class") or "")
+            assert "🍂" not in (legacy_unverified.text_content() or "")
+            legacy_verified = legacy_rows.nth(1)
+            assert "market-down" in (legacy_verified.get_attribute("class") or "")
+            assert "🍂" in (legacy_verified.text_content() or "")
+            browser.close()
+    except Exception as exc:
+        if "Executable doesn't exist" in str(exc) or "executable doesn't exist" in str(exc):
+            pytest.skip("Playwright Chromium is not installed")
+        raise
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+

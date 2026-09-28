@@ -388,3 +388,113 @@ def test_midday_briefing_explains_cross_market_move_and_technical_location():
     assert "20日區間" in semiconductor["watch"]
     assert "60日" in semiconductor["watch"]
     assert "資料截至 2026-08-03" in semiconductor["watch"]
+
+def test_taiwan_pair_uses_one_verified_display_state_for_rows_and_takeaway():
+    from src.briefing_cards import build_briefing_snapshot
+
+    briefing = build_briefing_snapshot({
+        "generated_at": "2026-09-28T07:00:00+08:00",
+        "indices": [
+            {"ticker": "TAIEX", "price": 48024.60, "change": -132.69, "change_percent": -0.28, "quote_date": "2026-09-24", "freshness": "recent_close"},
+            {"ticker": "TXF", "price": 48123.00, "change": -189.00, "change_percent": -0.39, "quote_date": "2026-09-24", "freshness": "recent_close", "contract_month": "202610", "quote_basis": "TAIFEX_TXF_DAY|contract=202610|session=regular"},
+        ],
+        "quotes": [],
+        "macro_quotes": [],
+        "events": {"items": []},
+    }, "post_close")
+
+    pair = briefing["morning_analysis"]["sections"][0]
+    assert [fact["display_state"] for fact in pair["facts_structured"]] == ["recent_close", "recent_close"]
+    assert [fact["display_change_percent"] for fact in pair["facts_structured"]] == [-0.28, -0.39]
+    assert "同跌" in pair["takeaway"]
+
+
+def test_taiwan_pair_suppresses_unverified_direction_and_status_date():
+    from src.briefing_cards import build_briefing_snapshot
+
+    briefing = build_briefing_snapshot({
+        "generated_at": "2026-09-28T07:00:00+08:00",
+        "indices": [
+            {"ticker": "TAIEX", "price": 48024.60, "change": -132.69, "change_percent": -0.28, "quote_date": "2026-09-24", "freshness": "recent_close"},
+            {"ticker": "TXF", "price": 48123.00, "change": -189.00, "change_percent": -0.39, "quote_date": "2026-09-24", "freshness": "unknown", "contract_month": "202610"},
+        ],
+        "quotes": [],
+        "macro_quotes": [],
+        "events": {"items": []},
+    }, "post_close")
+
+    pair = briefing["morning_analysis"]["sections"][0]
+    txf = pair["facts_structured"][1]
+    assert txf["display_state"] == "unavailable"
+    assert txf["display_change_percent"] is None
+    assert "未核實" in pair["status_notes"][1]
+    assert "最近已核實日盤" not in pair["status_notes"][1]
+    assert "暫不合併判讀" in pair["takeaway"]
+    assert txf["quote"]["change_percent"] == -0.39
+
+
+def test_taiwan_pair_keeps_partial_verified_quote_but_does_not_infer_direction():
+    from src.briefing_cards import build_briefing_snapshot
+
+    briefing = build_briefing_snapshot({
+        "generated_at": "2026-09-28T07:00:00+08:00",
+        "indices": [
+            {"ticker": "TAIEX", "price": 48024.60, "change": -132.69, "quote_date": "2026-09-24", "freshness": "recent_close"},
+            {"ticker": "TXF", "price": 48123.00, "change": -189.00, "change_percent": -0.39, "quote_date": "2026-09-24", "freshness": "recent_close", "contract_month": "202610"},
+        ],
+        "quotes": [],
+        "macro_quotes": [],
+        "events": {"items": []},
+    }, "post_close")
+
+    pair = briefing["morning_analysis"]["sections"][0]
+    taiex = pair["facts_structured"][0]
+    assert taiex["display_state"] == "recent_close"
+    assert taiex["display_change_percent"] is None
+    assert "48,024.60 點" in taiex["text"]
+    assert "漲跌幅未提供" in taiex["text"]
+    assert "不比較方向" in pair["takeaway"]
+
+
+def test_taiwan_pair_rejects_impossible_calendar_date():
+    from src.briefing_cards import build_briefing_snapshot
+
+    briefing = build_briefing_snapshot({
+        "generated_at": "2026-09-28T07:00:00+08:00",
+        "indices": [
+            {"ticker": "TAIEX", "price": 48024.60, "change_percent": -0.28, "quote_date": "2026-02-30", "freshness": "recent_close"},
+            {"ticker": "TXF", "price": 48123.00, "change_percent": -0.39, "quote_date": "2026-02-28", "freshness": "recent_close", "contract_month": "202610"},
+        ],
+        "quotes": [],
+        "macro_quotes": [],
+        "events": {"items": []},
+    }, "post_close")
+
+    pair = briefing["morning_analysis"]["sections"][0]
+    taiex = pair["facts_structured"][0]
+    assert taiex["display_state"] == "unavailable"
+    assert taiex["display_change_percent"] is None
+    assert "行情未核實" in pair["status_notes"][0]
+    assert "2026-02-30" not in pair["status_notes"][0]
+    assert "暫不合併判讀" in pair["takeaway"]
+
+def test_us_cash_header_and_observation_ignore_an_invalid_quote_date():
+    briefing = build_briefing_snapshot({
+        "generated_at": "2026-09-28T07:00:00+08:00",
+        "indices": [
+            {"ticker": "S&P 500", "price": 7800.0, "change_percent": 0.51, "quote_date": "2026-09-25", "freshness": "recent_close"},
+            {"ticker": "NASDAQ", "price": 27000.0, "change_percent": 0.48, "quote_date": "2026-02-30", "freshness": "recent_close"},
+            {"ticker": "DJIA", "price": 52000.0, "change_percent": 0.93, "quote_date": "2026-09-25", "freshness": "recent_close"},
+        ],
+        "quotes": [],
+        "macro_quotes": [],
+        "events": {"items": []},
+    }, "us_premarket")
+
+    cash = briefing["morning_analysis"]["sections"][0]
+    invalid = cash["facts_structured"][1]
+    assert invalid["display_state"] == "unavailable"
+    assert invalid["display_change_percent"] is None
+    assert "2026-02-30" not in cash["header_note"]
+    assert cash["takeaway"] == "指數表現分別呈現，避免用單一指數代表整體美股。"
+
