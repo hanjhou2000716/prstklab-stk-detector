@@ -159,6 +159,15 @@ def test_public_observations_add_structure_without_repeating_quote_lines():
     assert [item["title"] for item in sections] == ["台股現貨與台指期", "台股輔助統計（官方）"]
     assert sections[0]["layout"] == "taiwan_pair_v2"
     assert "同日收盤方向" in sections[0]["takeaway"]
+    assert sections[0]["facts"] == [
+        "加權現貨 45,862.52 點｜漲跌點數未提供（-0.70%）",
+        "台指期近月日盤 45,890.00 點｜-310.00 點（-0.67%）",
+    ]
+    assert all("2026-09-14" not in fact and "202610" not in fact for fact in sections[0]["facts"])
+    assert sections[0]["status_notes"] == [
+        "現貨｜最近收盤｜資料日 2026-09-14",
+        "期貨｜最近已核實日盤｜資料日 2026-09-14｜非即時",
+    ]
     projection = briefing["market_card_projection"]
     assert projection["version"] == "taiwan-market-cards-v2"
     assert projection["market_scope"] == "taiwan"
@@ -264,17 +273,25 @@ def test_us_premarket_cards_combine_cash_futures_and_sox_without_relabeling_clos
     assert [section["layout"] for section in sections] == ["us_cash_v2", "us_futures_sox_v2"]
     cash, futures = sections
     assert [fact["text"] for fact in cash["facts_structured"]] == [
-        "標普500 +0.51%", "那斯達克綜合 +0.48%", "道瓊 +0.93%",
+        "標普500 7,743.41 點｜+39.28 點（+0.51%）",
+        "那斯達克綜合 27,068.72 點｜+129.35 點（+0.48%）",
+        "道瓊 51,828.62 點｜+478.64 點（+0.93%）",
     ]
-    assert cash["header_note"] == f"資料日 {quote_date}"
+    assert cash["header_note"] == f"最近收盤｜資料日 {quote_date}"
     assert [fact["text"] for fact in futures["facts_structured"]] == [
         "ES（S&P 500 指數期貨）：盤前行情未取得",
         "NQ（Nasdaq-100 指數期貨）：盤前行情未取得",
         "YM（道瓊指數期貨）：盤前行情未取得",
     ]
     assert len(futures["reference_facts"]) == 3
-    assert all("最近收盤" in row["text"] and "資料日 2026-09-25" in row["text"] for row in futures["reference_facts"])
-    assert "費半最近收盤" in futures["supplementary_facts"][0]["text"]
+    assert [row["text"] for row in futures["reference_facts"]] == [
+        "ES（S&P 500 指數期貨） 7,805.75 點｜+38.75 點（+0.50%）",
+        "NQ（Nasdaq-100 指數期貨） 30,921.75 點｜+155.00 點（+0.50%）",
+        "YM（道瓊指數期貨） 52,180.00 點｜+463.00 點（+0.90%）",
+    ]
+    assert futures["reference_header_note"] == "最近收盤參考｜非盤前即時｜資料日 2026-09-25"
+    assert futures["sox_header_note"] == "半導體參考｜最近收盤｜資料日 2026-09-25"
+    assert futures["supplementary_facts"][0]["text"] == "費半 12,668.93 點｜+176.39 點（+1.41%）"
     projection = briefing["market_card_projection"]
     assert projection["version"] == "us-market-cards-v2"
     assert projection["market_scope"] == "us"
@@ -302,10 +319,30 @@ def test_us_futures_only_show_as_premarket_with_verified_session_timestamp_and_c
         "indices": [row], "quotes": [], "events": {"items": []},
     }, "us_premarket")
     futures = briefing["morning_analysis"]["sections"][1]
-    assert futures["facts_structured"][0]["text"] == "ES（S&P 500 指數期貨）：7,805.75（+38.75 點，+0.50%）"
+    assert futures["facts_structured"][0]["text"] == "ES（S&P 500 指數期貨） 7,805.75 點｜+38.75 點（+0.50%）"
     assert futures["facts_structured"][0]["display_change_percent"] == 0.5
     assert futures["reference_facts"] == []
     assert briefing["market_card_projection"]["instruments"][3]["display_state"] == "verified_premarket"
+
+
+def test_compact_market_quote_normalizes_negative_zero_and_keeps_missing_components_explicit():
+    briefing = build_briefing_snapshot({
+        "as_of": "2026-09-25T08:21:00-04:00",
+        "indices": [
+            {"ticker": "S&P 500", "price": 100, "change": -0.001, "change_percent": -0.0009, "quote_date": "2026-09-24", "freshness": "recent_close"},
+            {"ticker": "NASDAQ", "price": 200, "change_percent": 0.5, "quote_date": "2026-09-24", "freshness": "recent_close"},
+            {"ticker": "DJIA", "price": 300, "change": -1, "quote_date": "2026-09-24", "freshness": "recent_close"},
+        ],
+        "quotes": [], "events": {"items": []},
+    }, "us_premarket")
+
+    facts = briefing["morning_analysis"]["sections"][0]["facts"]
+    assert facts == [
+        "標普500 100.00 點｜0.00 點（0.00%）",
+        "那斯達克綜合 200.00 點｜漲跌點數未提供（+0.50%）",
+        "道瓊 300.00 點｜-1.00 點（漲跌幅未提供）",
+    ]
+    assert briefing["morning_analysis"]["sections"][0]["header_note"] == "最近收盤｜資料日 2026-09-24"
 
 
 def test_us_delayed_or_out_of_session_futures_never_appear_as_premarket_quotes():
