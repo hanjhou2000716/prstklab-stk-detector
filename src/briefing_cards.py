@@ -1374,6 +1374,7 @@ def _scoped_morning_analysis(
             point_change = _finite_number(quote.get("change"))
             percent = _finite_number(quote.get("change_percent"))
             observed = str(quote.get("quote_date") or quote.get("quote_time") or "")[:10]
+            freshness = str(quote.get("freshness") or quote.get("data_status") or "").casefold()
             quote_display_is_verified = (
                 price is not None
                 and bool(observed)
@@ -1387,7 +1388,6 @@ def _scoped_morning_analysis(
                 _format_compact_market_quote(name, price, point_change, percent)
                 if quote_display_is_verified else f"{name}：未取得可核對資料"
             )
-            freshness = str(quote.get("freshness") or quote.get("data_status") or "").casefold()
             if ticker == "TAIEX":
                 if freshness == "recent_close":
                     freshness_note = "最近收盤"
