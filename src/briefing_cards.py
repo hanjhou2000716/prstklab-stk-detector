@@ -1454,7 +1454,7 @@ def _scoped_morning_analysis(
                     freshness_note = "行情未核實"
                 status_note = (
                     f"現貨｜{freshness_note}｜資料日 {observed}"
-                    if verified else f"現貨｜行情未核實｜資料日期不採信"
+                    if verified else "現貨｜行情未核實｜資料日期不採信"
                 )
             elif verified and freshness == "recent_close":
                 status_note = f"期貨｜最近已核實日盤｜資料日 {observed}｜非即時"
