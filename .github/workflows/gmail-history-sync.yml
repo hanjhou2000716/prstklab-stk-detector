@@ -184,7 +184,7 @@ jobs:
           if [ "$DEPENDENCY_INSTALL_OUTCOME" = "success" ]; then
             if [ "$GMAIL_SYNC_OUTCOME" = "success" ]; then
               parser_sync_state="completed"
-              if [ "$RESULT_CONTRACT_OUTCOME" = "success" ]; then
+              if [ "$RESULT_CONTRACT_OUTCOME" = "success" ] && [ -s gmail-sync-result.json ]; then
                 source_health_state="checked"
                 cursor_state="sync_completed"
               else
@@ -313,7 +313,7 @@ jobs:
             candidate_type="none"
             notification_expected="false"
           fi
-          if [ "$RESULT_CONTRACT_OUTCOME" = "success" ]; then
+          if [ "$RESULT_CONTRACT_OUTCOME" = "success" ] && [ -s gmail-sync-result.json ]; then
             processed_summary="$processed"
             accepted_new_summary="$accepted_new"
             material_candidates_summary="$material_candidates"

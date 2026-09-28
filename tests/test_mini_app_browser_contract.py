@@ -530,13 +530,16 @@ def test_mini_app_taiwan_pair_uses_verified_projection_for_quote_direction() -> 
             )
             page.wait_for_selector("#briefing-observations .taiwan-market-pair", state="attached")
             rows = page.locator("#briefing-observations .taiwan-market-pair .taiwan-market-card-facts p")
-            assert rows.count() == 2
-            first_class = rows.nth(0).get_attribute("class") or ""
-            first_text = rows.nth(0).text_content() or ""
+            taiex_row = rows.filter(has_text="加權現貨")
+            txf_row = rows.filter(has_text="台指期近月日盤")
+            assert taiex_row.count() == 1
+            assert txf_row.count() == 1
+            first_class = taiex_row.get_attribute("class") or ""
+            first_text = taiex_row.text_content() or ""
             assert "market-down" in first_class
             assert "🍂" in first_text
-            second_class = rows.nth(1).get_attribute("class") or ""
-            second_text = rows.nth(1).text_content() or ""
+            second_class = txf_row.get_attribute("class") or ""
+            second_text = txf_row.text_content() or ""
             assert "market-down" not in second_class
             assert "🍂" not in second_text
 
