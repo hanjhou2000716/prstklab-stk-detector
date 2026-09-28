@@ -134,6 +134,36 @@ class ReleaseGateResult:
     superseded: bool = False
 
 
+_SAFE_GATE_DIAGNOSTIC_CATEGORIES = frozenset({
+    "contract_mismatch",
+    "deployed_artifact_mismatch",
+    "local_artifact_mismatch",
+    "local_release_identity_mismatch",
+    "none",
+    "pages_unavailable",
+    "parallel_publish_superseded",
+    "public_content_mismatch",
+    "public_manifest_stale",
+})
+
+
+def _safe_diagnostic_outputs(result: ReleaseGateResult) -> dict[str, str]:
+    """Expose only bounded scalar diagnostics; never URLs or response bodies."""
+    attempts = result.attempts or ()
+    last = attempts[-1] if attempts else {}
+    category = str(last.get("error_category") or result.error_category or "unknown")
+    if category not in _SAFE_GATE_DIAGNOSTIC_CATEGORIES:
+        category = "unknown"
+    http_status = last.get("http_status") if attempts else result.http_status
+    if not isinstance(http_status, int) or isinstance(http_status, bool):
+        http_status = None
+    return {
+        "attempt_count": str(len(attempts)),
+        "last_attempt_error_category": category,
+        "last_attempt_http_status": str(http_status) if http_status is not None else "",
+    }
+
+
 def _validate_creator_artifact(artifact: dict[str, Any], manifest: dict[str, Any]) -> list[str]:
     """Validate an optional creator artifact against the exact parent release."""
     errors = validate_creator_release(
@@ -861,6 +891,7 @@ def main() -> int:
         "superseded": result.superseded,
         "errors": ";".join(result.errors),
     }
+    values.update(_safe_diagnostic_outputs(result))
     lines = [
         f"{key}={str(value).lower() if isinstance(value, bool) else str(value).replace(chr(10), ' ').replace(chr(13), ' ')}"
         for key, value in values.items()
