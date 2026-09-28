@@ -11,10 +11,10 @@ from src.release_gate import (
     _is_retryable_http_error,
     _load_release_artifacts,
     _request_timeout,
+    _safe_diagnostic_outputs,
     _utc_timestamp,
     _validate_bootstrap_artifact,
     _validate_public_alert_target,
-    _safe_diagnostic_outputs,
     verify_release_for_delivery,
 )
 from src.release_manifest import build_release_manifest, sha256_file, write_release_manifest
