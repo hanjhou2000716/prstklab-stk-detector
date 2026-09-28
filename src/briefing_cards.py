@@ -67,7 +67,7 @@ def _format_compact_market_quote(
             return missing
         rounded = round(value, 2)
         if rounded == 0:
-            rounded = 0.0
+            return f"{0.0:,.2f}{unit}"
         return f"{rounded:+,.2f}{unit}"
 
     point_text = signed(point_change, " 點", "漲跌點數未提供")
@@ -974,13 +974,14 @@ def _scoped_quote_detail(
     if not usable:
         label = f"{name}資料未取得或口徑未核實"
         evidence = {
-            "ticker": ticker,
-            "name": name,
-            "data_status": "unavailable",
-            "quote_date": row.get("quote_date"),
-            "quote_time": row.get("quote_time"),
-            "source": row.get("source_label") or row.get("quote_source") or row.get("source"),
-            "contract_month": row.get("contract_month"),
+            key: row.get(key)
+            for key in (
+                "ticker", "name", "price", "change", "change_percent", "currency",
+                "freshness", "data_status", "quote_date", "quote_time", "source_label",
+                "quote_source", "source", "source_url", "contract_month", "contract_basis",
+                "session", "quote_delayed", "stale_used", "quote_basis",
+            )
+            if row.get(key) not in (None, "")
         }
         return label, evidence, {"ticker": ticker, "name": name, "reason": missing_reason}
     basis = str(row.get("quote_basis") or "").strip()
@@ -1280,7 +1281,7 @@ def _scoped_morning_analysis(
                     "display_change_percent": None, "quote": {},
                 })
                 if (
-                    price is not None and percent is not None and quote_date
+                    price is not None and quote_date
                     and str(futures_quote.get("freshness") or futures_quote.get("data_status") or "").casefold() == "recent_close"
                 ):
                     reference_futures.append({
@@ -1304,7 +1305,8 @@ def _scoped_morning_analysis(
         sox_change = _finite_number(sox_quote.get("change"))
         sox_percent = _finite_number(sox_quote.get("change_percent"))
         sox_date = str(sox_quote.get("quote_date") or sox_quote.get("quote_time") or "")[:10]
-        if sox_price is not None and sox_percent is not None and sox_date:
+        sox_freshness = str(sox_quote.get("freshness") or sox_quote.get("data_status") or "").casefold()
+        if sox_price is not None and sox_date and sox_freshness == "recent_close":
             sox_text = _format_compact_market_quote("費半", sox_price, sox_change, sox_percent)
             sox_display_change = sox_percent
         else:
@@ -1313,7 +1315,7 @@ def _scoped_morning_analysis(
         sox_fact = {
             **facts[6], "name": "費城半導體指數（輔助）", "text": sox_text,
             "display_change_percent": sox_display_change, "quote": sox_quote,
-            "display_state": "recent_close_auxiliary" if sox_price is not None and sox_percent is not None and sox_date else "unavailable",
+            "display_state": "recent_close_auxiliary" if sox_price is not None and sox_date and sox_freshness == "recent_close" else "unavailable",
         }
         def group_quote_status(rows: list[dict[str, Any]], label: str, fallback: str) -> str:
             dates = sorted({
@@ -1372,9 +1374,18 @@ def _scoped_morning_analysis(
             point_change = _finite_number(quote.get("change"))
             percent = _finite_number(quote.get("change_percent"))
             observed = str(quote.get("quote_date") or quote.get("quote_time") or "")[:10]
+            quote_display_is_verified = (
+                price is not None
+                and bool(observed)
+                and freshness not in _UNUSABLE_FRESHNESS
+                and (
+                    ticker != "TXF"
+                    or bool(re.fullmatch(r"\d{6}", str(quote.get("contract_month") or "")))
+                )
+            )
             text = (
                 _format_compact_market_quote(name, price, point_change, percent)
-                if price is not None else f"{name}：未取得可核對資料"
+                if quote_display_is_verified else f"{name}：未取得可核對資料"
             )
             freshness = str(quote.get("freshness") or quote.get("data_status") or "").casefold()
             if ticker == "TAIEX":
