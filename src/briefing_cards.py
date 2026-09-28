@@ -31,6 +31,7 @@ SCOPED_TICKER_ORDER = {
     "us": ("S&P 500", "NASDAQ", "DJIA", "ES", "NQ", "YM", "SOX"),
 }
 _UNUSABLE_FRESHNESS = frozenset({"stale", "delayed", "unavailable", "unknown", "failed"})
+_USABLE_FRESHNESS = frozenset({"live", "recent_close"})
 _GENERIC_EVENT_CONTEXT = frozenset({
     "此公開事件可能影響市場預期",
     "可能連動主要股市、利率或商品市場",
@@ -967,7 +968,7 @@ def _scoped_quote_detail(
         missing_reason = "official_contract_month_unverified"
     usable = (
         price is not None and change is not None and bool(observed)
-        and freshness.casefold() not in _UNUSABLE_FRESHNESS
+        and freshness.casefold() in _USABLE_FRESHNESS
     )
     if scope == "taiwan" and ticker == "TXF" and missing_reason == "official_contract_month_unverified":
         usable = False
@@ -1378,7 +1379,7 @@ def _scoped_morning_analysis(
             quote_display_is_verified = (
                 price is not None
                 and bool(observed)
-                and freshness not in _UNUSABLE_FRESHNESS
+                and freshness in _USABLE_FRESHNESS
                 and (
                     ticker != "TXF"
                     or bool(re.fullmatch(r"\d{6}", str(quote.get("contract_month") or "")))
