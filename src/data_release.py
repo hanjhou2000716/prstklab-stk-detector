@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -203,7 +204,7 @@ def restore(
 def publish(
     *, root: Path | str = Path("."), branch: str = DEFAULT_BRANCH,
     includes: list[str] | None = None, message: str = "chore: publish immutable data release",
-    dry_run: bool = False,
+    dry_run: bool = False, expected_base_sha: str | None = None,
 ) -> dict[str, Any]:
     """Publish selected files as a data-only commit on ``branch``."""
     root = Path(root)
@@ -212,9 +213,12 @@ def publish(
     if not files:
         raise DataReleaseError("no data files found for release")
     if dry_run:
-        return {"published": False, "dry_run": True, "branch": branch, "files": files}
+        return {
+            "published": False, "dry_run": True, "branch": branch,
+            "files": files, "expected_base_sha": expected_base_sha or "",
+        }
 
-    _fetch_branch(branch)
+    fetched = _fetch_branch(branch)
     # The release branch is an append-only immutable store.  Every publisher
     # may select a different subset (for example, the market refresh workflow
     # publishes only ``site/data`` while the research workflow also publishes
@@ -223,6 +227,15 @@ def publish(
     # written by another workflow.
     parent_result = _run("rev-parse", f"refs/remotes/origin/{branch}", check=False)
     parent = parent_result.stdout.strip() if parent_result.returncode == 0 else ""
+    expected = str(expected_base_sha or "").strip().lower()
+    if expected_base_sha is not None and not expected:
+        raise DataReleaseError("expected_base_sha_invalid")
+    if expected and not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", expected):
+        raise DataReleaseError("expected_base_sha_invalid")
+    if expected and not fetched:
+        raise DataReleaseError("expected_base_sha_remote_unavailable")
+    if expected and parent.lower() != expected:
+        raise DataReleaseError("expected_base_sha_mismatch")
     index = root / ".git" / "data-release-index"
     index.unlink(missing_ok=True)
     env = os.environ.copy()
@@ -244,7 +257,11 @@ def publish(
         tree = subprocess.run(["git", "write-tree"], check=True, capture_output=True, text=True, env=env).stdout.strip()
         current_tree = _run("rev-parse", f"{parent}^{{tree}}", check=False).stdout.strip() if parent else ""
         if current_tree and current_tree == tree:
-            return {"published": False, "unchanged": True, "branch": branch, "files": files, "tree": tree}
+            return {
+                "published": False, "unchanged": True, "branch": branch,
+                "files": files, "tree": tree, "base_sha": parent,
+                "published_sha": parent,
+            }
         commit_args = ["commit-tree", tree]
         if parent:
             commit_args.extend(["-p", parent])
@@ -269,7 +286,11 @@ def publish(
         pushed = _run("push", "origin", f"{commit}:refs/heads/{branch}", check=False)
         if pushed.returncode:
             raise DataReleaseError(pushed.stderr.strip() or "data-release push failed")
-        return {"published": True, "branch": branch, "commit": commit, "files": files, "tree": tree}
+        return {
+            "published": True, "branch": branch, "commit": commit,
+            "files": files, "tree": tree, "base_sha": parent,
+            "published_sha": commit,
+        }
     finally:
         index.unlink(missing_ok=True)
 
@@ -282,16 +303,23 @@ def main() -> int:
     parser.add_argument("--branch", default=os.getenv("DATA_RELEASE_BRANCH", DEFAULT_BRANCH))
     parser.add_argument("--include", action="append", default=[])
     parser.add_argument("--message", default="chore: publish immutable data release")
+    parser.add_argument("--expected-base-sha")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     try:
         result = restore(branch=args.branch, includes=args.include, dry_run=args.dry_run) if args.restore else publish(
             branch=args.branch, includes=args.include, message=args.message, dry_run=args.dry_run,
+            expected_base_sha=args.expected_base_sha,
         )
     except DataReleaseError as exc:
         print(json.dumps({"published": False, "error": str(exc)}, ensure_ascii=False))
         return 1
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+    output_path = os.getenv("GITHUB_OUTPUT", "").strip()
+    if output_path and args.publish:
+        with open(output_path, "a", encoding="utf-8") as output:
+            output.write(f"data_release_base_sha={result.get('base_sha', '')}\n")
+            output.write(f"data_release_published_sha={result.get('published_sha', '')}\n")
     return 0
 
 

@@ -105,12 +105,29 @@ def test_workflow_reports_run_and_both_pull_request_commits() -> None:
         "workflow_tested_sha",
         "run_attempt",
         "run_url",
-        "steps.test_preflight.outcome",
-        "steps.static_preflight.outputs.failed_gate",
-        "steps.test_preflight.outputs.failed_gate",
+        "steps.quality_preflight.outcome",
+        "steps.quality_preflight.outputs.failed_gate",
         "scripts/inspect_quality_run.py",
     ):
         assert marker in workflow
+
+
+def test_full_preflight_contains_the_ci_integration_gates():
+    labels = [label for label, _command in quality_preflight.integration_commands()]
+    assert labels == [
+        "Railway shared classifier bundle",
+        "Railway canonical parser bundle",
+        "Canonical overlap and generated bundle provenance",
+        "Gate-Driven requirement and evidence registry",
+        "Offline Supabase migration contract",
+        "Disposable local Supabase migration integration",
+        "Creator, FinancialJuice, and news intelligence contracts",
+        "Python bytecode compilation",
+        "Checked-in Mini App runtime audit",
+        "Offline Telegram delivery configuration smoke test",
+        "Offline release-to-delivery dry run",
+        "Offline production release-to-delivery acceptance",
+    ]
 
 
 def test_unmerged_current_pr_head_failure_is_actionable() -> None:

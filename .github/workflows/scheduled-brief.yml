@@ -158,39 +158,130 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_EVENT_ACTION: ${{ github.event.action || '' }}
           HANDOFF_PARENT_RUN_ID: ${{ env.HANDOFF_PARENT_RUN_ID }}
+          HANDOFF_PARENT_VERIFIED: ${{ steps.validate_handoff_parent.outputs.valid || 'false' }}
+          GITHUB_RUN_ATTEMPT_CREATED_AT: ${{ steps.run_context.outputs.created_at || '' }}
+          GITHUB_RUN_ATTEMPT_STARTED_AT: ${{ steps.run_context.outputs.run_started_at || '' }}
           SLOT_CONTEXT: ${{ steps.window.outputs.context_json || '{}' }}
         run: python -m src.writer_queue
       - name: Prepare immutable market snapshot
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.window.outputs.should_run == 'true'
         id: prepare
         continue-on-error: true
+        # The runtime budget is 8 minutes; one extra minute lets the script
+        # persist its structured failure result after timeout handling.
+        timeout-minutes: 9
         env:
           PUBLIC_OBSERVATIONS_SHARED_SECRET: ${{ secrets['DELIVERY_RECEIPT_SHARED_SECRET'] || secrets['RAILWAY_STATUS_SHARED_SECRET'] || secrets['DELIVERY_STATUS_SHARED_SECRET'] }}
           SLOT_CONTEXT: ${{ steps.window.outputs.context_json }}
+          SCHEDULED_FOR_AT: ${{ steps.window.outputs.scheduled_for_at }}
         run: |
           set -euo pipefail
           attempt_output="$(mktemp)"
           trap 'rm -f "$attempt_output"' EXIT
-          restore_latest() {
-            python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data
-            git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
+          prepare_started="$(date +%s)"
+          slot_deadline="$(python - "$SCHEDULED_FOR_AT" <<'PY'
+          import sys
+          from datetime import datetime, timedelta
+
+          raw = sys.argv[1]
+          scheduled = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+          if scheduled.tzinfo is None:
+              raise SystemExit("scheduled anchor has no timezone")
+          print(int((scheduled + timedelta(minutes=30)).timestamp()))
+          PY
+          )"
+          max_prepare_deadline=$((prepare_started + 480))
+          reserve_deadline=$((slot_deadline - 300))
+          if [ "$reserve_deadline" -lt "$max_prepare_deadline" ]; then
+            prepare_deadline="$reserve_deadline"
+          else
+            prepare_deadline="$max_prepare_deadline"
+          fi
+          prepare_failure() {
+            local reason="$1" stage="$2" attempt="$3"
+            cat "$attempt_output" >> "$GITHUB_OUTPUT"
+            {
+              echo "prepared=false"
+              echo "reason=${reason}"
+              echo "prepare_failure_reason=${reason}"
+              echo "preparation_stage=${stage}"
+              echo "preparation_attempts=${attempt}"
+              echo "preparation_elapsed_seconds=$(($(date +%s) - prepare_started))"
+              echo "data_release_base_sha=${base_sha:-unknown}"
+              echo "data_release_current_sha=${current_sha:-unknown}"
+              echo "base_current=false"
+            } >> "$GITHUB_OUTPUT"
+            echo "::error::scheduled_prepare_failed:${reason}"
+            exit 1
+          }
+          remaining_budget() {
+            echo "$((prepare_deadline - $(date +%s)))"
           }
           for attempt in 1 2; do
             : > "$attempt_output"
-            restore_latest
-            base_sha="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"
-            GITHUB_OUTPUT="$attempt_output" python -m src.scheduled_delivery \
+            remaining="$(remaining_budget)"
+            if [ "$remaining" -le 0 ]; then
+              prepare_failure "prepare_budget_exhausted_reserve_required" "budget_check" "$((attempt - 1))"
+            fi
+            if ! timeout --signal=TERM --kill-after=5 "${remaining}s" \
+              python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data; then
+              prepare_failure "data_release_restore_failed" "restore" "$((attempt - 1))"
+            fi
+            remaining="$(remaining_budget)"
+            if [ "$remaining" -le 0 ]; then
+              prepare_failure "prepare_budget_exhausted_reserve_required" "restore" "$((attempt - 1))"
+            fi
+            if ! timeout --signal=TERM --kill-after=5 "${remaining}s" \
+              git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"; then
+              prepare_failure "data_release_base_lookup_failed" "base_lookup" "$((attempt - 1))"
+            fi
+            if ! base_sha="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"; then
+              prepare_failure "data_release_base_lookup_failed" "base_lookup" "$((attempt - 1))"
+            fi
+            remaining="$(remaining_budget)"
+            if [ "$remaining" -le 0 ]; then
+              prepare_failure "prepare_budget_exhausted_reserve_required" "before_prepare" "$((attempt - 1))"
+            fi
+            set +e
+            GITHUB_OUTPUT="$attempt_output" timeout --signal=TERM --kill-after=5 "${remaining}s" \
+              python -m src.scheduled_delivery \
               --slot "${{ steps.window.outputs.slot }}" --prepare-only \
               --slot-context "$SLOT_CONTEXT" --notification-requested "$NOTIFY" \
               --snapshot "$SNAPSHOT_PATH"
-            git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
-            current_sha="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"
+            prepare_status=$?
+            set -e
+            if [ "$prepare_status" -ne 0 ]; then
+              reported_reason="$(awk -F= '$1 == "reason" { value=substr($0, index($0, "=") + 1) } END { print value }' "$attempt_output")"
+              case "$reported_reason" in
+                ""|*[!a-zA-Z0-9_.:-]*) reported_reason="scheduled_delivery_prepare_failed" ;;
+              esac
+            if [ "$prepare_status" -eq 124 ] || [ "$prepare_status" -eq 137 ]; then
+                reported_reason="prepare_timeout_budget_exhausted"
+              fi
+              prepare_failure "$reported_reason" "prepare" "$attempt"
+            fi
+            remaining="$(remaining_budget)"
+            if [ "$remaining" -le 0 ]; then
+              prepare_failure "prepare_budget_exhausted_reserve_required" "base_revalidation" "$attempt"
+            fi
+            if ! timeout --signal=TERM --kill-after=5 "${remaining}s" \
+              git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"; then
+              prepare_failure "data_release_base_lookup_failed" "base_revalidation" "$attempt"
+            fi
+            if ! current_sha="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"; then
+              prepare_failure "data_release_base_lookup_failed" "base_revalidation" "$attempt"
+            fi
             if [ "$current_sha" = "$base_sha" ]; then
               cat "$attempt_output" >> "$GITHUB_OUTPUT"
               {
                 echo "data_release_sha=$base_sha"
+                echo "data_release_base_sha=$base_sha"
+                echo "data_release_current_sha=$current_sha"
                 echo "base_current=true"
                 echo "rebuild_attempts=$((attempt - 1))"
+                echo "preparation_stage=complete"
+                echo "preparation_attempts=$attempt"
+                echo "preparation_elapsed_seconds=$(($(date +%s) - prepare_started))"
               } >> "$GITHUB_OUTPUT"
               exit 0
             fi
@@ -202,6 +293,12 @@ jobs:
                 echo "rebuild_attempts=1"
                 echo "prepared=false"
                 echo "reason=base_changed_twice_during_prepare"
+                echo "prepare_failure_reason=base_changed_twice_during_prepare"
+                echo "preparation_stage=base_revalidation"
+                echo "preparation_attempts=$attempt"
+                echo "preparation_elapsed_seconds=$(($(date +%s) - prepare_started))"
+                echo "data_release_base_sha=$base_sha"
+                echo "data_release_current_sha=$current_sha"
                 echo "notification_expected=true"
               } >> "$GITHUB_OUTPUT"
               exit 1
@@ -326,6 +423,7 @@ jobs:
           RELEASE_ID: ${{ steps.release_manifest.outputs.release_id }}
         run: |
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
+            --expected-base-sha "${{ steps.prepare.outputs.data_release_sha }}" \
             --message "chore: refresh public market snapshot"
           git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
           printf 'data_release_sha=%s\n' "$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")" >> "$GITHUB_OUTPUT"
@@ -546,6 +644,9 @@ jobs:
         if: always()
         env:
           PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
+          PREPARE_FAILURE_REASON: ${{ steps.prepare.outputs.prepare_failure_reason || steps.prepare.outputs.reason || '' }}
+          PREPARATION_STAGE: ${{ steps.prepare.outputs.preparation_stage || 'not_started' }}
+          PREPARATION_ATTEMPTS: ${{ steps.prepare.outputs.preparation_attempts || '0' }}
           CANDIDATE_TYPE: ${{ steps.prepare.outputs.candidate_type || 'none' }}
           NOTIFICATION_EXPECTED_VALUE: ${{ steps.prepare.outputs.notification_expected || 'false' }}
           DELIVERY_OBLIGATION: ${{ steps.prepare.outputs.delivery_obligation || 'undetermined' }}
@@ -647,7 +748,7 @@ jobs:
             elif [ "$WINDOW_CONTRACT_STATUS" = "invalid" ]; then
               notification_reason="$WINDOW_NOTIFICATION_REASON"
             elif [ "$PREPARE_OUTCOME" = "failure" ]; then
-              notification_reason="production_failed"
+              notification_reason="${PREPARE_FAILURE_REASON:-scheduled_prepare_failed}"
             elif [ "$NOTIFICATION_REQUESTED" != "true" ] && [ "$WINDOW_DELIVERY_INTENT" = "notify_candidate" ]; then
               notification_reason="manual_notification_opt_in_required"
             elif [ -n "$WINDOW_NOTIFICATION_REASON" ]; then
@@ -726,6 +827,11 @@ jobs:
             notification_status="failed"
             notification_reason="${PREPARED_RELEASE_STATUS:-prepared_release_not_verified}"
           fi
+          if [ "$PREPARE_OUTCOME" = "failure" ] && [ "$notification_expected" = "true" ]; then
+            scan_status="preparation_failed"
+            notification_status="failed"
+            notification_reason="${PREPARE_FAILURE_REASON:-scheduled_prepare_failed}"
+          fi
           {
             echo "## Scheduled brief notification decision"
             echo "- delivery_obligation: ${DELIVERY_OBLIGATION}"
@@ -742,6 +848,11 @@ jobs:
             echo "- notification_expected: ${notification_expected:-false}"
             echo "- notification_status: ${notification_status}"
             echo "- notification_reason: ${notification_reason:-unknown}"
+            echo "- preparation_stage: ${PREPARATION_STAGE}"
+            echo "- preparation_attempts: ${PREPARATION_ATTEMPTS}"
+            echo "- preparation_failure_reason: ${PREPARE_FAILURE_REASON:-none}"
+            echo "- prepared_base_sha: ${{ steps.prepare.outputs.data_release_base_sha || steps.prepare.outputs.data_release_sha || 'unknown' }}"
+            echo "- data_release_current_sha: ${{ steps.prepare.outputs.data_release_current_sha || 'unknown' }}"
             echo "- release_manifest_status: ${RELEASE_MANIFEST_STATUS:-unknown}"
             echo "- alert_projection_status: ${ALERT_PROJECTION_STATUS:-unknown}"
             echo "- quarantined_alert_count: ${QUARANTINED_ALERT_COUNT:-0}"
@@ -821,6 +932,7 @@ jobs:
           fi
           python -m src.release_manifest "${arguments[@]}"
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
+            --expected-base-sha "${{ steps.publish_snapshot.outputs.data_release_published_sha || steps.prepare.outputs.data_release_sha }}" \
             --message "chore: persist scheduled notification ledger state"
           git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
           data_release_sha="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"
@@ -992,6 +1104,7 @@ jobs:
           SCHEDULED_FOR_AT: ${{ steps.window.outputs.scheduled_for_at || '' }}
           RUN_CREATED_AT: ${{ steps.run_context.outputs.created_at || '' }}
           PREPARE_OUTCOME: ${{ steps.prepare.outcome || 'unknown' }}
+          PREPARE_FAILURE_REASON: ${{ steps.prepare.outputs.prepare_failure_reason || steps.prepare.outputs.reason || '' }}
           PREPARE_READY: ${{ steps.prepare.outputs.prepared || 'false' }}
           SEND_OUTCOME: ${{ steps.send_brief.outcome || 'skipped' }}
           SEND_STATUS: ${{ steps.send_brief.outputs.notification_status || '' }}

@@ -1,4 +1,11 @@
-from src.market_scope import event_belongs_to_scope, scope_snapshot
+from src.market_scope import event_belongs_to_scope, market_scope_for_slot, scope_snapshot
+
+
+def test_routine_slot_scope_is_defined_by_slot_not_summary_text():
+    assert market_scope_for_slot("pre_open") == "taiwan"
+    assert market_scope_for_slot("post_close") == "taiwan"
+    assert market_scope_for_slot("us_premarket") == "us"
+    assert market_scope_for_slot("morning") is None
 
 
 def test_explicit_aliases_scope_events_without_using_headline_text():

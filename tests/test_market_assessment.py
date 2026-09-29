@@ -77,7 +77,10 @@ def test_unrelated_events_do_not_get_joined_into_market_title():
         ],
     }, "us_premarket")
 
-    assert result["public_short_message"].startswith("🟡 美股盤前")
+    assert result["status"] == "suppressed"
+    assert result["notification_eligible"] is False
+    assert result["notification_reason"] == "scheduled_market_data_unavailable"
+    assert result["public_short_message"].startswith("📊 美股盤前｜行情資料不足")
     assert "半導體出口管制更新" not in result["public_short_message"]
     assert "原油供應中斷" not in result["public_short_message"]
     assert result["market_scope_key"] == "us"
@@ -129,7 +132,7 @@ def test_market_assessment_uses_fixed_three_section_overview_and_weekend_status(
     assert "風險｜" in result["overview"]
     assert "台股休市" in result["overview"]
     assert len(result["overview"]) <= 140
-    assert result["public_short_message"].startswith("🟡 台股盤後")
+    assert result["public_short_message"].startswith("📊 台股盤後｜最近收盤")
 
 
 def test_taiwan_stance_does_not_call_nasdaq_softness_a_generic_conflict():
@@ -162,7 +165,9 @@ def test_quote_only_briefing_is_not_suppressed_but_empty_inputs_are():
 
     assert quote_only["notification_eligible"] is True
     assert quote_only["overview"].startswith("總結｜")
-    assert empty["notification_eligible"] is True
+    assert empty["notification_eligible"] is False
+    assert empty["status"] == "suppressed"
+    assert empty["notification_reason"] == "scheduled_market_data_unavailable"
     assert "行情資料不足" in empty["public_short_message"]
 
 

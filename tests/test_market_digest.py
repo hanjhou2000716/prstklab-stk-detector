@@ -58,6 +58,8 @@ def test_digest_prefers_complete_event_over_fragment_title():
     assert "Fed官員" in result["primary_theme"]["what_happened"]
     assert "沃勒" not in result["public_short_message"]
     assert "The..." not in result["public_short_message"]
+    assert "Fed官員" in result["public_short_message"]
+    assert "行情資料缺漏" in result["public_short_message"]
 
 
 def test_digest_drops_conditional_only_waller_fragment_for_complete_fact():

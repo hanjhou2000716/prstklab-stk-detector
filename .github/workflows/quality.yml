@@ -54,59 +54,17 @@ jobs:
           sudo install "$temp_dir/shellcheck-v0.11.0/shellcheck" /usr/local/bin/shellcheck
           actionlint -version
           shellcheck --version
-      - name: Run shared workflow, Ruff, and Mypy preflight
-        id: static_preflight
-        run: uv run python scripts/quality_preflight.py --static
       - name: Install Playwright browser for integration tests
         run: uv run python -m playwright install --with-deps chromium
       - name: Install pinned Supabase CLI
         uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v2
         with:
           version: 2.39.2
-      - name: Run changed tests and full unit coverage gates
-        id: test_preflight
+      - name: Run complete shared local and CI quality preflight
+        id: quality_preflight
         env:
           QUALITY_PREFLIGHT_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '' }}
-        run: uv run python scripts/quality_preflight.py --tests
-      - name: Verify Railway shared classifier bundle
-        id: classifier_bundle
-        run: python scripts/sync_railway_shared_classifier.py --check
-      - name: Verify Railway canonical external-parser bundle
-        id: parser_bundle
-        run: python scripts/sync_railway_canonical_parser.py --check
-      - name: Verify canonical overlap and generated bundle provenance
-        id: overlap_provenance
-        run: python scripts/verify_canonical_overlap.py
-      - name: Verify Gate-Driven requirement and evidence registry
-        id: gate_evidence
-        run: python scripts/verify_gate_evidence.py
-      - name: Verify offline Supabase migration contract without production credentials
-        id: migration_contract
-        run: python scripts/validate_local_migration_contract.py
-      - name: Run disposable local Supabase migration integration test
-        id: migration_integration
-        run: python scripts/local_supabase_migration_test.py
-      - name: Verify Creator, FinancialJuice and news intelligence contracts
-        id: intelligence_contracts
-        run: python scripts/verify_intelligence_contracts.py
-      - name: Compile Python modules
-        id: compile_python
-        run: python -m compileall -q src railway-monitor
-      - name: Validate checked-in Mini App artifacts
-        id: runtime_audit
-        run: python -m src.runtime_audit
-      - name: Validate Telegram delivery configuration without network access
-        id: delivery_smoke
-        run: python -m src.delivery_smoke_test
-      - name: Offline release-to-delivery dry run
-        id: release_dry_run
-        run: python -m src.system_dry_run
-      - name: Offline production release-to-delivery acceptance
-        id: production_e2e
-        # Use the locked environment that installed Chromium above.  Running
-        # the system Python here can load a different Playwright version and
-        # fail to find the matching browser even though installation passed.
-        run: uv run python -m src.production_e2e
+        run: uv run python scripts/quality_preflight.py --full
       - name: Publish CI provenance
         if: always()
         run: |
@@ -120,22 +78,8 @@ jobs:
             echo "- pull_request: ${{ github.event.pull_request.number || 'none' }}"
             echo "- pull_request_head_sha: ${{ github.event.pull_request.head.sha || 'none' }}"
             echo "- pull_request_base_sha: ${{ github.event.pull_request.base.sha || 'none' }}"
-            echo "- static_preflight_outcome: ${{ steps.static_preflight.outcome || 'not_run' }}"
-            echo "- static_preflight_failed_gate: ${{ steps.static_preflight.outputs.failed_gate || 'unknown' }}"
-            echo "- unit_test_preflight_outcome: ${{ steps.test_preflight.outcome || 'not_run' }}"
-            echo "- unit_test_preflight_failed_gate: ${{ steps.test_preflight.outputs.failed_gate || 'unknown' }}"
-            echo "- classifier_bundle_outcome: ${{ steps.classifier_bundle.outcome || 'not_run' }}"
-            echo "- parser_bundle_outcome: ${{ steps.parser_bundle.outcome || 'not_run' }}"
-            echo "- overlap_provenance_outcome: ${{ steps.overlap_provenance.outcome || 'not_run' }}"
-            echo "- gate_evidence_outcome: ${{ steps.gate_evidence.outcome || 'not_run' }}"
-            echo "- migration_contract_outcome: ${{ steps.migration_contract.outcome || 'not_run' }}"
-            echo "- migration_integration_outcome: ${{ steps.migration_integration.outcome || 'not_run' }}"
-            echo "- intelligence_contracts_outcome: ${{ steps.intelligence_contracts.outcome || 'not_run' }}"
-            echo "- compile_outcome: ${{ steps.compile_python.outcome || 'not_run' }}"
-            echo "- runtime_audit_outcome: ${{ steps.runtime_audit.outcome || 'not_run' }}"
-            echo "- delivery_smoke_outcome: ${{ steps.delivery_smoke.outcome || 'not_run' }}"
-            echo "- release_dry_run_outcome: ${{ steps.release_dry_run.outcome || 'not_run' }}"
-            echo "- production_e2e_outcome: ${{ steps.production_e2e.outcome || 'not_run' }}"
+            echo "- shared_quality_preflight_outcome: ${{ steps.quality_preflight.outcome || 'not_run' }}"
+            echo "- shared_quality_preflight_failed_gate: ${{ steps.quality_preflight.outputs.failed_gate || 'unknown' }}"
             echo "- job_outcome: ${{ job.status }}"
             echo "- run_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}"
             echo "- read_only_run_triage: uv run python scripts/inspect_quality_run.py --repo ${{ github.repository }} --run-id ${{ github.run_id }}"

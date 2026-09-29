@@ -41,6 +41,7 @@ def test_dry_run_is_non_mutating_and_reports_release_files(tmp_path, monkeypatch
         "dry_run": True,
         "branch": "data-release",
         "files": ["site/data/market.json"],
+        "expected_base_sha": "",
     }
     assert (data / "market.json").read_bytes() == before
 

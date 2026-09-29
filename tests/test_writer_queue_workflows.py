@@ -1,6 +1,8 @@
 import re
 from pathlib import Path
 
+from src.writer_queue import WRITER_WORKFLOW_IDENTITIES
+
 WORKFLOW_ROOT = Path(__file__).resolve().parents[1] / ".github" / "workflows"
 WRITER_WORKFLOWS = (
     "official-event-monitor.yml",
@@ -9,6 +11,7 @@ WRITER_WORKFLOWS = (
     "refresh-dashboard.yml",
     "monitor-health.yml",
     "unified-research-report.yml",
+    "deploy-pages.yml",
 )
 
 
@@ -75,3 +78,25 @@ def test_research_preparation_happens_before_shared_writer_queue() -> None:
 def test_superseded_diagnostics_use_normal_success_noop_reason() -> None:
     for name in WRITER_WORKFLOWS:
         assert "stale_workflow_superseded" in _workflow_text(name), name
+
+
+def test_every_release_or_pages_publisher_is_registered_by_exact_workflow_identity() -> None:
+    publishing_paths = set()
+    for path in WORKFLOW_ROOT.glob("*.yml"):
+        text = path.read_text(encoding="utf-8")
+        if any(marker in text for marker in (
+            "python -m src.data_release --publish",
+            "actions/upload-pages-artifact",
+            "actions/deploy-pages",
+        )):
+            publishing_paths.add(f".github/workflows/{path.name}")
+    assert publishing_paths <= set(WRITER_WORKFLOW_IDENTITIES)
+    assert set(WRITER_WORKFLOW_IDENTITIES) <= {
+        f".github/workflows/{name}" for name in WRITER_WORKFLOWS
+    }
+
+
+def test_queue_regression_uses_real_scheduled_workflow_api_identity() -> None:
+    scheduled = _workflow_text("scheduled-brief.yml")
+    assert "HANDOFF_PARENT_VERIFIED" in scheduled
+    assert "GITHUB_RUN_ATTEMPT_STARTED_AT" in scheduled

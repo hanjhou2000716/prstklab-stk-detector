@@ -39,7 +39,11 @@ jobs:
         run: python -m src.writer_queue
       - name: Restore last immutable data release
         if: steps.writer_queue.outputs.should_continue == 'true'
-        run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data
+        id: restore_release
+        run: |
+          python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data
+          git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
+          echo "data_release_sha=$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         if: steps.writer_queue.outputs.should_continue == 'true'
         with:
@@ -56,7 +60,9 @@ jobs:
           python -m src.release_manifest \
             --allow-stale-research \
             --research-fallback-reason "research scan incomplete; preserving last-known-good research snapshot"
-          python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --message "chore: publish monitor health diagnostics"
+          python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
+            --expected-base-sha "${{ steps.restore_release.outputs.data_release_sha }}" \
+            --message "chore: publish monitor health diagnostics"
       - name: Build and validate cache-busted static assets
         if: steps.writer_queue.outputs.should_continue == 'true'
         run: |

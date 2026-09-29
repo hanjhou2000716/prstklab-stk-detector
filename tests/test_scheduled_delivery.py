@@ -71,6 +71,51 @@ def test_scheduled_brief_requires_three_factors_and_two_evidence_dimensions() ->
     assert _briefing_evidence_ready({"market_assessment": {"confidence": "medium", "factor_count": 3, "evidence_dimensions": ["equity"]}}) is False
 
 
+def test_routine_us_report_uses_slot_scope_and_accepts_partial_data_with_valid_summary() -> None:
+    briefing = {
+        "slot": "us_premarket",
+        "scheduled_report": True,
+        "market_scope": "us",
+        "market_scope_key": "us",
+        "market_assessment": {
+            "market_scope": "美股",
+            "market_scope_key": "us",
+            "confidence": "low",
+        },
+        "digest_status": "ready",
+        "data_gap_status": "partial",
+        "public_short_message": "📊 美股盤前｜標普500+0.51%；缺漏 ES",
+        "public_summary_reason": "",
+        "briefing_id": "briefing-us-premarket-regression",
+    }
+
+    assert _briefing_evidence_ready(briefing) is True
+    assert scheduled_delivery._is_routine_market_report(briefing) is True
+
+
+def test_routine_scope_or_summary_contract_mismatch_blocks_with_specific_reason() -> None:
+    briefing = {
+        "slot": "us_premarket",
+        "scheduled_report": True,
+        "market_scope": "us",
+        "market_scope_key": "taiwan",
+        "market_assessment": {"market_scope_key": "taiwan"},
+        "digest_status": "ready",
+        "data_gap_status": "partial",
+        "public_short_message": "📊 美股盤前｜標普500+0.51%",
+        "briefing_id": "briefing-scope-mismatch",
+    }
+
+    assert scheduled_delivery._briefing_evidence_reason(briefing) == "scheduled_market_scope_mismatch"
+    briefing["market_scope_key"] = "us"
+    briefing["market_assessment"] = {"market_scope_key": "us"}
+    briefing["data_gap_status"] = "unavailable"
+    assert scheduled_delivery._briefing_evidence_reason(briefing) == "scheduled_market_data_unavailable"
+    briefing["data_gap_status"] = "partial"
+    briefing["public_short_message"] = "🟡 美股盤前"
+    assert scheduled_delivery._briefing_evidence_reason(briefing) == "scheduled_public_summary_invalid"
+
+
 def test_market_anchor_deadlines_use_the_slot_market_timezone():
     taiwan = {
         "effective_slot": "post_close",
@@ -128,10 +173,14 @@ def test_deployment_recovery_budget_is_clamped_to_the_original_market_window():
 
 def test_routine_market_report_does_not_require_an_event_candidate():
     assert scheduled_delivery._is_routine_market_report({
-        "scheduled_report": True, "market_scope_key": "taiwan",
+        "scheduled_report": True,
+        "market_scope_key": "taiwan",
+        "slot_context": {"scheduled_slot": "pre_open"},
     }) is True
     assert scheduled_delivery._is_routine_market_report({
-        "scheduled_report": True, "market_scope_key": "us",
+        "scheduled_report": True,
+        "market_scope_key": "us",
+        "slot_context": {"scheduled_slot": "us_premarket"},
     }) is True
     assert scheduled_delivery._is_routine_market_report({
         "scheduled_report": False, "market_scope_key": "us",
@@ -1409,7 +1458,7 @@ def test_delayed_brief_event_anchor_keeps_the_original_scheduled_slot():
                 "scheduled_report": True,
                 "market_scope_key": "taiwan",
                 "digest_status": "ready",
-                "public_short_message": "晨報摘要",
+                "public_short_message": "📊 台股盤前｜加權指數收盤走低",
                 "briefing_id": "brief-cross-day-1",
                 "slot_context": {
                     "scheduled_slot": "morning",

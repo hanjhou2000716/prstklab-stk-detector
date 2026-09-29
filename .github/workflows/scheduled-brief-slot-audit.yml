@@ -1,6 +1,8 @@
 name: Scheduled brief slot receipt audit
 
 on:
+  repository_dispatch:
+    types: [scheduled-slot-receipt-audit]
   schedule:
     # UTC triggers correspond to the exchange-local read-only receipt deadlines.
     - cron: "45 22 * * *"
@@ -47,12 +49,39 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: python -m src.workflow_run_context >> "$GITHUB_OUTPUT"
+      - name: Capture audit start and immutable ledger revision
+        id: audit_context
+        run: |
+          echo "started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+          echo "ledger_commit_sha=$(git -C receipt-ledger rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: Audit scheduled slot receipt without dispatch or mutation
         env:
           GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule }}
           RUN_CREATED_AT: ${{ steps.run_context.outputs.created_at }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+          TRIGGER_SOURCE: ${{ github.event_name }}
+          AUDIT_STARTED_AT: ${{ steps.audit_context.outputs.started_at }}
+          LEDGER_COMMIT_SHA: ${{ steps.audit_context.outputs.ledger_commit_sha }}
+          SCHEDULED_RECIPIENT_HASHES: ${{ vars.SCHEDULED_RECIPIENT_HASHES || '' }}
+          SCHEDULED_RECIPIENT_SET_VERSION: ${{ vars.SCHEDULED_RECIPIENT_SET_VERSION || '' }}
+          SCHEDULED_RECIPIENT_SET_EFFECTIVE_AT: ${{ vars.SCHEDULED_RECIPIENT_SET_EFFECTIVE_AT || '' }}
+          AUDIT_SLOT: ${{ github.event.client_payload.slot || '' }}
+          AUDIT_SLOT_DATE: ${{ github.event.client_payload.slot_date || '' }}
+          AUDIT_SCHEDULED_FOR_AT: ${{ github.event.client_payload.scheduled_for_at || '' }}
+          AUDIT_DISPATCH_UNIX: ${{ github.event.client_payload.dispatch_unix || '' }}
+          AUDIT_REQUESTED_AT: ${{ github.event.client_payload.dispatch_unix || steps.run_context.outputs.created_at || '' }}
         run: >-
           python -m src.scheduled_slot_audit
           --ledger receipt-ledger/site/data/event-ledger.json
           --schedule "$GITHUB_EVENT_SCHEDULE"
           --run-created-at "$RUN_CREATED_AT"
+          --ledger-source data-release
+          --ledger-commit-sha "$LEDGER_COMMIT_SHA"
+          --trigger-source "$TRIGGER_SOURCE"
+          --audit-started-at "$AUDIT_STARTED_AT"
+          --slot "$AUDIT_SLOT"
+          --slot-date "$AUDIT_SLOT_DATE"
+          --scheduled-for-at "$AUDIT_SCHEDULED_FOR_AT"
+          --requested-at "$AUDIT_REQUESTED_AT"
+          --dispatch-unix "$AUDIT_DISPATCH_UNIX"

@@ -1919,6 +1919,10 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         "lookback_hours": digest.get("lookback_hours", 24),
         "as_of": digest.get("as_of"),
         "market_scope": market_scope,
+        # Keep the canonical string scope next to the display-oriented legacy
+        # field. Scheduled delivery uses the slot-bound scope, never a label
+        # inferred from the public summary.
+        "market_scope_key": digest.get("market_scope_key") or market_scope or "global",
         "market_projection_version": snapshot.get("market_projection_version"),
         "quote_gaps": digest.get("quote_gaps", []),
         "data_gap_status": digest.get("data_gap_status", "unknown"),

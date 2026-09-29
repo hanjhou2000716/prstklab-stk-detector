@@ -34,6 +34,7 @@ def test_all_data_release_publishers_share_one_concurrency_group():
         assert group is not None, f"{path.name} must define a concurrency group"
         assert group.startswith("main-data-writer-"), f"{path.name} must use the shared writer queue"
         assert "python -m src.writer_queue" in text, f"{path.name} must wait for older writers"
+        assert "--expected-base-sha" in text, f"{path.name} must fence publication against its prepared base"
 
 
 def test_data_release_rejects_paths_outside_public_data():
@@ -78,6 +79,52 @@ def test_publish_dry_run_expands_only_existing_data(tmp_path):
 def test_publish_rejects_empty_release(tmp_path):
     with pytest.raises(DataReleaseError, match="no data files"):
         publish(root=tmp_path, includes=["site/data"], dry_run=True)
+
+
+def test_publish_rejects_stale_expected_base_before_creating_commit(tmp_path, monkeypatch):
+    data_dir = tmp_path / "site" / "data"
+    data_dir.mkdir(parents=True)
+    (data_dir / "market.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(data_release, "_fetch_branch", lambda _branch: True)
+    monkeypatch.setattr(
+        data_release, "_run",
+        lambda *args, **_kwargs: data_release.subprocess.CompletedProcess(args, 0, "b" * 40 + "\n", ""),
+    )
+    monkeypatch.setattr(
+        data_release.subprocess, "run",
+        lambda *_args, **_kwargs: pytest.fail("stale prepared release must stop before writing"),
+    )
+
+    with pytest.raises(DataReleaseError, match="expected_base_sha_mismatch"):
+        publish(
+            root=tmp_path, includes=["site/data"], expected_base_sha="a" * 40,
+        )
+
+
+def test_publish_rejects_unavailable_remote_base_when_expected(tmp_path, monkeypatch):
+    data_dir = tmp_path / "site" / "data"
+    data_dir.mkdir(parents=True)
+    (data_dir / "market.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(data_release, "_fetch_branch", lambda _branch: False)
+    monkeypatch.setattr(
+        data_release, "_run",
+        lambda *args, **_kwargs: data_release.subprocess.CompletedProcess(args, 0, "a" * 40 + "\n", ""),
+    )
+    with pytest.raises(DataReleaseError, match="expected_base_sha_remote_unavailable"):
+        publish(root=tmp_path, includes=["site/data"], expected_base_sha="a" * 40)
+
+
+def test_publish_rejects_explicitly_empty_expected_base(tmp_path, monkeypatch):
+    data_dir = tmp_path / "site" / "data"
+    data_dir.mkdir(parents=True)
+    (data_dir / "market.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(data_release, "_fetch_branch", lambda _branch: True)
+    monkeypatch.setattr(
+        data_release, "_run",
+        lambda *args, **_kwargs: data_release.subprocess.CompletedProcess(args, 0, "a" * 40 + "\n", ""),
+    )
+    with pytest.raises(DataReleaseError, match="expected_base_sha_invalid"):
+        publish(root=tmp_path, includes=["site/data"], expected_base_sha="")
 
 
 def test_publish_force_adds_ignored_release_artifacts(tmp_path, monkeypatch):

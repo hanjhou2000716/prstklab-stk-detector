@@ -19,6 +19,7 @@ from src.schedule_contract import (
 
 HANDOFF_EVENT = "scheduled-brief-handoff"
 HANDOFF_WORKFLOW_PATH = ".github/workflows/scheduled-brief.yml"
+HANDOFF_WORKFLOW_ID = 318853044
 _UTC = UTC
 
 
@@ -98,6 +99,9 @@ def build_handoff_payload(
             "force": False,
             "trigger_kind": "scheduled-handoff",
             "handoff_parent_run_id": parent_run_id,
+            # A parent is ignored by the child queue only after the parent
+            # has observed a stale main revision and stopped before writing.
+            "handoff_parent_queue_status": "superseded",
             "handoff_parent_sha": str(parent_sha).lower(),
             "handoff_target_sha": str(target_sha).lower(),
             "handoff_id": handoff_id,
@@ -119,8 +123,8 @@ def _fetch_run_list(*, api_url: str, repository: str, token: str) -> list[dict[s
 def _find_child(rows: list[dict[str, object]], handoff_id: str) -> dict[str, object] | None:
     for row in rows:
         if (
-            row.get("name") != "Scheduled market brief"
-            or row.get("path") != HANDOFF_WORKFLOW_PATH
+            row.get("path") != HANDOFF_WORKFLOW_PATH
+            or row.get("workflow_id") != HANDOFF_WORKFLOW_ID
             or row.get("event") != "repository_dispatch"
         ):
             continue
@@ -216,6 +220,7 @@ def validate_handoff_parent(
         or client_payload.get("force") is not False
         or str(client_payload.get("time_zone") or "") != "America/New_York"
         or str(client_payload.get("schedule_contract_version") or "") != EXPLICIT_TIMESTAMP_SCHEDULE_CONTRACT_VERSION
+        or str(client_payload.get("handoff_parent_queue_status") or "") != "superseded"
     ):
         return {"valid": False, "reason": "handoff_contract_invalid"}
     try:
@@ -247,7 +252,10 @@ def validate_handoff_parent(
     parent_repo_name = str(parent_repo.get("full_name") or "") if isinstance(parent_repo, Mapping) else ""
     if parent_repo_name.casefold() != repository.casefold():
         return {"valid": False, "reason": "handoff_parent_repository_mismatch"}
-    if run.get("path") != HANDOFF_WORKFLOW_PATH or run.get("name") != "Scheduled market brief":
+    if (
+        run.get("path") != HANDOFF_WORKFLOW_PATH
+        or run.get("workflow_id") != HANDOFF_WORKFLOW_ID
+    ):
         return {"valid": False, "reason": "handoff_parent_workflow_mismatch"}
     if run.get("status") != "in_progress":
         return {"valid": False, "reason": "handoff_parent_not_active"}
@@ -267,6 +275,7 @@ def validate_handoff_parent(
         "valid": True,
         "reason": "handoff_parent_verified",
         "parent_run_id": parent_id,
+        "parent_queue_status": "superseded",
         "parent_sha": parent_sha,
         "target_sha": target_sha,
         "scheduled_for_at": scheduled.isoformat(),

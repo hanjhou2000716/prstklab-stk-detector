@@ -13,7 +13,12 @@ class Response:
         return False
 
     def read(self):
-        return json.dumps({"created_at": "2026-09-26T00:23:53Z"}).encode()
+        return json.dumps({
+            "id": 12345,
+            "created_at": "2026-09-26T00:23:53Z",
+            "run_started_at": "2026-09-26T00:24:01Z",
+            "run_attempt": 2,
+        }).encode()
 
 
 def test_fetch_created_at_returns_timezone_aware_run_creation_time():
@@ -32,6 +37,28 @@ def test_fetch_created_at_returns_timezone_aware_run_creation_time():
         "auth": "Bearer secret-token",
         "timeout": 10,
     }
+
+
+def test_run_context_captures_attempt_start_without_changing_slot_anchor():
+    from src.workflow_run_context import fetch_run_context
+
+    result = fetch_run_context("owner/repo", "12345", "secret-token", opener=lambda *_args, **_kwargs: Response())
+    assert result == {
+        "created_at": "2026-09-26T00:23:53+00:00",
+        "run_started_at": "2026-09-26T00:24:01+00:00",
+        "run_attempt": "2",
+    }
+
+
+def test_run_context_rejects_wrong_api_run_identity():
+    from src.workflow_run_context import fetch_run_context
+
+    class WrongRun(Response):
+        def read(self):
+            return json.dumps({"id": 999, "created_at": "2026-09-26T00:23:53Z"}).encode()
+
+    with pytest.raises(RuntimeError, match="workflow_run_identity_mismatch"):
+        fetch_run_context("owner/repo", "12345", "secret-token", opener=lambda *_args, **_kwargs: WrongRun())
 
 
 @pytest.mark.parametrize(("repo", "run_id", "token"), [

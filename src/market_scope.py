@@ -8,6 +8,7 @@ from typing import Any
 SCOPE_VERSION = "market-projection-v1"
 
 SLOT_SCOPE = {
+    "pre_open": "taiwan",
     "post_close": "taiwan",
     "us_premarket": "us",
 }

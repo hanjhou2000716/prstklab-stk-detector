@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from src.writer_queue import WRITER_WORKFLOW_IDENTITIES
+
 
 def test_duplicate_brief_still_deploys_the_latest_dashboard_files():
     workflow = (
@@ -137,9 +139,7 @@ def test_pages_only_publisher_uses_the_shared_single_writer_queue():
     ).read_text(encoding="utf-8")
     assert "group: main-data-writer-${{ github.run_id }}" in workflow
     assert "python -m src.writer_queue --settle-seconds 0 --poll-seconds 10" in workflow
-    assert '"Deploy dashboard to GitHub Pages"' in (
-        Path(__file__).resolve().parents[1] / "src" / "writer_queue.py"
-    ).read_text(encoding="utf-8")
+    assert WRITER_WORKFLOW_IDENTITIES[".github/workflows/deploy-pages.yml"] == 318841880
     assert "Derive Pages build identity from code and data release" in workflow
     assert "--mode derive-version" in workflow
     assert "steps.pages_version.outputs.pages_build_version" in workflow

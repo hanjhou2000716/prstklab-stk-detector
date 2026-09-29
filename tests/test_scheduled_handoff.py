@@ -61,7 +61,8 @@ def test_parent_validation_binds_repository_workflow_slot_and_current_revision()
     parent = {
         "id": 1234,
         "path": ".github/workflows/scheduled-brief.yml",
-        "name": "Scheduled market brief",
+        "workflow_id": 318853044,
+        "name": "Scheduled market brief / us_premarket",
         "head_branch": "main",
         "head_sha": "a" * 40,
         "event": "schedule",
@@ -87,7 +88,7 @@ def test_replayed_handoff_from_completed_parent_is_rejected():
     client_payload = _payload()["client_payload"]
     parent = {
         "id": 1234, "path": ".github/workflows/scheduled-brief.yml",
-        "name": "Scheduled market brief", "head_branch": "main", "head_sha": "a" * 40,
+        "workflow_id": 318853044, "name": "Scheduled market brief / us_premarket", "head_branch": "main", "head_sha": "a" * 40,
         "event": "schedule", "status": "completed", "created_at": "2026-09-25T13:01:00Z",
         "repository": {"full_name": "owner/repo"},
     }
@@ -109,7 +110,8 @@ def test_unknown_dispatch_result_is_reconciled_without_a_second_post():
         if method == "POST":
             raise HandoffError("handoff_request_outcome_unknown_TimeoutError")
         return 200, {"workflow_runs": [{
-            "name": "Scheduled market brief", "path": ".github/workflows/scheduled-brief.yml",
+            "name": "Scheduled market brief / us_premarket", "path": ".github/workflows/scheduled-brief.yml",
+            "workflow_id": 318853044,
             "head_branch": "main", "event": "repository_dispatch",
             "display_title": f"Scheduled market brief / {handoff_id}", "status": "completed",
             "conclusion": "success", "id": 5678, "head_sha": "b" * 40,

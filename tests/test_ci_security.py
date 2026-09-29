@@ -28,8 +28,8 @@ def test_quality_workflow_uses_locked_environment_and_coverage():
     workflow = (root / ".github" / "workflows" / "quality.yml").read_text(encoding="utf-8")
     preflight = (root / "scripts" / "quality_preflight.py").read_text(encoding="utf-8")
     assert "uv sync --locked --all-groups" in workflow
-    assert "scripts/quality_preflight.py --static" in workflow
-    assert "scripts/quality_preflight.py --tests" in workflow
+    assert "scripts/quality_preflight.py --full" in workflow
+    assert "integration_commands()" in preflight
     assert "--cov=src" in preflight
     assert "src/alert_contract.py" in preflight
     assert "coverage\", \"erase" in preflight

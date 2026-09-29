@@ -2,6 +2,7 @@ from datetime import datetime
 
 from src.briefing_cards import _contagion_inputs, _regime_factors, build_briefing_snapshot
 from src.schedule_contract import live_market_phase_at
+from src.scheduled_delivery import _briefing_delivery_event, _briefing_evidence_ready
 
 
 def test_live_market_phase_uses_current_taipei_phase_for_pages_refreshes():
@@ -32,6 +33,38 @@ def test_live_market_briefing_does_not_fall_back_to_morning_label():
     assert briefing["slot"] == "post_close"
     assert briefing["title"] == "台股盤後儀表板"
     assert "晨報" not in briefing["public_short_message"]
+
+
+def test_sep_28_us_premarket_snapshot_keeps_partial_cash_quotes_and_valid_routine_summary():
+    rows = [
+        {"ticker": "S&P 500", "price": 7743.41, "change_percent": 0.51, "quote_date": "2026-09-25", "freshness": "recent_close"},
+        {"ticker": "NASDAQ", "price": 27068.72, "change_percent": 0.48, "quote_date": "2026-09-25", "freshness": "recent_close"},
+        {"ticker": "DJIA", "price": 51828.62, "change_percent": 0.93, "quote_date": "2026-09-25", "freshness": "recent_close"},
+        {"ticker": "SOX", "price": 12668.93, "change_percent": 1.41, "quote_date": "2026-09-25", "freshness": "recent_close"},
+        {"ticker": "ES", "price": 7777.0, "quote_date": "2026-09-28", "freshness": "recent_close"},
+        {"ticker": "NQ", "price": 30725.0, "quote_date": "2026-09-28", "freshness": "recent_close"},
+        {"ticker": "YM", "price": 51902.0, "quote_date": "2026-09-28", "freshness": "recent_close"},
+    ]
+    briefing = build_briefing_snapshot({
+        "generated_at": "2026-09-28T13:04:17+00:00",
+        "indices": rows,
+        "quotes": [],
+        "macro_quotes": [],
+        "events": {"items": []},
+    }, "us_premarket")
+
+    assert briefing["market_scope_key"] == "us"
+    assert briefing["data_gap_status"] == "partial"
+    assert briefing["digest_status"] == "ready"
+    assert briefing["public_short_message"].startswith("📊 美股盤前｜")
+    assert briefing["public_short_message"] != "🟡 美股盤前"
+    assert "最近收盤標普500+0.51%" in briefing["public_short_message"]
+    assert "盤前期貨未取得" in briefing["public_short_message"]
+    assert _briefing_evidence_ready(briefing) is True
+    event = _briefing_delivery_event({"briefing": briefing}, "us_premarket")
+    assert event is not None
+    assert event["source_key"] == "scheduled_brief"
+    assert event["public_short_message"] == briefing["public_short_message"]
 
 
 def test_regime_factors_omit_stale_quotes_and_expose_partial_evidence():
