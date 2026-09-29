@@ -2,21 +2,21 @@
   "schema": 2,
   "markets": {
     "taiwan": {
-      "fetched_at": "2026-09-29T19:57:51.188047+00:00",
+      "fetched_at": "2026-09-29T20:03:35.618578+00:00",
       "stories": [
         {
-          "title": "2. 美軍海上封鎖後 伊朗至中國鐵路貨運量增加十倍",
-          "url": "https://news.cnyes.com/news/id/6618136",
-          "source": "鉅亨網｜市場焦點",
-          "relevance": "market",
+          "title": "4. 全球資金『棄債轉股』！台股創新高後，相對低位階的是這產業！？",
+          "url": "https://news.cnyes.com/news/id/6612957",
+          "source": "鉅亨網｜持股關聯",
+          "relevance": "holding",
           "provider": "anue",
           "market_classification": {
-            "market_scope": "global",
-            "taiwan_matches": [],
-            "us_matches": [],
-            "global_matches": [
-              "伊朗"
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
             ],
+            "us_matches": [],
+            "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
@@ -24,18 +24,136 @@
               "source_market_hint": null
             }
           },
-          "market_scope": "global",
-          "taiwan_matches": [],
-          "us_matches": [],
-          "global_matches": [
-            "伊朗"
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
           ],
+          "us_matches": [],
+          "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 1,
             "source_market_hint": null
           }
+        },
+        {
+          "title": "Fed升息還沒完！三把手估年底可能再一次 但強調不用急",
+          "url": "https://tw.stock.yahoo.com/news/fed%E5%8D%87%E6%81%AF%E9%82%84%E6%B2%92%E5%AE%8C-%E4%B8%89%E6%8A%8A%E6%89%8B%E4%BC%B0%E5%B9%B4%E5%BA%95%E5%8F%AF%E8%83%BD%E5%86%8D-%E6%AC%A1-%E4%BD%86%E5%BC%B7%E8%AA%BF%E4%B8%8D%E7%94%A8%E6%80%A5-191002923.html",
+          "source": "Yahoo Taiwan Finance",
+          "relevance": "market",
+          "published_at": "2026-09-29T19:10:02+00:00",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "provider": "yahoo_finance",
+          "market_classification": {
+            "market_scope": "cross_market",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [
+              "fed"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "cross_market"
+            }
+          },
+          "market_scope": "cross_market",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [
+            "fed"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "cross_market"
+          },
+          "story_id": "news-4e2693dc7d978cee7b02",
+          "provider_name": "Yahoo Taiwan Finance",
+          "raw_title": "Fed升息還沒完！三把手估年底可能再一次 但強調不用急",
+          "normalized_fact": "Fed升息還沒完，三把手估年底可能再一次 但強調不用急。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/fed%E5%8D%87%E6%81%AF%E9%82%84%E6%B2%92%E5%AE%8C-%E4%B8%89%E6%8A%8A%E6%89%8B%E4%BC%B0%E5%B9%B4%E5%BA%95%E5%8F%AF%E8%83%BD%E5%86%8D-%E6%AC%A1-%E4%BD%86%E5%BC%B7%E8%AA%BF%E4%B8%8D%E7%94%A8%E6%80%A5-191002923.html",
+          "market": "cross_market",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "升息"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "升息"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "升息",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market"
+          ],
+          "freshness": "published",
+          "dedupe_key": "fed升息還沒完三把手估年底可能再一次但強調不用急",
+          "event_cluster_key": "event-9971be511ba341f0e323",
+          "published_time_bucket": "2026-09-29T19:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "升息"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "升息",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "title": "大摩首席美股策略師：美股若回檔10%　將引爆年底最強狂飆走勢",
@@ -376,42 +494,6 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 2,
-            "source_market_hint": null
-          }
-        },
-        {
-          "title": "Putnam短期債券基金Q2報酬率0.72% 信用利差緊縮影響表現",
-          "url": "https://tw.stock.yahoo.com/news/putnam%E7%9F%AD%E6%9C%9F%E5%82%B5%E5%88%B8%E5%9F%BA%E9%87%91q2%E5%A0%B1%E9%85%AC%E7%8E%870-72-%E4%BF%A1%E7%94%A8%E5%88%A9%E5%B7%AE%E7%B7%8A%E7%B8%AE%E5%BD%B1%E9%9F%BF%E8%A1%A8%E7%8F%BE-170424719.html",
-          "source": "Yahoo Taiwan Finance",
-          "relevance": "market",
-          "published_at": "2026-09-29T17:04:24+00:00",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "provider": "yahoo_finance",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": null
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
             "source_market_hint": null
           }
         },
@@ -2295,6 +2377,94 @@
         }
       ],
       "eligible_inventory": [
+        {
+          "story_id": "news-4e2693dc7d978cee7b02",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Fed升息還沒完！三把手估年底可能再一次 但強調不用急",
+          "raw_title": "Fed升息還沒完！三把手估年底可能再一次 但強調不用急",
+          "normalized_fact": "Fed升息還沒完，三把手估年底可能再一次 但強調不用急。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/fed%E5%8D%87%E6%81%AF%E9%82%84%E6%B2%92%E5%AE%8C-%E4%B8%89%E6%8A%8A%E6%89%8B%E4%BC%B0%E5%B9%B4%E5%BA%95%E5%8F%AF%E8%83%BD%E5%86%8D-%E6%AC%A1-%E4%BD%86%E5%BC%B7%E8%AA%BF%E4%B8%8D%E7%94%A8%E6%80%A5-191002923.html",
+          "url": "https://tw.stock.yahoo.com/news/fed%E5%8D%87%E6%81%AF%E9%82%84%E6%B2%92%E5%AE%8C-%E4%B8%89%E6%8A%8A%E6%89%8B%E4%BC%B0%E5%B9%B4%E5%BA%95%E5%8F%AF%E8%83%BD%E5%86%8D-%E6%AC%A1-%E4%BD%86%E5%BC%B7%E8%AA%BF%E4%B8%8D%E7%94%A8%E6%80%A5-191002923.html",
+          "published_at": "2026-09-29T19:10:02+00:00",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "升息"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "升息"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "升息",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "fed升息還沒完三把手估年底可能再一次但強調不用急",
+          "event_cluster_key": "event-9971be511ba341f0e323",
+          "published_time_bucket": "2026-09-29T19:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "升息"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "升息",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-09-29T20:03:35.618578+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
         {
           "story_id": "news-8af0a2c959fbc759f70a",
           "provider": "google_news",
@@ -6617,111 +6787,272 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        },
-        {
-          "story_id": "news-e3bc479ed5f900899b4d",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "半導體先進製程迎最新擴張期！資本支出飆640億美元，台積電供應鏈受惠-財經焦點情報站 - CMoney投資網誌",
-          "raw_title": "半導體先進製程迎最新擴張期！資本支出飆640億美元，台積電供應鏈受惠-財經焦點情報站 - CMoney投資網誌",
-          "normalized_fact": "半導體先進製程迎最新擴張期，資本支出飆640億美元，台積電供應鏈受惠。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": true,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNQlg1S2lRb2Ywa1VTMVdEYnAzZ21uejJjLTNIUGVPSFlfRVlfcjdlTjIxaUx2cGUzcVNlSFlyYkJrT3RpQm1iU3BNenhySFZBTDNTVngwdkwydUxMREdlMnlsUVpBSlM3Y2dVNndsLTRZaFdmT3pEcFpqZkhCWmppLVBR",
-          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNQlg1S2lRb2Ywa1VTMVdEYnAzZ21uejJjLTNIUGVPSFlfRVlfcjdlTjIxaUx2cGUzcVNlSFlyYkJrT3RpQm1iU3BNenhySFZBTDNTVngwdkwydUxMREdlMnlsUVpBSlM3Y2dVNndsLTRZaFdmT3pEcFpqZkhCWmppLVBR",
-          "published_at": "2026-09-27T18:45:05+00:00",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "台積電",
-              "資本支出"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "台積電",
-              "資本支出"
-            ],
-            "matched_subject": "台積電",
-            "matched_action": "資本支出",
-            "matched_market_object": "台積電",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM"
-          ],
-          "freshness": "published",
-          "dedupe_key": "半導體先進製程迎最新擴張期資本支出飆640億美元台積電供應鏈受惠",
-          "event_cluster_key": "event-e6fc6801d203f867f988",
-          "published_time_bucket": "2026-09-27T18:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "台積電",
-            "資本支出"
-          ],
-          "matched_subject": "台積電",
-          "matched_action": "資本支出",
-          "matched_market_object": "台積電",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 3,
-          "inventory_saved_at": "2026-09-27T22:04:29.482560+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 125,
-          "supporting_sources": [
-            {
-              "provider": "google_news",
-              "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE05bVlUQWx1aWwwcV9lNHFNM2U1UUdRRlRXd3ZxYzRtVFphWnYzaWh5V3hfSU9GLW10VV9iWkpETzZIdHV0a19RWHpSRWJxSm5a0gFWQVVfeXFMTVBzZU85Z3EtN1dNZmxOTjdXUG9OWVdxMThsdU5HWGRNalZtcTA3UFM1a3dMVlVWSmM1WVNXT3dGLW91MnRSd2dLclVoanJoYkFiVzU5SXc"
-            }
-          ]
         }
       ],
-      "inventory_saved_at": "2026-09-29T19:57:51.188047+00:00"
+      "inventory_saved_at": "2026-09-29T20:03:35.618578+00:00"
     },
     "us": {
-      "fetched_at": "2026-09-29T19:57:51.188047+00:00",
+      "fetched_at": "2026-09-29T20:03:35.618578+00:00",
       "stories": [
+        {
+          "title": "8-K - Inland Real Estate Income Trust, Inc. (0001528985) (Filer)",
+          "url": "https://www.sec.gov/Archives/edgar/data/1528985/000119312526407317/0001193125-26-407317-index.htm",
+          "published_at": "2026-09-29T20:02:55+00:00",
+          "source": "SEC",
+          "provider": "sec",
+          "source_tier": "official",
+          "authority_tier": "official",
+          "market": "us",
+          "relevance": "official",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "sec"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "sec"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "8-K - ACUITY INC. (DE) (0001144215) (Filer)",
+          "url": "https://www.sec.gov/Archives/edgar/data/1144215/000110465926111917/0001104659-26-111917-index.htm",
+          "published_at": "2026-09-29T20:01:54+00:00",
+          "source": "SEC",
+          "provider": "sec",
+          "source_tier": "official",
+          "authority_tier": "official",
+          "market": "us",
+          "relevance": "official",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "sec"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "sec"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "8-K - Sidus Space Inc. (0001879726) (Filer)",
+          "url": "https://www.sec.gov/Archives/edgar/data/1879726/000149315226044862/0001493152-26-044862-index.htm",
+          "published_at": "2026-09-29T20:01:42+00:00",
+          "source": "SEC",
+          "provider": "sec",
+          "source_tier": "official",
+          "authority_tier": "official",
+          "market": "us",
+          "relevance": "official",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "sec"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "sec"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "8-K - Workday, Inc. (0001327811) (Filer)",
+          "url": "https://www.sec.gov/Archives/edgar/data/1327811/000132781126000048/0001327811-26-000048-index.htm",
+          "published_at": "2026-09-29T20:01:40+00:00",
+          "source": "SEC",
+          "provider": "sec",
+          "source_tier": "official",
+          "authority_tier": "official",
+          "market": "us",
+          "relevance": "official",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "sec"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "sec"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "8-K - Maison Solutions Inc. (0001892292) (Filer)",
+          "url": "https://www.sec.gov/Archives/edgar/data/1892292/000121390026104637/0001213900-26-104637-index.htm",
+          "published_at": "2026-09-29T20:01:13+00:00",
+          "source": "SEC",
+          "provider": "sec",
+          "source_tier": "official",
+          "authority_tier": "official",
+          "market": "us",
+          "relevance": "official",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "sec"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "sec"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "8-K - Lightwave Logic, Inc. (0001325964) (Filer)",
+          "url": "https://www.sec.gov/Archives/edgar/data/1325964/000107997326001303/0001079973-26-001303-index.htm",
+          "published_at": "2026-09-29T20:01:13+00:00",
+          "source": "SEC",
+          "provider": "sec",
+          "source_tier": "official",
+          "authority_tier": "official",
+          "market": "us",
+          "relevance": "official",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "sec"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "sec"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "8-K - SOCIETY PASS INCORPORATED. (0001817511) (Filer)",
+          "url": "https://www.sec.gov/Archives/edgar/data/1817511/000149315226044860/0001493152-26-044860-index.htm",
+          "published_at": "2026-09-29T20:00:40+00:00",
+          "source": "SEC",
+          "provider": "sec",
+          "source_tier": "official",
+          "authority_tier": "official",
+          "market": "us",
+          "relevance": "official",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "sec"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "sec"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "us"
+          }
+        },
         {
           "title": "8-K - IPC Alternative Real Estate Income Trust, Inc. (0001959961) (Filer)",
           "url": "https://www.sec.gov/Archives/edgar/data/1959961/000119312526407222/0001193125-26-407222-index.htm",
@@ -6838,271 +7169,41 @@
           }
         },
         {
-          "title": "8-K - LAGO Evergreen Credit (0002043759) (Filer)",
-          "url": "https://www.sec.gov/Archives/edgar/data/2043759/000119312526406949/0001193125-26-406949-index.htm",
-          "published_at": "2026-09-29T18:41:18+00:00",
-          "source": "SEC",
-          "provider": "sec",
-          "source_tier": "official",
-          "authority_tier": "official",
-          "market": "us",
-          "relevance": "official",
+          "title": "2. 美軍海上封鎖後 伊朗至中國鐵路貨運量增加十倍",
+          "url": "https://news.cnyes.com/news/id/6618136",
+          "source": "鉅亨網｜市場焦點",
+          "relevance": "market",
+          "provider": "anue",
           "market_classification": {
-            "market_scope": "us",
+            "market_scope": "global",
             "taiwan_matches": [],
-            "us_matches": [
-              "sec"
+            "us_matches": [],
+            "global_matches": [
+              "伊朗"
             ],
-            "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
               "matched_term_count": 1,
-              "source_market_hint": "us"
+              "source_market_hint": null
             }
           },
-          "market_scope": "us",
+          "market_scope": "global",
           "taiwan_matches": [],
-          "us_matches": [
-            "sec"
+          "us_matches": [],
+          "global_matches": [
+            "伊朗"
           ],
-          "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 1,
-            "source_market_hint": "us"
+            "source_market_hint": null
           }
         },
         {
-          "title": "8-K - Reynaldo's Mexican Food Company, Inc. (0001283789) (Filer)",
-          "url": "https://www.sec.gov/Archives/edgar/data/1283789/000168316826007478/0001683168-26-007478-index.htm",
-          "published_at": "2026-09-29T18:36:37+00:00",
-          "source": "SEC",
-          "provider": "sec",
-          "source_tier": "official",
-          "authority_tier": "official",
-          "market": "us",
-          "relevance": "official",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "sec"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "sec"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "8-K - HELIOS TECHNOLOGIES, INC. (0001024795) (Filer)",
-          "url": "https://www.sec.gov/Archives/edgar/data/1024795/000119312526406905/0001193125-26-406905-index.htm",
-          "published_at": "2026-09-29T18:29:48+00:00",
-          "source": "SEC",
-          "provider": "sec",
-          "source_tier": "official",
-          "authority_tier": "official",
-          "market": "us",
-          "relevance": "official",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "sec"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "sec"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "8-K - Federal Home Loan Bank of New York (0001329842) (Filer)",
-          "url": "https://www.sec.gov/Archives/edgar/data/1329842/000165495426008634/0001654954-26-008634-index.htm",
-          "published_at": "2026-09-29T18:09:50+00:00",
-          "source": "SEC",
-          "provider": "sec",
-          "source_tier": "official",
-          "authority_tier": "official",
-          "market": "us",
-          "relevance": "official",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "sec",
-              "fed"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "sec",
-            "fed"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "8-K - Federal Home Loan Bank of San Francisco (0001316944) (Filer)",
-          "url": "https://www.sec.gov/Archives/edgar/data/1316944/000131694426000160/0001316944-26-000160-index.htm",
-          "published_at": "2026-09-29T18:08:52+00:00",
-          "source": "SEC",
-          "provider": "sec",
-          "source_tier": "official",
-          "authority_tier": "official",
-          "market": "us",
-          "relevance": "official",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "sec",
-              "fed"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "sec",
-            "fed"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "8-K - Monroe Capital Asset-Backed Finance Company, LP (0002125316) (Filer)",
-          "url": "https://www.sec.gov/Archives/edgar/data/2125316/000110465926111819/0001104659-26-111819-index.htm",
-          "published_at": "2026-09-29T18:04:38+00:00",
-          "source": "SEC",
-          "provider": "sec",
-          "source_tier": "official",
-          "authority_tier": "official",
-          "market": "us",
-          "relevance": "official",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "sec"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "sec"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "8-K - Luvu Brands, Inc. (0001374567) (Filer)",
-          "url": "https://www.sec.gov/Archives/edgar/data/1374567/000165495426008628/0001654954-26-008628-index.htm",
-          "published_at": "2026-09-29T17:53:29+00:00",
-          "source": "SEC",
-          "provider": "sec",
-          "source_tier": "official",
-          "authority_tier": "official",
-          "market": "us",
-          "relevance": "official",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "sec"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "sec"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "1. 〈美股盤後〉油價連五降 費半六連升 那指再寫歷史新高紀錄",
-          "url": "https://news.cnyes.com/news/id/6613562",
+          "title": "3. 〈美股早盤〉油價、美債殖利率終於降溫！標普、那指開高喘口氣",
+          "url": "https://news.cnyes.com/news/id/6618005",
           "source": "鉅亨網｜市場焦點",
           "relevance": "market",
           "provider": "anue",
@@ -7110,28 +7211,62 @@
             "market_scope": "us",
             "taiwan_matches": [],
             "us_matches": [
-              "美股",
-              "費半"
+              "美股"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 2,
+              "matched_term_count": 1,
               "source_market_hint": null
             }
           },
           "market_scope": "us",
           "taiwan_matches": [],
           "us_matches": [
-            "美股",
-            "費半"
+            "美股"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 2,
+            "matched_term_count": 1,
+            "source_market_hint": null
+          }
+        },
+        {
+          "title": "What we know about Trump's meeting with Alex Karp, Jensen Huang, & other AI leaders",
+          "url": "https://finance.yahoo.com/video/know-trumps-meeting-alex-karp-194043343.html?.tsrc=rss",
+          "source": "Yahoo Finance",
+          "relevance": "market",
+          "published_at": "2026-09-29T19:40:43+00:00",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "provider": "yahoo_finance",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "trump"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": null
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "trump"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
             "source_market_hint": null
           }
         },
@@ -8087,120 +8222,38 @@
           }
         },
         {
-          "title": "Fed's Williams sees no urgency for next Fed rate hike - Reuters",
-          "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxNQW15c0ZrS2lrMUlHZDZjZlpxRG5GazRlendBenpXeWZSR3NCaXBFLXA5LVBlbWNEeDNsWnRnS25CYWwxc3AzRDhrTjhUZTNZcl8xN2VDT3JtZHk1eVpHUzFaaXpVVy1HbUk1Y3hKOEtoTmxpNTVwWkJHZXVvTWl1cm5QdWVpWXhFQkxBdmt4enRJRkF3NUlxTQ",
+          "title": "Dollar gains as Treasury yields top 5%, Aussie slides after RBA hike - Reuters",
+          "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxNcm1xMjE3YTBSdTBJRVI5blBWcFFOS1ZSQWZlcVhMZU1iWU1kZTkyaElQUXhyRzZ4My1UcmdUVW1MZldrdjMzblF5eEh5amIwb2tlWmozYjloa29GaEhoT2dMbFFteHRwLV9pem9OYkowV3RUaGhnTUhDUjcwLXozSG1rT0dOMmdsdERFUlVwM1p4TjBZQlFZZWx2aTc4VC03QURrOWM1c1IwVXc?oc=5",
           "source": "Google News｜美股線索",
           "relevance": "market",
-          "published_at": "2026-09-29T18:08:40+00:00",
+          "published_at": "2026-09-29T01:57:00+00:00",
           "provider": "google_news",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
             "us_matches": [
-              "美股",
-              "fed"
+              "美股"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "us"
+              "matched_term_count": 1,
+              "source_market_hint": null
             }
           },
           "market_scope": "us",
           "taiwan_matches": [],
           "us_matches": [
-            "美股",
-            "fed"
+            "美股"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "us"
-          },
-          "story_id": "news-f73d3e62d9677f64f7aa",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "raw_title": "Fed's Williams sees no urgency for next Fed rate hike - Reuters",
-          "normalized_fact": "Fed's Williams sees no urgency for next Fed rate hike。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": true,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxNQW15c0ZrS2lrMUlHZDZjZlpxRG5GazRlendBenpXeWZSR3NCaXBFLXA5LVBlbWNEeDNsWnRnS25CYWwxc3AzRDhrTjhUZTNZcl8xN2VDT3JtZHk1eVpHUzFaaXpVVy1HbUk1Y3hKOEtoTmxpNTVwWkJHZXVvTWl1cm5QdWVpWXhFQkxBdmt4enRJRkF3NUlxTQ",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "rate"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "rate"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "rate",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "fedswilliamsseesnourgencyfornextfedratehike",
-          "event_cluster_key": "event-428391841ffcfc9ffca8",
-          "published_time_bucket": "2026-09-29T18:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "rate"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "rate",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
+            "matched_term_count": 1,
+            "source_market_hint": null
+          }
         },
         {
           "title": "Equities dip as bond yields hold near multi-decade highs - The Mighty 790 KFGO",
@@ -8455,11 +8508,11 @@
           }
         },
         {
-          "title": "Dollar gains as Treasury yields top 5%, Aussie slides after RBA hike - Reuters",
-          "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxNcm1xMjE3YTBSdTBJRVI5blBWcFFOS1ZSQWZlcVhMZU1iWU1kZTkyaElQUXhyRzZ4My1UcmdUVW1MZldrdjMzblF5eEh5amIwb2tlWmozYjloa29GaEhoT2dMbFFteHRwLV9pem9OYkowV3RUaGhnTUhDUjcwLXozSG1rT0dOMmdsdERFUlVwM1p4TjBZQlFZZWx2aTc4VC03QURrOWM1c1IwVXc?oc=5",
+          "title": "Dollar Rises to 2-Month High on Growing Prospect of October U.S. Rate-Rise - WSJ",
+          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNOVFNMTl0M210ZWZXN2xwNEVaMTJXeGNKUTN2YlRqN3ZFLUtQRVlULV9IZEZ6eFNXRzZCNGlKcEJQN3dNWnVuRnZuNkxHdGdNODdtcVZlMFF4Z0hzbDRPYUJJdFQ0RjhMMlkwX21ZQ3RHY1gydFlCRlFNY25Qalpqc3VIZXdNMEJtbFpadVZpbXltbUVLYlJVYjNsZ0swM3ktaWZIcmc0UkZGMGtlTzRRZVNmSGpZYUktcUNEUkN1emkzanZ5",
           "source": "Google News｜美股線索",
           "relevance": "market",
-          "published_at": "2026-09-29T01:57:00+00:00",
+          "published_at": "2026-09-29T11:47:00+00:00",
           "provider": "google_news",
           "market_classification": {
             "market_scope": "us",
@@ -8472,7 +8525,7 @@
             "routing_evidence": {
               "title_summary_scanned": true,
               "matched_term_count": 1,
-              "source_market_hint": null
+              "source_market_hint": "us"
             }
           },
           "market_scope": "us",
@@ -8485,8 +8538,88 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 1,
-            "source_market_hint": null
-          }
+            "source_market_hint": "us"
+          },
+          "story_id": "news-0ddc9b2f68fa2de729ee",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "raw_title": "Dollar Rises to 2-Month High on Growing Prospect of October U.S. Rate-Rise - WSJ",
+          "normalized_fact": "Dollar Rises to 2-Month High on Growing Prospect of October U.S. Rate-Rise - WSJ。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNOVFNMTl0M210ZWZXN2xwNEVaMTJXeGNKUTN2YlRqN3ZFLUtQRVlULV9IZEZ6eFNXRzZCNGlKcEJQN3dNWnVuRnZuNkxHdGdNODdtcVZlMFF4Z0hzbDRPYUJJdFQ0RjhMMlkwX21ZQ3RHY1gydFlCRlFNY25Qalpqc3VIZXdNMEJtbFpadVZpbXltbUVLYlJVYjNsZ0swM3ktaWZIcmc0UkZGMGtlTzRRZVNmSGpZYUktcUNEUkN1emkzanZ5",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "currency",
+            "reason": "currency_subject_action",
+            "matched_terms": [
+              "dollar",
+              "rises"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "dollar",
+              "rises"
+            ],
+            "matched_subject": "dollar",
+            "matched_action": "rises",
+            "matched_market_object": "dollar",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "dollarrisesto2monthhighongrowingprospectofoctoberusraterisewsj",
+          "event_cluster_key": "event-a6923b1c7948fa28bd4a",
+          "published_time_bucket": "2026-09-29T11:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "dollar",
+            "rises"
+          ],
+          "matched_subject": "dollar",
+          "matched_action": "rises",
+          "matched_market_object": "dollar",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
         },
         {
           "title": "COMMENTARY: What's the latest with semiconductor export controls? - Reuters",
@@ -8809,11 +8942,11 @@
           }
         },
         {
-          "title": "Senate Democrats Hold News Conference on AI Export Control Legislation - C-SPAN",
-          "url": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxQbVRwdXN2eVBvWGF5MVFFVG96b0J4NzNmYVdvMTl0RWhxN1VSVThadlpSRnZQVzZVc0RrN0ZLbTYxbHg2TzRkdDNxbVkzVFBTU051TFFPQjBNZlh4TlVnZUlLQW5tSEFjX25ZNVNXdG1GLTMwM0I3V0V0SzB5NDNsYjZRTXZ3eWtpenBGLXRWRTdmRDh4WmFXV0RjTW94UXRld3NXbnlEYmdUYkpnYjNlVXNRYUxZVnJNeTlmN05kekdpdw?oc=5",
+          "title": "Commerce Department Extends Export Controls to Advanced AI Models; Authorizes Release to Specific Trusted Partners - Mayer Brown",
+          "url": "https://news.google.com/rss/articles/CBMigwJBVV95cUxOWTQzZjJ5VGNUaGtJY3dTaTVwb0dWN01yWFY2RGtZX0gwZEpFVHM5NTZZQWRRZ04yZk1Hc2tCcFplcTg2VkxPZzVyUDhBeElfM21Id25YX3NpSXpRSmpLRVlkdXdkRWUyU1NMVXRydklfYmI4eWFrS1BqdnpNTlFmSnZ0RkZZeG9zYXRBRmdDYWIxOVA3R3E2aENra054OHl6WjhkTDVuWUY3eDdtc0J4WmVSR0lKbXNXaUNlaF9obXV5ajUwU0RNR3pLdjhlbGJYdllmNnZwZjNISUlvZFVUUkRGNTNoRWEyODgtVUQ3WXVKeDRUbHNYMEJXNnNQQWFyVGZN",
           "source": "Google News｜美股線索",
           "relevance": "market",
-          "published_at": "2026-09-23T16:07:03+00:00",
+          "published_at": "2026-06-30T07:00:00+00:00",
           "provider": "google_news",
           "market_classification": {
             "market_scope": "us",
@@ -8826,7 +8959,7 @@
             "routing_evidence": {
               "title_summary_scanned": true,
               "matched_term_count": 1,
-              "source_market_hint": null
+              "source_market_hint": "us"
             }
           },
           "market_scope": "us",
@@ -8839,8 +8972,88 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 1,
-            "source_market_hint": null
-          }
+            "source_market_hint": "us"
+          },
+          "story_id": "news-83f740cdbebdb7fa2b58",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "raw_title": "Commerce Department Extends Export Controls to Advanced AI Models; Authorizes Release to Specific Trusted Partners - Mayer Brown",
+          "normalized_fact": "Commerce Department Extends Export Controls to Advanced AI Models; Authorizes Release to Specific Trusted Partners - Mayer Brown。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMigwJBVV95cUxOWTQzZjJ5VGNUaGtJY3dTaTVwb0dWN01yWFY2RGtZX0gwZEpFVHM5NTZZQWRRZ04yZk1Hc2tCcFplcTg2VkxPZzVyUDhBeElfM21Id25YX3NpSXpRSmpLRVlkdXdkRWUyU1NMVXRydklfYmI4eWFrS1BqdnpNTlFmSnZ0RkZZeG9zYXRBRmdDYWIxOVA3R3E2aENra054OHl6WjhkTDVuWUY3eDdtc0J4WmVSR0lKbXNXaUNlaF9obXV5ajUwU0RNR3pLdjhlbGJYdllmNnZwZjNISUlvZFVUUkRGNTNoRWEyODgtVUQ3WXVKeDRUbHNYMEJXNnNQQWFyVGZN",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "export control"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "export control"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "export control",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "commercedepartmentextendsexportcontrolstoadvancedaimodelsauthorizesreleasetospecifictrustedpartnersmayerbrown",
+          "event_cluster_key": "event-a4658e4eec2e323f3ec8",
+          "published_time_bucket": "2026-06-30T07:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "export control"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "export control",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
         },
         {
           "title": "Iran war impact on global oil markets - Oil & Gas Journal",
@@ -13539,7 +13752,7 @@
           "ranking_score": 135
         }
       ],
-      "inventory_saved_at": "2026-09-29T19:57:51.188047+00:00"
+      "inventory_saved_at": "2026-09-29T20:03:35.618578+00:00"
     }
   }
 }
