@@ -251,6 +251,21 @@ def test_scheduled_preparation_and_expectation_mismatch_is_not_green() -> None:
     assert missing_expectation["failure"] is True
 
 
+def test_scheduled_prepare_race_keeps_the_actionable_failure_reason() -> None:
+    result = evaluate_scheduled_terminal(scheduled(
+        DELIVERY_OBLIGATION="undetermined",
+        PREPARE_OUTCOME="failure",
+        PREPARE_READY="false",
+        PREPARE_FAILURE_REASON="base_changed_twice_during_prepare",
+        WINDOW_DELIVERY_INTENT="notify_candidate",
+    ))
+
+    assert result["status"] == "failed"
+    assert result["reason"] == "base_changed_twice_during_prepare"
+    assert result["expected"] is True
+    assert result["failure"] is True
+
+
 def test_scheduled_handoff_reports_child_completion_without_resending() -> None:
     result = evaluate_scheduled_terminal(scheduled(HANDOFF_STATUS="delivered", HANDOFF_RUN_ID="42"))
 

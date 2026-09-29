@@ -419,12 +419,15 @@ jobs:
           fi
       - name: Persist research attempt lease
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && env.RESEARCH_DUE == 'true' && env.SCAN_MODE == 'production' && env.RESEARCH_ACTION != 'repair_state'
+        id: persist_research_attempt
         run: |
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" \
             --include data/research-attempts.json \
+            --expected-base-sha "${{ steps.prepared_base.outputs.data_release_sha }}" \
             --message "chore: persist research slot attempt"
       - name: Persist incremental research caches
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && env.SCAN_MODE == 'production' && (steps.research_gate.outputs.publish != 'true' || steps.research_gate.outputs.cache_required == 'true')
+        id: persist_incremental_caches
         run: |
           # Any incomplete strategy must persist its verified records even when
           # the other strategies form a valid mixed public release.  This is a
@@ -436,6 +439,7 @@ jobs:
             --include data/research-attempts.json \
             --include data/sec-companyfacts-cache.json \
             --include data/raw-observations \
+            --expected-base-sha "${{ steps.persist_research_attempt.outputs.data_release_published_sha || steps.prepared_base.outputs.data_release_sha }}" \
             --message "chore: persist bounded research caches"
       - name: Build release manifest
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
@@ -450,7 +454,9 @@ jobs:
         if: env.SCAN_MODE != 'production' || (steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.research_gate.outputs.publish == 'true')
         run: |
           if [[ "$SCAN_MODE" == "production" ]]; then
-            python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations --include data/taiwan-mops-pristine-history.json --include data/taiwan-official-financial-cache.json --include data/research-attempts.json --include data/sec-companyfacts-cache.json --message "chore: refresh public research report"
+            python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations --include data/taiwan-mops-pristine-history.json --include data/taiwan-official-financial-cache.json --include data/research-attempts.json --include data/sec-companyfacts-cache.json \
+              --expected-base-sha "${{ steps.persist_incremental_caches.outputs.data_release_published_sha || steps.persist_research_attempt.outputs.data_release_published_sha || steps.prepared_base.outputs.data_release_sha }}" \
+              --message "chore: refresh public research report"
           else
             echo "scan_mode=$SCAN_MODE: isolated artifact only; skipping data-release publication"
           fi

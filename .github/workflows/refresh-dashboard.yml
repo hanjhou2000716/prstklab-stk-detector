@@ -50,7 +50,11 @@ jobs:
         run: pip install -r requirements.txt
       - name: Restore last immutable data release
         if: steps.writer_queue.outputs.should_continue == 'true'
-        run: python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations
+        id: restore_release
+        run: |
+          python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations
+          git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
+          echo "data_release_sha=$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")" >> "$GITHUB_OUTPUT"
       - name: Refresh public market data
         if: steps.writer_queue.outputs.should_continue == 'true'
         run: python -m src.refresh_market_data
@@ -70,6 +74,7 @@ jobs:
           fi
           python -m src.release_manifest "${arguments[@]}"
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data --include data/raw-observations \
+            --expected-base-sha "${{ steps.restore_release.outputs.data_release_sha }}" \
             --message "chore: refresh public market snapshot"
       - name: Build and validate cache-busted static assets
         if: steps.writer_queue.outputs.should_continue == 'true'

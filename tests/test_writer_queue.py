@@ -1,9 +1,10 @@
 import json
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 
+import src.writer_queue as writer_queue
 from src.writer_queue import (
     QueueResult,
     WriterQueueError,
@@ -14,27 +15,48 @@ from src.writer_queue import (
 )
 
 
-def _run(run_id: int, status: str = "in_progress", name: str = "Refresh market dashboard") -> dict[str, object]:
+def _run(
+    run_id: int,
+    status: str = "in_progress",
+    name: str = "Refresh market dashboard",
+    *,
+    path: str = ".github/workflows/refresh-dashboard.yml",
+    workflow_id: int = 318848659,
+    created_at: str | None = None,
+    run_attempt: int = 1,
+) -> dict[str, object]:
     return {
         "id": run_id,
         "name": name,
+        "path": path,
+        "workflow_id": workflow_id,
         "status": status,
-        "created_at": "2026-08-31T08:00:00Z",
+        "created_at": created_at or f"2026-08-31T08:00:{run_id % 60:02d}Z",
+        "run_started_at": created_at or f"2026-08-31T08:00:{run_id % 60:02d}Z",
+        "run_attempt": run_attempt,
     }
 
 
 def test_blocking_runs_only_returns_older_active_production_writers():
     rows = blocking_runs(
-        [_run(10), _run(11, "queued"), _run(12, "completed"), _run(13, name="Quality and delivery")],
+        [
+            _run(10), _run(11, "queued"), _run(12, "completed"),
+            _run(13, name="Quality and delivery", path=".github/workflows/quality.yml", workflow_id=999),
+        ],
         current_run_id=12,
+        current_created_at=datetime(2026, 8, 31, 8, 1, tzinfo=UTC),
     )
     assert [row["id"] for row in rows] == [10, 11]
 
 
 def test_pages_deployment_is_serialized_with_data_release_writers():
     rows = blocking_runs(
-        [_run(10, name="Deploy dashboard to GitHub Pages")],
+        [_run(
+            10, name="Deploy dashboard to GitHub Pages",
+            path=".github/workflows/deploy-pages.yml", workflow_id=318841880,
+        )],
         current_run_id=11,
+        current_created_at=datetime(2026, 8, 31, 8, 1, tzinfo=UTC),
     )
     assert [row["name"] for row in rows] == ["Deploy dashboard to GitHub Pages"]
 
@@ -48,6 +70,7 @@ def test_wait_for_slot_waits_until_older_writer_finishes():
 
     result = wait_for_slot(
         current_run_id=11,
+        current_created_at=datetime(2026, 8, 31, 8, 1, tzinfo=UTC),
         api_url="https://api.github.test",
         repository="owner/repo",
         token="token",
@@ -69,6 +92,7 @@ def test_wait_for_slot_fails_closed_when_lookup_fails():
     with pytest.raises(WriterQueueError, match="lookup failed"):
         wait_for_slot(
             current_run_id=11,
+            current_created_at=datetime(2026, 8, 31, 8, 1, tzinfo=UTC),
             api_url="https://api.github.test",
             repository="owner/repo",
             token="token",
@@ -93,6 +117,7 @@ def test_wait_for_slot_supersedes_as_soon_as_main_moves():
 
     result = wait_for_slot(
         current_run_id=11,
+        current_created_at=datetime(2026, 8, 31, 8, 1, tzinfo=UTC),
         api_url="https://api.github.test",
         repository="owner/repo",
         token="token",
@@ -110,6 +135,126 @@ def test_wait_for_slot_supersedes_as_soon_as_main_moves():
     assert result.blockers == (10,)
     assert result.main_sha == "new-sha"
     assert sleeps == [2]
+
+
+def test_dynamic_scheduled_run_name_is_identified_by_exact_workflow_identity():
+    scheduled = _run(
+        36530546203,
+        name="Scheduled market brief / post_close",
+        path=".github/workflows/scheduled-brief.yml",
+        workflow_id=318853044,
+        created_at="2026-09-29T06:20:00Z",
+    )
+    result = blocking_runs(
+        [scheduled],
+        current_run_id=36530546204,
+        current_created_at=datetime(2026, 9, 29, 6, 21, tzinfo=UTC),
+    )
+    assert [row["id"] for row in result] == [36530546203]
+
+
+def test_known_workflow_id_with_wrong_path_fails_closed():
+    with pytest.raises(WriterQueueError, match="writer_workflow_identity_mismatch"):
+        blocking_runs(
+            [_run(10, path=".github/workflows/other.yml", workflow_id=318853044)],
+            current_run_id=11,
+            current_created_at=datetime(2026, 8, 31, 8, 1, tzinfo=UTC),
+        )
+
+
+def test_old_run_id_rerun_does_not_jump_ahead_of_earlier_attempt_start():
+    older_attempt = _run(
+        10, created_at="2026-08-31T08:00:00Z", run_attempt=2,
+    )
+    current = datetime(2026, 8, 31, 8, 1, tzinfo=UTC)
+    assert blocking_runs(
+        [older_attempt], current_run_id=11, current_created_at=current,
+    ) == [older_attempt]
+    later_rerun = _run(
+        9, created_at="2026-08-31T08:02:00Z", run_attempt=3,
+    )
+    assert blocking_runs(
+        [later_rerun], current_run_id=11, current_created_at=current,
+    ) == []
+
+
+def test_queue_api_reads_all_pages_and_active_statuses(monkeypatch):
+    requests: list[str] = []
+
+    class Response:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return json.dumps(self.payload).encode()
+
+    def open_request(request, timeout):
+        assert timeout == 15
+        requests.append(request.full_url)
+        query = request.full_url.split("?", 1)[1]
+        params = dict(item.split("=") for item in query.split("&"))
+        if params["status"] != "queued":
+            return Response({"total_count": 0, "workflow_runs": []})
+        if params["page"] == "1":
+            rows = [
+                {"id": index + 1, "run_attempt": 1, "path": ".github/workflows/quality.yml", "workflow_id": 999}
+                for index in range(100)
+            ]
+            return Response({"total_count": 101, "workflow_runs": rows})
+        return Response({"total_count": 101, "workflow_runs": [{
+            "id": 101, "run_attempt": 1, "path": ".github/workflows/scheduled-brief.yml",
+            "workflow_id": 318853044, "status": "queued",
+        }]})
+
+    monkeypatch.setattr(writer_queue, "urlopen", open_request)
+    runs = writer_queue._fetch_runs(
+        api_url="https://api.github.test", repository="owner/repo", token="token",
+    )
+    assert len(requests) == 6
+    assert any("status=waiting" in url for url in requests)
+    assert any("status=requested" in url for url in requests)
+    assert any("status=queued&page=2" in url for url in requests)
+    assert any(run["id"] == 101 for run in runs)
+
+
+def test_queue_api_accepts_a_valid_run_transition_between_status_reads(monkeypatch):
+    class Response:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return json.dumps(self.payload).encode()
+
+    run = _run(42, "queued", created_at="2026-08-31T08:00:01Z")
+    run["updated_at"] = "2026-08-31T08:00:02Z"
+
+    def open_request(request, timeout):
+        status = request.full_url.split("status=", 1)[1].split("&", 1)[0]
+        if status == "queued":
+            return Response({"total_count": 1, "workflow_runs": [run]})
+        if status == "in_progress":
+            advanced = {**run, "status": "in_progress", "updated_at": "2026-08-31T08:00:03Z"}
+            return Response({"total_count": 1, "workflow_runs": [advanced]})
+        return Response({"total_count": 0, "workflow_runs": []})
+
+    monkeypatch.setattr(writer_queue, "urlopen", open_request)
+    rows = writer_queue._fetch_runs(
+        api_url="https://api.github.test", repository="owner/repo", token="token",
+    )
+    assert len(rows) == 1
+    assert rows[0]["status"] == "in_progress"
 
 
 def test_production_revision_fence_allows_current_main():
@@ -191,6 +336,7 @@ def test_handoff_child_cannot_start_a_second_successor(monkeypatch, capsys, tmp_
     monkeypatch.setenv("GITHUB_TOKEN", "test-token")
     monkeypatch.setenv("GITHUB_SHA", "old-sha")
     monkeypatch.setenv("HANDOFF_PARENT_RUN_ID", "10")
+    monkeypatch.setenv("HANDOFF_PARENT_VERIFIED", "true")
     monkeypatch.setenv("SLOT_CONTEXT", json.dumps({
         "scheduled_slot": "us_premarket", "scheduled_for_at": "2026-09-25T09:00:00-04:00",
         "contract_status": "valid", "delivery_intent": "notify_candidate",
@@ -216,3 +362,16 @@ def test_handoff_child_cannot_start_a_second_successor(monkeypatch, capsys, tmp_
     assert "queue_status=superseded" in output
     assert "handoff_status=not_attempted" in output
     assert "handoff_status=delivered" not in output
+
+
+def test_unverified_handoff_parent_is_never_ignored(monkeypatch, tmp_path):
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+    monkeypatch.setenv("GITHUB_TOKEN", "test-token")
+    monkeypatch.setenv("GITHUB_SHA", "current-sha")
+    monkeypatch.setenv("HANDOFF_PARENT_RUN_ID", "10")
+    monkeypatch.setenv("HANDOFF_PARENT_VERIFIED", "false")
+    monkeypatch.setattr(sys, "argv", ["writer_queue", "--run-id", "20", "--settle-seconds", "0"])
+    output_path = tmp_path / "github-output"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output_path))
+    assert main() == 1
+    assert "handoff_parent_not_verified" in output_path.read_text(encoding="utf-8")

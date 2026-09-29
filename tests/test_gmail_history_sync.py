@@ -794,6 +794,8 @@ def _run_actual_gmail_summary_shell(
 ) -> tuple[int, str]:
     import pytest
 
+    if os.name == "nt":
+        pytest.skip("The workflow summary uses Ubuntu Bash; Windows Git Bash path semantics differ")
     bash = shutil.which("bash")
     if bash is None:
         pytest.skip("Bash is required to exercise the workflow's actual summary shell on this host")

@@ -272,6 +272,7 @@ def evaluate_scheduled_terminal(values: Mapping[str, str]) -> dict[str, Any]:
     send_status = _text(values, "SEND_STATUS")
     send_reason = _text(values, "SEND_REASON")
     prepare_outcome = _text(values, "PREPARE_OUTCOME", "unknown")
+    prepare_failure_reason = _text(values, "PREPARE_FAILURE_REASON")
 
     if obligation in {"expected_skip", "late_publish_only"}:
         publication_ok = (
@@ -299,6 +300,14 @@ def evaluate_scheduled_terminal(values: Mapping[str, str]) -> dict[str, Any]:
         return _result(
             values, "scheduled", status="not_requested",
             reason="notification_not_requested", expected=False,
+        )
+    if prepare_outcome == "failure" and (
+        expected or _text(values, "WINDOW_DELIVERY_INTENT") == "notify_candidate"
+    ):
+        return _result(
+            values, "scheduled", status="failed",
+            reason=prepare_failure_reason or "required_report_preparation_failed",
+            expected=True, failure=True,
         )
     if obligation == "undetermined":
         if prepare_outcome == "success" or _text(values, "WINDOW_DELIVERY_INTENT") == "notify_candidate":

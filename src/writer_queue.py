@@ -19,21 +19,24 @@ from datetime import UTC, datetime
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-WRITER_WORKFLOW_NAMES = frozenset(
-    {
-        "Scheduled market brief",
-        "Emergency market alert",
-        "Refresh market dashboard",
-        "Railway monitor health",
-        "Official macro and price monitor",
-        "Unified Taiwan-US research report",
-        # Static Pages publishers can overwrite a just-published data release
-        # even though they do not write data-release themselves.  They share
-        # the same single-writer fence so release-gate reads cannot race them.
-        "Deploy dashboard to GitHub Pages",
-    }
-)
-ACTIVE_STATUSES = frozenset({"queued", "in_progress", "waiting", "pending"})
+# The run name is user-configurable (`run-name:`) and scheduled-brief uses it
+# to include the slot. Identify writers by the immutable workflow path and ID
+# returned by GitHub's Actions API instead.
+WRITER_WORKFLOW_IDENTITIES = {
+    ".github/workflows/scheduled-brief.yml": 318853044,
+    ".github/workflows/emergency-alert.yml": 319337480,
+    ".github/workflows/refresh-dashboard.yml": 318848659,
+    ".github/workflows/monitor-health.yml": 326066489,
+    ".github/workflows/official-event-monitor.yml": 320209983,
+    ".github/workflows/unified-research-report.yml": 319283753,
+    # Static Pages publishers share the same fence because they can replace
+    # the public site while a release gate is reading it.
+    ".github/workflows/deploy-pages.yml": 318841880,
+}
+_WRITER_WORKFLOW_PATH_BY_ID = {value: key for key, value in WRITER_WORKFLOW_IDENTITIES.items()}
+ACTIVE_STATUSES = frozenset({"queued", "in_progress", "waiting", "pending", "requested"})
+_RUNS_PER_PAGE = 100
+_MAX_RUN_PAGES_PER_STATUS = 100
 
 
 class WriterQueueError(RuntimeError):
@@ -51,8 +54,8 @@ class QueueResult:
     main_sha: str = ""
 
 
-def _created_at(run: Mapping[str, object]) -> datetime | None:
-    value = run.get("created_at")
+def _timestamp(run: Mapping[str, object], field: str) -> datetime | None:
+    value = run.get(field)
     if not value:
         return None
     try:
@@ -62,6 +65,11 @@ def _created_at(run: Mapping[str, object]) -> datetime | None:
     return parsed.replace(tzinfo=UTC) if parsed.tzinfo is None else parsed.astimezone(UTC)
 
 
+def _attempt_started(run: Mapping[str, object]) -> datetime | None:
+    """Use this run's current attempt start, not the original run creation."""
+    return _timestamp(run, "run_started_at") or _timestamp(run, "created_at")
+
+
 def _run_id(run: Mapping[str, object]) -> int | None:
     try:
         return int(str(run.get("id") or ""))
@@ -69,62 +77,161 @@ def _run_id(run: Mapping[str, object]) -> int | None:
         return None
 
 
+def _workflow_identity(run: Mapping[str, object]) -> bool:
+    """Validate a GitHub run's immutable workflow path/ID pair."""
+    path = str(run.get("path") or "").strip()
+    raw_id = run.get("workflow_id")
+    try:
+        workflow_id = int(str(raw_id))
+    except (TypeError, ValueError):
+        workflow_id = None
+    expected_id = WRITER_WORKFLOW_IDENTITIES.get(path)
+    expected_path = _WRITER_WORKFLOW_PATH_BY_ID.get(workflow_id) if workflow_id is not None else None
+    if expected_id is not None and workflow_id != expected_id:
+        raise WriterQueueError("writer_workflow_identity_mismatch")
+    if expected_path is not None and path != expected_path:
+        raise WriterQueueError("writer_workflow_identity_mismatch")
+    return expected_id is not None and workflow_id == expected_id
+
+
 def blocking_runs(
     runs: Iterable[Mapping[str, object]],
     *,
     current_run_id: int,
     current_created_at: datetime | None = None,
+    current_attempt_started_at: datetime | None = None,
     ignored_run_ids: Iterable[int] = (),
 ) -> list[dict[str, object]]:
-    """Return older active production writers in deterministic order."""
+    """Return older active production writers in attempt-start FIFO order."""
     ignored = {int(value) for value in ignored_run_ids}
     blockers: list[dict[str, object]] = []
+    current_rows: list[Mapping[str, object]] = []
+    candidates: list[Mapping[str, object]] = []
     for run in runs:
         if not isinstance(run, Mapping):
             continue
         run_id = _run_id(run)
-        if run_id is None or run_id == current_run_id or run_id in ignored:
+        if run_id is None:
             continue
-        if run.get("name") not in WRITER_WORKFLOW_NAMES:
+        if not _workflow_identity(run):
             continue
         if str(run.get("status") or "").casefold() not in ACTIVE_STATUSES:
             continue
-        created = _created_at(run)
-        # Run IDs are monotonically increasing within a repository.  The
-        # timestamp guard handles mocked/non-GitHub IDs without allowing a
-        # newer run to block an older one indefinitely.
-        if run_id > current_run_id:
+        if run_id == current_run_id:
+            current_rows.append(run)
             continue
-        if current_created_at is not None and created is not None and created > current_created_at:
+        if run_id in ignored:
             continue
+        candidates.append(run)
+
+    if len(current_rows) > 1:
+        attempts = {str(row.get("run_attempt") or "") for row in current_rows}
+        if len(attempts) > 1:
+            raise WriterQueueError("current_run_attempt_identity_ambiguous")
+    current_started = (
+        _attempt_started(current_rows[0]) if current_rows else None
+    ) or current_attempt_started_at or current_created_at
+    if current_started is None:
+        raise WriterQueueError("current_run_attempt_start_unavailable")
+    current_attempt = str(current_rows[0].get("run_attempt") or "1") if current_rows else "1"
+
+    for run in candidates:
+        started = _attempt_started(run)
+        if started is None:
+            raise WriterQueueError("writer_attempt_start_unavailable")
+        if started > current_started:
+            continue
+        if started == current_started:
+            # GitHub timestamps are second precision. Do not use the old run
+            # ID to order a re-run against another attempt that started in the
+            # same second; the attempt order cannot be established safely.
+            candidate_attempt = str(run.get("run_attempt") or "1")
+            if candidate_attempt == current_attempt and _run_id(run) == current_run_id:
+                continue
+            raise WriterQueueError("writer_attempt_order_ambiguous")
         blockers.append(dict(run))
-    return sorted(blockers, key=lambda item: _run_id(item) or 0)
+
+    def queue_order(run: Mapping[str, object]) -> tuple[datetime, int, int]:
+        started = _attempt_started(run)
+        if started is None:
+            raise WriterQueueError("writer_attempt_start_unavailable")
+        try:
+            attempt = int(str(run.get("run_attempt") or "1"))
+        except ValueError:
+            raise WriterQueueError("writer_attempt_identity_invalid") from None
+        return started, _run_id(run) or 0, attempt
+
+    return sorted(blockers, key=queue_order)
 
 
 def _fetch_runs(*, api_url: str, repository: str, token: str) -> list[dict[str, object]]:
     if not repository or not token:
         raise WriterQueueError("GITHUB_REPOSITORY and GITHUB_TOKEN are required for the writer queue")
-    url = f"{api_url.rstrip('/')}/repos/{repository}/actions/runs?per_page=100&status=queued"
-    rows: list[dict[str, object]] = []
-    for status in ("queued", "in_progress"):
-        request = Request(
-            url.replace("status=queued", f"status={status}"),
-            headers={
-                "Accept": "application/vnd.github+json",
-                "Authorization": f"Bearer {token}",
-                "X-GitHub-Api-Version": "2022-11-28",
-                "User-Agent": "prstk-production-writer-queue",
-            },
-        )
-        try:
-            with urlopen(request, timeout=15) as response:
-                payload = json.loads(response.read().decode("utf-8"))
-        except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
-            raise WriterQueueError(f"GitHub Actions queue lookup failed: {type(exc).__name__}") from exc
-        values = payload.get("workflow_runs") if isinstance(payload, Mapping) else None
-        if isinstance(values, list):
-            rows.extend(item for item in values if isinstance(item, dict))
-    return rows
+    rows_by_attempt: dict[tuple[int, str], dict[str, object]] = {}
+    for status in ("queued", "in_progress", "waiting", "pending", "requested"):
+        page = 1
+        fetched = 0
+        total_count: int | None = None
+        while page <= _MAX_RUN_PAGES_PER_STATUS:
+            url = (
+                f"{api_url.rstrip('/')}/repos/{repository}/actions/runs"
+                f"?per_page={_RUNS_PER_PAGE}&status={status}&page={page}"
+            )
+            request = Request(
+                url,
+                headers={
+                    "Accept": "application/vnd.github+json",
+                    "Authorization": f"Bearer {token}",
+                    "X-GitHub-Api-Version": "2022-11-28",
+                    "User-Agent": "prstk-production-writer-queue",
+                },
+            )
+            try:
+                with urlopen(request, timeout=15) as response:
+                    payload = json.loads(response.read().decode("utf-8"))
+            except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
+                raise WriterQueueError(f"GitHub Actions queue lookup failed: {type(exc).__name__}") from exc
+            values = payload.get("workflow_runs") if isinstance(payload, Mapping) else None
+            count = payload.get("total_count") if isinstance(payload, Mapping) else None
+            if not isinstance(values, list) or not isinstance(count, int) or count < 0:
+                raise WriterQueueError("GitHub Actions queue response contract invalid")
+            if total_count is None:
+                total_count = count
+            elif total_count != count:
+                raise WriterQueueError("GitHub Actions queue pagination changed during read")
+            fetched += len(values)
+            for item in values:
+                if not isinstance(item, dict):
+                    raise WriterQueueError("GitHub Actions queue row contract invalid")
+                run_id = _run_id(item)
+                if run_id is None:
+                    raise WriterQueueError("GitHub Actions queue row has no run ID")
+                attempt = str(item.get("run_attempt") or "1")
+                key = (run_id, attempt)
+                previous = rows_by_attempt.get(key)
+                if previous is None:
+                    rows_by_attempt[key] = item
+                    continue
+                immutable_fields = (
+                    "path", "workflow_id", "head_sha", "run_attempt",
+                    "created_at", "run_started_at",
+                )
+                if any(previous.get(field) != item.get(field) for field in immutable_fields):
+                    raise WriterQueueError("GitHub Actions queue row identity changed during read")
+                previous_updated = _timestamp(previous, "updated_at")
+                item_updated = _timestamp(item, "updated_at")
+                if item_updated is not None and (previous_updated is None or item_updated > previous_updated):
+                    rows_by_attempt[key] = item
+                elif item_updated == previous_updated and previous.get("status") != item.get("status"):
+                    raise WriterQueueError("GitHub Actions queue state ambiguous during read")
+            if fetched >= total_count:
+                break
+            if len(values) != _RUNS_PER_PAGE:
+                raise WriterQueueError("GitHub Actions queue pagination incomplete")
+            page += 1
+        else:
+            raise WriterQueueError("GitHub Actions queue pagination limit exceeded")
+    return list(rows_by_attempt.values())
 
 
 def _fetch_main_revision(*, api_url: str, repository: str, token: str) -> str:
@@ -226,6 +333,7 @@ def wait_for_slot(
     *,
     current_run_id: int,
     current_created_at: datetime | None = None,
+    current_attempt_started_at: datetime | None = None,
     api_url: str | None = None,
     repository: str | None = None,
     token: str | None = None,
@@ -265,6 +373,7 @@ def wait_for_slot(
             fetcher(api_url=resolved_api_url, repository=resolved_repository, token=resolved_token),
             current_run_id=current_run_id,
             current_created_at=current_created_at,
+            current_attempt_started_at=current_attempt_started_at,
             ignored_run_ids=ignored_run_ids,
         )
         elapsed = int(max(0, time.monotonic() - started))
@@ -309,7 +418,9 @@ def main() -> int:
     if args.run_id <= 0:
         raise SystemExit("GITHUB_RUN_ID is required")
     created_raw = os.getenv("GITHUB_RUN_ATTEMPT_CREATED_AT")
-    created = _created_at({"created_at": created_raw}) if created_raw else None
+    created = _timestamp({"created_at": created_raw}, "created_at") if created_raw else None
+    attempt_started_raw = os.getenv("GITHUB_RUN_ATTEMPT_STARTED_AT", "")
+    attempt_started = _timestamp({"run_started_at": attempt_started_raw}, "run_started_at") if attempt_started_raw else None
     run_sha = os.getenv("GITHUB_SHA", "").strip().lower()
 
     def write_outputs(values: Mapping[str, object]) -> None:
@@ -391,6 +502,8 @@ def main() -> int:
         raw_parent = os.getenv("HANDOFF_PARENT_RUN_ID", "").strip()
         is_handoff = bool(raw_parent)
         if is_handoff:
+            if os.getenv("HANDOFF_PARENT_VERIFIED", "").strip().casefold() != "true":
+                raise WriterQueueError("handoff_parent_not_verified")
             try:
                 ignored_parent = (int(raw_parent),)
             except ValueError as exc:
@@ -398,6 +511,7 @@ def main() -> int:
         result = wait_for_slot(
             current_run_id=args.run_id,
             current_created_at=created,
+            current_attempt_started_at=attempt_started,
             timeout_seconds=max(0, args.timeout_seconds),
             poll_seconds=max(1, args.poll_seconds),
             settle_seconds=max(0, args.settle_seconds),

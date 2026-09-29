@@ -41,7 +41,8 @@ _TICKER_NAMES = {
     "TAIEX": "加權指數",
     "TPEx": "櫃買",
     "TXF": "台指期",
-    "NASDAQ": "那斯達克",
+    "S&P 500": "標普500",
+    "NASDAQ": "那斯達克綜合",
     "SOX": "費半",
     "DJIA": "道瓊",
     "NIKKEI": "日經",
@@ -857,22 +858,47 @@ def build_market_digest(
         )
     ]
     assessment["quote_gaps"] = quote_gaps
+    all_required_quotes_missing = bool(
+        market_scope_key and required_tickers and len(quote_gaps) == len(required_tickers)
+    )
+    complete_event_fact = next(
+        (
+            str(theme.get("what_happened") or "").strip()
+            for theme in event_themes
+            if theme.get("normalization_complete") is True
+            and str(theme.get("what_happened") or "").strip()
+            and not _is_fragment(str(theme.get("what_happened") or ""))
+        ),
+        "",
+    )
+    all_report_evidence_missing = all_required_quotes_missing and not complete_event_fact
     overview = project_overview(assessment, DASHBOARD_SUMMARY_MAX_CHARS)
     public_message = project_public_message(label, assessment, PUBLIC_MESSAGE_MAX_CHARS)
     if public_message and not len(public_message) <= PUBLIC_MESSAGE_MAX_CHARS:
         public_message = ""
-    if market_scope_key and required_tickers and len(quote_gaps) == len(required_tickers):
+    if all_required_quotes_missing:
         from src.telegram_client import canonical_short_message
 
-        scope_label = "台股盤後" if market_scope_key == "taiwan" else "美股盤前"
-        assessment["summary_sections"].update({
-            "summary": f"{scope_label}行情資料不足",
-            "market_highlights": "指定行情本輪缺漏，未使用其他市場或舊值替代",
-            "risk": "資料不足，不推論市場方向",
-        })
+        scope_label = _SLOT_LABELS.get(slot, "台股盤後" if market_scope_key == "taiwan" else "美股盤前")
+        if complete_event_fact:
+            assessment["summary_sections"].update({
+                "summary": f"{scope_label}事件摘要",
+                "market_highlights": f"{complete_event_fact}；指定行情資料缺漏，未以其他市場或舊值代替",
+                "risk": "行情資料缺漏，不推論市場價格方向",
+            })
+            message_content = f"{scope_label}｜{complete_event_fact}；行情資料缺漏"
+        else:
+            assessment["summary_sections"].update({
+                "summary": f"{scope_label}行情資料不足",
+                "market_highlights": "指定行情本輪缺漏，未使用其他市場或舊值替代",
+                "risk": "資料不足，不推論市場方向",
+            })
+            message_content = f"{scope_label}｜行情資料不足，本輪明確列示缺漏。"
         overview = project_overview(assessment, DASHBOARD_SUMMARY_MAX_CHARS)
         public_message = canonical_short_message(
-            f"{scope_label}｜行情資料不足，本輪明確列示缺漏。",
+            message_content,
+            message_kind="scheduled_brief",
+            label=scope_label,
             limit=PUBLIC_MESSAGE_MAX_CHARS,
         )
     elif market_scope_key:
@@ -882,24 +908,58 @@ def build_market_digest(
         # explicit in the linked card instead of suppressing the slot.
         from src.telegram_client import canonical_short_message
 
-        scope_label = "台股盤後" if market_scope_key == "taiwan" else "美股盤前"
+        scope_label = _SLOT_LABELS.get(slot, "台股盤後" if market_scope_key == "taiwan" else "美股盤前")
         available = []
         for item in quote_items:
             if not _usable_scoped_quote(item):
                 continue
             ticker = _normalise_ticker(item.get("ticker"))
             name = _TICKER_NAMES.get(ticker, ticker)
-            available.append(f"{name}{float(item['change_percent']):+.2f}%")
+            available.append({
+                "text": f"{name}{float(item['change_percent']):+.2f}%",
+                "freshness": str(item.get("freshness") or item.get("data_status") or "").casefold(),
+                "date": str(item.get("quote_date") or item.get("quote_time") or "")[:10],
+            })
         missing = [
             _TICKER_NAMES.get(str(item.get("ticker") or ""), str(item.get("ticker") or ""))
             for item in quote_gaps
         ]
-        compact = "、".join(available[:3]) if available else "行情資料不足"
-        if missing:
-            compact += "；缺漏 " + "、".join(missing[:3])
-        public_message = canonical_short_message(
-            f"{scope_label}｜{compact}", limit=PUBLIC_MESSAGE_MAX_CHARS,
-        )
+        missing_tickers = {str(item.get("ticker") or "").upper() for item in quote_gaps}
+        missing_clause = ""
+        if slot == "us_premarket" and missing_tickers & {"ES", "NQ", "YM"}:
+            missing_clause = "盤前期貨未取得"
+        elif missing:
+            missing_clause = "缺漏" + "、".join(missing[:2])
+
+        # Keep the routine Telegram body useful under its strict character
+        # budget: at least one release-bound fact, plus the most important
+        # missing-data disclosure. Quotes are grouped only when their freshness
+        # and observation date agree; do not make asynchronous rows look like
+        # one synchronous market reading.
+        quote_groups: dict[tuple[str, str], list[str]] = {}
+        for item in available:
+            quote_groups.setdefault((item["freshness"], item["date"]), []).append(item["text"])
+        summary_facts: list[str] = []
+        if quote_groups:
+            (freshness, _date), group = next(iter(quote_groups.items()))
+            freshness_label = "最近收盤" if freshness == "recent_close" else "盤前觀測" if slot == "us_premarket" else "行情"
+            summary_facts = [f"{freshness_label}{value}" for value in group[:3]]
+        else:
+            summary_facts = ["行情資料不足"]
+
+        public_message = ""
+        # Prefer the first verified fact and explicit futures gap. Add same-
+        # timestamp facts only if the complete canonical summary still fits.
+        for fact_count in range(len(summary_facts), 0, -1):
+            compact = "、".join(summary_facts[:fact_count])
+            if missing_clause:
+                compact += f"；{missing_clause}"
+            public_message = canonical_short_message(
+                f"{scope_label}｜{compact}", limit=PUBLIC_MESSAGE_MAX_CHARS,
+                message_kind="scheduled_brief", label=scope_label,
+            )
+            if public_message:
+                break
         if missing:
             existing_highlights = str(assessment["summary_sections"].get("market_highlights") or "").strip()
             missing_text = "缺漏 " + "、".join(missing[:3])
@@ -973,6 +1033,8 @@ def build_market_digest(
 
         public_message = canonical_short_message(
             f"晨報｜{session_disclosure}；{public_message or '今日市場行情與觀察'}",
+            message_kind="scheduled_brief",
+            label="晨報",
             limit=PUBLIC_MESSAGE_MAX_CHARS,
         )
         sections = assessment.get("summary_sections")
@@ -1005,7 +1067,7 @@ def build_market_digest(
             "summary_sections.summary",
             "summary_sections.market_highlights",
         ] if public_message else [],
-        "public_summary_reason": "" if public_message else "summary_semantics_incomplete",
+        "public_summary_reason": "" if public_message else "scheduled_summary_content_incomplete",
         # Quote hydration is release-bound evidence, not notification
         # identity.  Keep the values in the artifact, but exclude them from
         # the content hash so a refreshed quote cannot resend the same event.
@@ -1105,9 +1167,12 @@ def build_market_digest(
     ).hexdigest()
     briefing_id = f"briefing-{slot}-{content_hash[:20]}"
     return {
-        "status": "ready" if public_message else "suppressed",
-        "notification_eligible": bool(public_message),
-        "notification_reason": "candidate_ready" if public_message else "content_incomplete",
+        "status": "ready" if public_message and not all_report_evidence_missing else "suppressed",
+        "notification_eligible": bool(public_message) and not all_report_evidence_missing,
+        "notification_reason": (
+            "scheduled_market_data_unavailable" if all_report_evidence_missing
+            else "candidate_ready" if public_message else "content_incomplete"
+        ),
         "briefing_id": briefing_id,
         "notification_key": f"scheduled_brief:{slot}:{briefing_id}",
         "observation_id": f"briefing-observation-{content_hash[:20]}",
@@ -1228,7 +1293,14 @@ def build_taiwan_holiday_notice_digest(
         raise ValueError("holiday notice calendars are not independent")
 
     date_label = f"{parsed_next.month}/{parsed_next.day}"
-    public_message = f"台股休市提醒｜現貨與台指期日盤休市；次一交易日 {date_label}"
+    from src.telegram_client import canonical_short_message
+
+    public_message = canonical_short_message(
+        f"台股休市提醒｜現貨與台指期日盤休市；次一交易日 {date_label}",
+        message_kind="scheduled_brief",
+        label="台股休市提醒",
+        limit=PUBLIC_MESSAGE_MAX_CHARS,
+    )
     event_key = f"taiwan-holiday:{parsed_date.isoformat()}"
     source_evidence = [
         {**cash_evidence, "calendar_basis": str(cash_evidence.get("calendar_basis") or cash_calendar)},

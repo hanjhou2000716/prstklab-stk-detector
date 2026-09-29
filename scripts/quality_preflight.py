@@ -108,6 +108,24 @@ def test_commands(base_sha: str | None) -> list[tuple[str, list[str]]]:
     return commands
 
 
+def integration_commands() -> list[tuple[str, list[str]]]:
+    """Run the exact offline and local integration gates used by CI."""
+    return [
+        ("Railway shared classifier bundle", [sys.executable, str(ROOT / "scripts" / "sync_railway_shared_classifier.py"), "--check"]),
+        ("Railway canonical parser bundle", [sys.executable, str(ROOT / "scripts" / "sync_railway_canonical_parser.py"), "--check"]),
+        ("Canonical overlap and generated bundle provenance", [sys.executable, str(ROOT / "scripts" / "verify_canonical_overlap.py")]),
+        ("Gate-Driven requirement and evidence registry", [sys.executable, str(ROOT / "scripts" / "verify_gate_evidence.py")]),
+        ("Offline Supabase migration contract", [sys.executable, str(ROOT / "scripts" / "validate_local_migration_contract.py")]),
+        ("Disposable local Supabase migration integration", [sys.executable, str(ROOT / "scripts" / "local_supabase_migration_test.py")]),
+        ("Creator, FinancialJuice, and news intelligence contracts", [sys.executable, str(ROOT / "scripts" / "verify_intelligence_contracts.py")]),
+        ("Python bytecode compilation", [sys.executable, "-m", "compileall", "-q", "src", "railway-monitor"]),
+        ("Checked-in Mini App runtime audit", [sys.executable, "-m", "src.runtime_audit"]),
+        ("Offline Telegram delivery configuration smoke test", [sys.executable, "-m", "src.delivery_smoke_test"]),
+        ("Offline release-to-delivery dry run", [sys.executable, "-m", "src.system_dry_run"]),
+        ("Offline production release-to-delivery acceptance", ["uv", "run", "python", "-m", "src.production_e2e"]),
+    ]
+
+
 def _write_failed_gate(label: str) -> None:
     output_path = os.environ.get("GITHUB_OUTPUT")
     if output_path:
@@ -147,6 +165,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     phases = parser.add_mutually_exclusive_group()
     phases.add_argument("--static", action="store_true", help="run workflow syntax, Ruff, and Mypy")
     phases.add_argument("--tests", action="store_true", help="run changed tests and the full test/coverage gates")
+    phases.add_argument("--full", action="store_true", help="run every static, test, and integration gate (same command as CI)")
     parser.add_argument(
         "--base-sha",
         default=os.environ.get("QUALITY_PREFLIGHT_BASE_SHA") or None,
@@ -159,7 +178,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         elif args.tests:
             commands = test_commands(args.base_sha)
         else:
-            commands = [*static_commands(), *test_commands(args.base_sha)]
+            commands = [*static_commands(), *test_commands(args.base_sha), *integration_commands()]
     except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
         print(f"FAILED: could not prepare quality preflight ({type(exc).__name__})", file=sys.stderr)
         return 2

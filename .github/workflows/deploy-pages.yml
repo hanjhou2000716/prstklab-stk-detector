@@ -46,6 +46,24 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python -m src.writer_queue --settle-seconds 0 --poll-seconds 10
+      - name: Record production writer queue decision
+        if: always()
+        env:
+          QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'failed_or_unavailable' }}
+          QUEUE_REASON: ${{ steps.writer_queue.outputs.reason || 'queue_step_failed' }}
+          QUEUE_WAITED_SECONDS: ${{ steps.writer_queue.outputs.waited_seconds || 'unknown' }}
+          QUEUE_BLOCKERS: ${{ steps.writer_queue.outputs.blocker_run_ids || '' }}
+        run: |
+          {
+            echo "## Production writer queue"
+            echo "- queue_status: ${QUEUE_STATUS}"
+            echo "- queue_reason: ${QUEUE_REASON}"
+            echo "- waited_seconds: ${QUEUE_WAITED_SECONDS}"
+            echo "- active_blockers: ${QUEUE_BLOCKERS:-none}"
+            if [ "${QUEUE_STATUS}" = "superseded" ]; then
+              echo "- publication_status: skipped_stale_workflow_revision (stale_workflow_superseded)"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Set up Python
         if: steps.writer_queue.outputs.should_continue == 'true'
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065

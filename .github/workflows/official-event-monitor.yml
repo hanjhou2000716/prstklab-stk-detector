@@ -138,11 +138,13 @@ jobs:
           key: official-event-${{ steps.status.outputs.key }}
       - name: Build and publish event release
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && (steps.status.outputs.ledger_changed == 'true' || (steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'))
+        id: publish_event
         run: |
           python -m src.release_manifest \
             --allow-stale-research \
             --research-fallback-reason "research scan incomplete; preserving last-known-good research snapshot"
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
+            --expected-base-sha "${{ steps.prepared_base.outputs.data_release_sha }}" \
             --message "chore: refresh official event snapshot"
       - name: Build and validate cache-busted static assets
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && (steps.status.outputs.ledger_changed == 'true' || (steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'))
@@ -308,6 +310,7 @@ jobs:
             --allow-stale-research \
             --research-fallback-reason "research scan incomplete; preserving last-known-good research snapshot"
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
+            --expected-base-sha "${{ steps.publish_event.outputs.data_release_published_sha || steps.prepared_base.outputs.data_release_sha }}" \
             --message "chore: persist official notification ledger state"
       - name: Prepare reconciled Pages artifact
         if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success'

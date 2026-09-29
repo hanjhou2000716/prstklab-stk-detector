@@ -62,39 +62,97 @@ from src.telegram_client import (
 _DEFAULT_CREATOR_RECORDS_PATH = Path("creator/public-records.json")
 
 
-def _briefing_evidence_ready(briefing: dict[str, Any]) -> bool:
-    """Require scheduled Telegram briefs to meet the market evidence floor."""
-    if (
-        briefing.get("scheduled_report") is True
-        and briefing.get("market_scope_key") in {"taiwan", "us"}
-    ):
-        # Routine slot reports remain useful without a major headline or a
-        # high-confidence directional read. Their scoped projection already
-        # identifies the market and exposes every missing quote explicitly.
-        return (
-            briefing.get("digest_status") == "ready"
-            and bool(str(briefing.get("public_short_message") or "").strip())
-            and bool(str(briefing.get("briefing_id") or "").strip())
-            and not str(briefing.get("public_summary_reason") or "").strip()
-        )
+_ROUTINE_SLOT_SCOPE = {
+    "pre_open": "taiwan",
+    "post_close": "taiwan",
+    "us_premarket": "us",
+}
+_VALID_MARKET_SCOPES = {"global", "taiwan", "us"}
+_SCOPE_ALIASES = {
+    "台股": "taiwan", "taiwan_market": "taiwan",
+    "美股": "us", "us_market": "us",
+}
+
+
+def _scheduled_scope(briefing: dict[str, Any]) -> tuple[str | None, str]:
+    """Resolve and validate scope from the immutable slot contract."""
+    context = briefing.get("slot_context")
+    context = context if isinstance(context, dict) else {}
+    slot = str(
+        context.get("scheduled_slot") or context.get("effective_slot") or briefing.get("slot") or ""
+    ).strip()
+    if not slot:
+        return None, "scheduled_slot_missing"
+
+    assessment = briefing.get("market_assessment")
+    assessment = assessment if isinstance(assessment, dict) else {}
+    raw_scope = briefing.get("market_scope_key")
+    if not raw_scope:
+        raw_scope = assessment.get("market_scope_key")
+    if not raw_scope:
+        raw_scope = briefing.get("market_scope") or assessment.get("market_scope")
+    scope = str(raw_scope or "").strip().casefold()
+    scope = _SCOPE_ALIASES.get(scope, scope)
+    if scope not in _VALID_MARKET_SCOPES:
+        return None, "scheduled_market_scope_missing_or_invalid"
+
+    assessment_scope = str(
+        assessment.get("market_scope_key") or assessment.get("market_scope") or ""
+    ).strip().casefold()
+    assessment_scope = _SCOPE_ALIASES.get(assessment_scope, assessment_scope)
+    if assessment_scope and assessment_scope in _VALID_MARKET_SCOPES and assessment_scope != scope:
+        return None, "scheduled_market_scope_mismatch"
+    expected_scope = _ROUTINE_SLOT_SCOPE.get(slot)
+    if expected_scope and scope != expected_scope:
+        return None, "scheduled_market_scope_mismatch"
+    if slot not in {*_ROUTINE_SLOT_SCOPE, "morning"}:
+        return None, "scheduled_slot_not_supported"
+    return scope, ""
+
+
+def _briefing_evidence_reason(briefing: dict[str, Any]) -> str:
+    """Return a stable, actionable reason when a briefing cannot be sent."""
+    if briefing.get("scheduled_report") is True:
+        _scope, scope_error = _scheduled_scope(briefing)
+        if scope_error:
+            return scope_error
+        if str(briefing.get("data_gap_status") or "").casefold() == "unavailable":
+            return "scheduled_market_data_unavailable"
+        if briefing.get("digest_status") != "ready":
+            return "scheduled_digest_not_ready"
+        public_message = str(briefing.get("public_short_message") or "").strip()
+        if not public_message:
+            return "scheduled_public_summary_missing"
+        if not is_valid_public_summary(public_message, source="scheduled_brief"):
+            return "scheduled_public_summary_invalid"
+        if not str(briefing.get("briefing_id") or "").strip():
+            return "scheduled_briefing_identity_missing"
+        if str(briefing.get("public_summary_reason") or "").strip():
+            return str(briefing.get("public_summary_reason"))[:120]
+        return ""
     assessment = briefing.get("market_assessment")
     if not isinstance(assessment, dict):
-        return False
+        return "market_assessment_missing"
     if str(assessment.get("confidence") or "").casefold() == "low":
-        return False
+        return "market_evidence_confidence_low"
     try:
         factor_count = int(assessment.get("factor_count") or 0)
     except (TypeError, ValueError):
         factor_count = 0
     dimensions = assessment.get("evidence_dimensions")
-    return factor_count >= 3 and isinstance(dimensions, list) and len(dimensions) >= 2
+    if factor_count < 3:
+        return "market_evidence_factor_count_insufficient"
+    if not isinstance(dimensions, list) or len(dimensions) < 2:
+        return "market_evidence_dimensions_insufficient"
+    return ""
+
+
+def _briefing_evidence_ready(briefing: dict[str, Any]) -> bool:
+    return not _briefing_evidence_reason(briefing)
 
 
 def _is_routine_market_report(briefing: dict[str, Any]) -> bool:
-    return bool(
-        briefing.get("scheduled_report") is True
-        and briefing.get("market_scope_key") in {"taiwan", "us"}
-    )
+    return briefing.get("scheduled_report") is True and not _scheduled_scope(briefing)[1]
 
 
 def _scheduled_send_window(slot: str, context: dict[str, Any], now: datetime) -> tuple[bool, str]:
@@ -1207,7 +1265,7 @@ def prepare(
         # insufficient market state into a generic Telegram placeholder.
         snapshot["briefing"]["notification_eligible"] = False
         snapshot["briefing"]["status"] = "suppressed"
-        snapshot["briefing"]["notification_reason"] = "insufficient_market_evidence"
+        snapshot["briefing"]["notification_reason"] = _briefing_evidence_reason(snapshot["briefing"])
     # Read the latest delivered decision before publication.  This is a
     # read-only comparison, so notify=false never consumes the delivery lock.
     # The result is persisted in the same briefing object that the sender and

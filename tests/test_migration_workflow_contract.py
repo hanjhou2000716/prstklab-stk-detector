@@ -66,13 +66,16 @@ def test_quality_requires_pinned_actions_syntax_tools_and_local_supabase_integra
     workflow = (ROOT / ".github/workflows/quality.yml").read_text(encoding="utf-8")
     preflight = (ROOT / "scripts/quality_preflight.py").read_text(encoding="utf-8")
     tool_check = (ROOT / "scripts/check_quality_tools.py").read_text(encoding="utf-8")
+    bootstrap = (ROOT / "scripts/bootstrap_quality_tools.ps1").read_text(encoding="utf-8")
 
-    assert "scripts/quality_preflight.py --static" in workflow
+    assert "scripts/quality_preflight.py --full" in workflow
     assert "Install pinned actionlint and ShellCheck" in workflow
     assert "check_quality_tools.py" in preflight
     assert 'ACTIONLINT_VERSION = "1.7.7"' in tool_check
     assert 'SHELLCHECK_VERSION = "0.11.0"' in tool_check
-    assert "scripts/local_supabase_migration_test.py" in workflow
+    assert "8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198" in workflow
+    assert "8a4e35ab0b331c85d73567b12f2a444df187f483e5079ceffa6bda1faa2e740e" in bootstrap
+    assert "local_supabase_migration_test.py" in preflight
     assert "supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520" in workflow
 
 
