@@ -12,11 +12,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import time
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from urllib.error import HTTPError, URLError
+from urllib.parse import parse_qs, urlsplit
 from urllib.request import Request, urlopen
 
 # The run name is user-configurable (`run-name:`) and scheduled-brief uses it
@@ -37,6 +39,55 @@ _WRITER_WORKFLOW_PATH_BY_ID = {value: key for key, value in WRITER_WORKFLOW_IDEN
 ACTIVE_STATUSES = frozenset({"queued", "in_progress", "waiting", "pending", "requested"})
 _RUNS_PER_PAGE = 100
 _MAX_RUN_PAGES_PER_STATUS = 100
+
+
+def _next_page_url(
+    link_header: str | None,
+    *,
+    api_url: str,
+    repository: str,
+    status: str,
+    current_page: int,
+) -> str | None:
+    """Return GitHub's next-page URL after validating its API identity."""
+    if not link_header:
+        return None
+    next_links: list[str] = []
+    for entry in link_header.split(","):
+        match = re.search(r"<([^<>]+)>\s*;\s*rel=\"([^\"]+)\"", entry)
+        if match and "next" in match.group(2).split():
+            next_links.append(match.group(1))
+    if not next_links:
+        return None
+    if len(next_links) != 1:
+        raise WriterQueueError("GitHub Actions queue pagination link is ambiguous")
+
+    next_url = next_links[0]
+    parsed = urlsplit(next_url)
+    api = urlsplit(api_url)
+    expected_path = f"{api.path.rstrip('/')}/repos/{repository}/actions/runs"
+    if (
+        parsed.scheme.casefold() != api.scheme.casefold()
+        or parsed.netloc.casefold() != api.netloc.casefold()
+        or parsed.path != expected_path
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.fragment
+    ):
+        raise WriterQueueError("GitHub Actions queue pagination link identity invalid")
+
+    try:
+        query = parse_qs(parsed.query, strict_parsing=True, keep_blank_values=True)
+        if (
+            set(query) != {"per_page", "status", "page"}
+            or query["per_page"] != [str(_RUNS_PER_PAGE)]
+            or query["status"] != [status]
+            or query["page"] != [str(current_page + 1)]
+        ):
+            raise ValueError("unexpected page query")
+    except ValueError:
+        raise WriterQueueError("GitHub Actions queue pagination link query invalid") from None
+    return next_url
 
 
 class WriterQueueError(RuntimeError):
@@ -172,11 +223,15 @@ def _fetch_runs(*, api_url: str, repository: str, token: str) -> list[dict[str, 
         page = 1
         fetched = 0
         total_count: int | None = None
+        url = (
+            f"{api_url.rstrip('/')}/repos/{repository}/actions/runs"
+            f"?per_page={_RUNS_PER_PAGE}&status={status}&page={page}"
+        )
+        requested_urls: set[str] = set()
         while page <= _MAX_RUN_PAGES_PER_STATUS:
-            url = (
-                f"{api_url.rstrip('/')}/repos/{repository}/actions/runs"
-                f"?per_page={_RUNS_PER_PAGE}&status={status}&page={page}"
-            )
+            if url in requested_urls:
+                raise WriterQueueError("GitHub Actions queue pagination link cycle")
+            requested_urls.add(url)
             request = Request(
                 url,
                 headers={
@@ -189,6 +244,13 @@ def _fetch_runs(*, api_url: str, repository: str, token: str) -> list[dict[str, 
             try:
                 with urlopen(request, timeout=15) as response:
                     payload = json.loads(response.read().decode("utf-8"))
+                    response_headers = getattr(response, "headers", None)
+                    header_get = getattr(response_headers, "get", None)
+                    link_header = header_get("Link") if callable(header_get) else None
+                    if link_header is None:
+                        getheader = getattr(response, "getheader", None)
+                        if callable(getheader):
+                            link_header = getheader("Link")
             except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
                 raise WriterQueueError(f"GitHub Actions queue lookup failed: {type(exc).__name__}") from exc
             values = payload.get("workflow_runs") if isinstance(payload, Mapping) else None
@@ -198,7 +260,10 @@ def _fetch_runs(*, api_url: str, repository: str, token: str) -> list[dict[str, 
             if total_count is None:
                 total_count = count
             elif total_count != count:
-                raise WriterQueueError("GitHub Actions queue pagination changed during read")
+                raise WriterQueueError(
+                    "GitHub Actions queue pagination changed during read: "
+                    f"status={status} page={page}"
+                )
             fetched += len(values)
             for item in values:
                 if not isinstance(item, dict):
@@ -224,10 +289,21 @@ def _fetch_runs(*, api_url: str, repository: str, token: str) -> list[dict[str, 
                     rows_by_attempt[key] = item
                 elif item_updated == previous_updated and previous.get("status") != item.get("status"):
                     raise WriterQueueError("GitHub Actions queue state ambiguous during read")
-            if fetched >= total_count:
+            next_url = _next_page_url(
+                str(link_header) if link_header is not None else None,
+                api_url=api_url,
+                repository=repository,
+                status=status,
+                current_page=page,
+            )
+            if next_url is None:
+                if fetched < total_count:
+                    raise WriterQueueError(
+                        "GitHub Actions queue pagination incomplete: "
+                        f"status={status} page={page} fetched={fetched} total_count={total_count}"
+                    )
                 break
-            if len(values) != _RUNS_PER_PAGE:
-                raise WriterQueueError("GitHub Actions queue pagination incomplete")
+            url = next_url
             page += 1
         else:
             raise WriterQueueError("GitHub Actions queue pagination limit exceeded")

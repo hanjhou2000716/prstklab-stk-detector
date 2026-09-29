@@ -182,8 +182,9 @@ def test_queue_api_reads_all_pages_and_active_statuses(monkeypatch):
     requests: list[str] = []
 
     class Response:
-        def __init__(self, payload):
+        def __init__(self, payload, link=None):
             self.payload = payload
+            self.headers = {"Link": link} if link else {}
 
         def __enter__(self):
             return self
@@ -204,10 +205,17 @@ def test_queue_api_reads_all_pages_and_active_statuses(monkeypatch):
         if params["page"] == "1":
             rows = [
                 {"id": index + 1, "run_attempt": 1, "path": ".github/workflows/quality.yml", "workflow_id": 999}
-                for index in range(100)
+                for index in range(40)
             ]
-            return Response({"total_count": 101, "workflow_runs": rows})
+            return Response(
+                {"total_count": 101, "workflow_runs": rows},
+                ' <https://api.github.test/repos/owner/repo/actions/runs?per_page=100&status=queued&page=2>; rel="next", '
+                '<https://api.github.test/repos/owner/repo/actions/runs?per_page=100&status=queued&page=2>; rel="last"',
+            )
         return Response({"total_count": 101, "workflow_runs": [{
+            "id": index + 41, "run_attempt": 1, "path": ".github/workflows/quality.yml",
+            "workflow_id": 999,
+        } for index in range(60)] + [{
             "id": 101, "run_attempt": 1, "path": ".github/workflows/scheduled-brief.yml",
             "workflow_id": 318853044, "status": "queued",
         }]})
@@ -221,6 +229,55 @@ def test_queue_api_reads_all_pages_and_active_statuses(monkeypatch):
     assert any("status=requested" in url for url in requests)
     assert any("status=queued&page=2" in url for url in requests)
     assert any(run["id"] == 101 for run in runs)
+
+
+def test_queue_api_rejects_untrusted_next_page_url_before_request(monkeypatch):
+    requests: list[str] = []
+
+    class Response:
+        headers = {
+            "Link": '<https://evil.example/repos/owner/repo/actions/runs?per_page=100&status=queued&page=2>; rel="next"',
+        }
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return json.dumps({"total_count": 2, "workflow_runs": [{"id": 1}]}).encode()
+
+    def open_request(request, timeout):
+        requests.append(request.full_url)
+        return Response()
+
+    monkeypatch.setattr(writer_queue, "urlopen", open_request)
+    with pytest.raises(writer_queue.WriterQueueError, match="pagination link identity invalid"):
+        writer_queue._fetch_runs(
+            api_url="https://api.github.test", repository="owner/repo", token="token",
+        )
+    assert len(requests) == 1
+
+
+def test_queue_api_fails_closed_when_count_requires_page_but_link_is_missing(monkeypatch):
+    class Response:
+        headers = {}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return json.dumps({"total_count": 2, "workflow_runs": [{"id": 1}]}).encode()
+
+    monkeypatch.setattr(writer_queue, "urlopen", lambda *_args, **_kwargs: Response())
+    with pytest.raises(writer_queue.WriterQueueError, match="pagination incomplete"):
+        writer_queue._fetch_runs(
+            api_url="https://api.github.test", repository="owner/repo", token="token",
+        )
 
 
 def test_queue_api_accepts_a_valid_run_transition_between_status_reads(monkeypatch):
