@@ -379,7 +379,7 @@ def test_wait_for_slot_requires_two_complete_empty_snapshots():
 
 
 def test_disappeared_blocker_requires_authoritative_terminal_verification():
-    rows = [_run(10), [], []]
+    rows = [[_run(10)], [], []]
     verified = []
 
     def fetcher(**_kwargs):
@@ -485,6 +485,10 @@ def test_writer_queue_cli_stops_before_publication_when_main_moves(monkeypatch, 
 
 
 def test_us_premarket_superseded_run_dispatches_one_fixed_slot_successor(monkeypatch, capsys, tmp_path):
+    monkeypatch.setattr(
+        "src.writer_queue._scheduled_queue_budget",
+        lambda _context, *, requested_seconds: (requested_seconds, ""),
+    )
     monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
     monkeypatch.setenv("GITHUB_TOKEN", "test-token")
     monkeypatch.setenv("GITHUB_SHA", "old-sha")
@@ -520,6 +524,10 @@ def test_us_premarket_superseded_run_dispatches_one_fixed_slot_successor(monkeyp
 
 
 def test_handoff_child_cannot_start_a_second_successor(monkeypatch, capsys, tmp_path):
+    monkeypatch.setattr(
+        "src.writer_queue._scheduled_queue_budget",
+        lambda _context, *, requested_seconds: (requested_seconds, ""),
+    )
     monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
     monkeypatch.setenv("GITHUB_TOKEN", "test-token")
     monkeypatch.setenv("GITHUB_SHA", "old-sha")
