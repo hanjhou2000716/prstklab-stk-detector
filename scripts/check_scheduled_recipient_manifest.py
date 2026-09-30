@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import os
 import re
-import sys
 
 from src.alert_orchestrator import recipient_hash
 from src.scheduled_recipient_manifest import parse_recipient_manifest
