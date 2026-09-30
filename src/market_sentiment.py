@@ -45,8 +45,11 @@ def project_market_sentiments(
         sentiment = sentiment if isinstance(sentiment, dict) else {}
         if market.get("sentiment_signal_eligible") is not True:
             continue
+        raw_score = sentiment.get("score")
+        if raw_score is None:
+            continue
         try:
-            score = float(sentiment.get("score"))
+            score = float(raw_score)
         except (TypeError, ValueError):
             continue
         label = str(sentiment.get("label") or "").strip()

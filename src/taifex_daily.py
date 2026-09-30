@@ -155,6 +155,7 @@ def qualify_txf_quote_for_display(
         return {**unavailable, "reason": "reference_time_unverified"}
     local_now = reference_now.astimezone(TAIPEI)
     observed = _date(quote.get("quote_date") or quote.get("quote_time"))
+    observed_at: datetime | None
     try:
         observed_at = datetime.fromisoformat(str(quote.get("quote_time") or "").replace("Z", "+00:00"))
         if observed_at.tzinfo is None or observed_at.utcoffset() is None:
@@ -490,6 +491,7 @@ def validated_txf_backup(
         month = _contract_month(contract_match.group(1) if contract_match else "")
         observed = _date(row.get("market_date"))
         observed_at_raw = str(row.get("observed_at") or "")
+        observed_at: datetime | None
         try:
             observed_at = datetime.fromisoformat(observed_at_raw.replace("Z", "+00:00"))
             if observed_at.tzinfo is None or observed_at.utcoffset() is None:

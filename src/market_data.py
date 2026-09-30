@@ -927,7 +927,7 @@ def build_market_snapshot() -> dict[str, Any]:
     from src.market_backup import from_environment as market_backup_from_environment
     backup_store = market_backup_from_environment()
     markets = {key: get_market_status(key) for key in MARKETS}
-    errors: list[dict[str, str]] = []
+    errors: list[dict[str, Any]] = []
     taiwan_status = markets.get("taiwan")
     if isinstance(taiwan_status, dict):
         # XTAI supplies only the TWSE cash calendar.  TAIFEX is resolved from
