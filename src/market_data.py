@@ -681,7 +681,7 @@ def apply_taiwan_intraday_crosscheck(
         return indices, []
     tpex_fetcher = tpex_fetcher or fetch_tpex_index
     tpex_metadata = next((item for item in MARKET_INDICES if item.get("ticker") == "TPEx"), {})
-    errors: list[dict[str, str]] = []
+    errors: list[dict[str, Any]] = []
     tpex = None
     tpex_fallback_used = False
     had_tpex_row = any(item.get("ticker") == "TPEx" for item in indices)
@@ -1003,16 +1003,21 @@ def build_market_snapshot() -> dict[str, Any]:
         try:
             from src.taifex_daily import fetch_latest_verified_txf, validated_txf_backup
 
-            txf = fetch_latest_verified_txf(now=taipei_now)
+            txf_attempts: list[dict[str, str]] = []
+            txf = fetch_latest_verified_txf(now=taipei_now, diagnostics=txf_attempts)
             if txf is None:
-                txf = validated_txf_backup(backup_store, now=taipei_now)
+                txf = validated_txf_backup(
+                    backup_store, now=taipei_now, diagnostics=txf_attempts,
+                )
             indices = [item for item in indices if str(item.get("ticker") or "") != "TXF"]
             if txf is not None:
+                txf["source_attempts"] = txf_attempts
                 indices.append(txf)
             else:
                 errors.append({
                     "ticker": "TXF",
-                    "message": "TAIFEX日盤 OpenAPI／官方日盤表及具完整契約證據的最近快照均未取得；未以夜盤或連續合約補值。",
+                    "message": "TAIFEX日盤來源未能核實；未以夜盤或連續合約補值。",
+                    "source_attempts": txf_attempts,
                     "scope": "index",
                 })
         except Exception as exc:

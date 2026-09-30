@@ -129,6 +129,7 @@ def test_briefing_summary_keeps_two_fixed_rows_when_market_evidence_is_missing()
 
 def test_missing_quote_rows_are_publicly_omitted_but_kept_as_detailed_gaps():
     briefing = build_briefing_snapshot({
+        "generated_at": "2026-09-14T14:00:00+08:00",
         "indices": [
             {"ticker": "TAIEX", "price": 45862.52, "change_percent": -0.70, "quote_date": "2026-09-14"},
             {"ticker": "NASDAQ", "price": 26333.03, "change_percent": 0.96, "quote_date": "2026-09-14"},
@@ -172,9 +173,10 @@ def test_all_missing_quote_facts_do_not_leave_public_placeholder_or_observation(
 
 def test_public_observations_add_structure_without_repeating_quote_lines():
     briefing = build_briefing_snapshot({
+        "generated_at": "2026-09-14T14:00:00+08:00",
         "indices": [
             {"ticker": "TAIEX", "price": 45862.52, "change_percent": -0.70, "quote_date": "2026-09-14", "quote_time": "2026-09-14T13:30:00+08:00", "freshness": "recent_close"},
-            {"ticker": "TXF", "price": 45890, "change": -310, "change_percent": -0.67, "quote_date": "2026-09-14", "quote_time": "2026-09-14T13:45:00+08:00", "freshness": "recent_close", "contract_month": "202610", "quote_basis": "TAIFEX_TXF_DAY|contract=202610|session=regular", "source_url": "https://openapi.taifex.com.tw/v1/DailyMarketReportFut"},
+            {"ticker": "TXF", "price": 45890, "change": -310, "change_percent": -0.67, "quote_date": "2026-09-14", "quote_time": "2026-09-14T13:45:00+08:00", "freshness": "recent_close", "contract_month": "202610", "contract_basis": "named_month_contract", "quote_basis": "TAIFEX_TXF_DAY|contract=202610|session=regular", "instrument_id": "market:txf:taifex:202610:regular", "session": "regular", "source_url": "https://openapi.taifex.com.tw/v1/DailyMarketReportFut"},
             {"ticker": "TPEx", "price": 394.41, "change_percent": -0.28, "quote_date": "2026-09-14"},
             {"ticker": "NASDAQ", "price": 26333.04, "change_percent": 0.96, "quote_date": "2026-09-14"},
             {"ticker": "SOX", "price": 11824.00, "change_percent": 1.81, "quote_date": "2026-09-14"},
@@ -429,7 +431,7 @@ def test_taiwan_pair_uses_one_verified_display_state_for_rows_and_takeaway():
         "generated_at": "2026-09-28T07:00:00+08:00",
         "indices": [
             {"ticker": "TAIEX", "price": 48024.60, "change": -132.69, "change_percent": -0.28, "quote_date": "2026-09-24", "freshness": "recent_close"},
-            {"ticker": "TXF", "price": 48123.00, "change": -189.00, "change_percent": -0.39, "quote_date": "2026-09-24", "freshness": "recent_close", "contract_month": "202610", "quote_basis": "TAIFEX_TXF_DAY|contract=202610|session=regular"},
+            {"ticker": "TXF", "price": 48123.00, "change": -189.00, "change_percent": -0.39, "quote_date": "2026-09-24", "quote_time": "2026-09-24T13:45:00+08:00", "freshness": "recent_close", "contract_month": "202610", "contract_basis": "named_month_contract", "quote_basis": "TAIFEX_TXF_DAY|contract=202610|session=regular", "instrument_id": "market:txf:taifex:202610:regular", "session": "regular", "source_url": "https://openapi.taifex.com.tw/v1/DailyMarketReportFut"},
         ],
         "quotes": [],
         "macro_quotes": [],
@@ -473,7 +475,7 @@ def test_taiwan_pair_keeps_partial_verified_quote_but_does_not_infer_direction()
         "generated_at": "2026-09-28T07:00:00+08:00",
         "indices": [
             {"ticker": "TAIEX", "price": 48024.60, "change": -132.69, "quote_date": "2026-09-24", "freshness": "recent_close"},
-            {"ticker": "TXF", "price": 48123.00, "change": -189.00, "change_percent": -0.39, "quote_date": "2026-09-24", "freshness": "recent_close", "contract_month": "202610"},
+            {"ticker": "TXF", "price": 48123.00, "change": -189.00, "change_percent": -0.39, "quote_date": "2026-09-24", "quote_time": "2026-09-24T13:45:00+08:00", "freshness": "recent_close", "contract_month": "202610", "contract_basis": "named_month_contract", "quote_basis": "TAIFEX_TXF_DAY|contract=202610|session=regular", "instrument_id": "market:txf:taifex:202610:regular", "session": "regular", "source_url": "https://openapi.taifex.com.tw/v1/DailyMarketReportFut"},
         ],
         "quotes": [],
         "macro_quotes": [],
@@ -531,3 +533,84 @@ def test_us_cash_header_and_observation_ignore_an_invalid_quote_date():
     assert "2026-02-30" not in cash["header_note"]
     assert cash["takeaway"] == "指數表現分別呈現，避免用單一指數代表整體美股。"
 
+
+
+def test_sep_30_briefing_projects_historical_txf_and_only_taiwan_sentiment():
+    from unittest.mock import patch
+
+    snapshot = {
+        "generated_at": "2026-09-30T14:28:00+08:00",
+        "indices": [
+            {
+                "ticker": "TAIEX", "price": 48024.60, "change": 310.18, "change_percent": 0.65,
+                "quote_date": "2026-09-30", "quote_time": "2026-09-30T13:30:00+08:00",
+                "freshness": "recent_close",
+            },
+            {
+                "ticker": "TXF", "price": 47767.0, "change": -356.0, "change_percent": -0.74,
+                "quote_date": "2026-09-29", "quote_time": "2026-09-29T13:45:00+08:00",
+                "freshness": "stale", "data_status": "stale", "stale_used": True, "backup_used": True,
+                "quote_delayed": True, "contract_month": "202610", "contract_basis": "named_month_contract",
+                "quote_basis": "TAIFEX_TXF_DAY|contract=202610|session=regular",
+                "instrument_id": "market:txf:taifex:202610:regular", "session": "regular",
+                "source_url": "https://openapi.taifex.com.tw/v1/DailyMarketReportFut",
+            },
+        ],
+        "risk": {
+            "taiwan": {
+                "sentiment_signal_eligible": True,
+                "sentiment": {
+                    "score": 31.8, "label": "恐慌", "calculation_state": "fresh",
+                    "data_quality": "primary", "date": "2026-09-30",
+                    "calculated_at": "2026-09-30T14:28:00+08:00",
+                    "source_label": "TAIEX Macro FGI",
+                    "source_url": "https://example.tw/fgi",
+                },
+            },
+        },
+        "events": {"items": []},
+    }
+    with (
+        patch("src.taifex_daily.get_taifex_index_futures_status", return_value={"calendar_status": "confirmed_open"}),
+        patch("src.taifex_daily._calendar_open", return_value=True),
+        patch("src.taifex_daily._session_gap", return_value=1),
+        patch("src.taifex_daily._contract_is_unexpired", return_value=True),
+    ):
+        briefing = build_briefing_snapshot(snapshot, "post_close")
+
+    pair = briefing["morning_analysis"]["sections"][0]
+    txf = pair["facts_structured"][1]
+    projection = briefing["market_card_projection"]
+    assert txf["display_state"] == "historical_reference"
+    assert txf["display_change_percent"] == -0.74
+    assert "2026-09-29" in txf["status_note"]
+    assert "非即時" in txf["status_note"]
+    assert "47767.00 點" in txf["text"]
+    assert "資料日不同" in pair["takeaway"]
+    assert "同跌" not in pair["takeaway"]
+    assert [item["text"] for item in projection["sentiments"]] == ["台股情緒31.8／恐慌"]
+    assert briefing["market_sentiments"] == projection["sentiments"]
+
+
+def test_taifex_source_attempts_survive_into_read_only_card_diagnostics():
+    briefing = build_briefing_snapshot({
+        "generated_at": "2026-09-30T14:28:00+08:00",
+        "indices": [],
+        "quotes": [],
+        "macro_quotes": [],
+        "events": {"items": []},
+        "errors": [{
+            "ticker": "TXF",
+            "message": "not shown in the notification",
+            "source_attempts": [
+                {"source": "taifex_openapi", "outcome": "not_published"},
+                {"source": "taifex_daily_table", "outcome": "connection_failed"},
+                {"source": "taifex_saved_backup", "outcome": "backup_expired"},
+            ],
+        }],
+    }, "post_close")
+    gaps = briefing["morning_analysis"]["system_analysis"]["data_gaps"]
+    txf_gap = next(item for item in gaps if item.get("ticker") == "TXF")
+    assert [item["outcome"] for item in txf_gap["source_attempts"]] == [
+        "not_published", "connection_failed", "backup_expired",
+    ]

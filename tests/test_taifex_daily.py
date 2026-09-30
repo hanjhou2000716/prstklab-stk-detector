@@ -11,6 +11,7 @@ from src.taifex_daily import (
     fetch_latest_verified_txf,
     parse_daily_api,
     parse_daily_html,
+    qualify_txf_quote_for_display,
     validated_txf_backup,
 )
 
@@ -224,3 +225,112 @@ def test_last_known_good_requires_complete_official_contract_and_session_evidenc
         assert backup is not None and backup["backup_used"] is True
         assert validated_txf_backup(Store({**good, "quote_basis": "legacy generic quote"}), now=NOW) is None
         assert validated_txf_backup(Store({**good, "source_url": "https://openapi.taifex.com.tw.evil/v1/DailyMarketReportFut"}), now=NOW) is None
+
+def _official_display_quote(day="2026-09-29", *, source_url=TAIFEX_DAILY_API, session="regular", month="202610"):
+    return {
+        "ticker": "TXF",
+        "price": 47767.0,
+        "change": -356.0,
+        "change_percent": -0.74,
+        "quote_date": day,
+        "quote_time": f"{day}T13:45:00+08:00",
+        "freshness": "stale",
+        "stale_used": True,
+        "backup_used": True,
+        "contract_month": month,
+        "contract_basis": "named_month_contract",
+        "quote_basis": f"TAIFEX_TXF_DAY|contract={month}|session={session}",
+        "instrument_id": f"market:txf:taifex:{month}:regular",
+        "session": session,
+        "source_url": source_url,
+    }
+
+
+def test_official_previous_day_quote_is_reference_not_today_or_alert():
+    now = datetime.fromisoformat("2026-09-30T14:28:00+08:00")
+    quote = _official_display_quote()
+    with (
+        patch("src.taifex_daily.get_taifex_index_futures_status", return_value={"calendar_status": "confirmed_open"}),
+        patch("src.taifex_daily._calendar_open", return_value=True),
+        patch("src.taifex_daily._session_gap", return_value=1),
+        patch("src.taifex_daily._contract_is_unexpired", return_value=True),
+    ):
+        result = qualify_txf_quote_for_display(quote, now=now)
+    assert result["verified"] is True
+    assert result["display_state"] == "historical_reference"
+    assert result["date"] == "2026-09-29"
+    assert result["price"] == 47767.0
+    assert result["alert_eligible"] is False
+
+
+def test_official_txf_reference_fails_closed_for_wrong_source_session_or_age():
+    now = datetime.fromisoformat("2026-09-30T14:28:00+08:00")
+    invalid_quotes = [
+        (_official_display_quote(source_url="https://example.com/fake"), "official_source_unverified"),
+        (_official_display_quote(session="night"), "contract_or_session_unverified"),
+        (_official_display_quote(month="202610W4"), "contract_or_session_unverified"),
+    ]
+    with (
+        patch("src.taifex_daily.get_taifex_index_futures_status", return_value={"calendar_status": "confirmed_open"}),
+        patch("src.taifex_daily._calendar_open", return_value=True),
+        patch("src.taifex_daily._session_gap", return_value=1),
+        patch("src.taifex_daily._contract_is_unexpired", return_value=True),
+    ):
+        for quote, reason in invalid_quotes:
+            assert qualify_txf_quote_for_display(quote, now=now)["reason"] == reason
+        with patch("src.taifex_daily._session_gap", return_value=4):
+            assert qualify_txf_quote_for_display(_official_display_quote(), now=now)["reason"] == "backup_expired"
+
+
+def test_txf_display_requires_a_trusted_calendar_and_completed_session():
+    now = datetime.fromisoformat("2026-09-30T12:00:00+08:00")
+    quote = _official_display_quote(day="2026-09-29")
+    with (
+        patch("src.taifex_daily.get_taifex_index_futures_status", return_value={"calendar_status": "unknown"}),
+        patch("src.taifex_daily._calendar_open", return_value=True),
+        patch("src.taifex_daily._contract_is_unexpired", return_value=True),
+    ):
+        result = qualify_txf_quote_for_display(quote, now=now)
+    assert result["verified"] is False
+    assert result["reason"] == "taifex_calendar_unverified"
+
+
+def test_official_source_failures_have_safe_distinct_diagnostics():
+    responses = [
+        SimpleNamespace(status_code=200, raise_for_status=lambda: None, json=lambda: []),
+        SimpleNamespace(status_code=200, raise_for_status=lambda: None, text="<html>unrelated response</html>"),
+    ]
+
+    class Session:
+        def get(self, url, **kwargs):
+            return responses.pop(0)
+
+    diagnostics = []
+    assert fetch_latest_verified_txf(session=Session(), now=NOW, diagnostics=diagnostics) is None
+    assert diagnostics == [
+        {"source": "taifex_openapi", "outcome": "not_published"},
+        {"source": "taifex_daily_table", "outcome": "parse_or_contract_mismatch"},
+    ]
+
+
+def test_saved_txf_backup_diagnostics_identify_expired_history():
+    row = {
+        "market_date": "2026-09-29",
+        "observed_at": "2026-09-29T13:45:00+08:00",
+        "price": 47767.0,
+        "previous_close": 48123.0,
+        "change": -356.0,
+        "change_percent": -0.74,
+        "instrument_id": "market:txf:taifex:202610:regular",
+        "quote_basis": "TAIFEX_TXF_DAY|contract=202610|session=regular",
+        "source_url": TAIFEX_DAILY_API,
+    }
+    store = SimpleNamespace(latest_quote=lambda *args, **kwargs: row)
+    diagnostics = []
+    with (
+        patch("src.taifex_daily._contract_is_unexpired", return_value=True),
+        patch("src.taifex_daily._calendar_open", return_value=True),
+        patch("src.taifex_daily._session_gap", return_value=4),
+    ):
+        assert validated_txf_backup(store, now=datetime.fromisoformat("2026-09-30T14:28:00+08:00"), diagnostics=diagnostics) is None
+    assert diagnostics == [{"source": "taifex_saved_backup", "outcome": "backup_expired"}]

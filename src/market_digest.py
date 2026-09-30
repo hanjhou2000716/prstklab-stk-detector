@@ -379,6 +379,41 @@ def _usable_scoped_quote(item: dict[str, Any]) -> bool:
     return freshness not in _UNUSABLE_FRESHNESS and bool(item.get("quote_time") or item.get("quote_date"))
 
 
+def _txf_qualification(item: dict[str, Any] | None, as_of: datetime) -> dict[str, Any]:
+    if not isinstance(item, dict):
+        return {"verified": False, "display_state": "unavailable", "reason": "quote_missing"}
+    from src.taifex_daily import qualify_txf_quote_for_display
+
+    return qualify_txf_quote_for_display(item, now=as_of)
+
+
+def _scoped_quote_usable_for_report(
+    item: dict[str, Any], txf_qualification: dict[str, Any],
+) -> bool:
+    if _normalise_ticker(item.get("ticker")) == "TXF":
+        return bool(
+            txf_qualification.get("verified")
+            and txf_qualification.get("display_state") == "recent_close"
+        )
+    return _usable_scoped_quote(item)
+
+
+def _short_txf_reference(qualification: dict[str, Any]) -> str:
+    if not qualification.get("verified"):
+        return ""
+    observed = str(qualification.get("date") or "")
+    try:
+        parsed = datetime.strptime(observed, "%Y-%m-%d").date()
+    except ValueError:
+        return ""
+    price = qualification.get("price")
+    percent = qualification.get("change_percent")
+    if price is None or percent is None:
+        return ""
+    marker = "非今日" if qualification.get("display_state") == "historical_reference" else ""
+    return f"台指期{parsed.month}/{parsed.day}日盤{float(price):,.0f}({float(percent):+.2f}%){marker}"
+
+
 def _theme_for_event(event: dict[str, Any], fact: str, snapshot_quotes: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     source = _event_source(event)
     normalized = _event_projection(event)
@@ -616,6 +651,11 @@ def build_market_digest(
     except ValueError:
         as_of = datetime.now(UTC)
 
+    from src.market_sentiment import project_market_sentiments
+    market_sentiments = project_market_sentiments(
+        risk, market_scope=market_scope_key, as_of=as_of,
+    )
+
     raw_events: list[dict[str, Any]] = []
     event_block = snapshot.get("events")
     if isinstance(event_block, dict) and isinstance(event_block.get("items"), list):
@@ -681,12 +721,29 @@ def build_market_digest(
 
     candidates.sort(key=candidate_sort_key)
 
-    all_quotes = [
+    source_quotes = [
         item for item in [*(snapshot.get("indices") or []), *(snapshot.get("quotes") or []), *(snapshot.get("macro_quotes") or [])]
         if isinstance(item, dict)
     ]
+    txf_source = next(
+        (item for item in source_quotes if _normalise_ticker(item.get("ticker")) == "TXF"),
+        None,
+    )
+    txf_qualification = (
+        _txf_qualification(txf_source, as_of)
+        if market_scope_key == "taiwan" else
+        {"verified": False, "display_state": "unavailable", "reason": "out_of_scope"}
+    )
+    txf_reference_fact = (
+        _short_txf_reference(txf_qualification)
+        if txf_qualification.get("display_state") == "historical_reference" else ""
+    )
+    all_quotes = source_quotes
     if market_scope_key:
-        all_quotes = [item for item in all_quotes if _usable_scoped_quote(item)]
+        all_quotes = [
+            item for item in all_quotes
+            if _scoped_quote_usable_for_report(item, txf_qualification)
+        ]
     quote_priority = [
         "TAIEX", "TXF", "S&P 500", "NASDAQ", "DJIA", "ES", "NQ", "YM", "SOX",
         "TPEx", "US10Y", "DXY", "GOLD", "WTI",
@@ -853,7 +910,8 @@ def build_market_digest(
         {"ticker": ticker, "reason": "quote_missing_or_unusable"}
         for ticker in required_tickers
         if ticker not in present_tickers or not any(
-            _normalise_ticker(item.get("ticker")) == ticker and _usable_scoped_quote(item)
+            _normalise_ticker(item.get("ticker")) == ticker
+            and _scoped_quote_usable_for_report(item, txf_qualification)
             for item in all_quotes
         )
     ]
@@ -871,7 +929,12 @@ def build_market_digest(
         ),
         "",
     )
-    all_report_evidence_missing = all_required_quotes_missing and not complete_event_fact
+    all_report_evidence_missing = (
+        all_required_quotes_missing
+        and not complete_event_fact
+        and not market_sentiments
+        and not txf_reference_fact
+    )
     overview = project_overview(assessment, DASHBOARD_SUMMARY_MAX_CHARS)
     public_message = project_public_message(label, assessment, PUBLIC_MESSAGE_MAX_CHARS)
     if public_message and not len(public_message) <= PUBLIC_MESSAGE_MAX_CHARS:
@@ -887,13 +950,21 @@ def build_market_digest(
                 "risk": "行情資料缺漏，不推論市場價格方向",
             })
             message_content = f"{scope_label}｜{complete_event_fact}；行情資料缺漏"
+        elif market_sentiments or txf_reference_fact:
+            support_facts = [value for value in (txf_reference_fact, *(item["text"] for item in market_sentiments)) if value]
+            assessment["summary_sections"].update({
+                "summary": f"{scope_label}市場參考",
+                "market_highlights": "；".join(support_facts),
+                "risk": "情緒與行情各自依資料日期閱讀，不合併推論方向",
+            })
+            message_content = f"{scope_label}｜" + "；".join(support_facts)
         else:
             assessment["summary_sections"].update({
                 "summary": f"{scope_label}行情資料不足",
-                "market_highlights": "指定行情本輪缺漏，未使用其他市場或舊值替代",
+                "market_highlights": "本輪未取得可核對的市場行情或情緒資料",
                 "risk": "資料不足，不推論市場方向",
             })
-            message_content = f"{scope_label}｜行情資料不足，本輪明確列示缺漏。"
+            message_content = f"{scope_label}｜市場資料暫未取得"
         overview = project_overview(assessment, DASHBOARD_SUMMARY_MAX_CHARS)
         public_message = canonical_short_message(
             message_content,
@@ -911,7 +982,7 @@ def build_market_digest(
         scope_label = _SLOT_LABELS.get(slot, "台股盤後" if market_scope_key == "taiwan" else "美股盤前")
         available = []
         for item in quote_items:
-            if not _usable_scoped_quote(item):
+            if not _scoped_quote_usable_for_report(item, txf_qualification):
                 continue
             ticker = _normalise_ticker(item.get("ticker"))
             name = _TICKER_NAMES.get(ticker, ticker)
@@ -924,18 +995,6 @@ def build_market_digest(
             _TICKER_NAMES.get(str(item.get("ticker") or ""), str(item.get("ticker") or ""))
             for item in quote_gaps
         ]
-        missing_tickers = {str(item.get("ticker") or "").upper() for item in quote_gaps}
-        missing_clause = ""
-        if slot == "us_premarket" and missing_tickers & {"ES", "NQ", "YM"}:
-            missing_clause = "盤前期貨未取得"
-        elif missing:
-            missing_clause = "缺漏" + "、".join(missing[:2])
-
-        # Keep the routine Telegram body useful under its strict character
-        # budget: at least one release-bound fact, plus the most important
-        # missing-data disclosure. Quotes are grouped only when their freshness
-        # and observation date agree; do not make asynchronous rows look like
-        # one synchronous market reading.
         quote_groups: dict[tuple[str, str], list[str]] = {}
         for item in available:
             quote_groups.setdefault((item["freshness"], item["date"]), []).append(item["text"])
@@ -944,22 +1003,38 @@ def build_market_digest(
             (freshness, _date), group = next(iter(quote_groups.items()))
             freshness_label = "最近收盤" if freshness == "recent_close" else "盤前觀測" if slot == "us_premarket" else "行情"
             summary_facts = [f"{freshness_label}{value}" for value in group[:3]]
-        else:
-            summary_facts = ["行情資料不足"]
+        elif not txf_reference_fact and not market_sentiments:
+            summary_facts = ["市場資料暫未取得"]
 
+        # Keep one verified price fact first, then the dated TXF reference and
+        # eligible market sentiment. Add secondary prices only when they fit.
+        fact_candidates: list[str] = []
+        if summary_facts:
+            fact_candidates.append(summary_facts[0])
+        if txf_reference_fact:
+            fact_candidates.append(txf_reference_fact)
+        fact_candidates.extend(str(item["text"]) for item in market_sentiments)
+        fact_candidates.extend(summary_facts[1:])
+
+        accepted_facts: list[str] = []
         public_message = ""
-        # Prefer the first verified fact and explicit futures gap. Add same-
-        # timestamp facts only if the complete canonical summary still fits.
-        for fact_count in range(len(summary_facts), 0, -1):
-            compact = "、".join(summary_facts[:fact_count])
-            if missing_clause:
-                compact += f"；{missing_clause}"
-            public_message = canonical_short_message(
-                f"{scope_label}｜{compact}", limit=PUBLIC_MESSAGE_MAX_CHARS,
-                message_kind="scheduled_brief", label=scope_label,
+        for fact in fact_candidates:
+            candidate = canonical_short_message(
+                f"{scope_label}｜" + "；".join([*accepted_facts, fact]),
+                limit=PUBLIC_MESSAGE_MAX_CHARS,
+                message_kind="scheduled_brief",
+                label=scope_label,
             )
-            if public_message:
-                break
+            if candidate:
+                accepted_facts.append(fact)
+                public_message = candidate
+        if not public_message and fact_candidates:
+            public_message = canonical_short_message(
+                f"{scope_label}｜{fact_candidates[0]}",
+                limit=PUBLIC_MESSAGE_MAX_CHARS,
+                message_kind="scheduled_brief",
+                label=scope_label,
+            )
         if missing:
             existing_highlights = str(assessment["summary_sections"].get("market_highlights") or "").strip()
             missing_text = "缺漏 " + "、".join(missing[:3])
@@ -1048,6 +1123,30 @@ def build_market_digest(
         sections["market_session"] = session_disclosure
         assessment["market_session_state"] = session_disclosure
         overview = project_overview(assessment, DASHBOARD_SUMMARY_MAX_CHARS)
+
+    if slot == "morning" and market_sentiments:
+        from src.telegram_client import canonical_short_message
+
+        sentiment_facts = [str(item["text"]) for item in market_sentiments]
+        sentiment_body = "；".join(sentiment_facts)
+        existing_body = public_message.split("｜", 1)[1].strip() if "｜" in public_message else public_message
+        with_existing = canonical_short_message(
+            f"晨報｜{sentiment_body}；{existing_body}" if existing_body else f"晨報｜{sentiment_body}",
+            message_kind="scheduled_brief",
+            label="晨報",
+            limit=PUBLIC_MESSAGE_MAX_CHARS,
+        )
+        if with_existing and all(fact in with_existing for fact in sentiment_facts):
+            public_message = with_existing
+        else:
+            sentiment_only = canonical_short_message(
+                f"晨報｜{sentiment_body}",
+                message_kind="scheduled_brief",
+                label="晨報",
+                limit=PUBLIC_MESSAGE_MAX_CHARS,
+            )
+            if sentiment_only and all(fact in sentiment_only for fact in sentiment_facts):
+                public_message = sentiment_only
 
     canonical_material = {
         # Slot labels are presentation metadata.  Cross-anchor delivery
@@ -1186,6 +1285,8 @@ def build_market_digest(
         "assessment_summary": overview,
         "overview": overview,
         "market_assessment": assessment,
+        "market_sentiments": market_sentiments,
+        "txf_display_qualification": txf_qualification if market_scope_key == "taiwan" else None,
         "market_scope_key": market_scope_key or assessment.get("market_scope_key"),
         "scheduled_report": assessment.get("scheduled_report") is True,
         "quote_gaps": quote_gaps,
