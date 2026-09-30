@@ -528,7 +528,7 @@ def audit_slot(
         expected_recipient_set_version,
         expected_recipient_set_effective_at,
         original_slot_anchor,
-        expected_recipient_hashes,
+        expected_recipient_hashes or set(),
     )
     normalized_version = str(expected_recipient_set_version or "").strip()
     source_fields["recipient_set_version"] = (
