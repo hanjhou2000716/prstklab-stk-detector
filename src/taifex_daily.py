@@ -477,15 +477,19 @@ def validated_txf_backup(
         return None
     local_now = (now or datetime.now(TAIPEI)).astimezone(TAIPEI)
     try:
-        row = store.latest_quote("TXF", before_or_on=local_now.date().isoformat(), provider="TAIFEX日盤")
+        row = store.latest_quote(
+            "TXF", before_or_on=local_now.date().isoformat(), provider="TAIFEX日盤",
+        )
         if not isinstance(row, dict):
             _record_source_attempt(diagnostics, "taifex_saved_backup", "backup_not_found")
             return None
-        contract_match = re.search(r"(?:^|\|)contract=(\d{6})(?:\||$)", str(row.get("quote_basis") or ""))
+        contract_match = re.search(
+            r"contract=(\d{6})",
+            str(row.get("quote_basis") or ""),
+        )
         month = _contract_month(contract_match.group(1) if contract_match else "")
         observed = _date(row.get("market_date"))
         observed_at_raw = str(row.get("observed_at") or "")
-        observed_at: datetime | None
         try:
             observed_at = datetime.fromisoformat(observed_at_raw.replace("Z", "+00:00"))
             if observed_at.tzinfo is None or observed_at.utcoffset() is None:
@@ -495,12 +499,17 @@ def validated_txf_backup(
         except ValueError:
             observed_at = None
         source_url = str(row.get("source_url") or "")
-        parsed_url = urlparse(source_url)
+        try:
+            parsed_url = urlparse(source_url)
+        except ValueError:
+            _record_source_attempt(diagnostics, "taifex_saved_backup", "backup_source_unverified")
+            return None
         trusted_source = (
             parsed_url.scheme == "https"
             and parsed_url.netloc == "openapi.taifex.com.tw"
             and parsed_url.hostname == "openapi.taifex.com.tw"
             and parsed_url.path == "/v1/DailyMarketReportFut"
+            and not parsed_url.query
             and not parsed_url.username and not parsed_url.password and not parsed_url.fragment
         ) or (
             parsed_url.scheme == "https"
@@ -510,30 +519,37 @@ def validated_txf_backup(
             and parse_qs(parsed_url.query) == {"commodity_id": ["TX"]}
             and not parsed_url.username and not parsed_url.password and not parsed_url.fragment
         )
+        if not trusted_source:
+            _record_source_attempt(diagnostics, "taifex_saved_backup", "backup_source_unverified")
+            return None
+        if (
+            not month or not observed or observed > local_now.date()
+            or month < observed.strftime("%Y%m")
+            or not _contract_is_unexpired(month, local_now)
+            or str(row.get("instrument_id") or "") != f"market:txf:taifex:{month}:regular"
+            or str(row.get("quote_basis") or "") != f"TAIFEX_TXF_DAY|contract={month}|session=regular"
+            or observed_at is None or observed_at.date() != observed
+        ):
+            _record_source_attempt(diagnostics, "taifex_saved_backup", "backup_identity_or_contract_mismatch")
+            return None
         price = _number(row.get("price"))
         previous_close = _number(row.get("previous_close"))
         change = _number(row.get("change"))
         percent = _number(row.get("change_percent"))
-        if not trusted_source:
-            _record_source_attempt(diagnostics, "taifex_saved_backup", "backup_source_unverified")
-            return None
-        if not month or not observed or month < observed.strftime("%Y%m") or (
-            not _contract_is_unexpired(month, local_now)
-        ) or str(row.get("instrument_id") or "") != f"market:txf:taifex:{month}:regular" or (
-            str(row.get("quote_basis") or "") != f"TAIFEX_TXF_DAY|contract={month}|session=regular"
-        ) or observed_at is None or observed_at.date() != observed:
-            _record_source_attempt(diagnostics, "taifex_saved_backup", "backup_identity_or_contract_mismatch")
-            return None
         if price is None or price <= 0 or previous_close is None or change is None or percent is None:
             _record_source_attempt(diagnostics, "taifex_saved_backup", "backup_values_unverified")
             return None
-        if not _calendar_open(observed):
+        try:
+            observed_session_open = _calendar_open(observed)
+        except Exception:
+            observed_session_open = False
+        if not observed_session_open:
             _record_source_attempt(diagnostics, "taifex_saved_backup", "backup_taifex_calendar_unverified")
             return None
         if _session_gap(observed, local_now.date()) > MAX_COMPLETED_SESSIONS_OLD:
             _record_source_attempt(diagnostics, "taifex_saved_backup", "backup_expired")
             return None
-                return {
+        backup = {
             "ticker": "TXF", "name": "臺股期貨近月", "market": "taiwan", "currency": "點",
             "price": price, "previous_close": previous_close,
             "change": change, "change_percent": percent,
@@ -546,10 +562,11 @@ def validated_txf_backup(
             "backup_used": True, "stale_used": True, "quote_delayed": True,
             "fallback_reason": "official_sources_temporarily_unavailable",
         }
+        _record_source_attempt(diagnostics, "taifex_saved_backup", "verified")
+        return backup
     except Exception:
         _record_source_attempt(diagnostics, "taifex_saved_backup", "backup_read_or_validation_failed")
         return None
-
 
 __all__ = [
     "TAIFEX_DAILY_API", "TAIFEX_DAILY_TABLE_QUERY", "fetch_latest_verified_txf",
