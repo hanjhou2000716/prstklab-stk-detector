@@ -410,7 +410,7 @@ def _short_txf_reference(qualification: dict[str, Any]) -> str:
     percent = qualification.get("change_percent")
     if price is None or percent is None:
         return ""
-    marker = "非今日" if qualification.get("display_state") == "historical_reference" else ""
+    marker = "非今日" if qualification.get("is_today") is False else ""
     return f"台指期{parsed.month}/{parsed.day}日盤{float(price):,.0f}({float(percent):+.2f}%){marker}"
 
 
@@ -736,7 +736,7 @@ def build_market_digest(
     )
     txf_reference_fact = (
         _short_txf_reference(txf_qualification)
-        if txf_qualification.get("display_state") == "historical_reference" else ""
+        if txf_qualification.get("verified") and txf_qualification.get("is_today") is False else ""
     )
     all_quotes = source_quotes
     if market_scope_key:
@@ -985,6 +985,8 @@ def build_market_digest(
             if not _scoped_quote_usable_for_report(item, txf_qualification):
                 continue
             ticker = _normalise_ticker(item.get("ticker"))
+            if ticker == "TXF" and txf_reference_fact:
+                continue
             name = _TICKER_NAMES.get(ticker, ticker)
             available.append({
                 "text": f"{name}{float(item['change_percent']):+.2f}%",

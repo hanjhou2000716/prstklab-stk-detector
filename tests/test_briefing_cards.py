@@ -59,7 +59,7 @@ def test_sep_28_us_premarket_snapshot_keeps_partial_cash_quotes_and_valid_routin
     assert briefing["public_short_message"].startswith("📊 美股盤前｜")
     assert briefing["public_short_message"] != "🟡 美股盤前"
     assert "最近收盤標普500+0.51%" in briefing["public_short_message"]
-    assert "盤前期貨未取得" in briefing["public_short_message"]
+    assert "盤前期貨未取得" not in briefing["public_short_message"]
     assert _briefing_evidence_ready(briefing) is True
     event = _briefing_delivery_event({"briefing": briefing}, "us_premarket")
     assert event is not None

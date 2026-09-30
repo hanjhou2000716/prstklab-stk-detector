@@ -1059,7 +1059,7 @@ def _scoped_quote_detail(
                 "ticker", "name", "price", "change", "change_percent", "currency",
                 "freshness", "data_status", "quote_date", "quote_time", "source_label",
                 "quote_source", "source", "source_url", "contract_month", "contract_basis",
-                "session", "quote_delayed", "stale_used", "quote_basis", "backup_used",
+                "session", "quote_delayed", "stale_used", "quote_basis", "instrument_id", "backup_used",
                 "official_fallback_used", "source_attempts",
             )
             if row.get(key) not in (None, "")
@@ -1085,7 +1085,7 @@ def _scoped_quote_detail(
         key: row.get(key)
         for key in (
             "ticker", "name", "price", "change", "change_percent", "quote_date", "quote_time",
-            "freshness", "data_status", "quote_basis", "quote_source", "source_label",
+            "freshness", "data_status", "quote_basis", "instrument_id", "quote_source", "source_label",
             "source_url", "session", "contract_month", "contract_basis", "quote_delayed",
             "stale_used", "backup_used", "official_fallback_used", "source_attempts",
         )
