@@ -585,7 +585,7 @@ def test_sep_30_briefing_projects_historical_txf_and_only_taiwan_sentiment():
     assert txf["display_change_percent"] == -0.74
     assert "2026-09-29" in txf["status_note"]
     assert "非即時" in txf["status_note"]
-    assert "47767.00 點" in txf["text"]
+    assert "47,767.00 點" in txf["text"]
     assert "資料日不同" in pair["takeaway"]
     assert "同跌" not in pair["takeaway"]
     assert [item["text"] for item in projection["sentiments"]] == ["台股情緒31.8／恐慌"]
