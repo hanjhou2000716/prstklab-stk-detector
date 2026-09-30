@@ -445,3 +445,123 @@ def test_generic_event_detail_cannot_become_primary_event():
         "此公開事件可能影響市場預期" not in theme.get("why_important", "")
         for theme in result["themes"]
     )
+
+
+def test_sep_30_post_close_keeps_verified_txf_reference_and_taiwan_sentiment_in_60_chars():
+    from unittest.mock import patch
+
+    snapshot = {
+        "generated_at": "2026-09-30T14:28:00+08:00",
+        "indices": [
+            {
+                "ticker": "TAIEX", "price": 48024.60, "change": 310.18, "change_percent": 0.65,
+                "quote_date": "2026-09-30", "quote_time": "2026-09-30T13:30:00+08:00",
+                "freshness": "recent_close",
+            },
+            {
+                "ticker": "TXF", "price": 47767.0, "change": -356.0, "change_percent": -0.74,
+                "quote_date": "2026-09-29", "quote_time": "2026-09-29T13:45:00+08:00",
+                "freshness": "stale", "data_status": "stale", "stale_used": True, "backup_used": True,
+                "quote_delayed": True, "contract_month": "202610", "contract_basis": "named_month_contract",
+                "quote_basis": "TAIFEX_TXF_DAY|contract=202610|session=regular",
+                "instrument_id": "market:txf:taifex:202610:regular", "session": "regular",
+                "source_url": "https://openapi.taifex.com.tw/v1/DailyMarketReportFut",
+            },
+        ],
+        "risk": {
+            "taiwan": {
+                "sentiment_signal_eligible": True,
+                "sentiment": {
+                    "score": 31.8, "label": "恐慌", "calculation_state": "fresh",
+                    "data_quality": "primary", "date": "2026-09-30",
+                    "calculated_at": "2026-09-30T14:28:00+08:00",
+                    "source_label": "TAIEX Macro FGI",
+                    "source_url": "https://example.tw/fgi",
+                },
+            },
+        },
+        "events": {"items": []},
+    }
+    with (
+        patch("src.taifex_daily.get_taifex_index_futures_status", return_value={"calendar_status": "confirmed_open"}),
+        patch("src.taifex_daily._calendar_open", return_value=True),
+        patch("src.taifex_daily._session_gap", return_value=1),
+        patch("src.taifex_daily._contract_is_unexpired", return_value=True),
+    ):
+        result = build_market_digest(snapshot, "post_close")
+
+    message = result["public_short_message"]
+    assert result["notification_eligible"] is True
+    assert result["txf_display_qualification"]["display_state"] == "historical_reference"
+    assert result["txf_display_qualification"]["alert_eligible"] is False
+    assert "台指期9/29日盤47,767(-0.74%)非今日" in message
+    assert "台股情緒31.8／恐慌" in message
+    assert "缺漏台指期" not in message
+    assert len(message) <= 60
+
+
+def test_us_premarket_and_morning_sentiment_projection_respects_market_scope():
+    snapshot = {
+        "generated_at": "2026-09-30T06:28:00+00:00",
+        "indices": [
+            {"ticker": "S&P 500", "price": 7805.75, "change_percent": 0.50,
+             "quote_date": "2026-09-29", "quote_time": "2026-09-29T16:00:00-04:00",
+             "freshness": "recent_close"},
+        ],
+        "risk": {
+            "taiwan": {
+                "sentiment_signal_eligible": True,
+                "sentiment": {
+                    "score": 31.8, "label": "恐慌", "calculation_state": "fresh",
+                    "data_quality": "primary", "date": "2026-09-30",
+                    "calculated_at": "2026-09-30T14:28:00+08:00",
+                    "source_label": "TAIEX Macro FGI", "source_url": "https://example.tw/fgi",
+                },
+            },
+            "us": {
+                "sentiment_signal_eligible": True,
+                "sentiment": {
+                    "score": 31.5, "label": "Fear", "updated_at": "2026-09-30T00:00:00+00:00",
+                    "source_label": "CNN Fear & Greed", "source_url": "https://example.com/fgi",
+                },
+            },
+        },
+        "events": {"items": []},
+    }
+    us = build_market_digest(snapshot, "us_premarket")
+    assert [item["market"] for item in us["market_sentiments"]] == ["us"]
+    assert "美股情緒31.5／Fear" in us["public_short_message"]
+    assert "台股情緒" not in us["public_short_message"]
+
+    morning = build_market_digest(snapshot, "morning")
+    assert {item["market"] for item in morning["market_sentiments"]} == {"taiwan", "us"}
+    assert "台股情緒31.8／恐慌" in morning["public_short_message"]
+    assert "美股情緒31.5／Fear" in morning["public_short_message"]
+    assert len(morning["public_short_message"]) <= 60
+
+
+def test_latest_completed_txf_before_today_is_still_labeled_non_today():
+    from unittest.mock import patch
+
+    snapshot = {
+        "generated_at": "2026-09-30T08:45:00+08:00",
+        "indices": [{
+            "ticker": "TXF", "price": 47767.0, "change": -356.0, "change_percent": -0.74,
+            "quote_date": "2026-09-29", "quote_time": "2026-09-29T13:45:00+08:00",
+            "freshness": "stale", "stale_used": True, "backup_used": True,
+            "contract_month": "202610", "quote_basis": "TAIFEX_TXF_DAY|contract=202610|session=regular",
+            "instrument_id": "market:txf:taifex:202610:regular", "session": "regular",
+            "source_url": "https://openapi.taifex.com.tw/v1/DailyMarketReportFut",
+        }],
+        "events": {"items": []},
+    }
+    with (
+        patch("src.taifex_daily.get_taifex_index_futures_status", return_value={"calendar_status": "confirmed_open"}),
+        patch("src.taifex_daily._calendar_open", return_value=True),
+        patch("src.taifex_daily._session_gap", return_value=0),
+        patch("src.taifex_daily._contract_is_unexpired", return_value=True),
+    ):
+        result = build_market_digest(snapshot, "pre_open")
+    assert result["txf_display_qualification"]["display_state"] == "recent_close"
+    assert result["txf_display_qualification"]["is_today"] is False
+    assert "台指期9/29日盤47,767(-0.74%)非今日" in result["public_short_message"]

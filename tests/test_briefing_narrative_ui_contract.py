@@ -52,3 +52,15 @@ def test_us_cards_use_compact_market_scoped_layout_and_keep_quote_evidence():
     assert "projectionCards ||" in app
     assert '["taiwan", "us"].includes(marketCardProjection?.market_scope)' in app
     assert "marketCardProjection.market_scope === \"taiwan\"" in app
+
+
+def test_scoped_cards_render_only_their_projected_market_sentiment():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    cards = (ROOT / "src" / "briefing_cards.py").read_text(encoding="utf-8")
+    assert "briefing-market-sentiment" in app
+    assert "marketProjection?.sentiments" in app
+    assert '"sentiments": list(market_sentiments or [])' in cards
+    assert "escapeHtml(label)" in app
+    assert "escapeHtml(sentiment)" in app
+    assert "source_attempts" in app
+    assert "backup_expired" in app

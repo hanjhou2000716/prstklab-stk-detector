@@ -1,4 +1,5 @@
 import json
+from unittest.mock import patch
 
 from src.market_assessment import build_joint_market_signal, normalize_headline
 from src.market_digest import build_market_digest
@@ -135,7 +136,8 @@ def test_market_assessment_uses_fixed_three_section_overview_and_weekend_status(
     assert result["public_short_message"].startswith("📊 台股盤後｜最近收盤")
 
 
-def test_taiwan_stance_does_not_call_nasdaq_softness_a_generic_conflict():
+@patch("src.market_digest._txf_qualification", return_value={"verified": True, "display_state": "recent_close", "date": "2026-09-04", "price": 101.0, "change": 1.0, "change_percent": 1.0, "alert_eligible": False})
+def test_taiwan_stance_does_not_call_nasdaq_softness_a_generic_conflict(_mock_txf_qualification):
     result = build_market_digest({
         "indices": [
             {"ticker": "TAIEX", "price": 100, "change_percent": 1.2, "freshness": "recent_close", "quote_date": "2026-09-04"},
@@ -171,7 +173,8 @@ def test_quote_only_briefing_is_not_suppressed_but_empty_inputs_are():
     assert "行情資料不足" in empty["public_short_message"]
 
 
-def test_tpex_does_not_replace_weighted_index_and_txf_in_taiwan_core_projection():
+@patch("src.market_digest._txf_qualification", return_value={"verified": True, "display_state": "recent_close", "date": "2026-09-04", "price": 101.0, "change": 1.0, "change_percent": 1.0, "alert_eligible": False})
+def test_tpex_does_not_replace_weighted_index_and_txf_in_taiwan_core_projection(_mock_txf_qualification):
     result = build_market_digest({
         "indices": [
             {"ticker": "TAIEX", "price": 100, "change_percent": 1.0, "freshness": "recent_close", "quote_date": "2026-09-04"},

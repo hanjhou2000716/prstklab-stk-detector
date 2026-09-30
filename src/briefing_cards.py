@@ -1010,11 +1010,40 @@ def _market_topics(items: dict[str, dict[str, Any]], events: list[dict[str, Any]
     return topics, dynamic
 
 
+def _scoped_quote_qualification(
+    quote: dict[str, Any] | None, ticker: str, as_of: Any,
+) -> dict[str, Any]:
+    if ticker != "TXF":
+        return _quote_display_qualification(quote, ticker)
+    try:
+        reference_time = datetime.fromisoformat(str(as_of or "").replace("Z", "+00:00"))
+        if reference_time.tzinfo is None or reference_time.utcoffset() is None:
+            return {"verified": False, "date": "", "freshness": "unknown", "price": None,
+                    "change": None, "change_percent": None, "state": "unavailable"}
+    except ValueError:
+        return {"verified": False, "date": "", "freshness": "unknown", "price": None,
+                "change": None, "change_percent": None, "state": "unavailable"}
+    from src.taifex_daily import qualify_txf_quote_for_display
+
+    result = qualify_txf_quote_for_display(quote, now=reference_time)
+    return {
+        "verified": bool(result.get("verified")),
+        "date": str(result.get("date") or ""),
+        "is_today": result.get("is_today") is True,
+        "freshness": str(result.get("freshness") or "unknown"),
+        "price": result.get("price"),
+        "change": result.get("change"),
+        "change_percent": result.get("change_percent"),
+        "state": str(result.get("display_state") or "unavailable"),
+        "qualification_reason": str(result.get("reason") or ""),
+    }
+
+
 def _scoped_quote_detail(
-    item: dict[str, Any] | None, ticker: str, name: str, *, scope: str,
+    item: dict[str, Any] | None, ticker: str, name: str, *, scope: str, as_of: Any = None,
 ) -> tuple[str, dict[str, Any], dict[str, Any] | None]:
     row = item if isinstance(item, dict) else {}
-    qualification = _quote_display_qualification(row, ticker)
+    qualification = _scoped_quote_qualification(row, ticker, as_of)
     price = qualification["price"]
     change = qualification["change_percent"]
     point_change = qualification["change"]
@@ -1030,8 +1059,8 @@ def _scoped_quote_detail(
                 "ticker", "name", "price", "change", "change_percent", "currency",
                 "freshness", "data_status", "quote_date", "quote_time", "source_label",
                 "quote_source", "source", "source_url", "contract_month", "contract_basis",
-                "session", "quote_delayed", "stale_used", "quote_basis", "backup_used",
-                "official_fallback_used",
+                "session", "quote_delayed", "stale_used", "quote_basis", "instrument_id", "backup_used",
+                "official_fallback_used", "source_attempts",
             )
             if row.get(key) not in (None, "")
         }
@@ -1056,9 +1085,9 @@ def _scoped_quote_detail(
         key: row.get(key)
         for key in (
             "ticker", "name", "price", "change", "change_percent", "quote_date", "quote_time",
-            "freshness", "data_status", "quote_basis", "quote_source", "source_label",
+            "freshness", "data_status", "quote_basis", "instrument_id", "quote_source", "source_label",
             "source_url", "session", "contract_month", "contract_basis", "quote_delayed",
-            "stale_used", "backup_used", "official_fallback_used",
+            "stale_used", "backup_used", "official_fallback_used", "source_attempts",
         )
         if row.get(key) not in (None, "")
     }
@@ -1069,6 +1098,8 @@ def _scoped_morning_analysis(
     items: dict[str, dict[str, Any]], scope: str, as_of: Any, slot: str,
     taiwan_market_statistics: dict[str, Any] | None = None,
     *, release_id: str = "", snapshot_id: str = "",
+    market_sentiments: list[dict[str, Any]] | None = None,
+    source_errors: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Build only the market-specific explanations required for these slots."""
     specs = (
@@ -1082,10 +1113,17 @@ def _scoped_morning_analysis(
     data_gaps: list[dict[str, Any]] = []
     facts: list[dict[str, Any]] = []
     for ticker, name in specs:
-        text, evidence, gap = _scoped_quote_detail(items.get(ticker), ticker, name, scope=scope)
+        text, evidence, gap = _scoped_quote_detail(items.get(ticker), ticker, name, scope=scope, as_of=as_of)
         facts.append({"ticker": ticker, "name": name, "text": text, "quote": evidence})
         if gap:
-            data_gaps.append({"kind": "quote", **gap, "checked_at": as_of})
+            source_error = next((
+                error for error in (source_errors or [])
+                if isinstance(error, dict) and str(error.get("ticker") or "").upper() == ticker
+            ), {})
+            data_gaps.append({
+                "kind": "quote", **gap, "checked_at": as_of,
+                "source_attempts": source_error.get("source_attempts", []),
+            })
     supplementary_section: dict[str, Any] | None = None
     supplementary_gaps: list[dict[str, Any]] = []
     market_card_projection: dict[str, Any] | None = None
@@ -1434,7 +1472,7 @@ def _scoped_morning_analysis(
             quote = fact.get("quote") if isinstance(fact.get("quote"), dict) else {}
             ticker = str(fact.get("ticker") or "")
             name = "加權現貨" if ticker == "TAIEX" else "台指期近月日盤"
-            qualification = _quote_display_qualification(quote, ticker)
+            qualification = _scoped_quote_qualification(quote, ticker, as_of)
             verified = bool(qualification["verified"])
             observed = str(qualification["date"] or "")
             freshness = str(qualification["freshness"])
@@ -1456,8 +1494,11 @@ def _scoped_morning_analysis(
                     f"現貨｜{freshness_note}｜資料日 {observed}"
                     if verified else "現貨｜行情未核實｜資料日期不採信"
                 )
+            elif verified and freshness == "historical_reference":
+                status_note = f"期貨｜最近已核實日盤參考｜資料日 {observed}｜非今日／非即時"
             elif verified and freshness == "recent_close":
-                status_note = f"期貨｜最近已核實日盤｜資料日 {observed}｜非即時"
+                day_status = "非即時" if qualification["is_today"] else "非今日／非即時"
+                status_note = f"期貨｜最近已核實日盤｜資料日 {observed}｜{day_status}"
             elif verified:
                 status_note = f"期貨｜日盤行情｜資料日 {observed}"
             else:
@@ -1467,14 +1508,14 @@ def _scoped_morning_analysis(
                 "text": text,
                 "quote": quote,
                 "status_note": status_note,
-                "display_state": freshness if verified else "unavailable",
+                "display_state": qualification["state"] if verified else "unavailable",
                 "display_change_percent": percent if verified else None,
                 "display_date": observed,
             })
 
         pair_dates = [str(item.get("display_date") or "") for item in pair_facts]
         pair_eligible = [
-            item.get("display_state") in {"live", "recent_close"}
+            item.get("display_state") in {"live", "recent_close", "historical_reference"}
             for item in pair_facts
         ]
         pair_changes = [
@@ -1501,6 +1542,7 @@ def _scoped_morning_analysis(
             "layout": "taiwan_pair_v2",
             "facts": [item["text"] for item in pair_facts],
             "facts_structured": pair_facts,
+            "sentiments": list(market_sentiments or []),
             "status_notes": [item["status_note"] for item in pair_facts],
             "header_note": "；".join(item["status_note"] for item in pair_facts),
             "takeaway": pair_takeaway,
@@ -1582,6 +1624,7 @@ def _scoped_morning_analysis(
             "release_id": release_id,
             "snapshot_id": snapshot_id,
             "instruments": pair_facts,
+            "sentiments": list(market_sentiments or []),
             "takeaway": pair_takeaway,
             "cards": sections,
         }
@@ -1591,6 +1634,7 @@ def _scoped_morning_analysis(
             "version": "us-market-cards-v2",
             "market_scope": "us",
             "slot": slot,
+            "sentiments": list(market_sentiments or []),
             "market_date": cash_date,
             "release_id": release_id,
             "snapshot_id": snapshot_id,
@@ -1719,7 +1763,11 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
     else:
         cards = [all_items[ticker] for ticker in GLOBAL_TICKERS if all_items.get(ticker)]
     observations = _market_observations(all_items, risk, events)
-    briefing_data_as_of = snapshot.get("as_of") or snapshot.get("fetched_at") or snapshot.get("created_at")
+    briefing_data_as_of = snapshot.get("as_of") or snapshot.get("fetched_at") or snapshot.get("created_at") or snapshot.get("generated_at")
+    from src.market_sentiment import project_market_sentiments
+    market_sentiments = project_market_sentiments(
+        risk, market_scope=market_scope, as_of=briefing_data_as_of,
+    )
     if briefing_data_as_of:
         for observation in observations:
             observation["data_as_of"] = briefing_data_as_of
@@ -1864,6 +1912,8 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         snapshot.get("taiwan_market_statistics") if market_scope == "taiwan" else None,
         release_id=str(snapshot.get("release_id") or ""),
         snapshot_id=str(snapshot.get("snapshot_id") or snapshot.get("market_snapshot_id") or ""),
+        market_sentiments=market_sentiments,
+        source_errors=snapshot.get("errors") if isinstance(snapshot.get("errors"), list) else None,
     ) if market_scope else _morning_analysis(
         all_items,
         risk,
@@ -1890,6 +1940,7 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         "assessment_summary": digest.get("assessment_summary", ""),
         "market_assessment": digest.get("market_assessment", {}),
         "morning_analysis": morning_analysis,
+        "market_sentiments": market_sentiments,
         "market_card_projection": (
             morning_analysis.get("market_card_projection")
             if isinstance(morning_analysis, dict) and market_scope in {"taiwan", "us"} else None

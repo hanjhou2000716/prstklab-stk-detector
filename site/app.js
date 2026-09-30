@@ -1571,6 +1571,19 @@ const renderBriefing = (briefing, generatedAt) => {
     const sessionState = String(morningAnalysis.market_session_state || "").trim();
     const sessionMeta = sessionState && sessionState !== "本輪市場時段"
       ? `<div class="morning-analysis-meta">${escapeHtml(sessionState)}</div>` : "";
+    const sentimentFacts = Array.isArray(marketProjection?.sentiments)
+      ? marketProjection.sentiments
+      : (Array.isArray(report.market_sentiments) ? report.market_sentiments : []);
+    const sentimentMarkup = sentimentFacts.length
+      ? `<aside class="briefing-market-sentiment" aria-label="市場情緒">${sentimentFacts.map((fact) => {
+        const label = String(fact.label || "市場情緒");
+        const score = Number(fact.score);
+        const value = Number.isFinite(score) ? score.toFixed(1) : "資料未取得";
+        const sentiment = String(fact.sentiment || "");
+        const date = String(fact.observed_date || "");
+        return `<p><b>${escapeHtml(label)}：</b>${escapeHtml(value)}／${escapeHtml(sentiment)}${date ? `<small>資料日 ${escapeHtml(date)}</small>` : ""}</p>`;
+      }).join("")}${renderEvidence(sentimentFacts.map((fact) => ({ ...fact, ticker: fact.label, kind: "market_sentiment" })))}</aside>`
+      : "";
     const systemAnalysis = document.getElementById("briefing-morning-system-analysis");
     if (systemAnalysis) {
       const gapReasonLabels = {
@@ -1589,7 +1602,23 @@ const renderBriefing = (briefing, generatedAt) => {
         const reason = gapReasonLabels[String(item.reason || "").trim()] || String(item.reason || "資料缺口").trim();
         const status = String(item.data_status || "").trim();
         const observedAt = String(item.observed_at || item.checked_at || "").trim();
-        return [name, reason, status && `狀態 ${status}`, observedAt && `時間 ${observedAt}`]
+        const attemptLabels = {
+          not_published: "尚未公布",
+          connection_failed: "連線失敗",
+          parse_or_contract_mismatch: "解析／契約不符",
+          response_parse_failed: "回應解析失敗",
+          backup_expired: "備援過期",
+          backup_not_found: "無核實備援",
+          backup_store_unavailable: "備援帳本不可讀",
+          backup_identity_or_contract_mismatch: "備援身份不符",
+          backup_source_unverified: "備援來源未核實",
+          verified: "來源核實",
+        };
+        const attempts = Array.isArray(item.source_attempts)
+          ? item.source_attempts.map((entry) => attemptLabels[String(entry.outcome || "")] || String(entry.outcome || ""))
+            .filter(Boolean).join("、") : "";
+        return [name, reason, status && `狀態 ${status}`, observedAt && `時間 ${observedAt}`,
+          attempts && `來源檢查 ${attempts}`]
           .filter(Boolean).join("｜");
       };
       const rawGaps = [
@@ -1633,7 +1662,7 @@ const renderBriefing = (briefing, generatedAt) => {
         ? `${jointMarkup}${scheduleMarkup}${gaps.length ? `<p><b>資料缺口：</b>${escapeHtml(gaps.join("、"))}</p>` : ""}${note ? `<p>${escapeHtml(note)}</p>` : ""}`
         : '<p class="empty">本輪沒有額外系統分析資料。</p>';
     }
-    container.innerHTML = `<div class="morning-analysis">${sessionMeta}${morningSections.slice(0, 4).map(renderMorningSection).join("")}</div>`;
+    container.innerHTML = `<div class="morning-analysis">${sessionMeta}${sentimentMarkup}${morningSections.slice(0, 4).map(renderMorningSection).join("")}</div>`;
     return;
   }
   const systemAnalysis = document.getElementById("briefing-morning-system-analysis");
