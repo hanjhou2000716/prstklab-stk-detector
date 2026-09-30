@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import io
 import json
 import os
@@ -17,6 +16,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from src.schedule_contract import NEW_YORK, TAIPEI, fixed_scheduled_for, scheduled_anchor_key
+from src.scheduled_recipient_manifest import RecipientManifest, parse_recipient_manifest, recipient_set_version
 
 SCHEDULE_TO_SLOT = {
     "45 22 * * *": "morning",
@@ -123,28 +123,19 @@ def _receipt_result(
     }
 
 
+def _expected_recipient_manifest_from_env() -> tuple[set[str], str, str, str]:
+    """Read one atomic, content-addressed recipient manifest; never inspect sender IDs."""
+    raw_manifest = os.getenv("SCHEDULED_RECIPIENT_SET_MANIFEST", "")
+    try:
+        manifest = parse_recipient_manifest(raw_manifest)
+    except ValueError as exc:
+        return set(), "", "", str(exc)
+    return set(manifest.recipient_hashes), manifest.version, manifest.effective_at, ""
+
+
 def _expected_recipient_hashes_from_env() -> set[str]:
-    """Read a pre-hashed allowlist; never require subscriber IDs in audit logs."""
-    raw_hashes = os.getenv("SCHEDULED_RECIPIENT_HASHES", "")
-    hashes = {value.strip().casefold() for value in raw_hashes.split(",") if value.strip()}
-    if hashes:
-        return hashes if all(re.fullmatch(r"[0-9a-f]{12}", value) for value in hashes) else set()
-    # Keep audit membership independent from sender configuration and secrets.
-    return set()
-
-
-def recipient_set_version(recipient_hashes: set[str], effective_at: str) -> str:
-    """Bind the audited recipient hashes and effective timestamp into one version."""
-    normalized_hashes = sorted({str(value).strip().casefold() for value in recipient_hashes if str(value).strip()})
-    parsed = datetime.fromisoformat(str(effective_at).replace("Z", "+00:00"))
-    if parsed.tzinfo is None or parsed.utcoffset() is None:
-        raise ValueError("recipient set effective time must include a timezone")
-    normalized_effective = parsed.astimezone(UTC).isoformat().replace("+00:00", "Z")
-    material = json.dumps(
-        {"recipient_hashes": normalized_hashes, "effective_at": normalized_effective},
-        sort_keys=True, separators=(",", ":"),
-    ).encode("utf-8")
-    return f"recipients-{hashlib.sha256(material).hexdigest()[:16]}"
+    """Compatibility helper for callers that need only the manifest hash set."""
+    return _expected_recipient_manifest_from_env()[0]
 
 
 def _recipient_set_metadata_error(
@@ -408,6 +399,8 @@ def audit_slot(
     expected_recipient_set_version: str = "",
     expected_recipient_set_effective_at: str = "",
     require_recipient_set_metadata: bool = False,
+    expected_recipient_set_manifest_error: str = "",
+    recipient_manifest: RecipientManifest | None = None,
     github_repository: str = "",
     github_token: str = "",
 ) -> dict[str, Any]:
@@ -524,12 +517,22 @@ def audit_slot(
             "status": "blocked", "reason": policy_reason, "slot": slot,
             "obligation": obligation, "market_date": slot_date, "anchor": anchor, **source_fields,
         }
+    if recipient_manifest is not None:
+        selected_recipient_set = recipient_manifest.for_anchor(original_slot_anchor)
+        if selected_recipient_set is None:
+            expected_recipient_set_manifest_error = "expected_recipient_set_not_effective_for_slot"
+        else:
+            expected_recipient_hashes = set(selected_recipient_set.recipient_hashes)
+            expected_recipient_set_version = selected_recipient_set.version
+            expected_recipient_set_effective_at = selected_recipient_set.effective_at
     metadata_error, effective_label = _recipient_set_metadata_error(
         expected_recipient_set_version,
         expected_recipient_set_effective_at,
         original_slot_anchor,
         expected_recipient_hashes or set(),
     )
+    if expected_recipient_set_manifest_error:
+        metadata_error = expected_recipient_set_manifest_error
     normalized_version = str(expected_recipient_set_version or "").strip()
     source_fields["recipient_set_version"] = (
         normalized_version
@@ -587,14 +590,24 @@ def main() -> int:
     parser.add_argument("--scheduled-for-at", default=os.getenv("AUDIT_SCHEDULED_FOR_AT", ""))
     parser.add_argument("--requested-at", default=os.getenv("AUDIT_REQUESTED_AT", ""))
     parser.add_argument("--dispatch-unix", default=os.getenv("AUDIT_DISPATCH_UNIX", ""))
-    parser.add_argument("--recipient-set-version", default=os.getenv("SCHEDULED_RECIPIENT_SET_VERSION", ""))
-    parser.add_argument("--recipient-set-effective-at", default=os.getenv("SCHEDULED_RECIPIENT_SET_EFFECTIVE_AT", ""))
+    parser.add_argument("--recipient-set-manifest", default=os.getenv("SCHEDULED_RECIPIENT_SET_MANIFEST", ""))
     parser.add_argument("--repository", default=os.getenv("GITHUB_REPOSITORY", ""))
     parser.add_argument("--github-token", default=os.getenv("GITHUB_TOKEN", ""))
     parser.add_argument("--now", help="UTC timestamp override for deterministic tests")
     args = parser.parse_args()
     now = datetime.fromisoformat(args.now.replace("Z", "+00:00")) if args.now else datetime.now(UTC)
-    expected_recipient_hashes = _expected_recipient_hashes_from_env()
+    try:
+        recipient_manifest = parse_recipient_manifest(args.recipient_set_manifest)
+        expected_recipient_hashes = set(recipient_manifest.latest.recipient_hashes)
+        recipient_set_version_value = recipient_manifest.latest.version
+        recipient_set_effective_at = recipient_manifest.latest.effective_at
+        recipient_manifest_error = ""
+    except ValueError as exc:
+        recipient_manifest = None
+        expected_recipient_hashes = set()
+        recipient_set_version_value = ""
+        recipient_set_effective_at = ""
+        recipient_manifest_error = str(exc)
     result = audit_slot(
         ledger_path=args.ledger,
         schedule=args.schedule,
@@ -610,9 +623,11 @@ def main() -> int:
         external_scheduled_for_at=args.scheduled_for_at,
         external_requested_at=args.requested_at,
         external_dispatch_unix=args.dispatch_unix,
-        expected_recipient_set_version=args.recipient_set_version,
-        expected_recipient_set_effective_at=args.recipient_set_effective_at,
+        expected_recipient_set_version=recipient_set_version_value,
+        expected_recipient_set_effective_at=recipient_set_effective_at,
         require_recipient_set_metadata=True,
+        expected_recipient_set_manifest_error=recipient_manifest_error,
+        recipient_manifest=recipient_manifest,
         github_repository=args.repository,
         github_token=args.github_token,
     )
