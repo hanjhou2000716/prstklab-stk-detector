@@ -10,7 +10,21 @@ from pathlib import Path
 from typing import Any
 
 _TRUE = {"1", "true", "yes", "on"}
-_SAFE_SUPPRESSIONS = {"theme:same_theme_unchanged", "theme:same_theme_within_2h"}
+_SAFE_SUPPRESSIONS = {
+    "theme:same_theme_unchanged",
+    "theme:same_theme_within_2h",
+    "event_policy:event_daily_budget_exhausted",
+    "event_policy:event_market_cooldown",
+    "event_policy:sensitive_move_below_threshold",
+    "alert_budget:hourly_budget_exhausted",
+    "alert_budget:event_update_budget_exhausted",
+    "alert_budget:cooldown",
+    "alert_budget:quality_gate",
+    "alert_budget:source_quality_gate",
+    "alert_budget:stale_data",
+    "alert_budget:quote_delayed",
+    "alert_budget:crosscheck_pending",
+}
 _SAFE_RECONCILED_GATE_CATEGORIES = {
     "contract_mismatch",
     "deployed_artifact_mismatch",

@@ -456,6 +456,40 @@ def prepare_snapshot(*, publish: bool = True) -> tuple[dict[str, Any], dict[str,
     return snapshot, event
 
 
+def _candidate_delivery_policy(
+    event: dict[str, Any],
+    ledger: Any,
+    *,
+    priority: bool,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Use one event-policy and alert-budget decision in preflight and sender."""
+    if priority:
+        event_policy = {
+            "allowed": True,
+            "reason": "fj_priority_independent",
+            "market_scope": event_market_scope(event),
+        }
+    else:
+        history_method = getattr(ledger, "delivery_history", None)
+        history = history_method() if callable(history_method) else []
+        event_policy = decide_event_alert_policy(event, history)
+    if not event_policy.get("allowed", False):
+        return event_policy, {"allowed": False, "reason": "not_evaluated", "event_key": event_key(event)}
+    budget_event = {
+        **event,
+        "event_key": event_key(event),
+        "event_policy_allowed": bool(event_policy.get("allowed")),
+        "market_scope": event_policy.get("market_scope") or event_market_scope(event),
+    }
+    if priority:
+        budget = {"allowed": True, "reason": "fj_priority_independent", "event_key": event_key(event)}
+    else:
+        history_method = getattr(ledger, "delivery_history", None)
+        history = history_method() if callable(history_method) else []
+        budget = decide_alert_budget(budget_event, history)
+    return event_policy, budget
+
+
 def write_status_output(
     event: dict[str, Any] | None,
     snapshot: dict[str, Any] | None = None,
@@ -587,6 +621,18 @@ def write_status_output(
                     elif not candidate_priority and not candidate_should_send:
                         candidate_unknown_suppression = True
                         candidate_reason = "theme_preflight_unavailable"
+                    if candidate_should_send and not candidate_priority:
+                        policy, budget = _candidate_delivery_policy(
+                            candidate, theme_ledger, priority=candidate_priority,
+                        )
+                        if not policy.get("allowed", False):
+                            candidate_should_send = False
+                            candidate_suppressed = True
+                            candidate_reason = f"event_policy:{policy.get('reason') or 'suppressed'}"
+                        elif not budget.get("allowed", False):
+                            candidate_should_send = False
+                            candidate_suppressed = True
+                            candidate_reason = f"alert_budget:{budget.get('reason') or 'suppressed'}"
                 except (OSError, RuntimeError, TypeError, ValueError):
                     candidate_unknown_suppression = True
                     candidate_should_send = False
@@ -1100,10 +1146,8 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         # Legacy test/adapter doubles may not expose the new arbiter.  Keep
         # their path safe without resurrecting a production cooldown gate.
         _observe_event(event)
-    event_policy = (
-        {"allowed": True, "reason": "fj_priority_independent", "market_scope": event_market_scope(event)}
-        if fj_priority
-        else decide_event_alert_policy(event, ledger.delivery_history())
+    event_policy, budget = _candidate_delivery_policy(
+        event, ledger, priority=fj_priority,
     )
     if not event_policy.get("allowed", False):
         policy_event = {
@@ -1120,7 +1164,8 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
             False,
             f"event_policy:{event_policy.get('reason', 'suppressed')}",
             event=policy_event,
-            notification_status="suppressed",
+            notification_status="policy_suppressed",
+            notification_expected=False,
         )
         print(f"Official event suppressed by event policy: {event_policy.get('reason', 'suppressed')}")
         return False
@@ -1129,9 +1174,7 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         "alert_lane": "event",
         "market_scope": event_policy.get("market_scope") or event_market_scope(event),
         "event_policy_reason": event_policy.get("reason"),
-        # The FJ sender re-checks this marker for ordinary (<=8/10) events.
-        # High-priority FJ is independent of this gate, but retaining the
-        # marker makes the shared sender contract explicit for both lanes.
+        # FJ priority remains independent of the ordinary event policy.
         "event_policy_allowed": bool(event_policy.get("allowed")),
     }
     budget_event = {
@@ -1139,11 +1182,6 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
         "event_key": current_key,
         "event_policy_allowed": bool(event_policy.get("allowed")),
     }
-    budget = (
-        {"allowed": True, "reason": "fj_priority_independent", "event_key": current_key}
-        if fj_priority
-        else decide_alert_budget(budget_event, ledger.delivery_history())
-    )
     if not budget.get("allowed", False):
         if hasattr(ledger, "record_decision"):
             ledger.record_decision(budget_event, {**budget, "status": "suppressed", "reasons": [str(budget.get("reason") or "suppressed")]})
@@ -1152,7 +1190,8 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
             False,
             f"alert_budget:{budget.get('reason', 'suppressed')}",
             event=event,
-            notification_status="suppressed",
+            notification_status="policy_suppressed",
+            notification_expected=False,
         )
         print(f"Official event suppressed by alert budget: {budget.get('reason', 'suppressed')}")
         return False

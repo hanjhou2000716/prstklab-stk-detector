@@ -10,6 +10,7 @@ from src.release_manifest import (
     _normalize_market,
     _normalize_research,
     _read_object,
+    _write_immutable_alert_artifact,
     build_release_manifest,
     content_snapshot_id,
     sha256_file,
@@ -92,6 +93,42 @@ def test_local_release_bundle_fails_closed_on_snapshot_identity_mismatch(tmp_pat
     assert "market snapshot identity does not match the manifest" in errors
 
 
+
+
+def test_release_bound_alert_artifact_rebuild_preserves_exact_existing_bytes(tmp_path):
+    path = tmp_path / "alert.json"
+    first = {
+        "notification_id": "event-1",
+        "release_id": "release-1",
+        "snapshot_id": "snapshot-1",
+        "canonical_content_hash": "abc123",
+        "title": "Stable content",
+        "created_at": "2026-09-30T00:00:00Z",
+    }
+    stored = _write_immutable_alert_artifact(path, first)
+    original_bytes = path.read_bytes()
+    rebuilt = {**first, "created_at": "2026-09-30T00:05:00Z"}
+    preserved = _write_immutable_alert_artifact(path, rebuilt)
+    assert stored == first
+    assert preserved["created_at"] == first["created_at"]
+    assert path.read_bytes() == original_bytes
+
+
+def test_release_bound_alert_artifact_rejects_same_identity_with_changed_content(tmp_path):
+    path = tmp_path / "alert.json"
+    first = {
+        "notification_id": "event-1",
+        "release_id": "release-1",
+        "snapshot_id": "snapshot-1",
+        "canonical_content_hash": "abc123",
+        "title": "Stable content",
+        "created_at": "2026-09-30T00:00:00Z",
+    }
+    _write_immutable_alert_artifact(path, first)
+    with pytest.raises(ValueError, match="identity conflict"):
+        _write_immutable_alert_artifact(path, {**first, "title": "Changed content"})
+
+
 def test_manifest_publishes_release_specific_immutable_alert_details(tmp_path):
     _artifacts(tmp_path)
     market_path = tmp_path / "site" / "data" / "market.json"
@@ -123,6 +160,12 @@ def test_manifest_publishes_release_specific_immutable_alert_details(tmp_path):
     assert len(first_alert["canonical_content_hash"]) == 64
     assert first_row["canonical_content_hash"] == first_alert["canonical_content_hash"]
     assert verify_release_files(first, root=tmp_path / "site") == []
+    first_index_bytes = (tmp_path / "site" / "data" / "alert-index.json").read_bytes()
+    repeated = build_release_manifest(root=tmp_path)
+    assert repeated["release_id"] == first["release_id"]
+    assert repeated["artifact_hashes"]["alert-index.json"] == first["artifact_hashes"]["alert-index.json"]
+    assert (tmp_path / "site" / "data" / "alert-index.json").read_bytes() == first_index_bytes
+    assert first_path.read_text(encoding="utf-8") == first_text
 
     market["events"]["items"][0]["why_important"] = "官方已發布後續說明；仍待市場核對。"
     market_path.write_text(json.dumps(market), encoding="utf-8")

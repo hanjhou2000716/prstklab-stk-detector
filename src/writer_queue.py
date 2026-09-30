@@ -94,6 +94,23 @@ class WriterQueueError(RuntimeError):
     """Raised when the production writer queue cannot be established."""
 
 
+class RetryableQueueSnapshotError(WriterQueueError):
+    """A complete queue snapshot could not be read consistently; restart at page one."""
+
+
+class QueueRuns(list[dict[str, object]]):
+    """A complete queue snapshot with bounded recovery diagnostics."""
+
+    def __init__(
+        self,
+        values: Iterable[dict[str, object]] = (),
+        *,
+        recovery_rounds: int = 0,
+    ) -> None:
+        super().__init__(values)
+        self.recovery_rounds = recovery_rounds
+
+
 @dataclass(frozen=True)
 class QueueResult:
     waited_seconds: int
@@ -103,6 +120,9 @@ class QueueResult:
     reason: str = "queue_acquired"
     run_sha: str = ""
     main_sha: str = ""
+    recovery_rounds: int = 0
+    complete_snapshots: int = 0
+    verified_blockers: tuple[int, ...] = ()
 
 
 def _timestamp(run: Mapping[str, object], field: str) -> datetime | None:
@@ -215,7 +235,10 @@ def blocking_runs(
     return sorted(blockers, key=queue_order)
 
 
-def _fetch_runs(*, api_url: str, repository: str, token: str) -> list[dict[str, object]]:
+def _fetch_runs_once(
+    *, api_url: str, repository: str, token: str,
+    deadline_monotonic: float | None = None,
+) -> list[dict[str, object]]:
     if not repository or not token:
         raise WriterQueueError("GITHUB_REPOSITORY and GITHUB_TOKEN are required for the writer queue")
     rows_by_attempt: dict[tuple[int, str], dict[str, object]] = {}
@@ -242,7 +265,13 @@ def _fetch_runs(*, api_url: str, repository: str, token: str) -> list[dict[str, 
                 },
             )
             try:
-                with urlopen(request, timeout=15) as response:
+                request_timeout = 15.0
+                if deadline_monotonic is not None:
+                    remaining = deadline_monotonic - time.monotonic()
+                    if remaining <= 0:
+                        raise RetryableQueueSnapshotError("writer_queue_recovery_deadline_exhausted")
+                    request_timeout = min(request_timeout, remaining)
+                with urlopen(request, timeout=request_timeout) as response:
                     payload = json.loads(response.read().decode("utf-8"))
                     response_headers = getattr(response, "headers", None)
                     header_get = getattr(response_headers, "get", None)
@@ -251,8 +280,18 @@ def _fetch_runs(*, api_url: str, repository: str, token: str) -> list[dict[str, 
                         getheader = getattr(response, "getheader", None)
                         if callable(getheader):
                             link_header = getheader("Link")
-            except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
-                raise WriterQueueError(f"GitHub Actions queue lookup failed: {type(exc).__name__}") from exc
+            except HTTPError as exc:
+                if exc.code == 429 or 500 <= exc.code <= 599:
+                    raise RetryableQueueSnapshotError(
+                        f"writer_queue_transient_http_{exc.code}"
+                    ) from exc
+                raise WriterQueueError(
+                    f"GitHub Actions queue lookup failed: HTTPError_{exc.code}"
+                ) from exc
+            except (URLError, TimeoutError, OSError, ValueError) as exc:
+                raise RetryableQueueSnapshotError(
+                    f"GitHub Actions queue lookup failed: {type(exc).__name__}"
+                ) from exc
             values = payload.get("workflow_runs") if isinstance(payload, Mapping) else None
             count = payload.get("total_count") if isinstance(payload, Mapping) else None
             if not isinstance(values, list) or not isinstance(count, int) or count < 0:
@@ -260,7 +299,7 @@ def _fetch_runs(*, api_url: str, repository: str, token: str) -> list[dict[str, 
             if total_count is None:
                 total_count = count
             elif total_count != count:
-                raise WriterQueueError(
+                raise RetryableQueueSnapshotError(
                     "GitHub Actions queue pagination changed during read: "
                     f"status={status} page={page}"
                 )
@@ -288,7 +327,7 @@ def _fetch_runs(*, api_url: str, repository: str, token: str) -> list[dict[str, 
                 if item_updated is not None and (previous_updated is None or item_updated > previous_updated):
                     rows_by_attempt[key] = item
                 elif item_updated == previous_updated and previous.get("status") != item.get("status"):
-                    raise WriterQueueError("GitHub Actions queue state ambiguous during read")
+                    raise RetryableQueueSnapshotError("GitHub Actions queue state ambiguous during read")
             next_url = _next_page_url(
                 str(link_header) if link_header is not None else None,
                 api_url=api_url,
@@ -298,7 +337,7 @@ def _fetch_runs(*, api_url: str, repository: str, token: str) -> list[dict[str, 
             )
             if next_url is None:
                 if fetched < total_count:
-                    raise WriterQueueError(
+                    raise RetryableQueueSnapshotError(
                         "GitHub Actions queue pagination incomplete: "
                         f"status={status} page={page} fetched={fetched} total_count={total_count}"
                     )
@@ -308,6 +347,134 @@ def _fetch_runs(*, api_url: str, repository: str, token: str) -> list[dict[str, 
         else:
             raise WriterQueueError("GitHub Actions queue pagination limit exceeded")
     return list(rows_by_attempt.values())
+
+
+def _fetch_runs(
+    *, api_url: str, repository: str, token: str,
+    deadline_monotonic: float | None = None,
+    sleeper: Callable[[float], None] | None = None,
+) -> QueueRuns:
+    """Read a complete queue snapshot, restarting from page one on transient inconsistency."""
+    if not repository or not token:
+        raise WriterQueueError("GITHUB_REPOSITORY and GITHUB_TOKEN are required for the writer queue")
+    sleep = sleeper or time.sleep
+    started = time.monotonic()
+    deadline = min(started + 90.0, deadline_monotonic) if deadline_monotonic is not None else started + 90.0
+    delays = (2.0, 5.0)
+    last_error: RetryableQueueSnapshotError | None = None
+    attempts = 0
+    for round_index in range(3):
+        attempts = round_index + 1
+        try:
+            rows = _fetch_runs_once(
+                api_url=api_url,
+                repository=repository,
+                token=token,
+                deadline_monotonic=deadline,
+            )
+            return QueueRuns(rows, recovery_rounds=round_index)
+        except RetryableQueueSnapshotError as exc:
+            last_error = exc
+            if round_index >= 2:
+                break
+            delay = delays[round_index]
+            remaining = deadline - time.monotonic()
+            if remaining <= delay:
+                break
+            print(json.dumps({
+                "writer_queue": "snapshot_recovering",
+                "recovery_round": round_index + 1,
+                "error_code": str(exc).split(":", 1)[0][:80],
+                "remaining_seconds": max(0, int(remaining)),
+            }, sort_keys=True))
+            sleep(delay)
+    reason = str(last_error or "writer_queue_snapshot_unavailable")
+    raise WriterQueueError(
+        f"{reason}; writer_queue_recovery_exhausted; recovery_rounds={attempts}"
+    ) from last_error
+
+
+def _fetch_run_attempt(
+    run: Mapping[str, object], *, api_url: str, repository: str, token: str,
+    deadline_monotonic: float | None = None,
+) -> bool:
+    """Return whether a previously observed writer attempt is still active."""
+    run_id = _run_id(run)
+    try:
+        attempt = int(str(run.get("run_attempt") or "1"))
+    except (TypeError, ValueError):
+        attempt = 0
+    if run_id is None or attempt <= 0 or not repository or not token:
+        raise WriterQueueError("writer_queue_blocker_identity_invalid")
+    url = (
+        f"{api_url.rstrip('/')}/repos/{repository}/actions/runs/"
+        f"{run_id}/attempts/{attempt}"
+    )
+    request = Request(url, headers={
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {token}",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "prstk-production-writer-queue",
+    })
+    timeout = 15.0
+    if deadline_monotonic is not None:
+        timeout = min(timeout, deadline_monotonic - time.monotonic())
+    if timeout <= 0:
+        raise WriterQueueError("writer_queue_blocker_verification_deadline_exhausted")
+    try:
+        with urlopen(request, timeout=timeout) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
+        raise WriterQueueError(
+            f"writer_queue_blocker_verification_failed:{type(exc).__name__}"
+        ) from exc
+    if not isinstance(payload, Mapping):
+        raise WriterQueueError("writer_queue_blocker_response_invalid")
+    if (
+        _run_id(payload) != run_id
+        or str(payload.get("run_attempt") or "") != str(attempt)
+        or not _workflow_identity(payload)
+    ):
+        raise WriterQueueError("writer_queue_blocker_identity_mismatch")
+    status = str(payload.get("status") or "").casefold()
+    if status in ACTIVE_STATUSES:
+        return True
+    if status != "completed":
+        raise WriterQueueError("writer_queue_blocker_terminal_state_unknown")
+    return False
+
+
+def _scheduled_queue_budget(
+    slot_context: Mapping[str, object],
+    *,
+    requested_seconds: int,
+    now: datetime | None = None,
+) -> tuple[int, str]:
+    """Keep scheduled queue waiting inside the original slot's delivery reserve."""
+    slot = str(slot_context.get("scheduled_slot") or slot_context.get("effective_slot") or "")
+    if str(slot_context.get("delivery_intent") or "") != "notify_candidate":
+        return max(0, requested_seconds), ""
+    raw_anchor = str(slot_context.get("scheduled_for_at") or "").strip()
+    if not raw_anchor:
+        return max(0, requested_seconds), ""
+    try:
+        anchor = datetime.fromisoformat(raw_anchor.replace("Z", "+00:00"))
+    except ValueError:
+        raise WriterQueueError("scheduled_queue_anchor_invalid") from None
+    if anchor.tzinfo is None or anchor.utcoffset() is None:
+        raise WriterQueueError("scheduled_queue_anchor_invalid")
+    if slot == "us_premarket":
+        try:
+            from src.schedule_contract import NEW_YORK, us_session_bounds
+            open_at, _close_at = us_session_bounds(anchor.astimezone(NEW_YORK).date())
+            deadline = open_at.astimezone(UTC)
+        except (ImportError, OSError, ValueError) as exc:
+            raise WriterQueueError("scheduled_queue_market_deadline_unavailable") from exc
+    else:
+        deadline = anchor.astimezone(UTC) + timedelta(minutes=30)
+    current = (now or datetime.now(UTC)).astimezone(UTC)
+    available = int((deadline - current).total_seconds()) - 300
+    return max(0, min(max(0, requested_seconds), available)), deadline.isoformat()
 
 
 def _fetch_main_revision(*, api_url: str, repository: str, token: str) -> str:
@@ -421,13 +588,19 @@ def wait_for_slot(
     run_sha: str | None = None,
     revision_fetcher: Callable[..., str] | None = None,
     ignored_run_ids: Iterable[int] = (),
+    blocker_verifier: Callable[..., bool] | None = None,
+    stable_empty_snapshots: int = 2,
 ) -> QueueResult:
-    """Wait until all older production writer runs have left active states."""
+    """Wait for two complete queue snapshots and verify disappeared blockers."""
     resolved_api_url: str = api_url or os.getenv("GITHUB_API_URL") or "https://api.github.com"
     resolved_repository: str = repository or os.getenv("GITHUB_REPOSITORY") or ""
     resolved_token: str = token or os.getenv("GITHUB_TOKEN") or ""
     started = time.monotonic()
     checks = 0
+    complete_snapshots = 0
+    recovery_rounds = 0
+    stable_empty = 0
+    known_blockers: dict[tuple[int, str], dict[str, object]] = {}
     run_sha = str(run_sha or "").strip().lower()
     if revision_fetcher is not None:
         early_revision = _queue_revision(
@@ -444,14 +617,72 @@ def wait_for_slot(
     if settle_seconds > 0:
         sleeper(min(settle_seconds, max(timeout_seconds, 0)))
     while True:
+        elapsed = int(max(0, time.monotonic() - started))
+        remaining = timeout_seconds - elapsed
+        if remaining <= 0:
+            ids = tuple(sorted({key[0] for key in known_blockers}))
+            raise WriterQueueError(
+                f"writer queue timed out; active blockers={','.join(map(str, ids))}; "
+                "reason=writer_queue_timeout"
+            )
         checks += 1
+        rows = fetcher(
+            api_url=resolved_api_url,
+            repository=resolved_repository,
+            token=resolved_token,
+            deadline_monotonic=started + timeout_seconds,
+        )
+        recovery_rounds += int(getattr(rows, "recovery_rounds", 0) or 0)
+        complete_snapshots += 1
         blockers = blocking_runs(
-            fetcher(api_url=resolved_api_url, repository=resolved_repository, token=resolved_token),
+            rows,
             current_run_id=current_run_id,
             current_created_at=current_created_at,
             current_attempt_started_at=current_attempt_started_at,
             ignored_run_ids=ignored_run_ids,
         )
+        present_keys = {
+            (_run_id(row) or 0, str(row.get("run_attempt") or "1"))
+            for row in blockers
+        }
+        for key, previous in list(known_blockers.items()):
+            if key in present_keys:
+                continue
+            if blocker_verifier is not None:
+                still_active = blocker_verifier(
+                    previous,
+                    api_url=resolved_api_url,
+                    repository=resolved_repository,
+                    token=resolved_token,
+                    deadline_monotonic=started + timeout_seconds,
+                )
+            elif fetcher is _fetch_runs:
+                still_active = _fetch_run_attempt(
+                    previous,
+                    api_url=resolved_api_url,
+                    repository=resolved_repository,
+                    token=resolved_token,
+                    deadline_monotonic=started + timeout_seconds,
+                )
+            else:
+                # An injected fetcher is a deterministic test seam; production
+                # always uses the authoritative attempt endpoint above.
+                still_active = False
+            if still_active:
+                blockers.append(previous)
+                present_keys.add(key)
+            else:
+                known_blockers.pop(key, None)
+        for row in blockers:
+            run_id = _run_id(row)
+            key = (run_id or 0, str(row.get("run_attempt") or "1"))
+            if run_id:
+                known_blockers[key] = dict(row)
+        blockers.sort(key=lambda row: (
+            _attempt_started(row) or datetime.max.replace(tzinfo=UTC),
+            _run_id(row) or 0,
+            str(row.get("run_attempt") or "1"),
+        ))
         elapsed = int(max(0, time.monotonic() - started))
         revision = _queue_revision(
             run_sha=run_sha,
@@ -466,21 +697,42 @@ def wait_for_slot(
         if revision is not None:
             return revision
         if not blockers:
-            print(json.dumps({"writer_queue": "acquired", "waited_seconds": elapsed, "checks": checks}))
-            return QueueResult(
-                elapsed,
-                checks,
-                (),
-                status="acquired",
-                reason="queue_acquired",
-                run_sha=run_sha,
-            )
+            stable_empty += 1
+            if stable_empty >= max(2, stable_empty_snapshots):
+                print(json.dumps({
+                    "writer_queue": "acquired",
+                    "waited_seconds": elapsed,
+                    "checks": checks,
+                    "complete_snapshots": complete_snapshots,
+                    "recovery_rounds": recovery_rounds,
+                    "verified_blockers": sorted({key[0] for key in known_blockers}),
+                }, sort_keys=True))
+                return QueueResult(
+                    elapsed,
+                    checks,
+                    (),
+                    status="acquired",
+                    reason="queue_acquired",
+                    run_sha=run_sha,
+                    recovery_rounds=recovery_rounds,
+                    complete_snapshots=complete_snapshots,
+                    verified_blockers=tuple(sorted({key[0] for key in known_blockers})),
+                )
+            sleeper(min(2, max(0, timeout_seconds - elapsed)))
+            continue
+        stable_empty = 0
         remaining = timeout_seconds - elapsed
         if remaining <= 0:
             ids = _run_ids(blockers)
             raise WriterQueueError(f"writer queue timed out; active blockers={','.join(map(str, ids))}")
         ids = _run_ids(blockers)
-        print(json.dumps({"writer_queue": "waiting", "blockers": ids, "waited_seconds": elapsed}))
+        print(json.dumps({
+            "writer_queue": "waiting",
+            "blockers": ids,
+            "waited_seconds": elapsed,
+            "complete_snapshots": complete_snapshots,
+            "recovery_rounds": recovery_rounds,
+        }, sort_keys=True))
         sleeper(min(max(1, poll_seconds), remaining))
 
 
@@ -584,11 +836,17 @@ def main() -> int:
                 ignored_parent = (int(raw_parent),)
             except ValueError as exc:
                 raise WriterQueueError("handoff_parent_id_invalid") from exc
+        queue_timeout_seconds, queue_deadline_at = _scheduled_queue_budget(
+            slot_context,
+            requested_seconds=max(0, args.timeout_seconds),
+        )
+        if queue_timeout_seconds <= 0 and str(slot_context.get("delivery_intent") or "") == "notify_candidate":
+            raise WriterQueueError("scheduled_queue_delivery_reserve_exhausted")
         result = wait_for_slot(
             current_run_id=args.run_id,
             current_created_at=created,
             current_attempt_started_at=attempt_started,
-            timeout_seconds=max(0, args.timeout_seconds),
+            timeout_seconds=queue_timeout_seconds,
             poll_seconds=max(1, args.poll_seconds),
             settle_seconds=max(0, args.settle_seconds),
             run_sha=run_sha,
@@ -646,16 +904,30 @@ def main() -> int:
             "should_continue": "true",
             "reason": "current_production_revision",
             "waited_seconds": waited_seconds,
+            "queue_budget_seconds": queue_timeout_seconds,
+            "queue_deadline_at": queue_deadline_at,
+            "complete_snapshots": result.complete_snapshots if result is not None else 0,
+            "recovery_rounds": result.recovery_rounds if result is not None else 0,
             "blocker_run_ids": "",
             "run_sha": run_sha,
             "main_sha": main_revision,
         })
         print(json.dumps({"production_revision": revision["reason"]}))
     except WriterQueueError as exc:
+        recovery_match = re.search(r"recovery_rounds=(\d+)", str(exc))
         write_outputs({
             "queue_status": "failed",
             "should_continue": "false",
             "reason": str(exc).replace("\n", " "),
+            "queue_error_code": (
+                "writer_queue_snapshot_inconsistent_after_retries"
+                if "writer_queue_recovery_exhausted" in str(exc)
+                else str(exc).split(":", 1)[0][:100]
+            ),
+            "recovery_rounds": recovery_match.group(1) if recovery_match else "",
+            "complete_snapshots": "",
+            "queue_budget_seconds": "",
+            "queue_deadline_at": "",
             "waited_seconds": "",
             "blocker_run_ids": "",
             "run_sha": run_sha,

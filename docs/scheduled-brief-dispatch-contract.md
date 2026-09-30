@@ -88,11 +88,17 @@ one independently reviewed recipient-set record:
 - `SCHEDULED_RECIPIENT_HASHES`: comma-separated expected active recipient
   hashes (first 12 lowercase hex characters of SHA-256 over each configured
   chat ID; never store the chat IDs here).
-- `SCHEDULED_RECIPIENT_SET_VERSION`: a stable version label for that list.
+- `SCHEDULED_RECIPIENT_SET_VERSION`: `recipients-<fingerprint>`, where
+  `<fingerprint>` is the first 16 lowercase hex characters of SHA-256 over
+  canonical JSON (sorted keys, compact separators) containing the sorted,
+  de-duplicated lowercase hashes and normalized UTC effective timestamp. The
+  code exposes `recipient_set_version(hashes, effective_at)` as the canonical
+  calculation.
 - `SCHEDULED_RECIPIENT_SET_EFFECTIVE_AT`: timezone-aware ISO-8601 timestamp
-  (prefer UTC, for example `2026-09-29T00:00:00Z`) from which that exact list
-  is valid. The audit blocks a slot earlier than this time rather than applying
-  today's list retroactively.
+  (prefer UTC, for example `2026-09-30T00:00:00Z`) from which that exact list
+  is valid. The audit verifies that the version fingerprint matches both the
+  list and timestamp and blocks a slot earlier than this time rather than
+  applying today's list retroactively.
 
 Update the hash list, version, and effective time together whenever the active
 subscriber set changes. Missing or malformed metadata fails closed. The audit
