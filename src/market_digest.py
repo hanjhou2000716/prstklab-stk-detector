@@ -964,7 +964,7 @@ def build_market_digest(
                 "market_highlights": "本輪未取得可核對的市場行情或情緒資料",
                 "risk": "資料不足，不推論市場方向",
             })
-            message_content = f"{scope_label}｜市場資料暫未取得"
+            message_content = f"{scope_label}｜行情資料不足"
         overview = project_overview(assessment, DASHBOARD_SUMMARY_MAX_CHARS)
         public_message = canonical_short_message(
             message_content,
