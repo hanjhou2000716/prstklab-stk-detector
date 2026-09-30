@@ -699,6 +699,50 @@ def test_safe_same_theme_suppression_is_not_reported_as_missing_receipt(monkeypa
 
 
 
+
+
+def test_preflight_applies_daily_alert_budget_before_declaring_candidate_ready(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    event = {
+        "event_key": "budget-1",
+        "event_cluster_key": "budget-1",
+        "source_key": "official",
+        "title": "Daily budget candidate",
+        "source_url": "https://example.test/budget",
+        "risk_level": "R1",
+    }
+    monkeypatch.setattr(monitor, "build_official_event_brief", lambda _event: "complete brief")
+    monkeypatch.setattr(monitor, "content_is_incomplete", lambda *_args: False)
+    monkeypatch.setattr(monitor, "_observe_event", lambda *_args, **_kwargs: {"should_remind": True})
+    monkeypatch.setattr(monitor, "select_official_event", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        monitor, "decide_alert_budget",
+        lambda *_args: {"allowed": False, "reason": "hourly_budget_exhausted"},
+    )
+
+    class FakeLedger:
+        delivery_claims = {}
+
+        def delivery_history(self):
+            return []
+
+        def theme_decision(self, _event):
+            return {"allowed": True, "reason": "new_theme"}
+
+        def save(self):
+            return None
+
+    monkeypatch.setattr(monitor, "EventLedger", FakeLedger)
+    monitor.write_status_output(event, {"events": {"items": [event]}})
+    text = output.read_text(encoding="utf-8")
+    assert "should_send=false" in text
+    assert "notification_expected=false" in text
+    assert "notification_status=policy_suppressed" in text
+    assert "notification_reason=alert_budget:hourly_budget_exhausted" in text
+    assert "hard_failure=false" in text
+
+
 def test_unknown_candidate_suppression_is_a_hard_failure(monkeypatch, tmp_path):
     output = tmp_path / "github-output.txt"
     monkeypatch.setenv("GITHUB_OUTPUT", str(output))

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import io
 import json
 import os
@@ -132,12 +133,27 @@ def _expected_recipient_hashes_from_env() -> set[str]:
     return set()
 
 
+def recipient_set_version(recipient_hashes: set[str], effective_at: str) -> str:
+    """Bind the audited recipient hashes and effective timestamp into one version."""
+    normalized_hashes = sorted({str(value).strip().casefold() for value in recipient_hashes if str(value).strip()})
+    parsed = datetime.fromisoformat(str(effective_at).replace("Z", "+00:00"))
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError("recipient set effective time must include a timezone")
+    normalized_effective = parsed.astimezone(UTC).isoformat().replace("+00:00", "Z")
+    material = json.dumps(
+        {"recipient_hashes": normalized_hashes, "effective_at": normalized_effective},
+        sort_keys=True, separators=(",", ":"),
+    ).encode("utf-8")
+    return f"recipients-{hashlib.sha256(material).hexdigest()[:16]}"
+
+
 def _recipient_set_metadata_error(
     version: str,
     effective_at: str,
     slot_anchor: datetime,
+    recipient_hashes: set[str],
 ) -> tuple[str, str]:
-    """Validate the independently maintained recipient-set identity."""
+    """Validate the independently maintained, content-addressed recipient-set identity."""
     normalized_version = str(version or "").strip()
     if not normalized_version:
         return "expected_recipient_set_version_unavailable", "unknown"
@@ -146,6 +162,8 @@ def _recipient_set_metadata_error(
     raw_effective = str(effective_at or "").strip()
     if not raw_effective:
         return "expected_recipient_set_effective_at_unavailable", "unknown"
+    if not recipient_hashes or any(not re.fullmatch(r"[0-9a-f]{12}", str(value)) for value in recipient_hashes):
+        return "expected_recipient_set_hashes_unavailable", "unknown"
     try:
         parsed = datetime.fromisoformat(raw_effective.replace("Z", "+00:00"))
     except ValueError:
@@ -156,6 +174,12 @@ def _recipient_set_metadata_error(
     normalized_effective = effective_utc.isoformat().replace("+00:00", "Z")
     if effective_utc > slot_anchor.astimezone(UTC):
         return "expected_recipient_set_not_effective_for_slot", normalized_effective
+    try:
+        expected_version = recipient_set_version(recipient_hashes, normalized_effective)
+    except (TypeError, ValueError):
+        return "expected_recipient_set_fingerprint_invalid", normalized_effective
+    if normalized_version != expected_version:
+        return "expected_recipient_set_fingerprint_mismatch", normalized_effective
     return "", normalized_effective
 
 
@@ -504,6 +528,7 @@ def audit_slot(
         expected_recipient_set_version,
         expected_recipient_set_effective_at,
         original_slot_anchor,
+        expected_recipient_hashes or set(),
     )
     normalized_version = str(expected_recipient_set_version or "").strip()
     source_fields["recipient_set_version"] = (

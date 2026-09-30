@@ -91,6 +91,39 @@ def test_official_preflight_policy_suppression_without_sender_is_not_a_failure()
     assert result["failure"] is False
 
 
+
+
+def test_official_known_daily_budget_suppression_is_not_missing_delivery() -> None:
+    result = evaluate_official_terminal(official(
+        SHOULD_SEND="false",
+        NOTIFICATION_EXPECTED="false",
+        NOTIFICATION_STATUS="policy_suppressed",
+        NOTIFICATION_REASON="event_policy:event_daily_budget_exhausted",
+        SEND_STATUS="policy_suppressed",
+        SEND_NOTIFICATION_EXPECTED="false",
+        SEND_REASON="event_policy:event_daily_budget_exhausted",
+        SEND_OUTCOME="success",
+    ))
+    assert result["status"] == "policy_suppressed"
+    assert result["expected"] is False
+    assert result["failure"] is False
+
+
+def test_official_unknown_budget_suppression_fails_closed() -> None:
+    result = evaluate_official_terminal(official(
+        SHOULD_SEND="false",
+        NOTIFICATION_EXPECTED="false",
+        NOTIFICATION_STATUS="policy_suppressed",
+        NOTIFICATION_REASON="alert_budget:unrecognized_reason",
+        SEND_STATUS="policy_suppressed",
+        SEND_NOTIFICATION_EXPECTED="false",
+        SEND_REASON="alert_budget:unrecognized_reason",
+        SEND_OUTCOME="success",
+    ))
+    assert result["status"] == "blocked"
+    assert result["failure"] is True
+
+
 def test_official_idempotency_cache_is_not_a_receipt() -> None:
     result = evaluate_official_terminal(official(IDEMPOTENCY_CACHE_HIT="true"))
 

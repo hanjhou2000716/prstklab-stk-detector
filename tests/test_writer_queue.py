@@ -62,7 +62,7 @@ def test_pages_deployment_is_serialized_with_data_release_writers():
 
 
 def test_wait_for_slot_waits_until_older_writer_finishes():
-    responses = [[_run(10)], []]
+    responses = [[_run(10)], [], []]
     sleeps: list[int] = []
 
     def fetcher(**_kwargs):
@@ -81,8 +81,9 @@ def test_wait_for_slot_waits_until_older_writer_finishes():
         sleeper=sleeps.append,
     )
 
-    assert result.checks == 2
-    assert sleeps == [2]
+    assert result.checks == 3
+    assert result.complete_snapshots == 3
+    assert sleeps == [2, 2]
 
 
 def test_wait_for_slot_fails_closed_when_lookup_fails():
@@ -261,6 +262,8 @@ def test_queue_api_rejects_untrusted_next_page_url_before_request(monkeypatch):
 
 
 def test_queue_api_fails_closed_when_count_requires_page_but_link_is_missing(monkeypatch):
+    monkeypatch.setattr(writer_queue.time, "sleep", lambda _seconds: None)
+
     class Response:
         headers = {}
 
@@ -314,6 +317,134 @@ def test_queue_api_accepts_a_valid_run_transition_between_status_reads(monkeypat
     assert rows[0]["status"] == "in_progress"
 
 
+
+
+def test_queue_api_restarts_from_first_page_after_transient_count_mismatch(monkeypatch):
+    sleeps = []
+    monkeypatch.setattr(writer_queue.time, "sleep", sleeps.append)
+    calls = {"count": 0}
+
+    class Response:
+        headers = {}
+
+        def __init__(self, payload):
+            self.payload = payload
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return json.dumps(self.payload).encode()
+
+    def open_request(request, timeout):
+        calls["count"] += 1
+        if calls["count"] == 1:
+            return Response({"total_count": 2, "workflow_runs": [{"id": 1}]})
+        return Response({"total_count": 0, "workflow_runs": []})
+
+    monkeypatch.setattr(writer_queue, "urlopen", open_request)
+    result = writer_queue._fetch_runs(
+        api_url="https://api.github.test", repository="owner/repo", token="token",
+    )
+    assert result == []
+    assert result.recovery_rounds == 1
+    assert calls["count"] == 6
+    assert sleeps == [2]
+
+
+def test_wait_for_slot_requires_two_complete_empty_snapshots():
+    calls = 0
+    sleeps = []
+
+    def fetcher(**_kwargs):
+        nonlocal calls
+        calls += 1
+        return []
+
+    result = wait_for_slot(
+        current_run_id=11,
+        current_created_at=datetime(2026, 8, 31, 8, 1, tzinfo=UTC),
+        timeout_seconds=30,
+        settle_seconds=0,
+        fetcher=fetcher,
+        sleeper=sleeps.append,
+    )
+    assert result.status == "acquired"
+    assert result.complete_snapshots == 2
+    assert calls == 2
+    assert sleeps == [2]
+
+
+def test_disappeared_blocker_requires_authoritative_terminal_verification():
+    rows = [[_run(10)], [], []]
+    verified = []
+
+    def fetcher(**_kwargs):
+        return rows.pop(0)
+
+    def verify(run, **_kwargs):
+        verified.append(run["id"])
+        return False
+
+    result = wait_for_slot(
+        current_run_id=11,
+        current_created_at=datetime(2026, 8, 31, 8, 1, tzinfo=UTC),
+        timeout_seconds=30,
+        poll_seconds=1,
+        settle_seconds=0,
+        fetcher=fetcher,
+        blocker_verifier=verify,
+        sleeper=lambda _seconds: None,
+    )
+    assert result.status == "acquired"
+    assert verified == [10]
+    assert result.verified_blockers == ()
+
+
+
+
+
+def test_scheduled_queue_wait_preserves_slot_delivery_reserve():
+    anchor = "2026-09-29T14:20:00+08:00"
+    context = {
+        "scheduled_slot": "post_close",
+        "scheduled_for_at": anchor,
+        "delivery_intent": "notify_candidate",
+    }
+    budget, deadline = writer_queue._scheduled_queue_budget(
+        context,
+        requested_seconds=3300,
+        now=datetime.fromisoformat("2026-09-29T14:25:00+08:00"),
+    )
+    assert budget == 20 * 60
+    assert deadline == "2026-09-29T06:50:00+00:00"
+
+    expired = writer_queue._scheduled_queue_budget(
+        context,
+        requested_seconds=3300,
+        now=datetime.fromisoformat("2026-09-29T14:45:00+08:00"),
+    )
+    assert expired[0] == 0
+
+
+def test_us_queue_wait_stops_before_exchange_open_reserve():
+    context = {
+        "scheduled_slot": "us_premarket",
+        "scheduled_for_at": "2026-09-29T21:00:00+08:00",
+        "delivery_intent": "notify_candidate",
+    }
+    budget, deadline = writer_queue._scheduled_queue_budget(
+        context,
+        requested_seconds=3300,
+        now=datetime.fromisoformat("2026-09-29T09:15:00-04:00"),
+    )
+    assert budget == 10 * 60
+    assert deadline == "2026-09-29T13:30:00+00:00"
+
+
 def test_production_revision_fence_allows_current_main():
     assert evaluate_production_revision(run_sha="abc123", main_sha="ABC123") == {
         "allowed": True,
@@ -354,6 +485,10 @@ def test_writer_queue_cli_stops_before_publication_when_main_moves(monkeypatch, 
 
 
 def test_us_premarket_superseded_run_dispatches_one_fixed_slot_successor(monkeypatch, capsys, tmp_path):
+    monkeypatch.setattr(
+        "src.writer_queue._scheduled_queue_budget",
+        lambda _context, *, requested_seconds: (requested_seconds, ""),
+    )
     monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
     monkeypatch.setenv("GITHUB_TOKEN", "test-token")
     monkeypatch.setenv("GITHUB_SHA", "old-sha")
@@ -389,6 +524,10 @@ def test_us_premarket_superseded_run_dispatches_one_fixed_slot_successor(monkeyp
 
 
 def test_handoff_child_cannot_start_a_second_successor(monkeypatch, capsys, tmp_path):
+    monkeypatch.setattr(
+        "src.writer_queue._scheduled_queue_budget",
+        lambda _context, *, requested_seconds: (requested_seconds, ""),
+    )
     monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
     monkeypatch.setenv("GITHUB_TOKEN", "test-token")
     monkeypatch.setenv("GITHUB_SHA", "old-sha")

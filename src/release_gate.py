@@ -403,7 +403,14 @@ def _fetch_public_release_artifacts(
             continue
         actual_hash = hashlib.sha256(body).hexdigest()
         if actual_hash != expected_hash:
-            errors.append(f"public artifact hash mismatch: {name}")
+            response_status = getattr(response, "status_code", None)
+            if not isinstance(response_status, int) or isinstance(response_status, bool):
+                response_status = 200
+            errors.append(
+                f"public artifact hash mismatch: {name} "
+                f"expected={expected_hash[:12]} actual={actual_hash[:12]} "
+                f"http_status={response_status}"
+            )
             continue
         try:
             value = json.loads(body.decode("utf-8"))

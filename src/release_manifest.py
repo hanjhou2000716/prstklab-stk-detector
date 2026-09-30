@@ -383,7 +383,7 @@ def _publish_alert_artifacts(
         notification_id = str(artifact["notification_id"])
         filename = f"{_alert_filename(notification_id)}-{_alert_filename(release_id)}.json"
         path = alert_dir / filename
-        _write_normalized_artifact(path, artifact)
+        artifact = _write_immutable_alert_artifact(path, artifact)
         relative = f"{ALERT_ARTIFACT_PREFIX}/{filename}"
         rows[(notification_id, release_id)] = {
             "notification_id": notification_id,
@@ -394,7 +394,7 @@ def _publish_alert_artifacts(
             "canonical_hash_version": artifact.get("canonical_hash_version"),
             "path": relative,
             "sha256": sha256_file(path),
-            "created_at": created_at,
+            "created_at": artifact.get("created_at") or created_at,
         }
         resolved[relative] = path
         hashes[relative] = sha256_file(path)
@@ -409,7 +409,7 @@ def _publish_alert_artifacts(
         briefing_id = str(artifact["notification_id"])
         filename = f"{_alert_filename(briefing_id)}-{_alert_filename(release_id)}.json"
         path = alert_dir / filename
-        _write_normalized_artifact(path, artifact)
+        artifact = _write_immutable_alert_artifact(path, artifact)
         relative = f"{ALERT_ARTIFACT_PREFIX}/{filename}"
         rows[(briefing_id, release_id)] = {
             "notification_id": briefing_id,
@@ -420,12 +420,17 @@ def _publish_alert_artifacts(
             "canonical_hash_version": artifact.get("canonical_hash_version"),
             "path": relative,
             "sha256": sha256_file(path),
-            "created_at": created_at,
+            "created_at": artifact.get("created_at") or created_at,
         }
         resolved[relative] = path
         hashes[relative] = sha256_file(path)
-    now = datetime.now(UTC)
-    cutoff = now - timedelta(days=ALERT_RETENTION_DAYS)
+    raw_release_time = str(market.get("generated_at") or created_at)
+    try:
+        release_time = datetime.fromisoformat(raw_release_time.replace("Z", "+00:00"))
+    except ValueError:
+        release_time = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+    release_time = release_time.replace(tzinfo=UTC) if release_time.tzinfo is None else release_time.astimezone(UTC)
+    cutoff = release_time - timedelta(days=ALERT_RETENTION_DAYS)
 
     def is_recent(item: dict[str, Any]) -> bool:
         value = str(item.get("created_at") or "").strip()
@@ -443,7 +448,7 @@ def _publish_alert_artifacts(
     older = [item for item in ordered if not is_recent(item)]
     index = {
         "schema_version": "1.0",
-        "generated_at": created_at,
+        "generated_at": release_time.isoformat(),
         # Every recent immutable alert remains addressable for the policy
         # retention window; the cap applies only to older history.
         "alerts": [*recent, *older[:max(0, MAX_ALERT_INDEX_ROWS - len(recent))]],
@@ -878,6 +883,24 @@ def _write_normalized_artifact(path: Path, value: dict[str, Any]) -> None:
     temporary = path.with_name(f".{path.name}.normalize.tmp")
     temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     replace_with_retry(temporary, path)
+
+
+def _write_immutable_alert_artifact(path: Path, value: dict[str, Any]) -> dict[str, Any]:
+    """Preserve byte-identical release-bound alert content on deterministic rebuilds."""
+    if not path.exists():
+        _write_normalized_artifact(path, value)
+        return value
+    try:
+        existing = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError("immutable alert artifact cannot be read") from exc
+    if not isinstance(existing, dict):
+        raise ValueError("immutable alert artifact is not an object")
+    existing_content = {key: item for key, item in existing.items() if key != "created_at"}
+    proposed_content = {key: item for key, item in value.items() if key != "created_at"}
+    if existing_content != proposed_content:
+        raise ValueError("immutable alert artifact identity conflict")
+    return existing
 
 
 def build_release_manifest(

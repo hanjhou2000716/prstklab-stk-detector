@@ -644,7 +644,9 @@ def test_release_gate_blocks_public_artifact_hash_mismatch(tmp_path, monkeypatch
     )
 
     assert result.allowed is False
-    assert "public artifact hash mismatch: market.json" in ";".join(result.errors)
+    diagnostic = ";".join(result.errors)
+    assert "public artifact hash mismatch: market.json" in diagnostic
+    assert "expected=" in diagnostic and "actual=" in diagnostic and "http_status=200" in diagnostic
 
 
 def test_public_bundle_strict_mode_rejects_legacy_research(tmp_path, monkeypatch):

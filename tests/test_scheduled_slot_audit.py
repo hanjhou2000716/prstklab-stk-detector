@@ -5,7 +5,7 @@ from io import BytesIO
 
 from src import scheduled_slot_audit as audit
 
-EXPECTED_RECIPIENT_HASHES = {"hash-a", "hash-b"}
+EXPECTED_RECIPIENT_HASHES = {"aaaaaaaaaaaa", "bbbbbbbbbbbb"}
 
 
 def _cash(is_open=False, next_date="2026-09-29"):
@@ -43,8 +43,8 @@ def _write_ledger(path, slot, slot_date, *, status="delivered", delivered=None):
                 "kind": "scheduled_brief",
                 "anchor_key": anchor,
                 "status": status,
-                "recipient_hashes": ["hash-a", "hash-b"],
-                "delivered_recipient_hashes": delivered if delivered is not None else ["hash-a", "hash-b"],
+                "recipient_hashes": sorted(EXPECTED_RECIPIENT_HASHES),
+                "delivered_recipient_hashes": delivered if delivered is not None else sorted(EXPECTED_RECIPIENT_HASHES),
             }
         }
     }
@@ -171,7 +171,7 @@ def test_unverified_calendar_blocks_and_does_not_treat_missing_claim_as_success(
 
 def test_partial_recipient_receipt_fails_and_wrong_dst_candidate_is_not_applicable(tmp_path):
     path = tmp_path / "event-ledger.json"
-    _write_ledger(path, "us_premarket", "2026-09-25", delivered=["hash-a"])
+    _write_ledger(path, "us_premarket", "2026-09-25", delivered=["aaaaaaaaaaaa"])
     result = audit.audit_slot(
         ledger_path=path, schedule="45 13 * * 1-5",
         run_created_at="2026-09-25T13:45:00Z",
@@ -217,11 +217,11 @@ def test_nyse_closed_is_expected_skip_and_invalid_run_time_is_blocked(monkeypatc
 
 def test_claim_cannot_define_a_smaller_recipient_set_than_configuration(tmp_path):
     path = tmp_path / "event-ledger.json"
-    _write_ledger(path, "us_premarket", "2026-09-25", delivered=["hash-a", "hash-b"])
+    _write_ledger(path, "us_premarket", "2026-09-25", delivered=["aaaaaaaaaaaa", "bbbbbbbbbbbb"])
     payload = json.loads(path.read_text(encoding="utf-8"))
     claim = next(iter(payload["delivery_claims"].values()))
-    claim["recipient_hashes"] = ["hash-a"]
-    claim["delivered_recipient_hashes"] = ["hash-a"]
+    claim["recipient_hashes"] = ["aaaaaaaaaaaa"]
+    claim["delivered_recipient_hashes"] = ["aaaaaaaaaaaa"]
     path.write_text(json.dumps(payload), encoding="utf-8")
 
     result = audit._receipt_result(
@@ -233,7 +233,7 @@ def test_claim_cannot_define_a_smaller_recipient_set_than_configuration(tmp_path
 
     assert result["status"] == "incomplete_receipt"
     assert result["reason"] == "scheduled_anchor_recipient_set_mismatch"
-    assert "hash-a" not in json.dumps(result)
+    assert "aaaaaaaaaaaa" not in json.dumps(result)
 
 
 def test_external_audit_payload_must_match_original_fixed_slot_anchor(monkeypatch, tmp_path):
@@ -394,6 +394,13 @@ def test_audit_workflow_receives_versioned_allowlist_without_sender_credentials(
     assert "SUPABASE_SERVICE_ROLE_KEY" not in workflow
 
 
+def test_recipient_set_version_binds_hashes_and_effective_time():
+    hashes = {"aaaaaaaaaaaa", "bbbbbbbbbbbb"}
+    original = audit.recipient_set_version(hashes, "2026-09-28T00:00:00Z")
+    assert original != audit.recipient_set_version({"aaaaaaaaaaaa"}, "2026-09-28T00:00:00Z")
+    assert original != audit.recipient_set_version(hashes, "2026-09-28T00:01:00Z")
+
+
 def test_recipient_set_version_and_effective_time_are_required_for_production_audit(
     monkeypatch, tmp_path,
 ):
@@ -427,9 +434,13 @@ def test_recipient_set_version_and_effective_time_are_required_for_production_au
 
     valid = audit.audit_slot(**{
         **base,
-        "expected_recipient_set_version": "recipients-2026-09-28-v1",
+        "expected_recipient_set_version": audit.recipient_set_version(
+            EXPECTED_RECIPIENT_HASHES, "2026-09-28T00:00:00Z",
+        ),
         "expected_recipient_set_effective_at": "2026-09-28T00:00:00Z",
     })
     assert valid["status"] == "missing_receipt"
-    assert valid["recipient_set_version"] == "recipients-2026-09-28-v1"
+    assert valid["recipient_set_version"] == audit.recipient_set_version(
+        EXPECTED_RECIPIENT_HASHES, "2026-09-28T00:00:00Z",
+    )
     assert valid["recipient_set_effective_at"] == "2026-09-28T00:00:00Z"
