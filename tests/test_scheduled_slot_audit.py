@@ -367,14 +367,19 @@ def test_missing_claim_is_diagnosed_from_exact_read_only_workflow_terminal(monke
     assert all("test-token" not in url for url in requested_urls)
 
 
-def test_prehashed_recipient_allowlist_rejects_invalid_values(monkeypatch):
-    monkeypatch.setenv("SCHEDULED_RECIPIENT_HASHES", "0123456789ab,not-a-hash")
+def test_recipient_manifest_rejects_invalid_values_without_falling_back(monkeypatch):
+    monkeypatch.setenv(
+        "SCHEDULED_RECIPIENT_SET_MANIFEST",
+        '{"schema_version":"scheduled-recipient-set-v1","version":"bad","effective_at":"2026-09-28T00:00:00Z","recipient_hashes":["0123456789ab","not-a-hash"]}',
+    )
     monkeypatch.setenv("TELEGRAM_CHAT_IDS", "must-not-fall-back")
     assert audit._expected_recipient_hashes_from_env() == set()
 
 
-def test_prehashed_recipient_allowlist_never_falls_back_to_sender_configuration(monkeypatch):
-    monkeypatch.delenv("SCHEDULED_RECIPIENT_HASHES", raising=False)
+def test_recipient_manifest_never_falls_back_to_legacy_sender_or_split_variables(monkeypatch):
+    monkeypatch.delenv("SCHEDULED_RECIPIENT_SET_MANIFEST", raising=False)
+    monkeypatch.setenv("SCHEDULED_RECIPIENT_HASHES", "0123456789ab")
+    monkeypatch.setenv("SCHEDULED_RECIPIENT_SET_VERSION", "legacy-version")
     monkeypatch.setenv("TELEGRAM_CHAT_IDS", "must-not-be-used")
     assert audit._expected_recipient_hashes_from_env() == set()
 
@@ -388,8 +393,10 @@ def test_audit_workflow_receives_versioned_allowlist_without_sender_credentials(
         / "workflows"
         / "scheduled-brief-slot-audit.yml"
     ).read_text(encoding="utf-8")
-    assert "SCHEDULED_RECIPIENT_SET_VERSION: ${{ vars.SCHEDULED_RECIPIENT_SET_VERSION || '' }}" in workflow
-    assert "SCHEDULED_RECIPIENT_SET_EFFECTIVE_AT: ${{ vars.SCHEDULED_RECIPIENT_SET_EFFECTIVE_AT || '' }}" in workflow
+    assert "SCHEDULED_RECIPIENT_SET_MANIFEST: ${{ vars.SCHEDULED_RECIPIENT_SET_MANIFEST || '' }}" in workflow
+    assert "SCHEDULED_RECIPIENT_SET_VERSION:" not in workflow
+    assert "SCHEDULED_RECIPIENT_SET_EFFECTIVE_AT:" not in workflow
+    assert "SCHEDULED_RECIPIENT_HASHES:" not in workflow
     assert "TELEGRAM_BOT_TOKEN" not in workflow
     assert "SUPABASE_SERVICE_ROLE_KEY" not in workflow
 

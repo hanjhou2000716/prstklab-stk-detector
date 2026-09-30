@@ -118,3 +118,19 @@ def test_security_workflow_uses_current_pinned_sbom_action():
     assert "anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610" in workflow
     assert "fallback_sbom.py" in workflow
     assert "steps.syft.outcome == 'failure'" in workflow
+
+
+def test_quality_workflow_validates_isolated_candidates_and_skips_draft_prs():
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    assert 'branches: [main, "validation/**"]' in workflow
+    assert "ready_for_review" in workflow
+    assert "github.event.pull_request.draft == false" in workflow
+    assert "workflow_dispatch" in workflow
+
+def test_quality_workflow_runs_remote_candidate_validation_before_pr_creation():
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    assert 'branches: [main, "validation/**"]' in workflow
+    assert "types: [opened, reopened, synchronize, ready_for_review]" in workflow
+    assert "github.event.pull_request.draft == false" in workflow
+
+

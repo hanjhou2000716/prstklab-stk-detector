@@ -63,9 +63,7 @@ jobs:
           TRIGGER_SOURCE: ${{ github.event_name }}
           AUDIT_STARTED_AT: ${{ steps.audit_context.outputs.started_at }}
           LEDGER_COMMIT_SHA: ${{ steps.audit_context.outputs.ledger_commit_sha }}
-          SCHEDULED_RECIPIENT_HASHES: ${{ vars.SCHEDULED_RECIPIENT_HASHES || '' }}
-          SCHEDULED_RECIPIENT_SET_VERSION: ${{ vars.SCHEDULED_RECIPIENT_SET_VERSION || '' }}
-          SCHEDULED_RECIPIENT_SET_EFFECTIVE_AT: ${{ vars.SCHEDULED_RECIPIENT_SET_EFFECTIVE_AT || '' }}
+          SCHEDULED_RECIPIENT_SET_MANIFEST: ${{ vars.SCHEDULED_RECIPIENT_SET_MANIFEST || '' }}
           AUDIT_SLOT: ${{ github.event.client_payload.slot || '' }}
           AUDIT_SLOT_DATE: ${{ github.event.client_payload.slot_date || '' }}
           AUDIT_SCHEDULED_FOR_AT: ${{ github.event.client_payload.scheduled_for_at || '' }}
