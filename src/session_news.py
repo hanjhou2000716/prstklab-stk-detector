@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, UTC
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -35,7 +35,7 @@ def _parse_time(value: Any) -> datetime | None:
         return None
     if parsed.tzinfo is None:
         return None
-    return parsed.astimezone(timezone.utc)
+    return parsed.astimezone(UTC)
 
 
 def _session_dates(market: str, as_of: datetime, mode: str) -> tuple[date | None, date | None]:

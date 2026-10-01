@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 from src.session_news import build_session_news_summary
 
@@ -30,7 +30,7 @@ def test_session_summary_selects_qualified_candidate_outside_top_five_and_binds_
     result = build_session_news_summary(
         payload,
         "morning",
-        datetime(2024, 1, 5, 2, 0, tzinfo=timezone.utc),
+        datetime(2024, 1, 5, 2, 0, tzinfo=UTC),
         [{"ticker": "S&P 500", "price": 4800, "change_percent": 0.5, "freshness": "recent_close", "quote_date": "2024-01-04"}],
         market_scope_key=None,
     )
