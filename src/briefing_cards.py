@@ -53,6 +53,17 @@ def _finite_number(value: Any) -> float | None:
     return number if math.isfinite(number) else None
 
 
+def _same_market_date(observed_date: str, as_of: Any, timezone_name: str) -> bool | None:
+    """Return whether a verified quote belongs to the report's local calendar date."""
+    try:
+        reference = datetime.fromisoformat(str(as_of or "").replace("Z", "+00:00"))
+        if reference.tzinfo is None or reference.utcoffset() is None:
+            return None
+        return observed_date == reference.astimezone(ZoneInfo(timezone_name)).date().isoformat()
+    except (TypeError, ValueError):
+        return None
+
+
 def _quote_display_qualification(
     quote: dict[str, Any] | None, ticker: str = "",
 ) -> dict[str, Any]:
@@ -1566,7 +1577,10 @@ def _scoped_morning_analysis(
                 "display_state": qualification.get("state") if verified else "unavailable",
                 "display_change_percent": percent if verified else None,
                 "display_date": observed,
-                "display_is_today": qualification.get("is_today") is True,
+                "display_is_today": (
+                    qualification.get("is_today") if ticker == "TXF"
+                    else _same_market_date(observed, briefing_data_as_of, "Asia/Taipei")
+                ),
                 "routine_eligible": bool(qualification.get("routine_eligible", verified)),
                 "alert_eligible": bool(qualification.get("alert_eligible")),
                 "qualification_reason": str(

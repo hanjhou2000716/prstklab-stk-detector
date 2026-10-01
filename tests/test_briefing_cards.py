@@ -204,6 +204,7 @@ def test_public_observations_add_structure_without_repeating_quote_lines():
         "期貨｜最近已核實日盤｜資料日 2026-09-14｜非即時",
     ]
     assert sections[0]["date_footer"] == "現貨 2026-09-14（非即時）｜期貨 2026-09-14（非即時）"
+    assert sections[0]["facts_structured"][0]["display_is_today"] is True
     projection = briefing["market_card_projection"]
     assert projection["version"] == "taiwan-market-cards-v2"
     assert projection["market_scope"] == "taiwan"
