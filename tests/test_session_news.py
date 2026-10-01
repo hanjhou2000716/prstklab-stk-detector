@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from src.session_news import build_session_news_summary
 
@@ -50,7 +50,7 @@ def test_session_summary_rejects_future_undated_cross_market_and_ineligible_news
         {**_story("促銷推薦", "https://news.example/ineligible", "2024-01-03T00:00:00+00:00", market="taiwan"), "public_news_eligible": False},
     ]}}}}
     result = build_session_news_summary(
-        payload, "pre_open", datetime(2024, 1, 3, 0, 45, tzinfo=timezone.utc), [],
+        payload, "pre_open", datetime(2024, 1, 3, 0, 45, tzinfo=UTC), [],
         market_scope_key="taiwan",
     )
     assert result["status"] == "unavailable"
@@ -69,7 +69,7 @@ def test_historical_session_story_is_explicit_and_quote_fallback_does_not_claim_
     result = build_session_news_summary(
         {"news": {"intelligence": {"us": {"editorial_candidates": [historical]}}}},
         "morning",
-        datetime(2024, 1, 5, 2, 0, tzinfo=timezone.utc),
+        datetime(2024, 1, 5, 2, 0, tzinfo=UTC),
         [{"ticker": "S&P 500", "price": 4800, "change_percent": -0.25, "freshness": "recent_close", "quote_date": "2024-01-03"}],
     )
     assert result["status"] == "recent_session_reference"
@@ -79,7 +79,7 @@ def test_historical_session_story_is_explicit_and_quote_fallback_does_not_claim_
     fallback = build_session_news_summary(
         {"news": {"intelligence": {"us": {"editorial_candidates": []}}}},
         "morning",
-        datetime(2024, 1, 5, 2, 0, tzinfo=timezone.utc),
+        datetime(2024, 1, 5, 2, 0, tzinfo=UTC),
         [{"ticker": "S&P 500", "price": 4800, "change_percent": 0, "freshness": "recent_close", "quote_date": "2024-01-04"}],
     )
     assert fallback["status"] == "market_data_fallback"

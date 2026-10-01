@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from datetime import date, datetime, timedelta, UTC
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -59,7 +59,7 @@ def _session_dates(market: str, as_of: datetime, mode: str) -> tuple[date | None
             continue
         opened_at = opened.to_pydatetime() if hasattr(opened, "to_pydatetime") else opened
         closed_at = closed.to_pydatetime() if hasattr(closed, "to_pydatetime") else closed
-        sessions.append((session_day.date(), opened_at.astimezone(timezone.utc), closed_at.astimezone(timezone.utc)))
+        sessions.append((session_day.date(), opened_at.astimezone(UTC), closed_at.astimezone(UTC)))
     if not sessions:
         return None, None
     if mode == "close":
