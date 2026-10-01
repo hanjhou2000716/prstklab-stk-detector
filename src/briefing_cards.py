@@ -1566,6 +1566,7 @@ def _scoped_morning_analysis(
                 "display_state": qualification.get("state") if verified else "unavailable",
                 "display_change_percent": percent if verified else None,
                 "display_date": observed,
+                "display_is_today": qualification.get("is_today") is True,
                 "routine_eligible": bool(qualification.get("routine_eligible", verified)),
                 "alert_eligible": bool(qualification.get("alert_eligible")),
                 "qualification_reason": str(
@@ -1597,11 +1598,28 @@ def _scoped_morning_analysis(
         else:
             direction = "同漲" if pair_changes[0] > 0 else "同跌"
             pair_takeaway = f"同日收盤方向{direction}；兩者仍是不同商品，不比較點位差。"
+        pair_date_labels: list[str] = []
+        for index, item in enumerate(pair_facts):
+            label = "現貨" if index == 0 else "期貨"
+            observed = str(item.get("display_date") or "")
+            if not observed:
+                pair_date_labels.append(f"{label}日期未核實")
+                continue
+            state = str(item.get("display_state") or "")
+            if state == "historical_reference" or item.get("display_is_today") is False:
+                date_status = "（非今日／非即時）"
+            elif state == "recent_close":
+                date_status = "（非即時）"
+            else:
+                date_status = ""
+            pair_date_labels.append(f"{label} {observed}{date_status}")
         pair_section = {
             "title": "台股現貨與台指期",
             "layout": "taiwan_pair_v2",
             "facts": [item["text"] for item in pair_facts],
             "facts_structured": pair_facts,
+            "presentation_version": "market-card-v3",
+            "date_footer": "｜".join(pair_date_labels),
             "sentiments": list(market_sentiments or []),
             "status_notes": [item["status_note"] for item in pair_facts],
             "header_note": "；".join(item["status_note"] for item in pair_facts),
@@ -1615,8 +1633,8 @@ def _scoped_morning_analysis(
             "confidence": "low" if data_gaps else "medium",
         }
         stats_records: list[tuple[str, str, dict[str, Any] | None]] = [
-            ("turnover", "上市成交金額", turnover_evidence),
-            ("breadth", "上市漲跌家數", breadth_evidence),
+            ("turnover", "成交金額", turnover_evidence),
+            ("breadth", "漲跌家數", breadth_evidence),
             ("institutions", "三大法人合計", institution_evidence),
         ]
         compact_stats: list[dict[str, Any]] = []
@@ -1625,23 +1643,29 @@ def _scoped_morning_analysis(
                 text = f"{name}：未公布或本輪未取得"
                 quote = {}
             elif key == "turnover":
-                text = f"{name} {float(compact_evidence['display_value']):,.2f} 億元（{compact_evidence.get('observed_date') or '日期未提供'}）"
+                text = f"{name} {float(compact_evidence['display_value']):,.2f} 億元"
                 quote = compact_evidence
             elif key == "breadth":
                 advancing = _finite_number(compact_evidence.get("advancing"))
                 declining = _finite_number(compact_evidence.get("declining"))
                 unchanged = _finite_number(compact_evidence.get("unchanged"))
-                text = f"上漲 {advancing:.0f}／下跌 {declining:.0f}" if advancing is not None and declining is not None else "漲跌家數：未核實"
+                text = f"{name} 上漲 {advancing:.0f}／下跌 {declining:.0f}" if advancing is not None and declining is not None else f"{name}：未核實"
                 if unchanged is not None:
                     text += f"／平盤 {unchanged:.0f}"
-                text += f"（{compact_evidence.get('observed_date') or '日期未提供'}）"
                 quote = compact_evidence
             else:
                 display_value = compact_evidence.get("display_value")
                 net = float(display_value if display_value is not None else float(compact_evidence["raw_value"]) / 100_000_000)
-                text = f"{name} {'買超' if net > 0 else '賣超' if net < 0 else '相抵'} {abs(net):,.2f} 億元（{compact_evidence.get('observed_date') or '日期未提供'}）"
+                text = f"{name} {'買超' if net > 0 else '賣超' if net < 0 else '相抵'} {abs(net):,.2f} 億元"
                 quote = compact_evidence
-            compact_stats.append({"ticker": f"TW_STATS_{key.upper()}", "name": name, "text": text, "quote": quote})
+            compact_stats.append({
+                "ticker": f"TW_STATS_{key.upper()}",
+                "name": name,
+                "text": text,
+                "statistic_kind": key,
+                "display_date": str(compact_evidence.get("observed_date") or "") if isinstance(compact_evidence, dict) else "",
+                "quote": quote,
+            })
         stat_dates = {
             str(row.get("observed_date") or "")
             for _key, _name, row in stats_records

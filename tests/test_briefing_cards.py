@@ -203,6 +203,7 @@ def test_public_observations_add_structure_without_repeating_quote_lines():
         "現貨｜最近收盤｜資料日 2026-09-14",
         "期貨｜最近已核實日盤｜資料日 2026-09-14｜非即時",
     ]
+    assert sections[0]["date_footer"] == "現貨 2026-09-14（非即時）｜期貨 2026-09-14（非即時）"
     projection = briefing["market_card_projection"]
     assert projection["version"] == "taiwan-market-cards-v2"
     assert projection["market_scope"] == "taiwan"
@@ -213,6 +214,11 @@ def test_public_observations_add_structure_without_repeating_quote_lines():
     assert "3,210.50 億元" in statistics["market_observation"]
     assert "賣超 45.20 億元" in statistics["market_observation"]
     assert all(item["quote"].get("source_url") for item in statistics["facts_structured"])
+    assert [item["statistic_kind"] for item in statistics["facts_structured"]] == [
+        "turnover", "breadth", "institutions",
+    ]
+    assert all(item["display_date"] == "2026-09-14" for item in statistics["facts_structured"])
+    assert all("2026-09-14" not in item["text"] for item in statistics["facts_structured"])
 
 
 def test_observation_cards_follow_quote_led_digest_without_raw_publisher_tail():

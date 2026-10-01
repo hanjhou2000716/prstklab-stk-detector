@@ -6,7 +6,10 @@ WORKFLOW = Path(__file__).parents[1] / ".github" / "workflows" / "quality.yml"
 def test_quality_workflow_runs_tests_and_non_network_smoke_validation():
     workflow = WORKFLOW.read_text(encoding="utf-8")
     preflight = (WORKFLOW.parents[2] / "scripts" / "quality_preflight.py").read_text(encoding="utf-8")
-    assert "python -m pip install -r requirements.txt pytest" in workflow
+    assert 'python -m pip install "uv==0.9.5"' in workflow
+    assert "uv sync --locked --all-groups" in workflow
+    assert "uv_version" in workflow
+    assert "python_version" in workflow
     assert "scripts/quality_preflight.py --full" in workflow
     assert "pytest\",\n                    \"-q\"" in preflight
     assert "compileall" in preflight
@@ -120,17 +123,15 @@ def test_security_workflow_uses_current_pinned_sbom_action():
     assert "steps.syft.outcome == 'failure'" in workflow
 
 
-def test_quality_workflow_validates_isolated_candidates_and_skips_draft_prs():
+def test_quality_workflow_validates_explicit_candidates_without_per_push_branch_runs():
     workflow = WORKFLOW.read_text(encoding="utf-8")
-    assert 'branches: [main, "validation/**"]' in workflow
+    assert "branches: [main]" in workflow
+    assert "validation/**" not in workflow
     assert "ready_for_review" in workflow
     assert "github.event.pull_request.draft == false" in workflow
     assert "workflow_dispatch" in workflow
-
-def test_quality_workflow_runs_remote_candidate_validation_before_pr_creation():
-    workflow = WORKFLOW.read_text(encoding="utf-8")
-    assert 'branches: [main, "validation/**"]' in workflow
-    assert "types: [opened, reopened, synchronize, ready_for_review]" in workflow
-    assert "github.event.pull_request.draft == false" in workflow
+    assert "base_sha:" in workflow
+    assert "QUALITY_PREFLIGHT_BASE_SHA" in workflow
+    assert "candidate_base=" in workflow
 
 

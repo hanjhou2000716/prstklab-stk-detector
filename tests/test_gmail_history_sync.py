@@ -768,7 +768,12 @@ def test_gmail_workflow_bounds_dependency_install_and_reports_phase_outcomes() -
     assert "timeout-minutes: 4" in install
     assert 'PIP_DEFAULT_TIMEOUT: "30"' in install
     assert 'PIP_RETRIES: "5"' in install
-    assert "python -m pip install -r requirements-production.txt" in install
+    assert 'python -m pip install "uv==0.9.5"' in install
+    assert "uv sync --locked --only-group gmail-sync" in install
+    gmail_group = (Path(__file__).parents[1] / "pyproject.toml").read_text(encoding="utf-8").split("gmail-sync = [", 1)[1].split("]", 1)[0]
+    assert '"jsonschema>=4.23,<5"' in gmail_group
+    assert "hashFiles('pyproject.toml', 'uv.lock')" in workflow
+    assert "requirements-production.txt" not in install
 
     sync = workflow.split("- name: Sync bounded history into canonical parser", 1)[1].split(
         "- name: Validate Gmail sync result contract", 1

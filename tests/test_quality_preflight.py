@@ -33,6 +33,25 @@ def test_static_preflight_collects_every_gate_failure() -> None:
     assert invoked == ["tool-versions", "workflow-lint", "ruff", "mypy"]
 
 
+def test_zero_base_sha_is_treated_as_missing_not_passed_to_git(monkeypatch) -> None:
+    calls: list[list[str]] = []
+
+    def runner(command, **_kwargs):
+        calls.append(list(command))
+        raise AssertionError("zero sentinel must not invoke git diff")
+
+    monkeypatch.setattr(quality_preflight.subprocess, "run", runner)
+    assert quality_preflight._changed_test_files("0" * 40) == []
+    assert calls == []
+
+
+def test_invalid_explicit_base_sha_fails_closed():
+    import pytest
+
+    with pytest.raises(RuntimeError, match="full commit SHA"):
+        quality_preflight._changed_test_files("not-a-commit")
+
+
 def test_changed_tests_precede_full_suite(monkeypatch) -> None:
     monkeypatch.setattr(quality_preflight, "_changed_test_files", lambda _base: ["tests/test_scheduled_delivery.py"])
 
@@ -93,6 +112,24 @@ def test_report_for_pr_1013_intermediate_failure_is_superseded() -> None:
 
     assert classification == "merged_latest_success"
     assert "已合併" in message
+
+
+def test_preflight_writes_gate_results_and_durations_to_step_summary(monkeypatch, tmp_path) -> None:
+    summary_file = tmp_path / "summary.md"
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary_file))
+
+    class Result:
+        returncode = 0
+
+    assert quality_preflight.run_commands(
+        [("Deterministic test gate", ["python", "-c", "pass"])],
+        runner=lambda *_args, **_kwargs: Result(),
+    ) == 0
+    summary = summary_file.read_text(encoding="utf-8")
+    assert "Shared quality preflight gate results" in summary
+    assert "Deterministic test gate" in summary
+    assert "success" in summary
+    assert "s |" in summary
 
 
 def test_workflow_reports_run_and_both_pull_request_commits() -> None:

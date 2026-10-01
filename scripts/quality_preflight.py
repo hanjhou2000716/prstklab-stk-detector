@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
+import time
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -39,6 +41,22 @@ def _workflow_files() -> list[str]:
 def _changed_test_files(base_sha: str | None) -> list[str]:
     if not base_sha:
         return []
+    base_sha = base_sha.strip()
+    if len(base_sha) == 40 and set(base_sha) == {"0"}:
+        # GitHub uses an all-zero before SHA for a new ref. The workflow
+        # resolves a merge-base for that case; never pass the sentinel to git.
+        return []
+    if not re.fullmatch(r"[0-9a-fA-F]{40}", base_sha):
+        raise RuntimeError("QUALITY_PREFLIGHT_BASE_SHA must be a full commit SHA.")
+    resolved = subprocess.run(
+        ["git", "cat-file", "-e", f"{base_sha}^{{commit}}"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if resolved.returncode != 0:
+        raise RuntimeError("QUALITY_PREFLIGHT_BASE_SHA does not resolve to a commit.")
     result = subprocess.run(
         ["git", "diff", "--name-only", f"{base_sha}...HEAD"],
         cwd=ROOT,
@@ -133,6 +151,18 @@ def _write_failed_gate(label: str) -> None:
             output.write(f"failed_gate={label}\n")
 
 
+def _append_gate_summary(label: str, outcome: str, duration_seconds: float) -> None:
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if not summary_path:
+        return
+    safe_label = label.replace("|", "/").replace("\n", " ")
+    try:
+        with Path(summary_path).open("a", encoding="utf-8") as summary:
+            summary.write(f"| {safe_label} | {outcome} | {duration_seconds:.2f}s |\n")
+    except OSError as exc:
+        print(f"WARNING: could not write gate timing summary ({type(exc).__name__})", file=sys.stderr)
+
+
 def run_commands(
     commands: Sequence[tuple[str, list[str]]],
     runner=subprocess.run,
@@ -141,14 +171,26 @@ def run_commands(
 ) -> int:
     failed_labels: list[str] = []
     first_failure = 0
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary_path:
+        try:
+            with Path(summary_path).open("a", encoding="utf-8") as summary:
+                summary.write("\n### Shared quality preflight gate results\n| Gate | Result | Duration |\n|---|---:|---:|\n")
+        except OSError as exc:
+            print(f"WARNING: could not initialize gate timing summary ({type(exc).__name__})", file=sys.stderr)
     for label, command in commands:
         print(f"\n==> {label}", flush=True)
+        started = time.perf_counter()
         try:
             completed = runner(command, cwd=ROOT, check=False)
             returncode = int(completed.returncode)
         except OSError as exc:
             returncode = 127
             print(f"FAILED: {label} could not start ({type(exc).__name__})", file=sys.stderr, flush=True)
+        duration = time.perf_counter() - started
+        outcome = "success" if returncode == 0 else f"failure ({returncode})"
+        print(f"GATE_RESULT: {label} | {outcome} | {duration:.2f}s", flush=True)
+        _append_gate_summary(label, outcome, duration)
         if returncode:
             failed_labels.append(label)
             if first_failure == 0:

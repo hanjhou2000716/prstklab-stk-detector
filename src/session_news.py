@@ -95,10 +95,25 @@ def _story_key(story: dict[str, Any]) -> str:
     return str(story.get("event_cluster_key") or story.get("dedupe_key") or story.get("canonical_url") or story.get("url") or story.get("title") or "").strip()
 
 
+def _has_equity_market_relevance(story: dict[str, Any], market: str) -> bool:
+    text = " ".join(
+        str(story.get(key) or "")
+        for key in ("title", "summary", "description", "topics", "sectors", "tickers")
+    ).casefold()
+    terms = (
+        ("台股", "台灣股市", "台灣股票", "加權指數", "加權", "櫃買", "台指期", "taiex", "twii", "twse", "taiwan stocks", "taiwan equities", "taiwan stock market", "taiwan index")
+        if market == "taiwan"
+        else ("美股", "美國股市", "美國股票", "標普", "那斯達克", "道瓊", "費半", "s&p 500", "nasdaq", "dow jones", "djia", "sox", "us stocks", "u.s. stocks", "us equities", "u.s. equities", "us stock market", "u.s. stock market", "american stocks")
+    )
+    return any(term.casefold() in text for term in terms)
+
+
 def _story_matches(story: dict[str, Any], market: str, target_day: date, previous_day: date | None, cutoff: datetime) -> tuple[bool, date | None, datetime | None]:
     if story.get("public_news_eligible") is not True:
         return False, None, None
     if str(story.get("market") or "").strip().casefold() != market:
+        return False, None, None
+    if not _has_equity_market_relevance(story, market):
         return False, None, None
     title = str(story.get("title") or "").strip()
     url = str(story.get("canonical_url") or story.get("url") or "").strip()
@@ -120,7 +135,7 @@ def _slot_terms(slot: str) -> tuple[str, ...]:
 def _candidate_rank(story: dict[str, Any], local_day: date, target_day: date, slot: str, market: str, published: datetime) -> tuple[Any, ...]:
     text = " ".join(str(story.get(key) or "") for key in ("title", "summary", "description", "topics", "sectors")).casefold()
     slot_match = int(any(term.casefold() in text for term in _slot_terms(slot)))
-    index_terms = ("指數", "加權", "標普", "那斯達克", "道瓊", "費半", "index", "s&p", "nasdaq", "dow", "stocks", "market", "equity")
+    index_terms = ("指數", "加權", "標普", "那斯達克", "道瓊", "費半", "index", "s&p", "nasdaq", "dow", "stocks", "equity")
     index_match = int(any(term.casefold() in text for term in index_terms))
     authority = str(story.get("source_tier") or story.get("authority_tier") or "").casefold()
     source_rank = {"official": 3, "primary": 3, "market": 2, "reputable": 1}.get(authority, 0)

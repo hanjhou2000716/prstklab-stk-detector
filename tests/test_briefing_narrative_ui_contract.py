@@ -54,29 +54,25 @@ def test_us_cards_use_compact_market_scoped_layout_and_keep_quote_evidence():
     assert "marketCardProjection.market_scope === \"taiwan\"" in app
 
 
-def test_scoped_cards_render_only_their_projected_market_sentiment():
-    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
-    cards = (ROOT / "src" / "briefing_cards.py").read_text(encoding="utf-8")
-    assert "briefing-market-sentiment" in app
-    assert "marketProjection?.sentiments" in app
-    assert '"sentiments": list(market_sentiments or [])' in cards
-    assert "escapeHtml(label)" in app
-    assert "escapeHtml(sentiment)" in app
-    assert "source_attempts" in app
-    assert "backup_expired" in app
-
-
-
-def test_morning_deduplicates_sentiment_and_alert_uses_release_bound_session_news():
+def test_four_reports_use_the_single_lower_sentiment_panel():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     html = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
-    styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
+    cards = (ROOT / "src" / "briefing_cards.py").read_text(encoding="utf-8")
+    assert 'class="briefing-market-sentiment"' not in app
+    assert 'id="market-sentiment-card"' in html
+    assert '"sentiments": list(market_sentiments or [])' in cards
+
+
+def test_routine_news_is_integrated_into_briefing_and_not_a_separate_alert_card():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    html = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
     digest = (ROOT / "src" / "market_digest.py").read_text(encoding="utf-8")
-    assert 'report.slot === "morning"' in app
-    assert 'id="alert-session-news"' in html
+    assert "briefing-overview-news-label" in app
+    assert "briefing-overview-news-sentence" in app
+    assert 'new Set(["morning", "pre_open", "post_close", "us_premarket"])' in app
+    assert 'id="alert-session-news"' not in html
     assert "session_news_summary" in digest
-    assert "editorial_candidates" in app or "session_news_summary" in app
-    assert "safeHttpsUrl(summary.source_url)" in app
-    assert 'node.textContent = String(value || "")' in app
-    assert "alert-session-news" in styles
-    assert "notification_eligible" not in (ROOT / "src" / "session_news.py").read_text(encoding="utf-8")
+    assert '"historical_reference"].includes(state)' in app
+    assert 'statisticIcons = { turnover: "💰", breadth: "📊", institutions: "🏦" }' in app
+    assert "safeHttpsUrl(session.source_url)" in app
+    assert 'class="us-market-date-footer"' in app
