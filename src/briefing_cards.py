@@ -1579,7 +1579,7 @@ def _scoped_morning_analysis(
                 "display_date": observed,
                 "display_is_today": (
                     qualification.get("is_today") if ticker == "TXF"
-                    else _same_market_date(observed, briefing_data_as_of, "Asia/Taipei")
+                    else _same_market_date(observed, as_of, "Asia/Taipei")
                 ),
                 "routine_eligible": bool(qualification.get("routine_eligible", verified)),
                 "alert_eligible": bool(qualification.get("alert_eligible")),
