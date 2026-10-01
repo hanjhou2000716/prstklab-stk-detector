@@ -1929,8 +1929,35 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         if briefing_data_as_of:
             for observation in observations:
                 observation["data_as_of"] = str(briefing_data_as_of)
+    from src.session_news import bind_session_news_identity
+
+    session_news_summary = digest.get("session_news_summary")
+    if not isinstance(session_news_summary, dict):
+        session_news_summary = {
+            "status": "unavailable",
+            "selection_reason": "projection_missing",
+            "slot": slot,
+            "market_scope_key": market_scope or "global",
+            "session_kind": "市場時段焦點",
+            "headline": "資料不足，暫無可核實總結",
+            "summary": "資料不足，暫無可核實總結。",
+            "summary_sentences": ["資料不足，暫無可核實總結。"],
+            "source": "",
+            "source_url": "",
+            "published_at": None,
+            "story_id": "",
+            "target_session_date": None,
+            "reference_label": "資料不足",
+            "quote_evidence": [],
+        }
+    session_news_summary = bind_session_news_identity(
+        session_news_summary,
+        snapshot.get("release_id"),
+        snapshot.get("snapshot_id") or snapshot.get("market_snapshot_id"),
+    )
     return {
         "slot": slot,
+        "session_news_summary": session_news_summary,
         "title": SLOT_TITLES.get(slot or "", "即時市場儀表板"),
         "overview": digest_overview or (
             f"{lead.get('brief_title') or lead.get('title') or '市場資料狀態'}｜"

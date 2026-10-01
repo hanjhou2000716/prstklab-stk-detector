@@ -905,6 +905,20 @@ def build_news_intelligence(
         limit=max(len(eligible), 1),
         max_per_provider=max(len(eligible), 1),
     )
+    editorial_candidates: list[dict[str, Any]] = []
+    editorial_seen: set[str] = set()
+    for item in [*deduped, *ranked_inventory]:
+        identities = {
+            str(item.get(key) or "").strip()
+            for key in ("event_cluster_key", "dedupe_key", "canonical_url")
+            if str(item.get(key) or "").strip()
+        }
+        if identities & editorial_seen:
+            continue
+        editorial_candidates.append(item)
+        editorial_seen.update(identities)
+        if len(editorial_candidates) >= 40:
+            break
     # Source diversity is evidence about the current scan only.  Retained
     # inventory must never masquerade as same-run corroboration.
     source_diversity = summarize_source_diversity(ranked_current)
@@ -1019,6 +1033,9 @@ def build_news_intelligence(
         "schema_version": "1.0",
         "provider_registry": provider_registry(),
         "stories": ranked,
+        # The complete bounded eligible pool is only for editorial session selection;
+        # alert/theme consumers retain the existing Top-N stories contract.
+        "editorial_candidates": editorial_candidates,
         "source_diversity": source_diversity,
         "interest_graph": graph,
         "excluded_count": len(excluded),

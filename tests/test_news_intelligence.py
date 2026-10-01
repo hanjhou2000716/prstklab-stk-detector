@@ -636,3 +636,15 @@ def test_news_intelligence_allows_explicit_disabled_provider_without_endpoint():
     nasdaq["feed_url"] = ""
     nasdaq["enabled"] = False
     assert not any("feed_url" in error for error in validate_news_intelligence(artifact))
+
+
+def test_editorial_candidates_keep_bounded_qualified_pool_beyond_top_five():
+    stories = [{
+        "title": f"Fed announces market rate decision number {number}",
+        "url": f"https://www.federalreserve.gov/newsevents/pressreleases/rate-{number}.htm",
+        "published_at": f"2026-09-05T0{number}:00:00+00:00",
+    } for number in range(1, 9)]
+    payload = build_news_intelligence(stories, market="us", limit=5)
+    assert len(payload["stories"]) == 5
+    assert len(payload["editorial_candidates"]) == 8
+    assert all(item["public_news_eligible"] is True for item in payload["editorial_candidates"])

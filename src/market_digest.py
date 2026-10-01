@@ -752,6 +752,15 @@ def build_market_digest(
         [item for item in all_quotes if _normalise_ticker(item.get("ticker")) in quote_priority],
         key=lambda item: quote_priority.index(_normalise_ticker(item.get("ticker"))),
     )
+    from src.session_news import build_session_news_summary
+
+    session_news_summary = build_session_news_summary(
+        snapshot,
+        slot,
+        as_of,
+        quote_items,
+        market_scope_key=market_scope_key,
+    )
     quote_theme = _theme_for_quotes(quote_items)
     # Quote evidence belongs to an event only when the event carries a
     # structured ticker reference (or its own market_evidence).  In
@@ -820,6 +829,7 @@ def build_market_digest(
             "evidence": [],
             "source_evidence": [],
             "quote_evidence": [],
+            "session_news_summary": session_news_summary,
         }
     themes = [primary_theme]
     primary_key = str(primary_theme.get("canonical_event_key") or "")
@@ -887,6 +897,7 @@ def build_market_digest(
             "evidence": [],
             "source_evidence": [],
             "quote_evidence": [],
+            "session_news_summary": session_news_summary,
         }
 
     label = _SLOT_LABELS.get(slot, "市場")
@@ -1288,6 +1299,7 @@ def build_market_digest(
         "overview": overview,
         "market_assessment": assessment,
         "market_sentiments": market_sentiments,
+        "session_news_summary": session_news_summary,
         "txf_display_qualification": txf_qualification if market_scope_key == "taiwan" else None,
         "market_scope_key": market_scope_key or assessment.get("market_scope_key"),
         "scheduled_report": assessment.get("scheduled_report") is True,

@@ -477,6 +477,7 @@ const displayAlertProjection = (alert) => {
     return projected;
   }
   const kind = String(alert.message_kind || alert.notification_kind || alert.kind || "").toLowerCase();
+  if (kind === "session_news_focus") return projected;
   const raw = String(alert.public_short_message || alert.brief_title || alert.event || alert.title || "")
     .replace(/\s+/g, " ").trim();
   const isBrief = kind === "scheduled_brief" || source === "scheduled_brief" || source === "market_briefing" || raw.startsWith("📊");
@@ -637,6 +638,55 @@ const primaryBriefingEvent = (snapshot) => {
   };
 };
 
+const renderSessionNewsSummary = (summary, expectedReleaseId = "", expectedSnapshotId = "") => {
+  const container = document.getElementById("alert-session-news");
+  if (!container) return;
+  container.replaceChildren();
+  container.hidden = true;
+  if (!summary || typeof summary !== "object") return;
+  if (summary.release_id && expectedReleaseId && String(summary.release_id) !== String(expectedReleaseId)) return;
+  if (summary.snapshot_id && expectedSnapshotId && String(summary.snapshot_id) !== String(expectedSnapshotId)) return;
+  summary = {
+    ...summary,
+    release_id: summary.release_id || expectedReleaseId,
+    snapshot_id: summary.snapshot_id || expectedSnapshotId,
+  };
+  const addText = (tag, className, value) => {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    node.textContent = String(value || "");
+    container.append(node);
+    return node;
+  };
+  addText("p", "alert-session-news-label", summary.reference_label || "市場開收盤焦點");
+  addText("h4", "alert-session-news-headline", summary.headline || "資料不足，暫無可核實總結");
+  const sentences = Array.isArray(summary.summary_sentences)
+    ? summary.summary_sentences.filter((sentence) => String(sentence || "").trim()).slice(0, 2)
+    : [String(summary.summary || "").trim()].filter(Boolean);
+  sentences.forEach((sentence) => addText("p", "alert-session-news-sentence", sentence));
+  const sourceUrl = safeHttpsUrl(summary.source_url);
+  const sourceText = [summary.source, summary.published_at ? traceTime(summary.published_at) : ""].filter(Boolean).join("｜");
+  if (sourceText || sourceUrl) {
+    const footer = document.createElement("div");
+    footer.className = "alert-session-news-source";
+    if (sourceText) {
+      const source = document.createElement("span");
+      source.textContent = sourceText;
+      footer.append(source);
+    }
+    if (sourceUrl) {
+      const link = document.createElement("a");
+      link.href = sourceUrl;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "查看原文";
+      footer.append(link);
+    }
+    container.append(footer);
+  }
+  container.hidden = false;
+};
+
 const renderAlertCard = (events, generatedAt, externalAlert, indices = [], externalRisk = null, snapshot = null) => {
   const profile = externalAlert ? externalAlertProfile(externalAlert.category, indices) : null;
   const rawEvent = externalAlert ? {
@@ -680,6 +730,13 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
   } : projectedEvent;
   const marketCardProjection = event?.briefing?.market_card_projection
     || event?.market_card_projection || null;
+  const sessionNewsSummary = event?.session_news_summary
+    || event?.briefing?.session_news_summary
+    || snapshot?.briefing?.session_news_summary;
+  const expectedNewsRelease = event?.release_id || snapshot?.release_id || window.releaseManifest?.release_id || "";
+  const expectedNewsSnapshot = event?.snapshot_id || snapshot?.snapshot_id
+    || snapshot?.market_snapshot_id || window.releaseManifest?.market_snapshot_id || "";
+  renderSessionNewsSummary(sessionNewsSummary, expectedNewsRelease, expectedNewsSnapshot);
   const card = document.getElementById("alert-card");
   if (!card) return;
   const pendingNode = document.getElementById("alert-pending");
@@ -750,21 +807,31 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
     banner.hidden = event.kind === "market_signal";
     const corporatePending = event.corporate_event && event.notification_status === "pending";
     const corporateRoutine = event.corporate_event && event.notification_status === "observe_only";
-    banner.textContent = event.kind === "external_alert"
-      ? externalBanner
-      : corporatePending
-        ? "官方來源已核對｜等待台股／台指同步"
-        : corporateRoutine
-          ? "例行公司公告｜觀察"
-          : "已核對的重要市場事件";
+    banner.textContent = event.kind === "session_news_focus"
+      ? "市場開收盤焦點"
+      : event.kind === "external_alert"
+        ? externalBanner
+        : corporatePending
+          ? "官方來源已核對｜等待台股／台指同步"
+          : corporateRoutine
+            ? "例行公司公告｜觀察"
+            : "已核對的重要市場事件";
   }
   // Older immutable alert artifacts predate the headline aliases.  Fall
   // back to their preserved event text so historical Telegram links never
   // render an "undefined｜undefined" heading.
   const headline = event.public_short_message || event.brief_title || event.title || event.event || `${event.short_label || "公開事件"}｜市場事件`;
   setText("alert-headline", headline);
+  const isSessionNewsFocus = event.kind === "session_news_focus";
+  const alertDetail = document.querySelector("#alert-card .alert-detail");
+  if (alertDetail) alertDetail.hidden = isSessionNewsFocus;
+  const alertBriefList = document.querySelector("#alert-card .alert-brief-list");
+  if (alertBriefList) alertBriefList.hidden = isSessionNewsFocus;
   const headlineNode = document.getElementById("alert-headline");
-  if (headlineNode) headlineNode.className = `market-signal-title ${movementClass(headline)}`;
+  if (headlineNode) {
+    headlineNode.className = `market-signal-title ${movementClass(headline)}`;
+    headlineNode.hidden = event.kind === "session_news_focus";
+  }
   const isNativeMarketSignal = event.kind === "market_signal";
   const nativeMove = String(event.market_move || "").trim();
   const nativePattern = String(event.pattern || "").trim();
@@ -1574,7 +1641,7 @@ const renderBriefing = (briefing, generatedAt) => {
     const sentimentFacts = Array.isArray(marketProjection?.sentiments)
       ? marketProjection.sentiments
       : (Array.isArray(report.market_sentiments) ? report.market_sentiments : []);
-    const sentimentMarkup = sentimentFacts.length
+    const sentimentMarkup = report.slot === "morning" ? "" : sentimentFacts.length
       ? `<aside class="briefing-market-sentiment" aria-label="市場情緒">${sentimentFacts.map((fact) => {
         const label = String(fact.label || "市場情緒");
         const score = Number(fact.score);
@@ -2125,6 +2192,23 @@ const renderCreatorInsights = (creatorRelease) => {
 };
 
 const render = (snapshot, { deferAlert = false } = {}) => {
+  const manifest = window.releaseManifest;
+  const releaseId = String(manifest?.release_id || "");
+  const marketSnapshotId = String(manifest?.market_snapshot_id || "");
+  if (releaseId && !snapshot.release_id) snapshot.release_id = releaseId;
+  if (marketSnapshotId && !snapshot.snapshot_id) snapshot.snapshot_id = marketSnapshotId;
+  if (snapshot.briefing && typeof snapshot.briefing === "object") {
+    const summary = snapshot.briefing.session_news_summary;
+    if (summary && typeof summary === "object") {
+      if (!summary.release_id) summary.release_id = releaseId;
+      if (!summary.snapshot_id) summary.snapshot_id = marketSnapshotId;
+    }
+    const projection = snapshot.briefing.market_card_projection;
+    if (projection && typeof projection === "object") {
+      if (!projection.release_id) projection.release_id = releaseId;
+      if (!projection.snapshot_id) projection.snapshot_id = marketSnapshotId;
+    }
+  }
   window.marketSnapshot = snapshot;
   const externalAlert = activeExternalAlert(snapshot.external_alert);
   setText("data-status", snapshot.data_status || "資料更新中");
@@ -2140,7 +2224,35 @@ const render = (snapshot, { deferAlert = false } = {}) => {
   renderRisk(snapshot.risk);
   if (!deferAlert) {
     const briefingEvent = primaryBriefingEvent(snapshot);
-    const focusEvents = briefingEvent ? [briefingEvent] : primaryAlertEvents(snapshot);
+    const candidates = [
+      ...(Array.isArray(snapshot.events?.items) ? snapshot.events.items : []),
+      ...(Array.isArray(snapshot.external_observations) ? snapshot.external_observations : []),
+      ...(Array.isArray(snapshot.financialjuice_priority_events) ? snapshot.financialjuice_priority_events : []),
+    ];
+    const eligibleMajor = candidates.find((item) => {
+      const source = String(item?.source_key || item?.source || item?.content_origin || "").toLowerCase();
+      if (item?.notification_status !== "eligible" || source === "news" || source === "scheduled_brief") return false;
+      return source !== "financialjuice" || isCanonicalFjSummary(item);
+    });
+    const sessionNews = snapshot.briefing?.session_news_summary;
+    const newsFocus = sessionNews && typeof sessionNews === "object" ? {
+      kind: "session_news_focus",
+      source: "release-bound session news",
+      source_key: "session_news_summary",
+      brief_title: sessionNews.headline || "資料不足，暫無可核實總結",
+      public_short_message: sessionNews.headline || "資料不足，暫無可核實總結",
+      event: (Array.isArray(sessionNews.summary_sentences) ? sessionNews.summary_sentences : []).join(" "),
+      summary: sessionNews.summary || "",
+      market_card_projection: snapshot.briefing?.market_card_projection,
+      market_evidence: Array.isArray(sessionNews.quote_evidence) ? sessionNews.quote_evidence : [],
+      snapshot_id: sessionNews.snapshot_id || snapshot.snapshot_id,
+      release_id: sessionNews.release_id || snapshot.release_id,
+      notification_status: "observe_only",
+    } : null;
+    const focusEvents = eligibleMajor ? [eligibleMajor]
+      : newsFocus ? [newsFocus]
+      : briefingEvent ? [briefingEvent]
+      : primaryAlertEvents(snapshot);
     renderAlertCard({ ...(snapshot.events || {}), items: focusEvents }, snapshot.generated_at, externalAlert, snapshot.indices || [], snapshot.intelligence?.external_event_risk, snapshot);
   }
   renderEvents(snapshot.events, snapshot.briefing);

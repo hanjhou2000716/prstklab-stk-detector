@@ -294,6 +294,17 @@ def test_scheduled_briefing_projection_preserves_primary_semantics_and_real_quot
     _artifacts(tmp_path)
     market_path = tmp_path / "site" / "data" / "market.json"
     market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["events"] = {"items": [{
+        "notification_id": "market-alert-news-projection",
+        "event_cluster_key": "market-alert-news-projection",
+        "kind": "official_event",
+        "source_key": "official_events",
+        "source": "官方事件",
+        "title": "官方重大市場事件",
+        "event": "官方重大市場事件已確認。",
+        "notification_status": "eligible",
+        "market_evidence": [],
+    }]}
     market["briefing"] = {
         "slot": "us_premarket",
         "briefing_id": "briefing-us-premarket-rich",
@@ -305,6 +316,15 @@ def test_scheduled_briefing_projection_preserves_primary_semantics_and_real_quot
         "assessment_summary": "今日判讀：能源設施事件已核對。",
         "canonical_content_hash": "c" * 64,
         "canonical_hash_version": 1,
+        "session_news_summary": {
+            "schema_version": "session-news-summary-v1",
+            "status": "selected",
+            "headline": "美股收盤焦點",
+            "summary_sentences": ["來源摘要。", "行情觀察。"],
+            "release_id": "",
+            "snapshot_id": "",
+            "source_url": "https://news.example/session-focus",
+        },
         "primary_theme": {
             "canonical_event_key": "event-energy-1",
             "what_happened": "能源設施事件已核對。",
@@ -339,6 +359,12 @@ def test_scheduled_briefing_projection_preserves_primary_semantics_and_real_quot
     assert artifact["market_evidence"][0]["change_percent"] == -0.29
     assert artifact["source_evidence"][0]["source_key"] == "financialjuice"
     assert artifact["briefing"]["displayed_event_keys"] == ["event-energy-1", "event-market-2"]
+    assert artifact["briefing"]["session_news_summary"]["release_id"] == manifest["release_id"]
+    assert artifact["briefing"]["session_news_summary"]["snapshot_id"] == manifest["market_snapshot_id"]
+    alert_row = next(item for item in index["alerts"] if item["notification_id"] == "market-alert-news-projection")
+    alert_artifact = json.loads((tmp_path / "site" / "data" / alert_row["path"]).read_text(encoding="utf-8"))
+    assert alert_artifact["session_news_summary"]["release_id"] == manifest["release_id"]
+    assert alert_artifact["session_news_summary"]["snapshot_id"] == manifest["market_snapshot_id"]
     assert verify_release_files(manifest, root=tmp_path / "site") == []
 
 
