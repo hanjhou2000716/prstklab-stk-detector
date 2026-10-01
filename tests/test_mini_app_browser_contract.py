@@ -584,7 +584,9 @@ def test_mini_app_taiwan_pair_uses_verified_projection_for_quote_direction() -> 
             page.reload(wait_until="domcontentloaded")
             page.wait_for_selector("#risk-list .risk-metric-card", state="attached")
             assert page.locator("#briefing-observations .briefing-market-sentiment").count() == 0
-            assert page.locator("#risk-list .risk-metric-card").count() == 1
+            assert page.locator("#risk-list .risk-market-group").count() == 1
+            assert page.locator("#risk-list .risk-metric-card").count() == 2
+            assert page.locator("#risk-list .risk-market-group").filter(has_text="CNN Fear & Greed").count() == 1
 
             market["events"] = {"items": [{
                 "notification_id": "verified-major-event",
