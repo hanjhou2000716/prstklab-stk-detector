@@ -100,6 +100,6 @@ def test_session_summary_keeps_two_complete_sentences_within_140_characters():
     assert result["status"] == "selected"
     assert len(result["summary_sentences"]) == 2
     assert len(result["summary"]) <= 140
-    assert result["summary_sentences"][0] == "來源未提供可核實中文摘要，請參閱原文。"
+    assert result["summary_sentences"][0] == "市場收盤聚焦與投資人觀察。"
     assert "2024-01-04" in result["summary_sentences"][1]
     assert "+0.50%" in result["summary_sentences"][1]
