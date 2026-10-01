@@ -779,6 +779,8 @@ def test_gmail_workflow_bounds_dependency_install_and_reports_phase_outcomes() -
         "- name: Validate Gmail sync result contract", 1
     )[0]
     assert "id: sync" in sync
+    assert '          uv run --no-sync python scripts/sync_gmail_supabase.py' in sync
+    assert '          python scripts/sync_gmail_supabase.py' not in sync
     job = workflow.split("jobs:", 1)[1].split("steps:", 1)[0]
     assert "timeout-minutes: 10" in job
     assert "DEPENDENCY_INSTALL_OUTCOME: ${{ steps.dependencies.outcome || 'skipped' }}" in workflow

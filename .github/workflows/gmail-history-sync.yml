@@ -81,7 +81,7 @@ jobs:
           if [ -n "${HISTORY_ID:-}" ]; then args+=(--history-id "$HISTORY_ID"); fi
           if [ "${{ inputs.latest_financialjuice || github.event.client_payload.latest_financialjuice || false }}" = "true" ]; then args+=(--latest-financialjuice); fi
           args+=(--notify "$NOTIFY")
-          python scripts/sync_gmail_supabase.py "${args[@]}" | tee gmail-sync-result.json
+          uv run --no-sync python scripts/sync_gmail_supabase.py "${args[@]}" | tee gmail-sync-result.json
       - name: Validate Gmail sync result contract
         if: success()
         id: contract
