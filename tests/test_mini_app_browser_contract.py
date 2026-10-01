@@ -563,11 +563,11 @@ def test_mini_app_taiwan_pair_uses_verified_projection_for_quote_direction() -> 
             legacy_verified = legacy_rows.nth(1)
             assert "market-down" in (legacy_verified.get_attribute("class") or "")
             assert "🍂" in (legacy_verified.text_content() or "")
-            focus = page.locator("#alert-session-news")
+            focus = page.locator("#briefing-overview")
             assert focus.is_visible()
             assert "台股收盤焦點：指數震盪" in (focus.text_content() or "")
-            assert focus.locator(".alert-session-news-sentence").count() == 2
-            assert focus.locator("a").get_attribute("href") == "https://news.example/taiwan-close"
+            assert focus.locator(".briefing-overview-news-sentence").count() == 2
+            assert focus.locator('a[href="https://news.example/taiwan-close"]').count() == 1
             assert page.locator("#alert-card .alert-brief-list").is_hidden()
 
             sentiment = {"label": "美股情緒", "score": 30.8, "sentiment": "偏恐慌", "observed_date": "2026-09-30"}
@@ -602,9 +602,9 @@ def test_mini_app_taiwan_pair_uses_verified_projection_for_quote_direction() -> 
             manifest["artifact_hashes"]["market.json"] = hashlib.sha256(market_text.encode()).hexdigest()
             manifest_text = json.dumps(manifest, ensure_ascii=False, separators=(",", ":"))
             page.reload(wait_until="domcontentloaded")
-            page.wait_for_selector("#alert-session-news", state="visible")
+            page.wait_for_selector("#briefing-overview .briefing-overview-news-label", state="visible")
             assert "優先顯示的重大警報" in (page.locator("#alert-headline").text_content() or "")
-            assert "台股收盤焦點：指數震盪" in (page.locator("#alert-session-news").text_content() or "")
+            assert "台股收盤焦點：指數震盪" in (page.locator("#briefing-overview").text_content() or "")
             assert page.locator("#alert-card .alert-brief-list").is_visible()
             browser.close()
     except Exception as exc:

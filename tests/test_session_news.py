@@ -21,7 +21,7 @@ def _story(title: str, url: str, published_at: str, *, summary: str = "市場開
 def test_session_summary_selects_qualified_candidate_outside_top_five_and_binds_session():
     stories = [
         _story(f"Fed market rates update {index}", f"https://news.example/{index}",
-               f"2024-01-04T21:{index:02d}:00+00:00", summary="聯準會公布利率決策，市場關注通膨。")
+               f"2024-01-04T21:{index:02d}:00+00:00", summary="聯準會公布利率決策，美股市場關注通膨。")
         for index in range(1, 8)
     ]
     payload = {
@@ -63,7 +63,7 @@ def test_historical_session_story_is_explicit_and_quote_fallback_does_not_claim_
         "Market close wrap",
         "https://news.example/close",
         "2024-01-03T22:00:00+00:00",
-        summary="市場收盤重點。",
+        summary="美股市場收盤重點。",
         market="us",
     )
     result = build_session_news_summary(
@@ -88,7 +88,7 @@ def test_historical_session_story_is_explicit_and_quote_fallback_does_not_claim_
 
 
 def test_session_summary_keeps_two_complete_sentences_within_140_characters():
-    long_summary = "市場收盤聚焦與投資人觀察。" * 20
+    long_summary = "美股收盤聚焦與投資人觀察。" * 20
     result = build_session_news_summary(
         {"news": {"intelligence": {"us": {"editorial_candidates": [
             _story("美股收盤焦點", "https://news.example/long", "2024-01-04T21:00:00+00:00", summary=long_summary),
@@ -100,6 +100,52 @@ def test_session_summary_keeps_two_complete_sentences_within_140_characters():
     assert result["status"] == "selected"
     assert len(result["summary_sentences"]) == 2
     assert len(result["summary"]) <= 140
-    assert result["summary_sentences"][0] == "市場收盤聚焦與投資人觀察。"
+    assert result["summary_sentences"][0] == "美股收盤聚焦與投資人觀察。"
     assert "2024-01-04" in result["summary_sentences"][1]
     assert "+0.50%" in result["summary_sentences"][1]
+
+
+def test_unrelated_gold_story_cannot_become_taiwan_market_focus_from_metadata_alone():
+    gold = _story(
+        "國際黃金價格創高，避險需求升溫",
+        "https://news.example/gold",
+        "2024-01-04T05:00:00+00:00",
+        summary="黃金與美元走勢受到關注。",
+        market="taiwan",
+    )
+    result = build_session_news_summary(
+        {"news": {"intelligence": {"taiwan": {"editorial_candidates": [gold]}}}},
+        "post_close",
+        datetime(2024, 1, 4, 8, 0, tzinfo=UTC),
+        [],
+        market_scope_key="taiwan",
+    )
+    assert result["status"] == "unavailable"
+    assert result["story_id"] == ""
+    assert result["source_url"] == ""
+
+
+def test_equity_focus_beats_higher_quality_but_unrelated_commodity_story():
+    gold = _story(
+        "Gold climbs as safe-haven demand rises",
+        "https://news.example/gold-us",
+        "2024-01-04T21:00:00+00:00",
+        summary="Gold futures gain on safe-haven flows.",
+        market="us",
+    )
+    stocks = _story(
+        "美股收盤：主要指數收高",
+        "https://news.example/us-stocks",
+        "2024-01-04T21:01:00+00:00",
+        summary="美股主要指數收高，市場等待企業財報。",
+        market="us",
+    )
+    gold["source_tier"] = "official"
+    result = build_session_news_summary(
+        {"news": {"intelligence": {"us": {"editorial_candidates": [gold, stocks]}}}},
+        "morning",
+        datetime(2024, 1, 5, 2, 0, tzinfo=UTC),
+        [{"ticker": "S&P 500", "price": 4800, "change_percent": 0.2, "freshness": "recent_close", "quote_date": "2024-01-04"}],
+    )
+    assert result["status"] == "selected"
+    assert result["story_id"] == stocks["canonical_url"]

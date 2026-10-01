@@ -461,13 +461,19 @@ h1 { font-size: clamp(1.1rem, 5.2vw, 1.55rem); }
 .morning-analysis-fact.market-down { color: var(--positive) !important; }
 .morning-analysis-fact.flat { color: #263f57 !important; }
 
-.taiwan-market-status { display: grid; gap: 2px; margin: 5px 0 2px; color: var(--muted); font-size: .68rem; line-height: 1.4; }
-.taiwan-market-status span { overflow-wrap: anywhere; }
+.taiwan-market-status { display: none; }
+.taiwan-market-date-footer { margin: 5px 0 0; padding-top: 6px; border-top: 1px solid #dfe3df; color: var(--muted) !important; font-size: .68rem !important; line-height: 1.4; overflow-wrap: anywhere; }
+.taiwan-market-stats .statistic-item { color: var(--ink); }
+.briefing-overview > p { margin: 0; }
+.briefing-overview > p + p { margin-top: 7px; padding-top: 7px; border-top: 1px solid rgb(255 255 255 / 28%); }
+.briefing-overview-source { display: block; margin-top: 8px; color: rgb(255 255 255 / 78%); font-size: .72rem; font-weight: 500; overflow-wrap: anywhere; }
+.briefing-overview-source a { color: inherit; text-decoration: underline; }
 .taiwan-market-card-facts { display: grid; gap: 3px; min-width: 0; }
 .taiwan-market-pair .taiwan-market-card-facts > p { margin: 3px 0; padding: 7px 0; border-bottom: 1px solid #dfe3df; }
 .taiwan-market-pair .taiwan-market-card-facts > p:last-child { border-bottom: 0; }
 .taiwan-market-stats .taiwan-market-card-facts { grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 6px 12px; }
 .taiwan-market-stats .taiwan-market-card-facts > p { margin: 3px 0; padding: 6px 8px; border-radius: 8px; background: #fff; font-size: .74rem; }
+.taiwan-market-stats .taiwan-market-date-footer { grid-column: 1 / -1; }
 .taiwan-market-takeaway { margin: 7px 0 0 !important; padding-top: 7px; border-top: 1px solid #dfe3df; color: #465565 !important; font-size: .74rem !important; font-weight: 600; }
 .taiwan-market-takeaway b { color: #263f57 !important; }
 .us-market-card .morning-analysis-section-heading { align-items: baseline; }
@@ -515,3 +521,5 @@ h1 { font-size: clamp(1.1rem, 5.2vw, 1.55rem); }
   .alert-session-news { margin-inline: 12px; padding: 12px; }
   .alert-session-news-source { flex-direction: column; gap: 4px; }
 }
+
+.us-market-date-footer { display: block; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e2e4df; color: var(--muted); font-size: .68rem; line-height: 1.4; overflow-wrap: anywhere; }

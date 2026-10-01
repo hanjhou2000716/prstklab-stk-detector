@@ -53,7 +53,7 @@ const verifiedPairChange = (fact) => {
     || Object.prototype.hasOwnProperty.call(fact, "display_state")) {
     const state = String(fact.display_state || "");
     const value = fact.display_change_percent;
-    if (!["live", "recent_close", "recent_close_reference"].includes(state)
+    if (!["live", "recent_close", "recent_close_reference", "historical_reference"].includes(state)
       || value === null || value === undefined || value === "" || typeof value === "boolean") return null;
     const number = Number(value);
     return Number.isFinite(number) ? number : null;
@@ -638,55 +638,6 @@ const primaryBriefingEvent = (snapshot) => {
   };
 };
 
-const renderSessionNewsSummary = (summary, expectedReleaseId = "", expectedSnapshotId = "") => {
-  const container = document.getElementById("alert-session-news");
-  if (!container) return;
-  container.replaceChildren();
-  container.hidden = true;
-  if (!summary || typeof summary !== "object") return;
-  if (summary.release_id && expectedReleaseId && String(summary.release_id) !== String(expectedReleaseId)) return;
-  if (summary.snapshot_id && expectedSnapshotId && String(summary.snapshot_id) !== String(expectedSnapshotId)) return;
-  summary = {
-    ...summary,
-    release_id: summary.release_id || expectedReleaseId,
-    snapshot_id: summary.snapshot_id || expectedSnapshotId,
-  };
-  const addText = (tag, className, value) => {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    node.textContent = String(value || "");
-    container.append(node);
-    return node;
-  };
-  addText("p", "alert-session-news-label", summary.reference_label || "市場開收盤焦點");
-  addText("h4", "alert-session-news-headline", summary.headline || "資料不足，暫無可核實總結");
-  const sentences = Array.isArray(summary.summary_sentences)
-    ? summary.summary_sentences.filter((sentence) => String(sentence || "").trim()).slice(0, 2)
-    : [String(summary.summary || "").trim()].filter(Boolean);
-  sentences.forEach((sentence) => addText("p", "alert-session-news-sentence", sentence));
-  const sourceUrl = safeHttpsUrl(summary.source_url);
-  const sourceText = [summary.source, summary.published_at ? traceTime(summary.published_at) : ""].filter(Boolean).join("｜");
-  if (sourceText || sourceUrl) {
-    const footer = document.createElement("div");
-    footer.className = "alert-session-news-source";
-    if (sourceText) {
-      const source = document.createElement("span");
-      source.textContent = sourceText;
-      footer.append(source);
-    }
-    if (sourceUrl) {
-      const link = document.createElement("a");
-      link.href = sourceUrl;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      link.textContent = "查看原文";
-      footer.append(link);
-    }
-    container.append(footer);
-  }
-  container.hidden = false;
-};
-
 const renderAlertCard = (events, generatedAt, externalAlert, indices = [], externalRisk = null, snapshot = null) => {
   const profile = externalAlert ? externalAlertProfile(externalAlert.category, indices) : null;
   const rawEvent = externalAlert ? {
@@ -730,13 +681,6 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
   } : projectedEvent;
   const marketCardProjection = event?.briefing?.market_card_projection
     || event?.market_card_projection || null;
-  const sessionNewsSummary = event?.session_news_summary
-    || event?.briefing?.session_news_summary
-    || snapshot?.briefing?.session_news_summary;
-  const expectedNewsRelease = event?.release_id || snapshot?.release_id || window.releaseManifest?.release_id || "";
-  const expectedNewsSnapshot = event?.snapshot_id || snapshot?.snapshot_id
-    || snapshot?.market_snapshot_id || window.releaseManifest?.market_snapshot_id || "";
-  renderSessionNewsSummary(sessionNewsSummary, expectedNewsRelease, expectedNewsSnapshot);
   const card = document.getElementById("alert-card");
   if (!card) return;
   const pendingNode = document.getElementById("alert-pending");
@@ -771,6 +715,8 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
   const displayTime = generatedAt ? new Date(generatedAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "公開資料更新中";
   setText("alert-time", `${displayTime} CST`);
   if (!event) {
+    const alertDetail = document.querySelector("#alert-card .alert-detail");
+    if (alertDetail) alertDetail.hidden = true;
     card.dataset.risk = "neutral";
     setText("alert-banner", "今日無重大市場事件，持續觀察");
     setText("alert-headline", "市場訊號尚未達提醒門檻");
@@ -1373,7 +1319,55 @@ const renderBriefing = (briefing, generatedAt) => {
   if (reportLabel) setText("briefing-report-title", reportLabel);
   const displayTime = generatedAt ? new Date(generatedAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "公開資料更新中";
   setText("briefing-time", `${displayTime} CST`);
-  setText("briefing-overview", report.assessment_summary || report.overview || "本次以公開市場報價、官方事件與風險資料整理市場脈絡。 ");
+  const overview = document.getElementById("briefing-overview");
+  if (overview) {
+    overview.replaceChildren();
+    const addOverviewText = (tag, className, value) => {
+      const node = document.createElement(tag);
+      node.className = className;
+      node.textContent = String(value || "");
+      overview.append(node);
+      return node;
+    };
+    addOverviewText("p", "briefing-overview-base",
+      report.assessment_summary || report.overview || "本次以公開市場報價、官方事件與風險資料整理市場脈絡。");
+    const routineSlots = new Set(["morning", "pre_open", "post_close", "us_premarket"]);
+    const session = report.session_news_summary;
+    const sameRelease = !session?.release_id || !report.release_id
+      || String(session.release_id) === String(report.release_id);
+    const sameSnapshot = !session?.snapshot_id || !report.snapshot_id
+      || String(session.snapshot_id) === String(report.snapshot_id);
+    if (routineSlots.has(String(report.slot || "")) && session && typeof session === "object"
+      && sameRelease && sameSnapshot) {
+      const headline = session.headline || "資料不足，暫無可核實總結";
+      const reference = session.status === "recent_session_reference"
+        ? (session.reference_label || "最近交易日參考")
+        : session.status === "selected" ? "市場焦點" : "行情參考";
+      addOverviewText("p", "briefing-overview-news-label", reference + "｜" + headline);
+      const sentences = Array.isArray(session.summary_sentences)
+        ? session.summary_sentences.filter((item) => String(item || "").trim()).slice(0, 2)
+        : [String(session.summary || "").trim()].filter(Boolean);
+      sentences.forEach((sentence) => addOverviewText("p", "briefing-overview-news-sentence", sentence));
+      const sourceUrl = safeHttpsUrl(session.source_url);
+      const sourceText = [session.source, session.published_at ? traceTime(session.published_at) : ""]
+        .filter(Boolean).join("｜");
+      if (sourceText || sourceUrl) {
+        const footer = document.createElement("small");
+        footer.className = "briefing-overview-source";
+        if (sourceText) footer.append(document.createTextNode(sourceText));
+        if (sourceUrl) {
+          if (sourceText) footer.append(document.createTextNode("｜"));
+          const link = document.createElement("a");
+          link.href = sourceUrl;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = "查看原文";
+          footer.append(link);
+        }
+        overview.append(footer);
+      }
+    }
+  }
   setText("briefing-reminder", report.reminder || "僅供公開資訊整理與教育性觀察，不構成投資建議。");
   const correlation = document.getElementById("briefing-correlation");
   if (correlation) {
@@ -1564,7 +1558,7 @@ const renderBriefing = (briefing, generatedAt) => {
           });
           return Array.from(grouped.entries()).map(([date, groupFacts]) => {
             const status = date === "日期未確認" ? defaultStatus : `資料日 ${date}`;
-            return `<section class="us-market-subgroup ${className}"><h4>${escapeHtml(label)}</h4><small class="quote-group-status">${escapeHtml(status || date)}</small><div class="us-market-facts">${groupFacts.map(renderUsFact).join("")}</div></section>`;
+            return `<section class="us-market-subgroup ${className}"><h4>${escapeHtml(label)}</h4><div class="us-market-facts">${groupFacts.map(renderUsFact).join("")}</div><small class="quote-group-status">${escapeHtml(status || date)}</small></section>`;
           }).join("");
         };
         if (item.layout === "us_cash_v2") {
@@ -1573,7 +1567,12 @@ const renderBriefing = (briefing, generatedAt) => {
           const rows = splitByDate
             ? renderDateGroupedRows("最近收盤", visibleStructuredFacts, "us-market-date-group", "資料日期未確認")
             : `<div class="us-market-facts">${visibleStructuredFacts.map(renderUsFact).join("")}</div>`;
-          return `<article class="morning-analysis-section us-market-card us-market-cash"><div class="morning-analysis-section-heading"><h3>${title}</h3>${splitByDate ? "" : headerNoteMarkup}</div>${rows || '<p class="morning-analysis-fact">本輪未取得可核對資料。</p>'}${takeawayMarkup}${evidence}</article>`;
+          const cashDates = [...new Set(visibleStructuredFacts.map((fact) => quoteDate(fact)).filter(Boolean))];
+          const cashDateFooter = cashDates.length === 1
+            ? "資料日 " + cashDates[0]
+            : cashDates.length > 1 ? "各項資料日期分組標示" : "資料日期未確認";
+          const cashDateFooterMarkup = `<small class="us-market-date-footer">${escapeHtml(cashDateFooter)}</small>`;
+          return `<article class="morning-analysis-section us-market-card us-market-cash"><div class="morning-analysis-section-heading"><h3>${title}</h3></div>${rows || '<p class="morning-analysis-fact">本輪未取得可核對資料。</p>'}${cashDateFooterMarkup}${takeawayMarkup}${evidence}</article>`;
         }
         const references = Array.isArray(item.reference_facts) ? item.reference_facts : [];
         const supplements = Array.isArray(item.supplementary_facts) ? item.supplementary_facts : [];
@@ -1604,26 +1603,39 @@ const renderBriefing = (briefing, generatedAt) => {
         const cardClass = item.layout === "taiwan_pair_v2" ? "taiwan-market-pair" : "taiwan-market-stats";
         const compactFacts = visibleStructuredFacts.length
           ? visibleStructuredFacts.map((fact) => {
-            const quote = fact && fact.quote && typeof fact.quote === "object" ? fact.quote : null;
             const pairQuote = item.layout === "taiwan_pair_v2";
-            const displayChange = pairQuote ? verifiedPairChange(fact) : quote?.change_percent;
+            const displayChange = pairQuote ? verifiedPairChange(fact) : null;
             const movement = quoteMovement(displayChange);
-            return '<p class="morning-analysis-fact ' + movement.state + '">' + (displayChange === null || displayChange === undefined ? "" : quoteMovementPrefix(displayChange)) + escapeHtml(String(fact?.text || "")) + "</p>";
+            const statisticIcons = { turnover: "💰", breadth: "📊", institutions: "🏦" };
+            const statisticIcon = item.layout === "taiwan_stats_v2"
+              ? (statisticIcons[String(fact?.statistic_kind || "")] || "•")
+              : "";
+            const prefix = pairQuote && displayChange !== null ? quoteMovementPrefix(displayChange) : statisticIcon;
+            const lineClass = pairQuote ? movement.state : "statistic-item";
+            return '<p class="morning-analysis-fact ' + lineClass + '">' + prefix + escapeHtml(String(fact?.text || "")) + "</p>";
           }).join("")
           : visibleFacts.map((fact) => '<p class="morning-analysis-fact">' + escapeHtml(String(fact)) + "</p>").join("");
         const takeaway = String(item.takeaway || "").trim();
         const title = escapeHtml(item.title || "台股市場資訊");
         const evidence = renderEvidence(item.evidence);
-        const statusNotes = Array.isArray(item.status_notes)
-          ? item.status_notes.filter((note) => String(note || "").trim())
-          : String(item.header_note || "").split("；").filter(Boolean);
-        const statusMarkup = statusNotes.length
-          ? '<div class="taiwan-market-status">' + statusNotes.map((note) => '<span>' + escapeHtml(String(note)) + "</span>").join("") + "</div>"
+        const statusMarkup = "";
+        const statisticDates = visibleStructuredFacts.map((fact) => ({
+          name: String(fact?.name || fact?.ticker || "統計"),
+          date: String(fact?.display_date || fact?.quote?.observed_date || ""),
+        }));
+        const uniqueStatisticDates = [...new Set(statisticDates.map((item) => item.date).filter(Boolean))];
+        const dateFooter = item.layout === "taiwan_pair_v2"
+          ? String(item.date_footer || "")
+          : uniqueStatisticDates.length === 1 && statisticDates.every((item) => item.date === uniqueStatisticDates[0])
+            ? "資料日 " + uniqueStatisticDates[0]
+            : statisticDates.map((item) => item.name + " " + (item.date || "日期未核實")).join("｜");
+        const dateFooterMarkup = dateFooter
+          ? '<p class="taiwan-market-date-footer">' + escapeHtml(dateFooter) + "</p>"
           : "";
         const takeawayMarkup = takeaway
           ? '<p class="taiwan-market-takeaway"><b>簡要觀察：</b>' + escapeHtml(takeaway) + "</p>"
           : "";
-        return '<article class="morning-analysis-section ' + cardClass + '"><div class="morning-analysis-section-heading"><h3>' + title + '</h3></div>' + statusMarkup + '<div class="taiwan-market-card-facts">' + (compactFacts || '<p class="morning-analysis-fact">本輪未取得可核對資料。</p>') + "</div>" + takeawayMarkup + evidence + "</article>";
+        return '<article class="morning-analysis-section ' + cardClass + '"><div class="morning-analysis-section-heading"><h3>' + title + '</h3></div>' + statusMarkup + '<div class="taiwan-market-card-facts">' + (compactFacts || '<p class="morning-analysis-fact">本輪未取得可核對資料。</p>') + "</div>" + dateFooterMarkup + takeawayMarkup + evidence + "</article>";
       }
       const labeledItems = [
         ["為何重要", item.why_it_matters],
@@ -1638,19 +1650,8 @@ const renderBriefing = (briefing, generatedAt) => {
     const sessionState = String(morningAnalysis.market_session_state || "").trim();
     const sessionMeta = sessionState && sessionState !== "本輪市場時段"
       ? `<div class="morning-analysis-meta">${escapeHtml(sessionState)}</div>` : "";
-    const sentimentFacts = Array.isArray(marketProjection?.sentiments)
-      ? marketProjection.sentiments
-      : (Array.isArray(report.market_sentiments) ? report.market_sentiments : []);
-    const sentimentMarkup = report.slot === "morning" ? "" : sentimentFacts.length
-      ? `<aside class="briefing-market-sentiment" aria-label="市場情緒">${sentimentFacts.map((fact) => {
-        const label = String(fact.label || "市場情緒");
-        const score = Number(fact.score);
-        const value = Number.isFinite(score) ? score.toFixed(1) : "資料未取得";
-        const sentiment = String(fact.sentiment || "");
-        const date = String(fact.observed_date || "");
-        return `<p><b>${escapeHtml(label)}：</b>${escapeHtml(value)}／${escapeHtml(sentiment)}${date ? `<small>資料日 ${escapeHtml(date)}</small>` : ""}</p>`;
-      }).join("")}${renderEvidence(sentimentFacts.map((fact) => ({ ...fact, ticker: fact.label, kind: "market_sentiment" })))}</aside>`
-      : "";
+    // The lower "市場情緒與波動" card is the single sentiment surface for all four report slots.
+    const sentimentMarkup = "";
     const systemAnalysis = document.getElementById("briefing-morning-system-analysis");
     if (systemAnalysis) {
       const gapReasonLabels = {
@@ -2234,24 +2235,8 @@ const render = (snapshot, { deferAlert = false } = {}) => {
       if (item?.notification_status !== "eligible" || source === "news" || source === "scheduled_brief") return false;
       return source !== "financialjuice" || isCanonicalFjSummary(item);
     });
-    const sessionNews = snapshot.briefing?.session_news_summary;
-    const newsFocus = sessionNews && typeof sessionNews === "object" ? {
-      kind: "session_news_focus",
-      source: "release-bound session news",
-      source_key: "session_news_summary",
-      brief_title: sessionNews.headline || "資料不足，暫無可核實總結",
-      public_short_message: sessionNews.headline || "資料不足，暫無可核實總結",
-      event: (Array.isArray(sessionNews.summary_sentences) ? sessionNews.summary_sentences : []).join(" "),
-      summary: sessionNews.summary || "",
-      market_card_projection: snapshot.briefing?.market_card_projection,
-      market_evidence: Array.isArray(sessionNews.quote_evidence) ? sessionNews.quote_evidence : [],
-      snapshot_id: sessionNews.snapshot_id || snapshot.snapshot_id,
-      release_id: sessionNews.release_id || snapshot.release_id,
-      notification_status: "observe_only",
-    } : null;
     const focusEvents = eligibleMajor ? [eligibleMajor]
-      : newsFocus ? [newsFocus]
-      : briefingEvent ? [briefingEvent]
+      : briefingEvent?.source_key !== "scheduled_brief" ? (briefingEvent ? [briefingEvent] : primaryAlertEvents(snapshot))
       : primaryAlertEvents(snapshot);
     renderAlertCard({ ...(snapshot.events || {}), items: focusEvents }, snapshot.generated_at, externalAlert, snapshot.indices || [], snapshot.intelligence?.external_event_risk, snapshot);
   }
