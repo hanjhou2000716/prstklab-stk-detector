@@ -85,3 +85,21 @@ def test_historical_session_story_is_explicit_and_quote_fallback_does_not_claim_
     assert fallback["status"] == "market_data_fallback"
     assert "新聞未取得" in fallback["headline"]
     assert len(fallback["summary_sentences"]) == 2
+
+
+def test_session_summary_keeps_two_complete_sentences_within_140_characters():
+    long_summary = "市場收盤聚焦與投資人觀察。" * 20
+    result = build_session_news_summary(
+        {"news": {"intelligence": {"us": {"editorial_candidates": [
+            _story("美股收盤焦點", "https://news.example/long", "2024-01-04T21:00:00+00:00", summary=long_summary),
+        ]}}}},
+        "morning",
+        datetime(2024, 1, 5, 2, 0, tzinfo=UTC),
+        [{"ticker": "S&P 500", "price": 4800, "change_percent": 0.5, "freshness": "recent_close", "quote_date": "2024-01-04"}],
+    )
+    assert result["status"] == "selected"
+    assert len(result["summary_sentences"]) == 2
+    assert len(result["summary"]) <= 140
+    assert result["summary_sentences"][0] == "來源未提供可核實中文摘要，請參閱原文。"
+    assert "2024-01-04" in result["summary_sentences"][1]
+    assert "+0.50%" in result["summary_sentences"][1]

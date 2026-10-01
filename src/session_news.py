@@ -167,11 +167,12 @@ def _quote_observation(quote_items: list[dict[str, Any]], market: str) -> str | 
         except ValueError:
             observed_date = ""
         date_note = f"（資料日 {observed_date}）" if observed_date else ""
-        return f"行情觀察：{name}最近收盤{direction}{percent}{date_note}，僅作價格參考，不推論新聞因果。"
+        sentence = f"價格參考：{name}最近收盤{direction}{percent}{date_note}，不推論新聞因果。"
+        return sentence if len(sentence) <= 100 else None
     return None
 
 
-def _complete_summary_sentence(summary: str) -> str | None:
+def _complete_summary_sentence(summary: str, *, max_length: int = 82) -> str | None:
     clean = " ".join(summary.split())
     if not clean or not _CJK.search(clean):
         return None
@@ -179,7 +180,7 @@ def _complete_summary_sentence(summary: str) -> str | None:
     candidate = pieces[0] if pieces else clean
     if candidate[-1] not in "。！？.!?":
         candidate += "。"
-    if len(candidate) > 82:
+    if len(candidate) > min(82, max_length):
         return None
     return candidate
 
@@ -227,9 +228,12 @@ def build_session_news_summary(
         source_url = str(story.get("canonical_url") or story.get("url") or "").strip()
         if not source_url.startswith("https://"):
             source_url = ""
-        source_sentence = _complete_summary_sentence(str(story.get("summary") or ""))
-        news_sentence = source_sentence or "來源未提供可核實中文摘要，請參閱原文。"
         market_sentence = quote_sentence or "行情資料不足，暫不合併判讀。"
+        news_limit = max(0, 140 - len(market_sentence) - 1)
+        source_sentence = _complete_summary_sentence(
+            str(story.get("summary") or ""), max_length=news_limit,
+        )
+        news_sentence = source_sentence or "來源未提供可核實中文摘要，請參閱原文。"
         sentences = [news_sentence, market_sentence]
         is_target_session = story_day == target_day and (mode == "close" or target_day == current_market_day)
         status = "selected" if is_target_session else "recent_session_reference"
