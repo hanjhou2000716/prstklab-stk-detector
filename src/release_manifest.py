@@ -421,10 +421,10 @@ def _publish_alert_artifacts(
         }
         resolved[relative] = path
         hashes[relative] = sha256_file(path)
-    briefing = market.get("briefing") if isinstance(market, dict) else None
-    if isinstance(briefing, dict) and briefing.get("notification_eligible") is True:
+    session_briefing = market.get("briefing") if isinstance(market, dict) else None
+    if isinstance(session_briefing, dict) and session_briefing.get("notification_eligible") is True:
         artifact = _briefing_projection(
-            briefing,
+            session_briefing,
             release_id=release_id,
             market_snapshot_id=str(market.get("snapshot_id") or ""),
             created_at=created_at,
