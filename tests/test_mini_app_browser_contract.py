@@ -441,7 +441,7 @@ def test_mini_app_taiwan_pair_uses_verified_projection_for_quote_direction() -> 
             "title": "台股收盤焦點：指數震盪",
             "summary": "市場收盤報導指出指數震盪整理。",
             "canonical_url": "https://news.example/taiwan-close",
-            "published_at": "2026-09-25T06:00:00+00:00",
+            "published_at": "2026-09-24T06:00:00+00:00",
             "market": "taiwan",
             "public_news_eligible": True,
             "event_cluster_key": "taiwan-close-story",
