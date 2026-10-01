@@ -428,7 +428,7 @@ def fetch_twse_taiex_recent_close(
 
     current_rows = fetch_month(current_month, "twse_taiex_history_current_month")
     quote = parse_twse_taiex_history(current_rows, target_date=target) if current_rows is not None else None
-    if quote is not None and quote.get("change") is None:
+    if current_rows is not None and quote is not None and quote.get("change") is None:
         previous_rows = fetch_month(previous_month, "twse_taiex_history_previous_month")
         if previous_rows is not None:
             quote = parse_twse_taiex_history(
