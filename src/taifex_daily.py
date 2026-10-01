@@ -212,7 +212,6 @@ def qualify_txf_quote_for_display(
     if (
         price is None or price <= 0 or change is None or percent is None
         or str(quote.get("freshness") or quote.get("data_status") or "").casefold() not in {"recent_close", "stale"}
-        or quote.get("stale_used") is True and quote.get("backup_used") is not True
     ):
         return {**unavailable, "reason": "quote_values_or_freshness_unverified"}
 

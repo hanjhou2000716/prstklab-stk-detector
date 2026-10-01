@@ -199,7 +199,7 @@ def normalize_quote_record(record: dict[str, Any], *, fetched_at: str | None = N
         "published_at": item.get("published_at") or item.get("quote_time") or item.get("quote_date"),
         "source_url": url,
         "source_domain": source_domain(url),
-        "stale_used": bool(item.get("stale_used") or item.get("quote_delayed") or item.get("quote_basis") == "最近收盤"),
+        "stale_used": bool(item.get("stale_used")),
         "source_label": item.get("source_label") or provenance["source_label"],
         "quote_basis_label": item.get("quote_basis_label") or provenance["quote_basis"],
         "cross_checked": bool(item.get("cross_checked") or provenance["cross_checked"]),

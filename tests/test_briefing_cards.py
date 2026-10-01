@@ -614,3 +614,25 @@ def test_taifex_source_attempts_survive_into_read_only_card_diagnostics():
     assert [item["outcome"] for item in txf_gap["source_attempts"]] == [
         "not_published", "connection_failed", "backup_expired",
     ]
+
+
+def test_official_twse_cash_close_is_routine_display_not_live_alert_evidence():
+    briefing = build_briefing_snapshot({
+        "generated_at": "2026-10-01T08:50:10+08:00",
+        "indices": [{
+            "ticker": "TAIEX", "price": 47940.13, "previous_close": 47631.96,
+            "change": 308.17, "change_percent": 0.65,
+            "quote_date": "2026-09-30", "quote_time": "2026-09-30T13:30:00+08:00",
+            "freshness": "recent_close", "data_status": "最近收盤",
+            "source_tier": "official", "source_label": "TWSE",
+            "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK",
+            "quote_basis": "TWSE_TAIEX_DAILY_CLOSE", "quote_delayed": True,
+            "stale_used": False, "alert_eligible": False,
+        }],
+        "quotes": [], "macro_quotes": [], "events": {"items": []},
+    }, "pre_open")
+    fact = briefing["market_card_projection"]["cards"][0]["facts_structured"][0]
+    assert fact["display_state"] == "recent_close"
+    assert fact["display_change_percent"] == 0.65
+    assert "47,940.13 點" in fact["text"]
+    assert "2026-09-30" in fact["status_note"]

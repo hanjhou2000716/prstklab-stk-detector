@@ -14,6 +14,7 @@ from src.market_data import (
     apply_taiwan_intraday_crosscheck,
     change_percent,
     intraday_is_fresh,
+    _replace_with_verified_taiex_close,
 )
 
 
@@ -313,3 +314,29 @@ def test_stale_marker_cannot_be_upgraded_to_live_by_a_replaced_timestamp():
     assert annotated[0]["freshness"] == "recent_close"
     assert annotated[0]["freshness"] != "live"
     assert annotated[0]["alert_eligible"] is False
+
+
+def test_official_taiex_close_replaces_unverified_backup_but_keeps_live_verified_quote():
+    official = {
+        "ticker": "TAIEX", "price": 47940.13, "change": 308.17,
+        "change_percent": 0.65, "quote_date": "2026-09-30",
+        "source_tier": "official", "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK",
+        "quote_basis": "TWSE_TAIEX_DAILY_CLOSE", "freshness": "recent_close",
+        "quote_delayed": True, "stale_used": False,
+    }
+    backup = [{
+        "ticker": "TAIEX", "price": 48000, "quote_date": "2026-09-29",
+        "source_tier": "public-market", "freshness": "stale",
+    }]
+    replaced = _replace_with_verified_taiex_close(backup, official)
+    assert replaced[0]["price"] == 47940.13
+    assert replaced[0]["source_tier"] == "official"
+    assert replaced[0]["technical_context"] is None
+    assert replaced[0]["alert_eligible"] is False
+
+    live = [{
+        **official, "price": 47950, "freshness": "live",
+        "cross_checked": True, "crosscheck_status": "已交叉核對",
+        "crosscheck_sources": [{"provider": "TWSE"}, {"provider": "TAIFEX"}],
+    }]
+    assert _replace_with_verified_taiex_close(live, official)[0]["price"] == 47950

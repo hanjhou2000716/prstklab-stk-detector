@@ -907,6 +907,51 @@ def apply_public_market_secondary_crosscheck(
     return checked
 
 
+def _replace_with_verified_taiex_close(
+    indices: list[dict[str, Any]], official_quote: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """Use an official daily close unless a live official intraday check won."""
+    if not isinstance(official_quote, dict):
+        return indices
+    result: list[dict[str, Any]] = []
+    replaced = False
+    for item in indices:
+        if str(item.get("ticker") or "") != "TAIEX":
+            result.append(item)
+            continue
+        crosscheck_providers = {
+            str(source.get("provider") or "").casefold()
+            for source in (item.get("crosscheck_sources") or [])
+            if isinstance(source, dict)
+        }
+        if (
+            item.get("freshness") == "live"
+            and item.get("crosscheck_status") == "已交叉核對"
+            and item.get("cross_checked") is True
+            and {"twse", "taifex"}.issubset(crosscheck_providers)
+        ):
+            result.append(item)
+            replaced = True
+            continue
+        result.append({
+            **item,
+            **official_quote,
+            "technical_context": None,
+            "technical_context_stale": True,
+            "cross_checked": False,
+            "crosscheck_status": "官方收盤資料",
+            "crosscheck_sources": [],
+            "stale_used": False,
+            "alert_eligible": False,
+            "routine_eligible": True,
+        })
+        replaced = True
+    if not replaced:
+        metadata = next((row for row in MARKET_INDICES if row.get("ticker") == "TAIEX"), {})
+        result.append({**metadata, **official_quote})
+    return result
+
+
 def build_market_snapshot() -> dict[str, Any]:
     from src.adapters.catalog import build_adapter_catalog
     from src.market_data_adapter import bind_adapter_contract
@@ -1130,6 +1175,36 @@ def build_market_snapshot() -> dict[str, Any]:
     indices = apply_public_market_secondary_crosscheck(
         indices, phase_two.get("public_market_secondary")
     )
+    expected_taiex_date = _latest_completed_session_date(
+        {"ticker": "TAIEX", "market": "taiwan"}, scan_started_at,
+    ).isoformat()
+    from src.taiwan_market_statistics import (
+        fetch_twse_taiex_recent_close,
+        taiex_quote_from_market_statistics,
+    )
+    official_taiex = taiex_quote_from_market_statistics(
+        taiwan_market_statistics, expected_date=expected_taiex_date,
+    )
+    taiex_source_attempts: list[dict[str, str]] = [{
+        "source": "twse_fmtqik",
+        "outcome": "verified" if official_taiex else "date_or_values_unavailable",
+    }]
+    if official_taiex is None:
+        official_taiex = fetch_twse_taiex_recent_close(
+            target_date=expected_taiex_date,
+            diagnostics=taiex_source_attempts,
+        )
+    if official_taiex is not None:
+        official_taiex["source_attempts"] = taiex_source_attempts
+        indices = _replace_with_verified_taiex_close(indices, official_taiex)
+        errors = [error for error in errors if str(error.get("ticker") or "") != "TAIEX"]
+    else:
+        errors.append({
+            "ticker": "TAIEX",
+            "message": "TWSE官方加權指數收盤資料未能核實。",
+            "source_attempts": taiex_source_attempts,
+            "scope": "index",
+        })
     source_catalog = build_adapter_catalog()
     quotes = bind_adapter_contract(quotes, source_catalog)
     indices = bind_adapter_contract(indices, source_catalog)
