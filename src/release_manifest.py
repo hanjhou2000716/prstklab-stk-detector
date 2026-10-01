@@ -355,7 +355,8 @@ def _publish_alert_artifacts(
     index_path = root / "site" / "data" / ALERT_INDEX_NAME
     rows: dict[tuple[str, str], dict[str, Any]] = {}
     quarantined_fingerprints = financialjuice_quarantine_fingerprints(market)
-    briefing = market.get("briefing") if isinstance(market.get("briefing"), dict) else {}
+    raw_briefing = market.get("briefing")
+    briefing: dict[str, Any] = raw_briefing if isinstance(raw_briefing, dict) else {}
     raw_session_news = briefing.get("session_news_summary")
     session_news_summary = ({
         **raw_session_news,

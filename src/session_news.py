@@ -62,15 +62,16 @@ def _session_dates(market: str, as_of: datetime, mode: str) -> tuple[date | None
         sessions.append((session_day.date(), opened_at.astimezone(UTC), closed_at.astimezone(UTC)))
     if not sessions:
         return None, None
+    target: date | None
     if mode == "close":
-        eligible = [item for item in sessions if item[2] <= as_of]
-        if not eligible:
+        eligible_sessions = [item for item in sessions if item[2] <= as_of]
+        if not eligible_sessions:
             return None, None
-        target = eligible[-1][0]
+        target = eligible_sessions[-1][0]
     else:
         today = next((item[0] for item in sessions if item[0] == local_day), None)
-        eligible = [item[0] for item in sessions if item[0] <= local_day]
-        target = today or (eligible[-1] if eligible else None)
+        eligible_dates = [item[0] for item in sessions if item[0] <= local_day]
+        target = today or (eligible_dates[-1] if eligible_dates else None)
     if target is None:
         return None, None
     prior = [item[0] for item in sessions if item[0] < target]
@@ -78,9 +79,12 @@ def _session_dates(market: str, as_of: datetime, mode: str) -> tuple[date | None
 
 
 def _news_candidates(snapshot: dict[str, Any], market: str) -> list[dict[str, Any]]:
-    news = snapshot.get("news") if isinstance(snapshot.get("news"), dict) else {}
-    intelligence = news.get("intelligence") if isinstance(news.get("intelligence"), dict) else {}
-    market_news = intelligence.get(market) if isinstance(intelligence.get(market), dict) else {}
+    raw_news = snapshot.get("news")
+    news: dict[str, Any] = raw_news if isinstance(raw_news, dict) else {}
+    raw_intelligence = news.get("intelligence")
+    intelligence: dict[str, Any] = raw_intelligence if isinstance(raw_intelligence, dict) else {}
+    raw_market_news = intelligence.get(market)
+    market_news: dict[str, Any] = raw_market_news if isinstance(raw_market_news, dict) else {}
     candidates = market_news.get("editorial_candidates")
     if not isinstance(candidates, list):
         candidates = market_news.get("stories")
@@ -136,13 +140,18 @@ def _quote_observation(quote_items: list[dict[str, Any]], market: str) -> str | 
             continue
         if not any(quote.get(key) for key in ("quote_time", "quote_date", "date", "observed_at")):
             continue
+        raw_price = quote.get("price")
+        if raw_price is None:
+            continue
         try:
-            price = float(quote.get("price"))
+            price = float(raw_price)
         except (TypeError, ValueError):
             continue
         if not (price > 0 and price == price and abs(price) != float("inf")):
             continue
         value = quote.get("change_percent")
+        if value is None:
+            continue
         try:
             number = float(value)
         except (TypeError, ValueError):
@@ -211,7 +220,7 @@ def build_session_news_summary(
     label = _MARKETS[market][2]
     current_market_day = as_of.astimezone(ZoneInfo(_MARKETS[market][1])).date()
     quote_sentence = _quote_observation(quote_items, market)
-    if selected:
+    if selected and target_day is not None:
         _rank, story, story_day, published = selected
         headline = str(story.get("title") or "").strip()
         source = str(story.get("provider_name") or story.get("provider_display_name") or story.get("provider") or story.get("source") or "公開來源").strip()
