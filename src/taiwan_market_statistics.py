@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import re
 import time
 from datetime import date, datetime
@@ -14,6 +15,7 @@ TWSE_FMTQIK_URL = "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK"
 TWSE_BREADTH_URL = "https://openapi.twse.com.tw/v1/opendata/twtazu_od"
 TWSE_INSTITUTION_URL = "https://www.twse.com.tw/rwd/zh/fund/BFI82U"
 TWSE_MI_INDEX_URL = "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX"
+TWSE_TAIEX_HISTORY_URL = "https://openapi.twse.com.tw/v1/indicesReport/MI_5MINS_HIST"
 HEADERS = {"User-Agent": "PRStK-Lab-public-research/1.0"}
 
 
@@ -109,7 +111,9 @@ def parse_twse_market_statistics(
     if row:
         observed = _date(row.get("Date") or row.get("日期"))
         trade_value = _number(row.get("TradeValue"))
-        if observed and trade_value is not None:
+        taiex = _finite_float(row.get("TAIEX"))
+        change = _finite_float(row.get("Change"))
+        if observed and (trade_value is not None or taiex is not None):
             turnover = {
                 "observed_date": observed,
                 "trade_volume": _number(row.get("TradeVolume")),
@@ -117,13 +121,13 @@ def parse_twse_market_statistics(
                 "unit": "元",
                 "currency": "TWD",
                 "transactions": _number(row.get("Transaction")),
-                "taiex": row.get("TAIEX"),
-                "change": row.get("Change"),
+                "taiex": taiex,
+                "change": change,
                 "source": "TWSE FMTQIK official daily market statistics",
                 "source_url": TWSE_FMTQIK_URL,
                 "is_proxy": False,
             }
-    if turnover is None:
+    if turnover is None or turnover.get("trade_value") is None:
         errors.append("turnover_unavailable")
 
     breadth_list = breadth_rows if isinstance(breadth_rows, list) else []
@@ -200,7 +204,8 @@ def parse_twse_market_statistics(
         observed = value.get("observed_date")
         if isinstance(observed, str) and observed:
             observed_dates.append(observed)
-    status = "complete" if turnover and breadth and institutional else "partial" if turnover or breadth or institutional else "unavailable"
+    turnover_complete = bool(turnover and turnover.get("trade_value") is not None)
+    status = "complete" if turnover_complete and breadth and institutional else "partial" if turnover or breadth or institutional else "unavailable"
     return {
         "status": status,
         "observed_date": max(observed_dates) if observed_dates else None,
@@ -270,6 +275,174 @@ def parse_twse_mi_index_breadth(payload: Any, *, target_date: str | None = None)
             }]
     return []
 
+
+def _finite_float(value: Any) -> float | None:
+    if value in (None, "") or isinstance(value, bool):
+        return None
+    try:
+        parsed = float(str(value).replace(",", "").strip())
+    except (TypeError, ValueError):
+        return None
+    return parsed if math.isfinite(parsed) else None
+
+
+def _official_taiex_quote(
+    *, observed_date: str, price: float, previous_close: float | None,
+    change: float | None, change_percent: float | None, source_url: str,
+    source_label: str, source_name: str,
+) -> dict[str, Any]:
+    return {
+        "ticker": "TAIEX",
+        "symbol": "^TWII",
+        "name": "臺灣加權指數",
+        "market": "taiwan",
+        "currency": "點",
+        "price": round(price, 2),
+        "previous_close": round(previous_close, 2) if previous_close is not None else None,
+        "change": round(change, 2) if change is not None else None,
+        "change_percent": round(change_percent, 2) if change_percent is not None else None,
+        "quote_date": observed_date,
+        "quote_time": f"{observed_date}T13:30:00+08:00",
+        "quote_basis": "TWSE_TAIEX_DAILY_CLOSE",
+        "quote_source": source_name,
+        "source": source_name,
+        "source_url": source_url,
+        "source_label": source_label,
+        "source_tier": "official",
+        "instrument_id": "twse:taiex",
+        "freshness": "recent_close",
+        "data_status": "最近收盤",
+        "quote_delayed": True,
+        "stale_used": False,
+        "backup_used": False,
+        "cross_checked": False,
+        "crosscheck_status": "官方收盤資料",
+        "alert_eligible": False,
+        "routine_eligible": True,
+    }
+
+
+def taiex_quote_from_market_statistics(
+    statistics: Any, *, expected_date: str,
+) -> dict[str, Any] | None:
+    """Reuse the TWSE FMTQIK close already fetched with the market statistics."""
+    if not isinstance(statistics, dict):
+        return None
+    turnover = statistics.get("turnover")
+    if not isinstance(turnover, dict) or turnover.get("is_proxy") is not False:
+        return None
+    observed = _date(turnover.get("observed_date"))
+    target = _date(expected_date)
+    if not observed or observed != target or turnover.get("source_url") != TWSE_FMTQIK_URL:
+        return None
+    price = _finite_float(turnover.get("taiex"))
+    change = _finite_float(turnover.get("change"))
+    if price is None or price <= 0:
+        return None
+    previous = price - change if change is not None else None
+    if previous is not None and previous <= 0:
+        return None
+    percent = round(change / previous * 100, 2) if change is not None and previous is not None else None
+    return _official_taiex_quote(
+        observed_date=observed,
+        price=price,
+        previous_close=previous,
+        change=change,
+        change_percent=percent,
+        source_url=TWSE_FMTQIK_URL,
+        source_label="TWSE",
+        source_name="TWSE FMTQIK official TAIEX close",
+    )
+
+
+def parse_twse_taiex_history(
+    rows: Any, *, target_date: str,
+) -> dict[str, Any] | None:
+    """Parse TWSE monthly index history for one calendar-verified session."""
+    target = _date(target_date)
+    if not target or not isinstance(rows, list):
+        return None
+    dated: dict[str, float] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        observed = _date(row.get("Date") or row.get("日期"))
+        close = _finite_float(row.get("ClosingIndex") or row.get("收盤指數"))
+        if observed and close is not None and close > 0:
+            dated[observed] = close
+    price = dated.get(target)
+    if price is None:
+        return None
+    previous_dates = [observed for observed in dated if observed < target]
+    previous_date = max(previous_dates) if previous_dates else None
+    previous = dated.get(previous_date) if previous_date else None
+    change = round(price - previous, 2) if previous is not None else None
+    percent = round(change / previous * 100, 2) if change is not None and previous else None
+    return _official_taiex_quote(
+        observed_date=target,
+        price=price,
+        previous_close=previous,
+        change=change,
+        change_percent=percent,
+        source_url=TWSE_TAIEX_HISTORY_URL,
+        source_label="TWSE",
+        source_name="TWSE official TAIEX index history",
+    )
+
+
+def fetch_twse_taiex_recent_close(
+    *, target_date: str, session: requests.Session | None = None,
+    diagnostics: list[dict[str, str]] | None = None,
+) -> dict[str, Any] | None:
+    """Fetch a TWSE close and, at a month boundary, its preceding close."""
+    target = _date(target_date)
+    if not target:
+        if diagnostics is not None:
+            diagnostics.append({"source": "twse_taiex_history", "outcome": "target_date_unverified"})
+        return None
+    client = session or requests.Session()
+    year, month = map(int, target[:7].split("-"))
+    current_month = date(year, month, 1)
+    previous_month = date(year - 1, 12, 1) if month == 1 else date(year, month - 1, 1)
+    attempts: list[dict[str, str]] = []
+
+    def fetch_month(month_start: date, label: str) -> list[dict[str, Any]] | None:
+        try:
+            response = client.get(
+                TWSE_TAIEX_HISTORY_URL,
+                params={"date": month_start.strftime("%Y%m%d")},
+                headers=HEADERS,
+                timeout=5,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            if not isinstance(payload, list):
+                attempts.append({"source": label, "outcome": "response_shape_invalid"})
+                return None
+            attempts.append({"source": label, "outcome": "received"})
+            return [row for row in payload if isinstance(row, dict)]
+        except (OSError, ValueError, TypeError, requests.RequestException) as exc:
+            outcome = "connection_failed" if isinstance(exc, requests.RequestException) else "response_parse_failed"
+            attempts.append({"source": label, "outcome": outcome})
+            return None
+
+    current_rows = fetch_month(current_month, "twse_taiex_history_current_month")
+    quote = parse_twse_taiex_history(current_rows, target_date=target) if current_rows is not None else None
+    if current_rows is not None and quote is not None and quote.get("change") is None:
+        previous_rows = fetch_month(previous_month, "twse_taiex_history_previous_month")
+        if previous_rows is not None:
+            quote = parse_twse_taiex_history(
+                [*current_rows, *previous_rows], target_date=target,
+            )
+    if quote is not None:
+        attempts.append({"source": "twse_taiex_history", "outcome": "verified"})
+    elif current_rows is not None:
+        attempts.append({"source": "twse_taiex_history", "outcome": "date_or_values_unavailable"})
+    if diagnostics is not None:
+        diagnostics.extend(attempts)
+    if quote:
+        quote["source_attempts"] = attempts
+    return quote
 
 def fetch_twse_market_statistics(
     *, now: datetime | None = None, session: requests.Session | None = None,

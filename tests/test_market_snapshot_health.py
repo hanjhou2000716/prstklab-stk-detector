@@ -63,6 +63,8 @@ def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatc
         "status": "complete", "errors": [], "turnover": {}, "breadth": {},
         "institutional_flows": {}, "observed_date": "2026-09-07", "is_proxy": False,
     })
+    monkeypatch.setattr("src.taiwan_market_statistics.fetch_twse_taiex_recent_close", lambda **_kwargs: None)
+    monkeypatch.setattr("src.market_backup.from_environment", lambda: None)
     monkeypatch.setattr("src.market_data.apply_crypto_spot_crosscheck", lambda indices, _spot: indices)
     monkeypatch.setattr("src.research_cards.load_research_cards", lambda: {
         "status": "研究報告", "sources": [], "candidates": [{
@@ -76,18 +78,25 @@ def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatc
 
     # Optional quote providers can still leave a visible unavailable card;
     # the aggregate must disclose that degraded state instead of claiming all
-    # market data is live.  The risk-source error remains separately scoped.
+    # market data is live.  Risk and official-cash source errors remain scoped.
     assert snapshot["data_status"] == "即時"
     assert snapshot["scan"]["scope"] == "公開市場定時掃描"
     assert snapshot["scan"]["completed_at"] == snapshot["generated_at"]
-    assert len(snapshot["errors"]) == 2
+    assert len(snapshot["errors"]) == 3
     assert {row.get("scope") for row in snapshot["errors"]} == {"index", "risk"}
     assert next(row for row in snapshot["errors"] if row.get("scope") == "risk") == {
         "ticker": "台股風險指標",
         "message": "台指波動率資料暫時無法取得",
         "scope": "risk",
     }
-    assert "TAIFEX" in next(row["message"] for row in snapshot["errors"] if row.get("scope") == "index")
+    index_errors = {row["ticker"]: row for row in snapshot["errors"] if row.get("scope") == "index"}
+    assert "TXF" in index_errors
+    assert "TAIFEX" in index_errors["TXF"]["message"]
+    assert "TAIEX" in index_errors
+    assert index_errors["TAIEX"]["source_attempts"][-1] == {
+        "source": "twse_saved_official_backup",
+        "outcome": "backup_store_unavailable",
+    }
     assert snapshot["markets"]["taiwan_cash"]["calendar_provider"] == "pandas_market_calendars"
     assert snapshot["markets"]["taiwan_cash"]["calendar"] == "XTAI"
     assert snapshot["markets"]["taiwan_futures"]["calendar_provider"] == "TAIFEX"

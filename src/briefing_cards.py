@@ -76,22 +76,58 @@ def _quote_display_qualification(
         ticker != "TXF"
         or bool(re.fullmatch(r"\d{6}", str(row.get("contract_month") or "")))
     )
+    official_taiex_identity = (
+        ticker == "TAIEX"
+        and row.get("source_tier") == "official"
+        and row.get("quote_basis") == "TWSE_TAIEX_DAILY_CLOSE"
+        and row.get("source_url") in {
+            "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK",
+            "https://openapi.twse.com.tw/v1/indicesReport/MI_5MINS_HIST",
+        }
+        and freshness == "recent_close"
+    )
+    official_taiex_close = (
+        official_taiex_identity
+        and row.get("stale_used") is not True
+    )
+    official_taiex_backup = (
+        official_taiex_identity
+        and row.get("backup_used") is True
+        and row.get("official_fallback_used") is True
+        and row.get("fallback_reason") == "verified_official_market_backup"
+        and row.get("display_state") in {"recent_close", "historical_reference"}
+        and row.get("alert_eligible") is False
+    )
     verified = (
         price is not None
         and bool(observed_date)
         and freshness in _USABLE_FRESHNESS
-        and row.get("quote_delayed") is not True
-        and row.get("stale_used") is not True
+        and (
+            official_taiex_close
+            or official_taiex_backup
+            or (
+                row.get("quote_delayed") is not True
+                and row.get("stale_used") is not True
+            )
+        )
         and contract_verified
+    )
+    state = (
+        str(row.get("display_state"))
+        if official_taiex_backup else freshness
     )
     return {
         "verified": verified,
+        "routine_eligible": verified,
+        "alert_eligible": bool(
+            verified and not official_taiex_backup and row.get("alert_eligible") is True
+        ),
         "date": observed_date if verified else "",
         "freshness": freshness if verified else "unknown",
         "price": price if verified else None,
         "change": change if verified else None,
         "change_percent": percent if verified else None,
-        "state": freshness if verified else "unavailable",
+        "state": state if verified else "unavailable",
     }
 
 
@@ -1028,6 +1064,8 @@ def _scoped_quote_qualification(
     result = qualify_txf_quote_for_display(quote, now=reference_time)
     return {
         "verified": bool(result.get("verified")),
+        "routine_eligible": bool(result.get("verified")),
+        "alert_eligible": result.get("alert_eligible") is True,
         "date": str(result.get("date") or ""),
         "is_today": result.get("is_today") is True,
         "freshness": str(result.get("freshness") or "unknown"),
@@ -1041,14 +1079,14 @@ def _scoped_quote_qualification(
 
 def _scoped_quote_detail(
     item: dict[str, Any] | None, ticker: str, name: str, *, scope: str, as_of: Any = None,
-) -> tuple[str, dict[str, Any], dict[str, Any] | None]:
+) -> tuple[str, dict[str, Any], dict[str, Any] | None, dict[str, Any]]:
     row = item if isinstance(item, dict) else {}
     qualification = _scoped_quote_qualification(row, ticker, as_of)
     price = qualification["price"]
     change = qualification["change_percent"]
     point_change = qualification["change"]
     observed = str(row.get("quote_time") or row.get("quote_date") or "").strip()
-    freshness = qualification["freshness"]
+    freshness = str(qualification.get("state") or qualification["freshness"])
     missing_reason = "quote_missing" if not row else "quote_unusable_or_time_unverified"
     if ticker == "TXF" and row and not re.fullmatch(r"\d{6}", str(row.get("contract_month") or "")):
         missing_reason = "official_contract_month_unverified"
@@ -1057,8 +1095,8 @@ def _scoped_quote_detail(
             key: row.get(key)
             for key in (
                 "ticker", "name", "price", "change", "change_percent", "currency",
-                "freshness", "data_status", "quote_date", "quote_time", "source_label",
-                "quote_source", "source", "source_url", "contract_month", "contract_basis",
+                "freshness", "data_status", "quote_date", "quote_time", "source_tier", "source_label",
+                "quote_source", "source", "source_url", "crosscheck_sources", "contract_month", "contract_basis",
                 "session", "quote_delayed", "stale_used", "quote_basis", "instrument_id", "backup_used",
                 "official_fallback_used", "source_attempts",
             )
@@ -1066,7 +1104,7 @@ def _scoped_quote_detail(
         }
         return f"{name}資料未取得或口徑未核實", evidence, {
             "ticker": ticker, "name": name, "reason": missing_reason,
-        }
+        }, qualification
     basis = str(row.get("quote_basis") or "").strip()
     contract_note = ""
     if ticker == "TXF":
@@ -1078,20 +1116,26 @@ def _scoped_quote_detail(
     date_note = observed.replace("T", " ")[:19] if date_matches else str(qualification["date"])
     point_note = f"漲跌 {point_change:+,.2f} 點；" if point_change is not None else "漲跌點數未提供；"
     percent_note = f"{change:+.2f}%" if change is not None else "漲跌幅未提供"
-    quote_label = f"{name}{contract_note} 行情 {price:,.2f}；{point_note}{percent_note}；觀測 {date_note}；{freshness}"
+    freshness_label = {
+        "live": "盤中行情",
+        "recent_close": "最近收盤",
+        "historical_reference": "最近已核實歷史參考，非今日／非即時",
+    }.get(freshness, "時間口徑待核實")
+    quote_label = f"{name}{contract_note} 行情 {price:,.2f}；{point_note}{percent_note}；觀測 {date_note}；{freshness_label}"
     if basis:
         quote_label += f"；{basis}"
     evidence = {
         key: row.get(key)
         for key in (
             "ticker", "name", "price", "change", "change_percent", "quote_date", "quote_time",
-            "freshness", "data_status", "quote_basis", "instrument_id", "quote_source", "source_label",
-            "source_url", "session", "contract_month", "contract_basis", "quote_delayed",
+            "freshness", "display_state", "data_status", "quote_basis", "instrument_id", "quote_source", "source_label",
+            "source_url", "source_tier", "crosscheck_sources", "alert_eligible", "routine_eligible",
+            "session", "contract_month", "contract_basis", "quote_delayed",
             "stale_used", "backup_used", "official_fallback_used", "source_attempts",
         )
         if row.get(key) not in (None, "")
     }
-    return quote_label, evidence, None
+    return quote_label, evidence, None, qualification
 
 
 def _scoped_morning_analysis(
@@ -1113,8 +1157,13 @@ def _scoped_morning_analysis(
     data_gaps: list[dict[str, Any]] = []
     facts: list[dict[str, Any]] = []
     for ticker, name in specs:
-        text, evidence, gap = _scoped_quote_detail(items.get(ticker), ticker, name, scope=scope, as_of=as_of)
-        facts.append({"ticker": ticker, "name": name, "text": text, "quote": evidence})
+        text, evidence, gap, qualification = _scoped_quote_detail(
+            items.get(ticker), ticker, name, scope=scope, as_of=as_of,
+        )
+        facts.append({
+            "ticker": ticker, "name": name, "text": text, "quote": evidence,
+            "qualification": qualification,
+        })
         if gap:
             source_error = next((
                 error for error in (source_errors or [])
@@ -1472,8 +1521,12 @@ def _scoped_morning_analysis(
             quote = fact.get("quote") if isinstance(fact.get("quote"), dict) else {}
             ticker = str(fact.get("ticker") or "")
             name = "加權現貨" if ticker == "TAIEX" else "台指期近月日盤"
-            qualification = _scoped_quote_qualification(quote, ticker, as_of)
-            verified = bool(qualification["verified"])
+            qualification_value = fact.get("qualification")
+            qualification = (
+                qualification_value if isinstance(qualification_value, dict)
+                else _scoped_quote_qualification(quote, ticker, as_of)
+            )
+            verified = bool(qualification.get("verified"))
             observed = str(qualification["date"] or "")
             freshness = str(qualification["freshness"])
             percent = qualification["change_percent"]
@@ -1484,7 +1537,9 @@ def _scoped_morning_analysis(
                 if verified else f"{name}：未取得可核對資料"
             )
             if ticker == "TAIEX":
-                if freshness == "recent_close":
+                if qualification.get("state") == "historical_reference":
+                    freshness_note = "最近已核實歷史參考｜非今日／非即時"
+                elif freshness == "recent_close":
                     freshness_note = "最近收盤"
                 elif freshness == "live":
                     freshness_note = "盤中行情"
@@ -1508,9 +1563,14 @@ def _scoped_morning_analysis(
                 "text": text,
                 "quote": quote,
                 "status_note": status_note,
-                "display_state": qualification["state"] if verified else "unavailable",
+                "display_state": qualification.get("state") if verified else "unavailable",
                 "display_change_percent": percent if verified else None,
                 "display_date": observed,
+                "routine_eligible": bool(qualification.get("routine_eligible", verified)),
+                "alert_eligible": bool(qualification.get("alert_eligible")),
+                "qualification_reason": str(
+                    qualification.get("reason") or qualification.get("qualification_reason") or ""
+                ),
             })
 
         pair_dates = [str(item.get("display_date") or "") for item in pair_facts]

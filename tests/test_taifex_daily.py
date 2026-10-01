@@ -263,6 +263,29 @@ def test_official_previous_day_quote_is_reference_not_today_or_alert():
     assert result["alert_eligible"] is False
 
 
+def test_official_txf_daily_close_is_not_rejected_as_a_stale_backup():
+    quote = _official_display_quote()
+    quote.update({
+        "freshness": "recent_close",
+        "data_status": "最近收盤",
+        "quote_delayed": True,
+        "stale_used": True,
+        "backup_used": False,
+    })
+    with (
+        patch("src.taifex_daily.get_taifex_index_futures_status", return_value={"calendar_status": "confirmed_open"}),
+        patch("src.taifex_daily._calendar_open", return_value=True),
+        patch("src.taifex_daily._session_gap", return_value=1),
+        patch("src.taifex_daily._contract_is_unexpired", return_value=True),
+    ):
+        result = qualify_txf_quote_for_display(
+            quote, now=datetime.fromisoformat("2026-09-30T14:28:00+08:00"),
+        )
+    assert result["verified"] is True
+    assert result["display_state"] == "historical_reference"
+    assert result["alert_eligible"] is False
+
+
 def test_official_txf_reference_fails_closed_for_wrong_source_session_or_age():
     now = datetime.fromisoformat("2026-09-30T14:28:00+08:00")
     invalid_quotes = [

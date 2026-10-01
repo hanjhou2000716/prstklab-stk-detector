@@ -1,7 +1,12 @@
 from datetime import datetime
 
 import src.taiwan_market_statistics as taiwan_statistics
-from src.taiwan_market_statistics import parse_twse_market_statistics, parse_twse_mi_index_breadth
+from src.taiwan_market_statistics import (
+    parse_twse_market_statistics,
+    parse_twse_mi_index_breadth,
+    parse_twse_taiex_history,
+    taiex_quote_from_market_statistics,
+)
 
 
 def test_parse_twse_official_statistics_converts_roc_dates_and_keeps_provenance() -> None:
@@ -216,3 +221,102 @@ def test_fetch_does_not_retry_supplementary_statistics_or_delay_the_slot(monkeyp
     assert result["status"] != "complete"
     assert result["retry_attempt"] == 0
     assert result["retry_attempts_configured"] == 0
+
+
+def test_official_fmtqik_taiex_quote_is_reused_only_for_the_expected_date():
+    stats = parse_twse_market_statistics(
+        turnover_rows=[{
+            "Date": "1150930", "TradeVolume": "10656764192",
+            "TradeValue": "921492702613", "Transaction": "4253963",
+            "TAIEX": "47940.13", "Change": "308.17",
+        }],
+        breadth_rows=[], institution_payload=None, target_date="2026-09-30",
+    )
+    quote = taiex_quote_from_market_statistics(stats, expected_date="2026-09-30")
+    assert quote is not None
+    assert quote["price"] == 47940.13
+    assert quote["change"] == 308.17
+    assert quote["change_percent"] == 0.65
+    assert quote["source_tier"] == "official"
+    assert quote["quote_delayed"] is True
+    assert quote["stale_used"] is False
+    assert quote["alert_eligible"] is False
+    assert taiex_quote_from_market_statistics(stats, expected_date="2026-10-01") is None
+
+
+def test_official_taiex_history_uses_adjacent_exchange_closes_and_preserves_missing_change():
+    rows = [
+        {"Date": "1150929", "ClosingIndex": "47,631.96"},
+        {"Date": "1150930", "ClosingIndex": "47,940.13"},
+    ]
+    quote = parse_twse_taiex_history(rows, target_date="2026-09-30")
+    assert quote is not None
+    assert quote["price"] == 47940.13
+    assert quote["previous_close"] == 47631.96
+    assert quote["change"] == 308.17
+    assert quote["change_percent"] == 0.65
+    assert quote["source_url"] == taiwan_statistics.TWSE_TAIEX_HISTORY_URL
+
+    first_session = parse_twse_taiex_history(
+        [{"Date": "1151001", "ClosingIndex": "48000"}],
+        target_date="2026-10-01",
+    )
+    assert first_session is not None
+    assert first_session["price"] == 48000
+    assert first_session["change"] is None
+    assert first_session["change_percent"] is None
+    assert parse_twse_taiex_history(rows, target_date="2026-10-01") is None
+
+
+def test_fmtqik_taiex_is_retained_when_turnover_value_is_missing():
+    stats = parse_twse_market_statistics(
+        turnover_rows=[{
+            "Date": "1150930", "TradeVolume": "10656764192",
+            "TradeValue": "", "Transaction": "4253963",
+            "TAIEX": "47940.13", "Change": "308.17",
+        }],
+        breadth_rows=[], institution_payload=None, target_date="2026-09-30",
+    )
+    assert stats["status"] == "partial"
+    assert stats["turnover"]["trade_value"] is None
+    assert "turnover_unavailable" in stats["errors"]
+    quote = taiex_quote_from_market_statistics(stats, expected_date="2026-09-30")
+    assert quote is not None
+    assert quote["price"] == 47940.13
+    assert quote["change_percent"] == 0.65
+
+
+
+def test_official_taiex_history_fetch_checks_previous_month_for_baseline():
+    class Response:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return self.payload
+
+    class Session:
+        def __init__(self):
+            self.calls = []
+
+        def get(self, url, *, params, headers, timeout):
+            self.calls.append((url, params, timeout))
+            if params["date"] == "20260901":
+                return Response([{"Date": "20260901", "ClosingIndex": "100.00"}])
+            if params["date"] == "20260801":
+                return Response([{"Date": "20260831", "ClosingIndex": "99.00"}])
+            raise AssertionError(f"unexpected month request {params['date']}")
+
+    session = Session()
+    diagnostics = []
+    quote = taiwan_statistics.fetch_twse_taiex_recent_close(
+        target_date="2026-09-01", session=session, diagnostics=diagnostics,
+    )
+    assert quote is not None
+    assert quote["change"] == 1.0
+    assert quote["change_percent"] == 1.01
+    assert [call[1]["date"] for call in session.calls] == ["20260901", "20260801"]
+    assert diagnostics[-1] == {"source": "twse_taiex_history", "outcome": "verified"}

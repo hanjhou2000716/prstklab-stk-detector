@@ -18,13 +18,14 @@ def test_event_contract_preserves_provenance_and_impact_confirmation():
     assert item["event_type"] == "central-bank"
 
 
-def test_quote_contract_marks_delayed_close():
+def test_quote_contract_keeps_delayed_close_separate_from_stale_fallback():
     item = normalize_quote_record({
         "ticker": "TPEx", "quote_source": "TWSE MIS official OTC index",
-        "quote_basis": "最近收盤", "quote_date": "2026-07-31",
+        "quote_basis": "最近收盤", "quote_date": "2026-07-31", "quote_delayed": True,
     }, fetched_at="2026-08-01T00:00:00+00:00")
     assert item["source_tier"] == "official"
-    assert item["stale_used"] is True
+    assert item["quote_delayed"] is True
+    assert item["stale_used"] is False
     assert item["published_at"] == "2026-07-31"
 
 

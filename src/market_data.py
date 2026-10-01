@@ -341,6 +341,17 @@ def annotate_quote_freshness(quotes: list[dict[str, Any]], *, now: datetime | No
     for quote in quotes:
         item = dict(quote)
         freshness = quote_freshness(item, now=now)
+        # A bounded saved official close has already passed its exchange-date
+        # and provenance checks. Keep its close semantics separate from its
+        # historical-reference display state; it remains alert-ineligible.
+        if (
+            item.get("source_tier") == "official"
+            and item.get("ticker") == "TAIEX"
+            and item.get("fallback_reason") == "verified_official_market_backup"
+            and item.get("official_fallback_used") is True
+            and item.get("display_state") in {"recent_close", "historical_reference"}
+        ):
+            freshness = "recent_close"
         # A fallback/cache marker is authoritative for alert safety. Some
         # official cross-checks preserve a current timestamp from the source
         # they replaced; that timestamp must not upgrade stale data to live.
@@ -907,6 +918,165 @@ def apply_public_market_secondary_crosscheck(
     return checked
 
 
+def _verified_taiex_backup(
+    store: Any, *, expected_date: date,
+    diagnostics: list[dict[str, str]] | None = None,
+) -> dict[str, Any] | None:
+    """Read only a recent, provenance-complete official TWSE cash-close backup."""
+    def record(outcome: str) -> None:
+        if diagnostics is not None:
+            diagnostics.append({"source": "twse_saved_official_backup", "outcome": outcome})
+
+    if store is None:
+        record("backup_store_unavailable")
+        return None
+    try:
+        row = store.latest_quote(
+            "TAIEX", before_or_on=expected_date.isoformat(), provider="TWSE",
+        )
+        if not isinstance(row, dict):
+            record("backup_not_found")
+            return None
+        observed = date.fromisoformat(str(row.get("market_date") or ""))
+        observed_at = datetime.fromisoformat(
+            str(row.get("observed_at") or "").replace("Z", "+00:00")
+        )
+        source_url = str(row.get("source_url") or "")
+        if (
+            str(row.get("ticker") or "") != "TAIEX"
+            or str(row.get("provider") or "") != "TWSE"
+            or str(row.get("source_tier") or "") != "official"
+            or str(row.get("instrument_id") or "") != "twse:taiex"
+            or str(row.get("quote_basis") or "") != "TWSE_TAIEX_DAILY_CLOSE"
+            or source_url not in {
+                "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK",
+                "https://openapi.twse.com.tw/v1/indicesReport/MI_5MINS_HIST",
+            }
+            or str(row.get("quality_status") or "") not in {"verified", "recent_close"}
+            or observed > expected_date
+            or observed_at.tzinfo is None
+            or observed_at.utcoffset() is None
+            or observed_at.date() != observed
+        ):
+            record("backup_identity_or_provenance_mismatch")
+            return None
+        try:
+            import pandas_market_calendars as mcal
+
+            schedule = mcal.get_calendar("XTAI").schedule(
+                start_date=observed, end_date=expected_date,
+            )
+            age_sessions = sum(session.date() > observed for session in schedule.index)
+        except Exception:
+            record("twse_calendar_unverified")
+            return None
+        if age_sessions > 3:
+            record("backup_expired")
+            return None
+
+        def finite(value: Any) -> float | None:
+            if value is None or isinstance(value, bool):
+                return None
+            try:
+                result = float(str(value).replace(",", "").strip())
+            except (TypeError, ValueError):
+                return None
+            return result if result == result and abs(result) != float("inf") else None
+
+        price = finite(row.get("price"))
+        previous = finite(row.get("previous_close"))
+        change = finite(row.get("change"))
+        percent = finite(row.get("change_percent"))
+        if price is None or price <= 0 or (previous is not None and previous <= 0):
+            record("backup_values_unverified")
+            return None
+        if previous is not None:
+            calculated_change = round(price - previous, 2)
+            calculated_percent = round(calculated_change / previous * 100, 2)
+            if change is not None and abs(change - calculated_change) > 0.02:
+                record("backup_values_conflict")
+                return None
+            if percent is not None and abs(percent - calculated_percent) > 0.02:
+                record("backup_values_conflict")
+                return None
+            change = calculated_change
+            percent = calculated_percent
+        elif change is not None:
+            record("backup_baseline_unavailable")
+            change = None
+            percent = None
+        state = "recent_close" if observed == expected_date else "historical_reference"
+        record("verified")
+        return {
+            "ticker": "TAIEX", "symbol": "^TWII", "name": "臺灣加權指數",
+            "market": "taiwan", "currency": str(row.get("currency") or "點"),
+            "price": round(price, 2),
+            "previous_close": round(previous, 2) if previous is not None else None,
+            "change": round(change, 2) if change is not None else None,
+            "change_percent": round(percent, 2) if percent is not None else None,
+            "quote_date": observed.isoformat(), "quote_time": observed_at.isoformat(),
+            "quote_basis": "TWSE_TAIEX_DAILY_CLOSE",
+            "quote_source": "TWSE verified official saved close",
+            "source": "TWSE verified official saved close",
+            "source_url": source_url, "source_label": "TWSE官方備援",
+            "source_tier": "official", "instrument_id": "twse:taiex",
+            "freshness": "recent_close", "display_state": state,
+            "data_status": "最近收盤" if state == "recent_close" else "歷史參考",
+            "quote_delayed": True, "stale_used": observed < expected_date,
+            "backup_used": True, "official_fallback_used": True,
+            "fallback_reason": "verified_official_market_backup",
+            "routine_eligible": True, "alert_eligible": False,
+        }
+    except Exception:
+        record("backup_read_or_validation_failed")
+        return None
+
+
+def _replace_with_verified_taiex_close(
+    indices: list[dict[str, Any]], official_quote: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """Use an official daily close unless a live official intraday check won."""
+    if not isinstance(official_quote, dict):
+        return indices
+    result: list[dict[str, Any]] = []
+    replaced = False
+    for item in indices:
+        if str(item.get("ticker") or "") != "TAIEX":
+            result.append(item)
+            continue
+        crosscheck_providers = {
+            str(source.get("provider") or "").casefold()
+            for source in (item.get("crosscheck_sources") or [])
+            if isinstance(source, dict)
+        }
+        if (
+            item.get("freshness") == "live"
+            and item.get("crosscheck_status") == "已交叉核對"
+            and item.get("cross_checked") is True
+            and {"twse", "taifex"}.issubset(crosscheck_providers)
+        ):
+            result.append(item)
+            replaced = True
+            continue
+        result.append({
+            **item,
+            **official_quote,
+            "technical_context": None,
+            "technical_context_stale": True,
+            "cross_checked": False,
+            "crosscheck_status": "官方收盤資料",
+            "crosscheck_sources": [],
+            "stale_used": False,
+            "alert_eligible": False,
+            "routine_eligible": True,
+        })
+        replaced = True
+    if not replaced:
+        metadata = next((row for row in MARKET_INDICES if row.get("ticker") == "TAIEX"), {})
+        result.append({**metadata, **official_quote})
+    return result
+
+
 def build_market_snapshot() -> dict[str, Any]:
     from src.adapters.catalog import build_adapter_catalog
     from src.market_data_adapter import bind_adapter_contract
@@ -1130,6 +1300,42 @@ def build_market_snapshot() -> dict[str, Any]:
     indices = apply_public_market_secondary_crosscheck(
         indices, phase_two.get("public_market_secondary")
     )
+    expected_taiex_date = _latest_completed_session_date(
+        {"ticker": "TAIEX", "market": "taiwan"}, scan_started_at,
+    ).isoformat()
+    from src.taiwan_market_statistics import (
+        fetch_twse_taiex_recent_close,
+        taiex_quote_from_market_statistics,
+    )
+    official_taiex = taiex_quote_from_market_statistics(
+        taiwan_market_statistics, expected_date=expected_taiex_date,
+    )
+    taiex_source_attempts: list[dict[str, str]] = [{
+        "source": "twse_fmtqik",
+        "outcome": "verified" if official_taiex else "date_or_values_unavailable",
+    }]
+    if official_taiex is None:
+        official_taiex = fetch_twse_taiex_recent_close(
+            target_date=expected_taiex_date,
+            diagnostics=taiex_source_attempts,
+        )
+    if official_taiex is None:
+        official_taiex = _verified_taiex_backup(
+            backup_store,
+            expected_date=date.fromisoformat(expected_taiex_date),
+            diagnostics=taiex_source_attempts,
+        )
+    if official_taiex is not None:
+        official_taiex["source_attempts"] = taiex_source_attempts
+        indices = _replace_with_verified_taiex_close(indices, official_taiex)
+        errors = [error for error in errors if str(error.get("ticker") or "") != "TAIEX"]
+    else:
+        errors.append({
+            "ticker": "TAIEX",
+            "message": "TWSE官方加權指數收盤資料未能核實。",
+            "source_attempts": taiex_source_attempts,
+            "scope": "index",
+        })
     source_catalog = build_adapter_catalog()
     quotes = bind_adapter_contract(quotes, source_catalog)
     indices = bind_adapter_contract(indices, source_catalog)
