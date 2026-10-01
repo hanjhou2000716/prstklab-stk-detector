@@ -383,6 +383,8 @@ def test_market_quote_cards_render_group_freshness_without_repeating_dates_in_ro
 
     assert "renderDateGroupedRows" in app
     assert "quote-group-status" in app
-    assert "item.status_notes" in app
-    assert ".taiwan-market-status" in styles
+    assert 'String(item.date_footer || "")' in app
+    assert "fact?.display_date || fact?.quote?.observed_date" in app
+    assert "item.status_notes" not in app
+    assert ".taiwan-market-date-footer" in styles
     assert ".quote-group-status" in styles

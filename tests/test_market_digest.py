@@ -128,7 +128,7 @@ def test_ordinary_news_replacement_does_not_change_scheduled_decision_fingerprin
             "news": {"intelligence": {"us": {
                 "stories": [{
                     "title": title,
-                    "summary": "市場新聞更新，尚無完整價格傳導證據。",
+                    "summary": "美股市場新聞更新，尚無完整價格傳導證據。",
                     "canonical_url": "https://news.example/story",
                     "public_news_eligible": True,
                     "normalization_complete": True,
