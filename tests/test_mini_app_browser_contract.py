@@ -594,6 +594,7 @@ def test_mini_app_taiwan_pair_uses_verified_projection_for_quote_direction() -> 
                 "source_key": "official_events",
                 "notification_status": "eligible",
                 "risk_level": "高風險",
+                "public_short_message": "優先顯示的重大警報",
                 "title": "優先顯示的重大警報",
                 "event": "重大事件正文。",
             }]}
