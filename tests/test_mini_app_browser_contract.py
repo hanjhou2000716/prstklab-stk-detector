@@ -437,6 +437,16 @@ def test_mini_app_taiwan_pair_uses_verified_projection_for_quote_direction() -> 
     briefing = build_briefing_snapshot({
         "snapshot_id": "market-tw-quote-display-20260928",
         "generated_at": "2026-09-28T07:00:00+08:00",
+        "news": {"intelligence": {"taiwan": {"editorial_candidates": [{
+            "title": "台股收盤焦點：指數震盪",
+            "summary": "市場收盤報導指出指數震盪整理。",
+            "canonical_url": "https://news.example/taiwan-close",
+            "published_at": "2026-09-25T06:00:00+00:00",
+            "market": "taiwan",
+            "public_news_eligible": True,
+            "event_cluster_key": "taiwan-close-story",
+            "provider": "測試來源",
+        }]}}},
         "indices": [
             {"ticker": "TAIEX", "price": 48024.60, "change": -187.00, "change_percent": -0.39, "quote_date": "2026-09-25", "freshness": "recent_close"},
             {"ticker": "TXF", "price": 48123.00, "change": -189.00, "change_percent": -0.51, "quote_date": "2026-09-25", "freshness": "recent_close", "contract_month": "202610", "quote_basis": "TAIFEX_TXF_DAY|contract=202610|session=regular"},
@@ -553,6 +563,46 @@ def test_mini_app_taiwan_pair_uses_verified_projection_for_quote_direction() -> 
             legacy_verified = legacy_rows.nth(1)
             assert "market-down" in (legacy_verified.get_attribute("class") or "")
             assert "🍂" in (legacy_verified.text_content() or "")
+            focus = page.locator("#alert-session-news")
+            assert focus.is_visible()
+            assert "台股收盤焦點：指數震盪" in (focus.text_content() or "")
+            assert focus.locator(".alert-session-news-sentence").count() == 2
+            assert focus.locator("a").get_attribute("href") == "https://news.example/taiwan-close"
+            assert page.locator("#alert-card .alert-brief-list").is_hidden()
+
+            sentiment = {"label": "美股情緒", "score": 30.8, "sentiment": "偏恐慌", "observed_date": "2026-09-30"}
+            market["briefing"]["slot"] = "morning"
+            market["briefing"]["market_sentiments"] = [sentiment]
+            market["briefing"]["morning_analysis"]["market_card_projection"]["sentiments"] = [sentiment]
+            market["risk"] = {"us": {
+                "label": "美股",
+                "sentiment": {"score": 30.8, "label": "偏恐慌", "source_label": "CNN Fear & Greed"},
+            }}
+            market_text = json.dumps(market, ensure_ascii=False, separators=(",", ":"))
+            manifest["artifact_hashes"]["market.json"] = hashlib.sha256(market_text.encode()).hexdigest()
+            manifest_text = json.dumps(manifest, ensure_ascii=False, separators=(",", ":"))
+            page.reload(wait_until="domcontentloaded")
+            page.wait_for_selector("#risk-list .risk-metric-card", state="attached")
+            assert page.locator("#briefing-observations .briefing-market-sentiment").count() == 0
+            assert page.locator("#risk-list .risk-metric-card").count() == 1
+
+            market["events"] = {"items": [{
+                "notification_id": "verified-major-event",
+                "kind": "official_event",
+                "source_key": "official_events",
+                "notification_status": "eligible",
+                "risk_level": "高風險",
+                "title": "優先顯示的重大警報",
+                "event": "重大事件正文。",
+            }]}
+            market_text = json.dumps(market, ensure_ascii=False, separators=(",", ":"))
+            manifest["artifact_hashes"]["market.json"] = hashlib.sha256(market_text.encode()).hexdigest()
+            manifest_text = json.dumps(manifest, ensure_ascii=False, separators=(",", ":"))
+            page.reload(wait_until="domcontentloaded")
+            page.wait_for_selector("#alert-session-news", state="visible")
+            assert "優先顯示的重大警報" in (page.locator("#alert-headline").text_content() or "")
+            assert "台股收盤焦點：指數震盪" in (page.locator("#alert-session-news").text_content() or "")
+            assert page.locator("#alert-card .alert-brief-list").is_visible()
             browser.close()
     except Exception as exc:
         if "Executable doesn't exist" in str(exc) or "executable doesn't exist" in str(exc):

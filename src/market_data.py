@@ -1232,7 +1232,7 @@ def build_market_snapshot() -> dict[str, Any]:
         "taiwan_market_statistics": taiwan_market_statistics,
         "briefing": build_briefing_snapshot({
             "events": events, "indices": indices, "quotes": quotes,
-            "macro_quotes": macro_quotes, "risk": risk,
+            "macro_quotes": macro_quotes, "risk": risk, "news": news,
             "taiwan_market_statistics": taiwan_market_statistics,
             "markets": markets,
             "as_of": scan_completed_at.isoformat(),

@@ -494,3 +494,24 @@ h1 { font-size: clamp(1.1rem, 5.2vw, 1.55rem); }
 .briefing-market-sentiment p { display: flex; flex-wrap: wrap; gap: 4px; margin: 3px 0; color: #263f57; font-size: .76rem; line-height: 1.45; font-weight: 700; overflow-wrap: anywhere; }
 .briefing-market-sentiment b { color: var(--orange); }
 .briefing-market-sentiment small { color: var(--muted); font-size: .64rem; font-weight: 500; }
+
+
+.alert-session-news {
+  margin: 12px 18px 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f7f9fa;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.alert-session-news[hidden] { display: none; }
+.alert-session-news-label { margin: 0 0 6px; color: var(--muted); font-size: .76rem; line-height: 1.4; }
+.alert-session-news-headline { margin: 0 0 7px; color: var(--ink); font-size: .94rem; line-height: 1.45; }
+.alert-session-news-sentence { margin: 5px 0; color: #414b55; font-size: .84rem; line-height: 1.55; }
+.alert-session-news-source { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--line); color: var(--muted); font-size: .73rem; line-height: 1.45; }
+.alert-session-news-source a { color: var(--link, #23618a); text-decoration: underline; overflow-wrap: anywhere; }
+@media (max-width: 520px) {
+  .alert-session-news { margin-inline: 12px; padding: 12px; }
+  .alert-session-news-source { flex-direction: column; gap: 4px; }
+}

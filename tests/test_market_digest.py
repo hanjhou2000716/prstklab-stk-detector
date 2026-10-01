@@ -125,24 +125,40 @@ def test_ordinary_news_replacement_does_not_change_scheduled_decision_fingerprin
     def snapshot(title):
         return {
             "generated_at": "2026-09-07T01:00:00+00:00",
-            "news": {"intelligence": {"us": {"stories": [{
-                "title": title,
-                "summary": "市場新聞更新，尚無完整價格傳導證據。",
-                "canonical_url": "https://news.example/story",
-                "public_news_eligible": True,
-                "normalization_complete": True,
-            }]}}},
+            "news": {"intelligence": {"us": {
+                "stories": [{
+                    "title": title,
+                    "summary": "市場新聞更新，尚無完整價格傳導證據。",
+                    "canonical_url": "https://news.example/story",
+                    "public_news_eligible": True,
+                    "normalization_complete": True,
+                }],
+                "editorial_candidates": [{
+                    "title": title,
+                    "summary": "市場新聞更新，尚無完整價格傳導證據。",
+                    "canonical_url": "https://news.example/story",
+                    "published_at": "2026-09-04T20:00:00+00:00",
+                    "market": "us",
+                    "public_news_eligible": True,
+                    "normalization_complete": True,
+                    "event_cluster_key": "release-bound-editorial-story",
+                }],
+            }}},
             "indices": [
                 {"ticker": "TAIEX", "price": 26000, "change_percent": 0.8, "quote_date": "2026-09-07"},
                 {"ticker": "TPEx", "price": 300, "change_percent": 0.6, "quote_date": "2026-09-07"},
-                {"ticker": "NASDAQ", "price": 20000, "change_percent": -0.29, "quote_date": "2026-09-04"},
-                {"ticker": "SOX", "price": 5000, "change_percent": 3.37, "quote_date": "2026-09-04"},
+                {"ticker": "NASDAQ", "price": 20000, "change_percent": -0.29, "quote_date": "2026-09-04", "freshness": "recent_close"},
+                {"ticker": "SOX", "price": 5000, "change_percent": 3.37, "quote_date": "2026-09-04", "freshness": "recent_close"},
             ],
         }
 
     first = build_market_digest(snapshot("普通市場新聞甲"), "morning")
     second = build_market_digest(snapshot("普通市場新聞乙"), "morning")
     assert first["decision_fingerprint"] == second["decision_fingerprint"]
+    assert first["session_news_summary"]["status"] == "selected"
+    assert first["session_news_summary"]["headline"] == "普通市場新聞甲"
+    assert second["session_news_summary"]["headline"] == "普通市場新聞乙"
+    assert first["session_news_summary"]["summary"] == second["session_news_summary"]["summary"]
 
 
 def test_digest_rejects_legacy_news_event_rows_even_if_they_claim_public_eligibility():

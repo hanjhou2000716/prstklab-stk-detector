@@ -64,3 +64,19 @@ def test_scoped_cards_render_only_their_projected_market_sentiment():
     assert "escapeHtml(sentiment)" in app
     assert "source_attempts" in app
     assert "backup_expired" in app
+
+
+
+def test_morning_deduplicates_sentiment_and_alert_uses_release_bound_session_news():
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+    html = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+    styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
+    digest = (ROOT / "src" / "market_digest.py").read_text(encoding="utf-8")
+    assert 'report.slot === "morning"' in app
+    assert 'id="alert-session-news"' in html
+    assert "session_news_summary" in digest
+    assert "editorial_candidates" in app or "session_news_summary" in app
+    assert "safeHttpsUrl(summary.source_url)" in app
+    assert 'node.textContent = String(value || "")' in app
+    assert "alert-session-news" in styles
+    assert "notification_eligible" not in (ROOT / "src" / "session_news.py").read_text(encoding="utf-8")

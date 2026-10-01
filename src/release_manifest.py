@@ -91,7 +91,10 @@ def canonical_alert_content_hash(
     return hashlib.sha256(_canonical_json(payload)).hexdigest()
 
 
-def _alert_projection(event: dict[str, Any], *, release_id: str, market_snapshot_id: str, created_at: str) -> dict[str, Any]:
+def _alert_projection(
+    event: dict[str, Any], *, release_id: str, market_snapshot_id: str, created_at: str,
+    session_news_summary: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Create the immutable public detail for one notification identity."""
     notification_id = str(
         event.get("notification_id") or event.get("alert_id") or event.get("event_cluster_key")
@@ -197,6 +200,7 @@ def _alert_projection(event: dict[str, Any], *, release_id: str, market_snapshot
         "prstk_risk": event.get("prstk_risk") or {},
         "notification_status": event.get("notification_status"),
         "notification_reason": event.get("notification_reason"),
+        "session_news_summary": session_news_summary,
     }
 
 
@@ -265,6 +269,15 @@ def _briefing_projection(
         }
     else:
         market_card_projection = None
+    session_news_summary = briefing.get("session_news_summary")
+    if isinstance(session_news_summary, dict):
+        session_news_summary = {
+            **session_news_summary,
+            "release_id": release_id,
+            "snapshot_id": str(market_snapshot_id),
+        }
+    else:
+        session_news_summary = None
     return {
         "schema_version": "1.0",
         "kind": "market_briefing",
@@ -306,6 +319,7 @@ def _briefing_projection(
             "observations": briefing.get("observations") or [],
             "morning_analysis": briefing.get("morning_analysis") or {},
             "market_card_projection": market_card_projection,
+            "session_news_summary": session_news_summary,
             "evidence": briefing.get("evidence") or [],
             "source_evidence": source_evidence,
             "quote_evidence": primary_quote_evidence,
@@ -341,6 +355,13 @@ def _publish_alert_artifacts(
     index_path = root / "site" / "data" / ALERT_INDEX_NAME
     rows: dict[tuple[str, str], dict[str, Any]] = {}
     quarantined_fingerprints = financialjuice_quarantine_fingerprints(market)
+    briefing = market.get("briefing") if isinstance(market.get("briefing"), dict) else {}
+    raw_session_news = briefing.get("session_news_summary")
+    session_news_summary = ({
+        **raw_session_news,
+        "release_id": release_id,
+        "snapshot_id": str(market.get("snapshot_id") or ""),
+    } if isinstance(raw_session_news, dict) else None)
     # The retained immutable files are the source of truth.  Reusing a stale
     # index row can keep a deleted/moved artifact addressable and was the
     # reason historical files existed without a matching current index row.
@@ -379,6 +400,7 @@ def _publish_alert_artifacts(
             event, release_id=release_id,
             market_snapshot_id=str(market.get("snapshot_id") or ""),
             created_at=created_at,
+            session_news_summary=session_news_summary,
         )
         notification_id = str(artifact["notification_id"])
         filename = f"{_alert_filename(notification_id)}-{_alert_filename(release_id)}.json"
