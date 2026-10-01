@@ -37076,7 +37076,7 @@
       "location_fingerprint": "",
       "action_fingerprint": "",
       "first_discovered_at": "2026-10-01T10:59:23.871845+00:00",
-      "last_reminded_at": null,
+      "last_reminded_at": "2026-10-01T11:00:11.356897+00:00",
       "escalated": false,
       "risk_level": "持續觀察",
       "risk_rank": 0,
@@ -37087,7 +37087,7 @@
       "compound_item_id": null,
       "compound_event_cluster_key": null,
       "last_decision": {
-        "recorded_at": "2026-10-01T10:59:23.982632+00:00",
+        "recorded_at": "2026-10-01T11:00:08.083433+00:00",
         "allowed": true,
         "status": "eligible",
         "reason": "new_theme",
@@ -37114,9 +37114,58 @@
           "material_state_changed": true,
           "last_notified_at": null,
           "taiwan_priority": 4
+        },
+        {
+          "recorded_at": "2026-10-01T11:00:08.083433+00:00",
+          "allowed": true,
+          "status": "eligible",
+          "reason": "new_theme",
+          "reasons": [],
+          "notification_theme_key": "mops-f30dc23e22",
+          "event_key": "77337b22b14a0bf62db9475b9f0aeb18",
+          "risk": "R1",
+          "theme_window": 7200,
+          "material_state_changed": true,
+          "last_notified_at": null,
+          "taiwan_priority": 4
         }
       ],
-      "updated_at": "2026-10-01T10:59:23.982632+00:00"
+      "updated_at": "2026-10-01T11:00:11.356897+00:00",
+      "delivery_history": [
+        {
+          "event_key": "77337b22b14a0bf62db9475b9f0aeb18",
+          "notification_id": "77337b22b14a0bf62db9475b9f0aeb18",
+          "sent_at": "2026-10-01T11:00:11.356897+00:00",
+          "importance": "normal",
+          "alert_type": "macro",
+          "lifecycle_state": "confirmed",
+          "reason": "official_event_monitor",
+          "notification_theme_key": "mops-f30dc23e22",
+          "risk": "R1",
+          "taiwan_priority": 4,
+          "material_state_changed": true,
+          "release_id": "release-ac9a7fb42b6802eb",
+          "snapshot_id": "31ac8e7a1d497d29",
+          "delivery_status": "delivered",
+          "event_cluster_key": "evt-d070df52c3f5d37e07869cd3",
+          "prstk_risk": {
+            "prstk_risk_level": "R1",
+            "source": "event_alerts"
+          },
+          "release_ready_at": "2026-10-01T11:00:08.453704+00:00",
+          "telegram_attempted_at": "2026-10-01T11:00:08.544961+00:00",
+          "delivery_result": "delivered",
+          "delay_reason": "none",
+          "source_url": "https://mops.twse.com.tw/mops/#/web/t05st02",
+          "source_domain": "mops.twse.com.tw",
+          "alert_lane": "event",
+          "market_scope": "global",
+          "event_policy_reason": "event_materiality_available",
+          "trace_id": "official-9afda7644e5f3055"
+        }
+      ],
+      "last_theme_notification_at": "2026-10-01T11:00:11.356897+00:00",
+      "last_notified_at": "2026-10-01T11:00:11.356897+00:00"
     }
   },
   "delivery_claims": {
@@ -41578,6 +41627,35 @@
       "updated_at": "2026-10-01T06:24:59.869680+00:00",
       "failed_recipient_hashes": [],
       "delivered_at": "2026-10-01T06:24:59.869680+00:00"
+    },
+    "77337b22b14a0bf62db9475b9f0aeb18": {
+      "notification_key": "77337b22b14a0bf62db9475b9f0aeb18",
+      "slot_key": "",
+      "status": "delivered",
+      "recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d",
+        "59cf5c3e48bf"
+      ],
+      "delivered_recipient_hashes": [
+        "59cf5c3e48bf",
+        "5b1d66aae79d",
+        "7a30574fc065",
+        "d36bbcc2cd2d"
+      ],
+      "attempted_recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d",
+        "59cf5c3e48bf"
+      ],
+      "claimed_at": "2026-10-01T11:00:08.460789+00:00",
+      "lease_until": null,
+      "run_id_hash": "590595276756",
+      "updated_at": "2026-10-01T11:00:11.272168+00:00",
+      "failed_recipient_hashes": [],
+      "delivered_at": "2026-10-01T11:00:11.272168+00:00"
     }
   }
 }
