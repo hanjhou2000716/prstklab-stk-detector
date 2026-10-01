@@ -9,7 +9,7 @@ def test_bootstrap_keeps_first_paint_fields_and_drops_large_history() -> None:
         "generated_at": "2026-09-20T01:00:00+00:00",
         "data_status": "資料可用",
         "markets": {"taiwan": {"session": "收盤"}},
-        "indices": [{"ticker": "TXF", "price": 100, "change_percent": 1.2, "contract_month": "202610", "contract_basis": "named_month_contract", "session": "regular", "source_tier": "official", "alert_eligible": False, "routine_eligible": True, "history": list(range(10000))}],
+        "indices": [{"ticker": "TXF", "price": 100, "change_percent": 1.2, "contract_month": "202610", "contract_basis": "named_month_contract", "session": "regular", "source_tier": "official", "display_state": "historical_reference", "alert_eligible": False, "routine_eligible": True, "history": list(range(10000))}],
         "quotes": [{"ticker": "2330", "price": 1000, "change_percent": -0.5}],
         "macro_quotes": [{"ticker": "US10Y", "price": 4.1, "change_percent": 0.2}],
         "events": {"items": [{"notification_id": "alert-1", "title": "事件", "event": "完整事件內容"}]},
@@ -27,6 +27,7 @@ def test_bootstrap_keeps_first_paint_fields_and_drops_large_history() -> None:
     assert result["indices"][0]["contract_month"] == "202610"
     assert result["indices"][0]["session"] == "regular"
     assert result["indices"][0]["routine_eligible"] is True
+    assert result["indices"][0]["display_state"] == "historical_reference"
     assert result["indices"][0]["alert_eligible"] is False
     assert "history" not in result["indices"][0]
     assert "sources" not in result["source_health"]

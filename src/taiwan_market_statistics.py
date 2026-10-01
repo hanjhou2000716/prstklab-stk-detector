@@ -394,34 +394,55 @@ def fetch_twse_taiex_recent_close(
     *, target_date: str, session: requests.Session | None = None,
     diagnostics: list[dict[str, str]] | None = None,
 ) -> dict[str, Any] | None:
-    """Fetch the official TWSE index-history backup for a verified session date."""
+    """Fetch a TWSE close and, at a month boundary, its preceding close."""
     target = _date(target_date)
     if not target:
         if diagnostics is not None:
             diagnostics.append({"source": "twse_taiex_history", "outcome": "target_date_unverified"})
         return None
     client = session or requests.Session()
-    try:
-        response = client.get(
-            TWSE_TAIEX_HISTORY_URL,
-            params={"date": f"{target[:7].replace('-', '')}01"},
-            headers=HEADERS,
-            timeout=5,
-        )
-        response.raise_for_status()
-        quote = parse_twse_taiex_history(response.json(), target_date=target)
-        outcome = "verified" if quote else "date_or_values_unavailable"
-        if diagnostics is not None:
-            diagnostics.append({"source": "twse_taiex_history", "outcome": outcome})
-        if quote:
-            quote["source_attempts"] = [{"source": "twse_taiex_history", "outcome": "verified"}]
-        return quote
-    except (OSError, ValueError, TypeError, requests.RequestException) as exc:
-        outcome = "connection_failed" if isinstance(exc, requests.RequestException) else "response_parse_failed"
-        if diagnostics is not None:
-            diagnostics.append({"source": "twse_taiex_history", "outcome": outcome})
-        return None
+    year, month = map(int, target[:7].split("-"))
+    current_month = date(year, month, 1)
+    previous_month = date(year - 1, 12, 1) if month == 1 else date(year, month - 1, 1)
+    attempts: list[dict[str, str]] = []
 
+    def fetch_month(month_start: date, label: str) -> list[dict[str, Any]] | None:
+        try:
+            response = client.get(
+                TWSE_TAIEX_HISTORY_URL,
+                params={"date": month_start.strftime("%Y%m%d")},
+                headers=HEADERS,
+                timeout=5,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            if not isinstance(payload, list):
+                attempts.append({"source": label, "outcome": "response_shape_invalid"})
+                return None
+            attempts.append({"source": label, "outcome": "received"})
+            return [row for row in payload if isinstance(row, dict)]
+        except (OSError, ValueError, TypeError, requests.RequestException) as exc:
+            outcome = "connection_failed" if isinstance(exc, requests.RequestException) else "response_parse_failed"
+            attempts.append({"source": label, "outcome": outcome})
+            return None
+
+    current_rows = fetch_month(current_month, "twse_taiex_history_current_month")
+    quote = parse_twse_taiex_history(current_rows, target_date=target) if current_rows is not None else None
+    if quote is not None and quote.get("change") is None:
+        previous_rows = fetch_month(previous_month, "twse_taiex_history_previous_month")
+        if previous_rows is not None:
+            quote = parse_twse_taiex_history(
+                [*current_rows, *previous_rows], target_date=target,
+            )
+    if quote is not None:
+        attempts.append({"source": "twse_taiex_history", "outcome": "verified"})
+    elif current_rows is not None:
+        attempts.append({"source": "twse_taiex_history", "outcome": "date_or_values_unavailable"})
+    if diagnostics is not None:
+        diagnostics.extend(attempts)
+    if quote:
+        quote["source_attempts"] = attempts
+    return quote
 
 def fetch_twse_market_statistics(
     *, now: datetime | None = None, session: requests.Session | None = None,

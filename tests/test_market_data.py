@@ -10,11 +10,12 @@ from src.market_data import (
     _daily_quote,
     _intraday_quote,
     _replace_with_official_taiwan_close,
+    _replace_with_verified_taiex_close,
+    _verified_taiex_backup,
     annotate_quote_freshness,
     apply_taiwan_intraday_crosscheck,
     change_percent,
     intraday_is_fresh,
-    _replace_with_verified_taiex_close,
 )
 
 
@@ -340,3 +341,66 @@ def test_official_taiex_close_replaces_unverified_backup_but_keeps_live_verified
         "crosscheck_sources": [{"provider": "TWSE"}, {"provider": "TAIFEX"}],
     }]
     assert _replace_with_verified_taiex_close(live, official)[0]["price"] == 47950
+
+
+
+def test_taiex_saved_backup_requires_official_provenance_and_is_bounded():
+    from datetime import date
+    from unittest.mock import patch
+
+    row = {
+        "ticker": "TAIEX",
+        "provider": "TWSE",
+        "source_tier": "official",
+        "instrument_id": "twse:taiex",
+        "market_date": "2026-09-30",
+        "observed_at": "2026-09-30T13:30:00+08:00",
+        "price": 47940.13,
+        "previous_close": 47631.96,
+        "change": 308.17,
+        "change_percent": 0.65,
+        "currency": "點",
+        "quote_basis": "TWSE_TAIEX_DAILY_CLOSE",
+        "quality_status": "verified",
+        "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK",
+    }
+
+    class Store:
+        def __init__(self, value):
+            self.value = value
+
+        def latest_quote(self, ticker, *, before_or_on, provider=None):
+            assert ticker == "TAIEX"
+            assert before_or_on == "2026-10-01"
+            assert provider == "TWSE"
+            return self.value
+
+    with patch("pandas_market_calendars.get_calendar") as session_calendar:
+        session_calendar.return_value.schedule.return_value.index = pd.DatetimeIndex([
+            "2026-09-30", "2026-10-01",
+        ])
+        backup = _verified_taiex_backup(
+            Store(row), expected_date=date(2026, 10, 1),
+        )
+    assert backup is not None
+    assert backup["display_state"] == "historical_reference"
+    assert backup["routine_eligible"] is True
+    assert backup["alert_eligible"] is False
+    assert backup["stale_used"] is True
+    assert backup["quote_date"] == "2026-09-30"
+    assert backup["change"] == 308.17
+
+    bad_source = {**row, "source_url": "https://finance.yahoo.com/quote/%5ETWII/"}
+    assert _verified_taiex_backup(
+        Store(bad_source), expected_date=date(2026, 10, 1),
+    ) is None
+
+    expired = {**row, "market_date": "2026-09-24", "observed_at": "2026-09-24T13:30:00+08:00"}
+    with patch("pandas_market_calendars.get_calendar") as session_calendar:
+        session_calendar.return_value.schedule.return_value.index = pd.DatetimeIndex([
+            "2026-09-24", "2026-09-25", "2026-09-28", "2026-09-29",
+            "2026-09-30", "2026-10-01",
+        ])
+        assert _verified_taiex_backup(
+            Store(expired), expected_date=date(2026, 10, 1),
+        ) is None

@@ -284,3 +284,39 @@ def test_fmtqik_taiex_is_retained_when_turnover_value_is_missing():
     assert quote is not None
     assert quote["price"] == 47940.13
     assert quote["change_percent"] == 0.65
+
+
+
+def test_official_taiex_history_fetch_checks_previous_month_for_baseline():
+    class Response:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return self.payload
+
+    class Session:
+        def __init__(self):
+            self.calls = []
+
+        def get(self, url, *, params, headers, timeout):
+            self.calls.append((url, params, timeout))
+            if params["date"] == "20260901":
+                return Response([{"Date": "20260901", "ClosingIndex": "100.00"}])
+            if params["date"] == "20260801":
+                return Response([{"Date": "20260831", "ClosingIndex": "99.00"}])
+            raise AssertionError(f"unexpected month request {params['date']}")
+
+    session = Session()
+    diagnostics = []
+    quote = taiwan_statistics.fetch_twse_taiex_recent_close(
+        target_date="2026-09-01", session=session, diagnostics=diagnostics,
+    )
+    assert quote is not None
+    assert quote["change"] == 1.0
+    assert quote["change_percent"] == 1.01
+    assert [call[1]["date"] for call in session.calls] == ["20260901", "20260801"]
+    assert diagnostics[-1] == {"source": "twse_taiex_history", "outcome": "verified"}

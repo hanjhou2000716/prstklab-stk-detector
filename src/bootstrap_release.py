@@ -17,7 +17,7 @@ _QUOTE_FIELDS = (
     "symbol", "ticker", "name", "market", "currency", "price",
     "previous_close", "change", "change_percent", "change_15m_percent",
     "quote_date", "quote_time", "quote_basis", "quote_source", "source_url",
-    "source_label", "source_tier", "freshness", "data_status", "quote_delayed", "stale_used",
+    "source_label", "source_tier", "freshness", "display_state", "data_status", "quote_delayed", "stale_used",
     "routine_eligible", "alert_eligible", "backup_used", "official_fallback_used",
     "fallback_reason", "instrument_id", "contract_month", "contract_basis", "session",
     "source_attempts", "cross_checked", "snapshot_id", "observation_id",
