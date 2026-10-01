@@ -135,7 +135,7 @@ def test_ordinary_news_replacement_does_not_change_scheduled_decision_fingerprin
                 }],
                 "editorial_candidates": [{
                     "title": title,
-                    "summary": "市場新聞更新，尚無完整價格傳導證據。",
+                    "summary": "美股市場新聞更新，尚無完整價格傳導證據。",
                     "canonical_url": "https://news.example/story",
                     "published_at": "2026-09-04T20:00:00+00:00",
                     "market": "us",

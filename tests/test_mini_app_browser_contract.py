@@ -602,9 +602,9 @@ def test_mini_app_taiwan_pair_uses_verified_projection_for_quote_direction() -> 
             manifest["artifact_hashes"]["market.json"] = hashlib.sha256(market_text.encode()).hexdigest()
             manifest_text = json.dumps(manifest, ensure_ascii=False, separators=(",", ":"))
             page.reload(wait_until="domcontentloaded")
-            page.wait_for_selector("#alert-session-news", state="visible")
+            page.wait_for_selector("#briefing-overview .briefing-overview-news-label", state="visible")
             assert "優先顯示的重大警報" in (page.locator("#alert-headline").text_content() or "")
-            assert "台股收盤焦點：指數震盪" in (page.locator("#alert-session-news").text_content() or "")
+            assert "台股收盤焦點：指數震盪" in (page.locator("#briefing-overview").text_content() or "")
             assert page.locator("#alert-card .alert-brief-list").is_visible()
             browser.close()
     except Exception as exc:
