@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import shutil
@@ -169,6 +170,28 @@ def _append_gate_summary(label: str, outcome: str, duration_seconds: float) -> N
         print(f"WARNING: could not write gate timing summary ({type(exc).__name__})", file=sys.stderr)
 
 
+def _write_gate_evidence(
+    gates: list[dict[str, object]], expected_gate_count: int, outcome: str,
+) -> None:
+    evidence_path = os.environ.get("QUALITY_PREFLIGHT_EVIDENCE_PATH", "").strip()
+    if not evidence_path:
+        return
+    path = Path(evidence_path)
+    temporary_path = path.with_suffix(f"{path.suffix}.tmp")
+    record = {
+        "schema_version": "quality-preflight-gates-v1",
+        "status": outcome,
+        "expected_gate_count": expected_gate_count,
+        "gates": gates,
+    }
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary_path.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        os.replace(temporary_path, path)
+    except OSError as exc:
+        print(f"WARNING: could not write structured preflight evidence ({type(exc).__name__})", file=sys.stderr)
+
+
 def run_commands(
     commands: Sequence[tuple[str, list[str]]],
     runner=subprocess.run,
@@ -176,6 +199,7 @@ def run_commands(
     continue_on_failure: bool = False,
 ) -> int:
     failed_labels: list[str] = []
+    gate_results: list[dict[str, object]] = []
     first_failure = 0
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
@@ -196,6 +220,11 @@ def run_commands(
         duration = time.perf_counter() - started
         outcome = "success" if returncode == 0 else f"failure ({returncode})"
         print(f"GATE_RESULT: {label} | {outcome} | {duration:.2f}s", flush=True)
+        gate_results.append({
+            "name": label.replace("|", "/").replace("\n", " "),
+            "outcome": "success" if returncode == 0 else "failure",
+            "duration_seconds": round(duration, 2),
+        })
         _append_gate_summary(label, outcome, duration)
         if returncode:
             failed_labels.append(label)
@@ -205,6 +234,12 @@ def run_commands(
             if not continue_on_failure:
                 break
     _write_failed_gate(" | ".join(failed_labels) if failed_labels else "none", len(commands))
+    preflight_outcome = (
+        "success"
+        if len(gate_results) == len(commands) and all(gate["outcome"] == "success" for gate in gate_results)
+        else "failure"
+    )
+    _write_gate_evidence(gate_results, len(commands), preflight_outcome)
     return first_failure
 
 

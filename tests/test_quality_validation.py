@@ -4,6 +4,7 @@ import json
 from types import SimpleNamespace
 
 from scripts.verify_quality_validation import _gh_json_lines, latest_candidate_run, validate_evidence_record
+from scripts.write_quality_validation_evidence import build_evidence
 
 
 def _run(*, run_id: int = 20, attempt: int = 1, conclusion: str = "success") -> dict:
@@ -135,3 +136,54 @@ def test_paginated_github_json_lines_accept_json_quoted_records(monkeypatch):
     )
 
     assert _gh_json_lines(["--paginate", "repos/example/actions/runs", "--jq", ".workflow_runs[] | @json"]) == [record]
+
+
+def test_candidate_evidence_reads_shared_structured_preflight_file(monkeypatch, tmp_path):
+    preflight_path = tmp_path / "preflight-gates.json"
+    preflight_path.write_text(json.dumps({
+        "schema_version": "quality-preflight-gates-v1",
+        "status": "success",
+        "expected_gate_count": 2,
+        "gates": [
+            {"name": "static", "outcome": "success", "duration_seconds": 1.2},
+            {"name": "tests", "outcome": "success", "duration_seconds": 42.0},
+        ],
+    }), encoding="utf-8")
+    monkeypatch.setattr("scripts.write_quality_validation_evidence._version", lambda _command: "test-version")
+
+    record = build_evidence({
+        "QUALITY_PREFLIGHT_EVIDENCE_PATH": str(preflight_path),
+        "QUALITY_VALIDATION_CANDIDATE_SHA": "a" * 40,
+        "QUALITY_PREFLIGHT_BASE_SHA": "b" * 40,
+        "QUALITY_PREFLIGHT_GATE_COUNT": "2",
+        "QUALITY_PREFLIGHT_OUTCOME": "success",
+        "GITHUB_REPOSITORY": "hanjhou2000716/prstklab-stk-detector",
+        "GITHUB_RUN_ID": "123",
+        "GITHUB_RUN_ATTEMPT": "1",
+    })
+
+    assert record["status"] == "success"
+    assert record["errors"] == []
+    assert len(record["gates"]) == 2
+
+
+def test_candidate_evidence_fails_closed_if_step_summary_exists_but_shared_file_is_missing(tmp_path, monkeypatch):
+    summary_path = tmp_path / "summary.md"
+    summary_path.write_text(
+        "### Shared quality preflight gate results\n| Gate | Result | Duration |\n|---|---|---|\n| all | success | 1.00s |\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("scripts.write_quality_validation_evidence._version", lambda _command: "test-version")
+
+    record = build_evidence({
+        "QUALITY_PREFLIGHT_EVIDENCE_PATH": str(tmp_path / "missing-gates.json"),
+        "GITHUB_STEP_SUMMARY": str(summary_path),
+        "QUALITY_VALIDATION_CANDIDATE_SHA": "a" * 40,
+        "QUALITY_PREFLIGHT_BASE_SHA": "b" * 40,
+        "QUALITY_PREFLIGHT_GATE_COUNT": "1",
+        "QUALITY_PREFLIGHT_OUTCOME": "success",
+        "GITHUB_REPOSITORY": "hanjhou2000716/prstklab-stk-detector",
+    })
+
+    assert record["status"] == "failure"
+    assert "preflight_gate_evidence_missing" in record["errors"]

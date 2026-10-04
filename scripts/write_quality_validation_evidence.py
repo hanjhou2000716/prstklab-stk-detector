@@ -28,37 +28,31 @@ def _version(command: list[str]) -> str:
     return lines[0][:160] if result.returncode == 0 and lines else "unavailable"
 
 
-def _gate_results(summary_text: str) -> list[dict[str, Any]]:
-    active = False
-    gates: list[dict[str, Any]] = []
-    for line in summary_text.splitlines():
-        if line.strip() == "### Shared quality preflight gate results":
-            active = True
-            continue
-        if not active or not line.startswith("|"):
-            continue
-        parts = [part.strip() for part in line.strip().strip("|").split("|")]
-        if len(parts) != 3 or parts[0] in {"Gate", "---"} or parts[0].startswith("-"):
-            continue
-        duration = parts[2].removesuffix("s").strip()
-        try:
-            duration_seconds = float(duration)
-        except ValueError:
-            continue
-        gates.append({"name": parts[0], "outcome": parts[1], "duration_seconds": duration_seconds})
-    return gates
-
-
 def build_evidence(environment: dict[str, str] | None = None) -> dict[str, Any]:
     env = environment or os.environ
-    summary_path = Path(env.get("GITHUB_STEP_SUMMARY", ""))
+    preflight_path = Path(env.get("QUALITY_PREFLIGHT_EVIDENCE_PATH", ""))
+    preflight_record: dict[str, Any] = {}
+    preflight_errors: list[str] = []
     try:
-        summary_text = summary_path.read_text(encoding="utf-8")
+        loaded_preflight = json.loads(preflight_path.read_text(encoding="utf-8"))
     except OSError:
-        summary_text = ""
+        loaded_preflight = None
+        preflight_errors.append("preflight_gate_evidence_missing")
+    except json.JSONDecodeError:
+        loaded_preflight = None
+        preflight_errors.append("preflight_gate_evidence_invalid_json")
+    if isinstance(loaded_preflight, dict):
+        preflight_record = loaded_preflight
+        if preflight_record.get("schema_version") != "quality-preflight-gates-v1":
+            preflight_errors.append("preflight_gate_evidence_schema_mismatch")
+    elif loaded_preflight is not None:
+        preflight_errors.append("preflight_gate_evidence_invalid_shape")
+    gates = preflight_record.get("gates", [])
+    if not isinstance(gates, list):
+        gates = []
+        preflight_errors.append("preflight_gate_evidence_invalid_gates")
     candidate_sha = env.get("QUALITY_VALIDATION_CANDIDATE_SHA", "").lower()
     base_sha = env.get("QUALITY_PREFLIGHT_BASE_SHA", "").lower()
-    gates = _gate_results(summary_text)
     try:
         expected_gate_count = int(env.get("QUALITY_PREFLIGHT_GATE_COUNT", "0"))
     except ValueError:
@@ -73,10 +67,20 @@ def build_evidence(environment: dict[str, str] | None = None) -> dict[str, Any]:
         errors.append("preflight_gate_results_missing")
     if expected_gate_count <= 0 or len(gates) != expected_gate_count:
         errors.append("preflight_gate_count_mismatch")
-    if any(gate["outcome"] != "success" for gate in gates):
+    if preflight_record.get("status") != "success":
+        preflight_errors.append("structured_preflight_not_successful")
+    try:
+        recorded_expected_gate_count = int(preflight_record.get("expected_gate_count", 0))
+    except (TypeError, ValueError):
+        recorded_expected_gate_count = 0
+        preflight_errors.append("preflight_gate_count_invalid")
+    if recorded_expected_gate_count != expected_gate_count:
+        preflight_errors.append("preflight_gate_count_disagrees_with_workflow")
+    if any(not isinstance(gate, dict) or gate.get("outcome") != "success" for gate in gates):
         errors.append("one_or_more_preflight_gates_failed")
     if preflight_outcome != "success":
         errors.append("full_preflight_not_successful")
+    errors.extend(preflight_errors)
     workflow_file = ROOT / ".github" / "workflows" / "quality.yml"
     record: dict[str, Any] = {
         "schema_version": "quality-candidate-validation-v1",
@@ -117,6 +121,8 @@ def main() -> int:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"QUALITY_VALIDATION_EVIDENCE_STATUS={record['status']}")
+    if record["errors"]:
+        print("QUALITY_VALIDATION_EVIDENCE_ERRORS=" + ",".join(record["errors"]))
     # The workflow's earlier gate already owns the job result. Always permit
     # uploading this sanitized record, including a failed validation record.
     return 0

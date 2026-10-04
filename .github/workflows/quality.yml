@@ -122,10 +122,13 @@ jobs:
             --base-sha "$BASE_SHA"
       - name: Run complete shared local and CI quality preflight
         id: quality_preflight
+        env:
+          QUALITY_PREFLIGHT_EVIDENCE_PATH: ${{ runner.temp }}/quality-preflight-gates.json
         run: uv run python scripts/quality_preflight.py --full
       - name: Write exact-SHA candidate validation evidence
         if: always()
         env:
+          QUALITY_PREFLIGHT_EVIDENCE_PATH: ${{ runner.temp }}/quality-preflight-gates.json
           QUALITY_VALIDATION_EVIDENCE_PATH: ${{ runner.temp }}/quality-validation-evidence.json
           QUALITY_PREFLIGHT_OUTCOME: ${{ steps.quality_preflight.outcome || 'not_run' }}
           QUALITY_PREFLIGHT_GATE_COUNT: ${{ steps.quality_preflight.outputs.gate_count || '0' }}
