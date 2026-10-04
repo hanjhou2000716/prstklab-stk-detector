@@ -98,7 +98,10 @@ def validate_evidence_record(
 
 
 def _gh_json(arguments: list[str]) -> Any:
-    result = subprocess.run(["gh", "api", *arguments], check=False, capture_output=True, text=True, timeout=90)
+    result = subprocess.run(
+        ["gh", "api", "--method", "GET", *arguments],
+        check=False, capture_output=True, text=True, timeout=90,
+    )
     if result.returncode:
         raise RuntimeError(f"GitHub read failed ({result.returncode}): {result.stderr.strip()[:300]}")
     try:
@@ -108,7 +111,10 @@ def _gh_json(arguments: list[str]) -> Any:
 
 
 def _gh_json_lines(arguments: list[str]) -> list[Any]:
-    result = subprocess.run(["gh", "api", *arguments], check=False, capture_output=True, text=True, timeout=90)
+    result = subprocess.run(
+        ["gh", "api", "--method", "GET", *arguments],
+        check=False, capture_output=True, text=True, timeout=90,
+    )
     if result.returncode:
         raise RuntimeError(f"GitHub read failed ({result.returncode}): {result.stderr.strip()[:300]}")
     values: list[Any] = []

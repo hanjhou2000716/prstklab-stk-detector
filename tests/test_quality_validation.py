@@ -119,12 +119,19 @@ def test_evidence_rejects_missing_preflight_gates_even_if_return_status_is_succe
 def test_paginated_github_json_lines_parse_without_unsupported_slurp(monkeypatch):
     records = [{"id": 1}, {"id": 2}]
     stdout = "\n".join(json.dumps(record) for record in records)
+    calls = []
+
+    def fake_run(command, **_kwargs):
+        calls.append(command)
+        return SimpleNamespace(returncode=0, stdout=stdout, stderr="")
+
     monkeypatch.setattr(
         "scripts.verify_quality_validation.subprocess.run",
-        lambda *_args, **_kwargs: SimpleNamespace(returncode=0, stdout=stdout, stderr=""),
+        fake_run,
     )
 
     assert _gh_json_lines(["--paginate", "repos/example/actions/runs", "--jq", ".workflow_runs[] | @json"]) == records
+    assert calls[0][:4] == ["gh", "api", "--method", "GET"]
 
 
 def test_paginated_github_json_lines_accept_json_quoted_records(monkeypatch):
@@ -136,6 +143,21 @@ def test_paginated_github_json_lines_accept_json_quoted_records(monkeypatch):
     )
 
     assert _gh_json_lines(["--paginate", "repos/example/actions/runs", "--jq", ".workflow_runs[] | @json"]) == [record]
+
+
+def test_github_json_reads_send_query_fields_with_get(monkeypatch):
+    calls = []
+
+    def fake_run(command, **_kwargs):
+        calls.append(command)
+        return SimpleNamespace(returncode=0, stdout='{"artifacts": []}', stderr="")
+
+    monkeypatch.setattr("scripts.verify_quality_validation.subprocess.run", fake_run)
+
+    from scripts.verify_quality_validation import _gh_json
+
+    assert _gh_json(["repos/example/actions/runs/1/artifacts", "-f", "per_page=100"]) == {"artifacts": []}
+    assert calls[0][:4] == ["gh", "api", "--method", "GET"]
 
 
 def test_candidate_evidence_reads_shared_structured_preflight_file(monkeypatch, tmp_path):
