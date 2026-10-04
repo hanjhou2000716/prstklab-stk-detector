@@ -107,15 +107,36 @@ def _gh_json(arguments: list[str]) -> Any:
         raise RuntimeError("GitHub read returned invalid JSON.") from exc
 
 
+def _gh_json_lines(arguments: list[str]) -> list[Any]:
+    result = subprocess.run(["gh", "api", *arguments], check=False, capture_output=True, text=True, timeout=90)
+    if result.returncode:
+        raise RuntimeError(f"GitHub read failed ({result.returncode}): {result.stderr.strip()[:300]}")
+    values: list[Any] = []
+    for line in result.stdout.splitlines():
+        if not line.strip():
+            continue
+        try:
+            value = json.loads(line)
+            # gh's --jq formatter may emit a jq string either raw or JSON-quoted.
+            if isinstance(value, str):
+                value = json.loads(value)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError("GitHub paginated read returned invalid JSON lines.") from exc
+        if isinstance(value, list):
+            values.extend(value)
+        else:
+            values.append(value)
+    return values
+
+
 def verify_from_github(repository: str, candidate_sha: str, base_sha: str) -> list[str]:
     if not SHA_PATTERN.fullmatch(candidate_sha.lower()) or not SHA_PATTERN.fullmatch(base_sha.lower()):
         return ["candidate_and_base_must_be_full_commit_shas"]
-    runs_value = _gh_json([
-        "--paginate", "--slurp", f"repos/{repository}/actions/workflows/quality.yml/runs",
+    runs = _gh_json_lines([
+        "--paginate", f"repos/{repository}/actions/workflows/quality.yml/runs",
         "-f", "event=workflow_dispatch", "-f", f"head_sha={candidate_sha}", "-f", "per_page=100",
-        "--jq", "[.[].workflow_runs[]]",
+        "--jq", ".workflow_runs[] | @json",
     ])
-    runs = runs_value if isinstance(runs_value, list) else []
     run = latest_candidate_run([item for item in runs if isinstance(item, dict)], candidate_sha)
     if run is None:
         return ["no_isolated_validation_for_exact_candidate_sha"]

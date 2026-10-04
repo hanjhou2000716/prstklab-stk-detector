@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from scripts.verify_quality_validation import latest_candidate_run, validate_evidence_record
+import json
+from types import SimpleNamespace
+
+from scripts.verify_quality_validation import _gh_json_lines, latest_candidate_run, validate_evidence_record
 
 
 def _run(*, run_id: int = 20, attempt: int = 1, conclusion: str = "success") -> dict:
@@ -110,3 +113,25 @@ def test_evidence_rejects_missing_preflight_gates_even_if_return_status_is_succe
         candidate_sha="a" * 40, base_sha="b" * 40,
     )
     assert "validation_gate_count_mismatch" in errors
+
+
+def test_paginated_github_json_lines_parse_without_unsupported_slurp(monkeypatch):
+    records = [{"id": 1}, {"id": 2}]
+    stdout = "\n".join(json.dumps(record) for record in records)
+    monkeypatch.setattr(
+        "scripts.verify_quality_validation.subprocess.run",
+        lambda *_args, **_kwargs: SimpleNamespace(returncode=0, stdout=stdout, stderr=""),
+    )
+
+    assert _gh_json_lines(["--paginate", "repos/example/actions/runs", "--jq", ".workflow_runs[] | @json"]) == records
+
+
+def test_paginated_github_json_lines_accept_json_quoted_records(monkeypatch):
+    record = {"id": 3}
+    stdout = json.dumps(json.dumps(record))
+    monkeypatch.setattr(
+        "scripts.verify_quality_validation.subprocess.run",
+        lambda *_args, **_kwargs: SimpleNamespace(returncode=0, stdout=stdout, stderr=""),
+    )
+
+    assert _gh_json_lines(["--paginate", "repos/example/actions/runs", "--jq", ".workflow_runs[] | @json"]) == [record]
