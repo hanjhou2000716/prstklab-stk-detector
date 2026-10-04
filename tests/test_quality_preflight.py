@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from scripts import inspect_quality_run, quality_preflight
 
 
@@ -80,7 +82,7 @@ def test_failed_gate_is_written_to_github_step_output(monkeypatch, tmp_path) -> 
     )
 
     assert result == 1
-    assert output_file.read_text(encoding="utf-8") == "failed_gate=Mypy source\n"
+    assert output_file.read_text(encoding="utf-8") == "failed_gate=Mypy source\ngate_count=1\n"
 
 
 def test_report_for_pr_1013_intermediate_failure_is_superseded() -> None:
@@ -116,7 +118,11 @@ def test_report_for_pr_1013_intermediate_failure_is_superseded() -> None:
 
 def test_preflight_writes_gate_results_and_durations_to_step_summary(monkeypatch, tmp_path) -> None:
     summary_file = tmp_path / "summary.md"
+    output_file = tmp_path / "output.txt"
+    evidence_file = tmp_path / "preflight-gates.json"
     monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary_file))
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output_file))
+    monkeypatch.setenv("QUALITY_PREFLIGHT_EVIDENCE_PATH", str(evidence_file))
 
     class Result:
         returncode = 0
@@ -130,6 +136,32 @@ def test_preflight_writes_gate_results_and_durations_to_step_summary(monkeypatch
     assert "Deterministic test gate" in summary
     assert "success" in summary
     assert "s |" in summary
+    assert "gate_count=1" in output_file.read_text(encoding="utf-8")
+    evidence = json.loads(evidence_file.read_text(encoding="utf-8"))
+    assert evidence["schema_version"] == "quality-preflight-gates-v1"
+    assert evidence["status"] == "success"
+    assert evidence["expected_gate_count"] == 1
+    assert evidence["gates"][0]["name"] == "Deterministic test gate"
+    assert evidence["gates"][0]["outcome"] == "success"
+
+
+def test_preflight_writes_failure_evidence_when_a_gate_fails(monkeypatch, tmp_path) -> None:
+    evidence_file = tmp_path / "preflight-gates.json"
+    monkeypatch.setenv("QUALITY_PREFLIGHT_EVIDENCE_PATH", str(evidence_file))
+
+    class Result:
+        returncode = 1
+
+    assert quality_preflight.run_commands(
+        [("Failing gate", ["python", "-c", "pass"]), ("Not run", ["python", "-c", "pass"])],
+        runner=lambda *_args, **_kwargs: Result(),
+    ) == 1
+    evidence = json.loads(evidence_file.read_text(encoding="utf-8"))
+    assert evidence["status"] == "failure"
+    assert evidence["expected_gate_count"] == 2
+    assert evidence["gates"][0]["name"] == "Failing gate"
+    assert evidence["gates"][0]["outcome"] == "failure"
+    assert evidence["gates"][0]["duration_seconds"] >= 0
 
 
 def test_workflow_reports_run_and_both_pull_request_commits() -> None:
@@ -159,6 +191,7 @@ def test_full_preflight_contains_the_ci_integration_gates():
         "Offline Supabase migration contract",
         "Disposable local Supabase migration integration",
         "Creator, FinancialJuice, and news intelligence contracts",
+        "Gmail locked minimal runtime and mocked sync contracts",
         "Python bytecode compilation",
         "Checked-in Mini App runtime audit",
         "Offline Telegram delivery configuration smoke test",

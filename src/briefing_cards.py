@@ -1345,16 +1345,12 @@ def _scoped_morning_analysis(
             for fact in cash_facts
         ]
         available_cash_changes = [value for value in cash_changes if value is not None]
-        if len(available_cash_changes) == 3 and len(cash_dates) == 3 and len(set(cash_dates)) == 1 and all(value > 0 for value in available_cash_changes):
-            cash_takeaway = "三大指數最近收盤同向收漲，僅作市場背景，不代表盤前走勢。"
-        elif len(available_cash_changes) == 3 and len(cash_dates) == 3 and len(set(cash_dates)) == 1 and all(value < 0 for value in available_cash_changes):
-            cash_takeaway = "三大指數最近收盤同向收跌，僅作市場背景，不代表盤前走勢。"
-        elif available_cash_changes:
-            cash_takeaway = "指數表現分別呈現，避免用單一指數代表整體美股。"
-        else:
-            cash_takeaway = "行情不足，暫不合併判讀三大指數。"
+        cash_takeaway = (
+            "三大指數表現分別呈現，避免用單一指數代表整體美股。"
+            if available_cash_changes else "目前未取得可核實的美股現貨指數。"
+        )
         cash_section = {
-            "title": "美股三大指數｜最近收盤",
+            "title": "美股三大指數",
             "layout": "us_cash_v2",
             "header_note": cash_header_note,
             "facts": [fact["text"] for fact in cash_facts],
@@ -1500,11 +1496,7 @@ def _scoped_morning_analysis(
         sox_status_note = group_quote_status(
             [sox_fact], "半導體參考｜最近收盤", "費半最近收盤資料未取得",
         )
-        futures_takeaway = (
-            "盤前期貨與費半最近收盤分開閱讀；觀測時段不同，不合併推論。"
-            if not reference_futures else
-            "僅有最近收盤的期貨數值列為參考；盤前即時方向尚未核實。"
-        )
+        futures_takeaway = "期貨與半導體行情分項呈現，不跨商品合併判讀。"
         futures_section = {
             "title": "美股盤前期貨與半導體參考",
             "layout": "us_futures_sox_v2",
@@ -1598,20 +1590,20 @@ def _scoped_morning_analysis(
             for item in pair_facts
         ]
         if not all(pair_eligible):
-            pair_takeaway = "行情、資料日期或近月契約未核實，暫不合併判讀。"
+            pair_takeaway = "現貨與期貨各自呈現，不合併比較。"
         elif not pair_dates[0] or pair_dates[0] != pair_dates[1]:
-            pair_takeaway = "現貨與期貨資料日不同，不合併判讀；各自數值與日期分列。"
+            pair_takeaway = "現貨與期貨各自呈現，不合併比較。"
         elif pair_changes[0] is None or pair_changes[1] is None:
-            pair_takeaway = "同日行情有漲跌幅缺項，暫不比較方向。"
+            pair_takeaway = "漲跌幅分項呈現，不合併比較。"
         elif pair_facts[0].get("display_state") != pair_facts[1].get("display_state"):
-            pair_takeaway = "資料新鮮度口徑不同，暫不合併判讀。"
+            pair_takeaway = "現貨與期貨各自呈現，不合併比較。"
         elif pair_changes[0] * pair_changes[1] < 0:
-            pair_takeaway = "同日漲跌方向不同，分別解讀；不以兩者點位差當即時基差。"
+            pair_takeaway = "現貨與期貨方向不同，各自呈現；不比較點位差。"
         elif pair_changes[0] == 0 or pair_changes[1] == 0:
-            pair_takeaway = "同日資料至少一項持平，暫不視為同步方向；兩者不比較點位差。"
+            pair_takeaway = "至少一項行情持平，各自呈現；不比較點位差。"
         else:
             direction = "同漲" if pair_changes[0] > 0 else "同跌"
-            pair_takeaway = f"同日收盤方向{direction}；兩者仍是不同商品，不比較點位差。"
+            pair_takeaway = f"現貨與期貨方向{direction}；仍為不同商品，不比較點位差。"
         pair_date_labels: list[str] = []
         for index, item in enumerate(pair_facts):
             label = "現貨" if index == 0 else "期貨"
@@ -1686,7 +1678,7 @@ def _scoped_morning_analysis(
             if isinstance(row, dict) and row.get("observed_date")
         }
         if len(stat_dates) > 1:
-            stats_takeaway = "統計資料日不同，請分項閱讀，不合併推論。"
+            stats_takeaway = "各項統計分項呈現，不合併比較。"
         elif isinstance(breadth_evidence, dict):
             advancing = _finite_number(breadth_evidence.get("advancing"))
             declining = _finite_number(breadth_evidence.get("declining"))
@@ -2053,9 +2045,23 @@ def build_briefing_snapshot(snapshot: dict[str, Any], slot: str | None = None) -
         snapshot.get("release_id"),
         snapshot.get("snapshot_id") or snapshot.get("market_snapshot_id"),
     )
+    report_summary = session_news_summary.get("report_summary")
+    if not isinstance(report_summary, dict):
+        report_summary = {
+            "schema_version": "report-summary-v1",
+            "status": "unavailable",
+            "text": "目前沒有可核實的新聞或行情，總結暫未生成。",
+            "sentences": [],
+            "fact_refs": [],
+            "slot": slot,
+            "market_scope_key": market_scope or "global",
+            "release_id": str(snapshot.get("release_id") or ""),
+            "snapshot_id": str(snapshot.get("snapshot_id") or snapshot.get("market_snapshot_id") or ""),
+        }
     return {
         "slot": slot,
         "session_news_summary": session_news_summary,
+        "report_summary": report_summary,
         "title": SLOT_TITLES.get(slot or "", "即時市場儀表板"),
         "overview": digest_overview or (
             f"{lead.get('brief_title') or lead.get('title') or '市場資料狀態'}｜"

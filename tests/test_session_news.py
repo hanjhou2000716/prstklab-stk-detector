@@ -39,7 +39,15 @@ def test_session_summary_selects_qualified_candidate_outside_top_five_and_binds_
     assert result["target_session_date"] == "2024-01-04"
     assert len(result["summary_sentences"]) == 2
     assert len(result["summary"]) <= 140
-    assert "不推論新聞因果" in result["summary_sentences"][1]
+    report_summary = result["report_summary"]
+    assert report_summary["schema_version"] == "report-summary-v1"
+    assert report_summary["status"] == "ready"
+    assert len(report_summary["text"]) <= 140
+    selected_story = next(story for story in stories if story["canonical_url"] == result["story_id"])
+    assert selected_story["summary"] in report_summary["text"]
+    assert "標普500最近收盤上漲0.50%。" in report_summary["text"]
+    assert "價格參考" not in report_summary["text"]
+    assert "不推論新聞因果" not in report_summary["text"]
 
 
 def test_session_summary_rejects_future_undated_cross_market_and_ineligible_news():
@@ -56,6 +64,34 @@ def test_session_summary_rejects_future_undated_cross_market_and_ineligible_news
     assert result["status"] == "unavailable"
     assert result["source_url"] == ""
     assert "資料不足" in result["summary"]
+    assert result["report_summary"]["status"] == "unavailable"
+    assert result["report_summary"]["text"] == "目前沒有可核實的新聞或行情，總結暫未生成。"
+
+
+def test_report_summary_excludes_quotes_rejected_by_shared_market_qualification():
+    as_of = datetime(2024, 1, 5, 2, 0, tzinfo=UTC)
+    rejected_quotes = [
+        {
+            "ticker": "S&P 500", "price": 4800, "change_percent": 0.5,
+            "freshness": "recent_close", "quote_date": "2024-02-30",
+            "quote_time": "2024-01-04T21:00:00+00:00",
+        },
+        {
+            "ticker": "S&P 500", "price": 4800, "change_percent": 0.5,
+            "freshness": "recent_close", "quote_date": "2024-01-04", "stale_used": True,
+        },
+        {
+            "ticker": "S&P 500", "price": 4800, "change_percent": 0.5,
+            "freshness": "recent_close", "quote_date": "2024-01-04", "quote_delayed": True,
+        },
+    ]
+    for quote in rejected_quotes:
+        result = build_session_news_summary(
+            {"news": {"intelligence": {"us": {"editorial_candidates": []}}}},
+            "morning", as_of, [quote], market_scope_key="us",
+        )
+        assert result["report_summary"]["status"] == "unavailable"
+        assert result["report_summary"]["text"] == "目前沒有可核實的新聞或行情，總結暫未生成。"
 
 
 def test_historical_session_story_is_explicit_and_quote_fallback_does_not_claim_news():
@@ -75,6 +111,8 @@ def test_historical_session_story_is_explicit_and_quote_fallback_does_not_claim_
     assert result["status"] == "recent_session_reference"
     assert "最近交易日參考" in result["reference_label"]
     assert "非本日" in result["reference_label"]
+    assert "最近交易日參考" in result["report_summary"]["text"]
+    assert "2024-01-03" not in result["report_summary"]["text"]
 
     fallback = build_session_news_summary(
         {"news": {"intelligence": {"us": {"editorial_candidates": []}}}},
@@ -85,6 +123,8 @@ def test_historical_session_story_is_explicit_and_quote_fallback_does_not_claim_
     assert fallback["status"] == "market_data_fallback"
     assert "新聞未取得" in fallback["headline"]
     assert len(fallback["summary_sentences"]) == 2
+    assert fallback["report_summary"]["status"] == "ready"
+    assert fallback["report_summary"]["text"] == "標普500最近收盤持平（0.00%）。"
 
 
 def test_session_summary_keeps_two_complete_sentences_within_140_characters():
@@ -101,8 +141,9 @@ def test_session_summary_keeps_two_complete_sentences_within_140_characters():
     assert len(result["summary_sentences"]) == 2
     assert len(result["summary"]) <= 140
     assert result["summary_sentences"][0] == "美股收盤聚焦與投資人觀察。"
-    assert "2024-01-04" in result["summary_sentences"][1]
-    assert "+0.50%" in result["summary_sentences"][1]
+    assert "2024-01-04" not in result["summary_sentences"][1]
+    assert "上漲0.50%" in result["summary_sentences"][1]
+    assert len(result["report_summary"]["text"]) <= 140
 
 
 def test_unrelated_gold_story_cannot_become_taiwan_market_focus_from_metadata_alone():

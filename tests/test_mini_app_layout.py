@@ -170,7 +170,7 @@ def test_briefing_cards_use_orange_structured_labels_and_expandable_source_summa
     assert "briefing-analysis-label" in app
     assert "briefing-fact-row" in app
     assert "briefing-evidence" in app
-    assert "來源｜" in app
+    assert "來源與資料依據" in app
     assert "color: var(--orange)" in styles
 
 
@@ -381,10 +381,12 @@ def test_market_quote_cards_render_group_freshness_without_repeating_dates_in_ro
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     styles = (ROOT / "site" / "styles.css").read_text(encoding="utf-8")
 
-    assert "renderDateGroupedRows" in app
+    assert "renderUsRows" in app
     assert "quote-group-status" in app
-    assert 'String(item.date_footer || "")' in app
-    assert "fact?.display_date || fact?.quote?.observed_date" in app
+    assert 'const summary = "來源與資料依據"' in app
+    assert 'String(item.date_footer || "")' not in app
+    assert "fact?.display_date || fact?.quote?.observed_date" not in app
     assert "item.status_notes" not in app
-    assert ".taiwan-market-date-footer" in styles
+    assert ".taiwan-market-date-footer" not in styles
+    assert ".us-market-date-footer" not in styles
     assert ".quote-group-status" in styles
