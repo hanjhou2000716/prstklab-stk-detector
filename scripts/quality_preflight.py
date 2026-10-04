@@ -86,7 +86,11 @@ def static_commands() -> list[tuple[str, list[str]]]:
         ("Ruff source, tests, and quality tooling", ["uv", "run", "ruff", "check", "src", "tests", "scripts"]),
         (
             "Mypy source and quality tooling",
-            ["uv", "run", "mypy", "src", "scripts/quality_preflight.py", "scripts/inspect_quality_run.py"],
+            [
+                "uv", "run", "mypy", "src", "scripts/quality_preflight.py",
+                "scripts/inspect_quality_run.py", "scripts/write_quality_validation_evidence.py",
+                "scripts/verify_quality_validation.py", "scripts/gmail_sync_runtime_smoke.py",
+            ],
         ),
     ]
 
@@ -136,6 +140,7 @@ def integration_commands() -> list[tuple[str, list[str]]]:
         ("Offline Supabase migration contract", [sys.executable, str(ROOT / "scripts" / "validate_local_migration_contract.py")]),
         ("Disposable local Supabase migration integration", [sys.executable, str(ROOT / "scripts" / "local_supabase_migration_test.py")]),
         ("Creator, FinancialJuice, and news intelligence contracts", [sys.executable, str(ROOT / "scripts" / "verify_intelligence_contracts.py")]),
+        ("Gmail locked minimal runtime and mocked sync contracts", [sys.executable, str(ROOT / "scripts" / "gmail_sync_runtime_smoke.py")]),
         ("Python bytecode compilation", [sys.executable, "-m", "compileall", "-q", "src", "railway-monitor"]),
         ("Checked-in Mini App runtime audit", [sys.executable, "-m", "src.runtime_audit"]),
         ("Offline Telegram delivery configuration smoke test", [sys.executable, "-m", "src.delivery_smoke_test"]),
@@ -144,11 +149,12 @@ def integration_commands() -> list[tuple[str, list[str]]]:
     ]
 
 
-def _write_failed_gate(label: str) -> None:
+def _write_failed_gate(label: str, gate_count: int) -> None:
     output_path = os.environ.get("GITHUB_OUTPUT")
     if output_path:
         with Path(output_path).open("a", encoding="utf-8") as output:
             output.write(f"failed_gate={label}\n")
+            output.write(f"gate_count={gate_count}\n")
 
 
 def _append_gate_summary(label: str, outcome: str, duration_seconds: float) -> None:
@@ -198,7 +204,7 @@ def run_commands(
             print(f"FAILED: {label} (exit {returncode})", file=sys.stderr, flush=True)
             if not continue_on_failure:
                 break
-    _write_failed_gate(" | ".join(failed_labels) if failed_labels else "none")
+    _write_failed_gate(" | ".join(failed_labels) if failed_labels else "none", len(commands))
     return first_failure
 
 

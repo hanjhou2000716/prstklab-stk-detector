@@ -321,9 +321,27 @@ def test_scheduled_briefing_projection_preserves_primary_semantics_and_real_quot
             "status": "selected",
             "headline": "美股收盤焦點",
             "summary_sentences": ["來源摘要。", "行情觀察。"],
+            "report_summary": {
+                "schema_version": "report-summary-v1",
+                "status": "ready",
+                "text": "美股收盤聚焦企業財報。標普500最近收盤上漲0.50%。",
+                "sentences": ["美股收盤聚焦企業財報。", "標普500最近收盤上漲0.50%。"],
+                "fact_refs": [{"kind": "news", "story_id": "session-focus"}],
+                "release_id": "",
+                "snapshot_id": "",
+            },
             "release_id": "",
             "snapshot_id": "",
             "source_url": "https://news.example/session-focus",
+        },
+        "report_summary": {
+            "schema_version": "report-summary-v1",
+            "status": "ready",
+            "text": "美股收盤聚焦企業財報。標普500最近收盤上漲0.50%。",
+            "sentences": ["美股收盤聚焦企業財報。", "標普500最近收盤上漲0.50%。"],
+            "fact_refs": [{"kind": "news", "story_id": "session-focus"}],
+            "release_id": "",
+            "snapshot_id": "",
         },
         "primary_theme": {
             "canonical_event_key": "event-energy-1",
@@ -361,10 +379,16 @@ def test_scheduled_briefing_projection_preserves_primary_semantics_and_real_quot
     assert artifact["briefing"]["displayed_event_keys"] == ["event-energy-1", "event-market-2"]
     assert artifact["briefing"]["session_news_summary"]["release_id"] == manifest["release_id"]
     assert artifact["briefing"]["session_news_summary"]["snapshot_id"] == manifest["market_snapshot_id"]
+    assert artifact["briefing"]["report_summary"]["release_id"] == manifest["release_id"]
+    assert artifact["briefing"]["report_summary"]["snapshot_id"] == manifest["market_snapshot_id"]
+    assert artifact["briefing"]["session_news_summary"]["report_summary"]["release_id"] == manifest["release_id"]
+    assert artifact["report_summary"]["snapshot_id"] == manifest["market_snapshot_id"]
     alert_row = next(item for item in index["alerts"] if item["notification_id"] == "market-alert-news-projection")
     alert_artifact = json.loads((tmp_path / "site" / "data" / alert_row["path"]).read_text(encoding="utf-8"))
     assert alert_artifact["session_news_summary"]["release_id"] == manifest["release_id"]
     assert alert_artifact["session_news_summary"]["snapshot_id"] == manifest["market_snapshot_id"]
+    assert alert_artifact["report_summary"]["release_id"] == manifest["release_id"]
+    assert alert_artifact["report_summary"]["snapshot_id"] == manifest["market_snapshot_id"]
     assert verify_release_files(manifest, root=tmp_path / "site") == []
 
 

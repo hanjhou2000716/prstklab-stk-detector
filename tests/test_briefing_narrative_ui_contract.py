@@ -67,12 +67,16 @@ def test_routine_news_is_integrated_into_briefing_and_not_a_separate_alert_card(
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     html = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
     digest = (ROOT / "src" / "market_digest.py").read_text(encoding="utf-8")
-    assert "briefing-overview-news-label" in app
-    assert "briefing-overview-news-sentence" in app
+    assert "briefing-report-summary" in app
+    assert "report_summary" in app
+    assert "briefing-news-evidence" in app
+    assert "briefing-overview-news-label" not in app
+    assert "briefing-overview-news-sentence" not in app
     assert 'new Set(["morning", "pre_open", "post_close", "us_premarket"])' in app
     assert 'id="alert-session-news"' not in html
     assert "session_news_summary" in digest
     assert '"historical_reference"].includes(state)' in app
     assert 'statisticIcons = { turnover: "💰", breadth: "📊", institutions: "🏦" }' in app
     assert "safeHttpsUrl(session.source_url)" in app
-    assert 'class="us-market-date-footer"' in app
+    assert 'class="us-market-date-footer"' not in app
+    assert 'class="taiwan-market-date-footer"' not in app

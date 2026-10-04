@@ -201,6 +201,12 @@ def _alert_projection(
         "notification_status": event.get("notification_status"),
         "notification_reason": event.get("notification_reason"),
         "session_news_summary": session_news_summary,
+        "report_summary": (
+            session_news_summary.get("report_summary")
+            if isinstance(session_news_summary, dict)
+            and isinstance(session_news_summary.get("report_summary"), dict)
+            else None
+        ),
     }
 
 
@@ -276,8 +282,26 @@ def _briefing_projection(
             "release_id": release_id,
             "snapshot_id": str(market_snapshot_id),
         }
+        nested_summary = session_news_summary.get("report_summary")
+        if isinstance(nested_summary, dict):
+            session_news_summary["report_summary"] = {
+                **nested_summary,
+                "release_id": release_id,
+                "snapshot_id": str(market_snapshot_id),
+            }
     else:
         session_news_summary = None
+    report_summary = briefing.get("report_summary")
+    if isinstance(report_summary, dict):
+        report_summary = {
+            **report_summary,
+            "release_id": release_id,
+            "snapshot_id": str(market_snapshot_id),
+        }
+    elif isinstance(session_news_summary, dict) and isinstance(session_news_summary.get("report_summary"), dict):
+        report_summary = session_news_summary["report_summary"]
+    else:
+        report_summary = None
     return {
         "schema_version": "1.0",
         "kind": "market_briefing",
@@ -308,6 +332,7 @@ def _briefing_projection(
         "market_assessment": briefing.get("market_assessment") or {},
         "market_evidence": primary_quote_evidence,
         "source_evidence": source_evidence,
+        "report_summary": report_summary,
         "briefing": {
             "slot": briefing.get("slot"),
             "slot_context": briefing.get("slot_context") or {},
@@ -320,6 +345,7 @@ def _briefing_projection(
             "morning_analysis": briefing.get("morning_analysis") or {},
             "market_card_projection": market_card_projection,
             "session_news_summary": session_news_summary,
+            "report_summary": report_summary,
             "evidence": briefing.get("evidence") or [],
             "source_evidence": source_evidence,
             "quote_evidence": primary_quote_evidence,
@@ -363,6 +389,12 @@ def _publish_alert_artifacts(
         "release_id": release_id,
         "snapshot_id": str(market.get("snapshot_id") or ""),
     } if isinstance(raw_session_news, dict) else None)
+    if isinstance(session_news_summary, dict) and isinstance(session_news_summary.get("report_summary"), dict):
+        session_news_summary["report_summary"] = {
+            **session_news_summary["report_summary"],
+            "release_id": release_id,
+            "snapshot_id": str(market.get("snapshot_id") or ""),
+        }
     # The retained immutable files are the source of truth.  Reusing a stale
     # index row can keep a deleted/moved artifact addressable and was the
     # reason historical files existed without a matching current index row.

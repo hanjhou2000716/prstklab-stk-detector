@@ -565,9 +565,14 @@ def test_mini_app_taiwan_pair_uses_verified_projection_for_quote_direction() -> 
             assert "🍂" in (legacy_verified.text_content() or "")
             focus = page.locator("#briefing-overview")
             assert focus.is_visible()
-            assert "台股收盤焦點：指數震盪" in (focus.text_content() or "")
-            assert focus.locator(".briefing-overview-news-sentence").count() == 2
-            assert focus.locator('a[href="https://news.example/taiwan-close"]').count() == 1
+            assert focus.locator(".briefing-report-summary").count() == 1
+            assert "市場收盤報導指出指數震盪整理" in (focus.text_content() or "")
+            assert "有效因子不足" not in (focus.text_content() or "")
+            assert focus.locator(".briefing-overview-news-sentence").count() == 0
+            assert page.locator("#briefing-observations .briefing-news-evidence").count() == 1
+            assert page.locator('#briefing-observations a[href="https://news.example/taiwan-close"]').count() == 1
+            assert page.locator("#briefing-observations .briefing-news-evidence").locator("summary").text_content() == "新聞依據"
+            assert page.locator("#briefing-observations .taiwan-market-date-footer").count() == 0
             assert page.locator("#alert-card .alert-brief-list").is_hidden()
 
             sentiment = {"label": "美股情緒", "score": 30.8, "sentiment": "偏恐慌", "observed_date": "2026-09-30"}
@@ -602,9 +607,9 @@ def test_mini_app_taiwan_pair_uses_verified_projection_for_quote_direction() -> 
             manifest["artifact_hashes"]["market.json"] = hashlib.sha256(market_text.encode()).hexdigest()
             manifest_text = json.dumps(manifest, ensure_ascii=False, separators=(",", ":"))
             page.reload(wait_until="domcontentloaded")
-            page.wait_for_selector("#briefing-overview .briefing-overview-news-label", state="visible")
+            page.wait_for_selector("#briefing-overview .briefing-report-summary", state="visible")
             assert "優先顯示的重大警報" in (page.locator("#alert-headline").text_content() or "")
-            assert "台股收盤焦點：指數震盪" in (page.locator("#briefing-overview").text_content() or "")
+            assert "市場收盤報導指出指數震盪整理" in (page.locator("#briefing-overview").text_content() or "")
             assert page.locator("#alert-card .alert-brief-list").is_visible()
             browser.close()
     except Exception as exc:

@@ -143,48 +143,100 @@ def _candidate_rank(story: dict[str, Any], local_day: date, target_day: date, sl
     return (int(local_day == target_day), slot_match, index_match, source_rank, chinese, published.timestamp(), _story_key(story))
 
 
-def _quote_observation(quote_items: list[dict[str, Any]], market: str) -> str | None:
+def _quote_observation(quote_items: list[dict[str, Any]], market: str) -> dict[str, Any] | None:
+    from src.briefing_cards import _quote_display_qualification
+
     preferred = ("TAIEX", "TWII") if market == "taiwan" else ("S&P 500", "NASDAQ", "DJIA", "SOX")
+    names = {
+        "TAIEX": "加權指數", "TWII": "加權指數", "S&P 500": "標普500",
+        "NASDAQ": "那斯達克綜合指數", "DJIA": "道瓊指數", "SOX": "費半指數",
+    }
     by_ticker = {str(item.get("ticker") or "").strip().upper(): item for item in quote_items if isinstance(item, dict)}
     for ticker in preferred:
         quote = by_ticker.get(ticker.upper())
-        if not quote or quote.get("stale_used") is True:
+        if not quote:
             continue
-        freshness = str(quote.get("freshness") or quote.get("data_status") or "").casefold()
-        if freshness in {"stale", "delayed", "unavailable", "unknown", "failed"}:
+        qualification = _quote_display_qualification(quote, ticker)
+        if (
+            qualification.get("routine_eligible") is not True
+            or qualification.get("state") not in {"live", "recent_close"}
+        ):
             continue
-        if not any(quote.get(key) for key in ("quote_time", "quote_date", "date", "observed_at")):
+        price = qualification.get("price")
+        number = qualification.get("change_percent")
+        if price is None or number is None:
             continue
-        raw_price = quote.get("price")
-        if raw_price is None:
-            continue
-        try:
-            price = float(raw_price)
-        except (TypeError, ValueError):
-            continue
-        if not (price > 0 and price == price and abs(price) != float("inf")):
-            continue
-        value = quote.get("change_percent")
-        if value is None:
-            continue
-        try:
-            number = float(value)
-        except (TypeError, ValueError):
-            continue
-        if not (number == number and abs(number) != float("inf")):
-            continue
-        name = _INDEX_NAMES.get(ticker, "市場指數")
+        freshness = str(qualification.get("freshness") or "")
+        name = names.get(ticker, _INDEX_NAMES.get(ticker, "市場指數"))
         direction = "上漲" if number > 0 else "下跌" if number < 0 else "持平"
-        percent = f"{number:+.2f}%" if number else "0.00%"
-        observed_date = str(quote.get("quote_date") or quote.get("date") or "")[:10]
-        try:
-            date.fromisoformat(observed_date)
-        except ValueError:
-            observed_date = ""
-        date_note = f"（資料日 {observed_date}）" if observed_date else ""
-        sentence = f"價格參考：{name}最近收盤{direction}{percent}{date_note}，不推論新聞因果。"
-        return sentence if len(sentence) <= 100 else None
+        percent = f"{abs(number):.2f}%"
+        observed_date = str(qualification.get("date") or "")
+        label = "盤前報價" if freshness == "live" else "最近收盤"
+        change_text = f"{direction}{percent}" if number else "持平（0.00%）"
+        return {
+            "text": f"{name}{label}{change_text}。",
+            "ticker": ticker,
+            "name": name,
+            "price": price,
+            "change_percent": number,
+            "freshness": freshness,
+            "observed_date": observed_date,
+            "source": str(quote.get("quote_source") or quote.get("source_label") or quote.get("source") or ""),
+        }
     return None
+
+
+def _public_news_sentence(story: dict[str, Any]) -> str | None:
+    summary = _complete_summary_sentence(str(story.get("summary") or ""), max_length=96)
+    if summary:
+        return summary
+    headline = " ".join(str(story.get("title") or "").split())
+    if not headline or len(headline) > 96:
+        return None
+    if headline[-1] not in "。！？.!?":
+        headline += "。"
+    return headline if not re.search(r"有效因子不足|暫不把新聞|價格參考|資料不足，暫", headline) else None
+
+
+def _report_summary(
+    *, slot: str, market: str, target_day: date | None,
+    story: dict[str, Any] | None, story_day: date | None,
+    quote: dict[str, Any] | None,
+) -> dict[str, Any]:
+    sentences: list[str] = []
+    fact_refs: list[dict[str, Any]] = []
+    if story:
+        news_sentence = _public_news_sentence(story)
+        if news_sentence:
+            if story_day and target_day and story_day != target_day:
+                news_sentence = f"最近交易日參考：{news_sentence}"
+            sentences.append(news_sentence)
+            fact_refs.append({"kind": "news", "story_id": _story_key(story), "date": story_day.isoformat() if story_day else None})
+    if quote and quote.get("text"):
+        quote_sentence = str(quote["text"])
+        combined = " ".join([*sentences, quote_sentence])
+        if len(combined) <= 140:
+            sentences.append(quote_sentence)
+            fact_refs.append({
+                "kind": "quote", "ticker": quote.get("ticker"),
+                "date": quote.get("observed_date"),
+            })
+    text = " ".join(sentences)
+    if len(text) > 140:
+        # Never truncate a number, date, or headline. Prefer one intact, sourced fact.
+        sentences = sentences[-1:] if quote and quote.get("text") else sentences[:1]
+        text = " ".join(sentences)
+        fact_refs = fact_refs[-1:] if quote and quote.get("text") else fact_refs[:1]
+    return {
+        "schema_version": "report-summary-v1",
+        "status": "ready" if text else "unavailable",
+        "text": text or "目前沒有可核實的新聞或行情，總結暫未生成。",
+        "sentences": sentences,
+        "fact_refs": fact_refs,
+        "slot": slot,
+        "market_scope_key": market,
+        "target_session_date": target_day.isoformat() if target_day else None,
+    }
 
 
 def _complete_summary_sentence(summary: str, *, max_length: int = 82) -> str | None:
@@ -220,6 +272,9 @@ def build_session_news_summary(
             "summary": "時段無法核實，暫不選取新聞。資料不足，暫無可核實總結。", "source": "", "source_url": "",
             "published_at": None, "story_id": "", "target_session_date": None,
             "reference_label": "資料不足", "quote_evidence": [],
+            "report_summary": _report_summary(
+                slot=slot, market="", target_day=None, story=None, story_day=None, quote=None,
+            ),
         }
     target_day, previous_day = _session_dates(market, as_of, mode)
     candidates: list[tuple[tuple[Any, ...], dict[str, Any], date, datetime]] = []
@@ -235,7 +290,8 @@ def build_session_news_summary(
     selected = max(candidates, key=lambda item: item[0]) if candidates else None
     label = _MARKETS[market][2]
     current_market_day = as_of.astimezone(ZoneInfo(_MARKETS[market][1])).date()
-    quote_sentence = _quote_observation(quote_items, market)
+    quote_fact = _quote_observation(quote_items, market)
+    quote_sentence = str(quote_fact["text"]) if quote_fact else None
     if selected and target_day is not None:
         _rank, story, story_day, published = selected
         headline = str(story.get("title") or "").strip()
@@ -263,6 +319,10 @@ def build_session_news_summary(
             "summary": " ".join(sentences), "source": source, "source_url": source_url,
             "published_at": published.isoformat(), "story_id": _story_key(story),
             "quote_evidence": [dict(item) for item in quote_items[:4] if isinstance(item, dict)],
+            "report_summary": _report_summary(
+                slot=slot, market=market, target_day=target_day,
+                story=story, story_day=story_day, quote=quote_fact,
+            ),
         }
     sentences = [
         "本時段未取得符合資格的市場新聞。",
@@ -278,6 +338,10 @@ def build_session_news_summary(
         "summary_sentences": sentences, "summary": " ".join(sentences),
         "source": "", "source_url": "", "published_at": None, "story_id": "",
         "quote_evidence": [dict(item) for item in quote_items[:4] if isinstance(item, dict)],
+        "report_summary": _report_summary(
+            slot=slot, market=market, target_day=target_day,
+            story=None, story_day=None, quote=quote_fact,
+        ),
     }
 
 
@@ -285,10 +349,20 @@ def bind_session_news_identity(summary: dict[str, Any], release_id: Any, snapsho
     """Return a copy carrying the exact public release and snapshot identity."""
     market = str(summary.get("market_scope_key") or "")
     timezone_name = _MARKETS.get(market, ("", "UTC", ""))[1]
+    raw_report_summary = summary.get("report_summary")
+    report_summary = dict(raw_report_summary) if isinstance(raw_report_summary, dict) else _report_summary(
+        slot=str(summary.get("slot") or ""), market=market, target_day=None,
+        story=None, story_day=None, quote=None,
+    )
+    report_summary.update({
+        "release_id": str(release_id or ""),
+        "snapshot_id": str(snapshot_id or ""),
+    })
     return {
         **summary,
         "schema_version": "session-news-summary-v1",
         "timezone": timezone_name,
         "release_id": str(release_id or ""),
         "snapshot_id": str(snapshot_id or ""),
+        "report_summary": report_summary,
     }

@@ -80,7 +80,7 @@ def test_failed_gate_is_written_to_github_step_output(monkeypatch, tmp_path) -> 
     )
 
     assert result == 1
-    assert output_file.read_text(encoding="utf-8") == "failed_gate=Mypy source\n"
+    assert output_file.read_text(encoding="utf-8") == "failed_gate=Mypy source\ngate_count=1\n"
 
 
 def test_report_for_pr_1013_intermediate_failure_is_superseded() -> None:
@@ -116,7 +116,9 @@ def test_report_for_pr_1013_intermediate_failure_is_superseded() -> None:
 
 def test_preflight_writes_gate_results_and_durations_to_step_summary(monkeypatch, tmp_path) -> None:
     summary_file = tmp_path / "summary.md"
+    output_file = tmp_path / "output.txt"
     monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary_file))
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output_file))
 
     class Result:
         returncode = 0
@@ -130,6 +132,7 @@ def test_preflight_writes_gate_results_and_durations_to_step_summary(monkeypatch
     assert "Deterministic test gate" in summary
     assert "success" in summary
     assert "s |" in summary
+    assert "gate_count=1" in output_file.read_text(encoding="utf-8")
 
 
 def test_workflow_reports_run_and_both_pull_request_commits() -> None:
@@ -159,6 +162,7 @@ def test_full_preflight_contains_the_ci_integration_gates():
         "Offline Supabase migration contract",
         "Disposable local Supabase migration integration",
         "Creator, FinancialJuice, and news intelligence contracts",
+        "Gmail locked minimal runtime and mocked sync contracts",
         "Python bytecode compilation",
         "Checked-in Mini App runtime audit",
         "Offline Telegram delivery configuration smoke test",

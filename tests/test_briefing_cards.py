@@ -193,7 +193,7 @@ def test_public_observations_add_structure_without_repeating_quote_lines():
     sections = briefing["morning_analysis"]["sections"]
     assert [item["title"] for item in sections] == ["台股現貨與台指期", "台股輔助統計（官方）"]
     assert sections[0]["layout"] == "taiwan_pair_v2"
-    assert "同日收盤方向" in sections[0]["takeaway"]
+    assert sections[0]["takeaway"] == "現貨與期貨方向同跌；仍為不同商品，不比較點位差。"
     assert sections[0]["facts"] == [
         "加權現貨 45,862.52 點｜漲跌點數未提供（-0.70%）",
         "台指期近月日盤 45,890.00 點｜-310.00 點（-0.67%）",
@@ -471,7 +471,7 @@ def test_taiwan_pair_suppresses_unverified_direction_and_status_date():
     assert txf["display_change_percent"] is None
     assert "未核實" in pair["status_notes"][1]
     assert "最近已核實日盤" not in pair["status_notes"][1]
-    assert "暫不合併判讀" in pair["takeaway"]
+    assert pair["takeaway"] == "現貨與期貨各自呈現，不合併比較。"
     assert txf["quote"]["change_percent"] == -0.39
 
 
@@ -495,7 +495,7 @@ def test_taiwan_pair_keeps_partial_verified_quote_but_does_not_infer_direction()
     assert taiex["display_change_percent"] is None
     assert "48,024.60 點" in taiex["text"]
     assert "漲跌幅未提供" in taiex["text"]
-    assert "不比較方向" in pair["takeaway"]
+    assert pair["takeaway"] == "漲跌幅分項呈現，不合併比較。"
 
 
 def test_taiwan_pair_rejects_impossible_calendar_date():
@@ -518,7 +518,7 @@ def test_taiwan_pair_rejects_impossible_calendar_date():
     assert taiex["display_change_percent"] is None
     assert "行情未核實" in pair["status_notes"][0]
     assert "2026-02-30" not in pair["status_notes"][0]
-    assert "暫不合併判讀" in pair["takeaway"]
+    assert pair["takeaway"] == "現貨與期貨各自呈現，不合併比較。"
 
 def test_us_cash_header_and_observation_ignore_an_invalid_quote_date():
     briefing = build_briefing_snapshot({
@@ -538,7 +538,7 @@ def test_us_cash_header_and_observation_ignore_an_invalid_quote_date():
     assert invalid["display_state"] == "unavailable"
     assert invalid["display_change_percent"] is None
     assert "2026-02-30" not in cash["header_note"]
-    assert cash["takeaway"] == "指數表現分別呈現，避免用單一指數代表整體美股。"
+    assert cash["takeaway"] == "三大指數表現分別呈現，避免用單一指數代表整體美股。"
 
 
 
@@ -593,7 +593,7 @@ def test_sep_30_briefing_projects_historical_txf_and_only_taiwan_sentiment():
     assert "2026-09-29" in txf["status_note"]
     assert "非即時" in txf["status_note"]
     assert "47,767.00 點" in txf["text"]
-    assert "資料日不同" in pair["takeaway"]
+    assert pair["takeaway"] == "現貨與期貨各自呈現，不合併比較。"
     assert "同跌" not in pair["takeaway"]
     assert [item["text"] for item in projection["sentiments"]] == ["台股情緒31.8／恐慌"]
     assert briefing["market_sentiments"] == projection["sentiments"]

@@ -19,6 +19,18 @@ def test_quality_workflow_runs_tests_and_non_network_smoke_validation():
     assert "--send" not in workflow
 
 
+def test_quality_workflow_requires_same_sha_isolated_validation_before_a_pr():
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    assert "candidate_sha:" in workflow
+    assert "base_sha:" in workflow
+    assert "actions: read" in workflow
+    assert "Verify exact-SHA isolated validation before PR checks" in workflow
+    assert "scripts/verify_quality_validation.py" in workflow
+    assert "scripts/write_quality_validation_evidence.py" in workflow
+    assert "quality-candidate-validation" in workflow
+    assert "retention-days: 14" in workflow
+
+
 def test_notify_workflow_uses_the_fixed_editor_for_controlled_smoke_test():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "notify.yml").read_text(encoding="utf-8")
     assert "test_chat_id:" not in workflow
