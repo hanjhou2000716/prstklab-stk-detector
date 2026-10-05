@@ -278,6 +278,16 @@ def test_last_known_good_requires_complete_official_contract_and_session_evidenc
     ):
         backup = validated_txf_backup(Store(good), now=NOW)
         assert backup is not None and backup["backup_used"] is True
+        conflict_diagnostics = []
+        assert validated_txf_backup(
+            Store(good), now=NOW, diagnostics=conflict_diagnostics,
+            excluded_observed_dates={"2026-09-24"},
+        ) is None
+        assert conflict_diagnostics == [{
+            "source": "taifex_saved_backup",
+            "outcome": "backup_quarantined_official_conflict",
+            "observed_date": "2026-09-24",
+        }]
         assert validated_txf_backup(Store({**good, "quote_basis": "legacy generic quote"}), now=NOW) is None
         assert validated_txf_backup(Store({**good, "source_url": "https://openapi.taifex.com.tw.evil/v1/DailyMarketReportFut"}), now=NOW) is None
 

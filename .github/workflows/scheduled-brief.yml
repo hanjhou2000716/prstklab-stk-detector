@@ -155,7 +155,7 @@ jobs:
         id: official_close_watch
         if: steps.window.outputs.should_run == 'true' && steps.window.outputs.slot == 'post_close'
         continue-on-error: true
-        timeout-minutes: 22
+        timeout-minutes: 14
         env:
           SCHEDULED_FOR_AT: ${{ steps.window.outputs.scheduled_for_at }}
           # This step performs public HTTP GETs only; never expose the job's
@@ -184,9 +184,9 @@ jobs:
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.window.outputs.should_run == 'true'
         id: prepare
         continue-on-error: true
-        # The runtime budget is 8 minutes; one extra minute lets the script
-        # persist its structured failure result after timeout handling.
-        timeout-minutes: 9
+        # Two bounded attempts share the window through the final source check,
+        # while preserving five minutes for deployment, public validation and delivery.
+        timeout-minutes: 14
         env:
           PUBLIC_OBSERVATIONS_SHARED_SECRET: ${{ secrets['DELIVERY_RECEIPT_SHARED_SECRET'] || secrets['RAILWAY_STATUS_SHARED_SECRET'] || secrets['DELIVERY_STATUS_SHARED_SECRET'] }}
           SLOT_CONTEXT: ${{ steps.window.outputs.context_json }}
@@ -207,13 +207,52 @@ jobs:
           print(int((scheduled + timedelta(minutes=30)).timestamp()))
           PY
           )"
-          max_prepare_deadline=$((prepare_started + 480))
+          if [ "${{ steps.window.outputs.slot }}" = "post_close" ]; then
+            max_prepare_deadline=$((prepare_started + 780))
+          else
+            max_prepare_deadline=$((prepare_started + 480))
+          fi
           reserve_deadline=$((slot_deadline - 300))
           if [ "$reserve_deadline" -lt "$max_prepare_deadline" ]; then
             prepare_deadline="$reserve_deadline"
           else
             prepare_deadline="$max_prepare_deadline"
           fi
+          first_attempt_deadline="$(python - "$SCHEDULED_FOR_AT" "$prepare_started" <<'PY'
+          import sys
+          from datetime import datetime, timedelta
+
+          scheduled = datetime.fromisoformat(sys.argv[1].replace("Z", "+00:00"))
+          source_check_at = int((scheduled + timedelta(minutes=20)).timestamp())
+          print(min(int(sys.argv[2]) + 480, source_check_at))
+          PY
+          )"
+          final_watch_file="$(mktemp)"
+          final_watch_pid=""
+          source_rebuild_needed=false
+          if [ "${{ steps.window.outputs.slot }}" = "post_close" ] \
+            && [ "${{ steps.official_close_watch.outputs.status }}" != "both_official_closes_available" ]; then
+            env \
+              SCHEDULED_FOR_AT="$SCHEDULED_FOR_AT" \
+              SUPABASE_URL='' SUPABASE_SERVICE_ROLE_KEY='' MARKET_BACKUP_ENABLED='false' \
+              TELEGRAM_BOT_TOKEN='' TELEGRAM_CHAT_IDS='' TELEGRAM_SUBSCRIBERS_PATH='' \
+              PUBLIC_OBSERVATIONS_SHARED_SECRET='' RECEIPT_CALLBACK_URL='' \
+              RAILWAY_STATUS_URL='' RAILWAY_STATUS_SHARED_SECRET='' DELIVERY_RECEIPT_SHARED_SECRET='' \
+              RAILWAY_OBSERVATIONS_URL='' PUBLIC_OBSERVATIONS_URL='' \
+              GITHUB_TOKEN='' GH_TOKEN='' \
+              GITHUB_STEP_SUMMARY='' GITHUB_OUTPUT='' \
+              python -m src.market_source_watch --scheduled-for "$SCHEDULED_FOR_AT" \
+                --final-source-check --result-file "$final_watch_file" >/dev/null 2>&1 &
+            final_watch_pid=$!
+          fi
+          cleanup_source_watch() {
+            if [ -n "$final_watch_pid" ]; then
+              kill "$final_watch_pid" 2>/dev/null || true
+              wait "$final_watch_pid" 2>/dev/null || true
+            fi
+            rm -f "$final_watch_file"
+          }
+          trap 'cleanup_source_watch; rm -f "$attempt_output"' EXIT
           prepare_failure() {
             local reason="$1" stage="$2" attempt="$3"
             cat "$attempt_output" >> "$GITHUB_OUTPUT"
@@ -224,6 +263,7 @@ jobs:
               echo "preparation_stage=${stage}"
               echo "preparation_attempts=${attempt}"
               echo "preparation_elapsed_seconds=$(($(date +%s) - prepare_started))"
+              echo "source_rebuild_attempts=$([[ "${source_rebuild_needed:-false}" = "true" ]] && echo 1 || echo 0)"
               echo "data_release_base_sha=${base_sha:-unknown}"
               echo "data_release_current_sha=${current_sha:-unknown}"
               echo "base_current=false"
@@ -234,9 +274,18 @@ jobs:
           remaining_budget() {
             echo "$((prepare_deadline - $(date +%s)))"
           }
+          attempt_budget() {
+            local remaining
+            remaining="$(remaining_budget)"
+            if [ "$1" -eq 1 ]; then
+              local first_remaining=$((first_attempt_deadline - $(date +%s)))
+              if [ "$first_remaining" -lt "$remaining" ]; then remaining="$first_remaining"; fi
+            fi
+            echo "$remaining"
+          }
           for attempt in 1 2; do
             : > "$attempt_output"
-            remaining="$(remaining_budget)"
+            remaining="$(attempt_budget "$attempt")"
             if [ "$remaining" -le 0 ]; then
               prepare_failure "prepare_budget_exhausted_reserve_required" "budget_check" "$((attempt - 1))"
             fi
@@ -244,7 +293,7 @@ jobs:
               python -m src.data_release --restore --branch "$DATA_RELEASE_BRANCH" --include site/data; then
               prepare_failure "data_release_restore_failed" "restore" "$((attempt - 1))"
             fi
-            remaining="$(remaining_budget)"
+            remaining="$(attempt_budget "$attempt")"
             if [ "$remaining" -le 0 ]; then
               prepare_failure "prepare_budget_exhausted_reserve_required" "restore" "$((attempt - 1))"
             fi
@@ -255,7 +304,7 @@ jobs:
             if ! base_sha="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"; then
               prepare_failure "data_release_base_lookup_failed" "base_lookup" "$((attempt - 1))"
             fi
-            remaining="$(remaining_budget)"
+            remaining="$(attempt_budget "$attempt")"
             if [ "$remaining" -le 0 ]; then
               prepare_failure "prepare_budget_exhausted_reserve_required" "before_prepare" "$((attempt - 1))"
             fi
@@ -277,7 +326,35 @@ jobs:
               fi
               prepare_failure "$reported_reason" "prepare" "$attempt"
             fi
-            remaining="$(remaining_budget)"
+            if [ "$attempt" -eq 1 ] && [ -n "$final_watch_pid" ]; then
+              if ! wait "$final_watch_pid"; then
+                echo "Final official source watch ended without a complete result."
+              fi
+              final_watch_pid=""
+              if [ -s "$final_watch_file" ] && python -c 'import json,sys; from src.market_source_watch import watch_quotes_supersede_snapshot; result=json.loads(open(sys.argv[1], encoding="utf-8").read()); raise SystemExit(0 if watch_quotes_supersede_snapshot(result, sys.argv[2]) else 1)' "$final_watch_file" "$SNAPSHOT_PATH"; then
+                source_rebuild_needed=true
+                {
+                  echo "### 14:40 台股官方來源末次核對"
+                  echo "偵測到較新或同日修正的合格官方行情；同一時段最多重建一次。"
+                  echo '```json'
+                  cat "$final_watch_file"
+                  echo '```'
+                } >> "$GITHUB_STEP_SUMMARY"
+              else
+                {
+                  echo "### 14:40 台股官方來源末次核對"
+                  echo '末次查詢未發現比已準備快照更新的合格官方數值。'
+                  if [ -s "$final_watch_file" ]; then
+                    echo '```json'
+                    cat "$final_watch_file"
+                    echo '```'
+                  else
+                    echo '末次查詢未產生可讀結果；保留已準備版本。'
+                  fi
+                } >> "$GITHUB_STEP_SUMMARY"
+              fi
+            fi
+            remaining="$(attempt_budget "$attempt")"
             if [ "$remaining" -le 0 ]; then
               prepare_failure "prepare_budget_exhausted_reserve_required" "base_revalidation" "$attempt"
             fi
@@ -289,6 +366,10 @@ jobs:
               prepare_failure "data_release_base_lookup_failed" "base_revalidation" "$attempt"
             fi
             if [ "$current_sha" = "$base_sha" ]; then
+              if [ "$attempt" -eq 1 ] && [ "$source_rebuild_needed" = "true" ]; then
+                echo "Official source data changed; rebuilding the same scheduled slot once before delivery."
+                continue
+              fi
               cat "$attempt_output" >> "$GITHUB_OUTPUT"
               {
                 echo "data_release_sha=$base_sha"
@@ -296,6 +377,7 @@ jobs:
                 echo "data_release_current_sha=$current_sha"
                 echo "base_current=true"
                 echo "rebuild_attempts=$((attempt - 1))"
+                echo "source_rebuild_attempts=$([[ "$source_rebuild_needed" = "true" ]] && echo 1 || echo 0)"
                 echo "preparation_stage=complete"
                 echo "preparation_attempts=$attempt"
                 echo "preparation_elapsed_seconds=$(($(date +%s) - prepare_started))"

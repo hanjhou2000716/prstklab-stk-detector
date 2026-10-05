@@ -514,6 +514,7 @@ def fetch_latest_verified_txf(
 def validated_txf_backup(
     store: Any, *, now: datetime | None = None,
     diagnostics: list[dict[str, str]] | None = None,
+    excluded_observed_dates: set[str] | None = None,
 ) -> dict[str, Any] | None:
     """Use only our own official-daily TXF rows with complete contract/session evidence."""
     if store is None:
@@ -533,6 +534,12 @@ def validated_txf_backup(
         )
         month = _contract_month(contract_match.group(1) if contract_match else "")
         observed = _date(row.get("market_date"))
+        if observed and observed.isoformat() in (excluded_observed_dates or set()):
+            _record_source_attempt(
+                diagnostics, "taifex_saved_backup", "backup_quarantined_official_conflict",
+                observed_date=observed.isoformat(),
+            )
+            return None
         observed_at_raw = str(row.get("observed_at") or "")
         observed_at: datetime | None
         try:

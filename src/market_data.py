@@ -572,7 +572,8 @@ def _apply_supabase_backup(
 
 
 def _append_supabase_backup_missing(
-    items: list[dict[str, Any]], definitions: tuple[dict[str, str], ...], store: Any, *, now: datetime | None = None,
+    items: list[dict[str, Any]], definitions: tuple[dict[str, str], ...], store: Any, *,
+    now: datetime | None = None, excluded_txf_dates: set[str] | None = None,
 ) -> list[dict[str, Any]]:
     """Restore a missing provider row from the bounded private backup."""
     if store is None:
@@ -583,6 +584,19 @@ def _append_supabase_backup_missing(
     for definition in definitions:
         ticker = str(definition.get("ticker") or "")
         if not ticker or ticker in existing:
+            continue
+        if ticker == "TXF":
+            try:
+                from src.taifex_daily import validated_txf_backup
+
+                txf_backup = validated_txf_backup(
+                    store, now=reference, excluded_observed_dates=excluded_txf_dates,
+                )
+            except Exception:
+                txf_backup = None
+            if isinstance(txf_backup, dict):
+                result.append(txf_backup)
+                existing.add(ticker)
             continue
         try:
             expected = _latest_completed_session_date(definition, reference)
@@ -1124,6 +1138,7 @@ def build_market_snapshot() -> dict[str, Any]:
     backup_store = market_backup_from_environment()
     markets = {key: get_market_status(key) for key in MARKETS}
     errors: list[dict[str, Any]] = []
+    taifex_conflicted_dates: set[str] = set()
     taiwan_status = markets.get("taiwan")
     if isinstance(taiwan_status, dict):
         # XTAI supplies only the TWSE cash calendar.  TAIFEX is resolved from
@@ -1202,8 +1217,15 @@ def build_market_snapshot() -> dict[str, Any]:
             txf_attempts: list[dict[str, str]] = []
             txf = fetch_latest_verified_txf(now=taipei_now, diagnostics=txf_attempts)
             if txf is None:
+                taifex_conflicted_dates = {
+                    attempt.get("observed_date", "")
+                    for attempt in txf_attempts
+                    if attempt.get("outcome") == "same_day_official_conflict"
+                    and attempt.get("observed_date")
+                }
                 txf = validated_txf_backup(
                     backup_store, now=taipei_now, diagnostics=txf_attempts,
+                    excluded_observed_dates=taifex_conflicted_dates,
                 )
             indices = [item for item in indices if str(item.get("ticker") or "") != "TXF"]
             if txf is not None:
@@ -1271,7 +1293,10 @@ def build_market_snapshot() -> dict[str, Any]:
     quotes = annotate_quote_freshness(quotes)
     indices = annotate_quote_freshness(indices)
     quotes = _append_supabase_backup_missing(quotes, WATCHLIST, backup_store, now=scan_started_at)
-    indices = _append_supabase_backup_missing(indices, MARKET_INDICES, backup_store, now=scan_started_at)
+    indices = _append_supabase_backup_missing(
+        indices, MARKET_INDICES, backup_store, now=scan_started_at,
+        excluded_txf_dates=taifex_conflicted_dates,
+    )
     quotes = _apply_supabase_backup(quotes, backup_store, now=scan_started_at)
     indices = _apply_supabase_backup(indices, backup_store, now=scan_started_at)
     quotes = annotate_quote_freshness(quotes, now=scan_started_at)

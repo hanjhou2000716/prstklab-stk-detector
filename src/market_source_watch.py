@@ -9,13 +9,15 @@ import time
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from datetime import time as wall_time
+from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
 import requests
 
 TAIPEI = ZoneInfo("Asia/Taipei")
-WATCH_DURATION = timedelta(minutes=20)
+WATCH_DURATION = timedelta(minutes=12)
+FINAL_SOURCE_CHECK_OFFSET = timedelta(minutes=20)
 POLL_SECONDS = 120
 
 
@@ -77,17 +79,85 @@ def _probe(
     )
     cash_date = str(cash_quote.get("quote_date") or "")[:10] if cash_quote else ""
     futures_date = str(futures_quote.get("quote_date") or "")[:10] if futures_quote else ""
+
+    def compact_quote(quote: dict[str, Any] | None) -> dict[str, Any] | None:
+        if not quote:
+            return None
+        fields = (
+            "ticker", "quote_date", "price", "change", "change_percent",
+            "contract_month", "session", "source_label", "source_url",
+        )
+        return {key: quote[key] for key in fields if key in quote}
+
     return {
         "checked_at": datetime.now(TAIPEI).isoformat(),
         "cash_target_date": cash_target,
         "cash_observed_date": cash_date or None,
         "cash_target_available": cash_date == cash_target,
+        "cash_quote": compact_quote(cash_quote),
         "cash_attempts": cash_attempts,
         "futures_target_date": futures_target,
         "futures_observed_date": futures_date or None,
         "futures_target_available": futures_date == futures_target,
+        "futures_quote": compact_quote(futures_quote),
         "futures_attempts": futures_attempts,
     }
+
+
+def watch_quotes_supersede_snapshot(watch_result: dict[str, Any], snapshot_path: str) -> bool:
+    """Return whether the final official probe contains a newer/different quote."""
+    try:
+        snapshot = json.loads(Path(snapshot_path).read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return False
+    rows = snapshot.get("indices") if isinstance(snapshot, dict) else None
+    if not isinstance(rows, list):
+        return False
+    probe = watch_result.get("last_probe")
+    if isinstance(probe, dict):
+        watch_result = probe
+    existing = {
+        str(row.get("ticker") or "").upper(): row
+        for row in rows if isinstance(row, dict)
+    }
+    for ticker, key in (("TAIEX", "cash_quote"), ("TXF", "futures_quote")):
+        candidate = watch_result.get(key)
+        previous = existing.get(ticker)
+        if not isinstance(candidate, dict) or not isinstance(previous, dict):
+            if isinstance(candidate, dict) and candidate.get("quote_date"):
+                return True
+            continue
+        candidate_date = str(candidate.get("quote_date") or "")[:10]
+        previous_date = str(previous.get("quote_date") or "")[:10]
+        if not candidate_date:
+            continue
+        if not previous_date or candidate_date > previous_date:
+            return True
+        if candidate_date < previous_date:
+            continue
+        quote_fields = ("price", "change", "change_percent")
+        for field in quote_fields:
+            candidate_value = _rounded_number(candidate.get(field))
+            previous_value = _rounded_number(previous.get(field))
+            if candidate_value is not None and candidate_value != previous_value:
+                return True
+        if ticker == "TXF" and any(
+            candidate.get(field)
+            and str(candidate.get(field)) != str(previous.get(field) or "")
+            for field in ("contract_month", "session")
+        ):
+            return True
+    return False
+
+
+def _rounded_number(value: Any) -> float | None:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if not (parsed == parsed and abs(parsed) != float("inf")):
+        return None
+    return round(parsed, 2)
 
 
 def watch_until(
@@ -95,6 +165,7 @@ def watch_until(
     now: Callable[[], datetime] = lambda: datetime.now(TAIPEI),
     sleep: Callable[[float], None] = time.sleep,
     interval_seconds: int = POLL_SECONDS,
+    stop_when_complete: bool = True,
 ) -> dict[str, Any]:
     """Probe immediately, then at a bounded cadence through the fixed cutoff."""
     started = now()
@@ -106,7 +177,11 @@ def watch_until(
             last = probe()
         except Exception as exc:  # A read-only probe must never bypass normal prepare.
             last = {"probe_error": type(exc).__name__}
-        if last.get("cash_target_available") is True and last.get("futures_target_available") is True:
+        if (
+            stop_when_complete
+            and last.get("cash_target_available") is True
+            and last.get("futures_target_available") is True
+        ):
             return {
                 "status": "both_official_closes_available",
                 "attempts": attempts,
@@ -127,7 +202,10 @@ def watch_until(
         sleep(min(float(interval_seconds), remaining))
 
 
-def run_watch(scheduled_for: str, *, probe: Callable[..., dict[str, Any]] = _probe) -> dict[str, Any]:
+def run_watch(
+    scheduled_for: str, *, probe: Callable[..., dict[str, Any]] = _probe,
+    final_source_check: bool = False,
+) -> dict[str, Any]:
     anchor = _parse_anchor(scheduled_for)
     cash_target = _latest_twse_session(anchor)
     futures_target = _latest_taifex_session(anchor)
@@ -138,7 +216,9 @@ def run_watch(scheduled_for: str, *, probe: Callable[..., dict[str, Any]] = _pro
             "futures_target_date": futures_target,
             "attempts": 0,
         }
-    deadline = anchor + WATCH_DURATION
+    deadline = anchor + (
+        FINAL_SOURCE_CHECK_OFFSET if final_source_check else WATCH_DURATION
+    )
     # A closed-market anchor has no new same-day close to wait for. Still make
     # one read-only check so the final snapshot can reuse safely available data.
     if cash_target < anchor.date().isoformat() and futures_target < anchor.date().isoformat():
@@ -155,15 +235,21 @@ def run_watch(scheduled_for: str, *, probe: Callable[..., dict[str, Any]] = _pro
     return watch_until(
         deadline=deadline,
         probe=probe_call,
+        stop_when_complete=not final_source_check,
     ) | {"cash_target_date": cash_target, "futures_target_date": futures_target, "cutoff_at": deadline.isoformat()}
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--scheduled-for", required=True)
+    parser.add_argument(
+        "--final-source-check", action="store_true",
+        help="Continue a preparation-overlapped read-only watch to anchor +20 minutes.",
+    )
+    parser.add_argument("--result-file")
     args = parser.parse_args()
     try:
-        result = run_watch(args.scheduled_for)
+        result = run_watch(args.scheduled_for, final_source_check=args.final_source_check)
     except (ValueError, OverflowError) as exc:
         result = {"status": "invalid_schedule_anchor", "error": type(exc).__name__, "attempts": 0}
     rendered = json.dumps(result, ensure_ascii=False, sort_keys=True)
@@ -172,7 +258,10 @@ def main() -> int:
     if summary_path:
         with open(summary_path, "a", encoding="utf-8") as summary:
             summary.write("### 台股官方收盤唯讀查詢\n\n```json\n" + rendered + "\n```\n")
-    outputs_path = os.environ.get("GITHUB_OUTPUT")
+    if args.result_file:
+        with open(args.result_file, "w", encoding="utf-8") as result_file:
+            result_file.write(rendered)
+    outputs_path = os.environ.get("GITHUB_OUTPUT") if not args.result_file else None
     if outputs_path:
         with open(outputs_path, "a", encoding="utf-8") as output:
             output.write(f"status={result.get('status', 'unknown')}\n")
