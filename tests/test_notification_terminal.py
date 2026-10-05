@@ -299,6 +299,21 @@ def test_scheduled_prepare_race_keeps_the_actionable_failure_reason() -> None:
     assert result["failure"] is True
 
 
+def test_scheduled_release_manifest_failure_is_not_misreported_as_pages_failure() -> None:
+    result = evaluate_scheduled_terminal(scheduled(
+        RELEASE_MANIFEST_OUTCOME="failure",
+        PREPARE_OUTCOME="success",
+        PAGES_DEPLOYMENT_AVAILABLE="false",
+        GATE_ALLOWED="false",
+    ))
+
+    assert result["status"] == "failed"
+    assert result["reason"] == "release_manifest_failed_before_pages_deployment"
+    assert result["stages"]["release_manifest"] == "failure"
+    assert result["stages"]["deployment"] == "not_run"
+    assert result["stages"]["public_gate"] == "not_run"
+
+
 def test_scheduled_handoff_reports_child_completion_without_resending() -> None:
     result = evaluate_scheduled_terminal(scheduled(HANDOFF_STATUS="delivered", HANDOFF_RUN_ID="42"))
 
@@ -316,3 +331,13 @@ def test_summary_renders_the_classifier_result_as_the_final_state(tmp_path) -> N
     assert "notification_status: policy_not_required" in summary
     assert "notification_expected: false" in summary
     assert "recipient_receipt" not in summary
+
+
+def test_summary_identifies_release_failure_before_pages_and_public_gate(tmp_path) -> None:
+    result = evaluate_scheduled_terminal(scheduled(RELEASE_MANIFEST_OUTCOME="failure"))
+    destination = tmp_path / "summary.md"
+
+    append_summary(str(destination), result)
+
+    summary = destination.read_text(encoding="utf-8")
+    assert "release_manifest / deployment / public_gate: failure / not_run / not_run" in summary

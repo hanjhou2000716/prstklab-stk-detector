@@ -434,7 +434,13 @@ def _replace_with_official_taiwan_close(
             current_date = None
             official_date = None
         if item.get("price") is None or (official_date is not None and (current_date is None or official_date >= current_date)):
-            merged.append({**item, **official, "technical_context": item.get("technical_context")})
+            promoted = {**item, **official}
+            context = item.get("technical_context")
+            if isinstance(context, dict):
+                promoted["technical_context"] = context
+            else:
+                promoted.pop("technical_context", None)
+            merged.append(promoted)
         else:
             merged.append(item)
     return merged
@@ -1058,10 +1064,9 @@ def _replace_with_verified_taiex_close(
             result.append(item)
             replaced = True
             continue
-        result.append({
+        promoted = {
             **item,
             **official_quote,
-            "technical_context": None,
             "technical_context_stale": True,
             "cross_checked": False,
             "crosscheck_status": "官方收盤資料",
@@ -1069,7 +1074,11 @@ def _replace_with_verified_taiex_close(
             "stale_used": False,
             "alert_eligible": False,
             "routine_eligible": True,
-        })
+        }
+        # Optional technical context must be absent, not null: the release
+        # schema accepts only an object when this field is present.
+        promoted.pop("technical_context", None)
+        result.append(promoted)
         replaced = True
     if not replaced:
         metadata = next((row for row in MARKET_INDICES if row.get("ticker") == "TAIEX"), {})

@@ -2,6 +2,7 @@ import json
 
 import pytest
 
+from src.alert_orchestrator import notification_key_for_event
 from src.news_intelligence import build_news_intelligence
 from src.release_manifest import (
     _alert_projection,
@@ -127,6 +128,44 @@ def test_release_bound_alert_artifact_rejects_same_identity_with_changed_content
     _write_immutable_alert_artifact(path, first)
     with pytest.raises(ValueError, match="identity conflict"):
         _write_immutable_alert_artifact(path, {**first, "title": "Changed content"})
+
+
+def test_distinct_news_sharing_a_theme_cluster_get_distinct_public_notification_ids(tmp_path):
+    shared_cluster = "evt-90c23be8844921d6937c4c18"
+    stories = [
+        {
+            "title": "台積電與高通2奈米供應鏈消息",
+            "event": "台積電與高通2奈米供應鏈消息",
+            "event_cluster_key": shared_cluster,
+            "source_key": "google_news",
+            "published_at": "2026-10-02T12:49:04+00:00",
+            "source_url": "https://news.example.com/tsmc-qualcomm-2nm",
+        },
+        {
+            "title": "友達投資與美光AI記憶體供應消息",
+            "event": "友達投資與美光AI記憶體供應消息",
+            "event_cluster_key": shared_cluster,
+            "source_key": "google_news",
+            "published_at": "2026-10-02T13:02:10+00:00",
+            "source_url": "https://news.example.com/auo-micron-ai-memory",
+        },
+    ]
+
+    _artifacts(tmp_path)
+    market_path = tmp_path / "site" / "data" / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    market["events"] = {"items": stories}
+    market_path.write_text(json.dumps(market, ensure_ascii=False), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+    assert manifest["status"] == "ready"
+    index = json.loads((tmp_path / "site" / "data" / "alert-index.json").read_text(encoding="utf-8"))
+    rows = [row for row in index["alerts"] if row["release_id"] == manifest["release_id"]]
+    assert {row["notification_id"] for row in rows} == {
+        notification_key_for_event(story) for story in stories
+    }
+    assert len({row["path"] for row in rows}) == 2
+    assert verify_release_files(manifest, root=tmp_path / "site") == []
 
 
 def test_manifest_publishes_release_specific_immutable_alert_details(tmp_path):

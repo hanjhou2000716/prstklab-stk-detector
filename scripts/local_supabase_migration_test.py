@@ -141,8 +141,11 @@ def _check(command: list[str], cwd: Path, *, timeout: int = 600) -> str:
 
 
 def _capture_start_diagnostics(cli: str, cwd: Path, project_id: str) -> dict[str, Any]:
-    disk = shutil.disk_usage(cwd)
-    result: dict[str, Any] = {"free_disk_bytes": disk.free, "project_id": project_id}
+    result: dict[str, Any] = {"project_id": project_id}
+    try:
+        result["free_disk_bytes"] = shutil.disk_usage(cwd).free
+    except OSError as exc:
+        result["disk_diagnostic_error"] = type(exc).__name__
     for label, command in (
         ("supabase_version", [cli, "--version"]),
         ("docker_server_version", ["docker", "version", "--format", "{{.Server.Version}}"]),

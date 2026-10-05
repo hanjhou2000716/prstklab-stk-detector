@@ -45,6 +45,26 @@ def test_run_retains_timeout_diagnostics(monkeypatch):
     assert "registry connection reset" in captured.value.diagnostic
 
 
+def test_start_diagnostics_keep_running_when_disk_probe_is_unavailable(monkeypatch):
+    def disk_error(_path):
+        raise PermissionError("disk usage probe denied")
+
+    monkeypatch.setattr(migration_test.shutil, "disk_usage", disk_error)
+    monkeypatch.setattr(
+        migration_test,
+        "_run",
+        lambda command, *_args, **_kwargs: subprocess.CompletedProcess(
+            command, 0, "diagnostic-ok", "",
+        ),
+    )
+
+    result = migration_test._capture_start_diagnostics("supabase", Path.cwd(), "prstk-test")
+
+    assert result["project_id"] == "prstk-test"
+    assert result["disk_diagnostic_error"] == "PermissionError"
+    assert result["supabase_version"]["output"] == "diagnostic-ok"
+
+
 def test_disposable_stack_is_stopped_even_when_start_fails(tmp_path, monkeypatch):
     root = tmp_path / "prstk-supabase-diagnostic-test"
     root.mkdir()

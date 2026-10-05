@@ -131,6 +131,7 @@ def test_delivery_claim_persistence_reconciles_the_public_release():
     assert "do_not_resend" in classifier
     assert "DELIVERY_OBLIGATION" in terminal
     assert "NOTIFICATION_EXPECTED" in terminal
+    assert "RELEASE_MANIFEST_OUTCOME" in terminal
 
 
 def test_pages_only_publisher_uses_the_shared_single_writer_queue():
@@ -208,8 +209,10 @@ def test_scheduled_brief_reports_pages_publish_only_failure_and_blocks_expected_
     assert "pages_deployment_${PAGES_DEPLOYMENT_ERROR_CODE:-unavailable}" in decision
     assert "scan_status=\"published_unverified\"" in decision
     assert "pages_publication_status:" in decision
+    assert 'RELEASE_MANIFEST_OUTCOME" = "failure"' in decision
+    assert 'pages_publication_status="not_run_release_manifest_failed"' in decision
     assert 'if [ "$DELIVERY_OBLIGATION" = "expected_skip" ] || [ "$DELIVERY_OBLIGATION" = "late_publish_only" ]; then' in decision
-    assert 'if [ "$notification_expected" = "true" ] && [ "$DELIVERY_OBLIGATION" != "blocked" ] && [ "$PAGES_DEPLOYMENT_AVAILABLE" != "true" ]; then' in decision
+    assert 'if [ "$RELEASE_MANIFEST_OUTCOME" != "failure" ] && [ "$notification_expected" = "true" ] && [ "$DELIVERY_OBLIGATION" != "blocked" ] && [ "$PAGES_DEPLOYMENT_AVAILABLE" != "true" ]; then' in decision
     assert 'echo "- source_health_status: ${SOURCE_HEALTH_STATUS}"' in decision
     assert '&& [ "$DELIVERY_OBLIGATION" = "undetermined" ]' in decision
 

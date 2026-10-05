@@ -117,6 +117,21 @@ def test_shared_fj_summary_contract_rejects_contextless_military_fragment() -> N
     assert result["reason"] == "summary_semantics_incomplete"
 
 
+def test_fj_contract_accepts_attributed_houthi_attack_fact_from_expired_priority_case() -> None:
+    event = {"event": "葉門胡塞組織：以彈道飛彈與無人機襲擊沙烏地阿拉伯利雅德的阿美（Aramco）設施"}
+    result = summary_contract_status(event)
+    assert result["status"] == "ready"
+    assert result["reason"] == "complete_attributed_statement"
+    public = financialjuice_public_summary({**event, "vendor_importance": 9})
+    assert public["status"] == "ready"
+    assert "襲擊" in public["text"]
+
+
+def test_fj_attack_action_does_not_make_truncated_or_conditional_claim_complete() -> None:
+    assert summary_contract_status({"event": "葉門胡塞組織：以無人機襲擊…"})["status"] == "incomplete"
+    assert summary_contract_status({"event": "葉門胡塞組織可能襲擊沙烏地設施，如果局勢升級"})["status"] == "incomplete"
+
+
 def test_fj_summary_accepts_complete_attributed_official_statement() -> None:
     event = {
         "event": "美國財政部長貝森特：與中方在貿易和AI方面的接觸非常成功。",
