@@ -38670,11 +38670,11 @@
     },
     "42ecd5063020c504e4ff87beb6510381": {
       "canonical_key": "42ecd5063020c504e4ff87beb6510381",
-      "notification_theme_key": "mops-d16ee99330",
+      "notification_theme_key": "mops-65860da315",
       "material_state": {
         "risk_rank": 0,
-        "risk": "R1",
-        "official_confirmation": true,
+        "risk": "R0",
+        "official_confirmation": false,
         "market_confirmation": false,
         "material_fact_version": "",
         "direction": "",
@@ -38688,7 +38688,7 @@
       "location_fingerprint": "",
       "action_fingerprint": "",
       "first_discovered_at": "2026-10-05T08:05:57.788654+00:00",
-      "last_reminded_at": null,
+      "last_reminded_at": "2026-10-05T08:06:52.960212+00:00",
       "escalated": false,
       "risk_level": "持續觀察",
       "risk_rank": 0,
@@ -38699,14 +38699,14 @@
       "compound_item_id": null,
       "compound_event_cluster_key": null,
       "last_decision": {
-        "recorded_at": "2026-10-05T08:05:57.918926+00:00",
+        "recorded_at": "2026-10-05T08:06:50.320718+00:00",
         "allowed": true,
         "status": "eligible",
         "reason": "new_theme",
         "reasons": [],
-        "notification_theme_key": "mops-d16ee99330",
+        "notification_theme_key": "mops-65860da315",
         "event_key": "42ecd5063020c504e4ff87beb6510381",
-        "risk": "R1",
+        "risk": "R0",
         "theme_window": 7200,
         "material_state_changed": true,
         "last_notified_at": null,
@@ -38726,9 +38726,53 @@
           "material_state_changed": true,
           "last_notified_at": null,
           "taiwan_priority": 4
+        },
+        {
+          "recorded_at": "2026-10-05T08:06:50.320718+00:00",
+          "allowed": true,
+          "status": "eligible",
+          "reason": "new_theme",
+          "reasons": [],
+          "notification_theme_key": "mops-65860da315",
+          "event_key": "42ecd5063020c504e4ff87beb6510381",
+          "risk": "R0",
+          "theme_window": 7200,
+          "material_state_changed": true,
+          "last_notified_at": null,
+          "taiwan_priority": 4
         }
       ],
-      "updated_at": "2026-10-05T08:05:57.918926+00:00"
+      "updated_at": "2026-10-05T08:06:52.960212+00:00",
+      "delivery_history": [
+        {
+          "event_key": "42ecd5063020c504e4ff87beb6510381",
+          "notification_id": "42ecd5063020c504e4ff87beb6510381",
+          "sent_at": "2026-10-05T08:06:52.960212+00:00",
+          "importance": "normal",
+          "alert_type": "macro",
+          "lifecycle_state": "confirmed",
+          "reason": "official_event_monitor",
+          "notification_theme_key": "mops-65860da315",
+          "risk": "R0",
+          "taiwan_priority": 4,
+          "material_state_changed": true,
+          "release_id": "release-0cdfa07f41d68fec",
+          "snapshot_id": "709bb64f91c8c8d3",
+          "delivery_status": "delivered",
+          "release_ready_at": "2026-10-05T08:06:50.713760+00:00",
+          "telegram_attempted_at": "2026-10-05T08:06:50.821624+00:00",
+          "delivery_result": "delivered",
+          "delay_reason": "none",
+          "source_url": "https://mops.twse.com.tw/mops/#/web/t05st02",
+          "source_domain": "mops.twse.com.tw",
+          "alert_lane": "event",
+          "market_scope": "global",
+          "event_policy_reason": "event_materiality_available",
+          "trace_id": "official-c387e6cd20c64039"
+        }
+      ],
+      "last_theme_notification_at": "2026-10-05T08:06:52.960212+00:00",
+      "last_notified_at": "2026-10-05T08:06:52.960212+00:00"
     }
   },
   "delivery_claims": {
@@ -43386,6 +43430,35 @@
       "updated_at": "2026-10-05T06:25:09.554278+00:00",
       "failed_recipient_hashes": [],
       "delivered_at": "2026-10-05T06:25:09.554278+00:00"
+    },
+    "42ecd5063020c504e4ff87beb6510381": {
+      "notification_key": "42ecd5063020c504e4ff87beb6510381",
+      "slot_key": "",
+      "status": "delivered",
+      "recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d",
+        "59cf5c3e48bf"
+      ],
+      "delivered_recipient_hashes": [
+        "59cf5c3e48bf",
+        "5b1d66aae79d",
+        "7a30574fc065",
+        "d36bbcc2cd2d"
+      ],
+      "attempted_recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d",
+        "59cf5c3e48bf"
+      ],
+      "claimed_at": "2026-10-05T08:06:50.716538+00:00",
+      "lease_until": null,
+      "run_id_hash": "1ce3b3838218",
+      "updated_at": "2026-10-05T08:06:52.868589+00:00",
+      "failed_recipient_hashes": [],
+      "delivered_at": "2026-10-05T08:06:52.868589+00:00"
     }
   }
 }
