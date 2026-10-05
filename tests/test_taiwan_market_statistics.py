@@ -4,6 +4,8 @@ import src.taiwan_market_statistics as taiwan_statistics
 from src.taiwan_market_statistics import (
     parse_twse_market_statistics,
     parse_twse_mi_index_breadth,
+    parse_twse_mi_index_taiex,
+    parse_twse_mi_index_taiex_html,
     parse_twse_taiex_history,
     taiex_quote_from_market_statistics,
 )
@@ -291,6 +293,7 @@ def test_official_taiex_history_fetch_checks_previous_month_for_baseline():
     class Response:
         def __init__(self, payload):
             self.payload = payload
+            self.text = ""
 
         def raise_for_status(self):
             return None
@@ -304,6 +307,8 @@ def test_official_taiex_history_fetch_checks_previous_month_for_baseline():
 
         def get(self, url, *, params, headers, timeout):
             self.calls.append((url, params, timeout))
+            if url == taiwan_statistics.TWSE_MI_INDEX_REPORT_URL:
+                return Response({"stat": "查無資料"})
             if params["date"] == "20260901":
                 return Response([{"Date": "20260901", "ClosingIndex": "100.00"}])
             if params["date"] == "20260801":
@@ -318,5 +323,86 @@ def test_official_taiex_history_fetch_checks_previous_month_for_baseline():
     assert quote is not None
     assert quote["change"] == 1.0
     assert quote["change_percent"] == 1.01
-    assert [call[1]["date"] for call in session.calls] == ["20260901", "20260801"]
-    assert diagnostics[-1] == {"source": "twse_taiex_history", "outcome": "verified"}
+    assert [call[1].get("date") for call in session.calls] == [
+        "20260901", "20260901", "20260901", "20260801",
+    ]
+    assert diagnostics[-1]["source"] == "twse_taiex_history"
+    assert diagnostics[-1]["outcome"] == "verified"
+    assert diagnostics[-1]["target_date"] == "2026-09-01"
+    assert quote["source_attempts"][-1]["observed_date"] == "2026-09-01"
+
+
+def test_mi_index_report_parses_only_exact_dated_capitalization_weighted_row():
+    payload = {
+        "stat": "OK",
+        "date": "1151005",
+        "tables": [{
+            "title": "價格指數",
+            "fields": ["指數", "收盤指數", "漲跌(+/-)", "漲跌點數", "漲跌百分比"],
+            "data": [
+                ["發行量加權股價指數", "49,712.04", "+", "1,236.30", "2.55%"],
+                ["未含金融保險類指數", "99,999.00", "+", "9.00", "0.01%"],
+            ],
+        }],
+    }
+    quote = parse_twse_mi_index_taiex(payload, target_date="2026-10-05")
+    assert quote is not None
+    assert quote["price"] == 49712.04
+    assert quote["change"] == 1236.30
+    assert quote["change_percent"] == 2.55
+    assert quote["quote_date"] == "2026-10-05"
+    assert quote["source_url"] == (
+        f"{taiwan_statistics.TWSE_MI_INDEX_REPORT_URL}?date=20261005&type=IND&response=json"
+    )
+    assert quote["alert_eligible"] is False
+    assert parse_twse_mi_index_taiex(payload, target_date="2026-10-06") is None
+
+
+def test_mi_index_html_fallback_requires_report_date_and_exact_index_label():
+    html = """<html><body><h2>115年10月05日 大盤統計資訊</h2><table>
+    <thead><tr><th>指數</th><th>收盤指數</th><th>漲跌(+/-)</th><th>漲跌點數</th><th>漲跌百分比</th></tr></thead>
+    <tbody><tr><td>發行量加權股價指數</td><td>49,712.04</td><td>+</td><td>1,236.30</td><td>2.55%</td></tr></tbody>
+    </table></body></html>"""
+    quote = parse_twse_mi_index_taiex_html(html, target_date="2026-10-05")
+    assert quote is not None
+    assert quote["price"] == 49712.04
+    assert parse_twse_mi_index_taiex_html(html, target_date="2026-10-06") is None
+
+
+def test_fetch_prefers_same_day_mi_index_close_before_history_fallback():
+    payload = {
+        "stat": "OK", "date": "1151005", "tables": [{
+            "title": "價格指數",
+            "fields": ["指數", "收盤指數", "漲跌(+/-)", "漲跌點數", "漲跌百分比"],
+            "data": [["發行量加權股價指數", "49,712.04", "+", "1,236.30", "2.55%"]],
+        }],
+    }
+
+    class Response:
+        text = '{"stat":"OK"}'
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return payload
+
+    class Session:
+        calls = []
+
+        def get(self, url, **kwargs):
+            self.calls.append((url, kwargs.get("params")))
+            return Response()
+
+    session = Session()
+    diagnostics = []
+    quote = taiwan_statistics.fetch_twse_taiex_recent_close(
+        target_date="2026-10-05", session=session, diagnostics=diagnostics,
+    )
+    assert quote is not None and quote["price"] == 49712.04
+    assert session.calls == [(
+        taiwan_statistics.TWSE_MI_INDEX_REPORT_URL,
+        {"date": "20261005", "type": "IND", "response": "json"},
+    )]
+    assert diagnostics[0]["outcome"] == "verified"
+    assert len(diagnostics[0]["response_sha256"]) == 64

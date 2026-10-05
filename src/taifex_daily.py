@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import calendar
+import hashlib
+import json
 import re
 from datetime import date, datetime, time, timedelta
 from functools import lru_cache
@@ -416,31 +418,51 @@ def _to_quote(row: dict[str, Any], *, source: str, source_url: str, now: datetim
 
 def _record_source_attempt(
     diagnostics: list[dict[str, str]] | None, source: str, outcome: str,
+    **details: str,
 ) -> None:
     if diagnostics is not None:
-        diagnostics.append({"source": source, "outcome": outcome})
+        diagnostics.append({"source": source, "outcome": outcome, **details})
 
 
 def fetch_latest_verified_txf(
     *, session: requests.Session | None = None, now: datetime | None = None,
     diagnostics: list[dict[str, str]] | None = None,
+    target_date: str | None = None,
 ) -> dict[str, Any] | None:
-    """Try official OpenAPI first, then the exchange table with safe diagnostics."""
+    """Compare both official sources and choose the newest verified day session."""
     client = session or requests.Session()
     local_now = (now or datetime.now(TAIPEI)).astimezone(TAIPEI)
+    candidates: list[tuple[str, dict[str, Any]]] = []
+    checked_at = datetime.now(TAIPEI).isoformat()
+
+    def record(source: str, outcome: str, *, observed_date: str = "", response: str = "") -> None:
+        _record_source_attempt(
+            diagnostics,
+            source,
+            outcome,
+            checked_at=checked_at,
+            target_date=str(target_date or local_now.date().isoformat()),
+            observed_date=observed_date,
+            response_sha256=hashlib.sha256(response.encode("utf-8", errors="replace")).hexdigest() if response else "",
+        )
+
     try:
         response = client.get(TAIFEX_DAILY_API, headers={"User-Agent": "PRStK-Lab-public-research/1.0"}, timeout=15)
         response.raise_for_status()
         payload = response.json()
+        response_body = str(getattr(response, "text", "") or json.dumps(payload, ensure_ascii=False, sort_keys=True))
         quote = parse_daily_api(payload, now=local_now)
         if quote:
-            _record_source_attempt(diagnostics, "taifex_openapi", "verified")
-            return quote
-        outcome = "not_published" if not payload else "parse_or_contract_mismatch"
-        _record_source_attempt(diagnostics, "taifex_openapi", outcome)
+            candidates.append(("taifex_openapi", quote))
+            record("taifex_openapi", "verified", observed_date=str(quote.get("quote_date") or ""), response=response_body)
+        else:
+            outcome = "not_published" if not payload else "parse_or_contract_mismatch"
+            record("taifex_openapi", outcome, response=response_body)
+    except requests.Timeout:
+        record("taifex_openapi", "timeout")
     except (requests.RequestException, ValueError, TypeError) as exc:
         outcome = "connection_failed" if isinstance(exc, requests.RequestException) else "response_parse_failed"
-        _record_source_attempt(diagnostics, "taifex_openapi", outcome)
+        record("taifex_openapi", outcome)
     try:
         response = client.get(
             TAIFEX_DAILY_TABLE,
@@ -449,27 +471,50 @@ def fetch_latest_verified_txf(
             timeout=15,
         )
         response.raise_for_status()
-        html = response.text
+        html = str(getattr(response, "text", "") or "")
         quote = parse_daily_html(html, now=local_now)
         if quote:
-            _record_source_attempt(diagnostics, "taifex_daily_table", "verified")
-            return quote
-        normalized_html = str(html or "").casefold()
-        outcome = (
-            "not_published" if not normalized_html.strip()
-            or any(token in normalized_html for token in ("尚未公布", "尚無資料", "查無資料", "no data"))
-            else "parse_or_contract_mismatch"
-        )
-        _record_source_attempt(diagnostics, "taifex_daily_table", outcome)
-        return None
+            candidates.append(("taifex_daily_table", quote))
+            record("taifex_daily_table", "verified", observed_date=str(quote.get("quote_date") or ""), response=html)
+        else:
+            normalized_html = str(html or "").casefold()
+            outcome = (
+                "not_published" if not normalized_html.strip()
+                or any(token in normalized_html for token in ("尚未公布", "尚無資料", "查無資料", "no data"))
+                else "parse_or_contract_mismatch"
+            )
+            record("taifex_daily_table", outcome, response=html)
+    except requests.Timeout:
+        record("taifex_daily_table", "timeout")
     except (requests.RequestException, ValueError, TypeError) as exc:
         outcome = "connection_failed" if isinstance(exc, requests.RequestException) else "response_parse_failed"
-        _record_source_attempt(diagnostics, "taifex_daily_table", outcome)
+        record("taifex_daily_table", outcome)
+
+    if not candidates:
         return None
+    newest_date = max(str(quote.get("quote_date") or "")[:10] for _, quote in candidates)
+    newest = [(source, quote) for source, quote in candidates if str(quote.get("quote_date") or "")[:10] == newest_date]
+    if len(newest) > 1:
+        values = {
+            tuple(
+                round(value, 2) if (value := _number(quote.get(field))) is not None else None
+                for field in ("price", "change", "change_percent")
+            ) + (str(quote.get("contract_month") or ""), str(quote.get("session") or ""))
+            for _, quote in newest
+        }
+        if len(values) != 1:
+            record("taifex_official_comparison", "same_day_official_conflict", observed_date=newest_date)
+            return None
+    source, selected = newest[0]
+    record("taifex_selection", f"selected:{source}", observed_date=newest_date)
+    if diagnostics is not None:
+        selected["source_attempts"] = list(diagnostics)
+    return selected
 
 def validated_txf_backup(
     store: Any, *, now: datetime | None = None,
     diagnostics: list[dict[str, str]] | None = None,
+    excluded_observed_dates: set[str] | None = None,
 ) -> dict[str, Any] | None:
     """Use only our own official-daily TXF rows with complete contract/session evidence."""
     if store is None:
@@ -489,6 +534,12 @@ def validated_txf_backup(
         )
         month = _contract_month(contract_match.group(1) if contract_match else "")
         observed = _date(row.get("market_date"))
+        if observed and observed.isoformat() in (excluded_observed_dates or set()):
+            _record_source_attempt(
+                diagnostics, "taifex_saved_backup", "backup_quarantined_official_conflict",
+                observed_date=observed.isoformat(),
+            )
+            return None
         observed_at_raw = str(row.get("observed_at") or "")
         observed_at: datetime | None
         try:

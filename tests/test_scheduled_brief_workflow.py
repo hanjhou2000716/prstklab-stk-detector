@@ -13,6 +13,41 @@ def test_duplicate_brief_still_deploys_the_latest_dashboard_files():
     assert "steps.idempotency.outputs.cache-hit" not in deploy_section
 
 
+def test_post_close_official_source_watch_runs_before_the_writer_queue():
+    workflow = (
+        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"
+    ).read_text(encoding="utf-8")
+    watcher = workflow.index("Watch official Taiwan closes before writer queue")
+    queue = workflow.index("Wait for production writer queue")
+    assert watcher < queue
+    block = workflow[watcher:queue]
+    assert "steps.window.outputs.slot == 'post_close'" in block
+    assert "continue-on-error: true" in block
+    assert "src.market_source_watch" in block
+    assert "SUPABASE_SERVICE_ROLE_KEY: ''" in block
+    assert "MARKET_BACKUP_ENABLED: 'false'" in block
+    assert "timeout-minutes: 14" in block
+    assert 'python -m src.market_source_watch --scheduled-for "$SCHEDULED_FOR_AT"' in block
+
+
+def test_post_close_prepare_overlaps_final_source_watch_and_limits_rebuild_to_one():
+    workflow = (
+        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"
+    ).read_text(encoding="utf-8")
+    prepare = workflow.split("- name: Prepare immutable market snapshot", 1)[1].split(
+        "- name: Revalidate prepared release base", 1
+    )[0]
+
+    assert "--final-source-check --result-file" in prepare
+    assert 'first_attempt_deadline=' in prepare
+    assert 'max_prepare_deadline=$((prepare_started + 780))' in prepare
+    assert "source_rebuild_attempts=" in prepare
+    assert 'if [ "$attempt" -eq 1 ] && [ "$source_rebuild_needed" = "true" ]; then' in prepare
+    assert "TELEGRAM_BOT_TOKEN=''" in prepare
+    assert "SUPABASE_SERVICE_ROLE_KEY=''" in prepare
+    assert "GITHUB_STEP_SUMMARY='' GITHUB_OUTPUT=''" in prepare
+
+
 def test_automatic_scheduled_dispatch_enables_notification_but_manual_stays_opt_in():
     workflow = (
         Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"

@@ -2,19 +2,25 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 import re
 import time
 from datetime import date, datetime
+from io import StringIO
 from typing import Any
 from zoneinfo import ZoneInfo
 
+import pandas as pd
 import requests
+from bs4 import BeautifulSoup
 
 TWSE_FMTQIK_URL = "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK"
 TWSE_BREADTH_URL = "https://openapi.twse.com.tw/v1/opendata/twtazu_od"
 TWSE_INSTITUTION_URL = "https://www.twse.com.tw/rwd/zh/fund/BFI82U"
 TWSE_MI_INDEX_URL = "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX"
+TWSE_MI_INDEX_REPORT_URL = "https://www.twse.com.tw/exchangeReport/MI_INDEX"
 TWSE_TAIEX_HISTORY_URL = "https://openapi.twse.com.tw/v1/indicesReport/MI_5MINS_HIST"
 HEADERS = {"User-Agent": "PRStK-Lab-public-research/1.0"}
 
@@ -286,6 +292,159 @@ def _finite_float(value: Any) -> float | None:
     return parsed if math.isfinite(parsed) else None
 
 
+def _mi_index_report_date(payload: Any) -> str | None:
+    if not isinstance(payload, dict):
+        return None
+    for key in ("date", "Date", "日期"):
+        observed = _date(payload.get(key))
+        if observed:
+            return observed
+    for key in ("stat", "title", "reportDate"):
+        raw = str(payload.get(key) or "")
+        match = re.search(r"(?:(\d{3})年(\d{1,2})月(\d{1,2})日|(20\d{2})[/-](\d{1,2})[/-](\d{1,2}))", raw)
+        if not match:
+            continue
+        if match.group(1):
+            return _date(f"{match.group(1)}/{match.group(2)}/{match.group(3)}")
+        return _date(f"{match.group(4)}-{match.group(5)}-{match.group(6)}")
+    return None
+
+
+def _index_report_values(
+    fields: list[Any], rows: list[Any], *, target_date: str,
+) -> dict[str, Any] | None:
+    labels = [re.sub(r"\s+", "", str(item or "")) for item in fields]
+    positions = {
+        "index": next((i for i, item in enumerate(labels) if item in {"指數", "Index"}), None),
+        "price": next((i for i, item in enumerate(labels) if item in {"收盤指數", "ClosingIndex"}), None),
+        "sign": next((i for i, item in enumerate(labels) if "漲跌(+/-)" in item or "漲跌(±)" in item), None),
+        "change": next((i for i, item in enumerate(labels) if "漲跌點數" in item or "PointsChange" in item), None),
+        "percent": next((i for i, item in enumerate(labels) if "漲跌百分比" in item or "PercentChange" in item), None),
+    }
+    if positions["index"] is None or positions["price"] is None:
+        return None
+    if positions["change"] is None or positions["percent"] is None:
+        return None
+    for row in rows:
+        if isinstance(row, dict):
+            normalized_row = {
+                re.sub(r"\s+", "", str(key or "")): value
+                for key, value in row.items()
+            }
+            values = [normalized_row.get(labels[i]) for i in range(len(labels))]
+            name = str(normalized_row.get(labels[positions["index"]]) or "").strip()
+        elif isinstance(row, (list, tuple)):
+            values = list(row)
+            if max(i for i in positions.values() if i is not None) >= len(values):
+                continue
+            name = str(values[positions["index"]] or "").strip()
+        else:
+            continue
+        if name != "發行量加權股價指數":
+            continue
+        price = _finite_float(values[positions["price"]])
+        change = _finite_float(values[positions["change"]])
+        raw_percent = str(values[positions["percent"]] or "").replace("%", "").replace("％", "")
+        percent = _finite_float(raw_percent)
+        if price is None or price <= 0 or change is None or percent is None:
+            return None
+        sign_value = str(values[positions["sign"]] or "").strip() if positions["sign"] is not None else ""
+        sign = -1 if sign_value in {"-", "−", "－"} else 1 if sign_value in {"+", "＋"} else None
+        if sign is None:
+            if change < 0 or percent < 0:
+                sign = -1
+            elif change > 0 or percent > 0:
+                sign = 1
+            else:
+                sign = 1
+        change = abs(change) * sign
+        percent = abs(percent) * sign
+        previous = price - change
+        if previous <= 0:
+            return None
+        return _official_taiex_quote(
+            observed_date=target_date,
+            price=price,
+            previous_close=previous,
+            change=change,
+            change_percent=percent,
+            source_url=f"{TWSE_MI_INDEX_REPORT_URL}?date={target_date.replace('-', '')}&type=IND&response=json",
+            source_label="TWSE",
+            source_name="TWSE MI_INDEX official TAIEX close",
+        )
+    return None
+
+
+def parse_twse_mi_index_taiex(payload: Any, *, target_date: str) -> dict[str, Any] | None:
+    """Parse only the dated official capitalization-weighted index row."""
+    target = _date(target_date)
+    if not target or _mi_index_report_date(payload) != target or not isinstance(payload, dict):
+        return None
+    status = str(payload.get("stat") or "OK").strip().upper()
+    if status not in {"OK", "SUCCESS"} and _date(status) != target:
+        return None
+    tables = payload.get("tables")
+    for table in tables if isinstance(tables, list) else []:
+        if not isinstance(table, dict) or "價格指數" not in str(table.get("title") or ""):
+            continue
+        quote = _index_report_values(table.get("fields") or [], table.get("data") or [], target_date=target)
+        if quote:
+            quote["source_url"] = f"{TWSE_MI_INDEX_REPORT_URL}?date={target.replace('-', '')}&type=IND&response=json"
+            return quote
+    fields = payload.get("fields1") or payload.get("fields") or []
+    rows = payload.get("data1") or payload.get("data") or []
+    return _index_report_values(fields, rows, target_date=target)
+
+
+def parse_twse_mi_index_taiex_html(html: str, *, target_date: str) -> dict[str, Any] | None:
+    """Parse the official all-indexes HTML report when the JSON contract fails."""
+    target = _date(target_date)
+    if not target:
+        return None
+    soup = BeautifulSoup(str(html or ""), "html.parser")
+    page_text = soup.get_text(" ", strip=True)
+    match = re.search(r"(?:(\d{3})年(\d{1,2})月(\d{1,2})日|(20\d{2})[/-](\d{1,2})[/-](\d{1,2}))", page_text)
+    if not match:
+        return None
+    observed = (
+        _date(f"{match.group(1)}/{match.group(2)}/{match.group(3)}")
+        if match.group(1) else _date(f"{match.group(4)}-{match.group(5)}-{match.group(6)}")
+    )
+    if observed != target:
+        return None
+    try:
+        tables = pd.read_html(StringIO(str(html or "")))
+    except (ValueError, ImportError):
+        return None
+    for table in tables:
+        fields = ["".join(str(part) for part in item) if isinstance(item, tuple) else str(item) for item in table.columns]
+        normalized = [re.sub(r"\s+", "", item) for item in fields]
+        row = next(
+            (list(values) for values in table.itertuples(index=False, name=None)
+             if any(str(value).strip() == "發行量加權股價指數" for value in values)),
+            None,
+        )
+        if row is None:
+            continue
+        # The official report puts the price-index table first; locate columns
+        # by labels so changes elsewhere in the page cannot shift the values.
+        index_idx = next((i for i, value in enumerate(normalized) if value == "指數"), None)
+        price_idx = next((i for i, value in enumerate(normalized) if value == "收盤指數"), None)
+        sign_idx = next((i for i, value in enumerate(normalized) if "漲跌(+/-)" in value), None)
+        change_idx = next((i for i, value in enumerate(normalized) if "漲跌點數" in value), None)
+        percent_idx = next((i for i, value in enumerate(normalized) if "漲跌百分比" in value), None)
+        if None in (index_idx, price_idx, sign_idx, change_idx, percent_idx):
+            continue
+        assert index_idx is not None and price_idx is not None and sign_idx is not None
+        assert change_idx is not None and percent_idx is not None
+        return _index_report_values(
+            [fields[index_idx], fields[price_idx], fields[sign_idx], fields[change_idx], fields[percent_idx]],
+            [[row[index_idx], row[price_idx], row[sign_idx], row[change_idx], row[percent_idx]]],
+            target_date=target,
+        )
+    return None
+
+
 def _official_taiex_quote(
     *, observed_date: str, price: float, previous_close: float | None,
     change: float | None, change_percent: float | None, source_url: str,
@@ -394,13 +553,79 @@ def fetch_twse_taiex_recent_close(
     *, target_date: str, session: requests.Session | None = None,
     diagnostics: list[dict[str, str]] | None = None,
 ) -> dict[str, Any] | None:
-    """Fetch a TWSE close and, at a month boundary, its preceding close."""
+    """Fetch the dated official MI_INDEX close, then the monthly history fallback."""
     target = _date(target_date)
     if not target:
         if diagnostics is not None:
             diagnostics.append({"source": "twse_taiex_history", "outcome": "target_date_unverified"})
         return None
     client = session or requests.Session()
+    checked_at = datetime.now(ZoneInfo("Asia/Taipei")).isoformat()
+    source_attempts: list[dict[str, str]] = []
+    json_url = f"{TWSE_MI_INDEX_REPORT_URL}?date={target.replace('-', '')}&type=IND&response=json"
+    html_url = f"{TWSE_MI_INDEX_REPORT_URL}?date={target.replace('-', '')}&type=ALLBUT0999&response=html"
+
+    def record(source: str, outcome: str, body: str = "", *, observed_date: str = "") -> None:
+        attempt = {
+            "source": source,
+            "target_date": target,
+            "outcome": outcome,
+            "checked_at": checked_at,
+            "observed_date": observed_date,
+            "response_sha256": hashlib.sha256(body.encode("utf-8", errors="replace")).hexdigest() if body else "",
+        }
+        source_attempts.append(attempt)
+        if diagnostics is not None:
+            diagnostics.append(attempt)
+
+    json_body = ""
+    try:
+        response = client.get(
+            TWSE_MI_INDEX_REPORT_URL,
+            params={"date": target.replace("-", ""), "type": "IND", "response": "json"},
+            headers=HEADERS,
+            timeout=5,
+        )
+        response.raise_for_status()
+        json_body = str(getattr(response, "text", "") or "")
+        payload = response.json()
+        quote = parse_twse_mi_index_taiex(payload, target_date=target)
+        if quote:
+            record("twse_mi_index_json", "verified", json_body or json.dumps(payload, ensure_ascii=False, sort_keys=True), observed_date=target)
+            quote["source_url"] = json_url
+            quote["source_attempts"] = list(source_attempts)
+            return quote
+        record("twse_mi_index_json", "not_published_or_date_mismatch", json_body or json.dumps(payload, ensure_ascii=False, sort_keys=True))
+    except requests.Timeout:
+        record("twse_mi_index_json", "timeout")
+    except requests.RequestException:
+        record("twse_mi_index_json", "connection_failed")
+    except (ValueError, TypeError):
+        record("twse_mi_index_json", "response_parse_failed", json_body)
+
+    html_body = ""
+    try:
+        response = client.get(
+            TWSE_MI_INDEX_REPORT_URL,
+            params={"date": target.replace("-", ""), "type": "ALLBUT0999", "response": "html"},
+            headers=HEADERS,
+            timeout=5,
+        )
+        response.raise_for_status()
+        html_body = str(response.text or "")
+        quote = parse_twse_mi_index_taiex_html(html_body, target_date=target)
+        if quote:
+            record("twse_mi_index_html", "verified", html_body, observed_date=target)
+            quote["source_url"] = html_url
+            quote["source_attempts"] = list(source_attempts)
+            return quote
+        record("twse_mi_index_html", "not_published_or_date_mismatch", html_body)
+    except requests.Timeout:
+        record("twse_mi_index_html", "timeout")
+    except requests.RequestException:
+        record("twse_mi_index_html", "connection_failed")
+    except (ValueError, TypeError):
+        record("twse_mi_index_html", "response_parse_failed", html_body)
     year, month = map(int, target[:7].split("-"))
     current_month = date(year, month, 1)
     previous_month = date(year - 1, 12, 1) if month == 1 else date(year, month - 1, 1)
@@ -416,14 +641,25 @@ def fetch_twse_taiex_recent_close(
             )
             response.raise_for_status()
             payload = response.json()
+            body = str(getattr(response, "text", "") or json.dumps(payload, ensure_ascii=False, sort_keys=True))
             if not isinstance(payload, list):
-                attempts.append({"source": label, "outcome": "response_shape_invalid"})
+                attempts.append({"source": label, "target_date": target, "checked_at": checked_at,
+                                 "outcome": "response_shape_invalid", "response_sha256": hashlib.sha256(body.encode("utf-8", errors="replace")).hexdigest()})
                 return None
-            attempts.append({"source": label, "outcome": "received"})
+            returned_dates = [
+                observed for row in payload if isinstance(row, dict)
+                if (observed := _date(row.get("Date") or row.get("日期")))
+            ]
+            attempts.append({
+                "source": label, "target_date": target, "checked_at": checked_at,
+                "observed_date": max(returned_dates) if returned_dates else "",
+                "outcome": "received",
+                "response_sha256": hashlib.sha256(body.encode("utf-8", errors="replace")).hexdigest(),
+            })
             return [row for row in payload if isinstance(row, dict)]
         except (OSError, ValueError, TypeError, requests.RequestException) as exc:
             outcome = "connection_failed" if isinstance(exc, requests.RequestException) else "response_parse_failed"
-            attempts.append({"source": label, "outcome": outcome})
+            attempts.append({"source": label, "target_date": target, "checked_at": checked_at, "outcome": outcome})
             return None
 
     current_rows = fetch_month(current_month, "twse_taiex_history_current_month")
@@ -435,13 +671,15 @@ def fetch_twse_taiex_recent_close(
                 [*current_rows, *previous_rows], target_date=target,
             )
     if quote is not None:
-        attempts.append({"source": "twse_taiex_history", "outcome": "verified"})
+        attempts.append({"source": "twse_taiex_history", "target_date": target,
+                         "observed_date": target, "checked_at": checked_at, "outcome": "verified"})
     elif current_rows is not None:
-        attempts.append({"source": "twse_taiex_history", "outcome": "date_or_values_unavailable"})
+        attempts.append({"source": "twse_taiex_history", "target_date": target,
+                         "checked_at": checked_at, "outcome": "date_or_values_unavailable"})
     if diagnostics is not None:
         diagnostics.extend(attempts)
     if quote:
-        quote["source_attempts"] = attempts
+        quote["source_attempts"] = [*source_attempts, *attempts]
     return quote
 
 def fetch_twse_market_statistics(

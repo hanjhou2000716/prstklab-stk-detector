@@ -7,6 +7,7 @@ from src.market_data import (
     MACRO_REFERENCES,
     MARKET_INDICES,
     WATCHLIST,
+    _apply_supabase_backup,
     _daily_quote,
     _intraday_quote,
     _replace_with_official_taiwan_close,
@@ -64,6 +65,24 @@ def test_macro_quote_freshness_accepts_a_current_us10y_close():
 
     assert annotated[0]["freshness"] == "recent_close"
     assert annotated[0]["data_status"] == "最近收盤"
+
+
+def test_txf_database_backup_never_replaces_same_or_older_official_candidate(monkeypatch):
+    direct = {
+        "ticker": "TXF", "market": "taiwan", "price": 49_949.0,
+        "quote_date": "2026-10-05", "quote_source": "TAIFEX daily table",
+        "source_label": "TAIFEX日盤", "source_attempts": [{"source": "taifex_daily_table", "outcome": "verified"}],
+    }
+    backup = {
+        **direct, "price": 48_671.0, "quote_date": "2026-10-02",
+        "quote_source": "validated saved official quote", "source_label": "Supabase備援",
+    }
+    monkeypatch.setattr("src.market_data.quote_freshness", lambda *_args, **_kwargs: "stale")
+    monkeypatch.setattr("src.taifex_daily.validated_txf_backup", lambda *_args, **_kwargs: backup)
+    result = _apply_supabase_backup([direct], object(), now=datetime.fromisoformat("2026-10-05T14:20:00+08:00"))[0]
+    assert result["price"] == 49_949.0
+    assert result["quote_source"] == "TAIFEX daily table"
+    assert result["source_attempts"][-1]["outcome"] == "not_selected_not_newer:2026-10-02"
 
 
 def test_us_close_assets_use_us_session_after_taipei_midnight():

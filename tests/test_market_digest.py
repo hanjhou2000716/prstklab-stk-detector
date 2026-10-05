@@ -279,6 +279,23 @@ def test_digest_keeps_structured_quote_evidence_separate_from_source_evidence():
     assert changed["briefing_id"] == result["briefing_id"]
 
 
+def test_digest_preserves_safe_official_source_attempt_diagnostics():
+    attempts = [{
+        "source": "twse_mi_index_json", "target_date": "2026-10-05",
+        "observed_date": "2026-10-05", "outcome": "verified",
+        "response_sha256": "a" * 64,
+    }]
+    result = build_market_digest({
+        "generated_at": "2026-10-05T07:00:00+00:00",
+        "indices": [{
+            "ticker": "TAIEX", "market": "taiwan", "price": 49712.04,
+            "change_percent": 2.63, "freshness": "recent_close",
+            "quote_date": "2026-10-05", "source_attempts": attempts,
+        }],
+    }, "post_close")
+    assert result["quote_evidence"][0]["source_attempts"] == attempts
+
+
 def test_digest_does_not_attach_unrelated_snapshot_quotes_to_an_event():
     result = build_market_digest(
         {
@@ -429,6 +446,25 @@ def test_morning_digest_discloses_taiwan_holiday_and_taiex_data_date():
     assert "台股休市" in result["public_short_message"]
     assert "9/24" in result["public_short_message"]
     assert result["market_assessment"]["market_session_state"] == "台股休市；加權行情資料日 9/24"
+
+
+def test_post_close_short_message_dates_historical_taiex_as_not_today():
+    result = build_market_digest({
+        "generated_at": "2026-10-05T07:00:00+00:00",
+        "indices": [{
+            "ticker": "TAIEX", "name": "臺灣加權指數", "market": "taiwan",
+            "price": 48671.0, "change_percent": 0.25, "freshness": "recent_close",
+            "quote_date": "2026-10-02", "routine_eligible": True,
+        }],
+        "markets": {
+            "taiwan": {"is_trading_day": True, "calendar_status": "confirmed_open"},
+            "taiwan_cash": {"is_trading_day": True, "calendar_status": "confirmed_open"},
+            "taiwan_futures": {"is_trading_day": True, "calendar_status": "confirmed_open"},
+        },
+    }, "post_close")
+    assert "10/2" in result["public_short_message"]
+    assert "非今日" in result["public_short_message"]
+    assert len(result["public_short_message"]) <= 60
 
 
 def test_generic_event_detail_cannot_become_primary_event():
