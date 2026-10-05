@@ -13,6 +13,21 @@ def test_duplicate_brief_still_deploys_the_latest_dashboard_files():
     assert "steps.idempotency.outputs.cache-hit" not in deploy_section
 
 
+def test_post_close_official_source_watch_runs_before_the_writer_queue():
+    workflow = (
+        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"
+    ).read_text(encoding="utf-8")
+    watcher = workflow.index("Watch official Taiwan closes before writer queue")
+    queue = workflow.index("Wait for production writer queue")
+    assert watcher < queue
+    block = workflow[watcher:queue]
+    assert "steps.window.outputs.slot == 'post_close'" in block
+    assert "continue-on-error: true" in block
+    assert "src.market_source_watch" in block
+    assert "SUPABASE_SERVICE_ROLE_KEY: ''" in block
+    assert "MARKET_BACKUP_ENABLED: 'false'" in block
+
+
 def test_automatic_scheduled_dispatch_enables_notification_but_manual_stays_opt_in():
     workflow = (
         Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"

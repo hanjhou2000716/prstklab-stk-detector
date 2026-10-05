@@ -13,6 +13,7 @@ import math
 import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from src.market_assessment import (
     build_market_assessment,
@@ -199,6 +200,7 @@ _QUOTE_EVIDENCE_FIELDS = (
     "quote_time", "fetched_at", "freshness", "data_status", "source_label",
     "quote_source", "source_domain", "source_url", "cross_checked",
     "quote_delayed", "stale_used", "session", "contract_month", "contract_basis",
+    "source_attempts",
 )
 
 
@@ -650,6 +652,7 @@ def build_market_digest(
         as_of = as_of.replace(tzinfo=UTC) if as_of.tzinfo is None else as_of.astimezone(UTC)
     except ValueError:
         as_of = datetime.now(UTC)
+    taipei_report_date = as_of.astimezone(ZoneInfo("Asia/Taipei")).date().isoformat()
 
     from src.market_sentiment import project_market_sentiments
     market_sentiments = project_market_sentiments(
@@ -1003,19 +1006,33 @@ def build_market_digest(
                 "text": f"{name}{float(item['change_percent']):+.2f}%",
                 "freshness": str(item.get("freshness") or item.get("data_status") or "").casefold(),
                 "date": str(item.get("quote_date") or item.get("quote_time") or "")[:10],
+                "ticker": ticker,
+                "change_percent": float(item["change_percent"]),
             })
         missing = [
             _TICKER_NAMES.get(str(item.get("ticker") or ""), str(item.get("ticker") or ""))
             for item in quote_gaps
         ]
-        quote_groups: dict[tuple[str, str], list[str]] = {}
+        quote_groups: dict[tuple[str, str], list[dict[str, Any]]] = {}
         for item in available:
-            quote_groups.setdefault((item["freshness"], item["date"]), []).append(item["text"])
+            quote_key: tuple[str, str] = (str(item["freshness"]), str(item["date"]))
+            quote_groups.setdefault(quote_key, []).append(item)
         summary_facts: list[str] = []
         if quote_groups:
             (freshness, _date), group = next(iter(quote_groups.items()))
             freshness_label = "最近收盤" if freshness == "recent_close" else "盤前觀測" if slot == "us_premarket" else "行情"
-            summary_facts = [f"{freshness_label}{value}" for value in group[:3]]
+            for item in group[:3]:
+                if slot == "post_close" and item["ticker"] == "TAIEX" and item["date"] and item["date"] < taipei_report_date:
+                    try:
+                        observed_quote_date = datetime.strptime(item["date"], "%Y-%m-%d").date()
+                    except ValueError:
+                        summary_facts.append(f"最近收盤{item['text']}")
+                    else:
+                        summary_facts.append(
+                            f"最近收盤加權指數{observed_quote_date.month}/{observed_quote_date.day} {item['change_percent']:+.2f}%（非今日）"
+                        )
+                else:
+                    summary_facts.append(f"{freshness_label}{item['text']}")
         elif not txf_reference_fact and not market_sentiments:
             summary_facts = ["市場資料暫未取得"]
 

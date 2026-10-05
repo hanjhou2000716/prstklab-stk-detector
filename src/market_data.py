@@ -517,7 +517,24 @@ def _apply_supabase_backup(
                 backup = validated_txf_backup(store, now=reference)
             except Exception:
                 backup = None
-            result.append({**item, **backup} if isinstance(backup, dict) else item)
+            if not isinstance(backup, dict):
+                result.append(item)
+                continue
+            item_date: date | None = None
+            backup_date: date | None = None
+            try:
+                item_date = date.fromisoformat(str(item.get("quote_date") or "")[:10])
+                backup_date = date.fromisoformat(str(backup.get("quote_date") or "")[:10])
+            except ValueError:
+                pass
+            if item_date is not None and backup_date is not None and backup_date <= item_date:
+                attempts = list(item.get("source_attempts") or [])
+                attempts.append({"source": "taifex_saved_backup", "outcome": f"not_selected_not_newer:{backup_date.isoformat()}"})
+                result.append({**item, "source_attempts": attempts})
+            else:
+                attempts = [*(item.get("source_attempts") or []), *(backup.get("source_attempts") or [])]
+                attempts.append({"source": "taifex_saved_backup", "outcome": f"selected_newer:{backup.get('quote_date')}"})
+                result.append({**backup, "source_attempts": attempts})
             continue
         try:
             expected = _latest_completed_session_date(item, reference)
@@ -1319,9 +1336,22 @@ def build_market_snapshot() -> dict[str, Any]:
     official_taiex = taiex_quote_from_market_statistics(
         taiwan_market_statistics, expected_date=expected_taiex_date,
     )
+    turnover_evidence = taiwan_market_statistics.get("turnover")
+    fmtqik_observed_date = (
+        str(turnover_evidence.get("observed_date") or "")
+        if isinstance(turnover_evidence, dict) else ""
+    )
+    fmtqik_outcome = (
+        "verified" if official_taiex else
+        "reported_older_session" if fmtqik_observed_date and fmtqik_observed_date < expected_taiex_date else
+        "date_or_values_unavailable"
+    )
     taiex_source_attempts: list[dict[str, str]] = [{
         "source": "twse_fmtqik",
-        "outcome": "verified" if official_taiex else "date_or_values_unavailable",
+        "target_date": expected_taiex_date,
+        "observed_date": fmtqik_observed_date,
+        "checked_at": datetime.now(ZoneInfo("Asia/Taipei")).isoformat(),
+        "outcome": fmtqik_outcome,
     }]
     if official_taiex is None:
         official_taiex = fetch_twse_taiex_recent_close(

@@ -151,6 +151,23 @@ jobs:
           if [ -n "$DISPATCH_TRACE_ID" ]; then arguments+=(--dispatch-trace-id "$DISPATCH_TRACE_ID"); fi
           arguments+=(--schedule-contract-version "$SCHEDULE_CONTRACT_VERSION" --time-zone "$SCHEDULE_TIME_ZONE")
           python -m src.scheduled_brief "${arguments[@]}" >> "$GITHUB_OUTPUT"
+      - name: Watch official Taiwan closes before writer queue
+        id: official_close_watch
+        if: steps.window.outputs.should_run == 'true' && steps.window.outputs.slot == 'post_close'
+        continue-on-error: true
+        timeout-minutes: 22
+        env:
+          SCHEDULED_FOR_AT: ${{ steps.window.outputs.scheduled_for_at }}
+          # This step performs public HTTP GETs only; never expose the job's
+          # market-backup write credentials or delivery callback secrets.
+          SUPABASE_URL: ''
+          SUPABASE_SERVICE_ROLE_KEY: ''
+          MARKET_BACKUP_ENABLED: 'false'
+          RECEIPT_CALLBACK_URL: ''
+          RAILWAY_STATUS_URL: ''
+          RAILWAY_OBSERVATIONS_URL: ''
+          PUBLIC_OBSERVATIONS_URL: ''
+        run: python -m src.market_source_watch --scheduled-for "$SCHEDULED_FOR_AT"
       - name: Wait for production writer queue
         id: writer_queue
         if: steps.window.outputs.should_run == 'true'

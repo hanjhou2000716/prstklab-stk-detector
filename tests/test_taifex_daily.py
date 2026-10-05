@@ -150,7 +150,62 @@ def test_fetch_uses_official_html_only_when_openapi_has_no_verified_day_row():
         quote = fetch_latest_verified_txf(session=session, now=NOW)
     assert quote is not None
     assert quote["source_url"] == TAIFEX_DAILY_API
-    assert len(session.calls) == 1
+    assert len(session.calls) == 2
+
+
+def test_fetch_selects_newer_official_daily_table_when_openapi_is_stale():
+    api_quote = {"ticker": "TXF", "quote_date": "2026-10-02", "price": 48671.0, "change": -31.0,
+                 "change_percent": -0.06, "contract_month": "202610", "session": "regular", "source_label": "TAIFEX OpenAPI"}
+    table_quote = {**api_quote, "quote_date": "2026-10-05", "price": 49949.0, "change": 1280.0,
+                   "change_percent": 2.63, "source_label": "TAIFEX日盤", "source_url": "table"}
+    response = SimpleNamespace(
+        raise_for_status=lambda: None,
+        json=lambda: [_api_row()],
+        text="official daily table response",
+    )
+
+    class Session:
+        def __init__(self):
+            self.calls = []
+
+        def get(self, url, **kwargs):
+            self.calls.append(url)
+            return response
+
+    with (
+        patch("src.taifex_daily.parse_daily_api", return_value=api_quote),
+        patch("src.taifex_daily.parse_daily_html", return_value=table_quote),
+    ):
+        diagnostics = []
+        quote = fetch_latest_verified_txf(
+            session=Session(),
+            now=datetime.fromisoformat("2026-10-05T14:20:00+08:00"),
+            diagnostics=diagnostics,
+        )
+    assert quote is table_quote
+    assert quote["quote_date"] == "2026-10-05"
+    assert diagnostics[-1]["outcome"] == "selected:taifex_daily_table"
+    assert diagnostics[-1]["observed_date"] == "2026-10-05"
+
+
+def test_fetch_fails_closed_on_same_day_conflicting_official_sources():
+    api_quote = {"ticker": "TXF", "quote_date": "2026-09-24", "price": 48123.0, "change": -189.0,
+                 "change_percent": -0.39, "contract_month": "202610", "session": "regular"}
+    table_quote = {**api_quote, "price": 48124.0}
+    response = SimpleNamespace(raise_for_status=lambda: None, json=lambda: [_api_row()], text="official table")
+
+    class Session:
+        def get(self, *_args, **_kwargs):
+            return response
+
+    with (
+        patch("src.taifex_daily.parse_daily_api", return_value=api_quote),
+        patch("src.taifex_daily.parse_daily_html", return_value=table_quote),
+    ):
+        diagnostics = []
+        assert fetch_latest_verified_txf(session=Session(), now=NOW, diagnostics=diagnostics) is None
+    assert diagnostics[-1]["outcome"] == "same_day_official_conflict"
+    assert diagnostics[-1]["observed_date"] == "2026-09-24"
 
 
 def test_fetch_uses_table_fallback_after_invalid_api_and_fails_closed_if_both_fail():
@@ -330,10 +385,11 @@ def test_official_source_failures_have_safe_distinct_diagnostics():
 
     diagnostics = []
     assert fetch_latest_verified_txf(session=Session(), now=NOW, diagnostics=diagnostics) is None
-    assert diagnostics == [
-        {"source": "taifex_openapi", "outcome": "not_published"},
-        {"source": "taifex_daily_table", "outcome": "parse_or_contract_mismatch"},
+    assert [(item["source"], item["outcome"]) for item in diagnostics] == [
+        ("taifex_openapi", "not_published"),
+        ("taifex_daily_table", "parse_or_contract_mismatch"),
     ]
+    assert all(item["target_date"] == NOW.date().isoformat() for item in diagnostics)
 
 
 def test_saved_txf_backup_diagnostics_identify_expired_history():
