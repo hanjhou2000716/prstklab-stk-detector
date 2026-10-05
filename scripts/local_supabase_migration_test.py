@@ -16,6 +16,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -67,6 +68,15 @@ _URL_QUERY_SECRET_RE = re.compile(r"(?i)([?&](?:token|key|secret|password)=)[^&\
 _SECRET_ENV_LINE_RE = re.compile(
     r"(?i)^\s*(?:export\s+)?[A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|SERVICE_ROLE_KEY|ACCESS_KEY)\s*=.*$"
 )
+_TEMPORARY_PROJECT_ID_RE = re.compile(r"[a-z0-9-]+\Z")
+
+
+def _temporary_project_id() -> str:
+    """Return a unique Supabase project name independent of temp-path syntax."""
+    project_id = f"prstk-{uuid.uuid4().hex[:16]}"
+    if not _TEMPORARY_PROJECT_ID_RE.fullmatch(project_id):
+        raise LocalSupabaseError("temporary_project_id_invalid", stage="supabase:init")
+    return project_id
 
 
 def _safe_excerpt(value: str | bytes | None, *, max_chars: int = 1400) -> str:
@@ -349,9 +359,7 @@ def run(repo_root: Path) -> dict[str, Any]:
         shutil.copytree(migration_source, target)
         config_path = root / "supabase" / "config.toml"
         config = config_path.read_text(encoding="utf-8")
-        project_id = f"prstk-migration-{root.name.removeprefix('prstk-supabase-')}"
-        if not re.fullmatch(r"[a-z0-9-]+", project_id):
-            raise LocalSupabaseError("temporary_project_id_invalid", stage="supabase:init")
+        project_id = _temporary_project_id()
         if not re.search(r"(?m)^project_id\s*=\s*", config):
             raise LocalSupabaseError("temporary_project_id_missing", stage="supabase:init")
         config_path.write_text(

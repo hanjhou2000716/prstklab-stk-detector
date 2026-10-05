@@ -66,7 +66,7 @@ def test_start_diagnostics_keep_running_when_disk_probe_is_unavailable(monkeypat
 
 
 def test_disposable_stack_is_stopped_even_when_start_fails(tmp_path, monkeypatch):
-    root = tmp_path / "prstk-supabase-diagnostic-test"
+    root = tmp_path / "prstk-supabase-diagnostic_test"
     root.mkdir()
     migrations = tmp_path / "repository" / "supabase" / "migrations"
     migrations.mkdir(parents=True)
@@ -105,3 +105,20 @@ def test_disposable_stack_is_stopped_even_when_start_fails(tmp_path, monkeypatch
     assert captured.value.cleanup == "stopped"
     assert "container unhealthy" in captured.value.diagnostic
     assert stop.call_args.args[0][1:] == ["stop", "--no-backup"]
+    config = (root / "supabase" / "config.toml").read_text(encoding="utf-8")
+    project_id = config.split('project_id = "', 1)[1].split('"', 1)[0]
+    assert migration_test._TEMPORARY_PROJECT_ID_RE.fullmatch(project_id)
+    assert project_id.startswith("prstk-")
+    assert "diagnostic_test" not in project_id
+
+
+def test_temporary_project_id_uses_only_safe_random_hex(monkeypatch):
+    class UUID:
+        hex = "0123456789abcdef0123456789abcdef"
+
+    monkeypatch.setattr(migration_test.uuid, "uuid4", lambda: UUID())
+
+    project_id = migration_test._temporary_project_id()
+
+    assert project_id == "prstk-0123456789abcdef"
+    assert migration_test._TEMPORARY_PROJECT_ID_RE.fullmatch(project_id)
