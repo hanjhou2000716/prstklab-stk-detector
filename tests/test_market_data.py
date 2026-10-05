@@ -332,8 +332,18 @@ def test_official_taiex_close_replaces_unverified_backup_but_keeps_live_verified
     replaced = _replace_with_verified_taiex_close(backup, official)
     assert replaced[0]["price"] == 47940.13
     assert replaced[0]["source_tier"] == "official"
-    assert replaced[0]["technical_context"] is None
+    assert "technical_context" not in replaced[0]
     assert replaced[0]["alert_eligible"] is False
+    from src.artifact_contract import validate_market
+
+    promoted_quote = {**replaced[0], "source_label": "TWSE", "freshness": "recent_close"}
+    assert validate_market({
+        "generated_at": "2026-10-01T00:00:00Z",
+        "snapshot_id": "snapshot-official-close",
+        "indices": [promoted_quote],
+        "quotes": [],
+        "source_health": {},
+    }) == []
 
     live = [{
         **official, "price": 47950, "freshness": "live",
@@ -341,6 +351,19 @@ def test_official_taiex_close_replaces_unverified_backup_but_keeps_live_verified
         "crosscheck_sources": [{"provider": "TWSE"}, {"provider": "TAIFEX"}],
     }]
     assert _replace_with_verified_taiex_close(live, official)[0]["price"] == 47950
+
+
+def test_official_taiwan_quote_merge_omits_missing_technical_context():
+    official = {
+        "ticker": "TAIEX", "price": 47940.13, "quote_date": "2026-09-30",
+        "source_label": "TWSE", "freshness": "recent_close",
+    }
+    replacement = _replace_with_official_taiwan_close([{
+        "ticker": "TAIEX", "price": 47000, "quote_date": "2026-09-29",
+    }], {"TAIEX": official})
+
+    assert replacement[0]["price"] == 47940.13
+    assert "technical_context" not in replacement[0]
 
 
 

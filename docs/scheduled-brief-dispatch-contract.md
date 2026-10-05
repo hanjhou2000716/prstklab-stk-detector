@@ -82,28 +82,23 @@ permission (`contents:write` on a fine-grained token); the workflow itself is
 restricted to `actions:read` and `contents:read` and has no Telegram sender or
 Supabase service-role credentials.
 
-For complete recipient verification, maintain these repository variables as
-one independently reviewed recipient-set record:
+For complete recipient verification, maintain one append-only JSON repository
+variable, `SCHEDULED_RECIPIENT_SET_MANIFEST`. The current schema is
+`scheduled-recipient-manifest-v1` with a `versions` array. Each version stores
+only a fingerprinted version label, an effective UTC timestamp, and the sorted,
+deduplicated 12-character recipient hashes; raw chat IDs and sending tokens
+must never be included. The manifest parser validates the content fingerprint
+and history ordering and selects the version effective at the original slot
+anchor. This preserves prior recipient sets so a later subscriber change does
+not rewrite historical audit expectations.
 
-- `SCHEDULED_RECIPIENT_HASHES`: comma-separated expected active recipient
-  hashes (first 12 lowercase hex characters of SHA-256 over each configured
-  chat ID; never store the chat IDs here).
-- `SCHEDULED_RECIPIENT_SET_VERSION`: `recipients-<fingerprint>`, where
-  `<fingerprint>` is the first 16 lowercase hex characters of SHA-256 over
-  canonical JSON (sorted keys, compact separators) containing the sorted,
-  de-duplicated lowercase hashes and normalized UTC effective timestamp. The
-  code exposes `recipient_set_version(hashes, effective_at)` as the canonical
-  calculation.
-- `SCHEDULED_RECIPIENT_SET_EFFECTIVE_AT`: timezone-aware ISO-8601 timestamp
-  (prefer UTC, for example `2026-09-30T00:00:00Z`) from which that exact list
-  is valid. The audit verifies that the version fingerprint matches both the
-  list and timestamp and blocks a slot earlier than this time rather than
-  applying today's list retroactively.
-
-Update the hash list, version, and effective time together whenever the active
-subscriber set changes. Missing or malformed metadata fails closed. The audit
-never falls back to `TELEGRAM_CHAT_IDS` or trusts the claim's own recipient set
-as proof that all recipients were covered.
+Use the read-only `initialize-scheduled-recipient-manifest.yml` workflow to
+generate the sanitized value from the same active-subscription resolver used
+by the sender. Review and set that single repository variable as a separate
+administrative action; the initializer and audit workflow do not have variable
+write permission. Missing, malformed, or not-yet-effective versions fail
+closed. The audit never falls back to `TELEGRAM_CHAT_IDS` or trusts a claim's
+own recipient list as proof that all expected recipients were covered.
 
 A backup job is externally verified only after its enabled state, timezone,
 weekday selection, request body, authentication, and recent natural execution

@@ -15,6 +15,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -27,6 +29,82 @@ from scripts.validate_supabase_migrations import compare  # noqa: E402
 class LocalSupabaseError(RuntimeError):
     """A safe local integration failure."""
 
+    def __init__(
+        self,
+        code: str,
+        *,
+        stage: str = "unknown",
+        exit_code: int | None = None,
+        diagnostic: str = "",
+        cleanup: str = "not_attempted",
+    ) -> None:
+        super().__init__(code)
+        self.code = code
+        self.stage = stage
+        self.exit_code = exit_code
+        self.diagnostic = diagnostic
+        self.cleanup = cleanup
+
+    def as_result(self) -> dict[str, Any]:
+        return {
+            "status": "failed",
+            "stage": self.stage,
+            "error_code": self.code,
+            "command_exit_code": self.exit_code,
+            "diagnostic": self.diagnostic,
+            "cleanup": self.cleanup,
+            "production_credentials_used": False,
+        }
+
+
+_SECRET_VALUE_RE = re.compile(
+    r"(?i)(\b(?:authorization|api[_-]?key|access[_-]?token|refresh[_-]?token|"
+    r"password|passwd|secret|service[_-]?role[_-]?key|jwt)\b\s*[:=]\s*)([^\s,;]+)"
+)
+_BEARER_RE = re.compile(r"(?i)\bBearer\s+[A-Za-z0-9._~+/-]+=*")
+_JWT_RE = re.compile(r"\beyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b")
+_URL_CREDENTIALS_RE = re.compile(r"(?i)(https?://)[^/@\s]+:[^/@\s]+@")
+_URL_QUERY_SECRET_RE = re.compile(r"(?i)([?&](?:token|key|secret|password)=)[^&\s]+")
+_SECRET_ENV_LINE_RE = re.compile(
+    r"(?i)^\s*(?:export\s+)?[A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|SERVICE_ROLE_KEY|ACCESS_KEY)\s*=.*$"
+)
+_TEMPORARY_PROJECT_ID_RE = re.compile(r"[a-z0-9-]+\Z")
+
+
+def _temporary_project_id() -> str:
+    """Return a unique Supabase project name independent of temp-path syntax."""
+    project_id = f"prstk-{uuid.uuid4().hex[:16]}"
+    if not _TEMPORARY_PROJECT_ID_RE.fullmatch(project_id):
+        raise LocalSupabaseError("temporary_project_id_invalid", stage="supabase:init")
+    return project_id
+
+
+def _safe_excerpt(value: str | bytes | None, *, max_chars: int = 1400) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        value = value.decode("utf-8", errors="replace")
+    lines: list[str] = []
+    for line in value.splitlines():
+        if _SECRET_ENV_LINE_RE.match(line):
+            lines.append("[redacted environment value]")
+            continue
+        line = _SECRET_VALUE_RE.sub(r"\1[redacted]", line)
+        line = _BEARER_RE.sub("Bearer [redacted]", line)
+        line = _JWT_RE.sub("[redacted JWT]", line)
+        line = _URL_CREDENTIALS_RE.sub(r"\1[redacted]@", line)
+        line = _URL_QUERY_SECRET_RE.sub(r"\1[redacted]", line)
+        lines.append(line)
+    return "\n".join(lines[-20:])[-max_chars:]
+
+
+def _command_stage(command: list[str]) -> str:
+    executable = Path(command[0]).name.lower() if command else "unknown"
+    if executable.startswith("supabase"):
+        safe_parts = [part for part in command[1:3] if re.fullmatch(r"[a-zA-Z0-9_-]+", part)]
+        return ":".join(["supabase", *safe_parts])
+    return executable
+
 
 def _run(command: list[str], cwd: Path, *, timeout: int = 600) -> subprocess.CompletedProcess[str]:
     try:
@@ -38,15 +116,66 @@ def _run(command: list[str], cwd: Path, *, timeout: int = 600) -> subprocess.Com
             timeout=timeout,
             check=False,
         )
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise LocalSupabaseError(f"command_unavailable:{command[0]}") from exc
+    except subprocess.TimeoutExpired as exc:
+        diagnostic = _safe_excerpt(exc.stderr) or _safe_excerpt(exc.stdout)
+        raise LocalSupabaseError(
+            "command_timed_out",
+            stage=_command_stage(command),
+            diagnostic=diagnostic,
+        ) from exc
+    except OSError as exc:
+        raise LocalSupabaseError(
+            "command_unavailable",
+            stage=_command_stage(command),
+            diagnostic=type(exc).__name__,
+        ) from exc
+    except subprocess.SubprocessError as exc:
+        raise LocalSupabaseError(
+            "command_failed_to_run",
+            stage=_command_stage(command),
+            diagnostic=type(exc).__name__,
+        ) from exc
 
 
 def _check(command: list[str], cwd: Path, *, timeout: int = 600) -> str:
     result = _run(command, cwd, timeout=timeout)
     if result.returncode != 0:
-        raise LocalSupabaseError(f"command_failed:{command[0]}:{' '.join(command[1:3])}")
+        diagnostic = _safe_excerpt(result.stderr) or _safe_excerpt(result.stdout)
+        raise LocalSupabaseError(
+            "command_failed",
+            stage=_command_stage(command),
+            exit_code=result.returncode,
+            diagnostic=diagnostic,
+        )
     return result.stdout
+
+
+def _capture_start_diagnostics(cli: str, cwd: Path, project_id: str) -> dict[str, Any]:
+    result: dict[str, Any] = {"project_id": project_id}
+    try:
+        result["free_disk_bytes"] = shutil.disk_usage(cwd).free
+    except OSError as exc:
+        result["disk_diagnostic_error"] = type(exc).__name__
+    for label, command in (
+        ("supabase_version", [cli, "--version"]),
+        ("docker_server_version", ["docker", "version", "--format", "{{.Server.Version}}"]),
+        (
+            "project_containers",
+            [
+                "docker", "ps", "-a", "--filter", f"name={project_id}",
+                "--format", "{{.Names}}|{{.State}}|{{.Status}}",
+            ],
+        ),
+    ):
+        try:
+            output = _run(command, cwd, timeout=20)
+            result[label] = {
+                "exit_code": output.returncode,
+                "output": _safe_excerpt(output.stdout if output.returncode == 0 else output.stderr),
+            }
+        except LocalSupabaseError as exc:
+            result[label] = {"error_code": exc.code, "stage": exc.stage, "diagnostic": exc.diagnostic}
+    return result
 
 
 def _status_env(text: str) -> dict[str, str]:
@@ -228,10 +357,23 @@ def run(repo_root: Path) -> dict[str, Any]:
         if target.exists():
             shutil.rmtree(target)
         shutil.copytree(migration_source, target)
-        started = False
+        config_path = root / "supabase" / "config.toml"
+        config = config_path.read_text(encoding="utf-8")
+        project_id = _temporary_project_id()
+        if not re.search(r"(?m)^project_id\s*=\s*", config):
+            raise LocalSupabaseError("temporary_project_id_missing", stage="supabase:init")
+        config_path.write_text(
+            re.sub(r'(?m)^project_id\s*=\s*"[^"]*"', f'project_id = "{project_id}"', config, count=1),
+            encoding="utf-8",
+        )
+
+        failure: LocalSupabaseError | None = None
+        start_diagnostics: dict[str, Any] | None = None
+        cleanup = "not_attempted"
+        success_result: dict[str, Any] | None = None
         try:
+            start_time = time.monotonic()
             _check([cli, "start"], root, timeout=900)
-            started = True
             _check([cli, "db", "reset", "--local", "--no-seed"], root, timeout=900)
             _check([cli, "db", "push", "--local"], root, timeout=900)
             status = _status_env(_check([cli, "status", "-o", "env"], root, timeout=120))
@@ -240,7 +382,7 @@ def run(repo_root: Path) -> dict[str, Any]:
             comparison = compare(root, _check([cli, "migration", "list", "--local"], root, timeout=120))
             if comparison["status"] != "ready" or comparison["pending_count"] != 0:
                 raise LocalSupabaseError("second_run_has_pending_migrations")
-            return {
+            success_result = {
                 "status": "passed",
                 "first_run": "applied",
                 "second_run": "no_changes",
@@ -250,16 +392,41 @@ def run(repo_root: Path) -> dict[str, Any]:
                 "canary": "rolled_back_and_clean",
                 "production_credentials_used": False,
             }
+        except LocalSupabaseError as exc:
+            failure = exc
+            if exc.stage == "supabase:start":
+                start_diagnostics = _capture_start_diagnostics(cli, root, project_id)
+                start_diagnostics["elapsed_seconds"] = round(time.monotonic() - start_time, 2)
         finally:
-            if started:
-                _run([cli, "stop", "--no-backup"], root, timeout=300)
+            try:
+                stopped = _run([cli, "stop", "--no-backup"], root, timeout=300)
+                cleanup = "stopped" if stopped.returncode == 0 else "stop_failed"
+                if cleanup == "stop_failed":
+                    cleanup = f"stop_failed:{_safe_excerpt(stopped.stderr) or _safe_excerpt(stopped.stdout)}"
+            except LocalSupabaseError as exc:
+                cleanup = f"cleanup_command_failed:{exc.code}:{exc.stage}:{exc.diagnostic}"
+
+        if failure is not None:
+            failure.cleanup = cleanup
+            if start_diagnostics:
+                failure.diagnostic = json.dumps(
+                    {"command_output": failure.diagnostic, "environment": start_diagnostics},
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
+            raise failure
+        if cleanup != "stopped":
+            raise LocalSupabaseError("temporary_stack_cleanup_failed", stage="supabase:stop", diagnostic=cleanup)
+        if success_result is None:
+            raise LocalSupabaseError("migration_test_completed_without_result")
+        return success_result
 
 
 def main() -> int:
     try:
         result = run(Path(__file__).resolve().parents[1])
     except LocalSupabaseError as exc:
-        result = {"status": "failed", "error_code": str(exc), "production_credentials_used": False}
+        result = exc.as_result()
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
     return 0 if result["status"] == "passed" else 1
 

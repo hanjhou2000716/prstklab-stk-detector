@@ -17,7 +17,7 @@ _ACTION_RE = re.compile(
     r"(?:表示|指出|宣稱|宣称|宣布|公布|發布|发布|更新|完成|組成|组成|影響|上漲|上升|下跌|下降|升息|降息|"
     r"中斷|中断|供應|供给|簽署|簽約|簽|簽訂|達|高於|低於|發射|否認|否认|可能|擬|拟|"
     r"考慮|考虑|評估|评估|計劃|计划|擁有|拥有|具備|具备|達到|达到|容量|攻擊|攻击|擊落|击落|攔截|拦截|摧毀|摧毁|扣押|封鎖|封锁|撤離|撤离|部署|"
-    r"會面|会面|討論|讨论|發表|发表|推出|said|says|announc|report|rise|fall|jump|drop|"
+    r"襲擊|袭击|會面|会面|討論|讨论|發表|发表|推出|said|says|announc|report|rise|fall|jump|drop|"
     r"increase|decrease|disrupt|supply|rate|outlook|earnings|guidance|forecast|profit|revenue|policy)",
     re.IGNORECASE,
 )
@@ -33,7 +33,7 @@ _ATTRIBUTION_MARKERS = (
 _ATTRIBUTED_CLAIM_RE = re.compile(
     r"(?:接觸|接触|會談|会谈|談判|谈判|合作|協議|协议|進展|进展|成功|失敗|失败|"
     r"達成|达成|同意|拒絕|拒绝|可能|將|将|會|会|據報|据报|計劃|计划|政策|"
-    r"上升|下降|增加|減少|减少|維持|维持|支持|反對|反对|攻擊|攻击|否認|否认)",
+    r"上升|下降|增加|減少|减少|維持|维持|支持|反對|反对|攻擊|攻击|襲擊|袭击|否認|否认)",
     re.IGNORECASE,
 )
 _ATTRIBUTION_NOISE_RE = re.compile(
@@ -72,6 +72,8 @@ def is_complete_fact(value: Any) -> bool:
     """Check whether a source fact can stand alone without guessing."""
     text = _clean(value).strip()
     if not text or len(text.rstrip("。！？.!?")) < 8:
+        return False
+    if "…" in text or "..." in text:
         return False
     if not _ACTION_RE.search(text) or not _condition_complete(text):
         return False

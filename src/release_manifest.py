@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+from src.alert_orchestrator import notification_key_for_event
 from src.artifact_contract import validate_release, validate_source_health
 from src.atomic_file import replace_with_retry
 from src.bootstrap_release import BOOTSTRAP_MAX_BYTES, BOOTSTRAP_NAME, build_bootstrap_snapshot
@@ -96,10 +97,9 @@ def _alert_projection(
     session_news_summary: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Create the immutable public detail for one notification identity."""
-    notification_id = str(
-        event.get("notification_id") or event.get("alert_id") or event.get("event_cluster_key")
-        or event.get("event_key") or event.get("item_id") or ""
-    ).strip()
+    # Use the same identity as the delivery/event ledger. A cluster key groups
+    # related stories and is not unique enough for immutable alert filenames.
+    notification_id = notification_key_for_event(event)
     if not notification_id:
         notification_id = f"notification-{hashlib.sha256(_canonical_json(event)).hexdigest()[:24]}"
     evidence = event.get("market_evidence")
@@ -161,7 +161,11 @@ def _alert_projection(
         "source": event.get("source") or "公開來源",
         "source_key": event.get("source_key"),
         "notification_id": notification_id,
-        "alert_id": str(event.get("alert_id") or notification_id),
+        "alert_id": str(
+            event.get("alert_id")
+            if event.get("alert_id") and event.get("alert_id") != event.get("event_cluster_key")
+            else notification_id
+        ),
         "event_cluster_key": event.get("event_cluster_key"),
         "release_id": release_id,
         "snapshot_id": str(event.get("snapshot_id") or market_snapshot_id),

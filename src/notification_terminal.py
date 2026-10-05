@@ -115,8 +115,15 @@ def _result(
         "failed_count": _count(values, "FAILED_COUNT"),
         "stages": {
             "prepare": _text(values, "PREPARE_OUTCOME", _text(values, "SCAN_STATUS", "unknown")),
-            "deployment": _text(values, "DEPLOYMENT_AVAILABLE", _text(values, "PAGES_DEPLOYMENT_AVAILABLE", "unknown")),
-            "public_gate": _text(values, "RELEASE_GATE_ALLOWED", _text(values, "GATE_ALLOWED", "unknown")),
+            "release_manifest": _text(values, "RELEASE_MANIFEST_OUTCOME", "not_run"),
+            "deployment": (
+                "not_run" if _text(values, "RELEASE_MANIFEST_OUTCOME") == "failure"
+                else _text(values, "DEPLOYMENT_AVAILABLE", _text(values, "PAGES_DEPLOYMENT_AVAILABLE", "unknown"))
+            ),
+            "public_gate": (
+                "not_run" if _text(values, "RELEASE_MANIFEST_OUTCOME") == "failure"
+                else _text(values, "RELEASE_GATE_ALLOWED", _text(values, "GATE_ALLOWED", "unknown"))
+            ),
             "receipt": _text(values, "RECEIPT_OUTCOME", _text(values, "RECEIPT_CALLBACK_OUTCOME", "not_attempted")),
             "ledger": _text(values, "LEDGER_OUTCOME", _text(values, "LEDGER_PERSIST_OUTCOME", "not_attempted")),
         },
@@ -315,6 +322,14 @@ def evaluate_scheduled_terminal(values: Mapping[str, str]) -> dict[str, Any]:
             values, "scheduled", status="not_requested",
             reason="notification_not_requested", expected=False,
         )
+    if _text(values, "RELEASE_MANIFEST_OUTCOME") == "failure" and (
+        expected or _text(values, "WINDOW_DELIVERY_INTENT") == "notify_candidate"
+    ):
+        return _result(
+            values, "scheduled", status="failed",
+            reason="release_manifest_failed_before_pages_deployment",
+            expected=True, failure=True,
+        )
     if prepare_outcome == "failure" and (
         expected or _text(values, "WINDOW_DELIVERY_INTENT") == "notify_candidate"
     ):
@@ -438,6 +453,10 @@ def append_summary(path: str, terminal: Mapping[str, Any]) -> None:
         f"- notification_expected: {str(bool(terminal.get('expected'))).lower()}\n",
         f"- notification_status: {terminal.get('status', 'unresolved')}\n",
         f"- notification_reason: {terminal.get('reason', 'terminal_state_unresolved')}\n",
+        "- release_manifest / deployment / public_gate: "
+        f"{terminal.get('stages', {}).get('release_manifest', 'unknown')} / "
+        f"{terminal.get('stages', {}).get('deployment', 'unknown')} / "
+        f"{terminal.get('stages', {}).get('public_gate', 'unknown')}\n",
         f"- sender_status / receipt_status: {terminal.get('sender_status', 'unknown')} / {terminal.get('receipt_status', 'unknown')}\n",
         f"- delivered / failed recipients: {terminal.get('delivered_count', 'unknown')} / {terminal.get('failed_count', 'unknown')}\n",
         f"- no_resend: {str(bool(terminal.get('no_resend'))).lower()}\n",
