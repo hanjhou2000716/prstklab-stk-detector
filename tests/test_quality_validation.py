@@ -29,6 +29,7 @@ def _record(run: dict) -> dict:
         "workflow_path": ".github/workflows/quality.yml",
         "repository": "hanjhou2000716/prstklab-stk-detector",
         "candidate_sha": "a" * 40,
+        "tested_sha": "a" * 40,
         "base_sha": "b" * 40,
         "run_id": str(run["id"]),
         "run_attempt": str(run["run_attempt"]),
@@ -104,6 +105,24 @@ def test_partial_or_modified_candidate_evidence_is_rejected():
     assert "validation_gate_failure_present" in errors
 
 
+def test_validation_rejects_unavailable_tools_and_candidate_fingerprint_drift():
+    run = _run()
+    record = _record(run)
+    record["tool_versions"]["shellcheck"] = "unavailable"
+    record["input_fingerprints"]["uv_lock_sha256"] = "d" * 64
+    expected = {key: "c" * 64 for key in record["input_fingerprints"]}
+    errors = validate_evidence_record(
+        run, [{"name": "quality-candidate-validation", "expired": False}], record,
+        repository="hanjhou2000716/prstklab-stk-detector",
+        candidate_sha="a" * 40,
+        base_sha="b" * 40,
+        expected_fingerprints=expected,
+    )
+
+    assert "validation_tool_versions_missing" in errors
+    assert "validation_input_fingerprint_does_not_match_candidate_tree" in errors
+
+
 def test_evidence_rejects_missing_preflight_gates_even_if_return_status_is_success():
     run = _run()
     record = _record(run)
@@ -176,6 +195,7 @@ def test_candidate_evidence_reads_shared_structured_preflight_file(monkeypatch, 
     record = build_evidence({
         "QUALITY_PREFLIGHT_EVIDENCE_PATH": str(preflight_path),
         "QUALITY_VALIDATION_CANDIDATE_SHA": "a" * 40,
+        "GITHUB_SHA": "a" * 40,
         "QUALITY_PREFLIGHT_BASE_SHA": "b" * 40,
         "QUALITY_PREFLIGHT_GATE_COUNT": "2",
         "QUALITY_PREFLIGHT_OUTCOME": "success",

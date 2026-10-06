@@ -8,6 +8,7 @@ import src.writer_queue as writer_queue
 from src.writer_queue import (
     QueueResult,
     WriterQueueError,
+    WriterQueueTimeout,
     blocking_runs,
     evaluate_production_revision,
     main,
@@ -455,6 +456,99 @@ def test_queued_writer_with_unavailable_steps_only_defers_without_runner(monkeyp
     assert result.deferred_candidates == ({"run_id": 90, "attempt": 1, "reason": "writer_job_not_started"},)
 
 
+def test_real_github_queued_writer_timestamps_do_not_prove_runner_or_gate(monkeypatch):
+    run = {
+        "id": 37349718666,
+        "run_attempt": 1,
+        "path": ".github/workflows/official-event-monitor.yml",
+        "workflow_id": 320209983,
+        "status": "queued",
+        "created_at": "2026-10-05T17:36:42Z",
+        # GitHub returned these non-empty placeholders for an unstarted run.
+        "run_started_at": "2026-10-05T17:36:42Z",
+    }
+    job = {
+        "id": 111897193426,
+        "name": "monitor-send-deploy",
+        "status": "queued",
+        "runner_id": None,
+        "started_at": "2026-10-05T17:36:43Z",
+        "steps": [],
+    }
+    monkeypatch.setattr(
+        writer_queue,
+        "_fetch_attempt_jobs",
+        lambda **_kwargs: [job],
+    )
+
+    candidate = dict(run)
+    deferred = writer_queue._annotate_publication_gate(
+        candidate,
+        api_url="https://api.github.test",
+        repository="owner/repo",
+        token="token",
+        deadline_monotonic=None,
+    )
+
+    assert deferred == {
+        "run_id": 37349718666,
+        "attempt": 1,
+        "reason": "writer_job_not_started",
+    }
+    assert candidate["queue_gate_state"] == "deferred"
+
+
+def test_started_collection_before_pending_gate_is_deferred_but_later_step_is_not():
+    from src.writer_queue import RetryableQueueSnapshotError
+
+    candidate = {
+        "id": 90,
+        "run_attempt": 1,
+        "path": ".github/workflows/official-event-monitor.yml",
+        "workflow_id": 320209983,
+        "status": "in_progress",
+    }
+    prior_step = {
+        "name": "Collect official observations",
+        "status": "completed",
+        "started_at": "2026-10-06T00:00:01Z",
+    }
+    pending_gate = {
+        "name": "Wait for production writer queue",
+        "status": "queued",
+        "started_at": None,
+    }
+    steps = [prior_step, pending_gate]
+
+    def fetch(**_kwargs):
+        return [{"id": 900, "name": "monitor-send-deploy", "status": "in_progress",
+                 "runner_id": 77, "started_at": "2026-10-06T00:00:00Z", "steps": steps}]
+
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(writer_queue, "_fetch_attempt_jobs", lambda **_kwargs: fetch())
+    try:
+        assert writer_queue._annotate_publication_gate(
+            candidate,
+            api_url="https://api.github.test",
+            repository="owner/repo",
+            token="token",
+            deadline_monotonic=None,
+        )["reason"] == "publication_gate_not_reached"
+        candidate["id"] = 91
+        steps.append({"name": "Publish data-release", "status": "in_progress",
+                      "started_at": "2026-10-06T00:00:02Z"})
+        with pytest.raises(RetryableQueueSnapshotError):
+            writer_queue._annotate_publication_gate(
+                candidate,
+                api_url="https://api.github.test",
+                repository="owner/repo",
+                token="token",
+                deadline_monotonic=None,
+            )
+    finally:
+        monkeypatch.undo()
+
+
 
 
 def test_queue_api_restarts_from_first_page_after_transient_count_mismatch(monkeypatch):
@@ -540,6 +634,34 @@ def test_disappeared_blocker_requires_authoritative_terminal_verification():
     assert result.status == "acquired"
     assert verified == [10]
     assert result.verified_blockers == ()
+
+
+def test_previously_admitted_blocker_cannot_disappear_while_attempt_is_active(monkeypatch):
+    rows = [[_run(10)], [], []]
+    now = [0.0]
+    monkeypatch.setattr(writer_queue.time, "monotonic", lambda: now[0])
+
+    def fetcher(**_kwargs):
+        return rows.pop(0)
+
+    def verify(_run_row, **_kwargs):
+        return True
+
+    def sleep(seconds):
+        now[0] += seconds
+
+    with pytest.raises(WriterQueueTimeout) as raised:
+        wait_for_slot(
+            current_run_id=11,
+            current_created_at=datetime(2026, 8, 31, 8, 1, tzinfo=UTC),
+            timeout_seconds=2,
+            poll_seconds=1,
+            settle_seconds=0,
+            fetcher=fetcher,
+            blocker_verifier=verify,
+            sleeper=sleep,
+        )
+    assert raised.value.blockers == (10,)
 
 
 

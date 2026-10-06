@@ -95,6 +95,7 @@ def _result(
     failure: bool = False,
     no_resend: bool = False,
 ) -> dict[str, Any]:
+    expired = _flag(values, "SCHEDULE_EXPIRY_STATUS")
     queue_failed = (
         _text(values, "WRITER_QUEUE_STATUS", _text(values, "QUEUE_STATUS")) == "failed"
         and _text(values, "WRITER_QUEUE_OUTCOME", "failure") == "failure"
@@ -104,13 +105,22 @@ def _result(
         or (_count(values, "DELIVERED_COUNT") or 0) > 0
         or _text(values, "SEND_OUTCOME") not in {"", "skipped", "success", "not_attempted"}
     )
+    stages_not_run = expired or sender_not_run_after_queue_failure
     return {
-        "schema_version": "notification-terminal-v1",
+        "schema_version": "notification-terminal-v2",
         "workflow": workflow,
         "run_id": _text(values, "GITHUB_RUN_ID"),
         "workflow_sha": _text(values, "GITHUB_SHA"),
         "slot": _text(values, "SCHEDULED_SLOT", _text(values, "SLOT", _text(values, "CANDIDATE_TYPE", "unknown"))),
         "scheduled_for_at": _text(values, "SCHEDULED_FOR_AT"),
+        "schedule_expiry": {
+            "expired": expired,
+            "reason": _text(values, "SCHEDULE_EXPIRY_REASON"),
+            "slot_date": _text(values, "SCHEDULE_EXPIRY_SLOT_DATE"),
+            "anchor": _text(values, "SCHEDULE_EXPIRY_ANCHOR"),
+            "deadline": _text(values, "SCHEDULE_EXPIRY_DEADLINE"),
+            "detected_at": _text(values, "SCHEDULE_EXPIRY_DETECTED_AT"),
+        },
         "expected": expected,
         "status": status,
         "reason": reason[:200],
@@ -120,7 +130,10 @@ def _result(
         "reconciliation": _reconciliation_evidence(values),
         "sender_status": _text(values, "SEND_STATUS", "not_attempted") or "not_attempted",
         "writer_queue_error_code": _text(values, "WRITER_QUEUE_ERROR_CODE"),
+        "writer_queue_diagnostic_schema_version": _text(values, "WRITER_QUEUE_DIAGNOSTIC_SCHEMA_VERSION"),
+        "writer_queue_entry_at": _text(values, "WRITER_QUEUE_ENTRY_AT"),
         "writer_queue_blocker_run_ids": _text(values, "WRITER_QUEUE_BLOCKER_RUN_IDS"),
+        "writer_queue_blocker_details": _text(values, "WRITER_QUEUE_BLOCKER_DETAILS"),
         "writer_queue_attempt": _text(values, "WRITER_QUEUE_ATTEMPT"),
         "writer_queue_budget_seconds": _count(values, "WRITER_QUEUE_BUDGET_SECONDS"),
         "writer_queue_waited_seconds": _count(values, "WRITER_QUEUE_WAITED_SECONDS"),
@@ -138,20 +151,20 @@ def _result(
         "delivered_count": _count(values, "DELIVERED_COUNT"),
         "failed_count": _count(values, "FAILED_COUNT"),
         "stages": {
-            "writer_queue": _text(values, "WRITER_QUEUE_STATUS", _text(values, "QUEUE_STATUS", "not_run")),
-            "prepare": "not_run" if sender_not_run_after_queue_failure else _text(values, "PREPARE_OUTCOME", _text(values, "SCAN_STATUS", "unknown")),
-            "release_manifest": "not_run" if queue_failed else _text(values, "RELEASE_MANIFEST_OUTCOME", "not_run"),
+            "writer_queue": "not_run" if expired and not queue_failed else _text(values, "WRITER_QUEUE_STATUS", _text(values, "QUEUE_STATUS", "not_run")),
+            "prepare": "not_run" if stages_not_run else _text(values, "PREPARE_OUTCOME", _text(values, "SCAN_STATUS", "unknown")),
+            "release_manifest": "not_run" if stages_not_run else _text(values, "RELEASE_MANIFEST_OUTCOME", "not_run"),
             "deployment": (
-                "not_run" if sender_not_run_after_queue_failure or _text(values, "RELEASE_MANIFEST_OUTCOME") == "failure"
+                "not_run" if stages_not_run or _text(values, "RELEASE_MANIFEST_OUTCOME") == "failure"
                 else _text(values, "DEPLOYMENT_AVAILABLE", _text(values, "PAGES_DEPLOYMENT_AVAILABLE", "unknown"))
             ),
             "public_gate": (
-                "not_run" if sender_not_run_after_queue_failure or _text(values, "RELEASE_MANIFEST_OUTCOME") == "failure"
+                "not_run" if stages_not_run or _text(values, "RELEASE_MANIFEST_OUTCOME") == "failure"
                 else _text(values, "RELEASE_GATE_ALLOWED", _text(values, "GATE_ALLOWED", "unknown"))
             ),
-            "receipt": "not_run" if sender_not_run_after_queue_failure else _text(values, "RECEIPT_OUTCOME", _text(values, "RECEIPT_CALLBACK_OUTCOME", "not_attempted")),
-            "ledger": "not_run" if sender_not_run_after_queue_failure else _text(values, "LEDGER_OUTCOME", _text(values, "LEDGER_PERSIST_OUTCOME", "not_attempted")),
-            "sender": "not_run" if sender_not_run_after_queue_failure else _text(values, "SEND_OUTCOME", "not_attempted"),
+            "receipt": "not_run" if stages_not_run else _text(values, "RECEIPT_OUTCOME", _text(values, "RECEIPT_CALLBACK_OUTCOME", "not_attempted")),
+            "ledger": "not_run" if stages_not_run else _text(values, "LEDGER_OUTCOME", _text(values, "LEDGER_PERSIST_OUTCOME", "not_attempted")),
+            "sender": "not_run" if stages_not_run else _text(values, "SEND_OUTCOME", "not_attempted"),
         },
     }
 
@@ -345,6 +358,32 @@ def evaluate_scheduled_terminal(values: Mapping[str, str]) -> dict[str, Any]:
     send_reason = _text(values, "SEND_REASON")
     prepare_outcome = _text(values, "PREPARE_OUTCOME", "unknown")
     prepare_failure_reason = _text(values, "PREPARE_FAILURE_REASON")
+
+    queue_failed = (
+        _text(values, "WRITER_QUEUE_ERROR_CODE") == "writer_queue_timeout"
+        or (
+            _text(values, "WRITER_QUEUE_STATUS") == "failed"
+            and _text(values, "WRITER_QUEUE_OUTCOME") == "failure"
+        )
+    )
+    if queue_failed:
+        send_was_possible = (
+            _flag(values, "SEND_SENT")
+            or (_count(values, "DELIVERED_COUNT") or 0) > 0
+            or _text(values, "SEND_OUTCOME") not in {"", "skipped", "success", "not_attempted"}
+        )
+        queue_reason = _text(values, "WRITER_QUEUE_ERROR_CODE") or "writer_queue_failed_before_prepare"
+        return _result(
+            values, "scheduled", status="failed", reason=queue_reason,
+            expected=expected or obligation in {"report_required", "holiday_notice_required"},
+            failure=True, no_resend=send_was_possible,
+        )
+    if _flag(values, "SCHEDULE_EXPIRY_STATUS"):
+        return _result(
+            values, "scheduled", status="expired_not_attempted",
+            reason=_text(values, "SCHEDULE_EXPIRY_REASON") or "expired_scheduled_occurrence",
+            expected=False, failure=False,
+        )
 
     if obligation in {"expected_skip", "late_publish_only"}:
         publication_ok = (
@@ -543,6 +582,10 @@ def append_summary(path: str, terminal: Mapping[str, Any]) -> None:
         f"- run_id / tested_sha: {terminal.get('run_id', '')} / {terminal.get('workflow_sha', '')}\n",
         f"- slot: {terminal.get('slot', 'unknown')}\n",
         f"- scheduled_for_at: {terminal.get('scheduled_for_at', '') or 'not_applicable'}\n",
+        f"- schedule_expiry: {terminal.get('schedule_expiry', {}).get('reason') or 'not_expired'} "
+        f"(slot_date={terminal.get('schedule_expiry', {}).get('slot_date') or 'n/a'}; "
+        f"anchor={terminal.get('schedule_expiry', {}).get('anchor') or 'n/a'}; "
+        f"deadline={terminal.get('schedule_expiry', {}).get('deadline') or 'n/a'})\n",
         f"- notification_expected: {str(bool(terminal.get('expected'))).lower()}\n",
         f"- notification_status: {terminal.get('status', 'unresolved')}\n",
         f"- notification_reason: {terminal.get('reason', 'terminal_state_unresolved')}\n",
@@ -551,7 +594,11 @@ def append_summary(path: str, terminal: Mapping[str, Any]) -> None:
         f"{terminal.get('stages', {}).get('deployment', 'unknown')} / "
         f"{terminal.get('stages', {}).get('public_gate', 'unknown')}\n",
         f"- writer_queue: {terminal.get('stages', {}).get('writer_queue', 'unknown')} "
-        f"(error={terminal.get('writer_queue_error_code') or 'none'}; blockers={terminal.get('writer_queue_blocker_run_ids') or 'none'})\n",
+        f"(schema={terminal.get('writer_queue_diagnostic_schema_version') or 'unknown'}; "
+        f"entered={terminal.get('writer_queue_entry_at') or 'unknown'}; "
+        f"error={terminal.get('writer_queue_error_code') or 'none'}; "
+        f"blockers={terminal.get('writer_queue_blocker_run_ids') or 'none'}; "
+        f"blocker_details={terminal.get('writer_queue_blocker_details') or 'none'})\n",
         f"- queue attempt / budget / waited / remaining: {terminal.get('writer_queue_attempt') or 'unknown'} / "
         f"{terminal.get('writer_queue_budget_seconds') if terminal.get('writer_queue_budget_seconds') is not None else 'unknown'} / "
         f"{terminal.get('writer_queue_waited_seconds') if terminal.get('writer_queue_waited_seconds') is not None else 'unknown'} / "
@@ -592,6 +639,8 @@ def main() -> int:
     )
     append_summary(os.environ.get("GITHUB_STEP_SUMMARY", ""), terminal)
     print(json.dumps(terminal, ensure_ascii=False, sort_keys=True))
+    if terminal["failure"]:
+        print(f"::error::scheduled_notification_failed:{terminal['reason']}")
     return 1 if terminal["failure"] else 0
 
 

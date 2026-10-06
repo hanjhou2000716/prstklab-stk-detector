@@ -114,19 +114,6 @@ jobs:
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.11"
-      - name: Install production text-delivery dependencies
-        run: pip install -r requirements-production.txt
-      - name: Install Chromium for formal card renderer
-        run: python -m playwright install --with-deps chromium
-      - name: Validate scheduled handoff parent
-        id: validate_handoff_parent
-        if: github.event.client_payload.handoff_parent_run_id != ''
-        continue-on-error: true
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          GITHUB_SHA: ${{ github.sha }}
-          HANDOFF_CLIENT_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
-        run: python -m src.scheduled_handoff validate
       - name: Capture immutable workflow run creation time
         id: run_context
         if: github.event_name == 'schedule'
@@ -135,9 +122,30 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: python -m src.workflow_run_context >> "$GITHUB_OUTPUT"
+      - name: Stop expired automatic occurrence before publication setup
+        id: early_expiry
+        env:
+          GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule || '' }}
+          RUN_CREATED_AT: ${{ steps.run_context.outputs.created_at || '' }}
+        run: python -m src.scheduled_expiry
+      - name: Install production text-delivery dependencies
+        if: steps.early_expiry.outputs.expired != 'true'
+        run: pip install -r requirements-production.txt
+      - name: Install Chromium for formal card renderer
+        if: steps.early_expiry.outputs.expired != 'true'
+        run: python -m playwright install --with-deps chromium
+      - name: Validate scheduled handoff parent
+        id: validate_handoff_parent
+        if: steps.early_expiry.outputs.expired != 'true' && github.event.client_payload.handoff_parent_run_id != ''
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_SHA: ${{ github.sha }}
+          HANDOFF_CLIENT_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+        run: python -m src.scheduled_handoff validate
       - name: Resolve scheduled slot
         id: window
-        if: ${{ !github.event.client_payload.handoff_parent_run_id || steps.validate_handoff_parent.outputs.valid == 'true' }}
+        if: steps.early_expiry.outputs.expired != 'true' && (!github.event.client_payload.handoff_parent_run_id || steps.validate_handoff_parent.outputs.valid == 'true')
         env:
           RUN_CREATED_AT: ${{ steps.run_context.outputs.created_at || '' }}
         run: |
@@ -802,6 +810,10 @@ jobs:
           ALERT_PROJECTION_STATUS: ${{ steps.release_manifest.outputs.alert_projection_status || '' }}
           QUARANTINED_ALERT_COUNT: ${{ steps.release_manifest.outputs.quarantined_alert_count || '0' }}
           QUARANTINED_ALERT_REASONS: ${{ steps.release_manifest.outputs.quarantined_alert_reasons || '' }}
+          EXPIRED_STATUS: ${{ steps.early_expiry.outputs.expired || 'false' }}
+          EXPIRED_SLOT: ${{ steps.early_expiry.outputs.expired_slot || '' }}
+          EXPIRED_SLOT_DATE: ${{ steps.early_expiry.outputs.expired_slot_date || '' }}
+          EXPIRED_DEADLINE: ${{ steps.early_expiry.outputs.expired_deadline || '' }}
         run: |
           scan_status="unknown"
           if [ "$PREPARE_OUTCOME" = "success" ]; then
@@ -816,7 +828,12 @@ jobs:
           notification_status="$SEND_STATUS"
           notification_reason="$SEND_REASON"
           notification_expected="$NOTIFICATION_EXPECTED_VALUE"
-          if [ "$PREPARE_OUTCOME" = "failure" ] && [ "$NOTIFICATION_REQUESTED" = "true" ] && [ "$WINDOW_DELIVERY_INTENT" = "notify_candidate" ] && [ "$DELIVERY_OBLIGATION" = "undetermined" ]; then
+          if [ "$EXPIRED_STATUS" = "true" ]; then
+            scan_status="expired_before_publication"
+            notification_expected="false"
+            notification_status="expired_not_attempted"
+            notification_reason="expired_scheduled_occurrence"
+          elif [ "$PREPARE_OUTCOME" = "failure" ] && [ "$NOTIFICATION_REQUESTED" = "true" ] && [ "$WINDOW_DELIVERY_INTENT" = "notify_candidate" ] && [ "$DELIVERY_OBLIGATION" = "undetermined" ]; then
             notification_expected="true"
           fi
           if [ "$NOTIFICATION_REQUESTED" != "true" ]; then
@@ -939,7 +956,7 @@ jobs:
             pages_publication_status="not_published_or_unverified"
           fi
           {
-            echo "## Scheduled brief notification decision"
+            echo "## Scheduled brief execution diagnostics (authoritative final state follows)"
             echo "- delivery_obligation: ${DELIVERY_OBLIGATION}"
             echo "- obligation_reason: ${OBLIGATION_REASON:-none}"
             echo "- market_calendar_states: ${MARKET_CALENDAR_STATES}"
@@ -951,9 +968,8 @@ jobs:
             echo "- market_data_unavailable_count: ${MARKET_DATA_UNAVAILABLE_COUNT}"
             echo "- scan_status: ${scan_status}"
             echo "- candidate_type: ${CANDIDATE_TYPE:-none}"
-            echo "- notification_expected: ${notification_expected:-false}"
-            echo "- notification_status: ${notification_status}"
-            echo "- notification_reason: ${notification_reason:-unknown}"
+            echo "- expired_occurrence: ${EXPIRED_STATUS}"
+            echo "- expired_slot / date / deadline: ${EXPIRED_SLOT:-none} / ${EXPIRED_SLOT_DATE:-none} / ${EXPIRED_DEADLINE:-none}"
             echo "- preparation_stage: ${PREPARATION_STAGE}"
             echo "- preparation_attempts: ${PREPARATION_ATTEMPTS}"
             echo "- preparation_failure_reason: ${PREPARE_FAILURE_REASON:-none}"
@@ -1237,9 +1253,15 @@ jobs:
           NOTIFICATION_EXPECTED: ${{ steps.prepare.outputs.notification_expected || 'false' }}
           DELIVERY_OBLIGATION: ${{ steps.prepare.outputs.delivery_obligation || 'undetermined' }}
           OBLIGATION_REASON: ${{ steps.prepare.outputs.obligation_reason || '' }}
-          WINDOW_DELIVERY_INTENT: ${{ steps.window.outputs.delivery_intent || 'unknown' }}
-          SCHEDULED_SLOT: ${{ steps.window.outputs.scheduled_slot || steps.window.outputs.effective_slot || 'unknown' }}
-          SCHEDULED_FOR_AT: ${{ steps.window.outputs.scheduled_for_at || '' }}
+          WINDOW_DELIVERY_INTENT: ${{ steps.window.outputs.delivery_intent || (steps.early_expiry.outputs.expired == 'true' && 'expired' || 'unknown') }}
+          SCHEDULED_SLOT: ${{ steps.window.outputs.scheduled_slot || steps.window.outputs.effective_slot || steps.early_expiry.outputs.expired_slot || 'unknown' }}
+          SCHEDULED_FOR_AT: ${{ steps.window.outputs.scheduled_for_at || steps.early_expiry.outputs.expired_anchor || '' }}
+          SCHEDULE_EXPIRY_STATUS: ${{ steps.early_expiry.outputs.expired || 'false' }}
+          SCHEDULE_EXPIRY_REASON: ${{ steps.early_expiry.outputs.expired_reason || '' }}
+          SCHEDULE_EXPIRY_SLOT_DATE: ${{ steps.early_expiry.outputs.expired_slot_date || '' }}
+          SCHEDULE_EXPIRY_ANCHOR: ${{ steps.early_expiry.outputs.expired_anchor || '' }}
+          SCHEDULE_EXPIRY_DEADLINE: ${{ steps.early_expiry.outputs.expired_deadline || '' }}
+          SCHEDULE_EXPIRY_DETECTED_AT: ${{ steps.early_expiry.outputs.expired_detected_at || '' }}
           RUN_CREATED_AT: ${{ steps.run_context.outputs.created_at || '' }}
           PREPARE_OUTCOME: ${{ steps.prepare.outcome || 'unknown' }}
           PREPARE_FAILURE_REASON: ${{ steps.prepare.outputs.prepare_failure_reason || steps.prepare.outputs.reason || '' }}
@@ -1271,6 +1293,9 @@ jobs:
           WRITER_QUEUE_OUTCOME: ${{ steps.writer_queue.outcome || 'skipped' }}
           WRITER_QUEUE_ERROR_CODE: ${{ steps.writer_queue.outputs.queue_error_code || '' }}
           WRITER_QUEUE_BLOCKER_RUN_IDS: ${{ steps.writer_queue.outputs.blocker_run_ids || '' }}
+          WRITER_QUEUE_DIAGNOSTIC_SCHEMA_VERSION: ${{ steps.writer_queue.outputs.queue_diagnostic_schema_version || '' }}
+          WRITER_QUEUE_ENTRY_AT: ${{ steps.writer_queue.outputs.queue_entry_at || '' }}
+          WRITER_QUEUE_BLOCKER_DETAILS: ${{ steps.writer_queue.outputs.blocker_details || '' }}
           WRITER_QUEUE_ATTEMPT: ${{ github.run_attempt }}
           WRITER_QUEUE_BUDGET_SECONDS: ${{ steps.writer_queue.outputs.queue_budget_seconds || '' }}
           WRITER_QUEUE_WAITED_SECONDS: ${{ steps.writer_queue.outputs.waited_seconds || '' }}
