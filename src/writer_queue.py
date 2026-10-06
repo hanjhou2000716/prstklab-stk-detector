@@ -402,7 +402,8 @@ def _request_json(
         with urlopen(request, timeout=timeout) as response:
             payload = json.loads(response.read().decode("utf-8"))
             headers = getattr(response, "headers", None)
-            link = headers.get("Link") if callable(getattr(headers, "get", None)) else None
+            header_getter = getattr(headers, "get", None) if headers is not None else None
+            link = header_getter("Link") if callable(header_getter) else None
             if link is None and callable(getattr(response, "getheader", None)):
                 link = response.getheader("Link")
             return payload, str(link) if link is not None else None
@@ -1333,10 +1334,15 @@ def main() -> int:
         print(json.dumps({"production_revision": revision["reason"]}))
     except WriterQueueError as exc:
         recovery_match = re.search(r"recovery_rounds=(\d+)", str(exc))
-        timeout_match = isinstance(exc, WriterQueueTimeout)
-        blockers = exc.blockers if timeout_match else ()
-        waited_seconds = exc.waited_seconds if timeout_match else max(0, int(time.monotonic() - queue_started))
-        deferred_details = exc.deferred_candidates if timeout_match else ()
+        timeout_error = exc if isinstance(exc, WriterQueueTimeout) else None
+        timeout_match = timeout_error is not None
+        blockers = timeout_error.blockers if timeout_error is not None else ()
+        waited_seconds = (
+            timeout_error.waited_seconds
+            if timeout_error is not None
+            else max(0, int(time.monotonic() - queue_started))
+        )
+        deferred_details = timeout_error.deferred_candidates if timeout_error is not None else ()
         write_outputs({
             "queue_status": "failed",
             "should_continue": "false",
@@ -1346,8 +1352,8 @@ def main() -> int:
                 if "writer_queue_recovery_exhausted" in str(exc)
                 else str(exc).split(":", 1)[0][:100]
             ),
-            "recovery_rounds": exc.recovery_rounds if timeout_match else (recovery_match.group(1) if recovery_match else ""),
-            "complete_snapshots": exc.complete_snapshots if timeout_match else "",
+            "recovery_rounds": timeout_error.recovery_rounds if timeout_error is not None else (recovery_match.group(1) if recovery_match else ""),
+            "complete_snapshots": timeout_error.complete_snapshots if timeout_error is not None else "",
             "queue_budget_seconds": queue_timeout_seconds,
             "queue_deadline_at": queue_deadline_at,
             "remaining_seconds": max(0, queue_timeout_seconds - waited_seconds),

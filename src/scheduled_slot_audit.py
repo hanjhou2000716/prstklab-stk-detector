@@ -269,7 +269,8 @@ def _diagnose_scheduled_run(
             for check in checks:
                 if not isinstance(check, dict) or not isinstance(check.get("id"), int):
                     continue
-                output = check.get("output") if isinstance(check.get("output"), dict) else {}
+                raw_output = check.get("output")
+                output = raw_output if isinstance(raw_output, dict) else {}
                 expected_annotations = output.get("annotations_count", 0)
                 if not isinstance(expected_annotations, int) or expected_annotations < 0:
                     return diagnostic, "invalid_count"
