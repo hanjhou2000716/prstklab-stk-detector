@@ -35,6 +35,30 @@ def test_static_preflight_collects_every_gate_failure() -> None:
     assert invoked == ["tool-versions", "workflow-lint", "ruff", "mypy"]
 
 
+def test_full_preflight_aggregates_static_failures_then_skips_expensive_gates(tmp_path, monkeypatch) -> None:
+    evidence_path = tmp_path / "gate-evidence.json"
+    monkeypatch.setenv("QUALITY_PREFLIGHT_EVIDENCE_PATH", str(evidence_path))
+    invoked: list[str] = []
+
+    class Result:
+        returncode = 1
+
+    def runner(command, **_kwargs):
+        invoked.append(str(command[0]))
+        return Result()
+
+    result = quality_preflight.run_commands(
+        [("static one", ["lint"]), ("static two", ["types"]), ("tests", ["pytest"])],
+        runner=runner,
+        aggregate_failures_until=2,
+    )
+
+    assert result == 1
+    assert invoked == ["lint", "types"]
+    gates = json.loads(evidence_path.read_text(encoding="utf-8"))["gates"]
+    assert [gate["outcome"] for gate in gates] == ["failure", "failure", "not_run"]
+
+
 def test_zero_base_sha_is_treated_as_missing_not_passed_to_git(monkeypatch) -> None:
     calls: list[list[str]] = []
 
@@ -191,6 +215,17 @@ def test_workflow_reports_run_and_both_pull_request_commits() -> None:
         "scripts/inspect_quality_run.py",
     ):
         assert marker in workflow
+
+
+def test_isolated_dispatch_checks_candidate_sha_after_checking_out_branch_ref() -> None:
+    workflow = (quality_preflight.ROOT / ".github" / "workflows" / "quality.yml").read_text(encoding="utf-8")
+
+    assert "ref: ${{ inputs.candidate_sha && github.ref || github.sha }}" in workflow
+    checkout = workflow.index("actions/checkout@")
+    sha_check = workflow.index("name: Verify isolated candidate checkout SHA")
+    setup_python = workflow.index("actions/setup-python@")
+    assert checkout < sha_check < setup_python
+    assert 'git rev-parse HEAD' in workflow[sha_check:setup_python]
 
 
 def test_full_preflight_contains_the_ci_integration_gates():

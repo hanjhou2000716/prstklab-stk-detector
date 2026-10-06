@@ -90,7 +90,8 @@ def static_commands() -> list[tuple[str, list[str]]]:
             [
                 "uv", "run", "mypy", "src", "scripts/quality_preflight.py",
                 "scripts/inspect_quality_run.py", "scripts/write_quality_validation_evidence.py",
-                "scripts/verify_quality_validation.py", "scripts/gmail_sync_runtime_smoke.py",
+                "scripts/verify_quality_validation.py", "scripts/create_validated_pr.py",
+                "scripts/gmail_sync_runtime_smoke.py",
             ],
         ),
     ]
@@ -197,6 +198,7 @@ def run_commands(
     runner=subprocess.run,
     *,
     continue_on_failure: bool = False,
+    aggregate_failures_until: int = 0,
 ) -> int:
     failed_labels: list[str] = []
     gate_results: list[dict[str, object]] = []
@@ -231,6 +233,8 @@ def run_commands(
             if first_failure == 0:
                 first_failure = returncode
             print(f"FAILED: {label} (exit {returncode})", file=sys.stderr, flush=True)
+            if index + 1 < aggregate_failures_until:
+                continue
             if not continue_on_failure:
                 for skipped_label, _skipped_command in commands[index + 1 :]:
                     print(f"NOT RUN: {skipped_label} (earlier gate failed)", flush=True)
@@ -266,14 +270,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         if args.static:
             commands = static_commands()
+            aggregate_failures_until = 0
         elif args.tests:
             commands = test_commands(args.base_sha)
+            aggregate_failures_until = 0
         else:
-            commands = [*static_commands(), *test_commands(args.base_sha), *integration_commands()]
+            static = static_commands()
+            commands = [*static, *test_commands(args.base_sha), *integration_commands()]
+            aggregate_failures_until = len(static)
     except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
         print(f"FAILED: could not prepare quality preflight ({type(exc).__name__})", file=sys.stderr)
         return 2
-    return run_commands(commands, continue_on_failure=args.static)
+    return run_commands(
+        commands,
+        continue_on_failure=args.static,
+        aggregate_failures_until=aggregate_failures_until,
+    )
 
 
 if __name__ == "__main__":

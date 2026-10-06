@@ -53,6 +53,7 @@ def build_evidence(environment: dict[str, str] | None = None) -> dict[str, Any]:
         preflight_errors.append("preflight_gate_evidence_invalid_gates")
     candidate_sha = env.get("QUALITY_VALIDATION_CANDIDATE_SHA", "").lower()
     base_sha = env.get("QUALITY_PREFLIGHT_BASE_SHA", "").lower()
+    tested_sha = env.get("GITHUB_SHA", "").lower()
     try:
         expected_gate_count = int(env.get("QUALITY_PREFLIGHT_GATE_COUNT", "0"))
     except ValueError:
@@ -63,6 +64,10 @@ def build_evidence(environment: dict[str, str] | None = None) -> dict[str, Any]:
         errors.append("candidate_sha_missing_or_invalid")
     if not SHA_PATTERN.fullmatch(base_sha):
         errors.append("base_sha_missing_or_invalid")
+    if not SHA_PATTERN.fullmatch(tested_sha):
+        errors.append("tested_sha_missing_or_invalid")
+    if env.get("GITHUB_EVENT_NAME") == "workflow_dispatch" and tested_sha != candidate_sha:
+        errors.append("checked_out_sha_does_not_match_candidate")
     if not gates:
         errors.append("preflight_gate_results_missing")
     if expected_gate_count <= 0 or len(gates) != expected_gate_count:
@@ -91,6 +96,7 @@ def build_evidence(environment: dict[str, str] | None = None) -> dict[str, Any]:
         "workflow_sha": env.get("GITHUB_WORKFLOW_SHA", ""),
         "repository": env.get("GITHUB_REPOSITORY", ""),
         "candidate_sha": candidate_sha,
+        "tested_sha": tested_sha,
         "base_sha": base_sha,
         "expected_gate_count": expected_gate_count,
         "run_id": env.get("GITHUB_RUN_ID", ""),

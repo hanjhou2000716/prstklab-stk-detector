@@ -366,6 +366,70 @@ def test_scheduled_queue_timeout_keeps_root_cause_and_unrun_stages() -> None:
         assert result["stages"][stage] == "not_run"
 
 
+def test_scheduled_queue_failure_cannot_be_hidden_by_non_delivery_policy() -> None:
+    result = evaluate_scheduled_terminal(scheduled(
+        DELIVERY_OBLIGATION="late_publish_only",
+        NOTIFICATION_EXPECTED="false",
+        WRITER_QUEUE_STATUS="failed",
+        WRITER_QUEUE_OUTCOME="failure",
+        WRITER_QUEUE_ERROR_CODE="writer_queue_timeout",
+        WRITER_QUEUE_BLOCKER_RUN_IDS="37349718666",
+        PREPARE_OUTCOME="skipped",
+        SEND_OUTCOME="skipped",
+        SEND_SENT="false",
+        DELIVERED_COUNT="0",
+    ))
+
+    assert result["status"] == "failed"
+    assert result["failure"] is True
+    assert result["expected"] is False
+    assert result["reason"] == "writer_queue_timeout"
+    assert result["writer_queue_blocker_run_ids"] == "37349718666"
+    assert result["stages"]["writer_queue"] == "failed"
+    for stage in ("prepare", "deployment", "public_gate", "sender", "receipt", "ledger"):
+        assert result["stages"][stage] == "not_run"
+
+
+def test_expired_schedule_is_explicit_noop_with_original_slot_context() -> None:
+    result = evaluate_scheduled_terminal(scheduled(
+        SCHEDULE_EXPIRY_STATUS="true",
+        SCHEDULE_EXPIRY_REASON="expired_scheduled_occurrence",
+        SCHEDULE_EXPIRY_SLOT_DATE="2026-10-06",
+        SCHEDULE_EXPIRY_ANCHOR="2026-10-06T06:00:00+08:00",
+        SCHEDULE_EXPIRY_DEADLINE="2026-10-06T06:30:00+08:00",
+        SCHEDULE_EXPIRY_DETECTED_AT="2026-10-06T10:00:00+08:00",
+        DELIVERY_OBLIGATION="report_required",
+        NOTIFICATION_EXPECTED="true",
+        WRITER_QUEUE_STATUS="not_run",
+        PREPARE_OUTCOME="not_run",
+    ))
+
+    assert result["status"] == "expired_not_attempted"
+    assert result["failure"] is False
+    assert result["expected"] is False
+    assert result["schedule_expiry"]["slot_date"] == "2026-10-06"
+    assert result["schedule_expiry"]["anchor"] == "2026-10-06T06:00:00+08:00"
+    assert result["schedule_expiry"]["deadline"] == "2026-10-06T06:30:00+08:00"
+    assert all(stage == "not_run" for stage in result["stages"].values())
+
+
+def test_expiry_marker_does_not_mask_a_real_queue_failure() -> None:
+    result = evaluate_scheduled_terminal(scheduled(
+        SCHEDULE_EXPIRY_STATUS="true",
+        SCHEDULE_EXPIRY_REASON="expired_scheduled_occurrence",
+        WRITER_QUEUE_STATUS="failed",
+        WRITER_QUEUE_OUTCOME="failure",
+        WRITER_QUEUE_ERROR_CODE="writer_queue_timeout",
+        WRITER_QUEUE_BLOCKER_RUN_IDS="42",
+        PREPARE_OUTCOME="skipped",
+    ))
+
+    assert result["status"] == "failed"
+    assert result["failure"] is True
+    assert result["reason"] == "writer_queue_timeout"
+    assert result["stages"]["writer_queue"] == "failed"
+
+
 def test_scheduled_already_sent_without_persisted_receipt_is_no_resend() -> None:
     result = evaluate_scheduled_terminal(scheduled(DURABLE_RECEIPT_VERIFIED="false"))
 
@@ -421,5 +485,23 @@ def test_queue_timeout_summary_names_blocker_and_unrun_delivery_stages(tmp_path)
     append_summary(str(destination), result)
 
     summary = destination.read_text(encoding="utf-8")
-    assert "writer_queue: failed (error=writer_queue_timeout; blockers=37349718666)" in summary
+    assert "writer_queue: failed (schema=unknown; entered=unknown; error=writer_queue_timeout; blockers=37349718666" in summary
     assert "not_run / not_run / not_run / not_run / not_run / not_run" in summary
+
+
+def test_expired_summary_includes_the_original_anchor_and_deadline(tmp_path) -> None:
+    result = evaluate_scheduled_terminal(scheduled(
+        SCHEDULE_EXPIRY_STATUS="true",
+        SCHEDULE_EXPIRY_REASON="expired_scheduled_occurrence",
+        SCHEDULE_EXPIRY_SLOT_DATE="2026-10-06",
+        SCHEDULE_EXPIRY_ANCHOR="2026-10-06T06:00:00+08:00",
+        SCHEDULE_EXPIRY_DEADLINE="2026-10-06T06:30:00+08:00",
+    ))
+    destination = tmp_path / "summary.md"
+
+    append_summary(str(destination), result)
+
+    summary = destination.read_text(encoding="utf-8")
+    assert "schedule_expiry: expired_scheduled_occurrence" in summary
+    assert "anchor=2026-10-06T06:00:00+08:00" in summary
+    assert "deadline=2026-10-06T06:30:00+08:00" in summary

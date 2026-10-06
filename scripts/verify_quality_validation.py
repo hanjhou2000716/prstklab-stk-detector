@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import subprocess
@@ -13,6 +14,13 @@ from typing import Any
 
 WORKFLOW_PATH = ".github/workflows/quality.yml"
 ARTIFACT_NAME = "quality-candidate-validation"
+FINGERPRINT_PATHS = {
+    "pyproject_toml_sha256": "pyproject.toml",
+    "uv_lock_sha256": "uv.lock",
+    "quality_preflight_sha256": "scripts/quality_preflight.py",
+    "workflow_sha256": WORKFLOW_PATH,
+    "evidence_writer_sha256": "scripts/write_quality_validation_evidence.py",
+}
 SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 
 
@@ -37,6 +45,7 @@ def latest_candidate_run(runs: list[dict[str, Any]], candidate_sha: str) -> dict
 def validate_evidence_record(
     run: dict[str, Any], artifacts: list[dict[str, Any]], record: dict[str, Any],
     *, repository: str, candidate_sha: str, base_sha: str,
+    expected_fingerprints: dict[str, str] | None = None,
 ) -> list[str]:
     errors: list[str] = []
     if not SHA_PATTERN.fullmatch(candidate_sha.lower()):
@@ -62,6 +71,8 @@ def validate_evidence_record(
         errors.append("validation_repository_mismatch")
     if str(record.get("candidate_sha") or "").lower() != candidate_sha.lower():
         errors.append("validation_evidence_candidate_sha_mismatch")
+    if str(record.get("tested_sha") or "").lower() != candidate_sha.lower():
+        errors.append("validation_tested_sha_mismatch")
     if str(record.get("base_sha") or "").lower() != base_sha.lower():
         errors.append("validation_evidence_base_sha_mismatch")
     if str(record.get("run_id") or "") != str(run.get("id") or ""):
@@ -88,13 +99,33 @@ def validate_evidence_record(
         )
     ):
         errors.append("validation_input_fingerprint_missing")
+    elif expected_fingerprints is not None and any(
+        fingerprints.get(key) != expected_fingerprints.get(key)
+        for key in FINGERPRINT_PATHS
+    ):
+        errors.append("validation_input_fingerprint_does_not_match_candidate_tree")
     tool_versions = record.get("tool_versions")
     if not isinstance(tool_versions, dict) or any(
         not str(tool_versions.get(key) or "").strip()
+        or str(tool_versions.get(key) or "").strip().casefold() == "unavailable"
         for key in ("python", "uv", "actionlint", "shellcheck")
     ):
         errors.append("validation_tool_versions_missing")
     return errors
+
+
+def candidate_tree_fingerprints(candidate_sha: str) -> dict[str, str]:
+    """Hash the exact source files from the candidate commit, not the merge checkout."""
+    fingerprints: dict[str, str] = {}
+    for key, path in FINGERPRINT_PATHS.items():
+        result = subprocess.run(
+            ["git", "show", f"{candidate_sha}:{path}"],
+            check=False, capture_output=True, timeout=30,
+        )
+        if result.returncode:
+            raise RuntimeError(f"Candidate source fingerprint unavailable for {path}.")
+        fingerprints[key] = hashlib.sha256(result.stdout).hexdigest()
+    return fingerprints
 
 
 def _gh_json(arguments: list[str]) -> Any:
@@ -174,9 +205,14 @@ def verify_from_github(repository: str, candidate_sha: str, base_sha: str) -> li
             return ["validation_evidence_json_invalid"]
     if not isinstance(record, dict):
         return ["validation_evidence_is_not_an_object"]
+    try:
+        expected_fingerprints = candidate_tree_fingerprints(candidate_sha)
+    except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
+        return [f"candidate_tree_fingerprint_unavailable:{exc}"]
     return validate_evidence_record(
         run, [item for item in artifacts if isinstance(item, dict)], record,
         repository=repository, candidate_sha=candidate_sha, base_sha=base_sha,
+        expected_fingerprints=expected_fingerprints,
     )
 
 

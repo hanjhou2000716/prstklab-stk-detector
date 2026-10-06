@@ -202,12 +202,14 @@ class WriterQueueTimeout(WriterQueueError):
         *,
         recovery_rounds: int = 0,
         deferred_candidates: Iterable[Mapping[str, object]] = (),
+        blocker_details: Iterable[Mapping[str, object]] = (),
     ) -> None:
         self.blockers = tuple(sorted({int(value) for value in blockers}))
         self.waited_seconds = max(0, int(waited_seconds))
         self.complete_snapshots = max(0, int(complete_snapshots))
         self.recovery_rounds = max(0, int(recovery_rounds))
         self.deferred_candidates = tuple(dict(row) for row in deferred_candidates)
+        self.blocker_details = tuple(dict(row) for row in blocker_details)
         super().__init__(
             "writer queue timed out; active blockers="
             f"{','.join(map(str, self.blockers))}; waited_seconds={self.waited_seconds}; "
@@ -513,7 +515,10 @@ def _annotate_publication_gate(
     if len(gate_jobs) > 1:
         raise WriterQueueError("writer_publication_gate_job_ambiguous")
     status = str(run.get("status") or "").casefold()
-    run_not_started = status == "queued" and not run.get("run_started_at")
+    # GitHub may populate run/job started_at before a runner is assigned.
+    # Those timestamps are diagnostic only; the runner and step state are the
+    # evidence for whether this writer reached its publication gate.
+    run_not_started = status in {"queued", "requested", "pending"}
     if not gate_jobs:
         if run_not_started and not jobs:
             run.update({"queue_gate_state": "deferred", "queue_gate_reason": "workflow_not_started"})
@@ -527,17 +532,17 @@ def _annotate_publication_gate(
     if runner_id not in (None, "", 0, "0") and _positive_int(runner_id) is None:
         raise WriterQueueError("writer_publication_gate_runner_identity_invalid")
     no_runner = runner_id in (None, "", 0, "0")
-    job_not_started = _timestamp(job, "started_at") is None
-    if steps is None and run_not_started and job_status == "queued" and no_runner and job_not_started:
+    if steps is None and run_not_started and job_status == "queued" and no_runner:
         run.update({"queue_gate_state": "deferred", "queue_gate_reason": "writer_job_not_started"})
         return {"run_id": run_id, "attempt": attempt, "reason": "writer_job_not_started"}
     if job_id is None or not isinstance(steps, list):
         raise WriterQueueError("writer_publication_gate_job_contract_invalid")
+    run["queue_gate_job_id"] = job_id
     gate_steps = [step for step in steps if isinstance(step, Mapping) and str(step.get("name") or "") == gate["step_name"]]
     if len(gate_steps) > 1:
         raise WriterQueueError("writer_publication_gate_step_ambiguous")
     if not gate_steps:
-        if run_not_started and job_status == "queued" and no_runner and job_not_started and not any(
+        if run_not_started and job_status == "queued" and no_runner and not any(
             _timestamp(step, "started_at") is not None for step in steps if isinstance(step, Mapping)
         ):
             run.update({"queue_gate_state": "deferred", "queue_gate_reason": "writer_job_not_started"})
@@ -550,11 +555,17 @@ def _annotate_publication_gate(
         if step_status == "completed" and str(step.get("conclusion") or "").casefold() == "skipped":
             run.update({"queue_gate_state": "deferred", "queue_gate_reason": "publication_gate_skipped"})
             return {"run_id": run_id, "attempt": attempt, "reason": "publication_gate_skipped"}
-        if step_status in {"queued", "pending", ""} and not any(
-            _timestamp(item, "started_at") is not None for item in steps if isinstance(item, Mapping)
-        ):
+        gate_index = steps.index(step)
+        later_steps_started = any(
+            _timestamp(item, "started_at") is not None
+            for item in steps[gate_index + 1:]
+            if isinstance(item, Mapping)
+        )
+        if step_status in {"queued", "pending", ""} and not later_steps_started:
             run.update({"queue_gate_state": "deferred", "queue_gate_reason": "publication_gate_not_reached"})
             return {"run_id": run_id, "attempt": attempt, "reason": "publication_gate_not_reached"}
+        if step_status in {"queued", "pending", ""}:
+            raise RetryableQueueSnapshotError("writer_publication_gate_state_conflicts_with_later_step")
         raise WriterQueueError("writer_publication_gate_started_at_unavailable")
     run.update({
         "queue_gate_state": "admitted",
@@ -680,13 +691,26 @@ def _fetch_runs_once(
     for run in rows_by_attempt.values():
         if not _workflow_identity(run):
             continue
-        reason = _annotate_publication_gate(
-            run,
-            api_url=api_url,
-            repository=repository,
-            token=token,
-            deadline_monotonic=deadline_monotonic,
-        )
+        try:
+            reason = _annotate_publication_gate(
+                run,
+                api_url=api_url,
+                repository=repository,
+                token=token,
+                deadline_monotonic=deadline_monotonic,
+            )
+        except WriterQueueError as exc:
+            run_id = _run_id(run)
+            try:
+                diagnostic_attempt = int(str(run.get("run_attempt") or "1"))
+            except (TypeError, ValueError):
+                diagnostic_attempt = 0
+            job_id = _positive_int(run.get("queue_gate_job_id"))
+            identity = (
+                f"run_id={run_id or 'unknown'};attempt={diagnostic_attempt or 'unknown'};"
+                f"job_id={job_id or 'unknown'}"
+            )
+            raise type(exc)(f"{str(exc).split(':', 1)[0]}:{identity}") from exc
         if reason is not None:
             deferred.append(reason)
     return QueueRuns(rows_by_attempt.values(), deferred_candidates=deferred)
@@ -785,15 +809,10 @@ def _fetch_run_attempt(
         raise WriterQueueError("writer_queue_blocker_identity_mismatch")
     status = str(payload.get("status") or "").casefold()
     if status in ACTIVE_STATUSES:
-        candidate = dict(payload)
-        deferred = _annotate_publication_gate(
-            candidate,
-            api_url=api_url,
-            repository=repository,
-            token=token,
-            deadline_monotonic=deadline_monotonic,
-        )
-        return deferred is None and candidate.get("queue_gate_state") == "admitted"
+        # Once an attempt was observed inside the gate, it remains a blocker
+        # until GitHub confirms that exact attempt is terminal. API snapshots
+        # may temporarily regress to queued or omit the job/step.
+        return True
     if status != "completed":
         raise WriterQueueError("writer_queue_blocker_terminal_state_unknown")
     return False
@@ -879,6 +898,24 @@ def _run_ids(runs: Iterable[Mapping[str, object]]) -> tuple[int, ...]:
         if run_id is not None:
             ids.append(run_id)
     return tuple(ids)
+
+
+def _blocker_details(runs: Iterable[Mapping[str, object]]) -> tuple[dict[str, object], ...]:
+    """Keep bounded, non-secret identity for each actual queue blocker."""
+    details = []
+    for row in runs:
+        run_id = _run_id(row)
+        if run_id is None:
+            continue
+        details.append({
+            "run_id": run_id,
+            "attempt": str(row.get("run_attempt") or "1"),
+            "job_id": _positive_int(row.get("queue_gate_job_id")),
+            "workflow_id": _positive_int(row.get("workflow_id")),
+            "workflow_path": str(row.get("path") or ""),
+            "publication_gate_started_at": str(row.get("queue_gate_started_at") or ""),
+        })
+    return tuple(details)
 
 
 def _queue_revision(
@@ -986,6 +1023,7 @@ def wait_for_slot(
             raise WriterQueueTimeout(
                 ids, elapsed, complete_snapshots,
                 recovery_rounds=recovery_rounds,
+                blocker_details=_blocker_details(known_blockers.values()),
                 deferred_candidates=(
                     {"run_id": run_id, "attempt": attempt, "reason": reason}
                     for (run_id, attempt), reason in deferred_candidates.items()
@@ -1128,6 +1166,7 @@ def wait_for_slot(
             raise WriterQueueTimeout(
                 ids, elapsed, complete_snapshots,
                 recovery_rounds=recovery_rounds,
+                blocker_details=_blocker_details(blockers),
                 deferred_candidates=(
                     {"run_id": run_id, "attempt": attempt, "reason": reason}
                     for (run_id, attempt), reason in deferred_candidates.items()
@@ -1164,8 +1203,14 @@ def main() -> int:
         destination = os.getenv("GITHUB_OUTPUT", "").strip()
         if not destination:
             return
+        outputs: dict[str, object] = {
+            "queue_diagnostic_schema_version": "writer-queue-v2",
+            "queue_entry_at": queue_entry_at,
+            "queue_current_attempt": os.getenv("GITHUB_RUN_ATTEMPT", "1"),
+        }
+        outputs.update(values)
         with open(destination, "a", encoding="utf-8") as handle:
-            for key, value in values.items():
+            for key, value in outputs.items():
                 handle.write(f"{key}={value}\n")
 
     def handoff_superseded_run(result: QueueResult, *, eligible: bool) -> bool:
@@ -1228,6 +1273,7 @@ def main() -> int:
         return True
 
     queue_started = time.monotonic()
+    queue_entry_at = datetime.now(UTC).isoformat()
     queue_timeout_seconds = max(0, args.timeout_seconds)
     queue_deadline_at = ""
     try:
@@ -1324,6 +1370,7 @@ def main() -> int:
             "complete_snapshots": result.complete_snapshots if result is not None else 0,
             "recovery_rounds": result.recovery_rounds if result is not None else 0,
             "admission_at": result.admission_at if result is not None else datetime.now(UTC).isoformat(),
+            "blocker_details": "[]",
             "deferred_candidate_run_ids": ",".join(str(item) for item in (result.deferred_candidates if result is not None else ())),
             "deferred_candidate_reasons": ",".join(result.deferred_candidate_reasons if result is not None else ()),
             "deferred_candidate_details": json.dumps(result.deferred_candidate_details if result is not None else (), sort_keys=True),
@@ -1359,6 +1406,10 @@ def main() -> int:
             "remaining_seconds": max(0, queue_timeout_seconds - waited_seconds),
             "waited_seconds": waited_seconds,
             "blocker_run_ids": ",".join(str(item) for item in blockers),
+            "blocker_details": json.dumps(
+                timeout_error.blocker_details if timeout_error is not None else (),
+                sort_keys=True,
+            ),
             "deferred_candidate_run_ids": ",".join(str(item.get("run_id")) for item in deferred_details),
             "deferred_candidate_reasons": ",".join(sorted({str(item.get("reason")) for item in deferred_details})),
             "deferred_candidate_details": json.dumps(deferred_details, sort_keys=True),

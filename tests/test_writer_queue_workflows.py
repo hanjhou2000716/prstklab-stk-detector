@@ -1,6 +1,8 @@
 import re
 from pathlib import Path
 
+import yaml
+
 from src.writer_queue import WRITER_QUEUE_GATES, WRITER_WORKFLOW_IDENTITIES
 
 WORKFLOW_ROOT = Path(__file__).resolve().parents[1] / ".github" / "workflows"
@@ -100,16 +102,64 @@ def test_every_writer_has_a_static_publication_gate_job_and_step_contract() -> N
     assert set(WRITER_QUEUE_GATES) == set(WRITER_WORKFLOW_IDENTITIES)
     for path, gate in WRITER_QUEUE_GATES.items():
         assert gate["workflow_id"] == WRITER_WORKFLOW_IDENTITIES[path]
-        workflow = _workflow_text(Path(path).name)
-        assert (
-            f"  {gate['job_name']}:" in workflow
-            or f"name: {gate['job_name']}" in workflow
-        )
-        assert f"name: {gate['step_name']}" in workflow
-        assert "id: writer_queue" in workflow
+        workflow = yaml.safe_load(_workflow_text(Path(path).name))
+        jobs = workflow.get("jobs")
+        assert isinstance(jobs, dict)
+        job = jobs.get(gate["job_name"])
+        if job is None:
+            job = next(
+                (value for value in jobs.values()
+                 if isinstance(value, dict) and value.get("name") == gate["job_name"]),
+                None,
+            )
+        assert isinstance(job, dict), path
+        steps = job.get("steps")
+        assert isinstance(steps, list), path
+        matches = [
+            index for index, step in enumerate(steps)
+            if isinstance(step, dict) and step.get("name") == gate["step_name"]
+        ]
+        assert len(matches) == 1, path
+        queue_index = matches[0]
+        assert steps[queue_index].get("id") == "writer_queue", path
+        for index, step in enumerate(steps):
+            if not isinstance(step, dict):
+                continue
+            content = str(step.get("run") or "") + "\n" + str(step.get("uses") or "")
+            if not any(marker in content for marker in (
+                "python -m src.data_release --publish",
+                "actions/upload-pages-artifact",
+                "actions/deploy-pages",
+            )):
+                continue
+            if "actions/upload-artifact" in content:
+                continue
+            assert index > queue_index, f"{path}: publication before writer gate"
+            assert "writer_queue.outputs.should_continue" in str(step.get("if") or ""), path
 
 
 def test_queue_regression_uses_real_scheduled_workflow_api_identity() -> None:
     scheduled = _workflow_text("scheduled-brief.yml")
     assert "HANDOFF_PARENT_VERIFIED" in scheduled
     assert "GITHUB_RUN_ATTEMPT_STARTED_AT" in scheduled
+
+    workflow = yaml.safe_load(scheduled)
+    jobs = workflow.get("jobs")
+    assert isinstance(jobs, dict)
+    steps = next(
+        value["steps"]
+        for value in jobs.values()
+        if isinstance(value, dict)
+        and isinstance(value.get("steps"), list)
+        and any(
+            isinstance(step, dict) and step.get("id") == "early_expiry"
+            for step in value["steps"]
+        )
+    )
+    expiry_index = next(
+        index for index, step in enumerate(steps)
+        if isinstance(step, dict) and step.get("id") == "early_expiry"
+    )
+    expiry_step = steps[expiry_index]
+    assert expiry_step["env"]["GITHUB_EVENT_SCHEDULE"] == "${{ github.event.schedule || '' }}"
+    assert steps[expiry_index + 1]["name"] == "Install production text-delivery dependencies"
