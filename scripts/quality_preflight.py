@@ -208,7 +208,7 @@ def run_commands(
                 summary.write("\n### Shared quality preflight gate results\n| Gate | Result | Duration |\n|---|---:|---:|\n")
         except OSError as exc:
             print(f"WARNING: could not initialize gate timing summary ({type(exc).__name__})", file=sys.stderr)
-    for label, command in commands:
+    for index, (label, command) in enumerate(commands):
         print(f"\n==> {label}", flush=True)
         started = time.perf_counter()
         try:
@@ -232,6 +232,14 @@ def run_commands(
                 first_failure = returncode
             print(f"FAILED: {label} (exit {returncode})", file=sys.stderr, flush=True)
             if not continue_on_failure:
+                for skipped_label, _skipped_command in commands[index + 1 :]:
+                    print(f"NOT RUN: {skipped_label} (earlier gate failed)", flush=True)
+                    gate_results.append({
+                        "name": skipped_label.replace("|", "/").replace("\n", " "),
+                        "outcome": "not_run",
+                        "duration_seconds": 0.0,
+                    })
+                    _append_gate_summary(skipped_label, "not run", 0.0)
                 break
     _write_failed_gate(" | ".join(failed_labels) if failed_labels else "none", len(commands))
     preflight_outcome = (

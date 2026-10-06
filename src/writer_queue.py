@@ -339,8 +339,6 @@ def blocking_runs(
     current_job_id = _positive_int(current_rows[0].get("queue_gate_job_id")) if current_rows else None
     if current_rows and current_job_id is None:
         raise WriterQueueError("current_publication_gate_job_id_unavailable")
-    current_attempt = str(current_rows[0].get("run_attempt") or "1") if current_rows else "1"
-
     for run in candidates:
         gate_state = str(run.get("queue_gate_state") or "unknown")
         if gate_state == "deferred":

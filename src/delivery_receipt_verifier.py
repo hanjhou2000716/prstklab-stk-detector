@@ -13,6 +13,7 @@ from typing import Any
 
 from src.scheduled_recipient_manifest import parse_recipient_manifest
 
+
 def verify_delivery_claim(
     payload: object,
     notification_key: str,

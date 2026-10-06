@@ -152,16 +152,28 @@ def test_preflight_writes_failure_evidence_when_a_gate_fails(monkeypatch, tmp_pa
     class Result:
         returncode = 1
 
+    invoked: list[list[str]] = []
+
+    def runner(command, **_kwargs):
+        invoked.append(list(command))
+        return Result()
+
     assert quality_preflight.run_commands(
         [("Failing gate", ["python", "-c", "pass"]), ("Not run", ["python", "-c", "pass"])],
-        runner=lambda *_args, **_kwargs: Result(),
+        runner=runner,
     ) == 1
+    assert invoked == [["python", "-c", "pass"]]
     evidence = json.loads(evidence_file.read_text(encoding="utf-8"))
     assert evidence["status"] == "failure"
     assert evidence["expected_gate_count"] == 2
     assert evidence["gates"][0]["name"] == "Failing gate"
     assert evidence["gates"][0]["outcome"] == "failure"
     assert evidence["gates"][0]["duration_seconds"] >= 0
+    assert evidence["gates"][1] == {
+        "name": "Not run",
+        "outcome": "not_run",
+        "duration_seconds": 0.0,
+    }
 
 
 def test_workflow_reports_run_and_both_pull_request_commits() -> None:
