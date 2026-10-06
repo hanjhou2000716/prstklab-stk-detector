@@ -217,6 +217,17 @@ def test_workflow_reports_run_and_both_pull_request_commits() -> None:
         assert marker in workflow
 
 
+def test_isolated_dispatch_checks_candidate_sha_after_checking_out_branch_ref() -> None:
+    workflow = (quality_preflight.ROOT / ".github" / "workflows" / "quality.yml").read_text(encoding="utf-8")
+
+    assert "ref: ${{ inputs.candidate_sha && github.ref || github.sha }}" in workflow
+    checkout = workflow.index("actions/checkout@")
+    sha_check = workflow.index("name: Verify isolated candidate checkout SHA")
+    setup_python = workflow.index("actions/setup-python@")
+    assert checkout < sha_check < setup_python
+    assert 'git rev-parse HEAD' in workflow[sha_check:setup_python]
+
+
 def test_full_preflight_contains_the_ci_integration_gates():
     labels = [label for label, _command in quality_preflight.integration_commands()]
     assert labels == [

@@ -36,7 +36,20 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
-          ref: ${{ inputs.candidate_sha || github.sha }}
+          # Resolve an isolated dispatch through its advertised branch ref; the
+          # next step verifies that the branch still points at the fixed SHA.
+          ref: ${{ inputs.candidate_sha && github.ref || github.sha }}
+      - name: Verify isolated candidate checkout SHA
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          EXPECTED_CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          if [[ "${actual_sha,,}" != "${EXPECTED_CANDIDATE_SHA,,}" ]]; then
+            echo "Checked-out branch no longer points at the requested candidate SHA." >&2
+            exit 2
+          fi
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.11"
