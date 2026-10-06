@@ -81,6 +81,9 @@ def test_manifest_initializer_and_drift_workflows_are_read_only():
         assert "TELEGRAM_BOT_TOKEN" not in workflow
     assert "SCHEDULED_RECIPIENT_SET_MANIFEST" in initializer_script
     assert "SCHEDULED_RECIPIENT_SET_MANIFEST" in drift
+    assert "status: not_configured" in drift
+    assert "::error::scheduled_recipient_manifest_not_configured" in drift
+    assert "exit 1" in drift
     assert "vars.SCHEDULED_RECIPIENT_SET_MANIFEST" in audit
     assert "SUPABASE_SERVICE_ROLE_KEY" not in audit
 

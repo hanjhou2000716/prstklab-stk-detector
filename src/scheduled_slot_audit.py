@@ -8,6 +8,7 @@ import json
 import os
 import re
 import zipfile
+from collections.abc import Mapping
 from datetime import UTC, datetime, time, timedelta
 from pathlib import Path
 from typing import Any
@@ -17,6 +18,7 @@ from urllib.request import Request, urlopen
 
 from src.schedule_contract import NEW_YORK, TAIPEI, fixed_scheduled_for, scheduled_anchor_key
 from src.scheduled_recipient_manifest import RecipientManifest, parse_recipient_manifest, recipient_set_version
+from src.workflow_execution_diagnostics import classify_workflow_execution
 
 SCHEDULE_TO_SLOT = {
     "45 22 * * *": "morning",
@@ -232,6 +234,64 @@ def _diagnose_scheduled_run(
             raise ValueError("github_response_too_large")
         return body
 
+    def execution_diagnostic(run: Mapping[str, Any]) -> tuple[dict[str, Any], str]:
+        """Read the exact run's complete jobs and, when needed, runner annotations."""
+        run_id_value = run.get("id")
+        if not isinstance(run_id_value, int):
+            return {"classification": "unknown", "reason": "workflow_run_id_invalid"}, "unavailable"
+        try:
+            jobs_payload = json.loads(get(
+                f"{base}/actions/runs/{run_id_value}/jobs?per_page=100",
+                limit=4 * 1024 * 1024,
+            ).decode("utf-8"))
+        except (HTTPError, URLError, OSError, UnicodeError, json.JSONDecodeError, ValueError):
+            return {"classification": "unknown", "reason": "workflow_jobs_unavailable"}, "unavailable"
+        jobs = jobs_payload.get("jobs") if isinstance(jobs_payload, dict) else None
+        total = jobs_payload.get("total_count") if isinstance(jobs_payload, dict) else None
+        if not isinstance(jobs, list) or not isinstance(total, int) or total != len(jobs):
+            return {"classification": "unknown", "reason": "workflow_jobs_incomplete"}, "unavailable"
+        diagnostic = classify_workflow_execution(run, jobs)
+        if diagnostic.get("classification") != "pre_step_failure_unclassified":
+            return diagnostic, "not_required"
+        check_suite_id = run.get("check_suite_id")
+        if not isinstance(check_suite_id, int) or check_suite_id <= 0:
+            return diagnostic, "unavailable"
+        try:
+            checks_payload = json.loads(get(
+                f"{base}/check-suites/{check_suite_id}/check-runs?per_page=100",
+                limit=4 * 1024 * 1024,
+            ).decode("utf-8"))
+            checks = checks_payload.get("check_runs") if isinstance(checks_payload, dict) else None
+            check_total = checks_payload.get("total_count") if isinstance(checks_payload, dict) else None
+            if not isinstance(checks, list) or not isinstance(check_total, int) or check_total != len(checks):
+                return diagnostic, "incomplete"
+            annotations: list[dict[str, Any]] = []
+            for check in checks:
+                if not isinstance(check, dict) or not isinstance(check.get("id"), int):
+                    continue
+                raw_output = check.get("output")
+                output = raw_output if isinstance(raw_output, dict) else {}
+                expected_annotations = output.get("annotations_count", 0)
+                if not isinstance(expected_annotations, int) or expected_annotations < 0:
+                    return diagnostic, "invalid_count"
+                check_annotations: list[dict[str, Any]] = []
+                for page in range(1, min(20, (expected_annotations + 99) // 100) + 1):
+                    page_rows = json.loads(get(
+                        f"{base}/check-runs/{check['id']}/annotations?per_page=100&page={page}",
+                        limit=2 * 1024 * 1024,
+                    ).decode("utf-8"))
+                    if not isinstance(page_rows, list):
+                        return diagnostic, "invalid_response"
+                    check_annotations.extend(row for row in page_rows if isinstance(row, dict))
+                    if not page_rows:
+                        break
+                if len(check_annotations) != expected_annotations:
+                    return diagnostic, "incomplete"
+                annotations.extend(check_annotations)
+            return classify_workflow_execution(run, jobs, annotations), "available"
+        except (HTTPError, URLError, OSError, UnicodeError, json.JSONDecodeError, ValueError):
+            return diagnostic, "unavailable"
+
     try:
         runs_body = get(f"{base}/actions/workflows/scheduled-brief.yml/runs?{query}", limit=2 * 1024 * 1024)
         payload = json.loads(runs_body.decode("utf-8"))
@@ -282,6 +342,7 @@ def _diagnose_scheduled_run(
                 "no_resend": True,
             }
         run, terminal = matches[0]
+        execution, annotation_evidence_status = execution_diagnostic(run)
         stages_value = terminal.get("stages")
         stages: dict[str, Any] = stages_value if isinstance(stages_value, dict) else {}
         status_raw = str(terminal.get("status") or "unknown")
@@ -300,6 +361,8 @@ def _diagnose_scheduled_run(
             "run_conclusion": str(run.get("conclusion") or run.get("status") or "unknown")[:40],
             "terminal_status": status,
             "terminal_reason": reason,
+            "execution_diagnostic": execution,
+            "annotation_evidence_status": annotation_evidence_status,
             "expected": terminal.get("expected") is True,
             "sender_status": str(terminal.get("sender_status") or "unknown")[:80],
             "receipt_status": str(terminal.get("receipt_status") or "unknown")[:80],
@@ -309,7 +372,7 @@ def _diagnose_scheduled_run(
             },
             "stages": {
                 key: str(stages.get(key) or "unknown")[:80]
-                for key in ("prepare", "deployment", "public_gate", "receipt", "ledger")
+                for key in ("writer_queue", "prepare", "deployment", "public_gate", "sender", "receipt", "ledger")
             },
         }
         if status in {"delivered", "delivered_reconciliation_incomplete"} and not durable:
@@ -541,10 +604,19 @@ def audit_slot(
     )
     source_fields["recipient_set_effective_at"] = effective_label
     if require_recipient_set_metadata and metadata_error:
-        return {
+        blocked_result: dict[str, Any] = {
             "status": "blocked", "reason": metadata_error, "slot": slot,
             "obligation": obligation, "market_date": slot_date, "anchor": anchor, **source_fields,
         }
+        if github_repository and github_token:
+            blocked_result["run_diagnosis"] = _diagnose_scheduled_run(
+                repository=github_repository,
+                token=github_token,
+                slot=slot,
+                anchor_local=anchor_local,
+                now=now,
+            )
+        return blocked_result
     try:
         payload = _load_ledger(ledger_path)
     except (OSError, ValueError, UnicodeError) as exc:
@@ -650,9 +722,23 @@ def main() -> int:
                     "status", "reason", "run_id", "workflow_sha", "run_url",
                     "run_conclusion", "terminal_status", "terminal_reason",
                     "sender_status", "receipt_status", "durable_receipt_verified", "no_resend",
+                    "annotation_evidence_status",
                 ):
                     if key in diagnosis:
                         summary.write(f"- {key}: {diagnosis[key]}\n")
+                execution = diagnosis.get("execution_diagnostic")
+                if isinstance(execution, dict):
+                    summary.write(
+                        "- execution_diagnostic: "
+                        f"{execution.get('classification', 'unknown')} / "
+                        f"{execution.get('reason', 'unknown')} "
+                        f"(runner_started={execution.get('runner_started', 'unknown')}; "
+                        f"install={execution.get('install_state', 'unknown')}; "
+                        f"sync={execution.get('sync_state', 'unknown')}; "
+                        f"source_health={execution.get('source_health', 'unknown')}; "
+                        f"result_contract={execution.get('result_contract', 'unknown')}; "
+                        f"cursor_effect={execution.get('cursor_effect', 'unknown')})\n"
+                    )
                 stages = diagnosis.get("stages")
                 if isinstance(stages, dict):
                     summary.write("- stages: " + json.dumps(stages, sort_keys=True) + "\n")

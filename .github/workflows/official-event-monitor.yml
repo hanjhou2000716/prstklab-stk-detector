@@ -69,6 +69,14 @@ jobs:
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.11"
+      - name: Capture immutable workflow run creation time
+        id: run_context
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: python -m src.workflow_run_context >> "$GITHUB_OUTPUT"
       - name: Install production text-delivery dependencies
         run: pip install -r requirements-production.txt
       - name: Install Chromium for formal card renderer
@@ -312,6 +320,34 @@ jobs:
           python -m src.data_release --publish --branch "$DATA_RELEASE_BRANCH" --include site/data \
             --expected-base-sha "${{ steps.publish_event.outputs.data_release_published_sha || steps.prepared_base.outputs.data_release_sha }}" \
             --message "chore: persist official notification ledger state"
+      - name: Verify durable recipient receipt from the published ledger
+        id: durable_receipt
+        if: always() && steps.writer_queue.outputs.should_continue == 'true' && (steps.persist_notification_ledger.outcome == 'success' || steps.status.outputs.durable_receipt_verified == 'true')
+        continue-on-error: true
+        env:
+          NOTIFICATION_KEY: ${{ steps.send.outputs.notification_key || steps.status.outputs.notification_key || '' }}
+          DATA_RELEASE_BRANCH: ${{ env.DATA_RELEASE_BRANCH }}
+          SCHEDULED_RECIPIENT_SET_MANIFEST: ${{ vars.SCHEDULED_RECIPIENT_SET_MANIFEST || '' }}
+          RECEIPT_SLOT_ANCHOR: ${{ steps.run_context.outputs.created_at || '' }}
+        run: |
+          set -euo pipefail
+          if ! git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"; then
+            LEDGER_COMMIT="" python -m src.delivery_receipt_verifier \
+              --ledger "$RUNNER_TEMP/missing-event-ledger.json" \
+              --notification-key "$NOTIFICATION_KEY"
+            exit 0
+          fi
+          ledger_commit="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"
+          if [[ ! "$ledger_commit" =~ ^[0-9a-f]{40}$ ]] \
+            || ! git show "${ledger_commit}:site/data/event-ledger.json" > "$RUNNER_TEMP/durable-event-ledger.json"; then
+            LEDGER_COMMIT="${ledger_commit:-}" python -m src.delivery_receipt_verifier \
+              --ledger "$RUNNER_TEMP/missing-event-ledger.json" \
+              --notification-key "$NOTIFICATION_KEY"
+            exit 0
+          fi
+          LEDGER_COMMIT="$ledger_commit" python -m src.delivery_receipt_verifier \
+            --ledger "$RUNNER_TEMP/durable-event-ledger.json" \
+            --notification-key "$NOTIFICATION_KEY"
       - name: Prepare reconciled Pages artifact
         if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success'
         run: |
@@ -367,7 +403,10 @@ jobs:
           QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'not_required' }}
           PREPARED_RELEASE_STATUS: ${{ steps.prepared_release.outputs.reason || 'not_required' }}
           IDEMPOTENCY_CACHE_HIT: ${{ steps.idempotency.outputs.cache-hit || 'false' }}
-          DURABLE_RECEIPT_VERIFIED: ${{ steps.status.outputs.durable_receipt_verified || 'false' }}
+          DURABLE_RECEIPT_VERIFIED: ${{ steps.durable_receipt.outputs.verified || 'false' }}
+          RECEIPT_VERIFICATION_REASON: ${{ steps.durable_receipt.outputs.reason || 'not_run' }}
+          RECEIPT_LEDGER_COMMIT: ${{ steps.durable_receipt.outputs.ledger_commit || '' }}
+          RECEIPT_RECIPIENT_SET_VERSION: ${{ steps.durable_receipt.outputs.recipient_set_version || '' }}
           PENDING_COUNT: ${{ steps.status.outputs.priority_pending_count || '0' }}
           DISPATCH_REF_COUNT: ${{ steps.status.outputs.priority_dispatch_ref_count || '0' }}
           EVENT_REF_COUNT: ${{ steps.status.outputs.priority_event_ref_count || '0' }}
@@ -384,6 +423,19 @@ jobs:
           SEND_NOTIFICATION_EXPECTED: ${{ steps.send.outputs.notification_expected || steps.status.outputs.notification_expected || 'false' }}
           SEND_STATUS: ${{ steps.send.outputs.notification_status || '' }}
           LEDGER_OUTCOME: ${{ steps.persist_notification_ledger.outcome || 'skipped' }}
+          WRITER_QUEUE_OUTCOME: ${{ steps.writer_queue.outcome || 'skipped' }}
+          WRITER_QUEUE_ERROR_CODE: ${{ steps.writer_queue.outputs.queue_error_code || '' }}
+          WRITER_QUEUE_BLOCKER_RUN_IDS: ${{ steps.writer_queue.outputs.blocker_run_ids || '' }}
+          WRITER_QUEUE_ATTEMPT: ${{ github.run_attempt }}
+          WRITER_QUEUE_BUDGET_SECONDS: ${{ steps.writer_queue.outputs.queue_budget_seconds || '' }}
+          WRITER_QUEUE_WAITED_SECONDS: ${{ steps.writer_queue.outputs.waited_seconds || '' }}
+          WRITER_QUEUE_REMAINING_SECONDS: ${{ steps.writer_queue.outputs.remaining_seconds || '' }}
+          WRITER_QUEUE_COMPLETE_SNAPSHOTS: ${{ steps.writer_queue.outputs.complete_snapshots || '' }}
+          WRITER_QUEUE_RECOVERY_ROUNDS: ${{ steps.writer_queue.outputs.recovery_rounds || '' }}
+          WRITER_QUEUE_DEFERRED_CANDIDATE_RUN_IDS: ${{ steps.writer_queue.outputs.deferred_candidate_run_ids || '' }}
+          WRITER_QUEUE_DEFERRED_CANDIDATE_REASONS: ${{ steps.writer_queue.outputs.deferred_candidate_reasons || '' }}
+          WRITER_QUEUE_DEADLINE_AT: ${{ steps.writer_queue.outputs.queue_deadline_at || '' }}
+          WRITER_QUEUE_ADMISSION_AT: ${{ steps.writer_queue.outputs.admission_at || '' }}
           RECONCILED_DEPLOYMENT_AVAILABLE: ${{ steps.reconciled_deployment.outputs.available || 'false' }}
           RECONCILED_RELEASE_GATE_OUTCOME: ${{ steps.reconciled_release_gate.outcome || 'skipped' }}
           RECONCILED_GATE_ERROR_CATEGORY: ${{ steps.reconciled_release_gate.outputs.error_category || 'not_available' }}

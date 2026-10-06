@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 
-from src.writer_queue import WRITER_WORKFLOW_IDENTITIES
+from src.writer_queue import WRITER_QUEUE_GATES, WRITER_WORKFLOW_IDENTITIES
 
 WORKFLOW_ROOT = Path(__file__).resolve().parents[1] / ".github" / "workflows"
 WRITER_WORKFLOWS = (
@@ -94,6 +94,19 @@ def test_every_release_or_pages_publisher_is_registered_by_exact_workflow_identi
     assert set(WRITER_WORKFLOW_IDENTITIES) <= {
         f".github/workflows/{name}" for name in WRITER_WORKFLOWS
     }
+
+
+def test_every_writer_has_a_static_publication_gate_job_and_step_contract() -> None:
+    assert set(WRITER_QUEUE_GATES) == set(WRITER_WORKFLOW_IDENTITIES)
+    for path, gate in WRITER_QUEUE_GATES.items():
+        assert gate["workflow_id"] == WRITER_WORKFLOW_IDENTITIES[path]
+        workflow = _workflow_text(Path(path).name)
+        assert (
+            f"  {gate['job_name']}:" in workflow
+            or f"name: {gate['job_name']}" in workflow
+        )
+        assert f"name: {gate['step_name']}" in workflow
+        assert "id: writer_queue" in workflow
 
 
 def test_queue_regression_uses_real_scheduled_workflow_api_identity() -> None:

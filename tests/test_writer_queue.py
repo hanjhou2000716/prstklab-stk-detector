@@ -24,16 +24,24 @@ def _run(
     workflow_id: int = 318848659,
     created_at: str | None = None,
     run_attempt: int = 1,
+    queue_gate_state: str | None = None,
+    queue_gate_started_at: str | None = None,
+    queue_gate_job_id: int | None = None,
 ) -> dict[str, object]:
+    created = created_at or f"2026-08-31T08:00:{run_id % 60:02d}Z"
+    admitted = queue_gate_state or ("deferred" if status == "queued" else "admitted")
     return {
         "id": run_id,
         "name": name,
         "path": path,
         "workflow_id": workflow_id,
         "status": status,
-        "created_at": created_at or f"2026-08-31T08:00:{run_id % 60:02d}Z",
-        "run_started_at": created_at or f"2026-08-31T08:00:{run_id % 60:02d}Z",
+        "created_at": created,
+        "run_started_at": None if status == "queued" else created,
         "run_attempt": run_attempt,
+        "queue_gate_state": admitted,
+        "queue_gate_started_at": queue_gate_started_at or (created if admitted == "admitted" else ""),
+        "queue_gate_job_id": queue_gate_job_id or (run_id + 10000 if admitted == "admitted" else 0),
     }
 
 
@@ -46,7 +54,7 @@ def test_blocking_runs_only_returns_older_active_production_writers():
         current_run_id=12,
         current_created_at=datetime(2026, 8, 31, 8, 1, tzinfo=UTC),
     )
-    assert [row["id"] for row in rows] == [10, 11]
+    assert [row["id"] for row in rows] == [10]
 
 
 def test_pages_deployment_is_serialized_with_data_release_writers():
@@ -59,6 +67,24 @@ def test_pages_deployment_is_serialized_with_data_release_writers():
         current_created_at=datetime(2026, 8, 31, 8, 1, tzinfo=UTC),
     )
     assert [row["name"] for row in rows] == ["Deploy dashboard to GitHub Pages"]
+
+
+def test_unstarted_queued_writer_is_deferred_instead_of_blocking():
+    queued = _run(10, status="queued")
+    assert blocking_runs(
+        [queued], current_run_id=11,
+        current_created_at=datetime(2026, 8, 31, 8, 1, tzinfo=UTC),
+    ) == []
+
+
+def test_gate_fifo_uses_gate_start_and_job_id_for_same_second():
+    start = "2026-08-31T08:01:00Z"
+    earlier = _run(99, created_at="2026-08-31T07:00:00Z", queue_gate_started_at=start, queue_gate_job_id=100)
+    later = _run(1, created_at="2026-08-31T07:00:00Z", queue_gate_started_at=start, queue_gate_job_id=300)
+    current = _run(11, created_at="2026-08-31T07:00:00Z", queue_gate_started_at=start, queue_gate_job_id=200)
+    assert blocking_runs(
+        [later, current, earlier], current_run_id=11,
+    ) == [earlier]
 
 
 def test_wait_for_slot_waits_until_older_writer_finishes():
@@ -199,6 +225,8 @@ def test_queue_api_reads_all_pages_and_active_statuses(monkeypatch):
     def open_request(request, timeout):
         assert timeout == 15
         requests.append(request.full_url)
+        if "/runs/101/attempts/1/jobs?" in request.full_url:
+            return Response({"total_count": 0, "jobs": []})
         query = request.full_url.split("?", 1)[1]
         params = dict(item.split("=") for item in query.split("&"))
         if params["status"] != "queued":
@@ -225,7 +253,7 @@ def test_queue_api_reads_all_pages_and_active_statuses(monkeypatch):
     runs = writer_queue._fetch_runs(
         api_url="https://api.github.test", repository="owner/repo", token="token",
     )
-    assert len(requests) == 6
+    assert len(requests) == 7
     assert any("status=waiting" in url for url in requests)
     assert any("status=requested" in url for url in requests)
     assert any("status=queued&page=2" in url for url in requests)
@@ -301,6 +329,17 @@ def test_queue_api_accepts_a_valid_run_transition_between_status_reads(monkeypat
     run["updated_at"] = "2026-08-31T08:00:02Z"
 
     def open_request(request, timeout):
+        if "/runs/42/attempts/1/jobs?" in request.full_url:
+            return Response({"total_count": 1, "jobs": [{
+                "id": 4200,
+                "name": "refresh-and-deploy",
+                "status": "in_progress",
+                "steps": [{
+                    "name": "Wait for production writer queue",
+                    "status": "in_progress",
+                    "started_at": "2026-08-31T08:00:04Z",
+                }],
+            }]})
         status = request.full_url.split("status=", 1)[1].split("&", 1)[0]
         if status == "queued":
             return Response({"total_count": 1, "workflow_runs": [run]})
@@ -315,6 +354,105 @@ def test_queue_api_accepts_a_valid_run_transition_between_status_reads(monkeypat
     )
     assert len(rows) == 1
     assert rows[0]["status"] == "in_progress"
+
+
+def test_queued_writer_without_runner_does_not_hold_live_publication_gate(monkeypatch):
+    class Response:
+        def __init__(self, payload):
+            self.payload = payload
+            self.headers = {}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return json.dumps(self.payload).encode()
+
+    blocker = {
+        "id": 90, "run_attempt": 1, "path": ".github/workflows/official-event-monitor.yml",
+        "workflow_id": 320209983, "status": "queued", "created_at": "2026-10-06T00:00:00Z",
+        "run_started_at": None, "head_sha": "main-sha", "updated_at": "2026-10-06T00:00:00Z",
+    }
+    current = {
+        "id": 100, "run_attempt": 1, "path": ".github/workflows/scheduled-brief.yml",
+        "workflow_id": 318853044, "status": "in_progress", "created_at": "2026-10-06T00:05:00Z",
+        "run_started_at": "2026-10-06T00:05:00Z", "head_sha": "main-sha",
+        "updated_at": "2026-10-06T00:05:01Z",
+    }
+
+    def open_request(request, timeout):
+        assert timeout > 0
+        url = request.full_url
+        if "/runs/90/attempts/1/jobs?" in url:
+            return Response({"total_count": 1, "jobs": [{
+                "id": 900, "name": "monitor-send-deploy", "status": "queued",
+                "runner_id": 0, "started_at": None, "steps": None,
+            }]})
+        if "/runs/100/attempts/1/jobs?" in url:
+            return Response({"total_count": 1, "jobs": [{
+                "id": 1000, "name": "refresh-notify-deploy", "status": "in_progress",
+                "runner_id": 77, "started_at": "2026-10-06T00:05:00Z", "steps": [{
+                    "name": "Wait for production writer queue", "status": "in_progress",
+                    "started_at": "2026-10-06T00:05:01Z",
+                }],
+            }]})
+        status = url.split("status=", 1)[1].split("&", 1)[0]
+        rows = {"queued": [blocker], "in_progress": [current]}.get(status, [])
+        return Response({"total_count": len(rows), "workflow_runs": rows})
+
+    monkeypatch.setattr(writer_queue, "urlopen", open_request)
+    result = wait_for_slot(
+        current_run_id=100, current_attempt=1, require_current_attempt=True,
+        api_url="https://api.github.test", repository="owner/repo", token="token",
+        timeout_seconds=60, settle_seconds=0, poll_seconds=1,
+        sleeper=lambda _seconds: None,
+    )
+
+    assert result.status == "acquired"
+    assert result.complete_snapshots == 2
+    assert result.deferred_candidates == (90,)
+    assert result.deferred_candidate_reasons == ("writer_job_not_started",)
+
+
+def test_queued_writer_with_unavailable_steps_only_defers_without_runner(monkeypatch):
+    run = {
+        "id": 90, "run_attempt": 1, "path": ".github/workflows/official-event-monitor.yml",
+        "workflow_id": 320209983, "status": "queued", "created_at": "2026-10-06T00:00:00Z",
+        "run_started_at": None,
+    }
+
+    class Response:
+        headers = {}
+
+        def __init__(self, payload):
+            self.payload = payload
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return json.dumps(self.payload).encode()
+
+    def open_request(request, timeout):
+        if "/attempts/1/jobs?" in request.full_url:
+            return Response({"total_count": 1, "jobs": [{
+                "id": 900, "name": "monitor-send-deploy", "status": "queued",
+                "runner_id": 0, "started_at": None, "steps": None,
+            }]})
+        return Response({"total_count": 1, "workflow_runs": [run]})
+
+    monkeypatch.setattr(writer_queue, "urlopen", open_request)
+    result = writer_queue._fetch_runs_once(
+        api_url="https://api.github.test", repository="owner/repo", token="token",
+    )
+    assert result[0]["queue_gate_state"] == "deferred"
+    assert result.deferred_candidates == ({"run_id": 90, "attempt": 1, "reason": "writer_job_not_started"},)
 
 
 
@@ -419,7 +557,7 @@ def test_scheduled_queue_wait_preserves_slot_delivery_reserve():
         requested_seconds=3300,
         now=datetime.fromisoformat("2026-09-29T14:25:00+08:00"),
     )
-    assert budget == 20 * 60
+    assert budget == 12 * 60
     assert deadline == "2026-09-29T06:50:00+00:00"
 
     expired = writer_queue._scheduled_queue_budget(
@@ -428,6 +566,28 @@ def test_scheduled_queue_wait_preserves_slot_delivery_reserve():
         now=datetime.fromisoformat("2026-09-29T14:45:00+08:00"),
     )
     assert expired[0] == 0
+
+
+def test_scheduled_notification_queue_requires_immutable_anchor():
+    with pytest.raises(writer_queue.WriterQueueError, match="scheduled_queue_anchor_missing"):
+        writer_queue._scheduled_queue_budget(
+            {"scheduled_slot": "morning", "delivery_intent": "notify_candidate"},
+            requested_seconds=3300,
+            now=datetime.fromisoformat("2026-10-06T06:00:00+08:00"),
+        )
+
+
+def test_scheduled_notification_queue_rejects_unknown_slot_deadline():
+    with pytest.raises(writer_queue.WriterQueueError, match="scheduled_queue_slot_invalid"):
+        writer_queue._scheduled_queue_budget(
+            {
+                "scheduled_slot": "unrecognized",
+                "scheduled_for_at": "2026-10-06T06:00:00+08:00",
+                "delivery_intent": "notify_candidate",
+            },
+            requested_seconds=3300,
+            now=datetime.fromisoformat("2026-10-06T06:00:00+08:00"),
+        )
 
 
 def test_us_queue_wait_stops_before_exchange_open_reserve():
@@ -441,8 +601,23 @@ def test_us_queue_wait_stops_before_exchange_open_reserve():
         requested_seconds=3300,
         now=datetime.fromisoformat("2026-09-29T09:15:00-04:00"),
     )
-    assert budget == 10 * 60
+    assert budget == 2 * 60
     assert deadline == "2026-09-29T13:30:00+00:00"
+
+
+def test_morning_queue_cutoff_preserves_prepare_and_delivery_windows():
+    context = {
+        "scheduled_slot": "morning",
+        "scheduled_for_at": "2026-10-06T06:00:00+08:00",
+        "delivery_intent": "notify_candidate",
+    }
+    budget, deadline = writer_queue._scheduled_queue_budget(
+        context,
+        requested_seconds=3300,
+        now=datetime.fromisoformat("2026-10-06T06:00:00+08:00"),
+    )
+    assert budget == 17 * 60
+    assert deadline == "2026-10-05T22:30:00+00:00"
 
 
 def test_production_revision_fence_allows_current_main():
