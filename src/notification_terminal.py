@@ -95,6 +95,15 @@ def _result(
     failure: bool = False,
     no_resend: bool = False,
 ) -> dict[str, Any]:
+    queue_failed = (
+        _text(values, "WRITER_QUEUE_STATUS", _text(values, "QUEUE_STATUS")) == "failed"
+        and _text(values, "WRITER_QUEUE_OUTCOME", "failure") == "failure"
+    ) or _text(values, "WRITER_QUEUE_ERROR_CODE") == "writer_queue_timeout"
+    sender_not_run_after_queue_failure = queue_failed and not (
+        _flag(values, "SEND_SENT")
+        or (_count(values, "DELIVERED_COUNT") or 0) > 0
+        or _text(values, "SEND_OUTCOME") not in {"", "skipped", "success", "not_attempted"}
+    )
     return {
         "schema_version": "notification-terminal-v1",
         "workflow": workflow,
@@ -110,22 +119,39 @@ def _result(
         "durable_receipt_verified": _flag(values, "DURABLE_RECEIPT_VERIFIED"),
         "reconciliation": _reconciliation_evidence(values),
         "sender_status": _text(values, "SEND_STATUS", "not_attempted") or "not_attempted",
+        "writer_queue_error_code": _text(values, "WRITER_QUEUE_ERROR_CODE"),
+        "writer_queue_blocker_run_ids": _text(values, "WRITER_QUEUE_BLOCKER_RUN_IDS"),
+        "writer_queue_attempt": _text(values, "WRITER_QUEUE_ATTEMPT"),
+        "writer_queue_budget_seconds": _count(values, "WRITER_QUEUE_BUDGET_SECONDS"),
+        "writer_queue_waited_seconds": _count(values, "WRITER_QUEUE_WAITED_SECONDS"),
+        "writer_queue_remaining_seconds": _count(values, "WRITER_QUEUE_REMAINING_SECONDS"),
+        "writer_queue_complete_snapshots": _count(values, "WRITER_QUEUE_COMPLETE_SNAPSHOTS"),
+        "writer_queue_recovery_rounds": _count(values, "WRITER_QUEUE_RECOVERY_ROUNDS"),
+        "writer_queue_deferred_candidate_run_ids": _text(values, "WRITER_QUEUE_DEFERRED_CANDIDATE_RUN_IDS"),
+        "writer_queue_deferred_candidate_reasons": _text(values, "WRITER_QUEUE_DEFERRED_CANDIDATE_REASONS"),
+        "writer_queue_deadline_at": _text(values, "WRITER_QUEUE_DEADLINE_AT"),
+        "writer_queue_admission_at": _text(values, "WRITER_QUEUE_ADMISSION_AT"),
+        "receipt_verification_reason": _text(values, "RECEIPT_VERIFICATION_REASON"),
+        "receipt_ledger_commit": _text(values, "RECEIPT_LEDGER_COMMIT"),
+        "receipt_recipient_set_version": _text(values, "RECEIPT_RECIPIENT_SET_VERSION"),
         "receipt_status": _text(values, "RECEIPT_OUTCOME", _text(values, "RECEIPT_CALLBACK_OUTCOME", "not_attempted")) or "not_attempted",
         "delivered_count": _count(values, "DELIVERED_COUNT"),
         "failed_count": _count(values, "FAILED_COUNT"),
         "stages": {
-            "prepare": _text(values, "PREPARE_OUTCOME", _text(values, "SCAN_STATUS", "unknown")),
-            "release_manifest": _text(values, "RELEASE_MANIFEST_OUTCOME", "not_run"),
+            "writer_queue": _text(values, "WRITER_QUEUE_STATUS", _text(values, "QUEUE_STATUS", "not_run")),
+            "prepare": "not_run" if sender_not_run_after_queue_failure else _text(values, "PREPARE_OUTCOME", _text(values, "SCAN_STATUS", "unknown")),
+            "release_manifest": "not_run" if queue_failed else _text(values, "RELEASE_MANIFEST_OUTCOME", "not_run"),
             "deployment": (
-                "not_run" if _text(values, "RELEASE_MANIFEST_OUTCOME") == "failure"
+                "not_run" if sender_not_run_after_queue_failure or _text(values, "RELEASE_MANIFEST_OUTCOME") == "failure"
                 else _text(values, "DEPLOYMENT_AVAILABLE", _text(values, "PAGES_DEPLOYMENT_AVAILABLE", "unknown"))
             ),
             "public_gate": (
-                "not_run" if _text(values, "RELEASE_MANIFEST_OUTCOME") == "failure"
+                "not_run" if sender_not_run_after_queue_failure or _text(values, "RELEASE_MANIFEST_OUTCOME") == "failure"
                 else _text(values, "RELEASE_GATE_ALLOWED", _text(values, "GATE_ALLOWED", "unknown"))
             ),
-            "receipt": _text(values, "RECEIPT_OUTCOME", _text(values, "RECEIPT_CALLBACK_OUTCOME", "not_attempted")),
-            "ledger": _text(values, "LEDGER_OUTCOME", _text(values, "LEDGER_PERSIST_OUTCOME", "not_attempted")),
+            "receipt": "not_run" if sender_not_run_after_queue_failure else _text(values, "RECEIPT_OUTCOME", _text(values, "RECEIPT_CALLBACK_OUTCOME", "not_attempted")),
+            "ledger": "not_run" if sender_not_run_after_queue_failure else _text(values, "LEDGER_OUTCOME", _text(values, "LEDGER_PERSIST_OUTCOME", "not_attempted")),
+            "sender": "not_run" if sender_not_run_after_queue_failure else _text(values, "SEND_OUTCOME", "not_attempted"),
         },
     }
 
@@ -140,6 +166,25 @@ def evaluate_official_terminal(values: Mapping[str, str]) -> dict[str, Any]:
     hard_failure = _flag(values, "HARD_FAILURE")
     scan_outcome = _text(values, "SCAN_STATUS")
 
+    queue_failed = (
+        _text(values, "WRITER_QUEUE_ERROR_CODE") == "writer_queue_timeout"
+        or (
+            _text(values, "QUEUE_STATUS") == "failed"
+            and _text(values, "WRITER_QUEUE_OUTCOME") == "failure"
+        )
+    )
+    if requested and queue_failed:
+        send_was_possible = (
+            _flag(values, "SEND_SENT")
+            or (_count(values, "DELIVERED_COUNT") or 0) > 0
+            or _text(values, "SEND_OUTCOME") not in {"", "skipped", "success"}
+        )
+        return _result(
+            values, "official", status="failed",
+            reason="writer_queue_timeout" if _text(values, "WRITER_QUEUE_ERROR_CODE") == "writer_queue_timeout" else "writer_queue_failed_before_delivery",
+            expected=bool(should_send or expected or _flag(values, "SEND_NOTIFICATION_EXPECTED")),
+            failure=True, no_resend=send_was_possible,
+        )
     if requested and scan_outcome != "success":
         return _result(
             values, "official", status="failed",
@@ -278,6 +323,12 @@ def evaluate_official_terminal(values: Mapping[str, str]) -> dict[str, Any]:
             reason="post_send_public_release_not_reconciled_do_not_resend",
             expected=True, failure=True, no_resend=True,
         )
+    if _flag(values, "SEND_SENT") and not _flag(values, "DURABLE_RECEIPT_VERIFIED"):
+        return _result(
+            values, "official", status="delivered_reconciliation_incomplete",
+            reason="durable_recipient_receipt_unverified_do_not_resend",
+            expected=True, failure=True, no_resend=True,
+        )
     return _result(
         values, "official", status="delivered",
         reason="recipient_receipt_and_public_release_reconciled", expected=True,
@@ -322,6 +373,30 @@ def evaluate_scheduled_terminal(values: Mapping[str, str]) -> dict[str, Any]:
             values, "scheduled", status="not_requested",
             reason="notification_not_requested", expected=False,
         )
+    if (
+        _text(values, "WINDOW_DELIVERY_INTENT") == "notify_candidate"
+        and (
+            _text(values, "WRITER_QUEUE_ERROR_CODE") == "writer_queue_timeout"
+            or (
+                _text(values, "WRITER_QUEUE_STATUS") == "failed"
+                and _text(values, "WRITER_QUEUE_OUTCOME") == "failure"
+            )
+        )
+    ):
+        send_was_possible = (
+            _flag(values, "SEND_SENT")
+            or (_count(values, "DELIVERED_COUNT") or 0) > 0
+            or _text(values, "SEND_OUTCOME") not in {"", "skipped", "success"}
+        )
+        queue_reason = (
+            "writer_queue_timeout"
+            if _text(values, "WRITER_QUEUE_ERROR_CODE") == "writer_queue_timeout"
+            else "writer_queue_failed_before_prepare"
+        )
+        return _result(
+            values, "scheduled", status="failed", reason=queue_reason,
+            expected=True, failure=True, no_resend=send_was_possible,
+        )
     if _text(values, "RELEASE_MANIFEST_OUTCOME") == "failure" and (
         expected or _text(values, "WINDOW_DELIVERY_INTENT") == "notify_candidate"
     ):
@@ -356,6 +431,12 @@ def evaluate_scheduled_terminal(values: Mapping[str, str]) -> dict[str, Any]:
             expected=expected, failure=True,
         )
     if send_status == "already_delivered" and send_reason == "already_delivered":
+        if not _flag(values, "DURABLE_RECEIPT_VERIFIED"):
+            return _result(
+                values, "scheduled", status="delivered_reconciliation_incomplete",
+                reason="durable_recipient_receipt_unverified_do_not_resend",
+                expected=True, failure=True, no_resend=True,
+            )
         return _result(
             values, "scheduled", status="already_delivered",
             reason="durable_recipient_receipt_verified", expected=False,
@@ -417,6 +498,18 @@ def evaluate_scheduled_terminal(values: Mapping[str, str]) -> dict[str, Any]:
             reason="recipient_receipt_ledger_not_persisted_do_not_resend",
             expected=True, failure=True, no_resend=True,
         )
+    if _flag(values, "SEND_SENT") and not _flag(values, "DURABLE_RECEIPT_VERIFIED"):
+        return _result(
+            values, "official", status="delivered_reconciliation_incomplete",
+            reason="durable_recipient_receipt_unverified_do_not_resend",
+            expected=True, failure=True, no_resend=True,
+        )
+    if not _flag(values, "DURABLE_RECEIPT_VERIFIED"):
+        return _result(
+            values, "scheduled", status="delivered_reconciliation_incomplete",
+            reason="durable_recipient_receipt_unverified_do_not_resend",
+            expected=True, failure=True, no_resend=True,
+        )
     if (
         _text(values, "RECONCILED_DEPLOYMENT_VERIFIED") != "true"
         or _text(values, "RECONCILED_GATE_ALLOWED") != "true"
@@ -457,6 +550,27 @@ def append_summary(path: str, terminal: Mapping[str, Any]) -> None:
         f"{terminal.get('stages', {}).get('release_manifest', 'unknown')} / "
         f"{terminal.get('stages', {}).get('deployment', 'unknown')} / "
         f"{terminal.get('stages', {}).get('public_gate', 'unknown')}\n",
+        f"- writer_queue: {terminal.get('stages', {}).get('writer_queue', 'unknown')} "
+        f"(error={terminal.get('writer_queue_error_code') or 'none'}; blockers={terminal.get('writer_queue_blocker_run_ids') or 'none'})\n",
+        f"- queue attempt / budget / waited / remaining: {terminal.get('writer_queue_attempt') or 'unknown'} / "
+        f"{terminal.get('writer_queue_budget_seconds') if terminal.get('writer_queue_budget_seconds') is not None else 'unknown'} / "
+        f"{terminal.get('writer_queue_waited_seconds') if terminal.get('writer_queue_waited_seconds') is not None else 'unknown'} / "
+        f"{terminal.get('writer_queue_remaining_seconds') if terminal.get('writer_queue_remaining_seconds') is not None else 'unknown'} seconds\n",
+        f"- queue snapshots / recovery rounds / deferred candidates: "
+        f"{terminal.get('writer_queue_complete_snapshots') if terminal.get('writer_queue_complete_snapshots') is not None else 'unknown'} / "
+        f"{terminal.get('writer_queue_recovery_rounds') if terminal.get('writer_queue_recovery_rounds') is not None else 'unknown'} / "
+        f"{terminal.get('writer_queue_deferred_candidate_run_ids') or 'none'} "
+        f"({terminal.get('writer_queue_deferred_candidate_reasons') or 'none'})\n",
+        "- prepare / deployment / public_gate / sender / receipt / ledger: "
+        f"{terminal.get('stages', {}).get('prepare', 'unknown')} / "
+        f"{terminal.get('stages', {}).get('deployment', 'unknown')} / "
+        f"{terminal.get('stages', {}).get('public_gate', 'unknown')} / "
+        f"{terminal.get('stages', {}).get('sender', 'unknown')} / "
+        f"{terminal.get('stages', {}).get('receipt', 'unknown')} / "
+        f"{terminal.get('stages', {}).get('ledger', 'unknown')}\n",
+        f"- durable_receipt_verification: {terminal.get('receipt_verification_reason') or 'not_run'} "
+        f"(set={terminal.get('receipt_recipient_set_version') or 'unknown'}; "
+        f"ledger_commit={terminal.get('receipt_ledger_commit') or 'unknown'})\n",
         f"- sender_status / receipt_status: {terminal.get('sender_status', 'unknown')} / {terminal.get('receipt_status', 'unknown')}\n",
         f"- delivered / failed recipients: {terminal.get('delivered_count', 'unknown')} / {terminal.get('failed_count', 'unknown')}\n",
         f"- no_resend: {str(bool(terminal.get('no_resend'))).lower()}\n",

@@ -27,6 +27,7 @@ def official(**updates: str) -> dict[str, str]:
         "LEDGER_OUTCOME": "success",
         "RECONCILED_DEPLOYMENT_AVAILABLE": "true",
         "RECONCILED_RELEASE_GATE_OUTCOME": "success",
+        "DURABLE_RECEIPT_VERIFIED": "true",
     }
     values.update(updates)
     return values
@@ -52,6 +53,7 @@ def scheduled(**updates: str) -> dict[str, str]:
         "RECONCILED_GATE_ALLOWED": "true",
         "RECEIPT_ENDPOINT_CONFIGURED": "true",
         "RECEIPT_CALLBACK_OUTCOME": "success",
+        "DURABLE_RECEIPT_VERIFIED": "true",
     }
     values.update(updates)
     return values
@@ -184,6 +186,33 @@ def test_official_delivery_requires_every_persistent_stage() -> None:
     assert incomplete_reconciliation["no_resend"] is True
 
 
+def test_official_queue_failure_preserves_root_cause_before_scan_failure_fallback() -> None:
+    result = evaluate_official_terminal(official(
+        QUEUE_STATUS="failed",
+        WRITER_QUEUE_OUTCOME="failure",
+        WRITER_QUEUE_ERROR_CODE="writer_queue_timeout",
+        WRITER_QUEUE_BLOCKER_RUN_IDS="1234",
+        SCAN_STATUS="not_run",
+        SEND_OUTCOME="skipped",
+        SEND_SENT="false",
+        DELIVERED_COUNT="0",
+    ))
+
+    assert result["status"] == "failed"
+    assert result["reason"] == "writer_queue_timeout"
+    assert result["expected"] is True
+    assert result["no_resend"] is False
+    assert result["writer_queue_blocker_run_ids"] == "1234"
+
+
+def test_official_send_requires_a_reread_durable_claim() -> None:
+    result = evaluate_official_terminal(official(DURABLE_RECEIPT_VERIFIED="false"))
+
+    assert result["status"] == "delivered_reconciliation_incomplete"
+    assert result["reason"] == "durable_recipient_receipt_unverified_do_not_resend"
+    assert result["no_resend"] is True
+
+
 def test_official_failed_scan_cannot_be_reported_as_no_event() -> None:
     result = evaluate_official_terminal(official(
         SCAN_STATUS="failure",
@@ -314,6 +343,37 @@ def test_scheduled_release_manifest_failure_is_not_misreported_as_pages_failure(
     assert result["stages"]["public_gate"] == "not_run"
 
 
+def test_scheduled_queue_timeout_keeps_root_cause_and_unrun_stages() -> None:
+    result = evaluate_scheduled_terminal(scheduled(
+        DELIVERY_OBLIGATION="undetermined",
+        WINDOW_DELIVERY_INTENT="notify_candidate",
+        WRITER_QUEUE_STATUS="failed",
+        WRITER_QUEUE_OUTCOME="failure",
+        WRITER_QUEUE_ERROR_CODE="writer_queue_timeout",
+        WRITER_QUEUE_BLOCKER_RUN_IDS="37349718666",
+        PREPARE_OUTCOME="skipped",
+        SEND_OUTCOME="skipped",
+        SEND_STATUS="not_attempted",
+        DELIVERED_COUNT="0",
+    ))
+
+    assert result["status"] == "failed"
+    assert result["reason"] == "writer_queue_timeout"
+    assert result["expected"] is True
+    assert result["no_resend"] is False
+    assert result["writer_queue_blocker_run_ids"] == "37349718666"
+    for stage in ("prepare", "deployment", "public_gate", "sender", "receipt", "ledger"):
+        assert result["stages"][stage] == "not_run"
+
+
+def test_scheduled_already_sent_without_persisted_receipt_is_no_resend() -> None:
+    result = evaluate_scheduled_terminal(scheduled(DURABLE_RECEIPT_VERIFIED="false"))
+
+    assert result["status"] == "delivered_reconciliation_incomplete"
+    assert result["reason"] == "durable_recipient_receipt_unverified_do_not_resend"
+    assert result["no_resend"] is True
+
+
 def test_scheduled_handoff_reports_child_completion_without_resending() -> None:
     result = evaluate_scheduled_terminal(scheduled(HANDOFF_STATUS="delivered", HANDOFF_RUN_ID="42"))
 
@@ -341,3 +401,25 @@ def test_summary_identifies_release_failure_before_pages_and_public_gate(tmp_pat
 
     summary = destination.read_text(encoding="utf-8")
     assert "release_manifest / deployment / public_gate: failure / not_run / not_run" in summary
+
+
+def test_queue_timeout_summary_names_blocker_and_unrun_delivery_stages(tmp_path) -> None:
+    result = evaluate_scheduled_terminal(scheduled(
+        DELIVERY_OBLIGATION="undetermined",
+        WINDOW_DELIVERY_INTENT="notify_candidate",
+        WRITER_QUEUE_STATUS="failed",
+        WRITER_QUEUE_OUTCOME="failure",
+        WRITER_QUEUE_ERROR_CODE="writer_queue_timeout",
+        WRITER_QUEUE_BLOCKER_RUN_IDS="37349718666",
+        PREPARE_OUTCOME="skipped",
+        SEND_OUTCOME="skipped",
+        SEND_SENT="false",
+        DELIVERED_COUNT="0",
+    ))
+    destination = tmp_path / "summary.md"
+
+    append_summary(str(destination), result)
+
+    summary = destination.read_text(encoding="utf-8")
+    assert "writer_queue: failed (error=writer_queue_timeout; blockers=37349718666)" in summary
+    assert "not_run / not_run / not_run / not_run / not_run / not_run" in summary

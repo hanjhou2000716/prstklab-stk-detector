@@ -349,6 +349,18 @@ def test_missing_claim_is_diagnosed_from_exact_read_only_workflow_terminal(monke
                 "status": "completed",
                 "conclusion": "failure",
             }]}).encode())
+        if "/actions/runs/12345/jobs?" in request.full_url:
+            return Response(json.dumps({"total_count": 1, "jobs": [{
+                "id": 456,
+                "name": "refresh-notify-deploy",
+                "status": "completed",
+                "conclusion": "failure",
+                "runner_id": 88,
+                "started_at": "2026-09-28T01:00:01Z",
+                "steps": [
+                    {"name": "Wait for production writer queue", "status": "completed", "conclusion": "failure", "started_at": "2026-09-28T01:01:00Z"},
+                ],
+            }]}).encode())
         return Response(log_bytes)
 
     diagnosis = audit._diagnose_scheduled_run(
@@ -363,7 +375,9 @@ def test_missing_claim_is_diagnosed_from_exact_read_only_workflow_terminal(monke
     assert diagnosis["terminal_reason"].endswith("scheduled_public_summary_invalid")
     assert diagnosis["run_id"] == 12345
     assert diagnosis["stages"]["public_gate"] == "true"
-    assert len(requested_urls) == 2
+    assert diagnosis["execution_diagnostic"]["classification"] == "workflow_step_failed"
+    assert diagnosis["annotation_evidence_status"] == "not_required"
+    assert len(requested_urls) == 3
     assert all("test-token" not in url for url in requested_urls)
 
 
@@ -413,6 +427,13 @@ def test_recipient_set_version_and_effective_time_are_required_for_production_au
 ):
     snapshot = {"markets": {"taiwan_cash": _cash(True), "taiwan_futures": _futures(True)}}
     monkeypatch.setattr(audit, "_calendar_snapshot", lambda *_args: snapshot)
+    diagnoses = []
+
+    def diagnose(**kwargs):
+        diagnoses.append(kwargs)
+        return {"status": "matched", "execution_diagnostic": {"classification": "workflow_step_failed"}}
+
+    monkeypatch.setattr(audit, "_diagnose_scheduled_run", diagnose)
     ledger_path = tmp_path / "empty-ledger.json"
     ledger_path.write_text(json.dumps({"delivery_claims": {}}), encoding="utf-8")
     base = {
@@ -425,11 +446,15 @@ def test_recipient_set_version_and_effective_time_are_required_for_production_au
         "external_requested_at": "2026-09-28T01:30:05Z",
         "expected_recipient_hashes": EXPECTED_RECIPIENT_HASHES,
         "require_recipient_set_metadata": True,
+        "github_repository": "acme/prstk",
+        "github_token": "read-only-token",
     }
 
     missing = audit.audit_slot(**base)
     assert missing["status"] == "blocked"
     assert missing["reason"] == "expected_recipient_set_version_unavailable"
+    assert missing["run_diagnosis"]["execution_diagnostic"]["classification"] == "workflow_step_failed"
+    assert diagnoses[-1]["slot"] == "pre_open"
 
     future_effective = audit.audit_slot(**{
         **base,

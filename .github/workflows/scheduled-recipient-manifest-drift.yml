@@ -38,6 +38,7 @@ jobs:
               echo "- reason: repository manifest variable is not initialized"
               echo "- no configuration was changed"
             } >> "$GITHUB_STEP_SUMMARY"
-            exit 0
+            echo "::error::scheduled_recipient_manifest_not_configured"
+            exit 1
           fi
           python -m scripts.check_scheduled_recipient_manifest

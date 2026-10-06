@@ -797,6 +797,7 @@ def write_status_output(
     lines = [
         f"should_send={'true' if should_send else 'false'}",
         f"key={event_key(event) if event else ''}",
+        f"notification_key={notification_key_for_event(event) if event else ''}",
         f"snapshot_publish_failed={'true' if snapshot_publish_failed else 'false'}",
         f"notification_id={event.get('notification_id', '') if event else ''}",
         f"snapshot_id={event.get('snapshot_id', '') if event else ''}",
@@ -967,6 +968,7 @@ def _write_delivery_output(
     ]
     if event:
         lines.extend([
+            f"notification_key={notification_key_for_event(event)}",
             f"alert_id={event.get('notification_id') or event.get('event_cluster_key') or event.get('event_key') or ''}",
             f"notification_id={event.get('notification_id') or ''}",
             f"snapshot_id={event.get('snapshot_id') or ''}",

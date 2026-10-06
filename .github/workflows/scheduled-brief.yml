@@ -1018,6 +1018,7 @@ jobs:
           DELIVERY_STATUS: ${{ steps.send_brief.outputs.delivery_status }}
           DELIVERED_COUNT: ${{ steps.send_brief.outputs.delivered_count || '0' }}
           FAILED_COUNT: ${{ steps.send_brief.outputs.failed_count || '0' }}
+          SEND_SENT: ${{ steps.send_brief.outputs.sent || 'false' }}
           RENDERER_ERROR_TYPE: ${{ steps.send_brief.outputs.renderer_error_type }}
           FAILED_RECIPIENT_HASHES: ${{ steps.send_brief.outputs.failed_recipient_hashes }}
           FINANCIALJUICE_TRACE: ${{ steps.send_brief.outputs.financialjuice_delivery_trace }}
@@ -1057,6 +1058,37 @@ jobs:
             --source-revision "$GITHUB_SHA" \
             --manifest "$MANIFEST_PATH"
           } >> "$GITHUB_OUTPUT"
+      - name: Verify durable recipient receipt from the published ledger
+        id: durable_receipt
+        if: always() && steps.writer_queue.outputs.should_continue == 'true' && (steps.persist_notification_ledger.outcome == 'success' || steps.send_brief.outputs.notification_status == 'already_delivered')
+        continue-on-error: true
+        env:
+          NOTIFICATION_KEY: ${{ steps.send_brief.outputs.notification_key || '' }}
+          LEDGER_COMMIT: ${{ steps.persist_notification_ledger.outputs.reconciled_data_release_sha || '' }}
+          DATA_RELEASE_BRANCH: ${{ env.DATA_RELEASE_BRANCH }}
+          SCHEDULED_RECIPIENT_SET_MANIFEST: ${{ vars.SCHEDULED_RECIPIENT_SET_MANIFEST || '' }}
+          RECEIPT_SLOT_ANCHOR: ${{ steps.window.outputs.scheduled_for_at || '' }}
+        run: |
+          set -euo pipefail
+          commit="${LEDGER_COMMIT:-}"
+          if [[ ! "$commit" =~ ^[0-9a-f]{40}$ ]]; then
+            if ! git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"; then
+              LEDGER_COMMIT="" python -m src.delivery_receipt_verifier --ledger "$RUNNER_TEMP/missing-event-ledger.json" --notification-key "$NOTIFICATION_KEY"
+              exit 0
+            fi
+            commit="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"
+          fi
+          if [[ ! "$commit" =~ ^[0-9a-f]{40}$ ]]; then
+            LEDGER_COMMIT="" python -m src.delivery_receipt_verifier --ledger "$RUNNER_TEMP/missing-event-ledger.json" --notification-key "$NOTIFICATION_KEY"
+            exit 0
+          fi
+          if ! git show "${commit}:site/data/event-ledger.json" > "$RUNNER_TEMP/durable-event-ledger.json"; then
+            LEDGER_COMMIT="$commit" python -m src.delivery_receipt_verifier --ledger "$RUNNER_TEMP/missing-event-ledger.json" --notification-key "$NOTIFICATION_KEY"
+            exit 0
+          fi
+          LEDGER_COMMIT="$commit" python -m src.delivery_receipt_verifier \
+            --ledger "$RUNNER_TEMP/durable-event-ledger.json" \
+            --notification-key "$NOTIFICATION_KEY"
       - name: Prepare reconciled Pages artifact
         if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success'
         run: |
@@ -1227,11 +1259,28 @@ jobs:
           RECEIPT_CALLBACK_OUTCOME: ${{ steps.persist_scheduled_receipt.outcome || 'skipped' }}
           RECEIPT_ENDPOINT_CONFIGURED: ${{ (vars.RECEIPT_CALLBACK_URL != '' || vars.RAILWAY_STATUS_URL != '') && 'true' || 'false' }}
           LEDGER_PERSIST_OUTCOME: ${{ steps.persist_notification_ledger.outcome || 'skipped' }}
+          DURABLE_RECEIPT_VERIFIED: ${{ steps.durable_receipt.outputs.verified || 'false' }}
+          RECEIPT_VERIFICATION_REASON: ${{ steps.durable_receipt.outputs.reason || 'not_run' }}
+          RECEIPT_LEDGER_COMMIT: ${{ steps.durable_receipt.outputs.ledger_commit || '' }}
+          RECEIPT_RECIPIENT_SET_VERSION: ${{ steps.durable_receipt.outputs.recipient_set_version || '' }}
           RECONCILED_DEPLOYMENT_VERIFIED: ${{ steps.reconciled_deployment_identity.outputs.verified || 'false' }}
           RECONCILED_GATE_ALLOWED: ${{ steps.reconciled_release_gate.outputs.allowed || 'false' }}
           HANDOFF_STATUS: ${{ steps.writer_queue.outputs.handoff_status || 'not_attempted' }}
           HANDOFF_RUN_ID: ${{ steps.writer_queue.outputs.handoff_run_id || '' }}
           WRITER_QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'not_required' }}
+          WRITER_QUEUE_OUTCOME: ${{ steps.writer_queue.outcome || 'skipped' }}
+          WRITER_QUEUE_ERROR_CODE: ${{ steps.writer_queue.outputs.queue_error_code || '' }}
+          WRITER_QUEUE_BLOCKER_RUN_IDS: ${{ steps.writer_queue.outputs.blocker_run_ids || '' }}
+          WRITER_QUEUE_ATTEMPT: ${{ github.run_attempt }}
+          WRITER_QUEUE_BUDGET_SECONDS: ${{ steps.writer_queue.outputs.queue_budget_seconds || '' }}
+          WRITER_QUEUE_WAITED_SECONDS: ${{ steps.writer_queue.outputs.waited_seconds || '' }}
+          WRITER_QUEUE_REMAINING_SECONDS: ${{ steps.writer_queue.outputs.remaining_seconds || '' }}
+          WRITER_QUEUE_COMPLETE_SNAPSHOTS: ${{ steps.writer_queue.outputs.complete_snapshots || '' }}
+          WRITER_QUEUE_RECOVERY_ROUNDS: ${{ steps.writer_queue.outputs.recovery_rounds || '' }}
+          WRITER_QUEUE_DEFERRED_CANDIDATE_RUN_IDS: ${{ steps.writer_queue.outputs.deferred_candidate_run_ids || '' }}
+          WRITER_QUEUE_DEFERRED_CANDIDATE_REASONS: ${{ steps.writer_queue.outputs.deferred_candidate_reasons || '' }}
+          WRITER_QUEUE_DEADLINE_AT: ${{ steps.writer_queue.outputs.queue_deadline_at || '' }}
+          WRITER_QUEUE_ADMISSION_AT: ${{ steps.writer_queue.outputs.admission_at || '' }}
         run: python -m src.notification_terminal --workflow scheduled
 
 # - name: 設定 GitHub Pages
