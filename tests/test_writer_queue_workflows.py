@@ -3,7 +3,11 @@ from pathlib import Path
 
 import yaml
 
-from src.writer_queue import WRITER_QUEUE_GATES, WRITER_WORKFLOW_IDENTITIES
+from src.writer_queue import (
+    WRITER_QUEUE_GATES,
+    WRITER_WORKFLOW_IDENTITIES,
+    publication_gate_contract_fingerprint,
+)
 
 WORKFLOW_ROOT = Path(__file__).resolve().parents[1] / ".github" / "workflows"
 WRITER_WORKFLOWS = (
@@ -29,6 +33,25 @@ def _step_blocks(name: str) -> list[str]:
         if re.match(r"^      - (?:name|uses|run):", line)
     ]
     return ["".join(lines[start:end]) for start, end in zip(starts, starts[1:] + [len(lines)], strict=True)]
+
+
+def _transitive_job_dependencies(job_name: str, jobs: dict[str, object]) -> set[str]:
+    dependencies: set[str] = set()
+    pending = [job_name]
+    while pending:
+        current = pending.pop()
+        job = jobs.get(current)
+        if not isinstance(job, dict):
+            continue
+        raw_needs = job.get("needs", [])
+        needs = [raw_needs] if isinstance(raw_needs, str) else raw_needs
+        if not isinstance(needs, list):
+            continue
+        for dependency in needs:
+            if isinstance(dependency, str) and dependency not in dependencies:
+                dependencies.add(dependency)
+                pending.append(dependency)
+    return dependencies
 
 
 def test_every_shared_writer_has_an_id_and_safe_exit_contract() -> None:
@@ -106,11 +129,12 @@ def test_every_writer_has_a_static_publication_gate_job_and_step_contract() -> N
         jobs = workflow.get("jobs")
         assert isinstance(jobs, dict)
         job = jobs.get(gate["job_name"])
+        gate_job_name = str(gate["job_name"])
         if job is None:
-            job = next(
-                (value for value in jobs.values()
+            gate_job_name, job = next(
+                ((name, value) for name, value in jobs.items()
                  if isinstance(value, dict) and value.get("name") == gate["job_name"]),
-                None,
+                (gate_job_name, None),
             )
         assert isinstance(job, dict), path
         steps = job.get("steps")
@@ -122,6 +146,18 @@ def test_every_writer_has_a_static_publication_gate_job_and_step_contract() -> N
         assert len(matches) == 1, path
         queue_index = matches[0]
         assert steps[queue_index].get("id") == "writer_queue", path
+        all_gate_steps = [
+            (job_name, step)
+            for job_name, candidate_job in jobs.items()
+            if isinstance(candidate_job, dict)
+            for step in candidate_job.get("steps", [])
+            if isinstance(step, dict)
+            and step.get("id") == "writer_queue"
+            and step.get("name") == gate["step_name"]
+        ]
+        assert all_gate_steps == [(gate_job_name, steps[queue_index])], path
+        fingerprint = publication_gate_contract_fingerprint(path, gate)
+        assert re.fullmatch(r"[0-9a-f]{64}", fingerprint), path
         for index, step in enumerate(steps):
             if not isinstance(step, dict):
                 continue
@@ -137,6 +173,38 @@ def test_every_writer_has_a_static_publication_gate_job_and_step_contract() -> N
             assert index > queue_index, f"{path}: publication before writer gate"
             assert "writer_queue.outputs.should_continue" in str(step.get("if") or ""), path
 
+        # A writer may publish in a downstream job only when its `needs` graph
+        # proves that the gate job completed first. Telegram senders are held
+        # to the same rule as Pages and release writes.
+        publication_markers = (
+            "python -m src.data_release --publish",
+            "actions/upload-pages-artifact",
+            "actions/deploy-pages",
+        )
+        for candidate_job_name, candidate_job in jobs.items():
+            if not isinstance(candidate_job, dict):
+                continue
+            candidate_steps = candidate_job.get("steps", [])
+            if not isinstance(candidate_steps, list):
+                continue
+            for index, step in enumerate(candidate_steps):
+                if not isinstance(step, dict):
+                    continue
+                content = str(step.get("run") or "") + "\n" + str(step.get("uses") or "")
+                step_env = step.get("env") if isinstance(step.get("env"), dict) else {}
+                step_name = str(step.get("name") or "")
+                is_sender = "TELEGRAM_BOT_TOKEN" in step_env or "Send Telegram" in step_name
+                is_publication = any(marker in content for marker in publication_markers)
+                if not is_sender and not is_publication:
+                    continue
+                if candidate_job_name == gate_job_name:
+                    assert index > queue_index, f"{path}: sender/publication before writer gate"
+                    assert "writer_queue.outputs.should_continue" in str(step.get("if") or ""), path
+                    continue
+                assert gate_job_name in _transitive_job_dependencies(candidate_job_name, jobs), (
+                    f"{path}: sender/publication job {candidate_job_name} does not depend on gate job {gate_job_name}"
+                )
+
 
 def test_queue_regression_uses_real_scheduled_workflow_api_identity() -> None:
     scheduled = _workflow_text("scheduled-brief.yml")
@@ -146,20 +214,40 @@ def test_queue_regression_uses_real_scheduled_workflow_api_identity() -> None:
     workflow = yaml.safe_load(scheduled)
     jobs = workflow.get("jobs")
     assert isinstance(jobs, dict)
-    steps = next(
-        value["steps"]
-        for value in jobs.values()
-        if isinstance(value, dict)
-        and isinstance(value.get("steps"), list)
-        and any(
-            isinstance(step, dict) and step.get("id") == "early_expiry"
-            for step in value["steps"]
-        )
+    assert jobs["refresh-notify-deploy"]["needs"] == "occurrence"
+    assert jobs["refresh-notify-deploy"]["if"] == "needs.occurrence.outputs.expired != 'true'"
+    assert jobs["refresh-notify-deploy"]["environment"]["name"] == "github-pages"
+    occurrence_steps = jobs["occurrence"]["steps"]
+    occurrence_expiry_index = next(
+        index for index, step in enumerate(occurrence_steps)
+        if isinstance(step, dict) and step.get("id") == "early_expiry"
     )
+    assert occurrence_steps[occurrence_expiry_index + 1]["name"] == "Record expired occurrence terminal state"
+    steps = jobs["refresh-notify-deploy"]["steps"]
     expiry_index = next(
         index for index, step in enumerate(steps)
-        if isinstance(step, dict) and step.get("id") == "early_expiry"
+        if isinstance(step, dict) and step.get("id") == "late_expiry"
     )
     expiry_step = steps[expiry_index]
     assert expiry_step["env"]["GITHUB_EVENT_SCHEDULE"] == "${{ github.event.schedule || '' }}"
-    assert steps[expiry_index + 1]["name"] == "Install production text-delivery dependencies"
+    assert steps[expiry_index + 1]["name"] == "Set up Python"
+    assert steps[expiry_index + 1]["if"] == "steps.late_expiry.outputs.expired != 'true'"
+    assert steps[expiry_index + 2]["name"] == "Install production text-delivery dependencies"
+    assert steps[expiry_index + 2]["if"] == "steps.late_expiry.outputs.expired != 'true'"
+    assert any(
+        step.get("name") == "Upload scheduled terminal record"
+        and "github.run_attempt" in step["with"]["name"]
+        for step in steps
+        if isinstance(step, dict)
+    )
+    terminal_index = next(
+        index for index, step in enumerate(steps)
+        if isinstance(step, dict) and step.get("id") == "terminal_diagnostic"
+    )
+    for step in steps:
+        if not isinstance(step, dict) or "always()" not in str(step.get("if") or ""):
+            continue
+        if step.get("id") == "terminal_diagnostic" or step.get("name") == "Upload scheduled terminal record":
+            continue
+        assert "steps.late_expiry.outputs.expired != 'true'" in str(step.get("if") or "")
+    assert steps[terminal_index + 1]["name"] == "Upload scheduled terminal record"

@@ -390,7 +390,7 @@ def test_queued_writer_without_runner_does_not_hold_live_publication_gate(monkey
         if "/runs/90/attempts/1/jobs?" in url:
             return Response({"total_count": 1, "jobs": [{
                 "id": 900, "name": "monitor-send-deploy", "status": "queued",
-                "runner_id": 0, "started_at": None, "steps": None,
+                "runner_id": 0, "started_at": None, "steps": [],
             }]})
         if "/runs/100/attempts/1/jobs?" in url:
             return Response({"total_count": 1, "jobs": [{
@@ -418,7 +418,9 @@ def test_queued_writer_without_runner_does_not_hold_live_publication_gate(monkey
     assert result.deferred_candidate_reasons == ("writer_job_not_started",)
 
 
-def test_queued_writer_with_unavailable_steps_only_defers_without_runner(monkeypatch):
+def test_queued_writer_with_unavailable_steps_is_not_assumed_unstarted(monkeypatch):
+    from src.writer_queue import RetryableQueueSnapshotError
+
     run = {
         "id": 90, "run_attempt": 1, "path": ".github/workflows/official-event-monitor.yml",
         "workflow_id": 320209983, "status": "queued", "created_at": "2026-10-06T00:00:00Z",
@@ -449,11 +451,10 @@ def test_queued_writer_with_unavailable_steps_only_defers_without_runner(monkeyp
         return Response({"total_count": 1, "workflow_runs": [run]})
 
     monkeypatch.setattr(writer_queue, "urlopen", open_request)
-    result = writer_queue._fetch_runs_once(
-        api_url="https://api.github.test", repository="owner/repo", token="token",
-    )
-    assert result[0]["queue_gate_state"] == "deferred"
-    assert result.deferred_candidates == ({"run_id": 90, "attempt": 1, "reason": "writer_job_not_started"},)
+    with pytest.raises(RetryableQueueSnapshotError, match="writer_publication_gate_steps_unavailable"):
+        writer_queue._fetch_runs_once(
+            api_url="https://api.github.test", repository="owner/repo", token="token",
+        )
 
 
 def test_real_github_queued_writer_timestamps_do_not_prove_runner_or_gate(monkeypatch):
@@ -490,12 +491,112 @@ def test_real_github_queued_writer_timestamps_do_not_prove_runner_or_gate(monkey
         deadline_monotonic=None,
     )
 
-    assert deferred == {
-        "run_id": 37349718666,
-        "attempt": 1,
-        "reason": "writer_job_not_started",
-    }
+    assert deferred["run_id"] == 37349718666
+    assert deferred["attempt"] == 1
+    assert deferred["reason"] == "writer_job_not_started"
     assert candidate["queue_gate_state"] == "deferred"
+
+
+def test_github_waiting_environment_job_with_started_timestamps_and_empty_steps_is_deferred(monkeypatch):
+    run = {
+        "id": 37518565189,
+        "run_attempt": 1,
+        "path": ".github/workflows/scheduled-brief.yml",
+        "workflow_id": 318853044,
+        "status": "waiting",
+        "created_at": "2026-10-06T19:23:11Z",
+        "run_started_at": "2026-10-06T19:23:11Z",
+        "head_sha": "ce7f0ec273014dd173c4928feebb31c70280b266",
+    }
+    job = {
+        "id": 112457723411,
+        "name": "refresh-notify-deploy",
+        "status": "waiting",
+        "runner_id": None,
+        "started_at": "2026-10-06T19:23:12Z",
+        "steps": [],
+    }
+    monkeypatch.setattr(writer_queue, "_fetch_attempt_jobs", lambda **_kwargs: [job])
+
+    candidate = dict(run)
+    deferred = writer_queue._annotate_publication_gate(
+        candidate,
+        api_url="https://api.github.test",
+        repository="owner/repo",
+        token="token",
+        deadline_monotonic=None,
+    )
+
+    assert deferred["run_id"] == 37518565189
+    assert deferred["attempt"] == 1
+    assert deferred["reason"] == "writer_job_not_started"
+    assert deferred["observed_status"] == "waiting"
+    assert deferred["job_status"] == "waiting"
+    assert deferred["runner_assigned"] is False
+    assert deferred["observed_steps"] == 0
+    assert candidate["queue_gate_state"] == "deferred"
+    assert candidate["queue_gate_observed_steps"] == 0
+    assert candidate["queue_gate_runner_assigned"] is False
+
+
+def test_active_runner_with_unavailable_steps_is_retried_not_misclassified(monkeypatch):
+    from src.writer_queue import RetryableQueueSnapshotError
+
+    run = {
+        "id": 37518565189,
+        "run_attempt": 1,
+        "path": ".github/workflows/scheduled-brief.yml",
+        "workflow_id": 318853044,
+        "status": "in_progress",
+    }
+    job = {
+        "id": 112457723411,
+        "name": "refresh-notify-deploy",
+        "status": "in_progress",
+        "runner_id": 741,
+        "started_at": "2026-10-06T19:23:12Z",
+        "steps": None,
+    }
+    monkeypatch.setattr(writer_queue, "_fetch_attempt_jobs", lambda **_kwargs: [job])
+
+    with pytest.raises(RetryableQueueSnapshotError, match="writer_publication_gate_steps_unavailable"):
+        writer_queue._annotate_publication_gate(
+            run,
+            api_url="https://api.github.test",
+            repository="owner/repo",
+            token="token",
+            deadline_monotonic=None,
+        )
+
+    assert run["queue_gate_job_id"] == 112457723411
+
+
+def test_active_gate_job_with_runner_but_missing_step_is_recovered_not_deferred(monkeypatch):
+    from src.writer_queue import RetryableQueueSnapshotError
+
+    candidate = {
+        "id": 92,
+        "run_attempt": 1,
+        "path": ".github/workflows/scheduled-brief.yml",
+        "workflow_id": 318853044,
+        "status": "in_progress",
+    }
+    monkeypatch.setattr(writer_queue, "_fetch_attempt_jobs", lambda **_kwargs: [{
+        "id": 920,
+        "name": "refresh-notify-deploy",
+        "status": "in_progress",
+        "runner_id": 77,
+        "steps": [],
+    }])
+
+    with pytest.raises(RetryableQueueSnapshotError, match="writer_publication_gate_step_not_visible"):
+        writer_queue._annotate_publication_gate(
+            candidate,
+            api_url="https://api.github.test",
+            repository="owner/repo",
+            token="token",
+            deadline_monotonic=None,
+        )
 
 
 def test_started_collection_before_pending_gate_is_deferred_but_later_step_is_not():

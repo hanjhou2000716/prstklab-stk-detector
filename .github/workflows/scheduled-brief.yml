@@ -45,7 +45,67 @@ concurrency:
 # The lock deduplicates the Telegram notification, not the dashboard publication.
 
 jobs:
+  occurrence:
+    name: Resolve original scheduled occurrence before Pages environment
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      expired: ${{ steps.early_expiry.outputs.expired || 'false' }}
+      expired_reason: ${{ steps.early_expiry.outputs.expired_reason || '' }}
+      expired_slot: ${{ steps.early_expiry.outputs.expired_slot || '' }}
+      expired_slot_date: ${{ steps.early_expiry.outputs.expired_slot_date || '' }}
+      expired_anchor: ${{ steps.early_expiry.outputs.expired_anchor || '' }}
+      expired_deadline: ${{ steps.early_expiry.outputs.expired_deadline || '' }}
+      expired_detected_at: ${{ steps.early_expiry.outputs.expired_detected_at || '' }}
+    steps:
+      - name: Checkout immutable workflow code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 1
+      - name: Capture immutable scheduled run creation time
+        id: run_context
+        if: github.event_name == 'schedule'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: python -m src.workflow_run_context >> "$GITHUB_OUTPUT"
+      - name: Resolve whether the original occurrence has expired
+        id: early_expiry
+        env:
+          GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule || '' }}
+          RUN_CREATED_AT: ${{ steps.run_context.outputs.created_at || '' }}
+        run: python -m src.scheduled_expiry
+      - name: Record expired occurrence terminal state
+        id: expired_terminal
+        if: steps.early_expiry.outputs.expired == 'true'
+        env:
+          NOTIFICATION_REQUESTED: 'true'
+          NOTIFICATION_EXPECTED: 'false'
+          WINDOW_DELIVERY_INTENT: expired
+          SCHEDULED_SLOT: ${{ steps.early_expiry.outputs.expired_slot || 'unknown' }}
+          SCHEDULED_FOR_AT: ${{ steps.early_expiry.outputs.expired_anchor || '' }}
+          SCHEDULE_EXPIRY_STATUS: 'true'
+          SCHEDULE_EXPIRY_REASON: ${{ steps.early_expiry.outputs.expired_reason || '' }}
+          SCHEDULE_EXPIRY_SLOT_DATE: ${{ steps.early_expiry.outputs.expired_slot_date || '' }}
+          SCHEDULE_EXPIRY_ANCHOR: ${{ steps.early_expiry.outputs.expired_anchor || '' }}
+          SCHEDULE_EXPIRY_DEADLINE: ${{ steps.early_expiry.outputs.expired_deadline || '' }}
+          SCHEDULE_EXPIRY_DETECTED_AT: ${{ steps.early_expiry.outputs.expired_detected_at || '' }}
+          SCHEDULED_TERMINAL_PATH: /tmp/prstk-notification-terminal-${{ github.run_id }}.json
+        run: python -m src.notification_terminal --workflow scheduled
+      - name: Upload expired occurrence terminal record
+        if: always() && steps.expired_terminal.outcome != 'skipped'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: scheduled-terminal-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: /tmp/prstk-notification-terminal-${{ github.run_id }}.json
+          if-no-files-found: warn
+          retention-days: 14
   refresh-notify-deploy:
+    needs: occurrence
+    if: needs.occurrence.outputs.expired != 'true'
     # The Pages retry action exposes temporary unavailability through outputs;
     # release-gate failures remain hard failures and block notification.
     environment:
@@ -110,10 +170,6 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
-      - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
-        with:
-          python-version: "3.11"
       - name: Capture immutable workflow run creation time
         id: run_context
         if: github.event_name == 'schedule'
@@ -122,21 +178,26 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: python -m src.workflow_run_context >> "$GITHUB_OUTPUT"
-      - name: Stop expired automatic occurrence before publication setup
-        id: early_expiry
+      - name: Recheck scheduled expiry after environment and runner wait
+        id: late_expiry
         env:
           GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule || '' }}
           RUN_CREATED_AT: ${{ steps.run_context.outputs.created_at || '' }}
         run: python -m src.scheduled_expiry
+      - name: Set up Python
+        if: steps.late_expiry.outputs.expired != 'true'
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11"
       - name: Install production text-delivery dependencies
-        if: steps.early_expiry.outputs.expired != 'true'
+        if: steps.late_expiry.outputs.expired != 'true'
         run: pip install -r requirements-production.txt
       - name: Install Chromium for formal card renderer
-        if: steps.early_expiry.outputs.expired != 'true'
+        if: steps.late_expiry.outputs.expired != 'true'
         run: python -m playwright install --with-deps chromium
       - name: Validate scheduled handoff parent
         id: validate_handoff_parent
-        if: steps.early_expiry.outputs.expired != 'true' && github.event.client_payload.handoff_parent_run_id != ''
+        if: github.event.client_payload.handoff_parent_run_id != '' && steps.late_expiry.outputs.expired != 'true'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -145,7 +206,7 @@ jobs:
         run: python -m src.scheduled_handoff validate
       - name: Resolve scheduled slot
         id: window
-        if: steps.early_expiry.outputs.expired != 'true' && (!github.event.client_payload.handoff_parent_run_id || steps.validate_handoff_parent.outputs.valid == 'true')
+        if: steps.late_expiry.outputs.expired != 'true' && (!github.event.client_payload.handoff_parent_run_id || steps.validate_handoff_parent.outputs.valid == 'true')
         env:
           RUN_CREATED_AT: ${{ steps.run_context.outputs.created_at || '' }}
         run: |
@@ -484,7 +545,7 @@ jobs:
           fi
           exit "$manifest_status"
       - name: Capture private release preflight diagnostics
-        if: always()
+        if: always() && steps.late_expiry.outputs.expired != 'true'
         env:
           PRODUCTION_SHA: ${{ steps.prepare.outputs.data_release_sha }}
         run: >-
@@ -494,7 +555,7 @@ jobs:
           --output "/tmp/prstk-release-preflight-${GITHUB_RUN_ID}.json"
           --slot "${{ steps.window.outputs.slot || env.SLOT }}"
       - name: Upload private release preflight diagnostics
-        if: always()
+        if: always() && steps.late_expiry.outputs.expired != 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: scheduled-release-preflight-${{ github.run_id }}
@@ -563,7 +624,7 @@ jobs:
           build_version: ${{ steps.publish_snapshot.outputs.pages_build_version }}
           fallback_url: ${{ env.DASHBOARD_URL }}
       - name: Bound deployment recovery to the original delivery window
-        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.deployment.outputs.recoverable == 'true' && steps.prepare.outputs.notification_expected == 'true'
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.deployment.outputs.recoverable == 'true' && steps.prepare.outputs.notification_expected == 'true'
         id: deployment_recovery_window
         env:
           SLOT: ${{ steps.window.outputs.effective_slot }}
@@ -633,7 +694,7 @@ jobs:
           arguments=(--manifest "$MANIFEST_PATH" --expected-release-id "${{ steps.release_manifest.outputs.release_id }}" --expected-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" --public-url "${{ steps.deployment.outputs.page_url }}" --deployment-id "${{ steps.deployment_identity.outputs.deployment_id }}" --expected-notification-id "${{ steps.prepare.outputs.notification_id }}" --expected-alert-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" --expected-alert-observation-id "${{ steps.prepare.outputs.observation_id }}" --public-timeout-seconds 180 --public-delay 2 --public-max-delay 20)
           python -m src.release_gate "${arguments[@]}" >> "$GITHUB_OUTPUT"
       - name: Record release gate diagnostics
-        if: always()
+        if: always() && steps.late_expiry.outputs.expired != 'true'
         env:
           RELEASE_GATE_OUTCOME: ${{ steps.release_gate.outcome || 'not_run' }}
           RELEASE_GATE_ALLOWED: ${{ steps.release_gate.outputs.allowed || 'false' }}
@@ -669,7 +730,7 @@ jobs:
             echo "- delivery policy: claim and sender require allowed=true"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Save release gate diagnostics
-        if: always()
+        if: always() && steps.late_expiry.outputs.expired != 'true'
         env:
           RELEASE_GATE_OUTCOME: ${{ steps.release_gate.outcome || 'not_run' }}
           RELEASE_GATE_ALLOWED: ${{ steps.release_gate.outputs.allowed || 'false' }}
@@ -726,7 +787,7 @@ jobs:
           )
           PY
       - name: Upload release gate diagnostics
-        if: always()
+        if: always() && steps.late_expiry.outputs.expired != 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: release-gate-diagnostics-${{ github.run_id }}
@@ -748,7 +809,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --send-only --slot-key "${{ steps.window.outputs.key }}" --snapshot "$SNAPSHOT_PATH" --manifest "$MANIFEST_PATH" --public-url "${{ steps.deployment.outputs.page_url }}"
       - name: Publish scheduled notification decision
-        if: always()
+        if: always() && steps.late_expiry.outputs.expired != 'true'
         env:
           PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
           PREPARE_FAILURE_REASON: ${{ steps.prepare.outputs.prepare_failure_reason || steps.prepare.outputs.reason || '' }}
@@ -810,10 +871,10 @@ jobs:
           ALERT_PROJECTION_STATUS: ${{ steps.release_manifest.outputs.alert_projection_status || '' }}
           QUARANTINED_ALERT_COUNT: ${{ steps.release_manifest.outputs.quarantined_alert_count || '0' }}
           QUARANTINED_ALERT_REASONS: ${{ steps.release_manifest.outputs.quarantined_alert_reasons || '' }}
-          EXPIRED_STATUS: ${{ steps.early_expiry.outputs.expired || 'false' }}
-          EXPIRED_SLOT: ${{ steps.early_expiry.outputs.expired_slot || '' }}
-          EXPIRED_SLOT_DATE: ${{ steps.early_expiry.outputs.expired_slot_date || '' }}
-          EXPIRED_DEADLINE: ${{ steps.early_expiry.outputs.expired_deadline || '' }}
+          EXPIRED_STATUS: ${{ needs.occurrence.outputs.expired || 'false' }}
+          EXPIRED_SLOT: ${{ needs.occurrence.outputs.expired_slot || '' }}
+          EXPIRED_SLOT_DATE: ${{ needs.occurrence.outputs.expired_slot_date || '' }}
+          EXPIRED_DEADLINE: ${{ needs.occurrence.outputs.expired_deadline || '' }}
         run: |
           scan_status="unknown"
           if [ "$PREPARE_OUTCOME" = "success" ]; then
@@ -1021,7 +1082,7 @@ jobs:
         # no trace to persist.  Attempted deliveries always emit trace_id,
         # including failed attempts, so the receipt callback remains durable
         # without producing a false callback failure on dedup suppression.
-        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped' && steps.send_brief.outputs.trace_id != ''
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped' && steps.send_brief.outputs.trace_id != ''
         continue-on-error: true
         env:
           DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
@@ -1041,7 +1102,7 @@ jobs:
         run: python -m src.delivery_callback
       - name: Persist notification ledger state after delivery
         id: persist_notification_ledger
-        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true'
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -1076,7 +1137,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
       - name: Verify durable recipient receipt from the published ledger
         id: durable_receipt
-        if: always() && steps.writer_queue.outputs.should_continue == 'true' && (steps.persist_notification_ledger.outcome == 'success' || steps.send_brief.outputs.notification_status == 'already_delivered')
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && (steps.persist_notification_ledger.outcome == 'success' || steps.send_brief.outputs.notification_status == 'already_delivered')
         continue-on-error: true
         env:
           NOTIFICATION_KEY: ${{ steps.send_brief.outputs.notification_key || '' }}
@@ -1106,18 +1167,18 @@ jobs:
             --ledger "$RUNNER_TEMP/durable-event-ledger.json" \
             --notification-key "$NOTIFICATION_KEY"
       - name: Prepare reconciled Pages artifact
-        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success'
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success'
         run: |
           python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
           python -m src.asset_contract --root site
       - name: Upload reconciled Pages artifact
-        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success'
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success'
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           name: github-pages-reconciled
           path: site
       - name: Deploy reconciled Pages release
-        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success'
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success'
         id: reconciled_deployment
         uses: ./.github/actions/deploy-pages-retry
         with:
@@ -1125,7 +1186,7 @@ jobs:
           build_version: ${{ steps.persist_notification_ledger.outputs.pages_build_version }}
           fallback_url: ${{ env.DASHBOARD_URL }}
       - name: Verify reconciled Pages deployment identity
-        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success' && (steps.reconciled_deployment.outputs.available == 'true' || steps.reconciled_deployment.outputs.recoverable == 'true')
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success' && (steps.reconciled_deployment.outputs.available == 'true' || steps.reconciled_deployment.outputs.recoverable == 'true')
         id: reconciled_deployment_identity
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -1137,7 +1198,7 @@ jobs:
           --status-url "${{ steps.reconciled_deployment.outputs.deployment_status_url }}"
           >> "$GITHUB_OUTPUT"
       - name: Verify reconciled public release
-        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success' && steps.reconciled_deployment_identity.outputs.verified == 'true'
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success' && steps.reconciled_deployment_identity.outputs.verified == 'true'
         id: reconciled_release_gate
         run: >-
           python -m src.release_gate
@@ -1168,7 +1229,7 @@ jobs:
             --public-url "${{ steps.reconciled_deployment.outputs.page_url || steps.deployment.outputs.page_url }}" \
             >> "$GITHUB_OUTPUT"
       - name: Summarize Creator notification decision
-        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true'
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true'
         env:
           CREATOR_STATUS: ${{ steps.creator_dispatch.outputs.creator_status || 'not_run' }}
           CREATOR_SENT: ${{ steps.creator_dispatch.outputs.creator_sent || '0' }}
@@ -1197,7 +1258,7 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Persist Creator delivery receipt
-        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.reconciled_release_gate.outputs.allowed == 'true' && steps.creator_dispatch.outcome == 'success' && steps.creator_dispatch.outputs.creator_delivery_status != '' && steps.creator_dispatch.outputs.creator_sent != '0'
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.reconciled_release_gate.outputs.allowed == 'true' && steps.creator_dispatch.outcome == 'success' && steps.creator_dispatch.outputs.creator_delivery_status != '' && steps.creator_dispatch.outputs.creator_sent != '0'
         continue-on-error: true
         env:
           RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
@@ -1235,33 +1296,34 @@ jobs:
           key: scheduled-brief-${{ steps.window.outputs.key }}
 
       - name: Fail closed for invalid schedule context
-        if: always() && steps.window.outputs.contract_status == 'invalid'
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.window.outputs.contract_status == 'invalid'
         run: |
           echo "Invalid scheduled-brief contract: ${{ steps.window.outputs.resolution_reason || steps.window.outputs.notification_reason }}"
           exit 1
       - name: Fail closed for invalid revision handoff
-        if: always() && github.event.client_payload.handoff_parent_run_id != '' && steps.validate_handoff_parent.outputs.valid != 'true'
+        if: always() && steps.late_expiry.outputs.expired != 'true' && github.event.client_payload.handoff_parent_run_id != '' && steps.validate_handoff_parent.outputs.valid != 'true'
         env:
           HANDOFF_VALIDATION_REASON: ${{ steps.validate_handoff_parent.outputs.reason || 'handoff_parent_not_verified' }}
         run: |
           echo "::error::Scheduled premarket handoff was blocked (${HANDOFF_VALIDATION_REASON})."
           exit 1
       - name: Resolve scheduled notification terminal state
+        id: terminal_diagnostic
         if: always()
         env:
           NOTIFICATION_REQUESTED: ${{ env.NOTIFY }}
           NOTIFICATION_EXPECTED: ${{ steps.prepare.outputs.notification_expected || 'false' }}
           DELIVERY_OBLIGATION: ${{ steps.prepare.outputs.delivery_obligation || 'undetermined' }}
           OBLIGATION_REASON: ${{ steps.prepare.outputs.obligation_reason || '' }}
-          WINDOW_DELIVERY_INTENT: ${{ steps.window.outputs.delivery_intent || (steps.early_expiry.outputs.expired == 'true' && 'expired' || 'unknown') }}
-          SCHEDULED_SLOT: ${{ steps.window.outputs.scheduled_slot || steps.window.outputs.effective_slot || steps.early_expiry.outputs.expired_slot || 'unknown' }}
-          SCHEDULED_FOR_AT: ${{ steps.window.outputs.scheduled_for_at || steps.early_expiry.outputs.expired_anchor || '' }}
-          SCHEDULE_EXPIRY_STATUS: ${{ steps.early_expiry.outputs.expired || 'false' }}
-          SCHEDULE_EXPIRY_REASON: ${{ steps.early_expiry.outputs.expired_reason || '' }}
-          SCHEDULE_EXPIRY_SLOT_DATE: ${{ steps.early_expiry.outputs.expired_slot_date || '' }}
-          SCHEDULE_EXPIRY_ANCHOR: ${{ steps.early_expiry.outputs.expired_anchor || '' }}
-          SCHEDULE_EXPIRY_DEADLINE: ${{ steps.early_expiry.outputs.expired_deadline || '' }}
-          SCHEDULE_EXPIRY_DETECTED_AT: ${{ steps.early_expiry.outputs.expired_detected_at || '' }}
+          WINDOW_DELIVERY_INTENT: ${{ steps.window.outputs.delivery_intent || ((steps.late_expiry.outputs.expired == 'true' || needs.occurrence.outputs.expired == 'true') && 'expired' || 'unknown') }}
+          SCHEDULED_SLOT: ${{ steps.window.outputs.scheduled_slot || steps.window.outputs.effective_slot || steps.late_expiry.outputs.expired_slot || needs.occurrence.outputs.expired_slot || 'unknown' }}
+          SCHEDULED_FOR_AT: ${{ steps.window.outputs.scheduled_for_at || steps.late_expiry.outputs.expired_anchor || needs.occurrence.outputs.expired_anchor || '' }}
+          SCHEDULE_EXPIRY_STATUS: ${{ steps.late_expiry.outputs.expired || needs.occurrence.outputs.expired || 'false' }}
+          SCHEDULE_EXPIRY_REASON: ${{ steps.late_expiry.outputs.expired_reason || needs.occurrence.outputs.expired_reason || '' }}
+          SCHEDULE_EXPIRY_SLOT_DATE: ${{ steps.late_expiry.outputs.expired_slot_date || needs.occurrence.outputs.expired_slot_date || '' }}
+          SCHEDULE_EXPIRY_ANCHOR: ${{ steps.late_expiry.outputs.expired_anchor || needs.occurrence.outputs.expired_anchor || '' }}
+          SCHEDULE_EXPIRY_DEADLINE: ${{ steps.late_expiry.outputs.expired_deadline || needs.occurrence.outputs.expired_deadline || '' }}
+          SCHEDULE_EXPIRY_DETECTED_AT: ${{ steps.late_expiry.outputs.expired_detected_at || needs.occurrence.outputs.expired_detected_at || '' }}
           RUN_CREATED_AT: ${{ steps.run_context.outputs.created_at || '' }}
           PREPARE_OUTCOME: ${{ steps.prepare.outcome || 'unknown' }}
           PREPARE_FAILURE_REASON: ${{ steps.prepare.outputs.prepare_failure_reason || steps.prepare.outputs.reason || '' }}
@@ -1292,6 +1354,18 @@ jobs:
           WRITER_QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'not_required' }}
           WRITER_QUEUE_OUTCOME: ${{ steps.writer_queue.outcome || 'skipped' }}
           WRITER_QUEUE_ERROR_CODE: ${{ steps.writer_queue.outputs.queue_error_code || '' }}
+          WRITER_QUEUE_WORKFLOW_PATH: ${{ steps.writer_queue.outputs.queue_workflow_path || '' }}
+          WRITER_QUEUE_WORKFLOW_SHA: ${{ steps.writer_queue.outputs.queue_workflow_sha || '' }}
+          WRITER_QUEUE_CONTRACT_FINGERPRINT: ${{ steps.writer_queue.outputs.queue_gate_contract_fingerprint || '' }}
+          WRITER_QUEUE_ERROR_CANDIDATE_RUN_ID: ${{ steps.writer_queue.outputs.queue_error_candidate_run_id || '' }}
+          WRITER_QUEUE_ERROR_CANDIDATE_ATTEMPT: ${{ steps.writer_queue.outputs.queue_error_candidate_attempt || '' }}
+          WRITER_QUEUE_ERROR_CANDIDATE_JOB_ID: ${{ steps.writer_queue.outputs.queue_error_candidate_job_id || '' }}
+          WRITER_QUEUE_ERROR_CANDIDATE_STATUS: ${{ steps.writer_queue.outputs.queue_error_candidate_status || '' }}
+          WRITER_QUEUE_ERROR_CANDIDATE_JOB_STATUS: ${{ steps.writer_queue.outputs.queue_error_candidate_job_status || '' }}
+          WRITER_QUEUE_ERROR_CANDIDATE_RUNNER_ASSIGNED: ${{ steps.writer_queue.outputs.queue_error_candidate_runner_assigned || '' }}
+          WRITER_QUEUE_ERROR_CANDIDATE_OBSERVED_STEPS: ${{ steps.writer_queue.outputs.queue_error_candidate_observed_steps || '' }}
+          WRITER_QUEUE_ERROR_CANDIDATE_WORKFLOW_SHA: ${{ steps.writer_queue.outputs.queue_error_candidate_workflow_sha || '' }}
+          WRITER_QUEUE_ERROR_CANDIDATE_CONTRACT_FINGERPRINT: ${{ steps.writer_queue.outputs.queue_error_candidate_contract_fingerprint || '' }}
           WRITER_QUEUE_BLOCKER_RUN_IDS: ${{ steps.writer_queue.outputs.blocker_run_ids || '' }}
           WRITER_QUEUE_DIAGNOSTIC_SCHEMA_VERSION: ${{ steps.writer_queue.outputs.queue_diagnostic_schema_version || '' }}
           WRITER_QUEUE_ENTRY_AT: ${{ steps.writer_queue.outputs.queue_entry_at || '' }}
@@ -1306,6 +1380,15 @@ jobs:
           WRITER_QUEUE_DEFERRED_CANDIDATE_REASONS: ${{ steps.writer_queue.outputs.deferred_candidate_reasons || '' }}
           WRITER_QUEUE_DEADLINE_AT: ${{ steps.writer_queue.outputs.queue_deadline_at || '' }}
           WRITER_QUEUE_ADMISSION_AT: ${{ steps.writer_queue.outputs.admission_at || '' }}
+          SCHEDULED_TERMINAL_PATH: /tmp/prstk-notification-terminal-${{ github.run_id }}.json
         run: python -m src.notification_terminal --workflow scheduled
+      - name: Upload scheduled terminal record
+        if: always() && steps.terminal_diagnostic.outcome != 'skipped'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: scheduled-terminal-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: /tmp/prstk-notification-terminal-${{ github.run_id }}.json
+          if-no-files-found: warn
+          retention-days: 14
 
 # - name: 設定 GitHub Pages
