@@ -395,6 +395,28 @@ def test_external_dispatch_unix_derives_fixed_slot_anchor_without_runner_date():
     assert selected[1].isoformat() == "2026-09-28T08:45:00+08:00"
 
 
+def test_external_time_gate_uses_only_standard_library_anchor_before_calendar_install(monkeypatch):
+    import src.scheduled_slot_audit as audit_module
+
+    def calendar_must_not_run(*_args, **_kwargs):
+        raise AssertionError("exchange calendar is only checked by the full audit after dependencies install")
+
+    monkeypatch.setattr(audit_module, "fixed_scheduled_for", calendar_must_not_run)
+    anchor = datetime.fromisoformat("2026-10-07T09:00:00-04:00")
+    due = anchor + timedelta(minutes=45)
+    result = audit_module.external_audit_timing(
+        slot="us_premarket",
+        slot_date="2026-10-07",
+        scheduled_for_at=anchor.isoformat(),
+        dispatch_unix=str(int((due - timedelta(seconds=53)).timestamp())),
+        requested_at=(due - timedelta(seconds=53)).isoformat(),
+        now=due - timedelta(seconds=20),
+    )
+    assert result["status"] == "ready"
+    assert result["clock_skew_seconds"] == -53
+    assert result["wait_seconds"] == 20
+
+
 def test_missing_claim_is_diagnosed_from_exact_read_only_workflow_terminal(monkeypatch):
     anchor = "2026-09-28T08:45:00+08:00"
     terminal = {
@@ -611,9 +633,11 @@ def test_audit_workflow_receives_versioned_allowlist_without_sender_credentials(
     assert "TELEGRAM_BOT_TOKEN" not in workflow
     assert "SUPABASE_SERVICE_ROLE_KEY" not in workflow
     assert "--wait-until-due" in workflow
-    assert workflow.index("Validate external audit timestamp and wait until due") < workflow.index(
-        "Checkout published receipt ledger after audit deadline"
-    )
+    timing_at = workflow.index("Validate external audit timestamp and wait until due")
+    install_at = workflow.index("Install read-only audit dependencies")
+    ledger_at = workflow.index("Checkout published receipt ledger after audit deadline")
+    assert timing_at < install_at < ledger_at
+    assert "python -m pip install -r requirements-production.txt" in workflow
 
 
 def test_recipient_set_version_binds_hashes_and_effective_time():

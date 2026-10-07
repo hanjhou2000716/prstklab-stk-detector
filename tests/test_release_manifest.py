@@ -234,7 +234,10 @@ def test_manifest_publishes_scheduled_briefing_alert_artifact(tmp_path):
         "canonical_hash_version": 1,
         "themes": [{"title": "市場價格", "what_happened": "費半+2.69%。"}],
         "evidence": [{"source": "市場報價", "ticker": "SOX"}],
+        "report_summary": {"schema_version": "report-summary-v1", "text": "原版摘要：費半上漲。"},
+        "market_card_projection": {"cards": [{"ticker": "SOX", "price": 5200.0}]},
     }
+    market["risk"] = {"us": {"label": "美股", "sentiment": {"score": 47.3, "label": "中立"}}}
     market_path.write_text(json.dumps(market, ensure_ascii=False), encoding="utf-8")
 
     manifest = build_release_manifest(root=tmp_path)
@@ -245,7 +248,66 @@ def test_manifest_publishes_scheduled_briefing_alert_artifact(tmp_path):
     assert artifact["kind"] == "market_briefing"
     assert artifact["public_short_message"] == market["briefing"]["public_short_message"]
     assert artifact["snapshot_id"] == market["snapshot_id"]
+    context = artifact["notification_view_context"]
+    assert context["release_id"] == manifest["release_id"]
+    assert context["snapshot_id"] == market["snapshot_id"]
+    assert context["risk"]["us"]["sentiment"]["score"] == 47.3
+    assert context["briefing"]["report_summary"]["text"] == "原版摘要：費半上漲。"
+    assert context["briefing"]["market_card_projection"]["cards"][0]["ticker"] == "SOX"
     assert row["sha256"] == sha256_file(tmp_path / "site" / "data" / row["path"])
+    assert verify_release_files(manifest, root=tmp_path / "site") == []
+
+
+def test_manifest_builds_hashed_bounded_lookup_for_large_historical_index(tmp_path):
+    _artifacts(tmp_path)
+    alert_dir = tmp_path / "site" / "data" / "alerts"
+    alert_dir.mkdir(parents=True, exist_ok=True)
+    target = {"notification_id": "archived-notification-0371", "release_id": "release-archived-0371"}
+    for number in range(800):
+        alert = {
+            "notification_id": f"archived-notification-{number:04d}",
+            "release_id": f"release-archived-{number:04d}",
+            "snapshot_id": f"snapshot-{number:04d}",
+            "observation_id": f"observation-{number:04d}",
+            "created_at": "2026-08-04T10:00:00+08:00",
+            "canonical_content_hash": "a" * 64,
+        }
+        filename = f"archive-{number:04d}.json"
+        (alert_dir / filename).write_text(json.dumps(alert), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+    assert manifest["status"] == "ready"
+    descriptor = manifest["alert_lookup"]
+    assert descriptor["schema_version"] == "1.0"
+    assert manifest["artifact_hashes"]["alert-lookup-root.json"] == sha256_file(
+        tmp_path / "site" / manifest["artifact_paths"]["alert-lookup-root.json"]
+    )
+    root_path = tmp_path / "site" / "data" / descriptor["path"]
+    assert sha256_file(root_path) == descriptor["sha256"]
+
+    found = None
+    visited = set()
+
+    def visit(reference):
+        nonlocal found
+        path = tmp_path / "site" / "data" / reference["path"]
+        body = path.read_bytes()
+        assert len(body) <= 64 * 1024
+        assert sha256_file(path) == reference["sha256"]
+        node = json.loads(body)
+        if isinstance(node.get("rows"), list):
+            found = next((row for row in node["rows"]
+                if row["notification_id"] == target["notification_id"]
+                and row["release_id"] == target["release_id"]), found)
+            return
+        for child in node.get("children", {}).values():
+            if child["path"] not in visited:
+                visited.add(child["path"])
+                visit(child)
+
+    visit(descriptor)
+    assert found is not None
+    assert found["snapshot_id"] == "snapshot-0371"
     assert verify_release_files(manifest, root=tmp_path / "site") == []
 
 

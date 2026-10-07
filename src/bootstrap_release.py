@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-BOOTSTRAP_SCHEMA_VERSION = "1.0"
+BOOTSTRAP_SCHEMA_VERSION = "1.1"
 BOOTSTRAP_NAME = "bootstrap.json"
 BOOTSTRAP_MAX_BYTES = 150 * 1024
 
@@ -127,6 +127,7 @@ def build_bootstrap_snapshot(
     artifact_paths: dict[str, str] | None = None,
     artifact_hashes: dict[str, str] | None = None,
     alert_index_rows: list[dict[str, Any]] | None = None,
+    alert_index_coverage: str = "current_release",
 ) -> dict[str, Any]:
     """Return a bounded first-paint projection bound to one release."""
     return {
@@ -149,6 +150,7 @@ def build_bootstrap_snapshot(
         "source_health": _health(market.get("source_health")),
         "alert_index": {
             "schema_version": "1.0",
+            "coverage": alert_index_coverage,
             "alerts": [dict(row) for row in (alert_index_rows or []) if isinstance(row, dict)],
         },
         "deferred_artifacts": {

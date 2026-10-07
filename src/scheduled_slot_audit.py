@@ -494,15 +494,22 @@ def _external_slot_anchor(
             slot_date = dispatch_time.astimezone(local_zone).date().isoformat()
         if not slot_date:
             return None
-        try:
-            expected = fixed_scheduled_for(slot, slot_date)
-        except ValueError as exc:
-            # A weekday NYSE holiday still has an auditable nominal 09:00
-            # premarket anchor; the independent exchange calendar below will
-            # classify it as expected_skip, never as a delivery obligation.
-            if slot != "us_premarket" or str(exc) != "market_closed":
+        day = datetime.fromisoformat(f"{slot_date}T00:00:00").date()
+        if slot == "us_premarket":
+            # The pre-install timing gate uses only the nominal NY local
+            # anchor. The exchange calendar is checked later by audit_slot,
+            # after the workflow has installed its declared dependencies.
+            expected = datetime.combine(day, day_time(9, 0), tzinfo=NEW_YORK)
+        else:
+            taiwan_anchors = {
+                "morning": day_time(6, 0),
+                "pre_open": day_time(8, 45),
+                "post_close": day_time(14, 20),
+            }
+            expected_time = taiwan_anchors.get(slot)
+            if expected_time is None:
                 return None
-            expected = datetime.fromisoformat(f"{slot_date}T09:00:00").replace(tzinfo=NEW_YORK)
+            expected = datetime.combine(day, expected_time, tzinfo=TAIPEI)
         declared = (
             datetime.fromisoformat(str(scheduled_for_at).replace("Z", "+00:00"))
             if scheduled_for_at else expected

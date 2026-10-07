@@ -500,57 +500,9 @@ const displayAlertProjection = (alert) => {
   return projected;
 };
 
-const normalizedAlertText = (value) => String(value || "").trim().split(/\s+/).filter(Boolean).join(" ");
-
 const alertSourceKey = (item) => String(
   item?.source_key || item?.source || item?.content_origin || "",
 ).trim().toLowerCase();
-
-const alertPublicSummaryForHash = (item) => {
-  if (alertSourceKey(item) === "financialjuice") return normalizedAlertText(canonicalFjSummary(item));
-  return normalizedAlertText(item?.public_short_message || item?.brief_title || item?.title || "");
-};
-
-const alertEventForHash = (item) => normalizedAlertText(
-  alertSourceKey(item) === "financialjuice"
-    ? canonicalFjBody(item) || item?.event || item?.summary || item?.title || item?.brief_title || ""
-    : item?.event || item?.summary || item?.title || item?.brief_title || "",
-);
-
-// Keep this payload key order aligned with Python's sort_keys=True hash in
-// release_manifest.py.  Quotes, timestamps, risk and release metadata are
-// intentionally excluded because receipt reconciliation may republish the
-// same event in a later release.
-const canonicalAlertContentHash = async (item) => sha256Hex(JSON.stringify({
-  event: alertEventForHash(item),
-  public_summary: alertPublicSummaryForHash(item),
-  source_key: alertSourceKey(item),
-}));
-
-const sameAlertLineage = (left, right, snapshotId, observationId) => {
-  const leftNotification = String(left?.notification_id || "").trim();
-  const rightNotification = String(right?.notification_id || "").trim();
-  if (!leftNotification || leftNotification !== rightNotification) return false;
-  if (alertSourceKey(left) !== alertSourceKey(right)) return false;
-  const leftSnapshot = String(left?.snapshot_id || "").trim();
-  const rightSnapshot = String(right?.snapshot_id || "").trim();
-  if (!leftSnapshot || leftSnapshot !== rightSnapshot || (snapshotId && leftSnapshot !== snapshotId)) return false;
-  const leftObservation = String(left?.observation_id || "").trim();
-  const rightObservation = String(right?.observation_id || "").trim();
-  if (!leftObservation || leftObservation !== rightObservation || (observationId && leftObservation !== observationId)) return false;
-  return true;
-};
-
-const sameCanonicalAlertContent = async (left, right) => {
-  const leftStored = String(left?.canonical_content_hash || "").trim();
-  const rightStored = String(right?.canonical_content_hash || "").trim();
-  // A release-bound stored hash is the identity of an immutable alert.  Do
-  // not invalidate it merely because the current summary rules have evolved.
-  if (leftStored && rightStored) return leftStored === rightStored;
-  const leftHash = await canonicalAlertContentHash(left);
-  const rightHash = await canonicalAlertContentHash(right);
-  return leftHash === rightHash;
-};
 
 const usableEventField = (value) => {
   const text = String(value || "").trim();
@@ -640,7 +592,7 @@ const primaryBriefingEvent = (snapshot) => {
   };
 };
 
-const renderAlertCard = (events, generatedAt, externalAlert, indices = [], externalRisk = null, snapshot = null) => {
+const renderAlertCard = (events, generatedAt, externalAlert, indices = [], externalRisk = null, snapshot = null, emptyState = "") => {
   const profile = externalAlert ? externalAlertProfile(externalAlert.category, indices) : null;
   const rawEvent = externalAlert ? {
     kind: "external_alert", risk_level: externalAlert.category === "black_swan" ? "高風險" : "警戒", short_label: externalAlertLabel(externalAlert.category),
@@ -720,14 +672,17 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
     const alertDetail = document.querySelector("#alert-card .alert-detail");
     if (alertDetail) alertDetail.hidden = true;
     card.dataset.risk = "neutral";
-    setText("alert-banner", "今日無重大市場事件，持續觀察");
-    setText("alert-headline", "市場訊號尚未達提醒門檻");
-    setText("alert-summary", "目前沒有需優先提示的重大市場事件。");
-    setText("alert-trigger", "日內價格訊號尚未觸及提醒門檻。");
-    setText("alert-context", "持續核對公開資料與主要市場變化。");
-    setText("alert-stock-observation", "等待可核對的市場變化，不預設市場間因果。");
+    const notificationState = emptyState === "pending" || emptyState === "unavailable";
+    setText("alert-banner", emptyState === "pending" ? "正在核對通知原版" : emptyState === "unavailable" ? "通知原版暫時無法載入" : "今日無重大市場事件，持續觀察");
+    setText("alert-headline", emptyState === "pending" ? "正在核對通知內容" : emptyState === "unavailable" ? "尚未驗證此通知" : "市場訊號尚未達提醒門檻");
+    setText("alert-summary", emptyState === "pending" ? "正在讀取通知所屬版本，請稍候。" : emptyState === "unavailable" ? "通知原版目前無法驗證；完成核對前不顯示其他事件。" : "目前沒有需優先提示的重大市場事件。");
+    setText("alert-trigger", notificationState ? "驗證完成前，不判定本通知內容。" : "日內價格訊號尚未觸及提醒門檻。");
+    setText("alert-context", notificationState ? "可稍後重新開啟此通知進行核對。" : "持續核對公開資料與主要市場變化。");
+    setText("alert-stock-observation", notificationState ? "尚未載入本通知的原版行情。" : "等待可核對的市場變化，不預設市場間因果。");
     setText("alert-reminder", "僅供公開資訊整理與教育性觀察，不構成投資建議。");
-    document.getElementById("alert-quote-grid").innerHTML = '<p class="empty">目前沒有符合門檻的價格訊號</p>';
+    document.getElementById("alert-quote-grid").innerHTML = notificationState
+      ? '<p class="empty">通知原版行情尚未載入</p>'
+      : '<p class="empty">目前沒有符合門檻的價格訊號</p>';
     renderAlertTrace(null);
     return;
   }
@@ -2273,25 +2228,77 @@ const render = (snapshot, { deferAlert = false } = {}) => {
 // Telegram buttons carry the release and alert identity.  Resolve that
 // identity only after the manifest/hash boundary has succeeded; never fall
 // back to an unrelated current event when a deep link is stale or unknown.
-const ensureAlertIndex = async (snapshot) => {
-  if (Array.isArray(snapshot?.alert_index?.alerts) && snapshot.alert_index.alerts.length) return snapshot.alert_index;
+const ensureAlertIndex = async (snapshot, { forceComplete = false } = {}) => {
+  const embedded = snapshot?.alert_index;
+  if (!forceComplete && Array.isArray(embedded?.alerts)
+    && (embedded.coverage === "complete" || embedded.coverage === "current_release")) return embedded;
   const manifest = window.releaseManifest;
   if (!manifest?.artifact_hashes?.["alert-index.json"]) throw new Error("immutable alert index is not available");
-  const text = await loadVerifiedArtifactText(manifest, "alert-index.json", { timeoutMs: 8000 });
+  const text = await loadVerifiedArtifactText(manifest, "alert-index.json", { timeoutMs: 12000 });
   const index = JSON.parse(text);
   if (!Array.isArray(index.alerts)) throw new Error("alert index is invalid");
+  index.coverage = "complete";
   snapshot.alert_index = index;
   return index;
 };
 
+const lookupArchivedAlertRow = async (snapshot, notificationId, releaseId) => {
+  const embedded = snapshot?.alert_index;
+  const embeddedRow = Array.isArray(embedded?.alerts)
+    ? embedded.alerts.find((item) => String(item?.notification_id || "") === notificationId
+      && String(item?.release_id || "") === releaseId)
+    : null;
+  if (embeddedRow) return embeddedRow;
+
+  const manifest = window.releaseManifest;
+  const descriptor = manifest?.alert_lookup;
+  if (descriptor?.schema_version === "1.0" && descriptor.path && descriptor.sha256) {
+    const descriptorText = await loadVerifiedArtifactText(manifest, "alert-lookup-root.json", { timeoutMs: 12000 });
+    const publishedDescriptor = JSON.parse(descriptorText);
+    if (String(publishedDescriptor.path || "") !== String(descriptor.path)
+      || String(publishedDescriptor.sha256 || "") !== String(descriptor.sha256)) {
+      throw new Error("immutable alert lookup root identity mismatch");
+    }
+    const rootPath = String(descriptor.path);
+    if (!rootPath.startsWith("alerts/index/") || rootPath.includes("..")
+      || String(manifest?.artifact_hashes?.[rootPath] || "") !== String(descriptor.sha256)) {
+      throw new Error("immutable alert lookup root path or hash is invalid");
+    }
+    let node = JSON.parse(await loadVerifiedArtifactText(manifest, rootPath, { timeoutMs: 12000 }));
+    const identity = `${notificationId}\n${releaseId}`;
+    const digest = await sha256Hex(identity);
+    let prefix = "";
+    for (let depth = 0; depth <= digest.length; depth += 1) {
+      if (Array.isArray(node.rows)) {
+        return node.rows.find((item) => String(item?.notification_id || "") === notificationId
+          && String(item?.release_id || "") === releaseId) || null;
+      }
+      const children = node.children;
+      const child = children && children[digest[depth]];
+      if (!child || !child.path || !child.sha256) return null;
+      const path = String(child.path);
+      if (!path.startsWith("alerts/index/") || path.includes("..")) throw new Error("immutable alert lookup path is invalid");
+      const manifestHash = String(manifest?.artifact_hashes?.[path] || "");
+      if (manifestHash !== String(child.sha256)) throw new Error("immutable alert lookup child hash mismatch");
+      const childText = await loadVerifiedArtifactText(manifest, path, { timeoutMs: 12000 });
+      node = JSON.parse(childText);
+      prefix += digest[depth];
+      if (String(node.prefix || "") !== prefix) throw new Error("immutable alert lookup prefix mismatch");
+    }
+    return null;
+  }
+
+  const legacy = await ensureAlertIndex(snapshot, { forceComplete: true });
+  return legacy.alerts.find((item) => String(item?.notification_id || "") === notificationId
+    && String(item?.release_id || "") === releaseId) || null;
+};
+
 const loadArchivedAlert = async (snapshot, notificationId, releaseId, snapshotId, observationId) => {
-  const index = await ensureAlertIndex(snapshot);
-  const rows = Array.isArray(index?.alerts) ? index.alerts : [];
-  const row = rows.find((item) => String(item?.notification_id || "") === notificationId && String(item?.release_id || "") === releaseId);
+  const row = await lookupArchivedAlertRow(snapshot, notificationId, releaseId);
   if (!row || !row.path || !row.sha256) throw new Error("immutable alert artifact is not indexed");
   const path = String(row.path);
   if (path.startsWith("/") || path.includes("..") || !path.startsWith("alerts/")) throw new Error("immutable alert artifact path is invalid");
-  const response = await fetchResponseWithRetry(`data/${path}`);
+  const response = await fetchResponseWithRetry(`data/${path}`, { timeoutMs: 12000 });
   const text = await response.text();
   if (await sha256Hex(text) !== String(row.sha256)) throw new Error("immutable alert artifact hash mismatch");
   const alert = JSON.parse(text);
@@ -2317,12 +2324,6 @@ const loadArchivedAlert = async (snapshot, notificationId, releaseId, snapshotId
   return alert;
 };
 
-const currentReleaseAlertRow = (snapshot, notificationId, releaseId) => {
-  const rows = Array.isArray(snapshot?.alert_index?.alerts) ? snapshot.alert_index.alerts : [];
-  return rows.find((item) => String(item?.notification_id || "") === notificationId
-    && String(item?.release_id || "") === releaseId) || null;
-};
-
 const deepLinkFocusText = (alert) => {
   const projected = displayAlertProjection(alert);
   return String(projected?.public_short_message || projected?.brief_title || projected?.event || projected?.title || "").replace(/\s+/g, " ").trim();
@@ -2330,22 +2331,39 @@ const deepLinkFocusText = (alert) => {
 
 const renderResolvedDeepLink = (snapshot, alert) => {
   const projected = displayAlertProjection(alert);
-  renderAlertCard({ items: [projected] }, alert.created_at || snapshot.generated_at, null, alert.market_evidence || [], null, snapshot);
+  const context = alert.notification_view_context;
+  const originalSnapshot = context && String(context.release_id || "") === String(alert.release_id || "")
+    && String(context.snapshot_id || "") === String(alert.snapshot_id || "")
+    ? { ...context, events: { items: [alert] } }
+    : {
+      release_id: alert.release_id,
+      snapshot_id: alert.snapshot_id,
+      generated_at: alert.created_at || snapshot.generated_at,
+      data_status: "通知原版資料有限",
+      markets: {}, indices: [], quotes: [], macro_quotes: [], risk: {},
+      briefing: alert.briefing && typeof alert.briefing === "object" ? alert.briefing : {},
+      events: { items: [alert] },
+    };
+  render(originalSnapshot, { deferAlert: true });
+  renderAlertCard({ items: [projected] }, alert.created_at || originalSnapshot.generated_at, null, alert.market_evidence || [], null, originalSnapshot);
+  window.marketSnapshot = originalSnapshot;
+  setText("data-status", "通知原版");
   const focus = deepLinkFocusText(projected);
   setText("market-focus", focus || "已載入本次通知事件。");
+  setReleaseHealth("", "ready");
 };
 
 const renderDeepLinkPending = (snapshot) => {
-  renderAlertCard({ items: [] }, snapshot.generated_at, null, []);
+  renderAlertCard({ items: [] }, snapshot.generated_at, null, [], null, snapshot, "pending");
   setText("market-focus", "正在核對通知事件…");
 };
 
 const renderDeepLinkUnavailable = (snapshot) => {
-  renderAlertCard({ items: [] }, snapshot.generated_at, null, []);
+  renderAlertCard({ items: [] }, snapshot.generated_at, null, [], null, snapshot, "unavailable");
   setText("market-focus", "此通知無法驗證，未載入其他事件。");
 };
 
-const applyDeepLink = async (snapshot) => {
+const applyDeepLinkWithDeadline = async (snapshot) => {
   const params = new URLSearchParams(window.location.search);
   const requestedRelease = String(params.get("release") || "").trim();
   const requestedAlert = String(params.get("alert") || "").trim();
@@ -2358,28 +2376,7 @@ const applyDeepLink = async (snapshot) => {
     if (requestedAlert && requestedRelease) {
       try {
         const archived = await loadArchivedAlert(snapshot, requestedAlert, requestedRelease, requestedSnapshot, requestedObservation);
-        const latestRow = manifestRelease
-          ? currentReleaseAlertRow(snapshot, requestedAlert, manifestRelease)
-          : null;
-        if (latestRow) {
-          const latest = await loadArchivedAlert(
-            snapshot,
-            requestedAlert,
-            manifestRelease,
-            "",
-            "",
-          );
-          if (sameAlertLineage(archived, latest, requestedSnapshot || String(archived.snapshot_id || ""), requestedObservation || String(archived.observation_id || ""))
-            && await sameCanonicalAlertContent(archived, latest)) {
-            renderResolvedDeepLink(snapshot, latest);
-            // Same-event reconciliation is a successful silent projection;
-            // the release-bound alert remains visible above and no extra
-            // technical banner is needed.
-            return;
-          }
-        }
         renderResolvedDeepLink(snapshot, archived);
-        setReleaseHealth("已載入本次通知的歷史 immutable alert。", "ready");
         return;
       } catch (error) {
         renderDeepLinkUnavailable(snapshot);
@@ -2396,25 +2393,16 @@ const applyDeepLink = async (snapshot) => {
   // reconciled after delivery; the button must reopen the exact alert that
   // was sent, with the same title and evidence.
   if (requestedAlert) {
-    const indexedAlert = (snapshot?.alert_index?.alerts || []).some((item) =>
-      String(item?.notification_id || "") === requestedAlert
-      && String(item?.release_id || "") === requestedRelease,
-    );
-    if (indexedAlert) {
-      try {
-        const archived = await loadArchivedAlert(snapshot, requestedAlert, requestedRelease, requestedSnapshot, requestedObservation);
-        renderResolvedDeepLink(snapshot, archived);
-        setReleaseHealth("已載入本次訊息對應的 immutable alert 詳情。", "ready");
-        return;
-      } catch (error) {
-        renderDeepLinkUnavailable(snapshot);
-        setReleaseHealth(`該訊息版本不可驗證；已安全停止載入（${error.message}）。`, "error");
-        return;
-      }
+    try {
+      const archived = await loadArchivedAlert(snapshot, requestedAlert, requestedRelease, requestedSnapshot, requestedObservation);
+      if (!archived) throw new Error("immutable alert artifact is not indexed");
+      renderResolvedDeepLink(snapshot, archived);
+      return;
+    } catch (error) {
+      renderDeepLinkUnavailable(snapshot);
+      setReleaseHealth(`該訊息版本不可驗證；已安全停止載入（${error.message}）。`, "error");
+      return;
     }
-    renderDeepLinkUnavailable(snapshot);
-    setReleaseHealth("該訊息未找到可驗證的 immutable alert。", "error");
-    return;
   }
   const knownSnapshots = [
     window.releaseManifest?.market_snapshot_id,
@@ -2470,29 +2458,52 @@ const applyDeepLink = async (snapshot) => {
   if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
+const applyDeepLink = async (snapshot) => {
+  window.__notificationDeepLinkDeadline = Date.now() + 20000;
+  try {
+    await applyDeepLinkWithDeadline(snapshot);
+  } finally {
+    window.__notificationDeepLinkDeadline = 0;
+  }
+};
+
 // The manifest is the release boundary.  Fetching an artifact directly could
 // otherwise combine a new market file with an older research/event file when
 // GitHub Pages or Telegram's WebView serves different cache generations.
 const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
-const fetchResponseWithRetry = (url, options = {}, attempt = 0) => {
+const fetchResponseWithRetry = async (url, options = {}, attempt = 0) => {
   const revalidate = options.revalidate === true;
-  const timeoutMs = Number(options.timeoutMs || (revalidate ? 8000 : 12000));
+  const requestedTimeoutMs = Number(options.timeoutMs || (revalidate ? 8000 : 12000));
+  const deadlineAt = Number(options.deadlineAt || window.__notificationDeepLinkDeadline || 0);
+  const remainingMs = deadlineAt ? deadlineAt - Date.now() : requestedTimeoutMs;
+  if (remainingMs <= 0) throw new Error(`artifact unavailable: ${url} (notification lookup deadline exceeded)`);
+  const timeoutMs = Math.max(1, Math.min(requestedTimeoutMs, remainingMs));
   const controller = typeof AbortController === "function" ? new AbortController() : null;
   const timer = controller ? window.setTimeout(() => controller.abort(), timeoutMs) : null;
   const headers = revalidate ? { "Cache-Control": "no-cache", Accept: "application/json" } : { Accept: "application/json" };
-  return fetch(url, {
-    cache: revalidate ? "no-cache" : "default",
-    headers,
-    signal: controller?.signal,
-  }).then((response) => {
-    if (response.ok) return response;
-    throw new Error(`HTTP ${response.status}`);
-  }).catch((error) => {
-    if (attempt < 2) return sleep(200 * (attempt + 1)).then(() => fetchResponseWithRetry(url, options, attempt + 1));
-    throw new Error(`artifact unavailable: ${url} (${error.name === "AbortError" ? "timeout" : error.message})`);
-  }).finally(() => {
+  try {
+    const response = await fetch(url, {
+      cache: revalidate ? "no-cache" : "default",
+      headers,
+      signal: controller?.signal,
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const body = await response.arrayBuffer();
+    const activeDeadline = Number(options.deadlineAt || window.__notificationDeepLinkDeadline || 0);
+    if (activeDeadline && Date.now() > activeDeadline) throw new Error("notification lookup deadline exceeded");
+    return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
+  } catch (error) {
     if (timer) window.clearTimeout(timer);
-  });
+    const latestDeadline = Number(options.deadlineAt || window.__notificationDeepLinkDeadline || 0);
+    const canRetry = attempt < 2 && (!latestDeadline || latestDeadline - Date.now() > 250 * (attempt + 1));
+    if (canRetry) {
+      await sleep(200 * (attempt + 1));
+      return fetchResponseWithRetry(url, options, attempt + 1);
+    }
+    throw new Error(`artifact unavailable: ${url} (${error.name === "AbortError" ? "timeout" : error.message})`);
+  } finally {
+    if (timer) window.clearTimeout(timer);
+  }
 };
 
 const fetchJson = (url) => fetchResponseWithRetry(url).then((response) => response.json());
@@ -2553,6 +2564,8 @@ const loadVerifiedArtifactText = async (manifest, name, options = {}) => {
   if (!expectedHash) throw new Error(`artifact hash missing: ${name}`);
   const response = await fetchResponseWithRetry(safeArtifactPath(manifest, name), options);
   const text = await response.text();
+  const deadlineAt = Number(options.deadlineAt || window.__notificationDeepLinkDeadline || 0);
+  if (deadlineAt && Date.now() > deadlineAt) throw new Error(`artifact verification deadline exceeded: ${name}`);
   if (await sha256Hex(text) !== expectedHash) throw new Error(`artifact hash mismatch: ${name}`);
   return text;
 };
@@ -2578,7 +2591,7 @@ const readLastGoodBootstrap = async () => {
     const expectedHash = String(manifest.artifact_hashes?.["bootstrap.json"] || "");
     if (!expectedHash || await sha256Hex(text) !== expectedHash) return null;
     const bootstrap = JSON.parse(text);
-    if (bootstrap.schema_version !== "1.0" || String(bootstrap.release_id || "") !== String(manifest.release_id)) return null;
+  if (!["1.0", "1.1"].includes(String(bootstrap.schema_version || "")) || String(bootstrap.release_id || "") !== String(manifest.release_id)) return null;
     if (String(bootstrap.snapshot_id || "") !== String(manifest.market_snapshot_id || "")) return null;
     return { manifest, bootstrap, saved_at: saved.saved_at };
   } catch (_error) {
@@ -2647,7 +2660,8 @@ const readLastGoodRelease = async () => {
 
 const loadFullRelease = async (manifest, { includeImmutableAlerts = false } = {}) => {
   const hashes = manifest.artifact_hashes || {};
-  const names = Object.keys(hashes).filter((name) => includeImmutableAlerts || !name.startsWith("alerts/"));
+  const names = Object.keys(hashes).filter((name) => includeImmutableAlerts
+    || (!name.startsWith("alerts/") && name !== "alert-index.json" && name !== "alert-lookup-root.json"));
   const artifactEntries = await Promise.all(names.map(async (name) => [
     name,
     await loadVerifiedArtifactText(manifest, name),
@@ -2706,6 +2720,7 @@ const loadLegacyPublishedRelease = async (manifest) => {
   const paths = manifest.artifact_paths || {};
   const artifactTexts = {};
   for (const [name, expectedHash] of Object.entries(hashes)) {
+    if (name === "alert-index.json" || name === "alert-lookup-root.json" || name.startsWith("alerts/index/")) continue;
     const relativePath = String(paths[name] || "");
     if (!relativePath || relativePath.startsWith("/") || relativePath.includes("..")) {
       throw new Error(`invalid artifact path: ${name}`);
@@ -2825,7 +2840,7 @@ const loadPublishedRelease = async () => {
   const bootstrapText = await loadVerifiedArtifactText(manifest, bootstrapName, { timeoutMs: 8000 });
   performanceMark("bootstrap-verified");
   const bootstrap = JSON.parse(bootstrapText);
-  if (bootstrap.schema_version !== "1.0" || String(bootstrap.release_id || "") !== String(manifest.release_id)) {
+  if (!["1.0", "1.1"].includes(String(bootstrap.schema_version || "")) || String(bootstrap.release_id || "") !== String(manifest.release_id)) {
     throw new Error("bootstrap release identity mismatch");
   }
   if (String(bootstrap.snapshot_id || "") !== String(manifest.market_snapshot_id || "")) {
@@ -2854,10 +2869,11 @@ const renderLoadedSnapshot = async (snapshot, { historical = false } = {}) => {
   recordLoadMetric(hasAlertDeepLink ? "alert-shell" : "bootstrap", Date.now() - navigationStart);
   if (hasAlertDeepLink) await applyDeepLink(snapshot);
   if (hasAlertDeepLink) performanceMark("alert-rendered");
-  if (!historical) setReleaseHealth("", "ready");
+  if (!historical && !hasAlertDeepLink) setReleaseHealth("", "ready");
 };
 
 const startPublishedRelease = async () => {
+  const hasAlertDeepLink = Boolean(new URLSearchParams(window.location.search).get("alert"));
   // Local storage is only used after a previous SHA-256 verification.  It is
   // a fast paint source, never a notification-eligibility or delivery source.
   const cached = await readLastGoodBootstrap();
@@ -2867,8 +2883,10 @@ const startPublishedRelease = async () => {
     await renderLoadedSnapshot(cached.bootstrap);
     cachedRendered = true;
     const savedAt = cached.saved_at ? new Date(cached.saved_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "未知";
-    setText("data-status", "已驗證快取");
-    setReleaseHealth(`已顯示最後驗證版本（${savedAt}）；正在核對最新資料。`, "degraded");
+    if (!hasAlertDeepLink) {
+      setText("data-status", "已驗證快取");
+      setReleaseHealth(`已顯示最後驗證版本（${savedAt}）；正在核對最新資料。`, "degraded");
+    }
   }
   try {
     const loaded = await loadPublishedRelease();
@@ -2880,14 +2898,14 @@ const startPublishedRelease = async () => {
     if (loaded.deferred) {
       const completed = await loaded.deferred;
       if (completed.error) {
-        setReleaseHealth(`首屏已載入；其餘資料背景更新失敗（${completed.error.message}）。`, "degraded");
+        if (!hasAlertDeepLink) setReleaseHealth(`首屏已載入；其餘資料背景更新失敗（${completed.error.message}）。`, "degraded");
         return;
       }
       await renderLoadedSnapshot(completed.snapshot);
     }
   } catch (error) {
     if (cachedRendered) {
-      setReleaseHealth("目前沿用最後驗證版本；最新資料暫時無法取得。", "degraded");
+      if (!hasAlertDeepLink) setReleaseHealth("目前沿用最後驗證版本；最新資料暫時無法取得。", "degraded");
       return;
     }
     const saved = await readLastGoodRelease();

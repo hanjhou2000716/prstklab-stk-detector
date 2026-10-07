@@ -1704,6 +1704,7 @@ def send(
         )
         return
     claim: dict[str, Any] = {}
+    delivery_claim_key = ""
     if str(event.get("source_key") or event.get("source") or "").strip().casefold() != "financialjuice":
         recipient_hashes = tuple(recipient_hash(chat_id) for chat_id in settings.telegram_chat_ids)
         if hasattr(ledger, "claim_scheduled_brief"):
@@ -1731,6 +1732,11 @@ def send(
             # Minimal test/compatibility doubles predate the scheduled-anchor
             # claim API. The real EventLedger always takes one of the paths.
             claim = {"status": "claimed", "pending_recipient_hashes": []}
+        delivery_claim_key = str(claim.get("notification_key") or "")
+        if not delivery_claim_key and not hasattr(ledger, "claim_scheduled_brief") and not hasattr(ledger, "claim_notification"):
+            # Compatibility-only test doubles predate durable claim identities.
+            # The production EventLedger must always return its persisted key.
+            delivery_claim_key = notification_key
         if claim.get("status") != "claimed":
             already_delivered = str(claim.get("status") or "") == "already_delivered"
             _write_decision_output(
@@ -1738,7 +1744,7 @@ def send(
                     "sent": "false",
                     "delivery_status": "already_delivered" if already_delivered else "suppressed",
                     "reason": "already_delivered" if already_delivered else f"notification_{claim.get('status', 'blocked')}",
-                    "notification_key": notification_key,
+                    "notification_key": delivery_claim_key,
                     "comparison_notification_key": claim.get("comparison_notification_key") or "",
                     "material_changes": claim.get("material_changes") or [],
                     "delivery_eligible": False,
@@ -1751,6 +1757,24 @@ def send(
                 notification_reason="already_delivered" if already_delivered else f"notification_{claim.get('status', 'blocked')}",
                 notification_expected=already_delivered,
                 last_receipt_status="already_delivered" if already_delivered else str(claim.get("status") or "blocked"),
+            )
+            return
+        if not delivery_claim_key:
+            _write_decision_output(
+                {
+                    "sent": "false",
+                    "delivery_status": "blocked",
+                    "reason": "notification_claim_key_missing",
+                    "notification_expected": "true",
+                    "notification_status": "blocked",
+                    "notification_reason": "notification_claim_key_missing",
+                    "last_receipt_status": "not_attempted",
+                },
+                event=event,
+                notification_status="blocked",
+                notification_reason="notification_claim_key_missing",
+                notification_expected=True,
+                last_receipt_status="not_attempted",
             )
             return
         pending_hashes = set(str(item) for item in claim.get("pending_recipient_hashes") or [])
@@ -1794,11 +1818,11 @@ def send(
     except (OSError, ValueError) as exc:
         if event is None or str(event.get("source_key") or event.get("source") or "").strip().casefold() != "financialjuice":
             ledger.complete_notification_claim(
-                claim.get("notification_key") or notification_key,
+                delivery_claim_key,
                 uncertain=True,
             )
         _write_decision_output(
-            {"sent": "false", "delivery_status": "blocked", "reason": "text_delivery_failed", "error_type": type(exc).__name__, "release_id": gate.release_id, "snapshot_id": snapshot_id, "trace_id": trace_id, "risk": event_risk},
+            {"sent": "false", "delivery_status": "blocked", "reason": "text_delivery_failed", "error_type": type(exc).__name__, "release_id": gate.release_id, "snapshot_id": snapshot_id, "trace_id": trace_id, "risk": event_risk, "notification_key": delivery_claim_key},
             event=event, notification_status="failed", notification_reason="text_delivery_failed",
         )
         return
@@ -1815,7 +1839,7 @@ def send(
                 "sent": "false",
                 "delivery_status": "already_delivered",
                 "reason": "already_delivered",
-                "notification_key": fj_delivery.get("notification_key", notification_key),
+                "notification_key": fj_delivery.get("notification_key") or "",
                 "release_id": gate.release_id,
                 "snapshot_id": snapshot_id,
                 "trace_id": trace_id,
@@ -1831,7 +1855,7 @@ def send(
                 "sent": "false",
                 "delivery_status": "blocked",
                 "reason": "financialjuice_delivery_blocked",
-                "notification_key": fj_delivery.get("notification_key", ""),
+                "notification_key": fj_delivery.get("notification_key") or "",
                 "delivery_reasons": ";".join(str(item) for item in (fj_delivery.get("reasons") or [])),
                 "release_id": gate.release_id,
                 "snapshot_id": snapshot_id,
@@ -1875,6 +1899,7 @@ def send(
                 "notification_expected": "true",
                 "notification_status": "failed",
                 "notification_reason": failure_reason,
+                "notification_key": fj_delivery.get("notification_key") or "",
                 "risk": event_risk,
             }, event=event, notification_status="failed", notification_reason=failure_reason, delivered_count=0, failed_count=max(failed, len(settings.telegram_chat_ids)), last_receipt_status="failed")
             raise RuntimeError("Telegram FinancialJuice delivery failed for every configured recipient")
@@ -1885,7 +1910,7 @@ def send(
         failed_recipient_hashes = [delivery.chat_id_hash for delivery in deliveries if delivery.status != "delivered"]
         if hasattr(ledger, "complete_notification_claim"):
             ledger.complete_notification_claim(
-                claim.get("notification_key") or notification_key,
+                delivery_claim_key,
                 delivered_recipient_hashes=tuple(delivery.chat_id_hash for delivery in deliveries if delivery.status == "delivered"),
                 failed_recipient_hashes=tuple(delivery.chat_id_hash for delivery in deliveries if delivery.status != "delivered"),
             )
@@ -1914,6 +1939,10 @@ def send(
         "delivery_eligible": True,
         "suppression_reason": "",
         "event_key": alert_id,
+        "notification_key": (
+            str(fj_delivery.get("notification_key") or "")
+            if fj_delivery is not None else delivery_claim_key
+        ),
         "risk": event_risk,
     }
     if isinstance(event, dict) and str(event.get("source_key") or "").strip().casefold() == "financialjuice":
@@ -1948,7 +1977,7 @@ def send(
         "release_id": gate.release_id,
         "snapshot_id": snapshot_id,
         "delivery_status": delivery_status,
-        "notification_key": notification_key,
+        "notification_key": delivery_claim_key,
     }
     if fj_delivery is not None:
         ledger_event["notification_key"] = fj_delivery.get("notification_key")

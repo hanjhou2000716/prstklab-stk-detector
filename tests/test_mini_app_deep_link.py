@@ -7,7 +7,8 @@ def test_mini_app_resolves_deep_link_only_with_matching_release():
     assert "new URLSearchParams(window.location.search)" in APP
     assert "requestedRelease !== manifestRelease" in APP
     assert "該訊息版本已歸檔或不可用" in APP
-    assert "sameAlertLineage" in APP
+    assert "notification_view_context" in APP
+    assert "renderResolvedDeepLink(snapshot, archived)" in APP
     assert "最新同事件版本" not in APP
 
 
@@ -29,4 +30,5 @@ def test_mini_app_verifies_snapshot_and_observation_identity():
     assert "knownSnapshots.includes(requestedSnapshot)" in APP
     assert "event.observation_id" in APP
     assert "canonical_content_hash" in APP
-    assert 'requestedAlert,\n            manifestRelease,\n            "",\n            "",' in APP
+    assert "loadArchivedAlert(snapshot, requestedAlert, requestedRelease, requestedSnapshot, requestedObservation)" in APP
+    assert "renderResolvedDeepLink(snapshot, latest)" not in APP

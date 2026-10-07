@@ -783,11 +783,22 @@ def test_scheduled_delivery_uses_text_delivery_after_release_gate(tmp_path, monk
     monkeypatch.setattr(scheduled_delivery, "write_event_lock_key", lambda *_args: None)
     captured = {}
 
+    claim_key = "scheduled-anchor:taiwan:2026-10-07:morning"
+    persisted = {}
+
     class FakeLedger:
         def delivery_history(self):
             return []
 
+        def claim_scheduled_brief(self, *_args, **_kwargs):
+            return {"status": "claimed", "notification_key": claim_key, "pending_recipient_hashes": []}
+
+        def complete_notification_claim(self, notification_key, **kwargs):
+            persisted["notification_key"] = notification_key
+            persisted.update(kwargs)
+
         def record_delivery(self, payload, **_kwargs):
+            persisted["delivery_notification_key"] = payload.get("notification_key")
             return payload
 
         def save(self):
@@ -811,6 +822,9 @@ def test_scheduled_delivery_uses_text_delivery_after_release_gate(tmp_path, monk
     text = output.read_text(encoding="utf-8")
     assert "sent=true" in text
     assert "delivery_mode=text" in text
+    assert f"notification_key={claim_key}" in text
+    assert persisted["notification_key"] == claim_key
+    assert persisted["delivery_notification_key"] == claim_key
     assert captured["target_url"] == alert_mini_app_url(
         "https://example.test/app",
         alert_id="event-1",

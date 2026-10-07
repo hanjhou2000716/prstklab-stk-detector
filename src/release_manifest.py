@@ -50,9 +50,11 @@ DEFAULT_ARTIFACTS = {
 }
 
 ALERT_INDEX_NAME = "alert-index.json"
+ALERT_LOOKUP_NAME = "alert-lookup-root.json"
 ALERT_ARTIFACT_PREFIX = "alerts"
 MAX_ALERT_INDEX_ROWS = 1000
 ALERT_RETENTION_DAYS = 30
+ALERT_LOOKUP_NODE_MAX_BYTES = 64 * 1024
 CANONICAL_HASH_VERSION = 2
 
 SOURCE_HEALTH_ARTIFACT = "source-health.json"
@@ -372,7 +374,7 @@ def _briefing_projection(
 def _publish_alert_artifacts(
     *, root: Path, market: dict[str, Any], release_id: str, created_at: str,
     resolved: dict[str, Path], hashes: dict[str, str],
-) -> None:
+) -> dict[str, Any]:
     """Write release-bound alert details and a bounded historical index.
 
     Alert files are release-specific and therefore never overwritten when the
@@ -387,6 +389,45 @@ def _publish_alert_artifacts(
     quarantined_fingerprints = financialjuice_quarantine_fingerprints(market)
     raw_briefing = market.get("briefing")
     briefing: dict[str, Any] = raw_briefing if isinstance(raw_briefing, dict) else {}
+    view_snapshot = build_bootstrap_snapshot(
+        market,
+        release_id=release_id,
+        created_at=created_at,
+        alert_index_coverage="current_release",
+    )
+    notification_view_context = {
+        "schema_version": "1.0",
+        "release_id": release_id,
+        "snapshot_id": str(market.get("snapshot_id") or ""),
+        "generated_at": market.get("generated_at") or created_at,
+        "data_status": market.get("data_status"),
+        "markets": view_snapshot.get("markets") or {},
+        "indices": view_snapshot.get("indices") or [],
+        "quotes": view_snapshot.get("quotes") or [],
+        "macro_quotes": view_snapshot.get("macro_quotes") or [],
+        "risk": view_snapshot.get("risk") or {},
+        "briefing": view_snapshot.get("briefing") or {},
+    }
+    historical_briefing = notification_view_context["briefing"]
+    if isinstance(historical_briefing, dict):
+        for field in (
+            "themes", "primary_theme", "secondary_signals", "observations", "evidence",
+            "source_evidence", "market_card_projection", "session_news_summary", "report_summary",
+        ):
+            value = briefing.get(field)
+            if value is not None:
+                historical_briefing[field] = value
+        historical_briefing["release_id"] = release_id
+        historical_briefing["snapshot_id"] = str(market.get("snapshot_id") or "")
+        for key in ("market_card_projection", "session_news_summary", "report_summary"):
+            nested = historical_briefing.get(key)
+            if isinstance(nested, dict):
+                nested["release_id"] = release_id
+                nested["snapshot_id"] = str(market.get("snapshot_id") or "")
+        session = historical_briefing.get("session_news_summary")
+        if isinstance(session, dict) and isinstance(session.get("report_summary"), dict):
+            session["report_summary"]["release_id"] = release_id
+            session["report_summary"]["snapshot_id"] = str(market.get("snapshot_id") or "")
     raw_session_news = briefing.get("session_news_summary")
     session_news_summary = ({
         **raw_session_news,
@@ -439,6 +480,7 @@ def _publish_alert_artifacts(
             created_at=created_at,
             session_news_summary=session_news_summary,
         )
+        artifact["notification_view_context"] = notification_view_context
         notification_id = str(artifact["notification_id"])
         filename = f"{_alert_filename(notification_id)}-{_alert_filename(release_id)}.json"
         path = alert_dir / filename
@@ -465,6 +507,7 @@ def _publish_alert_artifacts(
             market_snapshot_id=str(market.get("snapshot_id") or ""),
             created_at=created_at,
         )
+        artifact["notification_view_context"] = notification_view_context
         briefing_id = str(artifact["notification_id"])
         filename = f"{_alert_filename(briefing_id)}-{_alert_filename(release_id)}.json"
         path = alert_dir / filename
@@ -505,16 +548,73 @@ def _publish_alert_artifacts(
     ordered = sorted(rows.values(), key=lambda item: str(item.get("created_at") or ""), reverse=True)
     recent = [item for item in ordered if is_recent(item)]
     older = [item for item in ordered if not is_recent(item)]
-    index = {
+    indexed_alerts: list[dict[str, Any]] = [
+        *recent,
+        *older[:max(0, MAX_ALERT_INDEX_ROWS - len(recent))],
+    ]
+    index: dict[str, Any] = {
         "schema_version": "1.0",
         "generated_at": release_time.isoformat(),
         # Every recent immutable alert remains addressable for the policy
         # retention window; the cap applies only to older history.
-        "alerts": [*recent, *older[:max(0, MAX_ALERT_INDEX_ROWS - len(recent))]],
+        "alerts": indexed_alerts,
     }
     _write_normalized_artifact(index_path, index)
     resolved[ALERT_INDEX_NAME] = index_path
     hashes[ALERT_INDEX_NAME] = sha256_file(index_path)
+
+    lookup_dir = root / "site" / "data" / ALERT_ARTIFACT_PREFIX / "index"
+    lookup_rows = sorted(
+        indexed_alerts,
+        key=lambda item: (str(item.get("notification_id") or ""), str(item.get("release_id") or "")),
+    )
+
+    def write_lookup_node(prefix: str, selected: list[dict[str, Any]]) -> dict[str, Any]:
+        lookup: dict[str, Any] = {
+            "schema_version": "1.0",
+            "prefix": prefix,
+            "rows": selected,
+        }
+        encoded = _canonical_json(lookup) + b"\n"
+        if len(encoded) > ALERT_LOOKUP_NODE_MAX_BYTES:
+            if len(prefix) >= 64:
+                raise ValueError("alert lookup shard exceeds maximum size")
+            groups: dict[str, list[dict[str, Any]]] = {}
+            for row in selected:
+                identity = f"{row.get('notification_id') or ''}\n{row.get('release_id') or ''}"
+                digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()
+                if not digest.startswith(prefix):
+                    raise ValueError("alert lookup row prefix mismatch")
+                groups.setdefault(digest[len(prefix)], []).append(row)
+            children = {
+                digit: write_lookup_node(prefix + digit, group)
+                for digit, group in sorted(groups.items())
+            }
+            lookup = {"schema_version": "1.0", "prefix": prefix, "children": children}
+            encoded = _canonical_json(lookup) + b"\n"
+            if len(encoded) > ALERT_LOOKUP_NODE_MAX_BYTES:
+                raise ValueError("alert lookup index node exceeds maximum size")
+        lookup_dir.mkdir(parents=True, exist_ok=True)
+        node_name = f"node-{prefix or 'root'}.json"
+        path = lookup_dir / node_name
+        path.write_bytes(encoded)
+        relative = f"{ALERT_ARTIFACT_PREFIX}/index/{node_name}"
+        digest = sha256_file(path)
+        resolved[relative] = path
+        hashes[relative] = digest
+        return {"path": relative, "sha256": digest}
+
+    root_node = write_lookup_node("", lookup_rows)
+    root_descriptor = {
+        "schema_version": "1.0",
+        "key": "sha256(notification_id + newline + release_id)",
+        **root_node,
+    }
+    lookup_root_path = root / "site" / "data" / ALERT_LOOKUP_NAME
+    _write_normalized_artifact(lookup_root_path, root_descriptor)
+    resolved[ALERT_LOOKUP_NAME] = lookup_root_path
+    hashes[ALERT_LOOKUP_NAME] = sha256_file(lookup_root_path)
+    return root_descriptor
 
 
 def _creator_identity_hash(
@@ -1166,8 +1266,9 @@ def build_release_manifest(
     # core release identity.  Keeping them out of ``release_material`` avoids
     # a circular hash (the artifact itself carries its release_id), while the
     # resulting paths/hashes are still covered by the manifest gate.
+    alert_lookup_descriptor: dict[str, Any] | None = None
     if not financialjuice_boundary["fatal_alert_contract_errors"]:
-        _publish_alert_artifacts(
+        alert_lookup_descriptor = _publish_alert_artifacts(
             root=root, market=market, release_id=release_id, created_at=created_at,
             resolved=resolved, hashes=hashes,
         )
@@ -1286,6 +1387,7 @@ def build_release_manifest(
         artifact_paths=bootstrap_paths,
         artifact_hashes=hashes,
         alert_index_rows=bootstrap_rows,
+        alert_index_coverage="current_release",
     )
     try:
         _write_normalized_artifact(bootstrap_path, bootstrap)
@@ -1325,6 +1427,7 @@ def build_release_manifest(
         "artifact_paths": public_paths,
         "bootstrap_artifacts": [BOOTSTRAP_NAME],
         "deep_link_artifacts": [ALERT_INDEX_NAME, "alerts/*"],
+        "alert_lookup": alert_lookup_descriptor,
         "deferred_artifacts": sorted(name for name in public_paths if name != BOOTSTRAP_NAME),
         "bootstrap_contract": {
             "schema_version": "1.0",
