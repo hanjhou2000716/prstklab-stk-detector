@@ -1099,6 +1099,23 @@ def test_bootstrap_release_gate_rejects_invalid_contract_and_identity():
     ]
 
 
+@pytest.mark.parametrize("schema_version", ["1.0", "1.1"])
+def test_bootstrap_release_gate_accepts_supported_schema_versions(schema_version):
+    manifest = {
+        "release_id": "release-current",
+        "market_snapshot_id": "market-current",
+        "bootstrap_contract": {"max_bytes": 64_000},
+    }
+    artifact = {
+        "schema_version": schema_version,
+        "release_id": "release-current",
+        "snapshot_id": "market-current",
+        "indices": [],
+        "events": {},
+    }
+    assert _validate_bootstrap_artifact(artifact, manifest) == []
+
+
 def test_public_alert_target_gate_covers_missing_tampered_and_matching_alerts(monkeypatch):
     manifest = {"release_id": "release-current"}
     assert _validate_public_alert_target({}, manifest, public_url="https://example.test", notification_id="a") == [

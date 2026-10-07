@@ -186,7 +186,7 @@ def _validate_creator_artifact(artifact: dict[str, Any], manifest: dict[str, Any
 def _validate_bootstrap_artifact(artifact: dict[str, Any], manifest: dict[str, Any]) -> list[str]:
     """Validate the small first-paint projection before Telegram delivery."""
     errors: list[str] = []
-    if str(artifact.get("schema_version") or "") != "1.0":
+    if str(artifact.get("schema_version") or "") not in {"1.0", "1.1"}:
         errors.append("bootstrap schema version is invalid")
     if str(artifact.get("release_id") or "") != str(manifest.get("release_id") or ""):
         errors.append("bootstrap release_id does not match manifest")

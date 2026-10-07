@@ -347,6 +347,31 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
         "event": event_text,
         "vendor_importance": 10,
         "prstk_risk": {"prstk_risk_level": "R2"},
+        "notification_view_context": {
+            "schema_version": "1.0",
+            "release_id": old_release,
+            "snapshot_id": old_snapshot,
+            "generated_at": "2026-09-03T21:00:00-04:00",
+            "data_status": "通知原版資料",
+            "markets": {},
+            "indices": [{"ticker": "SP500", "price": 6000.0, "change_percent": 0.58}],
+            "quotes": [],
+            "macro_quotes": [],
+            "risk": {"us": {"label": "美股", "sentiment": {"score": 47.3, "label": "中立"}}},
+            "briefing": {
+                "slot": "us_premarket",
+                "digest_status": "ready",
+                "release_id": old_release,
+                "snapshot_id": old_snapshot,
+                "public_short_message": public_message,
+                "report_summary": {
+                    "schema_version": "report-summary-v1",
+                    "release_id": old_release,
+                    "snapshot_id": old_snapshot,
+                    "text": "原版總結：標普500最近收盤上漲0.58%。",
+                },
+            },
+        },
     }
     current_alert = {**old_alert, "release_id": current_release}
     old_text = json.dumps(old_alert, ensure_ascii=False, separators=(",", ":"))
@@ -358,6 +383,21 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
         ]
     }
     index_text = json.dumps(index, ensure_ascii=False, separators=(",", ":"))
+    lookup_node_path = "alerts/index/node-root.json"
+    lookup_node = {
+        "schema_version": "1.0",
+        "prefix": "",
+        "rows": index["alerts"],
+    }
+    lookup_node_text = json.dumps(lookup_node, ensure_ascii=False, separators=(",", ":"))
+    lookup_node_hash = hashlib.sha256(lookup_node_text.encode()).hexdigest()
+    lookup_descriptor = {
+        "schema_version": "1.0",
+        "key": "sha256(notification_id + newline + release_id)",
+        "path": lookup_node_path,
+        "sha256": lookup_node_hash,
+    }
+    lookup_descriptor_text = json.dumps(lookup_descriptor, ensure_ascii=False, separators=(",", ":"))
     market = {
         "snapshot_id": "market-current",
         "generated_at": "2026-09-04T08:00:00+00:00",
@@ -366,7 +406,7 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
         "indices": [],
         "quotes": [],
         "events": {"items": [{"title": "不應取代通知的目前事件", "event": "不應取代通知的目前事件"}]},
-        "risk": {},
+        "risk": {"us": {"label": "美股", "sentiment": {"score": 99.0, "label": "新版"}}},
         "briefing": {},
         "source_health": {"sources": []},
         "external_observations": [],
@@ -380,8 +420,16 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
         "artifact_hashes": {
             "market.json": hashlib.sha256(market_text.encode()).hexdigest(),
             "alert-index.json": hashlib.sha256(index_text.encode()).hexdigest(),
+            "alert-lookup-root.json": hashlib.sha256(lookup_descriptor_text.encode()).hexdigest(),
+            lookup_node_path: lookup_node_hash,
         },
-        "artifact_paths": {"market.json": "data/market.json", "alert-index.json": "data/alert-index.json"},
+        "artifact_paths": {
+            "market.json": "data/market.json",
+            "alert-index.json": "data/alert-index.json",
+            "alert-lookup-root.json": "data/alert-lookup-root.json",
+            lookup_node_path: f"data/{lookup_node_path}",
+        },
+        "alert_lookup": lookup_descriptor,
     }
     manifest_text = json.dumps(manifest, ensure_ascii=False, separators=(",", ":"))
 
@@ -402,6 +450,10 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
                     route.fulfill(status=200, content_type="application/json", body=market_text)
                 elif "/data/alert-index.json" in url:
                     route.fulfill(status=200, content_type="application/json", body=index_text)
+                elif "/data/alert-lookup-root.json" in url:
+                    route.fulfill(status=200, content_type="application/json", body=lookup_descriptor_text)
+                elif "/data/alerts/index/node-root.json" in url:
+                    route.fulfill(status=200, content_type="application/json", body=lookup_node_text)
                 elif "/data/alerts/old.json" in url:
                     route.fulfill(status=200, content_type="application/json", body=old_text)
                 elif "/data/alerts/current.json" in url:
@@ -415,10 +467,14 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
                 wait_until="domcontentloaded",
             )
             page.wait_for_function("document.querySelector('#alert-headline')?.textContent.includes('FJ 10/10')")
+            page.wait_for_function("window.marketSnapshot?.release_id === 'release-old' && window.marketSnapshot?.risk?.us?.sentiment?.score === 47.3")
             assert page.locator("#release-health").is_hidden()
             assert page.locator("#market-focus").text_content() == public_message
             assert "notification" not in (page.locator("#market-focus").text_content() or "")
             assert page.locator("#alert-headline").text_content() == public_message
+            assert page.evaluate("window.marketSnapshot.briefing.report_summary.text") == "原版總結：標普500最近收盤上漲0.58%。"
+            assert page.evaluate("window.marketSnapshot.indices[0].price") == 6000
+            assert "通知原版" in (page.locator("#data-status").text_content() or "")
             assert "不應取代通知的目前事件" not in (page.locator("#alert-card").text_content() or "")
             browser.close()
     except Exception as exc:

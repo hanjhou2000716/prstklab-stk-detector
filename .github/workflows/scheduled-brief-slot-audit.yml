@@ -50,6 +50,8 @@ jobs:
           --scheduled-for-at "$AUDIT_SCHEDULED_FOR_AT"
           --dispatch-unix "$AUDIT_DISPATCH_UNIX"
           --requested-at "$AUDIT_REQUESTED_AT"
+      - name: Install read-only audit dependencies
+        run: python -m pip install -r requirements-production.txt
       - name: Checkout published receipt ledger after audit deadline (read-only)
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -57,8 +59,6 @@ jobs:
           path: receipt-ledger
           fetch-depth: 1
           persist-credentials: false
-      - name: Install read-only audit dependencies
-        run: pip install -r requirements-production.txt
       - name: Capture immutable audit run creation time
         id: run_context
         env:
