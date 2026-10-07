@@ -7,9 +7,11 @@ import io
 import json
 import os
 import re
+import time as time_module
 import zipfile
 from collections.abc import Mapping
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, datetime, timedelta
+from datetime import time as day_time
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -44,7 +46,7 @@ def _candidate_occurrence(schedule: str, reference: datetime) -> datetime | None
         day = current.date() - timedelta(days=offset)
         if schedule.endswith("1-5") and day.weekday() >= 5:
             continue
-        candidate = datetime.combine(day, time(hour, minute), UTC)
+        candidate = datetime.combine(day, day_time(hour, minute), UTC)
         if candidate <= current:
             return candidate
     return None
@@ -177,18 +179,21 @@ def _recipient_set_metadata_error(
 
 
 def _terminal_records_from_logs(body: bytes) -> list[dict[str, Any]]:
-    """Extract only the bounded, machine-readable terminal row from run logs."""
+    """Extract bounded v1/v2 terminal rows from logs or a run-bound artifact."""
     if len(body) > 20 * 1024 * 1024:
         raise ValueError("workflow_logs_too_large")
     records: list[dict[str, Any]] = []
+    seen: set[tuple[str, ...]] = set()
     with zipfile.ZipFile(io.BytesIO(body)) as archive:
         for member in archive.infolist():
-            if not member.filename.endswith(".txt") or member.file_size > 5 * 1024 * 1024:
+            if not member.filename.endswith((".txt", ".json")) or member.file_size > 5 * 1024 * 1024:
                 continue
             with archive.open(member) as handle:
-                for raw_line in handle:
-                    if len(records) >= 20:
-                        return records
+                raw_content = handle.read(5 * 1024 * 1024 + 1)
+                if len(raw_content) > 5 * 1024 * 1024:
+                    continue
+                raw_lines = raw_content.splitlines() if member.filename.endswith(".txt") else [raw_content]
+                for raw_line in raw_lines:
                     try:
                         line = raw_line.decode("utf-8")
                         json_start = line.find("{")
@@ -197,10 +202,21 @@ def _terminal_records_from_logs(body: bytes) -> list[dict[str, Any]]:
                         continue
                     if (
                         isinstance(row, dict)
-                        and row.get("schema_version") == "notification-terminal-v1"
+                        and row.get("schema_version") in {
+                            "notification-terminal-v1", "notification-terminal-v2",
+                        }
                         and row.get("workflow") == "scheduled"
                     ):
+                        key = tuple(str(row.get(field) or "") for field in (
+                            "schema_version", "run_id", "workflow_sha", "slot",
+                            "scheduled_for_at", "status", "reason",
+                        ))
+                        if key in seen:
+                            continue
+                        seen.add(key)
                         records.append(row)
+                        if len(records) >= 20:
+                            return records
     return records
 
 
@@ -215,7 +231,6 @@ def _diagnose_scheduled_run(
     current = now.astimezone(UTC)
     lower_bound = max(anchor_utc - timedelta(minutes=15), current - timedelta(hours=72))
     query = urlencode({
-        "per_page": "100",
         "branch": "main",
         "created": f"{lower_bound.date().isoformat()}..{current.date().isoformat()}",
     })
@@ -234,22 +249,98 @@ def _diagnose_scheduled_run(
             raise ValueError("github_response_too_large")
         return body
 
+    def get_collection(
+        endpoint: str, *, collection_key: str, limit: int,
+    ) -> list[dict[str, Any]]:
+        """Read a complete, stable, bounded GitHub collection or fail closed."""
+        rows: list[dict[str, Any]] = []
+        seen_ids: set[int] = set()
+        expected_total: int | None = None
+        for page in range(1, 11):
+            separator = "&" if "?" in endpoint else "?"
+            url = f"{endpoint}{separator}per_page=100&page={page}"
+            payload = json.loads(get(url, limit=limit).decode("utf-8"))
+            page_rows = payload.get(collection_key) if isinstance(payload, dict) else None
+            total = payload.get("total_count") if isinstance(payload, dict) else None
+            if (
+                not isinstance(page_rows, list)
+                or not isinstance(total, int)
+                or total < 0
+                or (expected_total is not None and total != expected_total)
+            ):
+                raise ValueError("github_collection_identity_or_count_invalid")
+            expected_total = total
+            for row in page_rows:
+                if not isinstance(row, dict) or not isinstance(row.get("id"), int):
+                    raise ValueError("github_collection_row_identity_invalid")
+                row_id = row["id"]
+                if row_id in seen_ids:
+                    raise ValueError("github_collection_changed_during_pagination")
+                seen_ids.add(row_id)
+                rows.append(row)
+            if len(rows) > expected_total:
+                raise ValueError("github_collection_count_overflow")
+            if len(rows) == expected_total:
+                return rows
+        raise ValueError("github_collection_pagination_incomplete")
+
+    def terminal_rows_for_run(run: Mapping[str, Any]) -> list[dict[str, Any]]:
+        """Prefer the exact run/attempt artifact; use bounded historical logs otherwise."""
+        run_id = run.get("id")
+        if not isinstance(run_id, int):
+            return []
+        attempt = str(run.get("run_attempt") or "1")
+        expected_name = f"scheduled-terminal-{run_id}-attempt-{attempt}"
+        try:
+            artifacts = get_collection(
+                f"{base}/actions/runs/{run_id}/artifacts",
+                collection_key="artifacts",
+                limit=2 * 1024 * 1024,
+            )
+        except (HTTPError, URLError, OSError, UnicodeError, json.JSONDecodeError, ValueError):
+            artifacts = []
+        matching = [item for item in artifacts if item.get("name") == expected_name]
+        if len(matching) > 1:
+            raise ValueError("workflow_terminal_artifact_ambiguous")
+        if matching:
+            artifact = matching[0]
+            artifact_id = artifact.get("id")
+            workflow_run = artifact.get("workflow_run")
+            if (
+                not isinstance(artifact_id, int)
+                or artifact.get("expired") is True
+                or (isinstance(workflow_run, dict) and workflow_run.get("id") != run_id)
+            ):
+                raise ValueError("workflow_terminal_artifact_identity_invalid")
+            body = get(f"{base}/actions/artifacts/{artifact_id}/zip", limit=20 * 1024 * 1024)
+            rows = _terminal_records_from_logs(body)
+            head_sha = str(run.get("head_sha") or "")
+            attempt = str(run.get("run_attempt") or "1")
+            if not any(
+                str(row.get("run_id") or "") == str(run_id)
+                and str(row.get("workflow_sha") or "") == head_sha
+                and str(row.get("run_attempt") or "1") == attempt
+                for row in rows
+            ):
+                raise ValueError("workflow_terminal_artifact_payload_identity_invalid")
+            return rows
+        return _terminal_records_from_logs(
+            get(f"{base}/actions/runs/{run_id}/logs", limit=20 * 1024 * 1024),
+        )
+
     def execution_diagnostic(run: Mapping[str, Any]) -> tuple[dict[str, Any], str]:
         """Read the exact run's complete jobs and, when needed, runner annotations."""
         run_id_value = run.get("id")
         if not isinstance(run_id_value, int):
             return {"classification": "unknown", "reason": "workflow_run_id_invalid"}, "unavailable"
         try:
-            jobs_payload = json.loads(get(
-                f"{base}/actions/runs/{run_id_value}/jobs?per_page=100",
+            jobs = get_collection(
+                f"{base}/actions/runs/{run_id_value}/jobs",
+                collection_key="jobs",
                 limit=4 * 1024 * 1024,
-            ).decode("utf-8"))
+            )
         except (HTTPError, URLError, OSError, UnicodeError, json.JSONDecodeError, ValueError):
-            return {"classification": "unknown", "reason": "workflow_jobs_unavailable"}, "unavailable"
-        jobs = jobs_payload.get("jobs") if isinstance(jobs_payload, dict) else None
-        total = jobs_payload.get("total_count") if isinstance(jobs_payload, dict) else None
-        if not isinstance(jobs, list) or not isinstance(total, int) or total != len(jobs):
-            return {"classification": "unknown", "reason": "workflow_jobs_incomplete"}, "unavailable"
+            return {"classification": "unknown", "reason": "workflow_jobs_unavailable_or_incomplete"}, "unavailable"
         diagnostic = classify_workflow_execution(run, jobs)
         if diagnostic.get("classification") != "pre_step_failure_unclassified":
             return diagnostic, "not_required"
@@ -257,14 +348,11 @@ def _diagnose_scheduled_run(
         if not isinstance(check_suite_id, int) or check_suite_id <= 0:
             return diagnostic, "unavailable"
         try:
-            checks_payload = json.loads(get(
-                f"{base}/check-suites/{check_suite_id}/check-runs?per_page=100",
+            checks = get_collection(
+                f"{base}/check-suites/{check_suite_id}/check-runs",
+                collection_key="check_runs",
                 limit=4 * 1024 * 1024,
-            ).decode("utf-8"))
-            checks = checks_payload.get("check_runs") if isinstance(checks_payload, dict) else None
-            check_total = checks_payload.get("total_count") if isinstance(checks_payload, dict) else None
-            if not isinstance(checks, list) or not isinstance(check_total, int) or check_total != len(checks):
-                return diagnostic, "incomplete"
+            )
             annotations: list[dict[str, Any]] = []
             for check in checks:
                 if not isinstance(check, dict) or not isinstance(check.get("id"), int):
@@ -293,11 +381,11 @@ def _diagnose_scheduled_run(
             return diagnostic, "unavailable"
 
     try:
-        runs_body = get(f"{base}/actions/workflows/scheduled-brief.yml/runs?{query}", limit=2 * 1024 * 1024)
-        payload = json.loads(runs_body.decode("utf-8"))
-        runs = payload.get("workflow_runs") if isinstance(payload, dict) else None
-        if not isinstance(runs, list):
-            raise ValueError("github_workflow_runs_invalid")
+        runs = get_collection(
+            f"{base}/actions/workflows/scheduled-brief.yml/runs?{query}",
+            collection_key="workflow_runs",
+            limit=2 * 1024 * 1024,
+        )
         candidates: list[dict[str, Any]] = []
         for run in runs:
             if not isinstance(run, dict) or run.get("path") != ".github/workflows/scheduled-brief.yml":
@@ -319,8 +407,7 @@ def _diagnose_scheduled_run(
             run_id = run.get("id")
             if not isinstance(run_id, int):
                 continue
-            logs = get(f"{base}/actions/runs/{run_id}/logs", limit=20 * 1024 * 1024)
-            for terminal in _terminal_records_from_logs(logs):
+            for terminal in terminal_rows_for_run(run):
                 try:
                     terminal_anchor = datetime.fromisoformat(
                         str(terminal.get("scheduled_for_at") or "").replace("Z", "+00:00")
@@ -332,16 +419,23 @@ def _diagnose_scheduled_run(
                     and terminal_anchor.tzinfo is not None
                     and terminal_anchor.astimezone(UTC) == anchor_utc
                     and str(terminal.get("run_id") or "") == str(run_id)
+                    and str(terminal.get("workflow_sha") or "") == str(run.get("head_sha") or "")
+                    and str(terminal.get("run_attempt") or run.get("run_attempt") or "1") == str(run.get("run_attempt") or "1")
                 ):
                     matches.append((run, terminal))
-        if len(matches) != 1:
+        scheduled_matches = [item for item in matches if item[0].get("event") == "schedule"]
+        selected_matches = scheduled_matches or [
+            item for item in matches if item[0].get("event") == "repository_dispatch"
+        ]
+        if len(selected_matches) != 1:
             return {
-                "status": "ambiguous" if len(matches) > 1 else "not_found",
+                "status": "ambiguous" if len(selected_matches) > 1 else "not_found",
                 "reason": "scheduled_terminal_not_unique",
                 "candidate_run_count": len(candidates),
+                "matching_terminal_count": len(matches),
                 "no_resend": True,
             }
-        run, terminal = matches[0]
+        run, terminal = selected_matches[0]
         execution, annotation_evidence_status = execution_diagnostic(run)
         stages_value = terminal.get("stages")
         stages: dict[str, Any] = stages_value if isinstance(stages_value, dict) else {}
@@ -443,6 +537,49 @@ def _parse_requested_at(value: str) -> datetime | None:
     return parsed if parsed.tzinfo is not None and parsed.utcoffset() is not None else None
 
 
+def external_audit_timing(
+    *, slot: str, slot_date: str, scheduled_for_at: str,
+    dispatch_unix: str, requested_at: str, now: datetime,
+) -> dict[str, Any]:
+    """Validate external clock skew and state how long a read-only audit must wait."""
+    selected = _external_slot_anchor(
+        slot=slot,
+        slot_date=slot_date,
+        scheduled_for_at=scheduled_for_at,
+        dispatch_unix=dispatch_unix,
+    )
+    if selected is None:
+        return {"status": "blocked", "reason": "external_audit_slot_identity_invalid"}
+    resolved_slot, anchor = selected
+    requested = _parse_requested_at(requested_at)
+    if requested is None:
+        return {"status": "blocked", "reason": "external_audit_requested_at_invalid"}
+    due = anchor + timedelta(minutes=45)
+    skew = (requested.astimezone(UTC) - due.astimezone(UTC)).total_seconds()
+    if skew < -120:
+        return {
+            "status": "blocked", "reason": "external_audit_requested_too_early",
+            "slot": resolved_slot, "audit_due_at": due.isoformat(),
+            "requested_at": requested.isoformat(), "clock_skew_seconds": int(skew),
+        }
+    current = now.astimezone(UTC)
+    if requested.astimezone(UTC) > current + timedelta(minutes=5):
+        return {"status": "blocked", "reason": "external_audit_requested_at_in_future"}
+    wait_seconds = max(0, int((due.astimezone(UTC) - current).total_seconds() + 0.999))
+    if wait_seconds > 120:
+        return {
+            "status": "blocked", "reason": "external_audit_wait_exceeds_tolerance",
+            "slot": resolved_slot, "audit_due_at": due.isoformat(),
+            "requested_at": requested.isoformat(), "clock_skew_seconds": int(skew),
+        }
+    return {
+        "status": "ready", "reason": "external_audit_time_valid",
+        "slot": resolved_slot, "audit_due_at": due.isoformat(),
+        "requested_at": requested.isoformat(), "clock_skew_seconds": int(skew),
+        "wait_seconds": wait_seconds,
+    }
+
+
 def audit_slot(
     *,
     ledger_path: Path,
@@ -492,15 +629,32 @@ def audit_slot(
         requested_at = _parse_requested_at(external_requested_at)
         if requested_at is None:
             return {"status": "blocked", "reason": "external_audit_requested_at_invalid", **source_fields}
-        due_time = anchor_local + timedelta(minutes=45)
-        if requested_at.astimezone(UTC) < due_time.astimezone(UTC):
-            return {"status": "blocked", "reason": "external_audit_requested_before_deadline", **source_fields}
+        timing = external_audit_timing(
+            slot=slot,
+            slot_date=anchor_local.date().isoformat(),
+            scheduled_for_at=anchor_local.isoformat(),
+            dispatch_unix=external_dispatch_unix,
+            requested_at=external_requested_at,
+            now=now,
+        )
+        if timing.get("status") != "ready":
+            return {"status": "blocked", "reason": timing.get("reason"), **source_fields}
+        source_fields.update({
+            "external_requested_at": timing["requested_at"],
+            "external_clock_skew_seconds": timing["clock_skew_seconds"],
+            "audit_due_at": timing["audit_due_at"],
+        })
         request_utc = requested_at.astimezone(UTC)
         if request_utc > now.astimezone(UTC) + timedelta(minutes=5):
             return {"status": "blocked", "reason": "external_audit_requested_at_in_future", **source_fields}
         request_age_limit = timedelta(hours=72) if external_slot_date else timedelta(hours=12)
         if now.astimezone(UTC) - request_utc > request_age_limit:
             return {"status": "blocked", "reason": "external_audit_request_expired", **source_fields}
+        if now.astimezone(UTC) < datetime.fromisoformat(str(timing["audit_due_at"])).astimezone(UTC):
+            return {
+                "status": "not_due", "reason": "audit_deadline_not_passed",
+                "slot": slot, "wait_seconds": timing["wait_seconds"], **source_fields,
+            }
         slot_date = anchor_local.date().isoformat()
         anchor = scheduled_anchor_key(slot, slot_date)
         selection = (slot, anchor_local)
@@ -650,7 +804,8 @@ def audit_slot(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Read-only audit for scheduled notification receipts")
-    parser.add_argument("--ledger", type=Path, required=True)
+    parser.add_argument("--ledger", type=Path)
+    parser.add_argument("--wait-until-due", action="store_true")
     parser.add_argument("--schedule", default=os.getenv("GITHUB_EVENT_SCHEDULE", ""))
     parser.add_argument("--run-created-at", default=os.getenv("RUN_CREATED_AT", ""))
     parser.add_argument("--ledger-source", default=os.getenv("LEDGER_SOURCE", "data-release"))
@@ -668,6 +823,39 @@ def main() -> int:
     parser.add_argument("--now", help="UTC timestamp override for deterministic tests")
     args = parser.parse_args()
     now = datetime.fromisoformat(args.now.replace("Z", "+00:00")) if args.now else datetime.now(UTC)
+    if args.wait_until_due:
+        timing = external_audit_timing(
+            slot=args.slot,
+            slot_date=args.slot_date,
+            scheduled_for_at=args.scheduled_for_at,
+            dispatch_unix=args.dispatch_unix,
+            requested_at=args.requested_at,
+            now=now,
+        )
+        if timing.get("status") != "ready":
+            print(f"::error::{timing.get('reason', 'external_audit_time_invalid')}")
+            return 1
+        wait_seconds = int(timing.get("wait_seconds") or 0)
+        if not args.now and wait_seconds:
+            due = datetime.fromisoformat(str(timing["audit_due_at"])).astimezone(UTC)
+            time_module.sleep(wait_seconds)
+            while datetime.now(UTC) < due:
+                time_module.sleep(min(1.0, max(0.05, (due - datetime.now(UTC)).total_seconds())))
+        actual_start = datetime.now(UTC) if not args.now else now.astimezone(UTC)
+        if actual_start < datetime.fromisoformat(str(timing["audit_due_at"])).astimezone(UTC):
+            print("::error::external_audit_not_due_after_wait")
+            return 1
+        output_path = os.environ.get("GITHUB_OUTPUT", "").strip()
+        if output_path:
+            with Path(output_path).open("a", encoding="utf-8") as output:
+                output.write(f"audit_due_at={timing['audit_due_at']}\n")
+                output.write(f"external_clock_skew_seconds={timing['clock_skew_seconds']}\n")
+                output.write(f"actual_audit_ready_at={actual_start.isoformat()}\n")
+                output.write(f"waited_seconds={wait_seconds}\n")
+        print(json.dumps({**timing, "actual_audit_ready_at": actual_start.isoformat()}, sort_keys=True))
+        return 0
+    if args.ledger is None:
+        parser.error("--ledger is required unless --wait-until-due is used")
     try:
         recipient_manifest = parse_recipient_manifest(args.recipient_set_manifest)
         expected_recipient_hashes = set(recipient_manifest.latest.recipient_hashes)

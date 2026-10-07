@@ -1,6 +1,6 @@
 import json
 import zipfile
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from io import BytesIO
 
 from src import scheduled_slot_audit as audit
@@ -77,6 +77,33 @@ def test_four_anchor_audit_crons_map_to_exchange_local_deadlines():
         assert selected is not None
         assert selected[0] == expected_slot
         assert selected[1].isoformat() == expected_time
+
+
+def test_terminal_log_parser_reads_v1_v2_and_deduplicates_archive_entries():
+    terminal_v2 = {
+        "schema_version": "notification-terminal-v2",
+        "workflow": "scheduled",
+        "run_id": "123",
+        "run_attempt": 2,
+        "workflow_sha": "a" * 40,
+        "slot": "morning",
+        "scheduled_for_at": "2026-09-25T06:00:00+08:00",
+        "status": "failed",
+        "reason": "writer_queue_failed",
+    }
+    terminal_v1 = {**terminal_v2, "schema_version": "notification-terminal-v1", "run_id": "124"}
+    archive = BytesIO()
+    with zipfile.ZipFile(archive, "w") as output:
+        output.writestr("job/terminal.txt", "prefix " + json.dumps(terminal_v2))
+        output.writestr("job/duplicate.txt", "prefix " + json.dumps(terminal_v2))
+        output.writestr("terminal.json", json.dumps(terminal_v1))
+
+    rows = audit._terminal_records_from_logs(archive.getvalue())
+
+    assert {row["schema_version"] for row in rows} == {
+        "notification-terminal-v1", "notification-terminal-v2",
+    }
+    assert len(rows) == 2
 
 
 def test_delayed_audit_uses_original_run_created_slot_not_latest_slot(monkeypatch, tmp_path):
@@ -265,6 +292,76 @@ def test_external_audit_payload_must_match_original_fixed_slot_anchor(monkeypatc
     assert valid["trigger_source"] == "repository_dispatch"
 
 
+def test_external_audit_clock_skew_allows_up_to_120_seconds_and_bounds_wait():
+    from datetime import timedelta
+
+    due = datetime.fromisoformat("2026-09-28T01:30:00+00:00")
+    common = {
+        "slot": "pre_open",
+        "slot_date": "2026-09-28",
+        "scheduled_for_at": "2026-09-28T08:45:00+08:00",
+        "dispatch_unix": str(int((due - timedelta(seconds=69)).timestamp())),
+    }
+    allowed = audit.external_audit_timing(
+        **common,
+        requested_at=(due - timedelta(seconds=69)).isoformat(),
+        now=due - timedelta(seconds=20),
+    )
+    assert allowed["status"] == "ready"
+    assert allowed["clock_skew_seconds"] == -69
+    assert allowed["wait_seconds"] == 20
+
+    boundary = audit.external_audit_timing(
+        **{**common, "dispatch_unix": str(int((due - timedelta(seconds=120)).timestamp()))},
+        requested_at=(due - timedelta(seconds=120)).isoformat(),
+        now=due - timedelta(seconds=120),
+    )
+    assert boundary["status"] == "ready"
+    assert boundary["wait_seconds"] == 120
+
+    too_early = audit.external_audit_timing(
+        **{**common, "dispatch_unix": str(int((due - timedelta(seconds=121)).timestamp()))},
+        requested_at=(due - timedelta(seconds=121)).isoformat(),
+        now=due,
+    )
+    assert too_early["status"] == "blocked"
+    assert too_early["reason"] == "external_audit_requested_too_early"
+
+
+def test_external_audit_clock_skew_boundaries_include_on_time_and_exact_limit():
+    due = datetime.fromisoformat("2026-09-28T01:30:00+00:00")
+    for seconds_early, expected_status in ((0, "ready"), (69, "ready"), (120, "ready"), (121, "blocked")):
+        requested = due - timedelta(seconds=seconds_early)
+        result = audit.external_audit_timing(
+            slot="pre_open",
+            slot_date="2026-09-28",
+            scheduled_for_at="2026-09-28T08:45:00+08:00",
+            dispatch_unix=str(int(requested.timestamp())),
+            requested_at=requested.isoformat(),
+            now=due,
+        )
+        assert result["status"] == expected_status
+        assert result["clock_skew_seconds"] == -seconds_early
+
+
+def test_external_audit_within_clock_tolerance_does_not_read_ledger_before_due(tmp_path):
+    due = datetime.fromisoformat("2026-09-28T01:30:00+00:00")
+    result = audit.audit_slot(
+        ledger_path=tmp_path / "ledger-must-not-be-read.json",
+        schedule="",
+        now=due - timedelta(seconds=15),
+        external_slot="pre_open",
+        external_slot_date="2026-09-28",
+        external_scheduled_for_at="2026-09-28T08:45:00+08:00",
+        external_dispatch_unix=str(int((due - timedelta(seconds=69)).timestamp())),
+        external_requested_at=(due - timedelta(seconds=69)).isoformat(),
+        expected_recipient_hashes=EXPECTED_RECIPIENT_HASHES,
+    )
+    assert result["status"] == "not_due"
+    assert result["wait_seconds"] == 15
+    assert not (tmp_path / "ledger-must-not-be-read.json").exists()
+
+
 def test_external_audit_requires_received_at_and_rejects_future_clock(monkeypatch, tmp_path):
     monkeypatch.setattr(audit, "_calendar_snapshot", lambda *_args: {
         "markets": {"taiwan_cash": _cash(True), "taiwan_futures": _futures(True)}
@@ -340,9 +437,20 @@ def test_missing_claim_is_diagnosed_from_exact_read_only_workflow_terminal(monke
         assert timeout == 15
         requested_urls.append(request.full_url)
         if "/actions/workflows/" in request.full_url and "/runs?" in request.full_url:
-            return Response(json.dumps({"workflow_runs": [{
+            if "page=2" in request.full_url:
+                return Response(json.dumps({"total_count": 2, "workflow_runs": [{
+                    "id": 12346,
+                    "path": ".github/workflows/other.yml",
+                    "event": "schedule",
+                    "created_at": "2026-09-28T01:00:00Z",
+                    "head_sha": "b" * 40,
+                    "status": "completed",
+                    "conclusion": "success",
+                }]}).encode())
+            return Response(json.dumps({"total_count": 2, "workflow_runs": [{
                 "id": 12345,
                 "path": ".github/workflows/scheduled-brief.yml",
+                "event": "schedule",
                 "created_at": "2026-09-28T01:00:00Z",
                 "head_sha": "a" * 40,
                 "html_url": "https://github.com/acme/prstk/actions/runs/12345",
@@ -377,8 +485,97 @@ def test_missing_claim_is_diagnosed_from_exact_read_only_workflow_terminal(monke
     assert diagnosis["stages"]["public_gate"] == "true"
     assert diagnosis["execution_diagnostic"]["classification"] == "workflow_step_failed"
     assert diagnosis["annotation_evidence_status"] == "not_required"
-    assert len(requested_urls) == 3
+    assert len(requested_urls) == 5
     assert all("test-token" not in url for url in requested_urls)
+
+
+def test_terminal_artifact_is_bound_to_run_attempt_and_preferred_to_logs():
+    anchor = "2026-09-28T08:45:00+08:00"
+    terminal = {
+        "schema_version": "notification-terminal-v2",
+        "workflow": "scheduled",
+        "run_id": "12345",
+        "run_attempt": 2,
+        "workflow_sha": "a" * 40,
+        "slot": "pre_open",
+        "scheduled_for_at": anchor,
+        "expected": True,
+        "status": "failed",
+        "reason": "writer_queue_timeout",
+        "stages": {"writer_queue": "failed", "prepare": "not_run"},
+    }
+    archive_bytes = BytesIO()
+    with zipfile.ZipFile(archive_bytes, "w") as archive:
+        archive.writestr("terminal.json", json.dumps(terminal))
+    terminal_zip = archive_bytes.getvalue()
+
+    class Response:
+        def __init__(self, body):
+            self.body = body
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self, _limit=-1):
+            return self.body
+
+    requested_urls = []
+
+    def opener(request, timeout):
+        requested_urls.append(request.full_url)
+        if "/actions/workflows/" in request.full_url and "/runs?" in request.full_url:
+            return Response(json.dumps({"total_count": 1, "workflow_runs": [{
+                "id": 12345,
+                "run_attempt": 2,
+                "path": ".github/workflows/scheduled-brief.yml",
+                "event": "schedule",
+                "created_at": "2026-09-28T01:00:00Z",
+                "head_sha": "a" * 40,
+                "status": "completed",
+                "conclusion": "failure",
+            }]}).encode())
+        if "/actions/runs/12345/artifacts?" in request.full_url:
+            return Response(json.dumps({"total_count": 1, "artifacts": [{
+                "id": 789,
+                "name": "scheduled-terminal-12345-attempt-2",
+                "expired": False,
+                "workflow_run": {"id": 12345},
+            }]}).encode())
+        if "/actions/artifacts/789/zip" in request.full_url:
+            return Response(terminal_zip)
+        if "/actions/runs/12345/jobs?" in request.full_url:
+            return Response(json.dumps({"total_count": 1, "jobs": [{
+                "id": 456,
+                "name": "refresh-notify-deploy",
+                "status": "completed",
+                "conclusion": "failure",
+                "runner_id": 88,
+                "started_at": "2026-09-28T01:00:01Z",
+                "steps": [{
+                    "name": "Wait for production writer queue",
+                    "status": "completed",
+                    "conclusion": "failure",
+                    "started_at": "2026-09-28T01:01:00Z",
+                }],
+            }]}).encode())
+        raise AssertionError(f"unexpected API request: {request.full_url}")
+
+    diagnosis = audit._diagnose_scheduled_run(
+        repository="acme/prstk",
+        token="read-only-token",
+        slot="pre_open",
+        anchor_local=datetime.fromisoformat(anchor),
+        now=datetime.fromisoformat("2026-09-28T01:31:00Z"),
+        opener=opener,
+    )
+
+    assert diagnosis["status"] == "matched"
+    assert diagnosis["terminal_reason"] == "writer_queue_timeout"
+    assert diagnosis["run_id"] == 12345
+    assert not any("/actions/runs/12345/logs" in url for url in requested_urls)
 
 
 def test_recipient_manifest_rejects_invalid_values_without_falling_back(monkeypatch):
@@ -413,6 +610,10 @@ def test_audit_workflow_receives_versioned_allowlist_without_sender_credentials(
     assert "SCHEDULED_RECIPIENT_HASHES:" not in workflow
     assert "TELEGRAM_BOT_TOKEN" not in workflow
     assert "SUPABASE_SERVICE_ROLE_KEY" not in workflow
+    assert "--wait-until-due" in workflow
+    assert workflow.index("Validate external audit timestamp and wait until due") < workflow.index(
+        "Checkout published receipt ledger after audit deadline"
+    )
 
 
 def test_recipient_set_version_binds_hashes_and_effective_time():

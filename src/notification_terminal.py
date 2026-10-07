@@ -110,6 +110,7 @@ def _result(
         "schema_version": "notification-terminal-v2",
         "workflow": workflow,
         "run_id": _text(values, "GITHUB_RUN_ID"),
+        "run_attempt": _count(values, "GITHUB_RUN_ATTEMPT") or 1,
         "workflow_sha": _text(values, "GITHUB_SHA"),
         "slot": _text(values, "SCHEDULED_SLOT", _text(values, "SLOT", _text(values, "CANDIDATE_TYPE", "unknown"))),
         "scheduled_for_at": _text(values, "SCHEDULED_FOR_AT"),
@@ -131,8 +132,20 @@ def _result(
         "sender_status": _text(values, "SEND_STATUS", "not_attempted") or "not_attempted",
         "writer_queue_error_code": _text(values, "WRITER_QUEUE_ERROR_CODE"),
         "writer_queue_diagnostic_schema_version": _text(values, "WRITER_QUEUE_DIAGNOSTIC_SCHEMA_VERSION"),
+        "writer_queue_workflow_path": _text(values, "WRITER_QUEUE_WORKFLOW_PATH"),
+        "writer_queue_workflow_sha": _text(values, "WRITER_QUEUE_WORKFLOW_SHA"),
+        "writer_queue_contract_fingerprint": _text(values, "WRITER_QUEUE_CONTRACT_FINGERPRINT"),
         "writer_queue_entry_at": _text(values, "WRITER_QUEUE_ENTRY_AT"),
         "writer_queue_blocker_run_ids": _text(values, "WRITER_QUEUE_BLOCKER_RUN_IDS"),
+        "writer_queue_error_candidate_run_id": _text(values, "WRITER_QUEUE_ERROR_CANDIDATE_RUN_ID"),
+        "writer_queue_error_candidate_attempt": _text(values, "WRITER_QUEUE_ERROR_CANDIDATE_ATTEMPT"),
+        "writer_queue_error_candidate_job_id": _text(values, "WRITER_QUEUE_ERROR_CANDIDATE_JOB_ID"),
+        "writer_queue_error_candidate_status": _text(values, "WRITER_QUEUE_ERROR_CANDIDATE_STATUS"),
+        "writer_queue_error_candidate_job_status": _text(values, "WRITER_QUEUE_ERROR_CANDIDATE_JOB_STATUS"),
+        "writer_queue_error_candidate_runner_assigned": _text(values, "WRITER_QUEUE_ERROR_CANDIDATE_RUNNER_ASSIGNED"),
+        "writer_queue_error_candidate_observed_steps": _text(values, "WRITER_QUEUE_ERROR_CANDIDATE_OBSERVED_STEPS"),
+        "writer_queue_error_candidate_workflow_sha": _text(values, "WRITER_QUEUE_ERROR_CANDIDATE_WORKFLOW_SHA"),
+        "writer_queue_error_candidate_contract_fingerprint": _text(values, "WRITER_QUEUE_ERROR_CANDIDATE_CONTRACT_FINGERPRINT"),
         "writer_queue_blocker_details": _text(values, "WRITER_QUEUE_BLOCKER_DETAILS"),
         "writer_queue_attempt": _text(values, "WRITER_QUEUE_ATTEMPT"),
         "writer_queue_budget_seconds": _count(values, "WRITER_QUEUE_BUDGET_SECONDS"),
@@ -375,7 +388,11 @@ def evaluate_scheduled_terminal(values: Mapping[str, str]) -> dict[str, Any]:
         queue_reason = _text(values, "WRITER_QUEUE_ERROR_CODE") or "writer_queue_failed_before_prepare"
         return _result(
             values, "scheduled", status="failed", reason=queue_reason,
-            expected=expected or obligation in {"report_required", "holiday_notice_required"},
+            expected=(
+                expected
+                or obligation in {"report_required", "holiday_notice_required"}
+                or _text(values, "WINDOW_DELIVERY_INTENT") == "notify_candidate"
+            ),
             failure=True, no_resend=send_was_possible,
         )
     if _flag(values, "SCHEDULE_EXPIRY_STATUS"):
@@ -595,10 +612,22 @@ def append_summary(path: str, terminal: Mapping[str, Any]) -> None:
         f"{terminal.get('stages', {}).get('public_gate', 'unknown')}\n",
         f"- writer_queue: {terminal.get('stages', {}).get('writer_queue', 'unknown')} "
         f"(schema={terminal.get('writer_queue_diagnostic_schema_version') or 'unknown'}; "
+        f"workflow={terminal.get('writer_queue_workflow_path') or 'unknown'}; "
+        f"sha={terminal.get('writer_queue_workflow_sha') or 'unknown'}; "
+        f"contract={terminal.get('writer_queue_contract_fingerprint') or 'unknown'}; "
         f"entered={terminal.get('writer_queue_entry_at') or 'unknown'}; "
         f"error={terminal.get('writer_queue_error_code') or 'none'}; "
         f"blockers={terminal.get('writer_queue_blocker_run_ids') or 'none'}; "
-        f"blocker_details={terminal.get('writer_queue_blocker_details') or 'none'})\n",
+            f"blocker_details={terminal.get('writer_queue_blocker_details') or 'none'}; "
+            f"unclassified_candidate={terminal.get('writer_queue_error_candidate_run_id') or 'none'}/"
+            f"{terminal.get('writer_queue_error_candidate_attempt') or 'none'}/"
+            f"{terminal.get('writer_queue_error_candidate_job_id') or 'none'}; "
+            f"state={terminal.get('writer_queue_error_candidate_status') or 'unknown'}/"
+            f"{terminal.get('writer_queue_error_candidate_job_status') or 'unknown'}; "
+            f"runner={terminal.get('writer_queue_error_candidate_runner_assigned') or 'unknown'}; "
+            f"steps={terminal.get('writer_queue_error_candidate_observed_steps') or 'unknown'}; "
+            f"sha={terminal.get('writer_queue_error_candidate_workflow_sha') or 'unknown'}; "
+            f"contract={terminal.get('writer_queue_error_candidate_contract_fingerprint') or 'unknown'})\n",
         f"- queue attempt / budget / waited / remaining: {terminal.get('writer_queue_attempt') or 'unknown'} / "
         f"{terminal.get('writer_queue_budget_seconds') if terminal.get('writer_queue_budget_seconds') is not None else 'unknown'} / "
         f"{terminal.get('writer_queue_waited_seconds') if terminal.get('writer_queue_waited_seconds') is not None else 'unknown'} / "
@@ -637,6 +666,14 @@ def main() -> int:
         if args.workflow == "official"
         else evaluate_scheduled_terminal(values)
     )
+    artifact_path = os.environ.get("SCHEDULED_TERMINAL_PATH", "").strip()
+    if artifact_path:
+        destination = Path(artifact_path)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(
+            json.dumps(terminal, ensure_ascii=False, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
     append_summary(os.environ.get("GITHUB_STEP_SUMMARY", ""), terminal)
     print(json.dumps(terminal, ensure_ascii=False, sort_keys=True))
     if terminal["failure"]:

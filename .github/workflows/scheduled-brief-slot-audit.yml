@@ -30,17 +30,33 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 1
-      - name: Checkout published receipt ledger (read-only)
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11"
+      - name: Validate external audit timestamp and wait until due
+        id: audit_timing
+        if: github.event_name == 'repository_dispatch'
+        env:
+          AUDIT_SLOT: ${{ github.event.client_payload.slot || '' }}
+          AUDIT_SLOT_DATE: ${{ github.event.client_payload.slot_date || '' }}
+          AUDIT_SCHEDULED_FOR_AT: ${{ github.event.client_payload.scheduled_for_at || '' }}
+          AUDIT_DISPATCH_UNIX: ${{ github.event.client_payload.dispatch_unix || '' }}
+          AUDIT_REQUESTED_AT: ${{ github.event.client_payload.dispatch_unix || '' }}
+        run: >-
+          python -m src.scheduled_slot_audit --wait-until-due
+          --slot "$AUDIT_SLOT"
+          --slot-date "$AUDIT_SLOT_DATE"
+          --scheduled-for-at "$AUDIT_SCHEDULED_FOR_AT"
+          --dispatch-unix "$AUDIT_DISPATCH_UNIX"
+          --requested-at "$AUDIT_REQUESTED_AT"
+      - name: Checkout published receipt ledger after audit deadline (read-only)
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: data-release
           path: receipt-ledger
           fetch-depth: 1
           persist-credentials: false
-      - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
-        with:
-          python-version: "3.11"
       - name: Install read-only audit dependencies
         run: pip install -r requirements-production.txt
       - name: Capture immutable audit run creation time

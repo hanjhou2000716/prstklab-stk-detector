@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import json
+
 from src.notification_terminal import (
     append_summary,
     evaluate_official_terminal,
     evaluate_scheduled_terminal,
+    main,
 )
 
 
@@ -351,6 +354,13 @@ def test_scheduled_queue_timeout_keeps_root_cause_and_unrun_stages() -> None:
         WRITER_QUEUE_OUTCOME="failure",
         WRITER_QUEUE_ERROR_CODE="writer_queue_timeout",
         WRITER_QUEUE_BLOCKER_RUN_IDS="37349718666",
+        WRITER_QUEUE_ERROR_CANDIDATE_RUN_ID="37518565189",
+        WRITER_QUEUE_ERROR_CANDIDATE_ATTEMPT="1",
+        WRITER_QUEUE_ERROR_CANDIDATE_JOB_ID="112457723411",
+        WRITER_QUEUE_ERROR_CANDIDATE_STATUS="waiting",
+        WRITER_QUEUE_ERROR_CANDIDATE_JOB_STATUS="waiting",
+        WRITER_QUEUE_ERROR_CANDIDATE_RUNNER_ASSIGNED="false",
+        WRITER_QUEUE_ERROR_CANDIDATE_OBSERVED_STEPS="0",
         PREPARE_OUTCOME="skipped",
         SEND_OUTCOME="skipped",
         SEND_STATUS="not_attempted",
@@ -362,6 +372,10 @@ def test_scheduled_queue_timeout_keeps_root_cause_and_unrun_stages() -> None:
     assert result["expected"] is True
     assert result["no_resend"] is False
     assert result["writer_queue_blocker_run_ids"] == "37349718666"
+    assert result["writer_queue_error_candidate_run_id"] == "37518565189"
+    assert result["writer_queue_error_candidate_job_id"] == "112457723411"
+    assert result["writer_queue_error_candidate_status"] == "waiting"
+    assert result["writer_queue_error_candidate_runner_assigned"] == "false"
     for stage in ("prepare", "deployment", "public_gate", "sender", "receipt", "ledger"):
         assert result["stages"][stage] == "not_run"
 
@@ -475,6 +489,13 @@ def test_queue_timeout_summary_names_blocker_and_unrun_delivery_stages(tmp_path)
         WRITER_QUEUE_OUTCOME="failure",
         WRITER_QUEUE_ERROR_CODE="writer_queue_timeout",
         WRITER_QUEUE_BLOCKER_RUN_IDS="37349718666",
+        WRITER_QUEUE_ERROR_CANDIDATE_RUN_ID="37518565189",
+        WRITER_QUEUE_ERROR_CANDIDATE_ATTEMPT="1",
+        WRITER_QUEUE_ERROR_CANDIDATE_JOB_ID="112457723411",
+        WRITER_QUEUE_ERROR_CANDIDATE_STATUS="waiting",
+        WRITER_QUEUE_ERROR_CANDIDATE_JOB_STATUS="waiting",
+        WRITER_QUEUE_ERROR_CANDIDATE_RUNNER_ASSIGNED="false",
+        WRITER_QUEUE_ERROR_CANDIDATE_OBSERVED_STEPS="0",
         PREPARE_OUTCOME="skipped",
         SEND_OUTCOME="skipped",
         SEND_SENT="false",
@@ -485,8 +506,29 @@ def test_queue_timeout_summary_names_blocker_and_unrun_delivery_stages(tmp_path)
     append_summary(str(destination), result)
 
     summary = destination.read_text(encoding="utf-8")
-    assert "writer_queue: failed (schema=unknown; entered=unknown; error=writer_queue_timeout; blockers=37349718666" in summary
+    assert "writer_queue: failed (schema=unknown; workflow=unknown; sha=unknown; contract=unknown; entered=unknown; error=writer_queue_timeout; blockers=37349718666" in summary
+    assert "unclassified_candidate=37518565189/1/112457723411" in summary
     assert "not_run / not_run / not_run / not_run / not_run / not_run" in summary
+
+
+def test_terminal_cli_persists_attempt_bound_json_artifact(tmp_path, monkeypatch) -> None:
+    destination = tmp_path / "scheduled-terminal.json"
+    monkeypatch.setenv("NOTIFICATION_REQUESTED", "false")
+    monkeypatch.setenv("NOTIFICATION_EXPECTED", "false")
+    monkeypatch.setenv("SCHEDULED_SLOT", "morning")
+    monkeypatch.setenv("GITHUB_RUN_ID", "12345")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "2")
+    monkeypatch.setenv("GITHUB_SHA", "a" * 40)
+    monkeypatch.setenv("SCHEDULED_TERMINAL_PATH", str(destination))
+    monkeypatch.delenv("GITHUB_STEP_SUMMARY", raising=False)
+    monkeypatch.setattr("sys.argv", ["notification_terminal", "--workflow", "scheduled"])
+
+    assert main() == 0
+    result = json.loads(destination.read_text(encoding="utf-8"))
+    assert result["schema_version"] == "notification-terminal-v2"
+    assert result["run_id"] == "12345"
+    assert result["run_attempt"] == 2
+    assert result["workflow_sha"] == "a" * 40
 
 
 def test_expired_summary_includes_the_original_anchor_and_deadline(tmp_path) -> None:
