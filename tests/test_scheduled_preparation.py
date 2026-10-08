@@ -3,6 +3,7 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
+from src.market_source_watch import TAIPEI
 from src.scheduled_preparation import coordinate_preparation, preparation_window
 
 
@@ -10,8 +11,8 @@ def test_post_close_window_keeps_revalidation_budget_after_1440_source_check():
     anchor = "2026-10-08T14:20:00+08:00"
     started = datetime.fromisoformat("2026-10-08T14:32:22+08:00").timestamp()
     window = preparation_window("post_close", anchor, started)
-    assert datetime.fromtimestamp(window.first_attempt_deadline).isoformat() == "2026-10-08T14:40:00"
-    assert datetime.fromtimestamp(window.overall_deadline).isoformat() == "2026-10-08T14:45:00"
+    assert datetime.fromtimestamp(window.first_attempt_deadline, TAIPEI).isoformat() == "2026-10-08T14:40:00+08:00"
+    assert datetime.fromtimestamp(window.overall_deadline, TAIPEI).isoformat() == "2026-10-08T14:45:00+08:00"
     assert window.overall_deadline > window.first_attempt_deadline
 
 
