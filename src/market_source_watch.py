@@ -85,9 +85,15 @@ def _probe(
             return None
         fields = (
             "ticker", "quote_date", "price", "change", "change_percent",
-            "contract_month", "session", "source_label", "source_url",
+            "previous_close", "quote_time", "quote_basis", "instrument_id", "freshness",
+            "data_status", "source", "source_tier", "quote_source", "source_label", "source_url",
+            "contract_month", "session", "contract_basis", "quote_delayed", "backup_used",
+            "official_fallback_used", "routine_eligible", "alert_eligible",
         )
-        return {key: quote[key] for key in fields if key in quote}
+        compact = {key: quote[key] for key in fields if key in quote}
+        attempts = cash_attempts if str(quote.get("ticker") or "") == "TAIEX" else futures_attempts
+        compact["source_attempts"] = attempts
+        return compact
 
     return {
         "checked_at": datetime.now(TAIPEI).isoformat(),
@@ -172,6 +178,15 @@ def watch_until(
     attempts = 0
     last: dict[str, Any] = {}
     while True:
+        current = now()
+        if current > deadline:
+            return {
+                "status": "source_watch_cutoff_reached",
+                "attempts": attempts,
+                "last_probe": last,
+                "watch_started_at": started.isoformat(),
+                "watch_finished_at": current.isoformat(),
+            }
         attempts += 1
         try:
             last = probe()

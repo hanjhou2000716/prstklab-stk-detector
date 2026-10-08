@@ -38,14 +38,16 @@ def test_post_close_prepare_overlaps_final_source_watch_and_limits_rebuild_to_on
         "- name: Revalidate prepared release base", 1
     )[0]
 
-    assert "--final-source-check --result-file" in prepare
-    assert 'first_attempt_deadline=' in prepare
-    assert 'max_prepare_deadline=$((prepare_started + 780))' in prepare
-    assert "source_rebuild_attempts=" in prepare
-    assert 'if [ "$attempt" -eq 1 ] && [ "$source_rebuild_needed" = "true" ]; then' in prepare
-    assert "TELEGRAM_BOT_TOKEN=''" in prepare
-    assert "SUPABASE_SERVICE_ROLE_KEY=''" in prepare
-    assert "GITHUB_STEP_SUMMARY='' GITHUB_OUTPUT=''" in prepare
+    assert "run: python -m src.scheduled_preparation" in prepare
+    assert "OFFICIAL_CLOSE_WATCH_STATUS" in prepare
+    assert "scheduled-preparation-${{ github.run_id }}-attempt-${{ github.run_attempt }}" in prepare
+    coordinator = (Path(__file__).resolve().parents[1] / "src" / "scheduled_preparation.py").read_text(encoding="utf-8")
+    assert "first_attempt_deadline" in coordinator
+    assert "overall_deadline" in coordinator
+    assert "source_rebuild_attempts" in coordinator
+    assert '"--final-source-check", "--result-file"' in coordinator
+    assert '"SUPABASE_SERVICE_ROLE_KEY"' in coordinator
+    assert '"GITHUB_STEP_SUMMARY", "GITHUB_OUTPUT"' in coordinator
 
 
 def test_automatic_scheduled_dispatch_enables_notification_but_manual_stays_opt_in():

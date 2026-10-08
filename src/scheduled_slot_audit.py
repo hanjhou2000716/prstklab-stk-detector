@@ -15,8 +15,8 @@ from datetime import time as day_time
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.parse import urlencode, urlparse
+from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
 
 from src.schedule_contract import NEW_YORK, TAIPEI, fixed_scheduled_for, scheduled_anchor_key
 from src.scheduled_recipient_manifest import RecipientManifest, parse_recipient_manifest, recipient_set_version
@@ -29,6 +29,38 @@ SCHEDULE_TO_SLOT = {
     "45 13 * * 1-5": "us_premarket",
     "45 14 * * 1-5": "us_premarket",
 }
+
+
+class _ArtifactRedirectHandler(HTTPRedirectHandler):
+    """Strip GitHub credentials before following a signed artifact redirect."""
+
+    max_redirections = 3
+    max_repeats = 1
+
+    def redirect_request(self, request, response, code, message, headers, new_url):
+        source = urlparse(request.full_url)
+        target = urlparse(new_url)
+        artifact_endpoint = re.fullmatch(
+            r"/repos/[^/]+/[^/]+/actions/(?:artifacts/\d+/zip|runs/\d+/logs)",
+            source.path,
+        )
+        artifact_host = re.fullmatch(r"productionresultssa\d+\.blob\.core\.windows\.net", target.hostname or "")
+        if (
+            source.scheme != "https" or source.hostname != "api.github.com"
+            or not artifact_endpoint or target.scheme != "https" or not artifact_host
+            or target.username or target.password or target.fragment
+        ):
+            raise URLError("artifact_redirect_destination_rejected")
+        redirected = super().redirect_request(request, response, code, message, headers, new_url)
+        if redirected is not None:
+            for name in ("Authorization", "Cookie", "Proxy-Authorization", "X-GitHub-Api-Version"):
+                redirected.remove_header(name)
+        return redirected
+
+
+def _open_artifact_url(request: Request, *, timeout: int):
+    """Use the constrained redirect policy for artifact/log API downloads."""
+    return build_opener(_ArtifactRedirectHandler()).open(request, timeout=timeout)
 
 
 def _candidate_occurrence(schedule: str, reference: datetime) -> datetime | None:
@@ -243,7 +275,17 @@ def _diagnose_scheduled_run(
 
     def get(url: str, *, limit: int) -> bytes:
         request = Request(url, headers=headers)
-        with opener(request, timeout=15) as response:
+        parsed_url = urlparse(url)
+        is_github_artifact = bool(re.fullmatch(
+            r"/repos/[^/]+/[^/]+/actions/(?:artifacts/\d+/zip|runs/\d+/logs)",
+            parsed_url.path,
+        ))
+        open_response = (
+            _open_artifact_url
+            if opener is urlopen and is_github_artifact
+            else opener
+        )
+        with open_response(request, timeout=15) as response:
             body = response.read(limit + 1)
         if len(body) > limit:
             raise ValueError("github_response_too_large")

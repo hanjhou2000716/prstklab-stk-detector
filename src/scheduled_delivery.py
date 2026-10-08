@@ -1018,11 +1018,16 @@ def prepare(
     *,
     slot_context: dict[str, Any] | None = None,
     notification_requested: bool | None = None,
+    official_close_overrides: dict[str, Any] | None = None,
 ) -> dict:
     """Create the exact snapshot that will later be deployed and delivered."""
     production_started_at = datetime.now(UTC).isoformat()
     try:
-        snapshot = build_market_snapshot()
+        snapshot = (
+            build_market_snapshot(official_close_overrides=official_close_overrides)
+            if official_close_overrides is not None
+            else build_market_snapshot()
+        )
     except Exception as exc:
         error_type = type(exc).__name__
         _write_decision_output(
@@ -1996,6 +2001,7 @@ def main() -> int:
     parser.add_argument("--prepare-only", action="store_true")
     parser.add_argument("--send-only", action="store_true")
     parser.add_argument("--snapshot", type=Path, default=Path("site/data/market.json"))
+    parser.add_argument("--official-close-overrides", type=Path)
     parser.add_argument("--manifest", type=Path, default=Path("site/data/release-manifest.json"))
     parser.add_argument("--public-url", default=None)
     parser.add_argument("--slot-key", default=None)
@@ -2032,6 +2038,10 @@ def main() -> int:
             args.snapshot,
             slot_context=context,
             notification_requested=notification_requested,
+            official_close_overrides=(
+                json.loads(args.official_close_overrides.read_text(encoding="utf-8"))
+                if args.official_close_overrides else None
+            ),
         )
     else:
         send(

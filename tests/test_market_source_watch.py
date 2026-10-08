@@ -54,6 +54,22 @@ def test_final_source_watch_overlaps_preparation_and_reaches_anchor_plus_twenty(
     assert probes[-1] == datetime(2026, 10, 5, 14, 40, tzinfo=TAIPEI)
 
 
+def test_final_source_watch_does_not_start_a_probe_after_cutoff():
+    current = [datetime(2026, 10, 5, 14, 40, 1, tzinfo=TAIPEI)]
+    probes = []
+
+    result = watch_until(
+        deadline=datetime(2026, 10, 5, 14, 40, tzinfo=TAIPEI),
+        probe=lambda: probes.append(current[0]) or {},
+        now=lambda: current[0],
+        stop_when_complete=False,
+    )
+
+    assert result["status"] == "source_watch_cutoff_reached"
+    assert result["attempts"] == 0
+    assert probes == []
+
+
 def test_watch_until_stops_when_both_same_day_official_quotes_arrive():
     current = [datetime(2026, 10, 5, 14, 20, tzinfo=TAIPEI)]
     calls = []
@@ -74,7 +90,7 @@ def test_watch_until_stops_when_both_same_day_official_quotes_arrive():
 
 
 def test_run_watch_uses_independent_calendars_and_fixed_anchor(monkeypatch):
-    from src import market_data, taifex_calendar
+    from src import market_data, market_source_watch, taifex_calendar
 
     monkeypatch.setattr(market_data, "get_market_status", lambda _market, today: {
         "calendar_status": "confirmed_open" if today.isoformat() == "2026-10-05" else "confirmed_closed",
@@ -87,6 +103,17 @@ def test_run_watch_uses_independent_calendars_and_fixed_anchor(monkeypatch):
     def probe(cash_target, futures_target):
         seen.append((cash_target, futures_target))
         return {"cash_target_available": True, "futures_target_available": True}
+
+    def run_immediate_watch(*, deadline, probe, **_kwargs):
+        assert deadline == datetime(2026, 10, 5, 14, 32, tzinfo=TAIPEI)
+        result = probe()
+        return {
+            "status": "both_official_closes_available",
+            "attempts": 1,
+            "last_probe": result,
+        }
+
+    monkeypatch.setattr(market_source_watch, "watch_until", run_immediate_watch)
 
     result = run_watch("2026-10-05T14:20:00+08:00", probe=probe)
     assert result["status"] == "both_official_closes_available"

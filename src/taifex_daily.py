@@ -29,7 +29,9 @@ _REGULAR_SESSIONS = {"一般", "一般交易時段", "regular", "regularsession"
 
 
 def _key(value: Any) -> str:
-    return re.sub(r"[\s_()（）%％]", "", str(value or "")).casefold()
+    # Percent signs distinguish percentage fields from their point-value
+    # counterparts (for example, ``Change`` versus ``Change%``).
+    return re.sub(r"[\s_()（）]", "", str(value or "")).replace("％", "%").casefold()
 
 
 def _value(row: dict[str, Any], *names: str) -> Any:
@@ -84,7 +86,14 @@ def _regular_session(value: Any) -> bool:
 
 
 def _contract_month(value: Any) -> str:
-    text = str(value or "").strip()
+    if isinstance(value, bool):
+        return ""
+    if isinstance(value, int):
+        text = str(value)
+    elif isinstance(value, float) and value.is_integer():
+        text = str(int(value))
+    else:
+        text = str(value or "").strip()
     match = re.fullmatch(r"(20\d{2})(0[1-9]|1[0-2])", text)
     return f"{match.group(1)}{match.group(2)}" if match else ""
 
@@ -272,7 +281,7 @@ def _normalized_row(row: dict[str, Any]) -> dict[str, Any] | None:
     day = _date(_value(row, "Date", "日期", "交易日期"))
     price = _number(_value(row, "Last", "LastPrice", "LastTradePrice", "最後成交價", "最後成交價(點)"))
     change = _number(_value(row, "Change", "ChangePrice", "漲跌價", "漲跌點"))
-    percent = _number(_value(row, "ChangePercent", "Change%", "漲跌%", "漲跌幅"))
+    percent = _number(_value(row, "ChangePercent", "Change%", "%", "漲跌%", "漲跌幅"))
     # Both key identity and regular-session label must be explicit. Never infer
     # the session from the clock: TAIFEX night trades are date-attributed.
     if contract != "TX" or not _regular_session(session) or not month or not day or price is None:
@@ -283,6 +292,12 @@ def _normalized_row(row: dict[str, Any]) -> dict[str, Any] | None:
         change = round(price * percent / (100 + percent), 2)
     if percent is None and change is not None and price - change > 0:
         percent = change_percent(price, price - change)
+    elif change is not None and percent is not None and price - change > 0:
+        derived_percent = change_percent(price, price - change)
+        # TAIFEX publishes percent to two decimal places. Reject rows where
+        # the point and percentage columns cannot describe the same quote.
+        if derived_percent is None or round(derived_percent, 2) != round(percent, 2):
+            return None
     if change is None or percent is None or month < day.strftime("%Y%m"):
         return None
     return {"date": day, "contract_month": month, "price": price, "change": change, "change_percent": percent}
@@ -341,7 +356,10 @@ def parse_daily_html(html: str, *, now: datetime | None = None) -> dict[str, Any
     if day_table is None:
         return None
     try:
-        tables = pd.read_html(StringIO(str(day_table)))
+        # Preserve identifier-like contract-month cells as text. Pandas
+        # otherwise infers the integer column as float because subtotal rows
+        # contain blanks, turning 202610 into the invalid string "202610.0".
+        tables = pd.read_html(StringIO(str(day_table)), converters={0: str, 1: str, 5: str, 6: str, 7: str})
     except (ValueError, ImportError):
         return None
     candidates: list[dict[str, Any]] = []
