@@ -6,6 +6,7 @@ import json
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 from src.intel_contract import normalize_quote_record
@@ -1117,7 +1118,44 @@ def _replace_with_verified_taiex_close(
     return result
 
 
-def build_market_snapshot() -> dict[str, Any]:
+def _official_close_override(
+    overrides: dict[str, Any] | None, ticker: str, *, now: datetime,
+) -> dict[str, Any] | None:
+    if not isinstance(overrides, dict):
+        return None
+    quote = overrides.get("cash_quote" if ticker == "TAIEX" else "futures_quote")
+    if not isinstance(quote, dict) or str(quote.get("ticker") or "").upper() != ticker:
+        return None
+    attempts = quote.get("source_attempts")
+    if not isinstance(attempts, list) or not attempts:
+        return None
+    observed = str(quote.get("quote_date") or "")[:10]
+    if not observed or observed > now.date().isoformat():
+        return None
+    if ticker == "TXF":
+        from src.taifex_daily import qualify_txf_quote_for_display
+
+        qualification = qualify_txf_quote_for_display(quote, now=now)
+        if qualification.get("verified") is not True:
+            return None
+        return {**quote, "source_attempts": attempts}
+    source = urlparse(str(quote.get("source_url") or ""))
+    if (
+        source.scheme != "https" or source.hostname not in {"www.twse.com.tw", "openapi.twse.com.tw"}
+        or quote.get("source_tier") != "official" or quote.get("quote_basis") != "TWSE_TAIEX_DAILY_CLOSE"
+        or not any(
+            isinstance(item, dict) and item.get("outcome") == "verified"
+            and str(item.get("observed_date") or "") == observed
+            for item in attempts
+        )
+    ):
+        return None
+    if any(quote.get(field) is None for field in ("price", "change", "change_percent")):
+        return None
+    return {**quote, "source_attempts": attempts}
+
+
+def build_market_snapshot(*, official_close_overrides: dict[str, Any] | None = None) -> dict[str, Any]:
     from src.adapters.catalog import build_adapter_catalog
     from src.market_data_adapter import bind_adapter_contract
 
@@ -1227,6 +1265,9 @@ def build_market_snapshot() -> dict[str, Any]:
                     backup_store, now=taipei_now, diagnostics=txf_attempts,
                     excluded_observed_dates=taifex_conflicted_dates,
                 )
+            final_txf = _official_close_override(official_close_overrides, "TXF", now=taipei_now)
+            if final_txf is not None:
+                txf = final_txf
             indices = [item for item in indices if str(item.get("ticker") or "") != "TXF"]
             if txf is not None:
                 txf["source_attempts"] = txf_attempts
@@ -1383,6 +1424,9 @@ def build_market_snapshot() -> dict[str, Any]:
             target_date=expected_taiex_date,
             diagnostics=taiex_source_attempts,
         )
+    final_taiex = _official_close_override(official_close_overrides, "TAIEX", now=taipei_now)
+    if final_taiex is not None:
+        official_taiex = final_taiex
     if official_taiex is None:
         official_taiex = _verified_taiex_backup(
             backup_store,

@@ -3,6 +3,8 @@ import zipfile
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
 
+import pytest
+
 from src import scheduled_slot_audit as audit
 
 EXPECTED_RECIPIENT_HASHES = {"aaaaaaaaaaaa", "bbbbbbbbbbbb"}
@@ -598,6 +600,31 @@ def test_terminal_artifact_is_bound_to_run_attempt_and_preferred_to_logs():
     assert diagnosis["terminal_reason"] == "writer_queue_timeout"
     assert diagnosis["run_id"] == 12345
     assert not any("/actions/runs/12345/logs" in url for url in requested_urls)
+
+
+def test_artifact_cross_host_redirect_drops_github_credentials_and_rejects_other_hosts():
+    from urllib.error import URLError
+    from urllib.request import Request
+
+    from src.scheduled_slot_audit import _ArtifactRedirectHandler
+
+    request = Request(
+        "https://api.github.com/repos/acme/prstk/actions/artifacts/789/zip",
+        headers={"Authorization": "Bearer secret", "Cookie": "session=secret"},
+    )
+    handler = _ArtifactRedirectHandler()
+    redirected = handler.redirect_request(
+        request, object(), 302, "Found", {},
+        "https://productionresultssa12.blob.core.windows.net/actions/abc?sig=private",
+    )
+    assert redirected is not None
+    assert not redirected.has_header("Authorization")
+    assert not redirected.has_header("Cookie")
+
+    with pytest.raises(URLError):
+        handler.redirect_request(
+            request, object(), 302, "Found", {}, "https://attacker.example/collect",
+        )
 
 
 def test_recipient_manifest_rejects_invalid_values_without_falling_back(monkeypatch):

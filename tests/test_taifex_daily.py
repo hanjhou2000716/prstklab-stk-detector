@@ -55,6 +55,39 @@ def test_openapi_selects_nearest_active_monthly_regular_day_row_only():
     assert quote["source_url"] == TAIFEX_DAILY_API
 
 
+def test_openapi_percent_symbol_is_not_confused_with_point_change():
+    row = _api_row(day="20261007", last="49979", change="-103", percent="-0.21%")
+    row.pop("Change%")
+    row["%"] = "-0.21%"
+    with (
+        patch("src.taifex_daily._calendar_open", return_value=True),
+        patch("src.taifex_daily._session_gap", return_value=1),
+        patch("src.taifex_daily._contract_is_unexpired", return_value=True),
+    ):
+        quote = parse_daily_api([row], now=datetime.fromisoformat("2026-10-08T14:00:00+08:00"))
+    assert quote is not None
+    assert quote["change"] == -103
+    assert quote["change_percent"] == -0.21
+
+
+def test_openapi_quarantines_percentage_that_conflicts_with_same_row_change():
+    row = _api_row(day="20261007", last="49979", change="-103", percent="-103%")
+    with (
+        patch("src.taifex_daily._calendar_open", return_value=True),
+        patch("src.taifex_daily._session_gap", return_value=1),
+        patch("src.taifex_daily._contract_is_unexpired", return_value=True),
+    ):
+        assert parse_daily_api([row], now=datetime.fromisoformat("2026-10-08T14:00:00+08:00")) is None
+
+
+def test_integral_float_month_is_canonicalized_but_fraction_is_rejected():
+    from src.taifex_daily import _contract_month
+
+    assert _contract_month(202610.0) == "202610"
+    assert _contract_month(202610.5) == ""
+    assert _contract_month(True) == ""
+
+
 def test_openapi_never_publishes_current_session_before_close_or_stale_rows():
     row_today = _api_row(day="20260925")
     with (
@@ -111,6 +144,22 @@ def test_official_html_parser_reads_only_the_explicit_regular_session_table():
     assert quote["change"] == -189
     assert quote["change_percent"] == -0.39
     assert quote["source_label"] == "TAIFEX日盤"
+
+
+def test_html_month_remains_valid_when_subtotal_rows_would_force_float_inference():
+    html = """<p>日期：2026/10/08</p><h3>2026/10/08 08:45~13:45 一般交易時段行情表</h3>
+    <table><tr><th>契約</th><th>到期月份(週別)</th><th>開盤價</th><th>最高價</th><th>最低價</th><th>最後成交價</th><th>漲跌價</th><th>漲跌%</th></tr>
+    <tr><td>TX</td><td>202610</td><td>50000</td><td>50100</td><td>49000</td><td>49349</td><td>▼-619</td><td>▼-1.24%</td></tr>
+    <tr><td>小計</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></table>"""
+    with (
+        patch("src.taifex_daily._calendar_open", return_value=True),
+        patch("src.taifex_daily._session_gap", return_value=0),
+        patch("src.taifex_daily._contract_is_unexpired", return_value=True),
+    ):
+        quote = parse_daily_html(html, now=datetime.fromisoformat("2026-10-08T14:00:00+08:00"))
+    assert quote is not None
+    assert quote["contract_month"] == "202610"
+    assert quote["change_percent"] == -1.24
 
 
 def test_html_fallback_rejects_unverified_or_expired_contract_rows():

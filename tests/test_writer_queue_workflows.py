@@ -249,5 +249,8 @@ def test_queue_regression_uses_real_scheduled_workflow_api_identity() -> None:
             continue
         if step.get("id") == "terminal_diagnostic" or step.get("name") == "Upload scheduled terminal record":
             continue
+        if step.get("name") == "Upload scheduled preparation record":
+            assert "steps.late_expiry.outputs.expired != 'true'" in str(step.get("if") or "")
+            continue
         assert "steps.late_expiry.outputs.expired != 'true'" in str(step.get("if") or "")
     assert steps[terminal_index + 1]["name"] == "Upload scheduled terminal record"
