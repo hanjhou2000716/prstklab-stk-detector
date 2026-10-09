@@ -647,7 +647,7 @@ jobs:
         env:
           PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
           PREPARE_FAILURE_REASON: ${{ steps.prepare.outputs.prepare_failure_reason || steps.prepare.outputs.reason || steps.preparation_record_fallback.outputs.reason || '' }}
-          PREPARATION_STAGE: ${{ steps.prepare.outputs.preparation_stage || 'not_started' }}
+          PREPARATION_STAGE: ${{ steps.prepare.outputs.preparation_stage || steps.preparation_record_fallback.outputs.stage || 'not_started' }}
           PREPARATION_ATTEMPTS: ${{ steps.prepare.outputs.preparation_attempts || '0' }}
           CANDIDATE_TYPE: ${{ steps.prepare.outputs.candidate_type || 'none' }}
           NOTIFICATION_EXPECTED_VALUE: ${{ steps.prepare.outputs.notification_expected || 'false' }}

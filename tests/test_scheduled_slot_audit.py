@@ -742,5 +742,13 @@ def test_receipt_failure_is_unhealthy_result_not_audit_process_failure():
     assert missing["incidentKey"] == "scheduled-receipt:pre_open:2026-10-09"
     assert audit._audit_exit_code(missing) == 0
 
+    for status in ("expected_skip", "not_applicable", "not_due"):
+        skipped = audit._finalize_audit_result({"status": status, "reason": "calendar_verified_closed"})
+        assert skipped["executionStatus"] == "COMPLETED"
+        assert skipped["dataStatus"] == "PASS"
+        assert skipped["completionStatus"] == "EXPECTED_SKIP"
+        assert skipped["reasonCodes"] == ["calendar_verified_closed"]
+        assert audit._audit_exit_code(skipped) == 0
+
     blocked = audit._finalize_audit_result({"status": "blocked", "reason": "ledger_unavailable"})
     assert audit._audit_exit_code(blocked) == 1

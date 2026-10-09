@@ -873,12 +873,13 @@ def _finalize_audit_result(result: dict[str, Any]) -> dict[str, Any]:
             "completionStatus": "COMPLETE",
             "reasonCodes": [],
         })
-    elif status == "expected_skip":
+    elif status in {"expected_skip", "not_applicable", "not_due"}:
+        reason = str(result.get("reason") or status)
         result.update({
             "executionStatus": "COMPLETED",
             "dataStatus": "PASS",
             "completionStatus": "EXPECTED_SKIP",
-            "reasonCodes": [],
+            "reasonCodes": [reason],
         })
     return result
 
@@ -989,8 +990,10 @@ def main() -> int:
         with open(summary_path, "a", encoding="utf-8") as summary:
             summary.write("## Scheduled slot recipient receipt audit\n\n")
             for key in (
-                "status", "reason", "slot", "obligation", "market_date", "anchor",
-                "ledger_source", "ledger_commit_sha", "audit_due_at", "audit_started_at",
+                "status", "executionStatus", "dataStatus", "completionStatus",
+                "reason", "reasonCodes", "incidentKey", "slot", "obligation",
+                "market_date", "anchor", "ledger_source", "ledger_commit_sha",
+                "audit_due_at", "audit_started_at",
                 "scheduled_slot_at", "audit_delay_seconds", "trigger_source",
                 "recipient_set_version", "recipient_set_effective_at",
             ):
