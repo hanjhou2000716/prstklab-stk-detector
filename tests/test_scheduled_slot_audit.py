@@ -728,3 +728,27 @@ def test_recipient_set_version_and_effective_time_are_required_for_production_au
         EXPECTED_RECIPIENT_HASHES, "2026-09-28T00:00:00Z",
     )
     assert valid["recipient_set_effective_at"] == "2026-09-28T00:00:00Z"
+
+
+
+def test_receipt_failure_is_unhealthy_result_not_audit_process_failure():
+    missing = audit._finalize_audit_result({
+        "status": "missing_receipt", "reason": "scheduled_anchor_claim_missing",
+        "slot": "pre_open", "market_date": "2026-10-09",
+    })
+    assert missing["executionStatus"] == "COMPLETED"
+    assert missing["dataStatus"] == "UNHEALTHY"
+    assert missing["completionStatus"] == "INCOMPLETE"
+    assert missing["incidentKey"] == "scheduled-receipt:pre_open:2026-10-09"
+    assert audit._audit_exit_code(missing) == 0
+
+    for status in ("expected_skip", "not_applicable", "not_due"):
+        skipped = audit._finalize_audit_result({"status": status, "reason": "calendar_verified_closed"})
+        assert skipped["executionStatus"] == "COMPLETED"
+        assert skipped["dataStatus"] == "PASS"
+        assert skipped["completionStatus"] == "EXPECTED_SKIP"
+        assert skipped["reasonCodes"] == ["calendar_verified_closed"]
+        assert audit._audit_exit_code(skipped) == 0
+
+    blocked = audit._finalize_audit_result({"status": "blocked", "reason": "ledger_unavailable"})
+    assert audit._audit_exit_code(blocked) == 1

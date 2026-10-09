@@ -261,13 +261,50 @@ jobs:
           OFFICIAL_CLOSE_WATCH_STATUS: ${{ steps.official_close_watch.outputs.status || 'unknown' }}
           PREPARATION_RESULT_PATH: /tmp/prstk-preparation-${{ github.run_id }}-attempt-${{ github.run_attempt }}.json
         run: python -m src.scheduled_preparation
+      - name: Record missing preparation result
+        id: preparation_record_fallback
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.prepare.outcome != 'skipped'
+        env:
+          PREPARATION_RESULT_PATH: /tmp/prstk-preparation-${{ github.run_id }}-attempt-${{ github.run_attempt }}.json
+          PREPARE_OUTCOME: ${{ steps.prepare.outcome || 'unknown' }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["PREPARATION_RESULT_PATH"])
+          valid = False
+          if path.is_file():
+              try:
+                  record = json.loads(path.read_text(encoding="utf-8"))
+                  valid = isinstance(record, dict) and record.get("schema_version") == "scheduled-preparation-v1" and record.get("status") in {"ready", "failed"}
+              except (OSError, ValueError):
+                  valid = False
+          if not valid:
+              reason = "preparation_result_missing" if not path.exists() else "preparation_result_invalid"
+              record = {
+                  "schema_version": "scheduled-preparation-v1",
+                  "status": "failed",
+                  "reason": reason,
+                  "stage": "result_persistence",
+                  "prepare_outcome": os.environ.get("PREPARE_OUTCOME", "unknown"),
+              }
+              path.parent.mkdir(parents=True, exist_ok=True)
+              temporary = path.with_suffix(path.suffix + ".tmp")
+              temporary.write_text(json.dumps(record, sort_keys=True), encoding="utf-8")
+              temporary.replace(path)
+              with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+                  output.write("reason=" + reason + chr(10))
+                  output.write("stage=result_persistence" + chr(10))
+          PY
       - name: Upload scheduled preparation record
         if: always() && steps.late_expiry.outputs.expired != 'true' && steps.prepare.outcome != 'skipped'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: scheduled-preparation-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: /tmp/prstk-preparation-${{ github.run_id }}-attempt-${{ github.run_attempt }}.json
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 14
       - name: Revalidate prepared release base
         id: prepared_release
@@ -609,8 +646,8 @@ jobs:
         if: always() && steps.late_expiry.outputs.expired != 'true'
         env:
           PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
-          PREPARE_FAILURE_REASON: ${{ steps.prepare.outputs.prepare_failure_reason || steps.prepare.outputs.reason || '' }}
-          PREPARATION_STAGE: ${{ steps.prepare.outputs.preparation_stage || 'not_started' }}
+          PREPARE_FAILURE_REASON: ${{ steps.prepare.outputs.prepare_failure_reason || steps.prepare.outputs.reason || steps.preparation_record_fallback.outputs.reason || '' }}
+          PREPARATION_STAGE: ${{ steps.prepare.outputs.preparation_stage || steps.preparation_record_fallback.outputs.stage || 'not_started' }}
           PREPARATION_ATTEMPTS: ${{ steps.prepare.outputs.preparation_attempts || '0' }}
           CANDIDATE_TYPE: ${{ steps.prepare.outputs.candidate_type || 'none' }}
           NOTIFICATION_EXPECTED_VALUE: ${{ steps.prepare.outputs.notification_expected || 'false' }}
@@ -1123,7 +1160,7 @@ jobs:
           SCHEDULE_EXPIRY_DETECTED_AT: ${{ steps.late_expiry.outputs.expired_detected_at || needs.occurrence.outputs.expired_detected_at || '' }}
           RUN_CREATED_AT: ${{ steps.run_context.outputs.created_at || '' }}
           PREPARE_OUTCOME: ${{ steps.prepare.outcome || 'unknown' }}
-          PREPARE_FAILURE_REASON: ${{ steps.prepare.outputs.prepare_failure_reason || steps.prepare.outputs.reason || '' }}
+          PREPARE_FAILURE_REASON: ${{ steps.prepare.outputs.prepare_failure_reason || steps.prepare.outputs.reason || steps.preparation_record_fallback.outputs.reason || '' }}
           RELEASE_MANIFEST_OUTCOME: ${{ steps.release_manifest.outcome || 'not_run' }}
           RELEASE_MANIFEST_STATUS: ${{ steps.release_manifest.outputs.manifest_status || '' }}
           PREPARE_READY: ${{ steps.prepare.outputs.prepared || 'false' }}

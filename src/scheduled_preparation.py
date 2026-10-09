@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -102,7 +103,19 @@ def _run_command(
     command: Sequence[str], *, timeout_seconds: int, env: dict[str, str],
     run: Callable[..., subprocess.CompletedProcess[str]],
 ) -> subprocess.CompletedProcess[str]:
-    return run(command, timeout=max(1, timeout_seconds), env=env, check=False, text=True)
+    # Callers inspect stdout for commands such as git rev-parse. Capture both
+    # streams explicitly so result handling never depends on subprocess defaults.
+    return run(
+        command, timeout=max(1, timeout_seconds), env=env, check=False,
+        text=True, capture_output=True,
+    )
+
+
+def _resolved_commit(result: subprocess.CompletedProcess[str]) -> str:
+    if result.returncode != 0:
+        return ""
+    value = (result.stdout or "").strip()
+    return value.lower() if re.fullmatch(r"[0-9a-fA-F]{40}", value) else ""
 
 
 def coordinate_preparation(
@@ -233,9 +246,12 @@ def coordinate_preparation(
                 ["git", "rev-parse", f"refs/remotes/origin/{data_release_branch}"],
                 timeout_seconds=_remaining(deadline, clock), env=env, run=run,
             )
-            base_sha = resolved.stdout.strip()
-            if resolved.returncode != 0 or not base_sha:
+            base_sha = _resolved_commit(resolved)
+            if resolved.returncode != 0:
                 failure_reason = "data_release_base_lookup_failed"
+                break
+            if not base_sha:
+                failure_reason = "data_release_base_lookup_output_invalid"
                 break
 
             enter_stage("prepare")
@@ -322,9 +338,12 @@ def coordinate_preparation(
                 ["git", "rev-parse", f"refs/remotes/origin/{data_release_branch}"],
                 timeout_seconds=_remaining(window.overall_deadline, clock), env=env, run=run,
             )
-            current_sha = resolved.stdout.strip()
-            if fetched.returncode != 0 or resolved.returncode != 0 or not current_sha:
+            current_sha = _resolved_commit(resolved)
+            if fetched.returncode != 0 or resolved.returncode != 0:
                 failure_reason = "data_release_base_lookup_failed"
+                break
+            if not current_sha:
+                failure_reason = "data_release_base_lookup_output_invalid"
                 break
 
             base_changed = current_sha != base_sha

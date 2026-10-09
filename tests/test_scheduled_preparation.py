@@ -1,10 +1,12 @@
 import json
+import os
+import re
 import subprocess
 from datetime import datetime
 from pathlib import Path
 
 from src.market_source_watch import TAIPEI
-from src.scheduled_preparation import coordinate_preparation, preparation_window
+from src.scheduled_preparation import _resolved_commit, _run_command, coordinate_preparation, preparation_window
 
 
 def test_post_close_window_keeps_revalidation_budget_after_1440_source_check():
@@ -64,10 +66,11 @@ def _run_same_slot_preparation(tmp_path: Path, *, source_updated: bool):
         }), encoding="utf-8")
         return SourceProcess()
 
-    def run(command, *, timeout, env, check, text):
+    def run(command, *, timeout, env, check, text, capture_output):
         nonlocal prepare_count
         commands.append(list(command))
         if command[0] == "git" and command[1] == "rev-parse":
+            assert capture_output is True
             return subprocess.CompletedProcess(command, 0, stdout="a" * 40 + "\n")
         if "src.scheduled_delivery" in command:
             prepare_count += 1
@@ -118,3 +121,28 @@ def test_source_update_rebuild_uses_the_same_verified_close_observations(tmp_pat
     assert count == 2
     assert result["rebuild_reason"] == "verified_source_update"
     assert any("--official-close-overrides" in command for command in commands)
+
+
+
+def test_real_git_rev_parse_captures_and_validates_commit_output(tmp_path):
+    subprocess.run(["git", "init", str(tmp_path)], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(tmp_path), "config", "user.name", "Fixture"], check=True)
+    subprocess.run(["git", "-C", str(tmp_path), "config", "user.email", "fixture@example.invalid"], check=True)
+    fixture = tmp_path / "fixture.txt"
+    fixture.write_text("root commit", encoding="utf-8")
+    subprocess.run(["git", "-C", str(tmp_path), "add", "fixture.txt"], check=True)
+    subprocess.run(["git", "-C", str(tmp_path), "commit", "-m", "fixture"], check=True, capture_output=True, text=True)
+
+    result = _run_command(
+        ["git", "-C", str(tmp_path), "rev-parse", "HEAD"],
+        timeout_seconds=5, env=dict(os.environ), run=subprocess.run,
+    )
+    assert result.returncode == 0
+    assert re.fullmatch(r"[0-9a-f]{40}", _resolved_commit(result))
+
+    missing = _run_command(
+        ["git", "-C", str(tmp_path), "rev-parse", "missing-ref"],
+        timeout_seconds=5, env=dict(os.environ), run=subprocess.run,
+    )
+    assert missing.returncode != 0
+    assert _resolved_commit(missing) == ""
