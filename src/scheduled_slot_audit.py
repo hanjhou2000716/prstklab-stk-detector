@@ -851,6 +851,48 @@ def audit_slot(
     return result
 
 
+def _finalize_audit_result(result: dict[str, Any]) -> dict[str, Any]:
+    """Mark a completed audit separately from the receipt/business outcome."""
+    status = str(result.get("status", ""))
+    if status in {"missing_receipt", "incomplete_receipt"}:
+        reason = str(result.get("reason") or status)
+        result.update({
+            "executionStatus": "COMPLETED",
+            "dataStatus": "UNHEALTHY",
+            "completionStatus": "INCOMPLETE",
+            "reasonCodes": [reason],
+            "incidentKey": (
+                f"scheduled-receipt:{result.get('slot') or 'unknown'}:"
+                f"{result.get('market_date') or 'unknown'}"
+            ),
+        })
+    elif status == "delivered":
+        result.update({
+            "executionStatus": "COMPLETED",
+            "dataStatus": "PASS",
+            "completionStatus": "COMPLETE",
+            "reasonCodes": [],
+        })
+    elif status == "expected_skip":
+        result.update({
+            "executionStatus": "COMPLETED",
+            "dataStatus": "PASS",
+            "completionStatus": "EXPECTED_SKIP",
+            "reasonCodes": [],
+        })
+    return result
+
+
+def _audit_exit_code(result: Mapping[str, Any]) -> int:
+    # Confirmed receipt incidents are completed business evaluations, not
+    # failures of this read-only audit process. Unknown/blocked states fail closed.
+    completed = {
+        "delivered", "missing_receipt", "incomplete_receipt",
+        "expected_skip", "not_applicable", "not_due",
+    }
+    return 0 if result.get("status") in completed else 1
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Read-only audit for scheduled notification receipts")
     parser.add_argument("--ledger", type=Path)
@@ -940,6 +982,7 @@ def main() -> int:
         github_repository=args.repository,
         github_token=args.github_token,
     )
+    result = _finalize_audit_result(result)
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
     summary_path = os.getenv("GITHUB_STEP_SUMMARY", "")
     if summary_path:
@@ -988,7 +1031,7 @@ def main() -> int:
                 f"- receipt_verified: {str(result.get('status') == 'delivered').lower()}\n"
             )
             summary.write("- mode: read-only; no dispatch, repair, or delivery attempted\n")
-    return 1 if result.get("status") in {"blocked", "missing_receipt", "incomplete_receipt"} else 0
+    return _audit_exit_code(result)
 
 
 __all__ = ["audit_slot"]
