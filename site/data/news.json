@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "406b11376e3b0678",
-  "snapshot_id": "news-3e1a19fc6a9cd2cd",
+  "market_snapshot_id": "bbccdfc336d87180",
+  "snapshot_id": "news-bfca17b74a9f0cf5",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -437,57 +437,52 @@
       ],
       "stories": [
         {
-          "story_id": "news-17dd1de3a12eef1f86e5",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "半導體與AI伺服器供應鏈Q3營收兩極化，先進製程擴產帶動台積電與設備廠創高！-財經焦點情報站 - CMoney投資網誌",
-          "raw_title": "半導體與AI伺服器供應鏈Q3營收兩極化，先進製程擴產帶動台積電與設備廠創高！-財經焦點情報站 - CMoney投資網誌",
-          "normalized_fact": "半導體與AI伺服器供應鏈Q3營收兩極化，先進製程擴產帶動台積電與設備廠創高。",
-          "market_topic": "semiconductor_ai",
+          "story_id": "news-dd357d3d645cc7fb863a",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "墨西哥灣油氣產量大減 逾七成石油生產中斷衝擊全球能源鏈",
+          "raw_title": "墨西哥灣油氣產量大減 逾七成石油生產中斷衝擊全球能源鏈",
+          "normalized_fact": "墨西哥灣油氣產量大減 逾七成石油生產中斷衝擊全球能源鏈。",
+          "market_topic": "energy_geopolitics",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
           "byline_removed": false,
-          "publisher_removed": true,
+          "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
           "summary": "",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPT2pzdkxCV0I4VlB6NFhjYzZObjNfX3FPYThvRjVwVXFtYVlHdTJleWtEb0p4ak8xSDVoWHRad0xsTHIzTTY0dllqUWFNU21UUEctQW1xd290OVFxclF3QVVheGxhcmtTVmtLR2pwNVdmdzhUNmdPWDNxMWIzWnQ2S2dB",
-          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPT2pzdkxCV0I4VlB6NFhjYzZObjNfX3FPYThvRjVwVXFtYVlHdTJleWtEb0p4ak8xSDVoWHRad0xsTHIzTTY0dllqUWFNU21UUEctQW1xd290OVFxclF3QVVheGxhcmtTVmtLR2pwNVdmdzhUNmdPWDNxMWIzWnQ2S2dB",
-          "published_at": "2026-10-09T13:50:46+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%A2%A8%E8%A5%BF%E5%93%A5%E7%81%A3%E6%B2%B9%E6%B0%A3%E7%94%A2%E9%87%8F%E5%A4%A7%E6%B8%9B-%E9%80%BE%E4%B8%83%E6%88%90%E7%9F%B3%E6%B2%B9%E7%94%9F%E7%94%A2%E4%B8%AD%E6%96%B7%E8%A1%9D%E6%93%8A%E5%85%A8%E7%90%83%E8%83%BD%E6%BA%90%E9%8F%88-002402962.html",
+          "url": "https://tw.stock.yahoo.com/news/%E5%A2%A8%E8%A5%BF%E5%93%A5%E7%81%A3%E6%B2%B9%E6%B0%A3%E7%94%A2%E9%87%8F%E5%A4%A7%E6%B8%9B-%E9%80%BE%E4%B8%83%E6%88%90%E7%9F%B3%E6%B2%B9%E7%94%9F%E7%94%A2%E4%B8%AD%E6%96%B7%E8%A1%9D%E6%93%8A%E5%85%A8%E7%90%83%E8%83%BD%E6%BA%90%E9%8F%88-002402962.html",
+          "published_at": "2026-10-10T00:24:02+00:00",
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
+          "entities": [],
           "sectors": [],
           "topics": [
-            "ai",
-            "earnings",
-            "semiconductor"
+            "energy"
           ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
+            "category": "energy",
+            "reason": "energy_subject_action",
             "matched_terms": [
-              "ai",
-              "供應"
+              "石油",
+              "產量"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "ai",
-              "供應"
+              "石油",
+              "產量"
             ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
+            "matched_subject": "石油",
+            "matched_action": "產量",
+            "matched_market_object": "石油",
             "input_fields": [
               "description",
               "summary",
@@ -496,30 +491,29 @@
           },
           "relevance_reasons": [
             "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM"
+            "active_event:石油"
           ],
           "freshness": "published",
-          "dedupe_key": "半導體與ai伺服器供應鏈q3營收兩極化先進製程擴產帶動台積電與設備廠創高",
-          "event_cluster_key": "event-399813a83cfbc2b784bc",
-          "published_time_bucket": "2026-10-09T13:00:00+00:00",
+          "dedupe_key": "墨西哥灣油氣產量大減逾七成石油生產中斷衝擊全球能源鏈",
+          "event_cluster_key": "event-20a04f2b808446bba65f",
+          "published_time_bucket": "2026-10-10T00:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "ai",
-            "供應"
+            "石油",
+            "產量"
           ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
+          "matched_subject": "石油",
+          "matched_action": "產量",
+          "matched_market_object": "石油",
+          "decision_value_class": "energy",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Google News｜台股線索",
+          "source": "Yahoo Taiwan Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -528,7 +522,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 125
+          "ranking_score": 135
         },
         {
           "story_id": "news-2fe3ff1e46d7da556202",
@@ -902,57 +896,52 @@
       ],
       "editorial_candidates": [
         {
-          "story_id": "news-17dd1de3a12eef1f86e5",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "半導體與AI伺服器供應鏈Q3營收兩極化，先進製程擴產帶動台積電與設備廠創高！-財經焦點情報站 - CMoney投資網誌",
-          "raw_title": "半導體與AI伺服器供應鏈Q3營收兩極化，先進製程擴產帶動台積電與設備廠創高！-財經焦點情報站 - CMoney投資網誌",
-          "normalized_fact": "半導體與AI伺服器供應鏈Q3營收兩極化，先進製程擴產帶動台積電與設備廠創高。",
-          "market_topic": "semiconductor_ai",
+          "story_id": "news-dd357d3d645cc7fb863a",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "墨西哥灣油氣產量大減 逾七成石油生產中斷衝擊全球能源鏈",
+          "raw_title": "墨西哥灣油氣產量大減 逾七成石油生產中斷衝擊全球能源鏈",
+          "normalized_fact": "墨西哥灣油氣產量大減 逾七成石油生產中斷衝擊全球能源鏈。",
+          "market_topic": "energy_geopolitics",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
           "byline_removed": false,
-          "publisher_removed": true,
+          "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
           "summary": "",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPT2pzdkxCV0I4VlB6NFhjYzZObjNfX3FPYThvRjVwVXFtYVlHdTJleWtEb0p4ak8xSDVoWHRad0xsTHIzTTY0dllqUWFNU21UUEctQW1xd290OVFxclF3QVVheGxhcmtTVmtLR2pwNVdmdzhUNmdPWDNxMWIzWnQ2S2dB",
-          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPT2pzdkxCV0I4VlB6NFhjYzZObjNfX3FPYThvRjVwVXFtYVlHdTJleWtEb0p4ak8xSDVoWHRad0xsTHIzTTY0dllqUWFNU21UUEctQW1xd290OVFxclF3QVVheGxhcmtTVmtLR2pwNVdmdzhUNmdPWDNxMWIzWnQ2S2dB",
-          "published_at": "2026-10-09T13:50:46+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%A2%A8%E8%A5%BF%E5%93%A5%E7%81%A3%E6%B2%B9%E6%B0%A3%E7%94%A2%E9%87%8F%E5%A4%A7%E6%B8%9B-%E9%80%BE%E4%B8%83%E6%88%90%E7%9F%B3%E6%B2%B9%E7%94%9F%E7%94%A2%E4%B8%AD%E6%96%B7%E8%A1%9D%E6%93%8A%E5%85%A8%E7%90%83%E8%83%BD%E6%BA%90%E9%8F%88-002402962.html",
+          "url": "https://tw.stock.yahoo.com/news/%E5%A2%A8%E8%A5%BF%E5%93%A5%E7%81%A3%E6%B2%B9%E6%B0%A3%E7%94%A2%E9%87%8F%E5%A4%A7%E6%B8%9B-%E9%80%BE%E4%B8%83%E6%88%90%E7%9F%B3%E6%B2%B9%E7%94%9F%E7%94%A2%E4%B8%AD%E6%96%B7%E8%A1%9D%E6%93%8A%E5%85%A8%E7%90%83%E8%83%BD%E6%BA%90%E9%8F%88-002402962.html",
+          "published_at": "2026-10-10T00:24:02+00:00",
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
+          "entities": [],
           "sectors": [],
           "topics": [
-            "ai",
-            "earnings",
-            "semiconductor"
+            "energy"
           ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
+            "category": "energy",
+            "reason": "energy_subject_action",
             "matched_terms": [
-              "ai",
-              "供應"
+              "石油",
+              "產量"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "ai",
-              "供應"
+              "石油",
+              "產量"
             ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
+            "matched_subject": "石油",
+            "matched_action": "產量",
+            "matched_market_object": "石油",
             "input_fields": [
               "description",
               "summary",
@@ -961,30 +950,29 @@
           },
           "relevance_reasons": [
             "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM"
+            "active_event:石油"
           ],
           "freshness": "published",
-          "dedupe_key": "半導體與ai伺服器供應鏈q3營收兩極化先進製程擴產帶動台積電與設備廠創高",
-          "event_cluster_key": "event-399813a83cfbc2b784bc",
-          "published_time_bucket": "2026-10-09T13:00:00+00:00",
+          "dedupe_key": "墨西哥灣油氣產量大減逾七成石油生產中斷衝擊全球能源鏈",
+          "event_cluster_key": "event-20a04f2b808446bba65f",
+          "published_time_bucket": "2026-10-10T00:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "ai",
-            "供應"
+            "石油",
+            "產量"
           ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
+          "matched_subject": "石油",
+          "matched_action": "產量",
+          "matched_market_object": "石油",
+          "decision_value_class": "energy",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Google News｜台股線索",
+          "source": "Yahoo Taiwan Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -993,7 +981,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 125
+          "ranking_score": 135
         },
         {
           "story_id": "news-2fe3ff1e46d7da556202",
@@ -1908,6 +1896,93 @@
           "ranking_score": 115
         },
         {
+          "story_id": "news-6d82f6d933b2a5ab8366",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "美中AI博弈與透明度困境：台灣如何發揮供應鏈優勢搶下「規則制定權」？ - TNL The News Lens 關鍵評論網",
+          "raw_title": "美中AI博弈與透明度困境：台灣如何發揮供應鏈優勢搶下「規則制定權」？ - TNL The News Lens 關鍵評論網",
+          "normalized_fact": "美中AI博弈與透明度困境：台灣如何發揮供應鏈優勢搶下規則制定權？ - TNL The News Lens 關鍵評論網。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiVEFVX3lxTE5KNlZRNThUOXB6X0FtazRfY1R0LVdBOGMxSmdBcmRaajNjSzFhdXR0S2E1Ui1PUFYySHh1VXd1RTlTWXNPcTExSGdxQm1CZE16X2hraw",
+          "url": "https://news.google.com/rss/articles/CBMiVEFVX3lxTE5KNlZRNThUOXB6X0FtazRfY1R0LVdBOGMxSmdBcmRaajNjSzFhdXR0S2E1Ui1PUFYySHh1VXd1RTlTWXNPcTExSGdxQm1CZE16X2hraw",
+          "published_at": "2026-10-09T23:58:00+00:00",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美中ai博弈與透明度困境台灣如何發揮供應鏈優勢搶下規則制定權tnlthenewslens關鍵評論網",
+          "event_cluster_key": "event-d5e2be3cbaa7baa47568",
+          "published_time_bucket": "2026-10-09T23:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜台股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
           "story_id": "news-10c00775ddd3010d1744",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -1998,44 +2073,57 @@
           "ranking_score": 25
         },
         {
-          "story_id": "news-8cf4646a45ecfebd6cdb",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "美就業數據疲軟降溫升息預期 日股收漲",
-          "raw_title": "美就業數據疲軟降溫升息預期 日股收漲",
-          "normalized_fact": "美就業數據疲軟降溫升息預期 日股收漲。",
-          "market_topic": "company_industry",
+          "story_id": "news-17dd1de3a12eef1f86e5",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "半導體與AI伺服器供應鏈Q3營收兩極化，先進製程擴產帶動台積電與設備廠創高！-財經焦點情報站 - CMoney投資網誌",
+          "raw_title": "半導體與AI伺服器供應鏈Q3營收兩極化，先進製程擴產帶動台積電與設備廠創高！-財經焦點情報站 - CMoney投資網誌",
+          "normalized_fact": "半導體與AI伺服器供應鏈Q3營收兩極化，先進製程擴產帶動台積電與設備廠創高。",
+          "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
           "byline_removed": false,
-          "publisher_removed": false,
+          "publisher_removed": true,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
           "summary": "",
           "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%B0%B1%E6%A5%AD%E6%95%B8%E6%93%9A%E7%96%B2%E8%BB%9F%E9%99%8D%E6%BA%AB%E5%8D%87%E6%81%AF%E9%A0%90%E6%9C%9F-%E6%97%A5%E8%82%A1%E6%94%B6%E6%BC%B2-063807382.html",
-          "url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%B0%B1%E6%A5%AD%E6%95%B8%E6%93%9A%E7%96%B2%E8%BB%9F%E9%99%8D%E6%BA%AB%E5%8D%87%E6%81%AF%E9%A0%90%E6%9C%9F-%E6%97%A5%E8%82%A1%E6%94%B6%E6%BC%B2-063807382.html",
-          "published_at": "2026-10-05T06:38:07+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPT2pzdkxCV0I4VlB6NFhjYzZObjNfX3FPYThvRjVwVXFtYVlHdTJleWtEb0p4ak8xSDVoWHRad0xsTHIzTTY0dllqUWFNU21UUEctQW1xd290OVFxclF3QVVheGxhcmtTVmtLR2pwNVdmdzhUNmdPWDNxMWIzWnQ2S2dB",
+          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPT2pzdkxCV0I4VlB6NFhjYzZObjNfX3FPYThvRjVwVXFtYVlHdTJleWtEb0p4ak8xSDVoWHRad0xsTHIzTTY0dllqUWFNU21UUEctQW1xd290OVFxclF3QVVheGxhcmtTVmtLR2pwNVdmdzhUNmdPWDNxMWIzWnQ2S2dB",
+          "published_at": "2026-10-09T13:50:46+00:00",
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "2330",
+            "TSM"
+          ],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "ai",
+            "earnings",
+            "semiconductor"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
             "input_fields": [
               "description",
               "summary",
@@ -2043,35 +2131,40 @@
             ]
           },
           "relevance_reasons": [
-            "market:taiwan"
+            "market:taiwan",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM"
           ],
           "freshness": "published",
-          "dedupe_key": "美就業數據疲軟降溫升息預期日股收漲",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-10-05T06:00:00+00:00",
+          "dedupe_key": "半導體與ai伺服器供應鏈q3營收兩極化先進製程擴產帶動台積電與設備廠創高",
+          "event_cluster_key": "event-399813a83cfbc2b784bc",
+          "published_time_bucket": "2026-10-09T13:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
+          "source": "Google News｜台股線索",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "inventory",
           "inventory_used": true,
-          "inventory_age_trading_sessions": 4,
-          "inventory_saved_at": "2026-10-05T06:58:46.082535+00:00",
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-09T22:11:04.989619+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 21
+          "ranking_score": 25
         },
         {
           "story_id": "news-5cddcdd940cd05ca399e",
@@ -2722,6 +2815,82 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 22
+        },
+        {
+          "story_id": "news-8cf4646a45ecfebd6cdb",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "美就業數據疲軟降溫升息預期 日股收漲",
+          "raw_title": "美就業數據疲軟降溫升息預期 日股收漲",
+          "normalized_fact": "美就業數據疲軟降溫升息預期 日股收漲。",
+          "market_topic": "company_industry",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%B0%B1%E6%A5%AD%E6%95%B8%E6%93%9A%E7%96%B2%E8%BB%9F%E9%99%8D%E6%BA%AB%E5%8D%87%E6%81%AF%E9%A0%90%E6%9C%9F-%E6%97%A5%E8%82%A1%E6%94%B6%E6%BC%B2-063807382.html",
+          "url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%B0%B1%E6%A5%AD%E6%95%B8%E6%93%9A%E7%96%B2%E8%BB%9F%E9%99%8D%E6%BA%AB%E5%8D%87%E6%81%AF%E9%A0%90%E6%9C%9F-%E6%97%A5%E8%82%A1%E6%94%B6%E6%BC%B2-063807382.html",
+          "published_at": "2026-10-05T06:38:07+00:00",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美就業數據疲軟降溫升息預期日股收漲",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-10-05T06:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 4,
+          "inventory_saved_at": "2026-10-05T06:58:46.082535+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 21
         },
         {
           "story_id": "news-f68c25c29c9d9da65a7f",
@@ -4335,197 +4504,22 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 13
-        },
-        {
-          "story_id": "news-f451cb45794448535e9c",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "欲藉 2 奈米盼重返高通供應鏈，台積電一單不漏全數拿下讓三星盼了個寂寞 - TechNews 科技新報",
-          "raw_title": "欲藉 2 奈米盼重返高通供應鏈，台積電一單不漏全數拿下讓三星盼了個寂寞 - TechNews 科技新報",
-          "normalized_fact": "欲藉 2 奈米盼重返高通供應鏈，台積電一單不漏全數拿下讓三星盼了個寂寞 - TechNews 科技新報。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxOTUYyQXFKSkZvMk1zOTU0emZjZ1hiZVpSaURuSU5aTUxZRDJNeVAwLWV6WUl4R01ZVU9xaHNNWS1mWjczZWNCZEF5YTFyVFZjZjhyWVpNS0Q4aC1BSFFWUWdqd2tkVXlqVi1IVl9OaTV6a09TdnZqM1kxX0hEcjJmSWpndHdTb2NuYmZxNEVTbDBGMVk2TTROWTNCcEtwOFQ5aERET3JwMl83RVJ5SVNoQlRUNnI4YnEtVW5Z",
-          "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxOTUYyQXFKSkZvMk1zOTU0emZjZ1hiZVpSaURuSU5aTUxZRDJNeVAwLWV6WUl4R01ZVU9xaHNNWS1mWjczZWNCZEF5YTFyVFZjZjhyWVpNS0Q4aC1BSFFWUWdqd2tkVXlqVi1IVl9OaTV6a09TdnZqM1kxX0hEcjJmSWpndHdTb2NuYmZxNEVTbDBGMVk2TTROWTNCcEtwOFQ5aERET3JwMl83RVJ5SVNoQlRUNnI4YnEtVW5Z",
-          "published_at": "2026-10-02T12:49:04+00:00",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "台積電",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "台積電",
-              "供應"
-            ],
-            "matched_subject": "台積電",
-            "matched_action": "供應",
-            "matched_market_object": "台積電",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM"
-          ],
-          "freshness": "published",
-          "dedupe_key": "欲藉2奈米盼重返高通供應鏈台積電一單不漏全數拿下讓三星盼了個寂寞technews科技新報",
-          "event_cluster_key": "event-beaec8cf4570b2d58835",
-          "published_time_bucket": "2026-10-02T12:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "台積電",
-            "供應"
-          ],
-          "matched_subject": "台積電",
-          "matched_action": "供應",
-          "matched_market_object": "台積電",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 5,
-          "inventory_saved_at": "2026-10-02T14:03:05.273511+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 13
-        },
-        {
-          "story_id": "news-4d09e12328fa9dc83804",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "從美光到南電「美AI需求＋台製造力」 00409A串完整全球AI供應鏈 - 蕃新聞",
-          "raw_title": "從美光到南電「美AI需求＋台製造力」 00409A串完整全球AI供應鏈 - 蕃新聞",
-          "normalized_fact": "從美光到南電美AI需求＋台製造力 00409A串完整全球AI供應鏈 - 蕃。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": true,
-          "publisher_removed": true,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE85X3BjWVRqUzNhRnNIcVB4dkcwbjd2UW1CVm1XZVFTLTktRXpXMmhoc3hnQ0V6SHNUcnY0dHMwbm1BWEo5LTRhd1pnZ3hjMm80MlE",
-          "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE85X3BjWVRqUzNhRnNIcVB4dkcwbjd2UW1CVm1XZVFTLTktRXpXMmhoc3hnQ0V6SHNUcnY0dHMwbm1BWEo5LTRhd1pnZ3hjMm80MlE",
-          "published_at": "2026-10-07T11:30:00+00:00",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "從美光到南電美ai需求台製造力00409a串完整全球ai供應鏈蕃",
-          "event_cluster_key": "event-2721b569b802310561b9",
-          "published_time_bucket": "2026-10-07T11:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-07T13:03:49.568985+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 12
         }
       ],
       "source_diversity": {
         "schema_version": "1.0",
-        "status": "single_source",
-        "cross_checked": false,
+        "status": "multi_source",
+        "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 1,
-        "provider_count": 1,
+        "independent_source_count": 2,
+        "provider_count": 2,
         "provider_ids": [
-          "google_news"
+          "google_news",
+          "yahoo_finance"
         ],
         "source_domains": [
-          "news.google.com"
+          "news.google.com",
+          "tw.stock.yahoo.com"
         ],
         "supporting_source_count": 0,
         "inventory_only": false,
@@ -4534,16 +4528,17 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 35,
-          "TSM": 35,
-          "NVDA": 6
+          "2330": 33,
+          "TSM": 33,
+          "NVDA": 4
         },
         "sector_interest": {},
         "topic_interest": {
-          "地震": 2
+          "石油": 2,
+          "黃金": 2
         },
         "market_interest": {
-          "taiwan": 107
+          "taiwan": 106
         },
         "context": {
           "tracked_tickers": [
@@ -4581,20 +4576,20 @@
             "ADP",
             "ADSK",
             "AEP",
-            "AVY",
-            "BSX",
+            "AXON",
+            "CAT",
             "CIEN",
-            "COIN",
-            "DAL",
-            "DXCM",
+            "DGX",
+            "FITB",
+            "GE",
+            "HONA",
             "HPE",
-            "HWM",
-            "MRNA",
+            "NOW",
+            "P",
             "PTC",
-            "ROST",
-            "STX",
-            "UAL",
-            "WDC"
+            "SBUX",
+            "SHW",
+            "UPS"
           ],
           "tracked_sectors": [],
           "active_event_topics": [
@@ -4620,24 +4615,24 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 35,
-            "TSM": 35,
-            "NVDA": 6
+            "2330": 33,
+            "TSM": 33,
+            "NVDA": 4
           },
           "research_candidate": {},
           "tracked_sector": {},
           "active_event": {
-            "地震": 2
+            "石油": 2,
+            "黃金": 2
           },
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 31,
+      "excluded_count": 28,
       "exclusion_reasons": {
-        "incomplete_normalized_fact": 5,
-        "insufficient_market_relevance": 26,
-        "market_scope_mismatch": 12,
-        "missing_published_at": 2,
+        "incomplete_normalized_fact": 3,
+        "insufficient_market_relevance": 28,
+        "market_scope_mismatch": 10,
         "non_investment_content": 1
       },
       "status": "ready",
@@ -4648,33 +4643,33 @@
         "successful_provider_count": 5,
         "failed_provider_count": 0,
         "disabled_provider_count": 0,
-        "fetched": 42,
-        "normalized": 42,
-        "eligible": 11,
-        "excluded": 31,
-        "deduped": 11,
+        "fetched": 40,
+        "normalized": 40,
+        "eligible": 12,
+        "excluded": 28,
+        "deduped": 12,
         "publicly_ranked": 5,
-        "current_eligible": 11,
-        "inventory_considered": 65,
-        "inventory_eligible": 50,
+        "current_eligible": 12,
+        "inventory_considered": 66,
+        "inventory_eligible": 52,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 31,
-        "fetched_story_count": 42,
-        "normalized_story_count": 42,
-        "eligible_story_count": 11,
-        "deduped_story_count": 11,
+        "filtered_story_count": 28,
+        "fetched_story_count": 40,
+        "normalized_story_count": 40,
+        "eligible_story_count": 12,
+        "deduped_story_count": 12,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 65,
-        "eligible": 50,
+        "considered": 66,
+        "eligible": 52,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -4686,8 +4681,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 42,
-          "checked_at": "2026-10-09T23:55:32.097189+00:00"
+          "item_count": 40,
+          "checked_at": "2026-10-10T00:32:03.053424+00:00"
         },
         {
           "provider": "twse",
@@ -4698,10 +4693,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-10-09T23:55:32.097189+00:00",
+          "checked_at": "2026-10-10T00:32:03.053424+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+          "last_success_at": "2026-10-10T00:32:03.053424+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4726,10 +4721,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-10-09T23:55:32.097189+00:00",
+          "checked_at": "2026-10-10T00:32:03.053424+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+          "last_success_at": "2026-10-10T00:32:03.053424+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4754,60 +4749,56 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 0,
-          "checked_at": "2026-10-09T23:55:32.097189+00:00",
+          "checked_at": "2026-10-10T00:32:03.053424+00:00",
+          "data_gap": "filtered_no_market_match",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+          "last_success_at": "2026-10-10T00:32:03.053424+00:00",
           "last_failure_at": null,
-          "stories_ingested": 2,
+          "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
-          "relevance_distribution": {
-            "market": 2,
-            "tracked_ticker": 1
-          },
+          "relevance_distribution": {},
           "funnel": {
-            "fetched_count": 2,
-            "normalized_count": 2,
-            "market_compatible_count": 2,
+            "fetched_count": 0,
+            "normalized_count": 0,
+            "market_compatible_count": 0,
             "eligible_count": 0,
-            "excluded_count": 2,
+            "excluded_count": 0,
             "deduped_count": 0,
             "ranked_count": 0
-          },
-          "data_gap": "filtered_no_market_match"
+          }
         },
         {
           "provider": "yahoo_finance",
           "key": "news_taiwan_yahoo_finance",
           "legacy_key": "official_news_taiwan_yahoo_finance",
           "label": "yahoo_finance market news",
-          "status": "no_event",
+          "status": "healthy",
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
-          "item_count": 0,
-          "checked_at": "2026-10-09T23:55:32.097189+00:00",
+          "item_count": 1,
+          "checked_at": "2026-10-10T00:32:03.053424+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 0,
-          "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-10-10T00:32:03.053424+00:00",
           "last_failure_at": null,
-          "stories_ingested": 4,
-          "stories_deduped": 0,
-          "ranked_count": 0,
+          "stories_ingested": 5,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
-            "market": 4,
-            "tracked_ticker": 1
+            "active_event": 2,
+            "market": 5
           },
           "funnel": {
             "fetched_count": 10,
-            "normalized_count": 4,
-            "market_compatible_count": 4,
-            "eligible_count": 0,
+            "normalized_count": 5,
+            "market_compatible_count": 5,
+            "eligible_count": 1,
             "excluded_count": 4,
-            "deduped_count": 0,
-            "ranked_count": 0
-          },
-          "data_gap": "filtered_no_market_match"
+            "deduped_count": 1,
+            "ranked_count": 1
+          }
         },
         {
           "provider": "google_news",
@@ -4817,18 +4808,18 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
-          "item_count": 5,
-          "checked_at": "2026-10-09T23:55:32.097189+00:00",
+          "item_count": 4,
+          "checked_at": "2026-10-10T00:32:03.053424+00:00",
           "raw_item_count": 30,
-          "filtered_item_count": 5,
-          "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+          "filtered_item_count": 4,
+          "last_success_at": "2026-10-10T00:32:03.053424+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
           "stories_deduped": 11,
-          "ranked_count": 5,
+          "ranked_count": 4,
           "relevance_distribution": {
             "market": 30,
-            "tracked_ticker": 12
+            "tracked_ticker": 11
           },
           "funnel": {
             "fetched_count": 30,
@@ -4837,38 +4828,35 @@
             "eligible_count": 11,
             "excluded_count": 19,
             "deduped_count": 11,
-            "ranked_count": 5
+            "ranked_count": 4
           }
         }
       ],
       "observability": {
-        "stories_ingested": 42,
-        "stories_deduped": 11,
+        "stories_ingested": 40,
+        "stories_deduped": 12,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 1,
-          "market": 42,
-          "tracked_ticker": 14
+          "active_event": 2,
+          "market": 40,
+          "tracked_ticker": 11
         },
         "providers": [
           {
             "provider": "anue",
-            "status": "healthy",
-            "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+            "status": "no_event",
+            "last_success_at": "2026-10-10T00:32:03.053424+00:00",
             "last_failure_at": null,
-            "stories_ingested": 2,
+            "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
-            "relevance_distribution": {
-              "market": 2,
-              "tracked_ticker": 1
-            },
+            "relevance_distribution": {},
             "funnel": {
-              "fetched_count": 2,
-              "normalized_count": 2,
-              "market_compatible_count": 2,
+              "fetched_count": 0,
+              "normalized_count": 0,
+              "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 2,
+              "excluded_count": 0,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -4876,14 +4864,14 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+            "last_success_at": "2026-10-10T00:32:03.053424+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
             "stories_deduped": 11,
-            "ranked_count": 5,
+            "ranked_count": 4,
             "relevance_distribution": {
               "market": 30,
-              "tracked_ticker": 12
+              "tracked_ticker": 11
             },
             "funnel": {
               "fetched_count": 30,
@@ -4892,13 +4880,13 @@
               "eligible_count": 11,
               "excluded_count": 19,
               "deduped_count": 11,
-              "ranked_count": 5
+              "ranked_count": 4
             }
           },
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+            "last_success_at": "2026-10-10T00:32:03.053424+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -4917,7 +4905,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+            "last_success_at": "2026-10-10T00:32:03.053424+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -4938,19 +4926,18 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 6,
+            "stories_ingested": 5,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "active_event": 1,
-              "market": 6
+              "market": 5
             },
             "funnel": {
-              "fetched_count": 6,
-              "normalized_count": 6,
+              "fetched_count": 5,
+              "normalized_count": 5,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 6,
+              "excluded_count": 5,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -4958,23 +4945,23 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+            "last_success_at": "2026-10-10T00:32:03.053424+00:00",
             "last_failure_at": null,
-            "stories_ingested": 4,
-            "stories_deduped": 0,
-            "ranked_count": 0,
+            "stories_ingested": 5,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
-              "market": 4,
-              "tracked_ticker": 1
+              "active_event": 2,
+              "market": 5
             },
             "funnel": {
               "fetched_count": 10,
-              "normalized_count": 4,
-              "market_compatible_count": 4,
-              "eligible_count": 0,
+              "normalized_count": 5,
+              "market_compatible_count": 5,
+              "eligible_count": 1,
               "excluded_count": 4,
-              "deduped_count": 0,
-              "ranked_count": 0
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           }
         ]
@@ -5199,15 +5186,15 @@
       ],
       "stories": [
         {
-          "story_id": "news-fef98035f9d73151d8d5",
+          "story_id": "news-f65fb9ff32f598c9668a",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "Iran response to more sanctions biggest oil market risk - Midland Reporter-Telegram",
-          "raw_title": "Iran response to more sanctions biggest oil market risk - Midland Reporter-Telegram",
-          "normalized_fact": "Iran response to more sanctions biggest oil market risk - Midland Reporter-Telegram。",
-          "market_topic": "company_industry",
+          "title": "Micron could dethrone Nvidia and become the biggest driver of S&P 500 profit growth - MarketWatch",
+          "raw_title": "Micron could dethrone Nvidia and become the biggest driver of S&P 500 profit growth - MarketWatch",
+          "normalized_fact": "Micron could dethrone Nvidia and become the biggest driver of S&P 500 profit growth - MarketWatch。",
+          "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5217,28 +5204,34 @@
           "normalization_complete": true,
           "summary": "",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxQVWlyd2t6YkJkMUN5d0ViTHFvNFNOOTNLMW44ZHpyRVRIOTQ0Tmo3cmJMN0dsN3BVVjZ0c2tzYXh4TzlKcEdEMjVobnJEaFdFOHowc2NkV0dWd3NMTFdZYWlRRWhwMUM1cmtLSkxLcHZFUjNPaFZOc3pIRWF6bzJaVGFiaERrckpyTVE",
-          "url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxQVWlyd2t6YkJkMUN5d0ViTHFvNFNOOTNLMW44ZHpyRVRIOTQ0Tmo3cmJMN0dsN3BVVjZ0c2tzYXh4TzlKcEdEMjVobnJEaFdFOHowc2NkV0dWd3NMTFdZYWlRRWhwMUM1cmtLSkxLcHZFUjNPaFZOc3pIRWF6bzJaVGFiaERrckpyTVE",
-          "published_at": "2026-08-24T07:00:00+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNc1BoMWkyX0xibzdDSW1VMUFmNjdSNHdjNVRFMFBqaF9Tb1lJN281TnpYR2tWWW1HU2pXdk1lWEpHUEd3b19EcHQzWGZmQ2llU2owS3pIaTdxTVZtTXRTT3RpZHdhWFM2S0szUU4tZW1kSGVaWjRMZWNvOWpFOWc4bmEyQkdZOE14cHJBcDdLazdVMFo3bFZDTFZRdXpwdFZOTld5a09HbnA2Tjk4X1VlNlBmR18tc2YtdDF3alJKMXpZQnd0",
+          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNc1BoMWkyX0xibzdDSW1VMUFmNjdSNHdjNVRFMFBqaF9Tb1lJN281TnpYR2tWWW1HU2pXdk1lWEpHUEd3b19EcHQzWGZmQ2llU2owS3pIaTdxTVZtTXRTT3RpZHdhWFM2S0szUU4tZW1kSGVaWjRMZWNvOWpFOWc4bmEyQkdZOE14cHJBcDdLazdVMFo3bFZDTFZRdXpwdFZOTld5a09HbnA2Tjk4X1VlNlBmR18tc2YtdDF3alJKMXpZQnd0",
+          "published_at": "2026-09-28T07:00:00+00:00",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "energy"
+          "entities": [
+            "NVDA"
           ],
+          "sectors": [],
+          "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "nvidia",
+              "profit"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "nvidia",
+              "profit"
+            ],
+            "matched_subject": "nvidia",
+            "matched_action": "profit",
+            "matched_market_object": "nvidia",
             "input_fields": [
               "description",
               "summary",
@@ -5247,22 +5240,24 @@
           },
           "relevance_reasons": [
             "market:us",
-            "active_event:iran",
-            "active_event:oil",
-            "active_event:sanctions"
+            "tracked_ticker:NVDA",
+            "research_candidate:P"
           ],
           "freshness": "published",
-          "dedupe_key": "iranresponsetomoresanctionsbiggestoilmarketriskmidlandreportertelegram",
-          "event_cluster_key": "event-17f560c266d4f10e72cb",
-          "published_time_bucket": "2026-08-24T07:00:00+00:00",
+          "dedupe_key": "microncoulddethronenvidiaandbecomethebiggestdriverofsp500profitgrowthmarketwatch",
+          "event_cluster_key": "event-139a0540cb7234aee6f8",
+          "published_time_bucket": "2026-09-28T07:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
+          "classification_evidence": [
+            "nvidia",
+            "profit"
+          ],
+          "matched_subject": "nvidia",
+          "matched_action": "profit",
+          "matched_market_object": "nvidia",
+          "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -5277,7 +5272,185 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 130
+          "ranking_score": 125
+        },
+        {
+          "story_id": "news-36d04a703a39669a3974",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways. - Yahoo Finance",
+          "raw_title": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways. - Yahoo Finance",
+          "normalized_fact": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": true,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxOd2E0eWxid3VEVFNPSm5ZU05iZXBlSFp1bHVXOEVDQ2VzM2JoY1FibEhwOFdhLVlMZW11VnYtV0NiMjBOMXJUYnVuSlRiUVNFMW1RdHl5Z1NWdWdDQmlfakZ6VlI3MjA4WEJUZnhVQ1JXaWhVMWNtd0FIeDR4RDNZbzVzbHVLei05Ymo4UEhEQUdHeXVYM2x3WHdn",
+          "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxOd2E0eWxid3VEVFNPSm5ZU05iZXBlSFp1bHVXOEVDQ2VzM2JoY1FibEhwOFdhLVlMZW11VnYtV0NiMjBOMXJUYnVuSlRiUVNFMW1RdHl5Z1NWdWdDQmlfakZ6VlI3MjA4WEJUZnhVQ1JXaWhVMWNtd0FIeDR4RDNZbzVzbHVLei05Ymo4UEhEQUdHeXVYM2x3WHdn",
+          "published_at": "2026-09-13T07:00:00+00:00",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai",
+            "earnings"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "earnings"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "earnings"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "earnings",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "research_candidate:P"
+          ],
+          "freshness": "published",
+          "dedupe_key": "goldmansachssaysaiisdrivinghalfofsp500earningsgrowththatnumbercutsbothways",
+          "event_cluster_key": "event-c5ddd8eb2cd6883da7d8",
+          "published_time_bucket": "2026-09-13T07:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "earnings"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "earnings",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 120
+        },
+        {
+          "story_id": "news-6c33c2955b85d7b0202a",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Can AI Investment Drive S&P 500 Earnings Even Higher? - Goldman Sachs",
+          "raw_title": "Can AI Investment Drive S&P 500 Earnings Even Higher? - Goldman Sachs",
+          "normalized_fact": "Can AI Investment Drive S&P 500 Earnings Even Higher? - Goldman Sachs。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxPemRqUVUwRkM4NkE3ajl3bVRncjNRY2s0b0dDWkhTLV9XcDhZQ1ljNXNNTV9OaVZjcS1Cek5rWUgybTlBYThmS015WmpyTHBWQnp5OE5JT0Fmd2RiR0FWTmlNRXQ2LUtjb0dnOHVFM2FwRkpJbS0xSmFzZHRwNjFLdko5OWl4TmlqSXRaaGNSeU5lQXd6aDBDT2Y0eEZFUUloZzN0NVVn",
+          "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxPemRqUVUwRkM4NkE3ajl3bVRncjNRY2s0b0dDWkhTLV9XcDhZQ1ljNXNNTV9OaVZjcS1Cek5rWUgybTlBYThmS015WmpyTHBWQnp5OE5JT0Fmd2RiR0FWTmlNRXQ2LUtjb0dnOHVFM2FwRkpJbS0xSmFzZHRwNjFLdko5OWl4TmlqSXRaaGNSeU5lQXd6aDBDT2Y0eEZFUUloZzN0NVVn",
+          "published_at": "2026-09-23T07:00:00+00:00",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai",
+            "earnings"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "earnings"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "earnings"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "earnings",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "research_candidate:P"
+          ],
+          "freshness": "published",
+          "dedupe_key": "canaiinvestmentdrivesp500earningsevenhighergoldmansachs",
+          "event_cluster_key": "event-3b6009f893c5c2a8ea71",
+          "published_time_bucket": "2026-09-23T07:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "earnings"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "earnings",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 120
         },
         {
           "story_id": "news-ec3eb2a42a53a62dd98f",
@@ -5359,15 +5532,15 @@
           "ranking_score": 120
         },
         {
-          "story_id": "news-f65fb9ff32f598c9668a",
+          "story_id": "news-ef50fcbf0e4dcfc59897",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "Micron could dethrone Nvidia and become the biggest driver of S&P 500 profit growth - MarketWatch",
-          "raw_title": "Micron could dethrone Nvidia and become the biggest driver of S&P 500 profit growth - MarketWatch",
-          "normalized_fact": "Micron could dethrone Nvidia and become the biggest driver of S&P 500 profit growth - MarketWatch。",
-          "market_topic": "semiconductor_ai",
+          "title": "S&P 500 Forecast: Tech Rally Puts 8,000 in View Despite Fed Risks - FXEmpire",
+          "raw_title": "S&P 500 Forecast: Tech Rally Puts 8,000 in View Despite Fed Risks - FXEmpire",
+          "normalized_fact": "S&P 500 Forecast: Tech Rally Puts 8,000 in View Despite Fed Risks - FXEmpire。",
+          "market_topic": "global_market",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5377,34 +5550,34 @@
           "normalization_complete": true,
           "summary": "",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNc1BoMWkyX0xibzdDSW1VMUFmNjdSNHdjNVRFMFBqaF9Tb1lJN281TnpYR2tWWW1HU2pXdk1lWEpHUEd3b19EcHQzWGZmQ2llU2owS3pIaTdxTVZtTXRTT3RpZHdhWFM2S0szUU4tZW1kSGVaWjRMZWNvOWpFOWc4bmEyQkdZOE14cHJBcDdLazdVMFo3bFZDTFZRdXpwdFZOTld5a09HbnA2Tjk4X1VlNlBmR18tc2YtdDF3alJKMXpZQnd0",
-          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNc1BoMWkyX0xibzdDSW1VMUFmNjdSNHdjNVRFMFBqaF9Tb1lJN281TnpYR2tWWW1HU2pXdk1lWEpHUEd3b19EcHQzWGZmQ2llU2owS3pIaTdxTVZtTXRTT3RpZHdhWFM2S0szUU4tZW1kSGVaWjRMZWNvOWpFOWc4bmEyQkdZOE14cHJBcDdLazdVMFo3bFZDTFZRdXpwdFZOTld5a09HbnA2Tjk4X1VlNlBmR18tc2YtdDF3alJKMXpZQnd0",
-          "published_at": "2026-09-28T07:00:00+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxPaVo3QTdpMjF5ZUszU3pxQzBZcEZCdVhGVENaSFBGbGxGSHd4UnZ2ZkQxb2lrY2E4bE9ZME4wQmpfQ3RmWmNOUUtiY2NDbm1qR0JkWmw0QUwyalIwZlcycHFuT3AyeFVCR3REVnJPV2JpSjR2QXdVbG5BVkRrc2ZkS3R1UmFXcno3Y2QzcF91Rl80Ulp3NldVa0FHaVV2S1NLLTdGSFJDUWxiREV0aGt0S1Niaw",
+          "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxPaVo3QTdpMjF5ZUszU3pxQzBZcEZCdVhGVENaSFBGbGxGSHd4UnZ2ZkQxb2lrY2E4bE9ZME4wQmpfQ3RmWmNOUUtiY2NDbm1qR0JkWmw0QUwyalIwZlcycHFuT3AyeFVCR3REVnJPV2JpSjR2QXdVbG5BVkRrc2ZkS3R1UmFXcno3Y2QzcF91Rl80Ulp3NldVa0FHaVV2S1NLLTdGSFJDUWxiREV0aGt0S1Niaw",
+          "published_at": "2026-10-09T15:42:50+00:00",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
+          "entities": [],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "rates"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
+            "category": "market",
+            "reason": "market_subject_action",
             "matched_terms": [
-              "nvidia",
-              "profit"
+              "s&p 500",
+              "rally"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "nvidia",
-              "profit"
+              "s&p 500",
+              "rally"
             ],
-            "matched_subject": "nvidia",
-            "matched_action": "profit",
-            "matched_market_object": "nvidia",
+            "matched_subject": "s&p 500",
+            "matched_action": "rally",
+            "matched_market_object": "s&p 500",
             "input_fields": [
               "description",
               "summary",
@@ -5413,23 +5586,23 @@
           },
           "relevance_reasons": [
             "market:us",
-            "tracked_ticker:NVDA"
+            "research_candidate:P"
           ],
           "freshness": "published",
-          "dedupe_key": "microncoulddethronenvidiaandbecomethebiggestdriverofsp500profitgrowthmarketwatch",
-          "event_cluster_key": "event-139a0540cb7234aee6f8",
-          "published_time_bucket": "2026-09-28T07:00:00+00:00",
+          "dedupe_key": "sp500forecasttechrallyputs8000inviewdespitefedrisksfxempire",
+          "event_cluster_key": "event-4ab9e12c09ee819eb3ab",
+          "published_time_bucket": "2026-10-09T15:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "nvidia",
-            "profit"
+            "s&p 500",
+            "rally"
           ],
-          "matched_subject": "nvidia",
-          "matched_action": "profit",
-          "matched_market_object": "nvidia",
-          "decision_value_class": "semiconductor_ai",
+          "matched_subject": "s&p 500",
+          "matched_action": "rally",
+          "matched_market_object": "s&p 500",
+          "decision_value_class": "company_event",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -5445,195 +5618,19 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 120
-        },
-        {
-          "story_id": "news-36d04a703a39669a3974",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways. - Yahoo Finance",
-          "raw_title": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways. - Yahoo Finance",
-          "normalized_fact": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": true,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxOd2E0eWxid3VEVFNPSm5ZU05iZXBlSFp1bHVXOEVDQ2VzM2JoY1FibEhwOFdhLVlMZW11VnYtV0NiMjBOMXJUYnVuSlRiUVNFMW1RdHl5Z1NWdWdDQmlfakZ6VlI3MjA4WEJUZnhVQ1JXaWhVMWNtd0FIeDR4RDNZbzVzbHVLei05Ymo4UEhEQUdHeXVYM2x3WHdn",
-          "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxOd2E0eWxid3VEVFNPSm5ZU05iZXBlSFp1bHVXOEVDQ2VzM2JoY1FibEhwOFdhLVlMZW11VnYtV0NiMjBOMXJUYnVuSlRiUVNFMW1RdHl5Z1NWdWdDQmlfakZ6VlI3MjA4WEJUZnhVQ1JXaWhVMWNtd0FIeDR4RDNZbzVzbHVLei05Ymo4UEhEQUdHeXVYM2x3WHdn",
-          "published_at": "2026-09-13T07:00:00+00:00",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "earnings"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "earnings"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "earnings"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "earnings",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "goldmansachssaysaiisdrivinghalfofsp500earningsgrowththatnumbercutsbothways",
-          "event_cluster_key": "event-c5ddd8eb2cd6883da7d8",
-          "published_time_bucket": "2026-09-13T07:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "earnings"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "earnings",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
-          "story_id": "news-6c33c2955b85d7b0202a",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Can AI Investment Drive S&P 500 Earnings Even Higher? - Goldman Sachs",
-          "raw_title": "Can AI Investment Drive S&P 500 Earnings Even Higher? - Goldman Sachs",
-          "normalized_fact": "Can AI Investment Drive S&P 500 Earnings Even Higher? - Goldman Sachs。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxPemRqUVUwRkM4NkE3ajl3bVRncjNRY2s0b0dDWkhTLV9XcDhZQ1ljNXNNTV9OaVZjcS1Cek5rWUgybTlBYThmS015WmpyTHBWQnp5OE5JT0Fmd2RiR0FWTmlNRXQ2LUtjb0dnOHVFM2FwRkpJbS0xSmFzZHRwNjFLdko5OWl4TmlqSXRaaGNSeU5lQXd6aDBDT2Y0eEZFUUloZzN0NVVn",
-          "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxPemRqUVUwRkM4NkE3ajl3bVRncjNRY2s0b0dDWkhTLV9XcDhZQ1ljNXNNTV9OaVZjcS1Cek5rWUgybTlBYThmS015WmpyTHBWQnp5OE5JT0Fmd2RiR0FWTmlNRXQ2LUtjb0dnOHVFM2FwRkpJbS0xSmFzZHRwNjFLdko5OWl4TmlqSXRaaGNSeU5lQXd6aDBDT2Y0eEZFUUloZzN0NVVn",
-          "published_at": "2026-09-23T07:00:00+00:00",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "earnings"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "earnings"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "earnings"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "earnings",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "canaiinvestmentdrivesp500earningsevenhighergoldmansachs",
-          "event_cluster_key": "event-3b6009f893c5c2a8ea71",
-          "published_time_bucket": "2026-09-23T07:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "earnings"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "earnings",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
         }
       ],
       "editorial_candidates": [
         {
-          "story_id": "news-fef98035f9d73151d8d5",
+          "story_id": "news-f65fb9ff32f598c9668a",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "Iran response to more sanctions biggest oil market risk - Midland Reporter-Telegram",
-          "raw_title": "Iran response to more sanctions biggest oil market risk - Midland Reporter-Telegram",
-          "normalized_fact": "Iran response to more sanctions biggest oil market risk - Midland Reporter-Telegram。",
-          "market_topic": "company_industry",
+          "title": "Micron could dethrone Nvidia and become the biggest driver of S&P 500 profit growth - MarketWatch",
+          "raw_title": "Micron could dethrone Nvidia and become the biggest driver of S&P 500 profit growth - MarketWatch",
+          "normalized_fact": "Micron could dethrone Nvidia and become the biggest driver of S&P 500 profit growth - MarketWatch。",
+          "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5643,28 +5640,34 @@
           "normalization_complete": true,
           "summary": "",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxQVWlyd2t6YkJkMUN5d0ViTHFvNFNOOTNLMW44ZHpyRVRIOTQ0Tmo3cmJMN0dsN3BVVjZ0c2tzYXh4TzlKcEdEMjVobnJEaFdFOHowc2NkV0dWd3NMTFdZYWlRRWhwMUM1cmtLSkxLcHZFUjNPaFZOc3pIRWF6bzJaVGFiaERrckpyTVE",
-          "url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxQVWlyd2t6YkJkMUN5d0ViTHFvNFNOOTNLMW44ZHpyRVRIOTQ0Tmo3cmJMN0dsN3BVVjZ0c2tzYXh4TzlKcEdEMjVobnJEaFdFOHowc2NkV0dWd3NMTFdZYWlRRWhwMUM1cmtLSkxLcHZFUjNPaFZOc3pIRWF6bzJaVGFiaERrckpyTVE",
-          "published_at": "2026-08-24T07:00:00+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNc1BoMWkyX0xibzdDSW1VMUFmNjdSNHdjNVRFMFBqaF9Tb1lJN281TnpYR2tWWW1HU2pXdk1lWEpHUEd3b19EcHQzWGZmQ2llU2owS3pIaTdxTVZtTXRTT3RpZHdhWFM2S0szUU4tZW1kSGVaWjRMZWNvOWpFOWc4bmEyQkdZOE14cHJBcDdLazdVMFo3bFZDTFZRdXpwdFZOTld5a09HbnA2Tjk4X1VlNlBmR18tc2YtdDF3alJKMXpZQnd0",
+          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNc1BoMWkyX0xibzdDSW1VMUFmNjdSNHdjNVRFMFBqaF9Tb1lJN281TnpYR2tWWW1HU2pXdk1lWEpHUEd3b19EcHQzWGZmQ2llU2owS3pIaTdxTVZtTXRTT3RpZHdhWFM2S0szUU4tZW1kSGVaWjRMZWNvOWpFOWc4bmEyQkdZOE14cHJBcDdLazdVMFo3bFZDTFZRdXpwdFZOTld5a09HbnA2Tjk4X1VlNlBmR18tc2YtdDF3alJKMXpZQnd0",
+          "published_at": "2026-09-28T07:00:00+00:00",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "energy"
+          "entities": [
+            "NVDA"
           ],
+          "sectors": [],
+          "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "nvidia",
+              "profit"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "nvidia",
+              "profit"
+            ],
+            "matched_subject": "nvidia",
+            "matched_action": "profit",
+            "matched_market_object": "nvidia",
             "input_fields": [
               "description",
               "summary",
@@ -5673,22 +5676,24 @@
           },
           "relevance_reasons": [
             "market:us",
-            "active_event:iran",
-            "active_event:oil",
-            "active_event:sanctions"
+            "tracked_ticker:NVDA",
+            "research_candidate:P"
           ],
           "freshness": "published",
-          "dedupe_key": "iranresponsetomoresanctionsbiggestoilmarketriskmidlandreportertelegram",
-          "event_cluster_key": "event-17f560c266d4f10e72cb",
-          "published_time_bucket": "2026-08-24T07:00:00+00:00",
+          "dedupe_key": "microncoulddethronenvidiaandbecomethebiggestdriverofsp500profitgrowthmarketwatch",
+          "event_cluster_key": "event-139a0540cb7234aee6f8",
+          "published_time_bucket": "2026-09-28T07:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
+          "classification_evidence": [
+            "nvidia",
+            "profit"
+          ],
+          "matched_subject": "nvidia",
+          "matched_action": "profit",
+          "matched_market_object": "nvidia",
+          "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -5703,7 +5708,185 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 130
+          "ranking_score": 125
+        },
+        {
+          "story_id": "news-36d04a703a39669a3974",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways. - Yahoo Finance",
+          "raw_title": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways. - Yahoo Finance",
+          "normalized_fact": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": true,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxOd2E0eWxid3VEVFNPSm5ZU05iZXBlSFp1bHVXOEVDQ2VzM2JoY1FibEhwOFdhLVlMZW11VnYtV0NiMjBOMXJUYnVuSlRiUVNFMW1RdHl5Z1NWdWdDQmlfakZ6VlI3MjA4WEJUZnhVQ1JXaWhVMWNtd0FIeDR4RDNZbzVzbHVLei05Ymo4UEhEQUdHeXVYM2x3WHdn",
+          "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxOd2E0eWxid3VEVFNPSm5ZU05iZXBlSFp1bHVXOEVDQ2VzM2JoY1FibEhwOFdhLVlMZW11VnYtV0NiMjBOMXJUYnVuSlRiUVNFMW1RdHl5Z1NWdWdDQmlfakZ6VlI3MjA4WEJUZnhVQ1JXaWhVMWNtd0FIeDR4RDNZbzVzbHVLei05Ymo4UEhEQUdHeXVYM2x3WHdn",
+          "published_at": "2026-09-13T07:00:00+00:00",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai",
+            "earnings"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "earnings"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "earnings"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "earnings",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "research_candidate:P"
+          ],
+          "freshness": "published",
+          "dedupe_key": "goldmansachssaysaiisdrivinghalfofsp500earningsgrowththatnumbercutsbothways",
+          "event_cluster_key": "event-c5ddd8eb2cd6883da7d8",
+          "published_time_bucket": "2026-09-13T07:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "earnings"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "earnings",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 120
+        },
+        {
+          "story_id": "news-6c33c2955b85d7b0202a",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Can AI Investment Drive S&P 500 Earnings Even Higher? - Goldman Sachs",
+          "raw_title": "Can AI Investment Drive S&P 500 Earnings Even Higher? - Goldman Sachs",
+          "normalized_fact": "Can AI Investment Drive S&P 500 Earnings Even Higher? - Goldman Sachs。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxPemRqUVUwRkM4NkE3ajl3bVRncjNRY2s0b0dDWkhTLV9XcDhZQ1ljNXNNTV9OaVZjcS1Cek5rWUgybTlBYThmS015WmpyTHBWQnp5OE5JT0Fmd2RiR0FWTmlNRXQ2LUtjb0dnOHVFM2FwRkpJbS0xSmFzZHRwNjFLdko5OWl4TmlqSXRaaGNSeU5lQXd6aDBDT2Y0eEZFUUloZzN0NVVn",
+          "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxPemRqUVUwRkM4NkE3ajl3bVRncjNRY2s0b0dDWkhTLV9XcDhZQ1ljNXNNTV9OaVZjcS1Cek5rWUgybTlBYThmS015WmpyTHBWQnp5OE5JT0Fmd2RiR0FWTmlNRXQ2LUtjb0dnOHVFM2FwRkpJbS0xSmFzZHRwNjFLdko5OWl4TmlqSXRaaGNSeU5lQXd6aDBDT2Y0eEZFUUloZzN0NVVn",
+          "published_at": "2026-09-23T07:00:00+00:00",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai",
+            "earnings"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "earnings"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "earnings"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "earnings",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "research_candidate:P"
+          ],
+          "freshness": "published",
+          "dedupe_key": "canaiinvestmentdrivesp500earningsevenhighergoldmansachs",
+          "event_cluster_key": "event-3b6009f893c5c2a8ea71",
+          "published_time_bucket": "2026-09-23T07:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "earnings"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "earnings",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 120
         },
         {
           "story_id": "news-ec3eb2a42a53a62dd98f",
@@ -5785,15 +5968,15 @@
           "ranking_score": 120
         },
         {
-          "story_id": "news-f65fb9ff32f598c9668a",
+          "story_id": "news-ef50fcbf0e4dcfc59897",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "Micron could dethrone Nvidia and become the biggest driver of S&P 500 profit growth - MarketWatch",
-          "raw_title": "Micron could dethrone Nvidia and become the biggest driver of S&P 500 profit growth - MarketWatch",
-          "normalized_fact": "Micron could dethrone Nvidia and become the biggest driver of S&P 500 profit growth - MarketWatch。",
-          "market_topic": "semiconductor_ai",
+          "title": "S&P 500 Forecast: Tech Rally Puts 8,000 in View Despite Fed Risks - FXEmpire",
+          "raw_title": "S&P 500 Forecast: Tech Rally Puts 8,000 in View Despite Fed Risks - FXEmpire",
+          "normalized_fact": "S&P 500 Forecast: Tech Rally Puts 8,000 in View Despite Fed Risks - FXEmpire。",
+          "market_topic": "global_market",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5803,34 +5986,34 @@
           "normalization_complete": true,
           "summary": "",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNc1BoMWkyX0xibzdDSW1VMUFmNjdSNHdjNVRFMFBqaF9Tb1lJN281TnpYR2tWWW1HU2pXdk1lWEpHUEd3b19EcHQzWGZmQ2llU2owS3pIaTdxTVZtTXRTT3RpZHdhWFM2S0szUU4tZW1kSGVaWjRMZWNvOWpFOWc4bmEyQkdZOE14cHJBcDdLazdVMFo3bFZDTFZRdXpwdFZOTld5a09HbnA2Tjk4X1VlNlBmR18tc2YtdDF3alJKMXpZQnd0",
-          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNc1BoMWkyX0xibzdDSW1VMUFmNjdSNHdjNVRFMFBqaF9Tb1lJN281TnpYR2tWWW1HU2pXdk1lWEpHUEd3b19EcHQzWGZmQ2llU2owS3pIaTdxTVZtTXRTT3RpZHdhWFM2S0szUU4tZW1kSGVaWjRMZWNvOWpFOWc4bmEyQkdZOE14cHJBcDdLazdVMFo3bFZDTFZRdXpwdFZOTld5a09HbnA2Tjk4X1VlNlBmR18tc2YtdDF3alJKMXpZQnd0",
-          "published_at": "2026-09-28T07:00:00+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxPaVo3QTdpMjF5ZUszU3pxQzBZcEZCdVhGVENaSFBGbGxGSHd4UnZ2ZkQxb2lrY2E4bE9ZME4wQmpfQ3RmWmNOUUtiY2NDbm1qR0JkWmw0QUwyalIwZlcycHFuT3AyeFVCR3REVnJPV2JpSjR2QXdVbG5BVkRrc2ZkS3R1UmFXcno3Y2QzcF91Rl80Ulp3NldVa0FHaVV2S1NLLTdGSFJDUWxiREV0aGt0S1Niaw",
+          "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxPaVo3QTdpMjF5ZUszU3pxQzBZcEZCdVhGVENaSFBGbGxGSHd4UnZ2ZkQxb2lrY2E4bE9ZME4wQmpfQ3RmWmNOUUtiY2NDbm1qR0JkWmw0QUwyalIwZlcycHFuT3AyeFVCR3REVnJPV2JpSjR2QXdVbG5BVkRrc2ZkS3R1UmFXcno3Y2QzcF91Rl80Ulp3NldVa0FHaVV2S1NLLTdGSFJDUWxiREV0aGt0S1Niaw",
+          "published_at": "2026-10-09T15:42:50+00:00",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
+          "entities": [],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "rates"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
+            "category": "market",
+            "reason": "market_subject_action",
             "matched_terms": [
-              "nvidia",
-              "profit"
+              "s&p 500",
+              "rally"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "nvidia",
-              "profit"
+              "s&p 500",
+              "rally"
             ],
-            "matched_subject": "nvidia",
-            "matched_action": "profit",
-            "matched_market_object": "nvidia",
+            "matched_subject": "s&p 500",
+            "matched_action": "rally",
+            "matched_market_object": "s&p 500",
             "input_fields": [
               "description",
               "summary",
@@ -5839,23 +6022,23 @@
           },
           "relevance_reasons": [
             "market:us",
-            "tracked_ticker:NVDA"
+            "research_candidate:P"
           ],
           "freshness": "published",
-          "dedupe_key": "microncoulddethronenvidiaandbecomethebiggestdriverofsp500profitgrowthmarketwatch",
-          "event_cluster_key": "event-139a0540cb7234aee6f8",
-          "published_time_bucket": "2026-09-28T07:00:00+00:00",
+          "dedupe_key": "sp500forecasttechrallyputs8000inviewdespitefedrisksfxempire",
+          "event_cluster_key": "event-4ab9e12c09ee819eb3ab",
+          "published_time_bucket": "2026-10-09T15:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "nvidia",
-            "profit"
+            "s&p 500",
+            "rally"
           ],
-          "matched_subject": "nvidia",
-          "matched_action": "profit",
-          "matched_market_object": "nvidia",
-          "decision_value_class": "semiconductor_ai",
+          "matched_subject": "s&p 500",
+          "matched_action": "rally",
+          "matched_market_object": "s&p 500",
+          "decision_value_class": "company_event",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -5873,102 +6056,14 @@
           "ranking_score": 120
         },
         {
-          "story_id": "news-36d04a703a39669a3974",
+          "story_id": "news-83f740cdbebdb7fa2b58",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways. - Yahoo Finance",
-          "raw_title": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways. - Yahoo Finance",
-          "normalized_fact": "Goldman Sachs Says AI Is Driving Half of S&P 500 Earnings Growth. That Number Cuts Both Ways。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": true,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxOd2E0eWxid3VEVFNPSm5ZU05iZXBlSFp1bHVXOEVDQ2VzM2JoY1FibEhwOFdhLVlMZW11VnYtV0NiMjBOMXJUYnVuSlRiUVNFMW1RdHl5Z1NWdWdDQmlfakZ6VlI3MjA4WEJUZnhVQ1JXaWhVMWNtd0FIeDR4RDNZbzVzbHVLei05Ymo4UEhEQUdHeXVYM2x3WHdn",
-          "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxOd2E0eWxid3VEVFNPSm5ZU05iZXBlSFp1bHVXOEVDQ2VzM2JoY1FibEhwOFdhLVlMZW11VnYtV0NiMjBOMXJUYnVuSlRiUVNFMW1RdHl5Z1NWdWdDQmlfakZ6VlI3MjA4WEJUZnhVQ1JXaWhVMWNtd0FIeDR4RDNZbzVzbHVLei05Ymo4UEhEQUdHeXVYM2x3WHdn",
-          "published_at": "2026-09-13T07:00:00+00:00",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "earnings"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "earnings"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "earnings"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "earnings",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "goldmansachssaysaiisdrivinghalfofsp500earningsgrowththatnumbercutsbothways",
-          "event_cluster_key": "event-c5ddd8eb2cd6883da7d8",
-          "published_time_bucket": "2026-09-13T07:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "earnings"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "earnings",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
-          "story_id": "news-6c33c2955b85d7b0202a",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Can AI Investment Drive S&P 500 Earnings Even Higher? - Goldman Sachs",
-          "raw_title": "Can AI Investment Drive S&P 500 Earnings Even Higher? - Goldman Sachs",
-          "normalized_fact": "Can AI Investment Drive S&P 500 Earnings Even Higher? - Goldman Sachs。",
+          "title": "Commerce Department Extends Export Controls to Advanced AI Models; Authorizes Release to Specific Trusted Partners - Mayer Brown",
+          "raw_title": "Commerce Department Extends Export Controls to Advanced AI Models; Authorizes Release to Specific Trusted Partners - Mayer Brown",
+          "normalized_fact": "Commerce Department Extends Export Controls to Advanced AI Models; Authorizes Release to Specific Trusted Partners - Mayer Brown。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -5979,17 +6074,16 @@
           "normalization_complete": true,
           "summary": "",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxPemRqUVUwRkM4NkE3ajl3bVRncjNRY2s0b0dDWkhTLV9XcDhZQ1ljNXNNTV9OaVZjcS1Cek5rWUgybTlBYThmS015WmpyTHBWQnp5OE5JT0Fmd2RiR0FWTmlNRXQ2LUtjb0dnOHVFM2FwRkpJbS0xSmFzZHRwNjFLdko5OWl4TmlqSXRaaGNSeU5lQXd6aDBDT2Y0eEZFUUloZzN0NVVn",
-          "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxPemRqUVUwRkM4NkE3ajl3bVRncjNRY2s0b0dDWkhTLV9XcDhZQ1ljNXNNTV9OaVZjcS1Cek5rWUgybTlBYThmS015WmpyTHBWQnp5OE5JT0Fmd2RiR0FWTmlNRXQ2LUtjb0dnOHVFM2FwRkpJbS0xSmFzZHRwNjFLdko5OWl4TmlqSXRaaGNSeU5lQXd6aDBDT2Y0eEZFUUloZzN0NVVn",
-          "published_at": "2026-09-23T07:00:00+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMigwJBVV95cUxOWTQzZjJ5VGNUaGtJY3dTaTVwb0dWN01yWFY2RGtZX0gwZEpFVHM5NTZZQWRRZ04yZk1Hc2tCcFplcTg2VkxPZzVyUDhBeElfM21Id25YX3NpSXpRSmpLRVlkdXdkRWUyU1NMVXRydklfYmI4eWFrS1BqdnpNTlFmSnZ0RkZZeG9zYXRBRmdDYWIxOVA3R3E2aENra054OHl6WjhkTDVuWUY3eDdtc0J4WmVSR0lKbXNXaUNlaF9obXV5ajUwU0RNR3pLdjhlbGJYdllmNnZwZjNISUlvZFVUUkRGNTNoRWEyODgtVUQ3WXVKeDRUbHNYMEJXNnNQQWFyVGZN",
+          "url": "https://news.google.com/rss/articles/CBMigwJBVV95cUxOWTQzZjJ5VGNUaGtJY3dTaTVwb0dWN01yWFY2RGtZX0gwZEpFVHM5NTZZQWRRZ04yZk1Hc2tCcFplcTg2VkxPZzVyUDhBeElfM21Id25YX3NpSXpRSmpLRVlkdXdkRWUyU1NMVXRydklfYmI4eWFrS1BqdnpNTlFmSnZ0RkZZeG9zYXRBRmdDYWIxOVA3R3E2aENra054OHl6WjhkTDVuWUY3eDdtc0J4WmVSR0lKbXNXaUNlaF9obXV5ajUwU0RNR3pLdjhlbGJYdllmNnZwZjNISUlvZFVUUkRGNTNoRWEyODgtVUQ3WXVKeDRUbHNYMEJXNnNQQWFyVGZN",
+          "published_at": "2026-06-30T07:00:00+00:00",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
           "entities": [],
           "sectors": [],
           "topics": [
-            "ai",
-            "earnings"
+            "ai"
           ],
           "event_classification": {
             "schema_version": "1.0",
@@ -5998,15 +6092,15 @@
             "reason": "semiconductor_subject_action",
             "matched_terms": [
               "ai",
-              "earnings"
+              "export control"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
               "ai",
-              "earnings"
+              "export control"
             ],
             "matched_subject": "ai",
-            "matched_action": "earnings",
+            "matched_action": "export control",
             "matched_market_object": "ai",
             "input_fields": [
               "description",
@@ -6018,18 +6112,18 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "canaiinvestmentdrivesp500earningsevenhighergoldmansachs",
-          "event_cluster_key": "event-3b6009f893c5c2a8ea71",
-          "published_time_bucket": "2026-09-23T07:00:00+00:00",
+          "dedupe_key": "commercedepartmentextendsexportcontrolstoadvancedaimodelsauthorizesreleasetospecifictrustedpartnersmayerbrown",
+          "event_cluster_key": "event-a4658e4eec2e323f3ec8",
+          "published_time_bucket": "2026-06-30T07:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
             "ai",
-            "earnings"
+            "export control"
           ],
           "matched_subject": "ai",
-          "matched_action": "earnings",
+          "matched_action": "export control",
           "matched_market_object": "ai",
           "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
@@ -6183,93 +6277,6 @@
           "matched_subject": "",
           "matched_action": "",
           "matched_market_object": "",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
-          "story_id": "news-ef50fcbf0e4dcfc59897",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "S&P 500 Forecast: Tech Rally Puts 8,000 in View Despite Fed Risks - FXEmpire",
-          "raw_title": "S&P 500 Forecast: Tech Rally Puts 8,000 in View Despite Fed Risks - FXEmpire",
-          "normalized_fact": "S&P 500 Forecast: Tech Rally Puts 8,000 in View Despite Fed Risks - FXEmpire。",
-          "market_topic": "global_market",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxPaVo3QTdpMjF5ZUszU3pxQzBZcEZCdVhGVENaSFBGbGxGSHd4UnZ2ZkQxb2lrY2E4bE9ZME4wQmpfQ3RmWmNOUUtiY2NDbm1qR0JkWmw0QUwyalIwZlcycHFuT3AyeFVCR3REVnJPV2JpSjR2QXdVbG5BVkRrc2ZkS3R1UmFXcno3Y2QzcF91Rl80Ulp3NldVa0FHaVV2S1NLLTdGSFJDUWxiREV0aGt0S1Niaw",
-          "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxPaVo3QTdpMjF5ZUszU3pxQzBZcEZCdVhGVENaSFBGbGxGSHd4UnZ2ZkQxb2lrY2E4bE9ZME4wQmpfQ3RmWmNOUUtiY2NDbm1qR0JkWmw0QUwyalIwZlcycHFuT3AyeFVCR3REVnJPV2JpSjR2QXdVbG5BVkRrc2ZkS3R1UmFXcno3Y2QzcF91Rl80Ulp3NldVa0FHaVV2S1NLLTdGSFJDUWxiREV0aGt0S1Niaw",
-          "published_at": "2026-10-09T15:42:50+00:00",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "market",
-            "reason": "market_subject_action",
-            "matched_terms": [
-              "s&p 500",
-              "rally"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "s&p 500",
-              "rally"
-            ],
-            "matched_subject": "s&p 500",
-            "matched_action": "rally",
-            "matched_market_object": "s&p 500",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "sp500forecasttechrallyputs8000inviewdespitefedrisksfxempire",
-          "event_cluster_key": "event-4ab9e12c09ee819eb3ab",
-          "published_time_bucket": "2026-10-09T15:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "s&p 500",
-            "rally"
-          ],
-          "matched_subject": "s&p 500",
-          "matched_action": "rally",
-          "matched_market_object": "s&p 500",
           "decision_value_class": "market_context",
           "quality_flags": [],
           "eligibility_reasons": [
@@ -8805,15 +8812,15 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "WDC": 2,
-          "NVDA": 4
+          "NVDA": 6,
+          "P": 15
         },
         "sector_interest": {},
         "topic_interest": {
-          "oil": 16,
-          "iran": 4,
+          "oil": 17,
+          "iran": 3,
           "war": 2,
-          "sanctions": 3,
+          "sanctions": 2,
           "gold": 1,
           "brent": 1,
           "wti": 1,
@@ -8821,7 +8828,7 @@
           "shipping": 1
         },
         "market_interest": {
-          "us": 112
+          "us": 117
         },
         "context": {
           "tracked_tickers": [
@@ -8859,20 +8866,20 @@
             "ADP",
             "ADSK",
             "AEP",
-            "AVY",
-            "BSX",
+            "AXON",
+            "CAT",
             "CIEN",
-            "COIN",
-            "DAL",
-            "DXCM",
+            "DGX",
+            "FITB",
+            "GE",
+            "HONA",
             "HPE",
-            "HWM",
-            "MRNA",
+            "NOW",
+            "P",
             "PTC",
-            "ROST",
-            "STX",
-            "UAL",
-            "WDC"
+            "SBUX",
+            "SHW",
+            "UPS"
           ],
           "tracked_sectors": [],
           "active_event_topics": [
@@ -8898,17 +8905,17 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "NVDA": 4
+            "NVDA": 6
           },
           "research_candidate": {
-            "WDC": 2
+            "P": 15
           },
           "tracked_sector": {},
           "active_event": {
-            "oil": 16,
-            "iran": 4,
+            "oil": 17,
+            "iran": 3,
             "war": 2,
-            "sanctions": 3,
+            "sanctions": 2,
             "gold": 1,
             "brent": 1,
             "wti": 1,
@@ -8918,13 +8925,13 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 45,
+      "excluded_count": 47,
       "exclusion_reasons": {
         "generic_official_filing": 20,
-        "incomplete_normalized_fact": 27,
-        "insufficient_market_relevance": 18,
+        "incomplete_normalized_fact": 28,
+        "insufficient_market_relevance": 20,
         "listicle_or_selection": 2,
-        "market_scope_mismatch": 2,
+        "market_scope_mismatch": 4,
         "missing_published_at": 2
       },
       "status": "ready",
@@ -8935,23 +8942,23 @@
         "successful_provider_count": 4,
         "failed_provider_count": 1,
         "disabled_provider_count": 1,
-        "fetched": 53,
-        "normalized": 53,
+        "fetched": 55,
+        "normalized": 55,
         "eligible": 8,
-        "excluded": 45,
+        "excluded": 47,
         "deduped": 8,
         "publicly_ranked": 5,
         "current_eligible": 8,
-        "inventory_considered": 59,
+        "inventory_considered": 62,
         "inventory_eligible": 33,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 45,
-        "fetched_story_count": 53,
-        "normalized_story_count": 53,
+        "filtered_story_count": 47,
+        "fetched_story_count": 55,
+        "normalized_story_count": 55,
         "eligible_story_count": 8,
         "deduped_story_count": 8,
         "ranked_story_count": 5
@@ -8960,7 +8967,7 @@
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 59,
+        "considered": 62,
         "eligible": 33,
         "selected": 0,
         "target_count": 5,
@@ -8973,8 +8980,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 53,
-          "checked_at": "2026-10-09T23:55:32.097189+00:00"
+          "item_count": 55,
+          "checked_at": "2026-10-10T00:32:03.053424+00:00"
         },
         {
           "provider": "sec",
@@ -8985,10 +8992,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-10-09T23:55:32.097189+00:00",
+          "checked_at": "2026-10-10T00:32:03.053424+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+          "last_success_at": "2026-10-10T00:32:03.053424+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9016,12 +9023,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-10-09T23:55:32.097189+00:00",
+          "checked_at": "2026-10-10T00:32:03.053424+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-10-09T23:55:32.097189+00:00",
+          "last_failure_at": "2026-10-10T00:32:03.053424+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9044,10 +9051,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-10-09T23:55:32.097189+00:00",
+          "checked_at": "2026-10-10T00:32:03.053424+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+          "last_success_at": "2026-10-10T00:32:03.053424+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9072,10 +9079,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 0,
-          "checked_at": "2026-10-09T23:55:32.097189+00:00",
+          "checked_at": "2026-10-10T00:32:03.053424+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+          "last_success_at": "2026-10-10T00:32:03.053424+00:00",
           "last_failure_at": null,
           "stories_ingested": 2,
           "stories_deduped": 0,
@@ -9103,21 +9110,23 @@
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
           "item_count": 0,
-          "checked_at": "2026-10-09T23:55:32.097189+00:00",
+          "checked_at": "2026-10-10T00:32:03.053424+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+          "last_success_at": "2026-10-10T00:32:03.053424+00:00",
           "last_failure_at": null,
-          "stories_ingested": 0,
+          "stories_ingested": 1,
           "stories_deduped": 0,
           "ranked_count": 0,
-          "relevance_distribution": {},
+          "relevance_distribution": {
+            "market": 1
+          },
           "funnel": {
-            "fetched_count": 1,
-            "normalized_count": 0,
-            "market_compatible_count": 0,
+            "fetched_count": 3,
+            "normalized_count": 1,
+            "market_compatible_count": 1,
             "eligible_count": 0,
-            "excluded_count": 0,
+            "excluded_count": 1,
             "deduped_count": 0,
             "ranked_count": 0
           },
@@ -9132,10 +9141,10 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
           "item_count": 5,
-          "checked_at": "2026-10-09T23:55:32.097189+00:00",
+          "checked_at": "2026-10-10T00:32:03.053424+00:00",
           "raw_item_count": 40,
           "filtered_item_count": 5,
-          "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+          "last_success_at": "2026-10-10T00:32:03.053424+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
           "stories_deduped": 8,
@@ -9143,7 +9152,7 @@
           "relevance_distribution": {
             "active_event": 10,
             "market": 40,
-            "research_candidate": 1,
+            "research_candidate": 7,
             "tracked_ticker": 1
           },
           "funnel": {
@@ -9158,20 +9167,20 @@
         }
       ],
       "observability": {
-        "stories_ingested": 53,
+        "stories_ingested": 55,
         "stories_deduped": 8,
         "ranked_count": 5,
         "relevance_distribution": {
           "active_event": 10,
-          "market": 53,
-          "research_candidate": 1,
-          "tracked_ticker": 1
+          "market": 55,
+          "research_candidate": 8,
+          "tracked_ticker": 2
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+            "last_success_at": "2026-10-10T00:32:03.053424+00:00",
             "last_failure_at": null,
             "stories_ingested": 2,
             "stories_deduped": 0,
@@ -9193,7 +9202,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-10-09T23:55:32.097189+00:00",
+            "last_failure_at": "2026-10-10T00:32:03.053424+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9211,7 +9220,7 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+            "last_success_at": "2026-10-10T00:32:03.053424+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
             "stories_deduped": 8,
@@ -9219,7 +9228,7 @@
             "relevance_distribution": {
               "active_event": 10,
               "market": 40,
-              "research_candidate": 1,
+              "research_candidate": 7,
               "tracked_ticker": 1
             },
             "funnel": {
@@ -9235,7 +9244,7 @@
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+            "last_success_at": "2026-10-10T00:32:03.053424+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9254,7 +9263,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+            "last_success_at": "2026-10-10T00:32:03.053424+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -9277,18 +9286,20 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 1,
+            "stories_ingested": 2,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 1
+              "market": 2,
+              "research_candidate": 1,
+              "tracked_ticker": 1
             },
             "funnel": {
-              "fetched_count": 1,
-              "normalized_count": 1,
+              "fetched_count": 2,
+              "normalized_count": 2,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 1,
+              "excluded_count": 2,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -9296,18 +9307,20 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-09T23:55:32.097189+00:00",
+            "last_success_at": "2026-10-10T00:32:03.053424+00:00",
             "last_failure_at": null,
-            "stories_ingested": 0,
+            "stories_ingested": 1,
             "stories_deduped": 0,
             "ranked_count": 0,
-            "relevance_distribution": {},
+            "relevance_distribution": {
+              "market": 1
+            },
             "funnel": {
-              "fetched_count": 1,
-              "normalized_count": 0,
-              "market_compatible_count": 0,
+              "fetched_count": 3,
+              "normalized_count": 1,
+              "market_compatible_count": 1,
               "eligible_count": 0,
-              "excluded_count": 0,
+              "excluded_count": 1,
               "deduped_count": 0,
               "ranked_count": 0
             }
