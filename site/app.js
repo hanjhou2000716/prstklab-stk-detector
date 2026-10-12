@@ -107,19 +107,66 @@ const compactQuoteMeta = (item) => {
   return `${base}${checked}`;
 };
 
+
+const renderEvidenceDetails = (containerId, rows, heading = "系統分析資料") => {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const details = container.closest("details");
+  const records = (Array.isArray(rows) ? rows : []).filter((item) => item && typeof item === "object");
+  container.replaceChildren();
+  if (!records.length) {
+    if (details) details.hidden = true;
+    return;
+  }
+  if (details) details.hidden = false;
+  const list = document.createElement("ul");
+  list.className = "evidence-list";
+  records.forEach((item) => {
+    const identity = String(item.name || item.ticker || item.kind || "資料").trim();
+    const source = String(item.source_label || item.source_name || item.source || item.quote_source || item.provider || "").trim();
+    const observed = String(item.data_as_of || item.observed_at || item.quote_time || item.quote_date || item.as_of || item.published_at || item.checked_at || "").slice(0, 19).replace("T", " ");
+    const contract = [item.contract_month, item.contract_basis, item.session].filter(Boolean).join("／");
+    const freshness = String(item.freshness || item.data_status || item.status || "").trim();
+    const verification = item.cross_checked === true ? "已核對" : item.cross_checked === false ? "未核對" : "";
+    const values = [item.summary, item.value, item.change_percent !== undefined && item.change_percent !== null ? `漲跌幅 ${signedPercent(Number(item.change_percent))}` : "", item.price !== undefined && item.price !== null ? `價格 ${formatNumber(Number(item.price))}` : ""].filter(Boolean);
+    const text = [identity, source, observed ? `資料時間 ${observed}` : "", contract, freshness, verification, ...values].filter(Boolean).join("｜");
+    const row = document.createElement("li");
+    const label = document.createElement("span");
+    label.textContent = text;
+    row.append(label);
+    const url = safeHttpsUrl(item.source_url || item.url);
+    if (url) {
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "查看來源";
+      row.append(link);
+    }
+    list.append(row);
+  });
+  const group = document.createElement("section");
+  group.className = "evidence-group";
+  const title = document.createElement("h4");
+  title.textContent = heading;
+  group.append(title, list);
+  container.append(group);
+};
+
 const renderQuoteList = (id, items) => {
   const container = document.getElementById(id);
   if (!container) return;
-  if (!items?.length) { container.innerHTML = '<li class="empty">公開報價暫時無法取得</li>'; return; }
+  const evidenceId = id === "index-list" ? "index-evidence" : id === "quote-list" ? "quote-evidence" : "";
+  if (!items?.length) { container.innerHTML = '<li class="empty">公開報價暫時無法取得</li>'; if (evidenceId) renderEvidenceDetails(evidenceId, []); return; }
   const ordered = [...items].sort((a, b) => {
     const rank = (item) => item.ticker === "TAIEX" ? 0 : item.ticker === "TPEx" ? 1 : 2;
     return rank(a) - rank(b);
   });
   container.innerHTML = ordered.map((item) => {
     const movement = quoteMovement(item.change_percent);
-    const meta = compactQuoteMeta(item);
-    return `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name)}</small></span><span class="quote-value ${movement.state}"><b>${quoteMovementPrefix(item.change_percent)}${formatNumber(item.price)} ${escapeHtml(item.currency || "")}</b><small>${signedPercent(item.change_percent)}</small><em class="quote-meta">${escapeHtml(meta)}</em></span></li>`;
+    return `<li><span><b>${escapeHtml(item.ticker)}</b><small>${escapeHtml(item.name)}</small></span><span class="quote-value ${movement.state}"><b>${quoteMovementPrefix(item.change_percent)}${formatNumber(item.price)} ${escapeHtml(item.currency || "")}</b><small>${signedPercent(item.change_percent)}</small></span></li>`;
   }).join("");
+  if (evidenceId) renderEvidenceDetails(evidenceId, ordered, id === "index-list" ? "指數來源與資料時間" : "標的來源與資料時間");
 };
 
 const activeExternalAlert = (alert) => {
@@ -160,7 +207,7 @@ const formatAlertQuote = (item) => {
   }
   const movement = quoteMovement(item.change_percent);
   const meta = compactQuoteMeta(item);
-  return `<div class="alert-quote"><b>${escapeHtml(name)}</b><strong class="${movement.state}">${quoteMovementPrefix(item.change_percent)}${formatNumber(item.price)}${item.currency ? ` ${escapeHtml(item.currency)}` : ""}</strong><small class="${movement.state}">${item.change === null || item.change === undefined ? "" : `${item.change > 0 ? "+" : ""}${formatNumber(item.change)}　`}${signedPercent(item.change_percent)}</small><em class="quote-meta">${escapeHtml(meta)}</em></div>`;
+  return `<div class="alert-quote"><b>${escapeHtml(name)}</b><strong class="${movement.state}">${quoteMovementPrefix(item.change_percent)}${formatNumber(item.price)}${item.currency ? ` ${escapeHtml(item.currency)}` : ""}</strong><small class="${movement.state}">${item.change === null || item.change === undefined ? "" : `${item.change > 0 ? "+" : ""}${formatNumber(item.change)}　`}${signedPercent(item.change_percent)}</small></div>`;
 };
 
 const alertLinkedMarketNames = {
@@ -254,7 +301,7 @@ const traceTime = (value) => {
   return Number.isNaN(parsed.getTime()) ? String(value) : parsed.toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false });
 };
 
-const renderAlertTrace = (event) => {
+const renderAlertTrace = (event, quoteRows = []) => {
   const container = document.getElementById("alert-trace");
   if (!container) return;
   container.replaceChildren();
@@ -362,6 +409,7 @@ const renderAlertTrace = (event) => {
     container.append(section);
   });
   container.hidden = container.childElementCount === 0;
+  renderEvidenceDetails("alert-market-evidence", quoteRows, "行情與來源依據");
 };
 
 const externalRiskReasonLabel = (reason) => ({
@@ -824,7 +872,7 @@ const renderAlertCard = (events, generatedAt, externalAlert, indices = [], exter
         ? `<p class="empty">已連動市場：${escapeHtml(linkedMarkets)}；報價待取得（此歷史版本未保存可核對的結構化報價）</p>`
         : '<p class="empty">本事件尚無可核對的連動市場</p>';
   }
-  renderAlertTrace(event);
+  renderAlertTrace(event, quoteItems);
 };
 
 const renderLegacyRisk = (risk) => {
@@ -847,6 +895,7 @@ const renderRisk = (risk) => {
   const markets = [["taiwan", risk?.taiwan], ["us", risk?.us]].filter(([, market]) => Boolean(market));
   if (!markets.length) {
     container.innerHTML = '<p class="empty">情緒資料暫時無法取得</p>';
+    renderEvidenceDetails("risk-evidence", []);
     return;
   }
   container.innerHTML = markets.map(([marketKey, market]) => {
@@ -866,6 +915,15 @@ const renderRisk = (risk) => {
       ? `｜歷史百分位 ${Number(vix.percentile).toFixed(1)}` : "";
     return `<section class="risk-market-group"><h4>${escapeHtml(market.label)}</h4><div class="risk-metric-grid"><article class="risk-metric-card"><span>${escapeHtml(source)}</span><strong>${escapeHtml(score)}</strong><small>${escapeHtml(sentimentLabel)}${escapeHtml(sentimentQuality)}</small></article><article class="risk-metric-card ${vixState}"><span>VIX</span><strong>${escapeHtml(vixValue)}</strong><small>${escapeHtml(vixChange)}｜${escapeHtml(vixStage)}${escapeHtml(vixPercentile)}</small></article></div></section>`;
   }).join("");
+  const evidence = markets.flatMap(([marketKey, market]) => {
+    const sentiment = market.sentiment || {};
+    const vix = market.vix || {};
+    return [
+      { name: `${market.label} 情緒`, source_label: sentiment.source_label || (marketKey === "taiwan" ? "TAIEX Macro FGI" : "CNN Fear & Greed"), data_as_of: sentiment.date || sentiment.as_of, value: sentiment.score === null || sentiment.score === undefined ? "" : `${Number(sentiment.score).toFixed(1)}｜${sentiment.label || ""}`, source_url: sentiment.source_url },
+      { name: `${market.label} VIX`, source_label: vix.source_label || vix.source, data_as_of: vix.quote_time || vix.quote_date || vix.as_of, price: vix.value, change_percent: vix.change_percent, freshness: vix.freshness || vix.data_status, source_url: vix.source_url },
+    ].filter((item) => item.value || item.price !== undefined || item.data_as_of || item.source_label);
+  });
+  renderEvidenceDetails("risk-evidence", evidence, "情緒與波動來源、資料時間");
 };
 
 const newsEmptyState = (health, intelligence = null) => {
@@ -1707,6 +1765,57 @@ const renderBriefing = (briefing, generatedAt) => {
   container.innerHTML = sections.join("") + sessionNewsEvidenceMarkup;
 };
 
+
+const moveBriefingEvidenceToAnalysis = () => {
+  const source = document.getElementById("briefing-observations");
+  const destination = document.getElementById("briefing-reference-evidence");
+  if (!source || !destination) return;
+  destination.replaceChildren();
+  const movedDetails = [...source.querySelectorAll(".briefing-evidence")]
+    .filter((item) => !item.parentElement?.closest(".briefing-evidence"));
+  movedDetails.forEach((item) => destination.append(item));
+  const sourceNotes = [...source.querySelectorAll(".briefing-source")];
+  const notes = [...new Set(sourceNotes.map((item) => String(item.textContent || "").trim()).filter(Boolean))];
+  sourceNotes.forEach((item) => item.remove());
+  if (notes.length) {
+    const group = document.createElement("details");
+    group.className = "briefing-evidence";
+    const summary = document.createElement("summary");
+    summary.textContent = "摘要、行情與統計資料時間及來源";
+    const list = document.createElement("ul");
+    notes.forEach((note) => {
+      const row = document.createElement("li");
+      const parts = note.split(/(https:\/\/[^\s<>"'）)\]}，；、]+)/g);
+      parts.forEach((part) => {
+        const url = safeHttpsUrl(part);
+        if (!url) {
+          row.append(document.createTextNode(part));
+          return;
+        }
+        const link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        try { link.textContent = new URL(url).hostname; } catch (_error) { link.textContent = "查看來源"; }
+        row.append(link);
+      });
+      list.append(row);
+    });
+    group.append(summary, list);
+    destination.append(group);
+  }
+  const section = destination.childElementCount ? document.createElement("section") : null;
+  if (section) {
+    section.className = "evidence-group";
+    const title = document.createElement("h4");
+    title.textContent = "報告、行情與新聞依據";
+    destination.prepend(section);
+    while (destination.children.length > 1) section.append(destination.children[1]);
+    section.prepend(title);
+  }
+  destination.hidden = destination.childElementCount === 0;
+};
+
 const renderFixedBriefingColumns = (report) => {
   const container = document.getElementById("briefing-observations");
   const observations = Array.isArray(report?.observations) ? report.observations : [];
@@ -1951,82 +2060,144 @@ const renderValueResearch = (id, items, empty) => {
 
 let activeResearchMarket = "taiwan";
 
-const renderResearch = (snapshot) => {
-  const report = snapshot.research_report || {};
-  const candidates = report.candidates || [];
-  const generatedAt = report.generated_at ? ` 掃描時間：${new Date(report.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}` : "";
+let latestResearchState = { status: "loading", report: null, manifest: null, message: "" };
+let latestResearchRequest = 0;
+
+
+
+const renderResearch = () => {
+  const report = latestResearchState.report;
+  const strategyLabels = { price_action: "裸 K 結構", momentum: "動能狙擊", resonance: "三維共振", value: "璞玉價值" };
   setText("research-tag", activeResearchMarket === "taiwan" ? "台股" : "美股");
-  const staleResearch = report.availability === "expired"
+  const researchTrace = document.getElementById("research-trace");
+  const researchDetails = document.getElementById("research-system-analysis");
+  const retry = document.getElementById("research-retry");
+  const setMeta = (strategy, value) => {
+    const label = strategyLabels[strategy];
+    const summary = document.querySelector(`.research-drawer[data-strategy="${strategy}"] summary`);
+    if (summary) summary.textContent = label;
+    const meta = document.querySelector(`[data-research-meta="${strategy}"]`);
+    if (meta) meta.innerHTML = value ? `<span class="research-meta-status">${escapeHtml(value)}</span>` : "";
+  };
+  if (!report || typeof report !== "object") {
+    const isLoading = latestResearchState.status === "loading";
+    const notice = latestResearchState.message || (isLoading ? "正在載入最新已核實研究資料。" : "研究資料尚未取得。");
+    setText("research-notice", notice);
+    if (retry) retry.hidden = isLoading;
+    if (researchTrace) researchTrace.innerHTML = `<p>${escapeHtml(notice)}</p>`;
+    if (researchDetails) researchDetails.hidden = false;
+    Object.keys(strategyLabels).forEach((strategy) => {
+      setMeta(strategy, isLoading ? "載入中" : "研究資料未取得");
+      const listId = { price_action: "research-list", momentum: "momentum-list", resonance: "resonance-list", value: "value-list" }[strategy];
+      const message = isLoading ? "正在載入已核實研究資料" : "研究資料未取得；不能判定本輪沒有符合標的";
+      if (strategy === "value") renderValueResearch(listId, [], message);
+      else renderResearchList(listId, [], message);
+    });
+    return;
+  }
+  const generatedAt = report.generated_at ? new Date(report.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "";
+  const reportIdentity = String(report.snapshot_id || latestResearchState.manifest?.research_snapshot_id || "版本識別未提供");
+  const cacheText = latestResearchState.status === "cached"
+    ? `目前顯示最後已核實版本 ${reportIdentity}${generatedAt ? `（${generatedAt}）` : ""}${latestResearchState.message ? `；${latestResearchState.message}` : ""}`
+    : `已核實研究版本 ${reportIdentity}${generatedAt ? `｜更新 ${generatedAt}` : ""}`;
+  const staleResearch = latestResearchState.status === "cached"
+    || report.availability === "expired"
     || report.research_freshness === "stale_fallback"
     || report.fallback_used === true
     || report.scan_state === "failed";
-  const lastSuccessfulAt = report.last_successful_generated_at || report.fallback_from_generated_at || report.generated_at;
+  const lastSuccessfulAt = report.last_successful_generated_at || report.fallback_from_generated_at;
   const staleNotice = staleResearch
-    ? `資料降級｜沿用上一個成功版本${lastSuccessfulAt ? `（${new Date(lastSuccessfulAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}）` : ""}`
-    : null;
-  const backtestState = window.releaseManifest?.backtest_publication_state;
+    ? `資料降級｜顯示的候選依各策略標示實際資料日${lastSuccessfulAt ? `｜最近成功 ${new Date(lastSuccessfulAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}` : ""}`
+    : "";
+  const backtestState = latestResearchState.manifest?.backtest_publication_state;
   const backtestNotice = backtestState && backtestState !== "ready"
     ? "正式回測尚未發布；候選僅供研究觀察，不提供操作判斷。"
     : "";
   const mixedNotice = report.publication_state === "mixed_strategy"
-    ? "本輪各策略獨立更新；未完成策略保留最後成功版本並標示歷史資料。"
+    ? "各策略分開更新；歷史候選依實際資料日標示。"
     : "";
-  setText("research-notice", mixedNotice || staleNotice || backtestNotice || generatedAt.trim() || "掃描時間暫時無法取得");
-  const sourceFor = (strategy) => (report.sources || []).find((item) => item.market === activeResearchMarket && item.strategy === strategy) || {};
-  const strategyLabels = { price_action: "裸 K 結構", momentum: "動能狙擊", resonance: "三維共振", value: "璞玉價值" };
+  setText("research-notice", [cacheText, staleNotice, mixedNotice, backtestNotice].filter(Boolean).join("｜"));
+  if (retry) retry.hidden = latestResearchState.status === "verified";
+  const sources = Array.isArray(report.sources) ? report.sources : [];
+  const candidates = Array.isArray(report.candidates) ? report.candidates : [];
+  const sourceFor = (strategy) => sources.find((item) => item.market === activeResearchMarket && item.strategy === strategy) || null;
+  const researchDate = (value) => String(value || "").match(/^\d{4}-\d{2}-\d{2}/)?.[0] || "";
   const researchStamp = (value) => {
     if (!value) return "";
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) return String(value).slice(0, 16).replace("T", " ");
-    const parts = new Intl.DateTimeFormat("en-CA", {
+    return new Intl.DateTimeFormat("zh-TW", {
       timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit",
       hour: "2-digit", minute: "2-digit", hour12: false,
-    }).formatToParts(parsed).reduce((result, item) => ({ ...result, [item.type]: item.value }), {});
-    return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
+    }).format(parsed);
   };
-  const researchDate = (value) => String(value || "").match(/^\d{4}-\d{2}-\d{2}/)?.[0] || "";
-  Object.entries(strategyLabels).forEach(([strategy, label]) => {
+  const sourceCandidateCount = (source) => Number(source?.visible_candidates ?? source?.visible_candidate_count ?? source?.candidates ?? source?.candidate_count ?? 0);
+  const scanComplete = (source) => {
+    if (source?.scan_state !== "complete" || source?.historical_fallback === true) return false;
+    if (source?.scan_completeness === "complete") return true;
+    const expected = Number(source.universe_expected ?? source.requested_records ?? source.requested ?? 0);
+    const completed = Number(source.universe_completed ?? source.complete_records ?? source.data_complete ?? 0);
+    const failed = Number(source.universe_failed ?? source.failed_records ?? source.failed ?? 0);
+    return expected > 0 && completed >= expected && failed === 0;
+  };
+  Object.entries(strategyLabels).forEach(([strategy]) => {
     const source = sourceFor(strategy);
-    const date = researchDate(source.scan_trading_date);
-    const state = source.freshness_state || (source.historical_fallback === true ? "歷史資料" : source.scan_state === "building" ? "建檔中" : source.scan_state === "failed" ? "更新失敗" : date ? "最近收盤資料" : "資料日期不明");
-    const successful = source.last_successful_at || source.last_successful_generated_at;
-    const summary = document.querySelector(`.research-drawer[data-strategy="${strategy}"] summary`);
-    if (summary) summary.textContent = label;
-    const meta = document.querySelector(`[data-research-meta="${strategy}"]`);
-    if (meta) {
-      const dateText = date ? `資料日 ${date}` : "資料日期不明";
-      const successText = successful ? `｜最後成功 ${researchStamp(successful)}` : "";
-      const financialText = strategy === "value" && source.rule_version === "tw_value_total_equity_quality_v3" && source.financial_period
-        ? `｜財報期間 ${source.financial_period}` : "";
-      const ruleText = strategy === "value" && source.rule_version === "tw_value_total_equity_quality_v3"
-        ? "｜當期總權益品質＋低熱度 v3" : "";
-      const reason = source.blocking_reason || source.notice || source.failure_reason || "";
-      meta.innerHTML = `<span class="research-meta-status">${escapeHtml(`${dateText}｜${state}${successText}${financialText}${ruleText}`)}</span>${reason && ["更新失敗", "建檔中", "資料日期不明"].includes(state) ? `<span class="research-meta-reason">${escapeHtml(String(reason))}</span>` : ""}`;
+    if (!source) {
+      setMeta(strategy, "掃描來源紀錄未取得");
+      return;
     }
+    const date = researchDate(source.scan_trading_date || source.quote_cutoff_at);
+    const state = source.freshness_state
+      || (source.historical_fallback === true ? "歷史資料" : source.scan_state === "building" ? "建檔中" : source.scan_state === "failed" ? "更新失敗" : source.scan_state === "partial" ? "部分完成" : source.scan_state === "complete" ? "掃描完成" : source.status || "狀態待確認");
+    const successful = source.last_successful_at || source.last_successful_generated_at;
+    const financialText = strategy === "value" && source.rule_version === "tw_value_total_equity_quality_v3" && source.financial_period
+      ? `｜財報期間 ${source.financial_period}` : "";
+    const ruleText = strategy === "value" && source.rule_version === "tw_value_total_equity_quality_v3"
+      ? "｜當期總權益品質＋低熱度 v3" : "";
+    const reason = source.blocking_reason || source.notice || source.failure_reason || "";
+    const detail = reason && ["更新失敗", "建檔中", "狀態待確認", "資料暫時無法取得"].includes(state)
+      ? `｜${String(reason)}` : "";
+    setMeta(strategy, [date ? `資料日 ${date}` : "", state, successful ? `最後成功 ${researchStamp(successful)}` : "", financialText, ruleText, detail].filter(Boolean).join("｜"));
   });
+  const marketCandidates = candidates.filter((item) => item.market === activeResearchMarket);
+  const strategyItems = (strategy) => {
+    const all = marketCandidates.filter((item) => item.strategy === strategy);
+    const current = all.filter((item) => item.research_version_state !== "historical");
+    return current.length ? current : all;
+  };
   const sourceBlocked = (strategy) => {
     const source = sourceFor(strategy);
-    const partialCandidatesAllowed = source.partial_candidates_allowed === true;
-    const buildingWithoutPartialRows = source.status === "建檔中" || source.scan_state === "building";
-    const sourceHasCandidates = marketCandidates.some((item) => item.strategy === strategy);
-    return (!sourceHasCandidates && (source.status === "掃描失敗" || source.status === "資料暫時無法取得" || source.scan_state === "failed"))
-      || (buildingWithoutPartialRows && !partialCandidatesAllowed && !sourceHasCandidates);
+    if (!source) return true;
+    const present = marketCandidates.some((item) => item.strategy === strategy);
+    const building = source.status === "建檔中" || source.scan_state === "building";
+    return ((!present && (source.status === "掃描失敗" || source.status === "資料暫時無法取得" || source.scan_state === "failed"))
+      || (building && source.partial_candidates_allowed !== true && !present));
   };
-  const marketCandidates = candidates.filter((item) => item.market === activeResearchMarket);
-  const sourceMessage = (strategy, fallback) => {
+  const sourceMessage = (strategy, noMatchMessage) => {
     const source = sourceFor(strategy);
-    if (source.historical_fallback === true) {
-      const stamp = source.last_successful_generated_at || "—";
-      return `本輪更新失敗或仍建檔中；顯示最後成功版本（${new Date(stamp).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}），不代表本輪新資料。`;
+    if (!source) return "此版本缺少本策略的來源紀錄，掃描結果無法核實。";
+    const items = strategyItems(strategy);
+    const knownCount = sourceCandidateCount(source);
+    if (items.length) return "";
+    if (knownCount > 0) return `來源紀錄有 ${knownCount} 檔候選，但本版本未提供可顯示的候選資料。`;
+    if (source.historical_fallback === true || source.strategy_version_state === "historical") {
+      return "此策略沿用歷史版本，但沒有保存可顯示候選；不能當成本輪零候選。";
     }
-    if (source.status === "掃描失敗" || source.scan_state === "failed") {
+    if (source.scan_state === "failed" || source.status === "掃描失敗" || source.status === "資料暫時無法取得") {
       const evidence = source.failure_evidence || {};
       const attempts = Number.isFinite(Number(evidence.attempts)) ? `（已重試 ${Number(evidence.attempts)} 次）` : "";
-      return `本輪掃描失敗${attempts}；顯示上一個成功版本候選，等待重試。`;
+      return `本輪掃描失敗${attempts}；沒有可核實候選可供顯示。`;
     }
-    if (source.status === "資料暫時無法取得") return "本輪資料暫時無法取得；顯示上一個成功版本候選。";
-    if (source.failed > 0) return `本輪有 ${source.failed} 檔資料缺漏，候選僅供檢視。`;
-    return fallback;
+    if (source.scan_state === "building" || source.status === "建檔中") {
+      return "本輪掃描尚未完成；目前不能判定沒有符合標的。";
+    }
+    const expected = Number(source.universe_expected ?? source.requested_records ?? source.requested ?? 0);
+    const scanned = Number(source.universe_scanned ?? source.universe_completed ?? source.complete_records ?? source.data_complete ?? 0);
+    if (source.scan_state === "partial" || (expected > 0 && scanned > 0 && scanned < expected)) {
+      return `本輪只完成部分掃描（${scanned}/${expected || "—"}）；目前不能判定全市場沒有符合標的。`;
+    }
+    if (scanComplete(source)) return noMatchMessage;
+    return "本輪掃描完整性尚未核實；目前不能判定沒有符合標的。";
   };
   const valueSource = sourceFor("value");
   const valuePending = valueSource?.scan_state === "building";
@@ -2035,23 +2206,41 @@ const renderResearch = (snapshot) => {
     ? `官方批次財報核對中：已核對 ${valueSource.official_financial_coverage ?? 0}/${valueSource.universe_expected ?? "—"} 檔；未完成全池資料覆核前不列入完整璞玉價值排名。`
     : valuePending
       ? `歷史核對中：已完成 ${valueSource.history_cached ?? 0}/${valueSource.history_expected ?? "—"} 檔（${valueSource.history_progress_pct ?? 0}%）；未完成六項公開資料覆核前不列入正式璞玉價值候選或觀察名單。`
-    : valueDiagnostics.records === 0
-      ? "本輪沒有可評估的公開資料；請查看來源健康狀態。"
-      : valueDiagnostics.complete_records === 0
-        ? `本輪 ${valueDiagnostics.records} 檔仍有必要資料缺口，未列入正式候選。`
-        : valueDiagnostics.formal_eligible_records === 0 && valueDiagnostics.observation_eligible_records === 0
-          ? `本輪 ${valueDiagnostics.complete_records} 檔資料完整，但未達正式 5/6 或觀察 3/6–4/6 門檻。`
-          : "本輪沒有同時通過璞玉品質與三月去熱門化公開資料覆核的標的";
-  const strategyItems = (strategy) => {
-    const all = marketCandidates.filter((item) => item.strategy === strategy);
-    const current = all.filter((item) => item.research_version_state !== "historical");
-    return current.length ? current : all;
-  };
-  renderResearchList("research-list", sourceBlocked("price_action") ? [] : strategyItems("price_action"), sourceMessage("price_action", "本輪掃描沒有符合裸 K 結構的候選標的"));
-  renderResearchList("momentum-list", sourceBlocked("momentum") ? [] : strategyItems("momentum"), sourceMessage("momentum", "本輪掃描沒有符合動能條件的候選標的"));
-  renderResearchList("resonance-list", sourceBlocked("resonance") ? [] : strategyItems("resonance"), sourceMessage("resonance", "本輪掃描沒有符合三維共振條件的候選標的"));
+      : valueDiagnostics.records === 0
+        ? "本輪沒有可評估的公開資料；請查看來源健康狀態。"
+        : valueDiagnostics.complete_records === 0
+          ? `本輪 ${valueDiagnostics.records} 檔仍有必要資料缺口，未列入正式候選。`
+          : valueDiagnostics.formal_eligible_records === 0 && valueDiagnostics.observation_eligible_records === 0
+            ? `本輪 ${valueDiagnostics.complete_records} 檔資料完整，但未達正式 5/6 或觀察 3/6–4/6 門檻。`
+            : "本輪沒有同時通過璞玉品質與三月去熱門化公開資料覆核的標的";
+  renderResearchList("research-list", sourceBlocked("price_action") ? [] : strategyItems("price_action"), sourceMessage("price_action", "本輪完整掃描完成，沒有符合裸 K 結構的候選標的"));
+  renderResearchList("momentum-list", sourceBlocked("momentum") ? [] : strategyItems("momentum"), sourceMessage("momentum", "本輪完整掃描完成，沒有符合動能條件的候選標的"));
+  renderResearchList("resonance-list", sourceBlocked("resonance") ? [] : strategyItems("resonance"), sourceMessage("resonance", "本輪完整掃描完成，沒有符合三維共振條件的候選標的"));
   renderValueResearch("value-list", sourceBlocked("value") ? [] : strategyItems("value"), sourceMessage("value", valueMessage));
+  if (researchTrace && researchDetails) {
+    const missingDates = sources.filter((item) => !researchDate(item.scan_trading_date || item.quote_cutoff_at))
+      .map((item) => `${item.market === "taiwan" ? "台股" : item.market === "us" ? "美股" : item.market || "市場"} ${strategyLabels[item.strategy] || item.strategy || "策略"}`);
+    const diagnostics = sources.map((item) => {
+      const market = item.market === "taiwan" ? "台股" : item.market === "us" ? "美股" : item.market || "市場";
+      const name = `${market}｜${strategyLabels[item.strategy] || item.strategy || "策略"}`;
+      const date = researchDate(item.scan_trading_date || item.quote_cutoff_at) || "資料日未提供";
+      const coverageExpected = item.universe_expected ?? item.requested_records ?? item.requested;
+      const coverageDone = item.universe_completed ?? item.universe_scanned ?? item.complete_records ?? item.data_complete;
+      const failed = item.universe_failed ?? item.failed_records ?? item.failed;
+      const candidateCount = sourceCandidateCount(item);
+      const reason = item.blocking_reason || item.failure_reason || item.notice || "";
+      return `<li><b>${escapeHtml(name)}</b>｜資料日 ${escapeHtml(date)}｜狀態 ${escapeHtml(String(item.freshness_state || item.status || item.scan_state || "未提供"))}｜候選 ${escapeHtml(String(candidateCount))}${coverageExpected !== undefined ? `｜掃描 ${escapeHtml(String(coverageDone ?? 0))}/${escapeHtml(String(coverageExpected))}` : ""}${failed !== undefined ? `｜失敗 ${escapeHtml(String(failed))}` : ""}${item.last_successful_at || item.last_successful_generated_at ? `｜最近成功 ${escapeHtml(researchStamp(item.last_successful_at || item.last_successful_generated_at))}` : ""}${reason ? `｜原因 ${escapeHtml(String(reason))}` : ""}${item.execution_version ? `｜版本 ${escapeHtml(String(item.execution_version).slice(0, 12))}` : ""}</li>`;
+    }).join("");
+    const candidateCount = candidates.length;
+    const header = `<p><b>研究快照：</b>${escapeHtml(reportIdentity)}${generatedAt ? `｜更新 ${escapeHtml(generatedAt)}` : ""}｜候選 ${candidateCount} 檔</p>`;
+    researchTrace.innerHTML = `${header}${missingDates.length ? `<p><b>資料日未提供：</b>${escapeHtml([...new Set(missingDates)].join("、"))}</p>` : ""}${diagnostics ? `<ul class="research-evidence-list">${diagnostics}</ul>` : '<p>本版本沒有策略來源紀錄。</p>'}`;
+    researchDetails.hidden = false;
+  }
 };
+
+document.getElementById("research-retry")?.addEventListener("click", () => {
+  if (window.releaseManifest) void loadLatestResearch(window.releaseManifest, { force: true });
+});
 
 document.querySelectorAll(".research-tab").forEach((tab) => tab.addEventListener("click", () => {
   activeResearchMarket = tab.dataset.market || "taiwan";
@@ -2060,7 +2249,7 @@ document.querySelectorAll(".research-tab").forEach((tab) => tab.addEventListener
     item.classList.toggle("active", selected);
     item.setAttribute("aria-selected", String(selected));
   });
-  if (window.marketSnapshot) renderResearch(window.marketSnapshot);
+  renderResearch();
 }));
 
 let activeNewsMarket = "taiwan";
@@ -2223,6 +2412,7 @@ const render = (snapshot, { deferAlert = false } = {}) => {
   };
   renderNewsList("taiwan-news", newsMarkets?.taiwan?.stories || snapshot.news?.taiwan, newsRegistry, newsHealthFor("taiwan"), newsMarkets?.taiwan);
   renderNewsList("us-news", newsMarkets?.us?.stories || snapshot.news?.us, newsRegistry, newsHealthFor("us"), newsMarkets?.us);
+  moveBriefingEvidenceToAnalysis();
 };
 
 // Telegram buttons carry the release and alert identity.  Resolve that
@@ -2548,6 +2738,7 @@ const saveLastGoodRelease = (manifest, artifactTexts) => {
 };
 
 const LAST_GOOD_BOOTSTRAP_KEY = "prstk.lastGoodBootstrap.v1";
+const LAST_GOOD_RESEARCH_KEY = "prstk.lastGoodResearch.v1";
 
 const safeArtifactPath = (manifest, name) => {
   const paths = manifest?.artifact_paths || {};
@@ -2568,6 +2759,113 @@ const loadVerifiedArtifactText = async (manifest, name, options = {}) => {
   if (deadlineAt && Date.now() > deadlineAt) throw new Error(`artifact verification deadline exceeded: ${name}`);
   if (await sha256Hex(text) !== expectedHash) throw new Error(`artifact hash mismatch: ${name}`);
   return text;
+};
+
+
+const validateResearchArtifact = async (manifest, text) => {
+  if (!manifest || !PUBLISHABLE_RELEASE_STATUSES.has(manifest.status) || !manifest.release_id) {
+    throw new Error("research_release_identity_invalid");
+  }
+  const expectedHash = String(manifest.artifact_hashes?.["research-report.json"] || "");
+  const expectedSnapshot = String(manifest.research_snapshot_id || "");
+  if (!expectedHash || !expectedSnapshot) throw new Error("research_artifact_not_published");
+  if (await sha256Hex(text) !== expectedHash) throw new Error("research_artifact_hash_mismatch");
+  const report = JSON.parse(text);
+  if (!report || typeof report !== "object" || String(report.snapshot_id || "") !== expectedSnapshot) {
+    throw new Error("research_snapshot_identity_mismatch");
+  }
+  if (!Array.isArray(report.candidates) || !Array.isArray(report.sources)) {
+    throw new Error("research_artifact_contract_invalid");
+  }
+  return report;
+};
+
+const saveLastGoodResearch = (manifest, text) => {
+  try {
+    localStorage.setItem(LAST_GOOD_RESEARCH_KEY, JSON.stringify({
+      manifest,
+      researchText: text,
+      saved_at: new Date().toISOString(),
+    }));
+  } catch (_error) {
+    // Storage limits do not block the verified network result.
+  }
+};
+
+const readLastGoodResearch = async () => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LAST_GOOD_RESEARCH_KEY) || "null");
+    if (typeof saved?.researchText !== "string" || !saved.manifest) return null;
+    const report = await validateResearchArtifact(saved.manifest, saved.researchText);
+    return { manifest: saved.manifest, text: saved.researchText, report, saved_at: saved.saved_at };
+  } catch (_error) {
+    return null;
+  }
+};
+
+const loadLatestResearch = async (manifest, { force = false } = {}) => {
+  const requestId = ++latestResearchRequest;
+  const prior = latestResearchState.report ? latestResearchState : null;
+  if (!prior) {
+    const cached = await readLastGoodResearch();
+    if (requestId !== latestResearchRequest) return;
+    if (cached) latestResearchState = { status: "cached", report: cached.report, manifest: cached.manifest, message: "正在核對最新研究版本。" };
+  } else if (prior.status !== "verified") {
+    latestResearchState = { ...prior, status: "cached", message: "正在核對最新研究版本。" };
+  }
+  if (!force && latestResearchState.status === "verified"
+    && String(latestResearchState.manifest?.release_id || "") === String(manifest?.release_id || "")
+    && String(latestResearchState.manifest?.research_snapshot_id || "") === String(manifest?.research_snapshot_id || "")) {
+    renderResearch();
+    return;
+  }
+  if (!manifest?.research_snapshot_id || !manifest?.artifact_hashes?.["research-report.json"]) {
+    if (requestId !== latestResearchRequest) return;
+    const hasVerifiedCache = Boolean(latestResearchState.report && latestResearchState.manifest);
+    latestResearchState = {
+      status: hasVerifiedCache ? "cached" : "missing",
+      report: latestResearchState.report,
+      manifest: latestResearchState.manifest,
+      message: hasVerifiedCache
+        ? "最新發布版本沒有研究檔；沿用最後已核實研究。"
+        : "此發布版本沒有可核實的研究資料。",
+    };
+    renderResearch();
+    return;
+  }
+  latestResearchState = {
+    ...latestResearchState,
+    status: latestResearchState.report ? "cached" : "loading",
+    message: latestResearchState.report ? "正在核對最新研究版本。" : "",
+    manifest: latestResearchState.report ? latestResearchState.manifest : manifest,
+  };
+  renderResearch();
+  const deadlineAt = Date.now() + 20000;
+  try {
+    const text = await loadVerifiedArtifactText(manifest, "research-report.json", {
+      timeoutMs: 12000,
+      deadlineAt,
+      revalidate: true,
+    });
+    const report = await validateResearchArtifact(manifest, text);
+    if (Date.now() > deadlineAt) throw new Error("research_verification_timeout");
+    if (requestId !== latestResearchRequest) return;
+    latestResearchState = { status: "verified", report, manifest, message: "" };
+    saveLastGoodResearch(manifest, text);
+    renderResearch();
+  } catch (error) {
+    if (requestId !== latestResearchRequest) return;
+    const hadVerifiedReport = Boolean(latestResearchState.report);
+    const reason = String(error?.message || "research_load_failed")
+      .replace(/https?:\/\/\S+/g, "[來源]")
+      .slice(0, 180);
+    latestResearchState = {
+      ...latestResearchState,
+      status: hadVerifiedReport ? "cached" : "error",
+      message: hadVerifiedReport ? `最新研究核對失敗（${reason}）` : `研究載入失敗（${reason}）`,
+    };
+    renderResearch();
+  }
 };
 
 const saveLastGoodBootstrap = (manifest, bootstrapText) => {
@@ -2832,6 +3130,7 @@ const loadPublishedRelease = async () => {
   if (!manifest || !PUBLISHABLE_RELEASE_STATUSES.has(manifest.status) || !manifest.release_id) {
     throw new Error("published release is incomplete");
   }
+  void loadLatestResearch(manifest);
   const bootstrapName = Array.isArray(manifest.bootstrap_artifacts) && manifest.bootstrap_artifacts.includes("bootstrap.json")
     ? "bootstrap.json" : "";
   if (!bootstrapName) {
@@ -2874,6 +3173,11 @@ const renderLoadedSnapshot = async (snapshot, { historical = false } = {}) => {
 
 const startPublishedRelease = async () => {
   const hasAlertDeepLink = Boolean(new URLSearchParams(window.location.search).get("alert"));
+  const savedResearch = await readLastGoodResearch();
+  if (savedResearch) {
+    latestResearchState = { status: "cached", report: savedResearch.report, manifest: savedResearch.manifest, message: "正在核對最新研究版本。" };
+    renderResearch();
+  }
   // Local storage is only used after a previous SHA-256 verification.  It is
   // a fast paint source, never a notification-eligibility or delivery source.
   const cached = await readLastGoodBootstrap();
