@@ -6,7 +6,7 @@
     <meta name="description" content="稜量速報系統 Telegram Mini App" />
     <meta name="prstk-api-base" content="" />
     <title>稜量速報系統</title>
-    <link rel="stylesheet" href="styles.css?v=5eb2f0eacf840b30" />
+    <link rel="stylesheet" href="styles.css?v=luna6evidence20261012" />
     <script src="https://telegram.org/js/telegram-web-app.js?61"></script>
   </head>
   <body>
@@ -55,18 +55,18 @@
           </section>
           <ul id="event-list" class="event-list signal-list"><li class="empty">載入中</li></ul>
           <aside id="alert-reminder" class="alert-reminder">僅供公開資訊整理與教育性觀察，不構成投資建議。</aside>
-          <details id="alert-system-analysis" class="technical-details"><summary>系統分析資料</summary><div id="alert-trace" class="alert-trace" aria-label="事件來源核對資訊"></div><p id="alert-pending" class="alert-pending" hidden></p></details>
+          <details id="alert-system-analysis" class="technical-details"><summary>系統分析資料</summary><div id="alert-trace" class="alert-trace" aria-label="事件來源核對資訊"></div><div id="alert-market-evidence"></div><p id="alert-pending" class="alert-pending" hidden></p></details>
         </details>
         <details id="briefing-report" class="briefing-report collapsible-card" open>
           <summary class="briefing-report-header"><h3 id="briefing-report-title" class="market-report-title">市場定時報告</h3><time id="briefing-time">資料載入中</time></summary>
           <div id="briefing-overview" class="briefing-overview" aria-label="市場綜合摘要"><p>正在整理本次公開市場脈絡。</p></div>
           <div id="briefing-observations" class="briefing-observations"><p class="empty">載入中</p></div>
           <aside id="briefing-reminder" class="alert-reminder">僅供公開資訊整理與教育性觀察，不構成投資建議。</aside>
-          <details id="briefing-system-analysis" class="technical-details"><summary>系統分析資料</summary><div id="briefing-correlation" class="alert-trace" aria-label="定時報告觀測關聯"></div><div id="briefing-intelligence-content"><p class="empty">本輪市場情報證據載入後可展開查看。</p></div><div id="external-intelligence-content"><p class="empty">本輪沒有可公開顯示的外部快訊。</p></div><div id="briefing-paper-content"><p class="empty">本輪沒有可追蹤的研究觀察。</p></div><div id="briefing-morning-system-analysis"><p class="empty">本輪沒有額外系統分析資料。</p></div></details>
+          <details id="briefing-system-analysis" class="technical-details"><summary>系統分析資料</summary><div id="briefing-correlation" class="alert-trace" aria-label="定時報告觀測關聯"></div><div id="briefing-intelligence-content"><p class="empty">本輪市場情報證據載入後可展開查看。</p></div><div id="external-intelligence-content"><p class="empty">本輪沒有可公開顯示的外部快訊。</p></div><div id="briefing-paper-content"><p class="empty">本輪沒有可追蹤的研究觀察。</p></div><div id="briefing-morning-system-analysis"><p class="empty">本輪沒有額外系統分析資料。</p></div><div id="briefing-reference-evidence" class="briefing-reference-evidence" hidden></div></details>
         </details>
         <details id="market-sentiment-card" class="panel collapsible-card" open>
           <summary class="panel-heading"><h3 class="market-report-title">市場情緒與波動</h3><span>公開資料</span></summary>
-          <div id="risk-list" class="risk-grid"><p class="empty">載入中</p></div>
+          <div id="risk-list" class="risk-grid"><p class="empty">載入中</p></div><details id="risk-system-analysis" class="technical-details" hidden><summary>系統分析資料</summary><div id="risk-evidence"></div></details>
         </details>
       </section>
 
@@ -74,24 +74,27 @@
         <div class="section-heading"><div><p class="section-kicker">MARKET</p><h2 id="market-title">市場脈動</h2></div><span id="market-status" class="source-chip">交易日資訊載入中</span></div>
         <details class="panel index-panel collapsible-card">
           <summary class="panel-heading"><h3>全球與主要市場</h3><span>市場指數</span></summary>
-          <ul id="index-list" class="watch-list"><li class="empty">載入中</li></ul>
+          <ul id="index-list" class="watch-list"><li class="empty">載入中</li></ul><details id="index-system-analysis" class="technical-details" hidden><summary>系統分析資料</summary><div id="index-evidence"></div></details>
         </details>
         <details class="panel collapsible-card">
           <summary class="panel-heading"><h3>代表標的</h3><span>觀測池</span></summary>
-          <ul id="quote-list" class="watch-list"><li class="empty">載入中</li></ul>
+          <ul id="quote-list" class="watch-list"><li class="empty">載入中</li></ul><details id="quote-system-analysis" class="technical-details" hidden><summary>系統分析資料</summary><div id="quote-evidence"></div></details>
         </details>
       </section>
 
       <section id="research" class="section-block" aria-labelledby="research-title">
         <div class="section-heading"><div><p class="section-kicker">RESEARCH</p><h2 id="research-title">策略資料清單</h2></div><span id="research-tag" class="source-chip">觀察中</span></div>
         <div class="research-tabs" role="tablist" aria-label="研究市場切換"><button type="button" class="research-tab active" data-market="taiwan" role="tab" aria-selected="true">台股</button><button type="button" class="research-tab" data-market="us" role="tab" aria-selected="false">美股</button></div>
-        <p id="research-notice" class="section-note">掃描時間載入中</p>
+        <p id="research-version-note" class="section-note">策略研究獨立更新，顯示最新已核實版本；與 Telegram 通知原版分開。</p>
+        <p id="research-notice" class="section-note">正在載入最新已核實研究。</p>
+        <button id="research-retry" class="research-retry" type="button" hidden>重新載入研究資料</button>
         <div class="detail-content research-drawers">
           <details class="research-drawer" data-strategy="price_action"><summary>裸 K 結構</summary><ul id="research-list" class="research-list"><li class="empty">載入中</li></ul><div class="research-meta" data-research-meta="price_action" aria-live="polite"></div></details>
           <details class="research-drawer" data-strategy="momentum"><summary>動能狙擊</summary><ul id="momentum-list" class="research-list"><li class="empty">載入中</li></ul><div class="research-meta" data-research-meta="momentum" aria-live="polite"></div></details>
           <details class="research-drawer" data-strategy="resonance"><summary>三維共振</summary><ul id="resonance-list" class="research-list"><li class="empty">載入中</li></ul><div class="research-meta" data-research-meta="resonance" aria-live="polite"></div></details>
           <details class="research-drawer" data-strategy="value"><summary>璞玉價值</summary><ul id="value-list" class="research-list"><li class="empty">載入中</li></ul><div class="research-meta" data-research-meta="value" aria-live="polite"></div></details>
         </div>
+        <details id="research-system-analysis" class="technical-details" hidden><summary>系統分析資料</summary><div id="research-trace"></div></details>
       </section>
 
       <section id="news" class="section-block" aria-labelledby="news-title">
@@ -112,6 +115,6 @@
 
       <footer><p>@2026 PRStK Lab &amp; D.INV | All right reserved.</p></footer>
     </main>
-    <script src="app.js?v=2fa09a90db47fda6"></script>
+    <script src="app.js?v=luna6evidence20261012"></script>
   </body>
 </html>
