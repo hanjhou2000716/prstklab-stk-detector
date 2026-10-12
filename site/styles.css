@@ -286,6 +286,16 @@ h1 { font-size: clamp(1.1rem, 5.2vw, 1.55rem); }
 .technical-details { margin: 10px 18px 0; border-top: 1px solid var(--line); color: var(--muted); font-size: .72rem; }
 .technical-details > summary { cursor: pointer; padding: 9px 0; color: var(--muted); }
 .technical-details .alert-trace { margin: 0 0 10px; }
+.evidence-group h4, .technical-details h4 { margin: 8px 0 5px; color: var(--accent); font-size: .72rem; }
+.evidence-list, .research-evidence-list { margin: 6px 0 10px; padding-left: 18px; }
+.evidence-list li, .research-evidence-list li { margin: 5px 0; color: var(--muted); font-size: .68rem; line-height: 1.5; overflow-wrap: anywhere; }
+.evidence-list li { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.evidence-list a { flex: 0 0 auto; color: var(--accent); }
+.evidence-group { min-width: 0; overflow-wrap: anywhere; }
+.briefing-reference-evidence { margin-top: 8px; }
+.briefing-reference-evidence .briefing-evidence { margin-top: 5px; }
+.research-retry { margin: 0 0 10px; padding: 8px 12px; border: 1px solid var(--orange); border-radius: 10px; background: var(--card); color: var(--accent); font: inherit; font-size: .76rem; cursor: pointer; }
+#research-retry[hidden] { display: none; }
 .briefing-stress-list { margin: 7px 0 0; padding: 8px 10px 0 20px; border-top: 1px solid #dce4e7; }
 .briefing-stress-list li { display: flex; justify-content: space-between; gap: 8px; margin: 3px 0; }
 .briefing-stress-list span { color: var(--muted); text-align: right; }

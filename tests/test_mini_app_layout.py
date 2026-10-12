@@ -363,7 +363,7 @@ def test_research_failure_message_exposes_retry_state_without_raw_errors():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     assert "source.failure_evidence || {}" in app
     assert "已重試" in app
-    assert "顯示上一個成功版本候選" in app
+    assert "目前顯示最後已核實版本" in app
 def test_research_cards_expose_strategy_binding_and_backtest_provenance():
     app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
     assert 'const researchExplainability = () => "";' in app
@@ -390,3 +390,35 @@ def test_market_quote_cards_render_group_freshness_without_repeating_dates_in_ro
     assert ".taiwan-market-date-footer" not in styles
     assert ".us-market-date-footer" not in styles
     assert ".quote-group-status" in styles
+
+def test_market_and_briefing_sources_are_nested_in_system_analysis():
+    page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert 'id="alert-market-evidence"' in page
+    assert 'id="briefing-reference-evidence"' in page
+    assert 'id="risk-system-analysis"' in page
+    assert 'id="index-system-analysis"' in page
+    assert 'id="quote-system-analysis"' in page
+    assert "moveBriefingEvidenceToAnalysis();" in app
+    assert 'renderEvidenceDetails("risk-evidence"' in app
+    assert 'const evidenceId = id === "index-list" ? "index-evidence" : id === "quote-list" ? "quote-evidence" : ""' in app
+    assert "renderEvidenceDetails(evidenceId, ordered" in app
+    assert '<em class="quote-meta">' not in app
+    assert "sourceNotes.forEach((item) => item.remove())" in app
+    assert 'const backtestState = latestResearchState.manifest?.backtest_publication_state' in app
+
+
+def test_research_is_loaded_independently_and_missing_data_is_not_reported_as_zero():
+    page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+    app = (ROOT / "site" / "app.js").read_text(encoding="utf-8")
+
+    assert 'id="research-version-note"' in page
+    assert 'id="research-system-analysis"' in page
+    assert 'id="research-retry"' in page
+    assert "void loadLatestResearch(manifest)" in app
+    assert 'status: "verified"' in app
+    assert "research_snapshot_identity_mismatch" in app
+    assert "本輪完整掃描完成，沒有符合" in app
+    assert "目前不能判定沒有符合標的" in app
+    assert "strategyItems(strategy)" in app

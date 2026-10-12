@@ -354,7 +354,11 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
             "generated_at": "2026-09-03T21:00:00-04:00",
             "data_status": "通知原版資料",
             "markets": {},
-            "indices": [{"ticker": "SP500", "price": 6000.0, "change_percent": 0.58}],
+            "indices": [{
+                "ticker": "SP500", "name": "標普500", "price": 6000.0, "change_percent": 0.58,
+                "quote_source": "S&P Dow Jones Indices", "quote_time": "2026-09-03T16:00:00-04:00",
+                "source_url": "https://www.spglobal.com/spdji/en/indices/equity/sp-500/",
+            }],
             "quotes": [],
             "macro_quotes": [],
             "risk": {"us": {"label": "美股", "sentiment": {"score": 47.3, "label": "中立"}}},
@@ -412,19 +416,73 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
         "external_observations": [],
     }
     market_text = json.dumps(market, ensure_ascii=False, separators=(",", ":"))
+    research_groups = {
+        ("taiwan", "price_action"): (["2359", "5471", "1810", "2457", "6741"], "2026-10-08", True),
+        ("taiwan", "momentum"): (["2466", "6672", "4556", "3624", "6174"], "2026-10-08", True),
+        ("taiwan", "resonance"): (["4939", "3090", "3680", "2359", "8114"], "2026-10-08", True),
+        ("taiwan", "value"): (["2451", "7610", "2404", "2059", "6691"], "2026-10-08", True),
+        ("us", "price_action"): (["HWM", "ROST", "BSX", "UAL", "AVY"], "2026-10-09", False),
+        ("us", "momentum"): (["MRNA", "CIEN", "PTC", "HPE", "ACN"], "2026-10-09", False),
+        ("us", "resonance"): (["COIN", "STX", "WDC", "DAL", "DXCM"], "2026-10-09", False),
+        ("us", "value"): (["ADBE", "ADI", "ADP", "ADSK", "AEP"], "2026-10-08", True),
+    }
+    research = {
+        "snapshot_id": "research-current",
+        "generated_at": "2026-10-11T08:45:57+08:00",
+        "sources": [
+            {
+                "market": market_name,
+                "strategy": strategy_name,
+                "status": "可用",
+                "scan_state": "complete",
+                "scan_completeness": "historical" if historical else "complete",
+                "historical_fallback": historical,
+                "strategy_version_state": "historical" if historical else "current",
+                "scan_trading_date": trading_date,
+                "candidates": len(tickers),
+                "visible_candidates": len(tickers),
+                "universe_expected": 1990 if market_name == "taiwan" else 519,
+                "universe_completed": 1990 if market_name == "taiwan" else 519,
+                "universe_scanned": 1990 if market_name == "taiwan" else 519,
+                "universe_failed": 0,
+                "failed": 0,
+            }
+            for (market_name, strategy_name), (tickers, trading_date, historical) in research_groups.items()
+        ],
+        "candidates": [
+            {
+                "market": market_name,
+                "strategy": strategy_name,
+                "rank": rank,
+                "ticker": ticker,
+                "name": ticker,
+                "score": 80 + rank,
+                "close": 100 + rank,
+                "change_percent": 0.5,
+                "research_version_state": "historical" if historical else "current",
+                **({"list_type": "formal"} if strategy_name == "value" else {}),
+            }
+            for (market_name, strategy_name), (tickers, _trading_date, historical) in research_groups.items()
+            for rank, ticker in enumerate(tickers, start=1)
+        ],
+    }
+    research_text = json.dumps(research, ensure_ascii=False, separators=(",", ":"))
     manifest = {
         "release_id": current_release,
         "status": "ready",
         "created_at": "2026-09-04T08:00:00+00:00",
         "market_snapshot_id": "market-current",
+        "research_snapshot_id": "research-current",
         "artifact_hashes": {
             "market.json": hashlib.sha256(market_text.encode()).hexdigest(),
+            "research-report.json": hashlib.sha256(research_text.encode()).hexdigest(),
             "alert-index.json": hashlib.sha256(index_text.encode()).hexdigest(),
             "alert-lookup-root.json": hashlib.sha256(lookup_descriptor_text.encode()).hexdigest(),
             lookup_node_path: lookup_node_hash,
         },
         "artifact_paths": {
             "market.json": "data/market.json",
+            "research-report.json": "data/research-report.json",
             "alert-index.json": "data/alert-index.json",
             "alert-lookup-root.json": "data/alert-lookup-root.json",
             lookup_node_path: f"data/{lookup_node_path}",
@@ -448,6 +506,8 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
                     route.fulfill(status=200, content_type="application/json", body=manifest_text)
                 elif "/data/market.json" in url:
                     route.fulfill(status=200, content_type="application/json", body=market_text)
+                elif "/data/research-report.json" in url:
+                    route.fulfill(status=200, content_type="application/json", body=research_text)
                 elif "/data/alert-index.json" in url:
                     route.fulfill(status=200, content_type="application/json", body=index_text)
                 elif "/data/alert-lookup-root.json" in url:
@@ -475,7 +535,74 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
             assert page.evaluate("window.marketSnapshot.briefing.report_summary.text") == "原版總結：標普500最近收盤上漲0.58%。"
             assert page.evaluate("window.marketSnapshot.indices[0].price") == 6000
             assert "通知原版" in (page.locator("#data-status").text_content() or "")
+            assert "2026-09-03" not in (page.locator("#index-list").text_content() or "")
+            assert "S&P Dow Jones Indices" in (page.locator("#index-evidence").text_content() or "")
+            assert "2026-09-03" in (page.locator("#index-evidence").text_content() or "")
+            assert page.locator("#index-evidence a").get_attribute("href").startswith("https://")
+            assert page.locator("#index-system-analysis").get_attribute("open") is None
             assert "不應取代通知的目前事件" not in (page.locator("#alert-card").text_content() or "")
+            page.wait_for_function("document.querySelector('#research-list')?.textContent.includes('2359')")
+            assert page.evaluate("window.marketSnapshot.briefing.report_summary.text") == "原版總結：標普500最近收盤上漲0.58%。"
+            assert page.evaluate("window.marketSnapshot.research_report === undefined")
+            assert "已核實研究版本 research-current" in (page.locator("#research-notice").text_content() or "")
+            assert "通知原版" in (page.locator("#data-status").text_content() or "")
+            assert "候選 40 檔" in (page.locator("#research-system-analysis").text_content() or "")
+            for strategy_list in ("#research-list", "#momentum-list", "#resonance-list", "#value-list"):
+                assert page.locator(f"{strategy_list} li.research-item").count() == 5
+            for strategy in ("price_action", "momentum", "resonance", "value"):
+                meta = page.locator(f'[data-research-meta="{strategy}"]').text_content() or ""
+                assert "2026-10-08" in meta
+                assert "歷史" in meta
+            page.locator('.research-tab[data-market="us"]').click()
+            assert page.locator("#research-list li.research-item").count() == 5
+            assert page.locator("#momentum-list").text_content().find("MRNA") >= 0
+            assert "資料日 2026-10-09" in (page.locator('[data-research-meta="price_action"]').text_content() or "")
+            assert page.locator("#value-list li.research-item").count() == 5
+            assert page.locator("#value-list").text_content().find("ADBE") >= 0
+
+            def republish_research(snapshot_id: str) -> None:
+                nonlocal research_text, manifest_text
+                research["snapshot_id"] = snapshot_id
+                manifest["research_snapshot_id"] = snapshot_id
+                research_text = json.dumps(research, ensure_ascii=False, separators=(",", ":"))
+                manifest["artifact_hashes"]["research-report.json"] = hashlib.sha256(research_text.encode()).hexdigest()
+                manifest_text = json.dumps(manifest, ensure_ascii=False, separators=(",", ":"))
+
+            price_source = next(
+                item for item in research["sources"]
+                if item["market"] == "taiwan" and item["strategy"] == "price_action"
+            )
+            research["candidates"] = [
+                item for item in research["candidates"]
+                if not (item["market"] == "taiwan" and item["strategy"] == "price_action")
+            ]
+            price_source.update({
+                "scan_state": "complete", "scan_completeness": "complete",
+                "historical_fallback": False, "strategy_version_state": "current",
+                "candidates": 0, "visible_candidates": 0, "universe_scanned": 1990,
+            })
+            republish_research("research-zero-complete")
+            page.reload(wait_until="domcontentloaded")
+            page.wait_for_function("document.querySelector('#research-list .empty')?.textContent.includes('本輪完整掃描完成')")
+            assert "沒有符合裸 K 結構的候選標的" in (page.locator("#research-list").text_content() or "")
+
+            price_source.update({
+                "scan_state": "partial", "scan_completeness": "partial",
+                "universe_scanned": 500, "universe_completed": 500,
+            })
+            republish_research("research-partial")
+            page.reload(wait_until="domcontentloaded")
+            page.wait_for_function("document.querySelector('#research-list .empty')?.textContent.includes('部分掃描')")
+            assert "目前不能判定全市場沒有符合標的" in (page.locator("#research-list").text_content() or "")
+
+            research["sources"] = [
+                item for item in research["sources"]
+                if not (item["market"] == "taiwan" and item["strategy"] == "price_action")
+            ]
+            republish_research("research-source-missing")
+            page.reload(wait_until="domcontentloaded")
+            page.wait_for_function("document.querySelector('#research-list .empty')?.textContent.includes('來源紀錄')")
+            assert "掃描結果無法核實" in (page.locator("#research-list").text_content() or "")
             browser.close()
     except Exception as exc:
         if "Executable doesn't exist" in str(exc) or "executable doesn't exist" in str(exc):
@@ -625,9 +752,14 @@ def test_mini_app_taiwan_pair_uses_verified_projection_for_quote_direction() -> 
             assert "市場收盤報導指出指數震盪整理" in (focus.text_content() or "")
             assert "有效因子不足" not in (focus.text_content() or "")
             assert focus.locator(".briefing-overview-news-sentence").count() == 0
-            assert page.locator("#briefing-observations .briefing-news-evidence").count() == 1
-            assert page.locator('#briefing-observations a[href="https://news.example/taiwan-close"]').count() == 1
-            assert page.locator("#briefing-observations .briefing-news-evidence").locator("summary").text_content() == "新聞依據"
+            assert page.locator("#briefing-observations .briefing-news-evidence").count() == 0
+            news_evidence = page.locator("#briefing-system-analysis .briefing-news-evidence")
+            assert news_evidence.count() == 1
+            assert news_evidence.locator('a[href="https://news.example/taiwan-close"]').count() == 1
+            assert news_evidence.locator("summary").text_content() == "新聞依據"
+            assert news_evidence.is_hidden()
+            page.locator("#briefing-system-analysis > summary").click()
+            assert news_evidence.is_visible()
             assert page.locator("#briefing-observations .taiwan-market-date-footer").count() == 0
             assert page.locator("#alert-card .alert-brief-list").is_hidden()
 
@@ -667,6 +799,11 @@ def test_mini_app_taiwan_pair_uses_verified_projection_for_quote_direction() -> 
             assert "優先顯示的重大警報" in (page.locator("#alert-headline").text_content() or "")
             assert "市場收盤報導指出指數震盪整理" in (page.locator("#briefing-overview").text_content() or "")
             assert page.locator("#alert-card .alert-brief-list").is_visible()
+            assert page.locator("#briefing-observations .briefing-evidence").count() == 0
+            assert page.locator("#briefing-observations .briefing-source").count() == 0
+            assert page.locator("#briefing-reference-evidence .briefing-evidence").count() > 0
+            assert page.locator("#briefing-system-analysis").get_attribute("open") is None
+            assert page.locator("#briefing-reference-evidence").evaluate("(node) => node.hidden") is False
             browser.close()
     except Exception as exc:
         if "Executable doesn't exist" in str(exc) or "executable doesn't exist" in str(exc):
