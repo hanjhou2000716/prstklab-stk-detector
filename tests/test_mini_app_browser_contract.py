@@ -752,9 +752,14 @@ def test_mini_app_taiwan_pair_uses_verified_projection_for_quote_direction() -> 
             assert "市場收盤報導指出指數震盪整理" in (focus.text_content() or "")
             assert "有效因子不足" not in (focus.text_content() or "")
             assert focus.locator(".briefing-overview-news-sentence").count() == 0
-            assert page.locator("#briefing-observations .briefing-news-evidence").count() == 1
-            assert page.locator('#briefing-observations a[href="https://news.example/taiwan-close"]').count() == 1
-            assert page.locator("#briefing-observations .briefing-news-evidence").locator("summary").text_content() == "新聞依據"
+            assert page.locator("#briefing-observations .briefing-news-evidence").count() == 0
+            news_evidence = page.locator("#briefing-system-analysis .briefing-news-evidence")
+            assert news_evidence.count() == 1
+            assert news_evidence.locator('a[href="https://news.example/taiwan-close"]').count() == 1
+            assert news_evidence.locator("summary").text_content() == "新聞依據"
+            assert news_evidence.is_hidden()
+            page.locator("#briefing-system-analysis > summary").click()
+            assert news_evidence.is_visible()
             assert page.locator("#briefing-observations .taiwan-market-date-footer").count() == 0
             assert page.locator("#alert-card .alert-brief-list").is_hidden()
 

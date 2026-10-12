@@ -126,7 +126,7 @@ const renderEvidenceDetails = (containerId, rows, heading = "系統分析資料"
     const source = String(item.source_label || item.source_name || item.source || item.quote_source || item.provider || "").trim();
     const observed = String(item.data_as_of || item.observed_at || item.quote_time || item.quote_date || item.as_of || item.published_at || item.checked_at || "").slice(0, 19).replace("T", " ");
     const contract = [item.contract_month, item.contract_basis, item.session].filter(Boolean).join("／");
-    const freshness = String(item.freshness || item.data_status || item.status || "").trim();
+    const freshness = [...new Set([item.data_status, item.freshness, item.status].filter(Boolean))].join("／");
     const verification = item.cross_checked === true ? "已核對" : item.cross_checked === false ? "未核對" : "";
     const values = [item.summary, item.value, item.change_percent !== undefined && item.change_percent !== null ? `漲跌幅 ${signedPercent(Number(item.change_percent))}` : "", item.price !== undefined && item.price !== null ? `價格 ${formatNumber(Number(item.price))}` : ""].filter(Boolean);
     const text = [identity, source, observed ? `資料時間 ${observed}` : "", contract, freshness, verification, ...values].filter(Boolean).join("｜");
