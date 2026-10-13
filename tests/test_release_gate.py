@@ -694,6 +694,64 @@ def test_release_gate_writes_actions_output_as_key_value_lines(tmp_path, monkeyp
     assert "attempts=[]" in text
 
 
+def test_release_gate_cli_loads_exact_alert_targets_file(tmp_path, monkeypatch):
+    from src import release_gate
+
+    targets = [
+        {"notification_id": "alert-a", "snapshot_id": "snapshot-a", "observation_id": "observation-a"},
+        {"notification_id": "alert-b", "snapshot_id": "snapshot-b", "observation_id": "observation-b"},
+    ]
+    targets_file = tmp_path / "targets.json"
+    targets_file.write_text(json.dumps(targets), encoding="utf-8")
+    output = tmp_path / "github-output"
+    captured = {}
+
+    def allow_release(**kwargs):
+        captured.update(kwargs)
+        return ReleaseGateResult(
+            allowed=True,
+            release_id="release-current",
+            snapshot_id="snapshot-current",
+            gate_status="allowed",
+            error_category="none",
+        )
+
+    monkeypatch.setattr(release_gate, "verify_release_for_delivery", allow_release)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["release_gate", "--expected-alert-targets-file", str(targets_file)],
+    )
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+
+    assert release_gate.main() == 0
+    assert captured["expected_alert_targets"] == targets
+    output_text = output.read_text(encoding="utf-8")
+    assert "allowed=true" in output_text
+    assert "release_id=release-current" in output_text
+
+
+@pytest.mark.parametrize(
+    ("payload", "reason"),
+    [
+        ("{", "JSONDecodeError"),
+        ("{}", "at most 10 records"),
+        (json.dumps([{"notification_id": f"alert-{index}"} for index in range(11)]), "at most 10 records"),
+    ],
+)
+def test_release_gate_cli_rejects_malformed_alert_target_files(tmp_path, monkeypatch, capsys, payload, reason):
+    from src import release_gate
+
+    targets_file = tmp_path / "targets.json"
+    targets_file.write_text(payload, encoding="utf-8")
+    monkeypatch.setattr(
+        "sys.argv",
+        ["release_gate", "--expected-alert-targets-file", str(targets_file)],
+    )
+
+    assert release_gate.main() == 2
+    assert reason in capsys.readouterr().err
+
+
 def test_release_gate_fails_fast_when_local_release_identity_changes(tmp_path, monkeypatch):
     path, manifest = _ready_release(tmp_path)
     calls = []
