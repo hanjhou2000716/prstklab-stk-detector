@@ -118,8 +118,11 @@ def run_creator_intelligence_e2e() -> dict[str, Any]:
         tracked_sectors=("semiconductor",),
         topics=("semiconductor",),
         limit=5,
+        reference_time=_AS_OF,
     )
-    us_news = build_news_intelligence(_news_records(), market="us", topics=("rates",), limit=5)
+    us_news = build_news_intelligence(
+        _news_records(), market="us", topics=("rates",), limit=5, reference_time=_AS_OF,
+    )
     checks = {
         "latest_per_creator": consensus["source_count"] == 2 and consensus["coverage"] == "2/2",
         "aligned_consensus_is_not_signal": (

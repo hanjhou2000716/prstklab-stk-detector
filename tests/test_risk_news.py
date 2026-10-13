@@ -1,4 +1,6 @@
 import json
+import threading
+import time
 from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -6,6 +8,8 @@ import pytest
 
 from src.news_intelligence import build_news_intelligence
 from src.risk_news import (
+    _cnyes_article_fields,
+    _enrich_cnyes_candidates,
     _filter_market_news,
     _inventory_age,
     _market_news_rss_url,
@@ -62,6 +66,60 @@ def test_news_extraction_falls_back_to_disclosed_market_focus():
         "https://news.cnyes.com/news/id/2",
     ]
     assert {story["source"] for story in stories} == {"鉅亨網｜市場焦點"}
+
+
+def test_cnyes_article_parser_keeps_structured_publication_facts_and_safe_canonical_url():
+    article = _cnyes_article_fields(
+        '''<html><head>
+        <script type="application/ld+json">{"@type":"NewsArticle","headline":"台積電供應鏈新訊","datePublished":"2026-10-13T05:10:00+08:00","description":"供應鏈公布最新產能資訊。"}</script>
+        <link rel="canonical" href="https://news.cnyes.com/news/id/6628856?utm_source=test">
+        </head><body><time datetime="2026-10-13T05:10:00+08:00"></time></body></html>''',
+        {"title": "分類頁標題", "url": "https://news.cnyes.com/news/id/6628856", "provider": "anue"},
+    )
+    assert article["title"] == "台積電供應鏈新訊"
+    assert article["published_at"] == "2026-10-12T21:10:00+00:00"
+    assert article["summary"] == "供應鏈公布最新產能資訊。"
+    assert article["url"] == "https://news.cnyes.com/news/id/6628856"
+    assert article["provider"] == "anue"
+
+
+def test_cnyes_date_enrichment_is_bounded_to_five_candidates_and_two_workers(monkeypatch):
+    lock = threading.Lock()
+    active = 0
+    max_active = 0
+    request_urls = []
+    article_html = '''<script type="application/ld+json">{"@type":"NewsArticle","datePublished":"2026-10-13T05:10:00+08:00"}</script>'''
+
+    class Response:
+        text = article_html
+
+        @staticmethod
+        def raise_for_status():
+            return None
+
+    def fake_get(url, **_kwargs):
+        nonlocal active, max_active
+        with lock:
+            active += 1
+            max_active = max(max_active, active)
+            request_urls.append(url)
+        time.sleep(0.02)
+        with lock:
+            active -= 1
+        return Response()
+
+    monkeypatch.setattr("src.risk_news.requests.get", fake_get)
+    candidates = [
+        {"title": f"標題 {index}", "url": f"https://news.cnyes.com/news/id/{index}"}
+        for index in range(1, 8)
+    ]
+    enriched, diagnostics = _enrich_cnyes_candidates(candidates, deadline=time.monotonic() + 2)
+
+    assert len(request_urls) == diagnostics["attempted"] == 5
+    assert diagnostics["enriched"] == 5
+    assert max_active <= 2
+    assert all(item.get("published_at") for item in enriched[:5])
+    assert enriched[5:] == candidates[5:]
 
 
 def test_taifex_vix_parser_uses_the_final_intraday_observation():
@@ -185,13 +243,15 @@ def test_taifex_invalid_live_and_reference_is_unavailable(monkeypatch):
 def test_market_news_rss_parser_keeps_market_specific_links():
     xml = """
     <rss><channel>
-      <item><title>US Nasdaq outlook</title><link>https://news.google.com/rss/articles/us1</link><pubDate>Mon, 24 Aug 2026 01:30:00 GMT</pubDate></item>
+      <item><title>US Nasdaq outlook</title><link>https://news.google.com/rss/articles/us1</link><pubDate>Mon, 24 Aug 2026 01:30:00 GMT</pubDate><description><![CDATA[<p>Semiconductor <b>earnings</b> update</p>]]></description></item>
       <item><title>Taiwan semiconductor outlook</title><link>https://news.google.com/rss/articles/tw1</link></item>
     </channel></rss>
     """
     stories = _news_from_rss(xml, "us")
     assert stories[0]["url"].endswith("/us1")
     assert stories[0]["source"] == "Google News｜美股線索"
+    assert stories[0]["provider"] == "google_news"
+    assert stories[0]["summary"] == "Semiconductor earnings update"
     assert stories[0]["published_at"] == "2026-08-24T01:30:00+00:00"
 
 
@@ -277,11 +337,12 @@ def test_us_news_inventory_uses_trading_sessions_and_reaches_five(monkeypatch, t
             },
         ]}}}, ensure_ascii=False), encoding="utf-8")
     monkeypatch.setenv("NEWS_CACHE_PATH", str(cache_path))
+    current_published_at = datetime.now(UTC).replace(microsecond=0).isoformat()
     monkeypatch.setattr("src.risk_news.fetch_market_news", lambda market: [
         {
             "title": "Fed keeps rates unchanged as inflation cools",
             "url": "https://www.federalreserve.gov/newsevents/pressreleases/current.htm",
-            "published_at": "2026-09-05T01:00:00+00:00",
+            "published_at": current_published_at,
         }
     ] if market == "us" else [])
     monkeypatch.setattr("src.risk_news.fetch_market_news_fallback", lambda market: [])
@@ -345,6 +406,7 @@ def test_us_news_filter_preserves_later_eligible_providers_before_ranking():
         {
             "title": "8-K - ALLIANCE ENTERTAINMENT HOLDING CORP (Filer)" if index == 5 else f"8-K current report {index}",
             "url": f"https://www.sec.gov/Archives/edgar/data/generic-{index}",
+            "published_at": "2026-08-25T00:50:00+00:00",
         }
         for index in range(6)
     ]
@@ -375,7 +437,12 @@ def test_us_news_filter_preserves_later_eligible_providers_before_ranking():
     filtered = _filter_market_news(generic_sec + later, "us")
     assert len(filtered) == 9
 
-    payload = build_news_intelligence(filtered, market="us", tracked_tickers=["NVDA"])
+    payload = build_news_intelligence(
+        filtered,
+        market="us",
+        tracked_tickers=["NVDA"],
+        reference_time=datetime(2026, 8, 25, 2, tzinfo=UTC),
+    )
     assert 0 < len(payload["stories"]) <= 5
     assert all(item["provider"] != "sec" for item in payload["stories"])
     assert payload["exclusion_reasons"]["generic_official_filing"] == 6
@@ -410,7 +477,7 @@ def test_us_discovery_success_with_official_failure_is_degraded_not_source_faile
     story = {
         "title": "Nasdaq and Nvidia earnings outlook",
         "url": "https://news.google.com/rss/articles/us-observation",
-        "published_at": "2026-08-25T01:00:00+00:00",
+        "published_at": datetime.now(UTC).replace(microsecond=0).isoformat(),
     }
     monkeypatch.setattr("src.risk_news.fetch_market_news", lambda market: [story] if market == "us" else [])
     monkeypatch.setattr("src.risk_news.fetch_market_news_fallback", lambda market: [])

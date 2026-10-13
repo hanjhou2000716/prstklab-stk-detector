@@ -1044,9 +1044,99 @@ const renderNewsList = (id, stories, providerRegistry = [], health = null, intel
     const detail = detailParts.length ? `<span class="news-reason-detail">${detailParts.join("、")}</span>` : "";
     const isInventory = story?.selection_lane === "inventory";
     const inventoryBadge = isInventory ? ' <span class="news-badge news-badge-inventory">近期庫存</span>' : "";
-    const inventoryTime = isInventory && story.published_at ? `｜原發布 ${escapeHtml(traceTime(story.published_at))}` : "";
-    return `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a><div class="news-badges" aria-label="這則新聞的關聯理由">${badges}${inventoryBadge}</div><small>${source}${detail}${inventoryTime}</small></li>`;
+    const isRecentReference = story?.date_eligibility_status === "recent_reference";
+    const recentBadge = isRecentReference ? ' <span class="news-badge news-badge-recent-reference">近期參考</span>' : "";
+    const publishedDate = story?.published_local_date || (story.published_at ? String(story.published_at).slice(0, 10) : "");
+    const referenceTime = isRecentReference && publishedDate ? `｜原發布 ${escapeHtml(publishedDate)}` : "";
+    return `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a><div class="news-badges" aria-label="這則新聞的關聯理由">${badges}${inventoryBadge}${recentBadge}</div><small>${source}${detail}${referenceTime}</small></li>`;
   }).join("");
+};
+
+let latestNewsState = { status: "loading", data: null, manifest: null, message: "" };
+let latestNewsRequest = 0;
+const NEWS_MARKETS = ["taiwan", "us"];
+
+const renderLatestNewsPanels = (fallbackNews = null, fallbackMarketSnapshotId = "") => {
+  const state = latestNewsState;
+  const fallbackIsBound = Boolean(fallbackNews && fallbackMarketSnapshotId
+    && String(fallbackNews.market_snapshot_id || "") === String(fallbackMarketSnapshotId)
+    && (!state.manifest?.market_snapshot_id || String(state.manifest.market_snapshot_id) === String(fallbackMarketSnapshotId)));
+  const news = state.data || (fallbackIsBound ? fallbackNews : null);
+  const markets = news?.markets || news?.intelligence || news || null;
+  const registry = Array.isArray(news?.provider_registry) ? news.provider_registry : [];
+  const sourceHealth = Array.isArray(news?.source_health) ? news.source_health : [];
+  for (const market of NEWS_MARKETS) {
+    const listId = market === "taiwan" ? "taiwan-news" : "us-news";
+    const list = document.getElementById(listId);
+    const statusNode = document.getElementById(`${listId}-source-status`);
+    const retry = document.getElementById(`${listId}-retry`);
+    if (!list) continue;
+    const marketData = markets?.[market] ?? news?.[market];
+    const intelligence = Array.isArray(marketData) ? null : marketData;
+    const stories = Array.isArray(marketData) ? marketData : Array.isArray(marketData?.stories) ? marketData.stories : null;
+    const aggregate = sourceHealth.find((row) => row?.key === `news_${market}`) || {};
+    const health = {
+      ...aggregate,
+      collection_state: intelligence?.collection_state || aggregate.collection_state,
+      source_failure_count: intelligence?.source_failure_count ?? aggregate.source_failure_count,
+    };
+
+    if (!news) {
+      const isLoading = state.status === "loading";
+      const title = isLoading ? "正在載入市場新聞" : state.status === "missing" ? "新聞資料／來源紀錄未取得" : "新聞驗證失敗";
+      const detail = state.message || (isLoading ? "新聞會獨立核對，不影響通知原版。" : "目前沒有可核實的新聞資料；可在此重試。" );
+      list.innerHTML = `<li class="empty news-empty-state"><strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail)}</small></li>`;
+      if (statusNode) statusNode.textContent = `新聞依據：${state.manifest?.release_id || "尚未核實發布版本"}｜${detail}`;
+      if (retry) retry.hidden = isLoading;
+      continue;
+    }
+    if (!Array.isArray(stories)) {
+      list.innerHTML = '<li class="empty news-empty-state"><strong>新聞來源紀錄未取得</strong><small>此發布版本沒有可核對的市場新聞清單。</small></li>';
+      if (statusNode) statusNode.textContent = `新聞資料契約不完整｜發布版本 ${state.manifest?.release_id || "相容快取"}`;
+      if (retry) retry.hidden = false;
+      continue;
+    }
+    const funnel = intelligence?.scan_summary || {};
+    const hasScanRecord = Number.isInteger(funnel.provider_count)
+      && funnel.provider_count >= 0
+      && Number.isInteger(funnel.final_public_count)
+      && funnel.final_public_count >= 0;
+    const hasCompleteZeroScan = hasScanRecord
+      && funnel.final_public_count === 0
+      && Number.isInteger(funnel.successful_provider_count)
+      && funnel.successful_provider_count > 0
+      && Number.isInteger(funnel.failed_provider_count)
+      && funnel.failed_provider_count === 0
+      && intelligence?.collection_state === "no_event";
+    let baseStatus = "來源核對資料未提供";
+    if (!stories.length && !hasCompleteZeroScan) {
+      const partial = ["degraded", "source_failed"].includes(String(intelligence?.collection_state || ""))
+        ? newsEmptyState(health, intelligence)
+        : { title: "新聞來源紀錄未取得", detail: "本輪來源未全部完成核對，不能確認零候選。" };
+      list.innerHTML = `<li class="empty news-empty-state"><strong>${escapeHtml(partial.title)}</strong><small>${escapeHtml(partial.detail)}</small></li>`;
+      baseStatus = `${partial.title}；不能判定本輪零候選。`;
+    } else {
+      renderNewsList(listId, stories, registry, health, intelligence);
+      baseStatus = statusNode?.textContent || baseStatus;
+    }
+    if (statusNode) {
+      const version = state.manifest?.release_id || news.release_id || "舊版已核實資料";
+      const updated = intelligence?.checked_at || news.generated_at || news.checked_at || "";
+      const cacheNote = state.status === "cached" ? "最後已核實版本" : "最新已核實版本";
+      const errorNote = state.message || "";
+      const exclusions = Object.entries(intelligence?.exclusion_reasons || {}).slice(0, 5)
+        .map(([reason, count]) => `${reason} ${Number(count) || 0}`).join("、");
+      const exclusionNote = exclusions ? `排除原因 ${exclusions}` : "";
+      const sourceNote = sourceHealth.filter((row) => row?.market === market || String(row?.key || "").startsWith(`news_${market}_`))
+        .slice(0, 6).map((row) => `${row.provider || row.key || "來源"}:${row.status || "unknown"}${row.error_stage ? `/${row.error_stage}` : ""}${row.http_status ? `/HTTP ${row.http_status}` : ""}`)
+        .join("、");
+      const countNote = Number.isInteger(funnel.final_public_count) && funnel.final_public_count >= 0
+        ? `選用 ${Number(funnel.final_public_count)} 則／本輪日期合格 ${Number(funnel.date_eligible_current ?? funnel.current_eligible ?? 0)} 則／日期排除 ${Number(funnel.date_excluded_current ?? 0)} 則`
+        : "";
+      statusNode.textContent = [baseStatus, `${cacheNote} ${version}`, updated ? `掃描／資料時間 ${updated}` : "資料時間未提供", countNote, exclusionNote, sourceNote, errorNote].filter(Boolean).join("｜");
+    }
+    if (retry) retry.hidden = state.status === "verified";
+  }
 };
 
 const stableEventKeys = (item) => {
@@ -2082,6 +2172,7 @@ const renderResearch = () => {
   if (!report || typeof report !== "object") {
     const isLoading = latestResearchState.status === "loading";
     const notice = latestResearchState.message || (isLoading ? "正在載入最新已核實研究資料。" : "研究資料尚未取得。");
+    setText("research-status", isLoading ? "正在載入策略研究。" : "策略研究尚未核實；請展開系統分析資料查看原因。");
     setText("research-notice", notice);
     if (retry) retry.hidden = isLoading;
     if (researchTrace) researchTrace.innerHTML = `<p>${escapeHtml(notice)}</p>`;
@@ -2116,6 +2207,12 @@ const renderResearch = () => {
   const mixedNotice = report.publication_state === "mixed_strategy"
     ? "各策略分開更新；歷史候選依實際資料日標示。"
     : "";
+  const statusText = latestResearchState.status === "verified"
+    ? "最新已核實策略研究已載入。"
+    : latestResearchState.status === "cached"
+      ? "正在核對最新研究；暫時顯示最後已核實版本。"
+      : "策略研究狀態待核對。";
+  setText("research-status", statusText);
   setText("research-notice", [cacheText, staleNotice, mixedNotice, backtestNotice].filter(Boolean).join("｜"));
   if (retry) retry.hidden = latestResearchState.status === "verified";
   const sources = Array.isArray(report.sources) ? report.sources : [];
@@ -2398,20 +2495,7 @@ const render = (snapshot, { deferAlert = false } = {}) => {
   renderBriefing(snapshot.briefing, snapshot.generated_at);
   renderExternalIntelligence(snapshot);
   renderResearch(snapshot);
-  const newsRegistry = snapshot.news?.provider_registry || [];
-  const newsMarkets = snapshot.news?.markets || snapshot.news?.intelligence || snapshot.news;
-  const newsHealth = Array.isArray(snapshot.news?.source_health) ? snapshot.news.source_health : [];
-  const newsHealthFor = (market) => {
-    const aggregate = newsHealth.find((item) => item?.key === `news_${market}`) || {};
-    const intelligence = newsMarkets?.[market] || {};
-    return {
-      ...aggregate,
-      collection_state: intelligence.collection_state || aggregate.collection_state,
-      source_failure_count: intelligence.source_failure_count ?? aggregate.source_failure_count,
-    };
-  };
-  renderNewsList("taiwan-news", newsMarkets?.taiwan?.stories || snapshot.news?.taiwan, newsRegistry, newsHealthFor("taiwan"), newsMarkets?.taiwan);
-  renderNewsList("us-news", newsMarkets?.us?.stories || snapshot.news?.us, newsRegistry, newsHealthFor("us"), newsMarkets?.us);
+  renderLatestNewsPanels(snapshot.news, snapshot.snapshot_id || snapshot.market_snapshot_id || "");
   moveBriefingEvidenceToAnalysis();
 };
 
@@ -2868,6 +2952,147 @@ const loadLatestResearch = async (manifest, { force = false } = {}) => {
   }
 };
 
+const LAST_GOOD_NEWS_KEY = "prstk.lastGoodNews.v1";
+
+const validateNewsArtifact = async (manifest, text) => {
+  if (!manifest || !PUBLISHABLE_RELEASE_STATUSES.has(manifest.status) || !manifest.release_id) {
+    throw new Error("news_release_identity_invalid");
+  }
+  const expectedHash = String(manifest.artifact_hashes?.["news.json"] || "");
+  if (!expectedHash) throw new Error("news_artifact_not_published");
+  if (await sha256Hex(text) !== expectedHash) throw new Error("news_artifact_hash_mismatch");
+  const news = JSON.parse(text);
+  if (!news || typeof news !== "object" || Array.isArray(news)) throw new Error("news_artifact_contract_invalid");
+  const expectedMarket = String(manifest.market_snapshot_id || "");
+  if (!expectedMarket || String(news.market_snapshot_id || "") !== expectedMarket) throw new Error("news_market_snapshot_mismatch");
+  const expectedNews = String(manifest.news_snapshot_id || "");
+  if (!expectedNews || String(news.snapshot_id || "") !== expectedNews) throw new Error("news_snapshot_identity_mismatch");
+  if (news.release_id && String(news.release_id) !== String(manifest.release_id)) throw new Error("news_release_identity_mismatch");
+  const markets = news.markets || news.intelligence || news;
+  if (!markets || typeof markets !== "object" || Array.isArray(markets)) throw new Error("news_market_structure_invalid");
+  const hasMarket = NEWS_MARKETS.some((market) => Array.isArray(markets[market]) || Array.isArray(markets[market]?.stories));
+  if (!hasMarket) throw new Error("news_market_structure_invalid");
+  return news;
+};
+
+const saveLastGoodNews = (manifest, newsText) => {
+  try {
+    localStorage.setItem(LAST_GOOD_NEWS_KEY, JSON.stringify({ manifest, newsText, saved_at: new Date().toISOString() }));
+  } catch (_error) {
+    // A full/private browser store never blocks a verified news response.
+  }
+};
+
+const readLastGoodNews = async () => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LAST_GOOD_NEWS_KEY) || "null");
+    if (typeof saved?.newsText !== "string" || !saved.manifest) return null;
+    const data = await validateNewsArtifact(saved.manifest, saved.newsText);
+    return { manifest: saved.manifest, newsText: saved.newsText, data, saved_at: saved.saved_at };
+  } catch (_error) {
+    return null;
+  }
+};
+
+const newsFailureMessage = (error) => {
+  const reason = String(error?.message || "").toLowerCase();
+  if (reason.includes("timeout") || reason.includes("deadline")) return "新聞下載／驗證逾時";
+  if (reason.includes("hash")) return "新聞檔雜湊核對失敗";
+  if (reason.includes("snapshot") || reason.includes("identity") || reason.includes("structure") || reason.includes("contract")) return "新聞發布身份或資料格式核對失敗";
+  if (reason.includes("http")) return "新聞來源暫時無法下載";
+  return "新聞資料暫時無法核實";
+};
+
+const loadLatestNews = async (manifest, { force = false, deadlineAt = 0, requestId: requestedId = null } = {}) => {
+  const requestId = requestedId === null ? ++latestNewsRequest : requestedId;
+  if (requestId !== latestNewsRequest) return;
+  const deadline = Number(deadlineAt || Date.now() + 20000);
+  if (!latestNewsState.data) {
+    const cached = await readLastGoodNews();
+    if (requestId !== latestNewsRequest) return;
+    if (cached) latestNewsState = { status: "cached", data: cached.data, manifest: cached.manifest, message: "正在核對最新市場新聞。" };
+  }
+  if (!force && latestNewsState.status === "verified"
+    && String(latestNewsState.manifest?.release_id || "") === String(manifest?.release_id || "")
+    && String(latestNewsState.manifest?.news_snapshot_id || "") === String(manifest?.news_snapshot_id || "")) {
+    renderLatestNewsPanels();
+    return;
+  }
+  if (!manifest?.artifact_hashes?.["news.json"]) {
+    const hasCached = Boolean(latestNewsState.data);
+    latestNewsState = {
+      ...latestNewsState,
+      status: hasCached ? "cached" : "missing",
+      manifest: hasCached ? latestNewsState.manifest : manifest,
+      message: hasCached ? "此發布版本沒有新聞檔；保留最後已核實新聞。" : "此發布版本沒有可核實的新聞檔。",
+    };
+    renderLatestNewsPanels();
+    return;
+  }
+  const verifiedData = latestNewsState.data;
+  const verifiedManifest = latestNewsState.manifest;
+  latestNewsState = {
+    status: verifiedData ? "cached" : "loading",
+    data: verifiedData,
+    manifest: verifiedData ? verifiedManifest : manifest,
+    message: verifiedData ? "正在核對最新市場新聞。" : "",
+    pendingManifest: manifest,
+  };
+  renderLatestNewsPanels();
+  try {
+    if (Date.now() >= deadline) throw new Error("news_verification_timeout");
+    const text = await loadVerifiedArtifactText(manifest, "news.json", {
+      timeoutMs: 12000, deadlineAt: deadline, revalidate: true,
+    });
+    const data = await validateNewsArtifact(manifest, text);
+    if (Date.now() > deadline) throw new Error("news_verification_timeout");
+    if (requestId !== latestNewsRequest) return;
+    latestNewsState = { status: "verified", data, manifest, message: "" };
+    saveLastGoodNews(manifest, text);
+    renderLatestNewsPanels();
+  } catch (error) {
+    if (requestId !== latestNewsRequest) return;
+    latestNewsState = {
+      status: verifiedData ? "cached" : "error",
+      data: verifiedData,
+      manifest: verifiedData ? verifiedManifest : manifest,
+      message: `${newsFailureMessage(error)}；${verifiedData ? "暫用最後已核實版本" : "可重試"}`,
+    };
+    renderLatestNewsPanels();
+  }
+};
+
+const retryLatestNews = async () => {
+  const requestId = ++latestNewsRequest;
+  const deadlineAt = Date.now() + 20000;
+  latestNewsState = {
+    ...latestNewsState,
+    status: latestNewsState.data ? "cached" : "loading",
+    message: latestNewsState.data ? "正在重新核對最新市場新聞。" : "",
+  };
+  renderLatestNewsPanels();
+  try {
+    const manifest = await fetchJsonWithOptions("data/release-manifest.json", {
+      revalidate: true, timeoutMs: 12000, deadlineAt,
+    });
+    if (!manifest || !PUBLISHABLE_RELEASE_STATUSES.has(manifest.status) || !manifest.release_id) {
+      throw new Error("news_release_identity_invalid");
+    }
+    if (requestId !== latestNewsRequest) return;
+    await loadLatestNews(manifest, { force: true, deadlineAt, requestId });
+  } catch (error) {
+    if (requestId !== latestNewsRequest) return;
+    latestNewsState = {
+      ...latestNewsState,
+      status: latestNewsState.data ? "cached" : "error",
+      message: `${newsFailureMessage(error)}；可重試`,
+    };
+    renderLatestNewsPanels();
+  }
+};
+
+document.querySelectorAll(".news-retry").forEach((button) => button.addEventListener("click", () => void retryLatestNews()));
+
 const saveLastGoodBootstrap = (manifest, bootstrapText) => {
   try {
     localStorage.setItem(LAST_GOOD_BOOTSTRAP_KEY, JSON.stringify({
@@ -2958,8 +3183,8 @@ const readLastGoodRelease = async () => {
 
 const loadFullRelease = async (manifest, { includeImmutableAlerts = false } = {}) => {
   const hashes = manifest.artifact_hashes || {};
-  const names = Object.keys(hashes).filter((name) => includeImmutableAlerts
-    || (!name.startsWith("alerts/") && name !== "alert-index.json" && name !== "alert-lookup-root.json"));
+  const names = Object.keys(hashes).filter((name) => name !== "news.json" && (includeImmutableAlerts
+    || (!name.startsWith("alerts/") && name !== "alert-index.json" && name !== "alert-lookup-root.json")));
   const artifactEntries = await Promise.all(names.map(async (name) => [
     name,
     await loadVerifiedArtifactText(manifest, name),
@@ -3018,7 +3243,7 @@ const loadLegacyPublishedRelease = async (manifest) => {
   const paths = manifest.artifact_paths || {};
   const artifactTexts = {};
   for (const [name, expectedHash] of Object.entries(hashes)) {
-    if (name === "alert-index.json" || name === "alert-lookup-root.json" || name.startsWith("alerts/index/")) continue;
+    if (name === "news.json" || name === "alert-index.json" || name === "alert-lookup-root.json" || name.startsWith("alerts/index/")) continue;
     const relativePath = String(paths[name] || "");
     if (!relativePath || relativePath.startsWith("/") || relativePath.includes("..")) {
       throw new Error(`invalid artifact path: ${name}`);
@@ -3131,6 +3356,7 @@ const loadPublishedRelease = async () => {
     throw new Error("published release is incomplete");
   }
   void loadLatestResearch(manifest);
+  void loadLatestNews(manifest);
   const bootstrapName = Array.isArray(manifest.bootstrap_artifacts) && manifest.bootstrap_artifacts.includes("bootstrap.json")
     ? "bootstrap.json" : "";
   if (!bootstrapName) {
@@ -3178,12 +3404,18 @@ const startPublishedRelease = async () => {
     latestResearchState = { status: "cached", report: savedResearch.report, manifest: savedResearch.manifest, message: "正在核對最新研究版本。" };
     renderResearch();
   }
+  const savedNews = await readLastGoodNews();
+  if (savedNews) {
+    latestNewsState = { status: "cached", data: savedNews.data, manifest: savedNews.manifest, message: "正在核對最新市場新聞。" };
+    renderLatestNewsPanels();
+  }
   // Local storage is only used after a previous SHA-256 verification.  It is
   // a fast paint source, never a notification-eligibility or delivery source.
   const cached = await readLastGoodBootstrap();
   let cachedRendered = false;
   if (cached) {
     window.releaseManifest = cached.manifest;
+    void loadLatestNews(cached.manifest);
     await renderLoadedSnapshot(cached.bootstrap);
     cachedRendered = true;
     const savedAt = cached.saved_at ? new Date(cached.saved_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "未知";

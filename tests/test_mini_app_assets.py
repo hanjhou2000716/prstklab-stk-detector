@@ -158,7 +158,8 @@ def test_mini_app_binds_news_artifact_to_release_before_rendering():
     assert "news.market_snapshot_id" in app
     assert "manifest.news_snapshot_id" in app
     assert "snapshot.news = news" in app
-    assert "snapshot.news?.markets || snapshot.news?.intelligence" in app
+    assert "news?.markets || news?.intelligence || news || null" in app
+    assert "snapshot.news = news" in app
     assert "stories.slice(0, 5)" in app
     assert "collection_state" in app
     assert "source_failure_count" in app

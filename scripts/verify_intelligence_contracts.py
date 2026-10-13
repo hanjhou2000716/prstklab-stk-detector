@@ -118,10 +118,16 @@ def run_audit() -> dict[str, Any]:
     taiwan_news = build_news_intelligence(
         [{"title": "Fed policy update", "url": "https://www.federalreserve.gov/feeds/press_all.xml"}],
         market="taiwan",
+        reference_time=AS_OF,
     )
     us_news = build_news_intelligence(
-        [{"title": "NVIDIA outlook", "url": "https://www.sec.gov/Archives/edgar/data/acceptance/8-k"}],
+        [{
+            "title": "NVIDIA outlook",
+            "url": "https://www.sec.gov/Archives/edgar/data/acceptance/8-k",
+            "published_at": AS_OF.isoformat(),
+        }],
         market="us",
+        reference_time=AS_OF,
     )
     checks["news_market_separation"] = (
         taiwan_news["status"] == "no_event"

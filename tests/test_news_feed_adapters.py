@@ -50,7 +50,7 @@ def test_discovery_providers_never_enter_official_feed_catalog():
 def test_rss_adapter_normalizes_fed_atom_and_isolates_other_provider_failure():
     xml = """
     <feed xmlns='http://www.w3.org/2005/Atom'>
-      <entry><title>FOMC policy statement</title><link href='https://www.federalreserve.gov/newsevents/pressreleases/a.htm'/><updated>2026-08-14T01:00:00Z</updated></entry>
+      <entry><title>FOMC policy statement</title><link href='https://www.federalreserve.gov/newsevents/pressreleases/a.htm'/><updated>2026-08-14T01:00:00Z</updated><summary>Fed &lt;b&gt;policy update&lt;/b&gt;</summary></entry>
     </feed>
     """
 
@@ -63,6 +63,8 @@ def test_rss_adapter_normalizes_fed_atom_and_isolates_other_provider_failure():
     result = fetch_official_market_news("us", requester=requester)
     assert [story["provider"] for story in result["stories"]] == ["fed"]
     assert result["stories"][0]["source_tier"] == "official"
+    assert result["stories"][0]["summary"] == "Fed policy update"
+    assert result["stories"][0]["published_at"] == "2026-08-14T01:00:00+00:00"
     assert any(item["provider"] == "sec" and item["status"] == "failed" for item in result["source_health"])
     assert any(item["provider"] == "sec" for item in result["errors"])
     failed = next(item for item in result["source_health"] if item["provider"] == "sec")
@@ -76,11 +78,12 @@ def test_json_adapter_normalizes_twse_rows_and_disabled_sources_do_not_call():
 
     def requester(url, **_kwargs):
         calls.append(url)
-        return Response(payload=[{"title": "TWSE market notice", "url": "https://www.twse.com.tw/news/1", "published_at": "2026-08-14T08:00:00Z"}])
+        return Response(payload=[{"title": "TWSE market notice", "url": "https://www.twse.com.tw/news/1", "published_at": "2026-08-14T08:00:00Z", "summary": "Exchange notice summary"}])
 
     result = fetch_official_market_news("taiwan", requester=requester)
     assert result["stories"][0]["provider"] == "twse"
     assert result["stories"][0]["published_at"].endswith("+00:00")
+    assert result["stories"][0]["summary"] == "Exchange notice summary"
     assert len(calls) == 2  # TWSE and MOPS; no US provider is requested.
     assert all("checked_at" in item for item in result["source_health"])
 
@@ -96,6 +99,12 @@ def test_http_429_is_recorded_without_retrying_or_aborting():
     assert result["stories"] == []
     assert len(calls) == 2  # SEC and Fed each attempted once.
     assert all(item["status"] == "rate_limited" for item in result["source_health"] if item["provider"] in {"sec", "fed"})
+
+
+def test_feed_summary_strips_markup_and_ignores_embedded_script_text():
+    from src.news_feed_adapters import clean_feed_text
+
+    assert clean_feed_text("<p>Market <b>update</b></p><script>secret()</script>") == "Market update"
 
 
 def test_custom_multimarket_source_is_fetched_for_the_requested_market():

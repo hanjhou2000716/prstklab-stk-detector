@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+from collections import Counter
 from collections.abc import Iterable, Mapping
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -16,6 +17,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from src.event_classifier import classify_event_fields
 from src.market_assessment import normalize_headline
+from src.news_freshness import NEWS_MAX_CALENDAR_DAYS, NEWS_MAX_TRADING_SESSIONS, qualify_market_news_date
 
 PROVIDER_REGISTRY: tuple[dict[str, Any], ...] = (
     # ``feed_url``/``feed_kind`` are the canonical adapter contract.  The
@@ -71,6 +73,7 @@ _SOURCE_FAILURE_STATES = frozenset({
 _SOURCE_HEALTH_FIELDS = (
     "provider", "key", "legacy_key", "label", "status", "source_tier", "source_url",
     "item_count", "checked_at", "last_parsed_at", "latency_ms", "data_gap",
+    "article_date_enrichment", "error_stage", "http_status",
     "stale_used", "fallback_used", "raw_item_count", "filtered_item_count", "funnel",
 )
 
@@ -209,6 +212,10 @@ def _public_news_decision(item: dict[str, Any]) -> tuple[bool, str | None, list[
         return False, "unsafe_url", flags, "unclassified"
     if not item.get("market_compatible"):
         return False, "market_scope_mismatch", flags, "unclassified"
+    if item.get("date_eligibility_status") == "excluded":
+        reason = str(item.get("date_eligibility_reason") or "publication_date_ineligible")
+        flags.append(reason)
+        return False, reason, flags, "unclassified"
     if not item.get("published_at") and source_tier in {"market", "discovery"}:
         flags.append("missing_published_at")
         return False, "missing_published_at", flags, "unclassified"
@@ -375,7 +382,8 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
     chosen_market = str(market or raw.get("market") or "").strip().lower() or None
     if chosen_market not in {"taiwan", "us", "global", "cross_market", None}:
         chosen_market = None
-    published = _published(raw.get("published_at") or raw.get("published"))
+    publication_time_input = raw.get("published_at") or raw.get("published")
+    published = _published(publication_time_input)
     tier = str(raw.get("source_tier") or provider["authority_tier"])
     authority = str(raw.get("authority_tier") or provider["authority_tier"])
     safe = bool(url and provider["provider_id"] != "unknown")
@@ -437,6 +445,12 @@ def normalize_news_story(raw: dict[str, Any], market: str | None = None) -> dict
         "canonical_url": url,
         "url": url,
         "published_at": published,
+        "publication_time_supplied": bool(str(publication_time_input or "").strip()),
+        "publication_time_invalid": bool(str(publication_time_input or "").strip()) and published is None,
+        "date_eligibility_status": str(raw.get("date_eligibility_status") or ""),
+        "date_eligibility_reason": str(raw.get("date_eligibility_reason") or ""),
+        "publication_age_trading_sessions": raw.get("publication_age_trading_sessions"),
+        "published_local_date": str(raw.get("published_local_date") or ""),
         "market": chosen_market,
         "market_compatible": market_compatible,
         "tickers": raw_tickers,
@@ -633,7 +647,11 @@ def deduplicate_and_rank(stories: Iterable[dict[str, Any]], *, limit: int = 5, m
                 groups.append(item)
         else:
             current.setdefault("supporting_sources", []).append({"provider": item["provider"], "url": item["canonical_url"]})
-    ordered = sorted(groups, key=lambda item: (-item["ranking_score"], item["story_id"]))
+    ordered = sorted(groups, key=lambda item: (
+        0 if item.get("selection_lane") == "current" else 1,
+        0 if item.get("date_eligibility_status") == "current" else 1,
+        -item["ranking_score"], item["story_id"],
+    ))
     result: list[dict[str, Any]] = []
     counts: dict[str, int] = {}
     selected_ids: set[str] = set()
@@ -835,6 +853,7 @@ def build_news_intelligence(
     source_health: Iterable[Mapping[str, Any]] | None = None,
     limit: int = 5,
     inventory_stories: Iterable[dict[str, Any]] = (),
+    reference_time: datetime | str | None = None,
 ) -> dict[str, Any]:
     current_raw = [dict(story) for story in stories if isinstance(story, dict)]
     inventory_raw = [dict(story) for story in inventory_stories if isinstance(story, dict)]
@@ -849,6 +868,16 @@ def build_news_intelligence(
     normalized_current = [normalize_news_story(story, market or story.get("market")) for story in current_raw]
     normalized_inventory = [normalize_news_story(story, market or story.get("market")) for story in inventory_raw]
     normalized = [*normalized_current, *normalized_inventory]
+    checked_at = reference_time or datetime.now(UTC)
+    if str(market or "").casefold() in {"taiwan", "us"}:
+        for item in normalized:
+            date_result = qualify_market_news_date(item.get("published_at"), str(market), checked_at)
+            if item.get("publication_time_invalid"):
+                date_result.update({"eligible": False, "status": "excluded", "reason": "invalid_published_at"})
+            item["date_eligibility_status"] = str(date_result.get("status") or "excluded")
+            item["date_eligibility_reason"] = str(date_result.get("reason") or "")
+            item["publication_age_trading_sessions"] = date_result.get("trading_sessions")
+            item["published_local_date"] = str(date_result.get("published_local_date") or "")
     graph = build_interest_graph(
         normalized,
         tracked_tickers=tracked_tickers,
@@ -993,6 +1022,16 @@ def build_news_intelligence(
         1 for row in provider_health
         if str(row.get("status") or "").casefold() == "disabled"
     )
+    date_exclusion_reasons_current = dict(sorted(Counter(
+        str(item.get("date_eligibility_reason") or "unknown")
+        for item in normalized_current
+        if item.get("date_eligibility_status") == "excluded"
+    ).items()))
+    date_exclusion_reasons_inventory = dict(sorted(Counter(
+        str(item.get("date_eligibility_reason") or "unknown")
+        for item in normalized_inventory
+        if item.get("date_eligibility_status") == "excluded"
+    ).items()))
     scan_summary = {
         "provider_count": len(provider_health),
         "successful_provider_count": success_count,
@@ -1004,6 +1043,13 @@ def build_news_intelligence(
         "normalized": len(normalized_current),
         "eligible": len(eligible),
         "excluded": len(excluded),
+        "date_eligible_current": sum(1 for item in normalized_current if item.get("date_eligibility_status") in {"current", "recent_reference"}),
+        "date_excluded_current": sum(1 for item in normalized_current if item.get("date_eligibility_status") == "excluded"),
+        "date_exclusion_reasons_current": date_exclusion_reasons_current,
+        "date_eligible_inventory": sum(1 for item in normalized_inventory if item.get("date_eligibility_status") in {"current", "recent_reference"}),
+        "date_excluded_inventory": sum(1 for item in normalized_inventory if item.get("date_eligibility_status") == "excluded"),
+        "date_exclusion_reasons_inventory": date_exclusion_reasons_inventory,
+        "reference_time": checked_at.isoformat() if isinstance(checked_at, datetime) else str(checked_at),
         "deduped": len(deduped),
         "publicly_ranked": len(ranked),
         "current_eligible": len(eligible),
@@ -1054,8 +1100,8 @@ def build_news_intelligence(
         "scan_summary": scan_summary,
         "inventory": {
             "enabled": str(market or "").casefold() in {"taiwan", "us"},
-            "retention_trading_sessions": 5,
-            "max_calendar_days": 10,
+            "retention_trading_sessions": NEWS_MAX_TRADING_SESSIONS,
+            "max_calendar_days": NEWS_MAX_CALENDAR_DAYS,
             "considered": len(normalized_inventory),
             "eligible": len(inventory_eligible),
             "selected": sum(1 for item in ranked if item.get("selection_lane") == "inventory"),

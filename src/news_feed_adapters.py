@@ -13,6 +13,7 @@ import json
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
+from html.parser import HTMLParser
 from time import perf_counter
 from typing import Any
 from urllib.parse import urljoin
@@ -24,6 +25,38 @@ from src.news_intelligence import provider_registry
 from src.value_fundamentals import SEC_USER_AGENT
 
 RequestFn = Callable[..., Any]
+
+
+class _FeedTextParser(HTMLParser):
+    """Extract plain feed text without retaining markup or script/style data."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.parts: list[str] = []
+        self._ignored_depth = 0
+
+    def handle_starttag(self, tag: str, _attrs: list[tuple[str, str | None]]) -> None:
+        if tag.casefold() in {"script", "style", "iframe", "object"}:
+            self._ignored_depth += 1
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag.casefold() in {"script", "style", "iframe", "object"} and self._ignored_depth:
+            self._ignored_depth -= 1
+
+    def handle_data(self, data: str) -> None:
+        if not self._ignored_depth and data.strip():
+            self.parts.append(data.strip())
+
+
+def clean_feed_text(value: Any, *, limit: int = 1200) -> str:
+    """Flatten RSS/Atom HTML descriptions before classification or storage."""
+    parser = _FeedTextParser()
+    try:
+        parser.feed(str(value or ""))
+        parser.close()
+    except (TypeError, ValueError):
+        return ""
+    return " ".join(" ".join(parser.parts).split())[: max(0, limit)]
 
 def feed_catalog() -> list[dict[str, Any]]:
     """Build the official feed catalog from the canonical provider registry.
@@ -103,6 +136,7 @@ def _json_stories(payload: Any, provider_id: str, base_url: str, market: str) ->
         stories.append({
             "title": title,
             "url": url,
+            "summary": clean_feed_text(row.get("summary") or row.get("description") or row.get("abstract") or row.get("摘要") or row.get("內容摘要")),
             "published_at": _date(row.get("published_at") or row.get("published") or row.get("date") or row.get("時間") or row.get("發佈時間")),
             "source": provider_id.upper(),
             "provider": provider_id,
@@ -127,10 +161,22 @@ def _rss_stories(payload: str, provider_id: str, base_url: str, market: str) -> 
             link = urljoin(base_url, link)
         if not title or not link:
             continue
-        published = entry.findtext("pubDate") or entry.findtext("{*}published") or entry.findtext("{*}updated")
+        published = (
+            entry.findtext("pubDate")
+            or entry.findtext("{http://purl.org/dc/elements/1.1/}date")
+            or entry.findtext("{*}published")
+            or entry.findtext("{*}updated")
+        )
+        summary = (
+            entry.findtext("description")
+            or entry.findtext("{*}summary")
+            or entry.findtext("{*}content")
+            or entry.findtext("{http://purl.org/rss/1.0/modules/content/}encoded")
+        )
         stories.append({
             "title": title,
             "url": link,
+            "summary": clean_feed_text(summary),
             "published_at": _date(published),
             "source": provider_id.upper(),
             "provider": provider_id,
