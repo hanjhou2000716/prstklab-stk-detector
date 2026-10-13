@@ -908,7 +908,49 @@ def test_release_gate_skips_sender_target_when_public_alert_is_not_indexed(tmp_p
     )
 
     assert result.allowed is False
-    assert "click target alert is not indexed in the published release" in result.errors
+    assert any(item.endswith("click target alert is not indexed in the published release") for item in result.errors)
+
+
+def test_release_gate_verifies_every_target_in_notification_batch(tmp_path, monkeypatch):
+    path, manifest = _ready_release(tmp_path)
+    checked: list[str] = []
+    monkeypatch.setattr(
+        "src.release_gate.requests.get",
+        lambda *_args, **_kwargs: _public_response(json.dumps(manifest).encode(), manifest),
+    )
+    monkeypatch.setattr(
+        "src.release_gate._fetch_public_release_artifacts",
+        lambda *_args, **_kwargs: ({"alert-index.json": {"alerts": []}}, []),
+    )
+
+    def verify_target(_loaded, _manifest, *, notification_id, **_kwargs):
+        checked.append(notification_id)
+        return ["click target alert hash mismatch"] if notification_id == "alert-2" else []
+
+    monkeypatch.setattr("src.release_gate._validate_public_alert_target", verify_target)
+    result = verify_release_for_delivery(
+        manifest_path=path,
+        expected_snapshot_id=manifest["market_snapshot_id"],
+        expected_release_id=manifest["release_id"],
+        public_url="https://example.test/",
+        expected_alert_targets=[
+            {"notification_id": "alert-1", "snapshot_id": manifest["market_snapshot_id"]},
+            {"notification_id": "alert-2", "snapshot_id": manifest["market_snapshot_id"]},
+        ],
+        public_attempts=1,
+        public_delay=0,
+    )
+
+    assert checked == ["alert-1", "alert-2"]
+    assert result.allowed is False
+    assert any("alert alert-2: click target alert hash mismatch" in item for item in result.errors)
+
+
+def test_release_gate_rejects_empty_explicit_alert_batch(tmp_path):
+    path, _manifest = _ready_release(tmp_path)
+    result = verify_release_for_delivery(manifest_path=path, expected_alert_targets=[])
+    assert result.allowed is False
+    assert "expected alert target list is empty" in result.errors
 
 
 def test_release_gate_retries_with_exponential_delay_and_stops_at_attempt_cap(

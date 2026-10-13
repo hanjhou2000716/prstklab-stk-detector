@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import tempfile
 from datetime import UTC, datetime, time
 from pathlib import Path
 from typing import Any
@@ -330,7 +331,7 @@ def select_official_event(
         candidates.append(event)
     excluded = excluded_event_keys or set()
     if candidates:
-        def _candidate_key(event: dict[str, Any]) -> tuple[int, int, int, int, int]:
+        def _candidate_key(event: dict[str, Any]) -> tuple[int, int, int, int, int, int]:
             risk = canonical_prstk_risk_level(event)
             risk_rank = {"R0": 0, "R1": 0, "R2": 1, "R3": 1, "R4": 2}.get(risk, 0)
             official = int(bool(event.get("official_confirmed") or event.get("official_confirmation") or event.get("source_tier") == "official"))
@@ -347,7 +348,14 @@ def select_official_event(
                 vendor_importance = int(float(str(event.get("vendor_importance"))))
             except (TypeError, ValueError):
                 vendor_importance = 0
-            return (0 if vendor_priority else 1, taiwan_investor_priority(event, now=now), -vendor_importance, -official, -risk_rank)
+            return (
+                0 if vendor_priority else 1,
+                -int(_event_age_seconds(event)),
+                taiwan_investor_priority(event, now=now),
+                -vendor_importance,
+                -official,
+                -risk_rank,
+            )
         candidates.sort(key=_candidate_key)
         for candidate in candidates:
             if event_key(candidate) not in excluded:
@@ -380,6 +388,65 @@ def select_official_event(
             None,
         )
     return signals[0] if signals else None
+
+
+def select_official_event_batch(
+    snapshot: dict[str, Any], *, now: datetime | None = None, max_count: int = 10,
+) -> list[dict[str, Any]]:
+    """Select a bounded, fair alert batch with reserved slots for live signals."""
+    limit = max(1, min(10, int(max_count)))
+    total = 0
+    for container_name in ("official_events", "events"):
+        container = snapshot.get(container_name)
+        items = container.get("items", []) if isinstance(container, dict) else []
+        if isinstance(items, list):
+            total += len(items)
+    pool: list[dict[str, Any]] = []
+    excluded: set[str] = set()
+    for _ in range(max(1, total + 1)):
+        event = select_official_event(snapshot, now=now, excluded_event_keys=excluded)
+        if event is None:
+            break
+        key = event_key(event)
+        if not key or key in excluded:
+            break
+        pool.append(event)
+        excluded.add(key)
+    if len(pool) <= limit:
+        return pool
+
+    def is_fj(event: dict[str, Any]) -> bool:
+        return str(event.get("source_key") or event.get("source") or "").strip().casefold() == "financialjuice"
+
+    def is_signal(event: dict[str, Any]) -> bool:
+        return str(event.get("kind") or "").strip().casefold() == "market_signal"
+
+    def is_official(event: dict[str, Any]) -> bool:
+        return bool(
+            event.get("official_confirmed")
+            or event.get("official_confirmation")
+            or str(event.get("source_tier") or "").strip().casefold() == "official"
+        )
+
+    fj_rows = [event for event in pool if is_fj(event)]
+    fj_rows.sort(key=lambda event: (-_event_age_seconds(event), -_safe_vendor_importance(event)))
+    signal_rows = [event for event in pool if not is_fj(event) and is_signal(event)]
+    official_rows = [event for event in pool if not is_fj(event) and not is_signal(event) and is_official(event)]
+    selected: list[dict[str, Any]] = []
+    reserved = [*(signal_rows[:1]), *(official_rows[:1])]
+    selected.extend(reserved[:limit])
+    remaining = limit - len(selected)
+    if remaining > 0:
+        priority_cap = min(len(fj_rows), max(0, remaining - (1 if pool and len(reserved) < 2 else 0)))
+        selected.extend(fj_rows[:priority_cap])
+    used = {event_key(event) for event in selected}
+    for event in pool:
+        if len(selected) >= limit:
+            break
+        if event_key(event) not in used:
+            selected.append(event)
+            used.add(event_key(event))
+    return selected
 
 
 def event_key(event: dict[str, Any] | None) -> str:
@@ -794,6 +861,46 @@ def write_status_output(
             snapshot["source_health"] = merge_decision_health(
                 snapshot.get("source_health"), "official_event_monitor", summary,
             )
+    batch_candidates = (
+        select_official_event_batch(snapshot)
+        if isinstance(snapshot, dict) and should_send else []
+    )
+    if should_send and event:
+        expected_key = event_key(event)
+        if expected_key and all(event_key(item) != expected_key for item in batch_candidates):
+            batch_candidates = [event, *batch_candidates[:9]]
+    batch_candidates = batch_candidates[:10]
+    batch_rows = [
+        {
+            "key": event_key(item),
+            "notification_key": notification_key_for_event(item),
+            "notification_id": str(item.get("notification_id") or ""),
+            "snapshot_id": str(item.get("snapshot_id") or (snapshot.get("snapshot_id") if isinstance(snapshot, dict) else "") or ""),
+            "observation_id": str(
+                item.get("observation_id")
+                or ((item.get("instrument") or {}).get("observation_id") if isinstance(item.get("instrument"), dict) else "")
+                or ""
+            ),
+            "source_key": str(item.get("source_key") or item.get("source") or "").strip().casefold(),
+            "kind": str(item.get("kind") or ""),
+        }
+        for item in batch_candidates
+        if event_key(item) and notification_key_for_event(item)
+    ]
+    batch_targets = [
+        {
+            "notification_id": row["notification_id"],
+            "snapshot_id": row["snapshot_id"],
+            "observation_id": row["observation_id"],
+        }
+        for row in batch_rows
+        if row["notification_id"]
+    ]
+    batch_contract_mismatch = bool(batch_candidates) and (
+        len(batch_rows) != len(batch_candidates)
+        or len(batch_targets) != len(batch_rows)
+        or len({row["notification_key"] for row in batch_rows}) != len(batch_rows)
+    )
     lines = [
         f"should_send={'true' if should_send else 'false'}",
         f"key={event_key(event) if event else ''}",
@@ -815,8 +922,11 @@ def write_status_output(
         f"priority_dispatch_legacy_rescan={'true' if legacy_dispatch_rescued else 'false'}",
         f"priority_pending_age_seconds={pending_age_seconds}",
         f"candidate_content_status={content_status}",
-        f"hard_failure_reason={hard_failure_reason or ('priority_candidate_contract_mismatch' if contract_mismatch else 'priority_durable_observation_missing' if durable_source_missing else 'priority_summary_timeout' if pending_timeout and not should_send else '')}",
-        f"hard_failure={'true' if snapshot_publish_failed or contract_mismatch or durable_source_missing or content_blocked or unknown_suppression or (pending_timeout and not should_send) else 'false'}",
+        f"batch_count={len(batch_rows)}",
+        f"batch_candidates={json.dumps(batch_rows, separators=(',', ':'), sort_keys=True)}",
+        f"batch_alert_targets={json.dumps(batch_targets, separators=(',', ':'), sort_keys=True)}",
+        f"hard_failure_reason={hard_failure_reason or ('notification_batch_contract_mismatch' if batch_contract_mismatch else 'priority_candidate_contract_mismatch' if contract_mismatch else 'priority_durable_observation_missing' if durable_source_missing else 'priority_summary_timeout' if pending_timeout and not should_send else '')}",
+        f"hard_failure={'true' if snapshot_publish_failed or batch_contract_mismatch or contract_mismatch or durable_source_missing or content_blocked or unknown_suppression or (pending_timeout and not should_send) else 'false'}",
         f"last_processed_at={summary['last_processed_at']}",
         f"last_candidate_at={summary['last_candidate_at'] or ''}",
     ]
@@ -1024,7 +1134,9 @@ def _write_delivery_output(
         print("\n".join(lines))
 
 
-def send_current_event(expected_key: str | None = None, *, prepared: bool = False) -> bool:
+def send_current_event(
+    expected_key: str | None = None, *, prepared: bool = False, exact_candidate: bool = False,
+) -> bool:
     """Send one verified event, safely skipping it if it changes between steps."""
     if prepared:
         try:
@@ -1113,6 +1225,9 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
                 # theme notification. Let the claim narrow the sender list.
                 break
             if claim_status in {"in_flight", "uncertain"}:
+                if exact_candidate:
+                    write_send_output(False, f"notification_{claim_status}", event=event, notification_status="suppressed", last_receipt_status=claim_status)
+                    return False
                 excluded.add(current_key)
                 next_event = select_official_event(snapshot, excluded_event_keys=excluded)
                 if next_event is not None:
@@ -1129,6 +1244,15 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
                 ledger.record_decision(event, theme)
                 ledger.save()
             if theme.get("reason") in {"same_theme_within_2h", "same_theme_unchanged"}:
+                if exact_candidate:
+                    write_send_output(
+                        False,
+                        f"theme:{theme.get('reason', 'same_theme_unchanged')}",
+                        event=event,
+                        notification_status="policy_suppressed",
+                        notification_expected=False,
+                    )
+                    return False
                 excluded.add(current_key)
                 next_event = select_official_event(snapshot, excluded_event_keys=excluded)
                 if next_event is not None:
@@ -1417,11 +1541,165 @@ def send_current_event(expected_key: str | None = None, *, prepared: bool = Fals
     return True
 
 
+def _read_action_outputs(path: Path) -> dict[str, str]:
+    result: dict[str, str] = {}
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return result
+    for line in lines:
+        key, separator, value = line.partition("=")
+        if separator and key and key.replace("_", "").isalnum():
+            result[key] = value
+    return result
+
+
+def send_current_event_batch(expected_file: Path, *, prepared: bool = False) -> list[dict[str, Any]]:
+    """Send each exact preflighted candidate and preserve per-event evidence."""
+    try:
+        candidates = json.loads(expected_file.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"batch candidate file unreadable: {type(exc).__name__}") from exc
+    if not isinstance(candidates, list) or not candidates or len(candidates) > 10:
+        raise ValueError("batch candidate file must contain 1..10 records")
+    seen: set[str] = set()
+    normalized: list[dict[str, str]] = []
+    for item in candidates:
+        if not isinstance(item, dict):
+            raise ValueError("batch candidate record is invalid")
+        key = str(item.get("key") or "").strip()
+        notification_key = str(item.get("notification_key") or "").strip()
+        if not key or not notification_key or key in seen:
+            raise ValueError("batch candidate identity is missing or duplicated")
+        seen.add(key)
+        normalized.append({
+            "key": key,
+            "notification_key": notification_key,
+            "notification_id": str(item.get("notification_id") or ""),
+            "snapshot_id": str(item.get("snapshot_id") or ""),
+            "observation_id": str(item.get("observation_id") or ""),
+        })
+
+    results: list[dict[str, Any]] = []
+    original_output = os.environ.get("GITHUB_OUTPUT")
+    original_summary = os.environ.get("GITHUB_STEP_SUMMARY")
+    with tempfile.TemporaryDirectory(prefix="official-event-batch-") as temp_dir:
+        root = Path(temp_dir)
+        try:
+            for index, candidate in enumerate(normalized):
+                output_path = root / f"event-{index}.out"
+                summary_path = root / f"event-{index}.summary"
+                os.environ["GITHUB_OUTPUT"] = str(output_path)
+                os.environ["GITHUB_STEP_SUMMARY"] = str(summary_path)
+                error_type = ""
+                try:
+                    send_current_event(candidate["key"], prepared=prepared, exact_candidate=True)
+                except Exception as exc:
+                    # A failed event does not starve later independent candidates.
+                    error_type = type(exc).__name__
+                    print(f"Event batch item failed safely: key={candidate['key'][:80]} error={error_type}")
+                values = _read_action_outputs(output_path)
+                actual_notification_key = values.get("notification_key") or candidate["notification_key"]
+                if actual_notification_key != candidate["notification_key"]:
+                    error_type = error_type or "notification_key_mismatch"
+                trace_id = values.get("trace_id", "")
+                delivery_status = values.get("delivery_status", "")
+                results.append({
+                    **candidate,
+                    "notification_key": actual_notification_key,
+                    "sent": values.get("sent") == "true",
+                    "reason": values.get("reason", "sender_output_missing")[:160],
+                    "notification_status": values.get("notification_status", "unknown")[:64],
+                    "delivery_status": delivery_status[:32],
+                    "trace_id": trace_id[:160],
+                    "release_id": values.get("release_id", os.environ.get("RELEASE_ID", ""))[:160],
+                    "snapshot_id": values.get("snapshot_id", candidate["snapshot_id"])[:160],
+                    "alert_id": values.get("alert_id", candidate["notification_id"])[:160],
+                    "delivery_mode": values.get("delivery_mode", "text")[:32],
+                    "delivered_count": _safe_nonnegative_int(values.get("delivered_count")),
+                    "failed_count": _safe_nonnegative_int(values.get("failed_count")),
+                    "failed_recipient_hashes": [
+                        item for item in values.get("failed_recipient_hashes", "").split(",")
+                        if len(item) == 12 and all(char in "0123456789abcdef" for char in item)
+                    ],
+                    "financialjuice_delivery_trace": values.get("financialjuice_delivery_trace", "")[:2000],
+                    "receipt_required": bool(trace_id and delivery_status),
+                    "error_type": error_type,
+                })
+        finally:
+            if original_output is None:
+                os.environ.pop("GITHUB_OUTPUT", None)
+            else:
+                os.environ["GITHUB_OUTPUT"] = original_output
+            if original_summary is None:
+                os.environ.pop("GITHUB_STEP_SUMMARY", None)
+            else:
+                os.environ["GITHUB_STEP_SUMMARY"] = original_summary
+
+    destination = Path(os.getenv("OFFICIAL_EVENT_BATCH_RESULTS_PATH") or Path(tempfile.gettempdir()) / "official-event-batch-results.json")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_suffix(destination.suffix + ".tmp")
+    temporary.write_text(json.dumps(results, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
+    temporary.replace(destination)
+    receipt_rows = [row for row in results if row["receipt_required"]]
+    delivered = sum(row["delivery_status"] == "delivered" for row in receipt_rows)
+    partial = sum(row["delivery_status"] == "partial" for row in receipt_rows)
+    failed = sum(row["delivery_status"] == "failed" or bool(row["error_type"]) for row in results)
+    delivered_recipients = sum(row["delivered_count"] for row in receipt_rows)
+    failed_recipients = sum(row["failed_count"] for row in receipt_rows)
+    status = "failed" if failed else "partial" if partial else "delivered" if delivered else "no_delivery"
+    delivery_status = (
+        "partial" if delivered_recipients and failed_recipients
+        else "failed" if failed_recipients or failed
+        else "partial" if partial
+        else "delivered" if delivered_recipients
+        else "suppressed"
+    )
+    summary = {
+        "schema_version": "official-event-delivery-batch-v1",
+        "candidate_count": len(results),
+        "receipt_required_count": len(receipt_rows),
+        "delivered_event_count": delivered,
+        "partial_event_count": partial,
+        "failed_event_count": failed,
+        "delivered_recipient_count": delivered_recipients,
+        "failed_recipient_count": failed_recipients,
+    }
+    output_values = {
+        "batch_results_file": str(destination),
+        "batch_count": len(results),
+        "attempted_count": len(receipt_rows),
+        "delivered_event_count": delivered,
+        "partial_event_count": partial,
+        "failed_event_count": failed,
+        "delivery_status": delivery_status,
+        "delivered_count": delivered_recipients,
+        "failed_count": failed_recipients,
+        "sent": "true" if receipt_rows else "false",
+        "notification_expected": "true",
+        "notification_status": status,
+        "reason": "batch_delivery_results_recorded",
+    }
+    action_output_path = os.getenv("GITHUB_OUTPUT")
+    output_lines = [f"{key}={value}" for key, value in output_values.items()]
+    if action_output_path:
+        with Path(action_output_path).open("a", encoding="utf-8") as handle:
+            handle.write("\n".join(output_lines) + "\n")
+    else:
+        print("\n".join(output_lines))
+    write_summary("Official event batch delivery", summary)
+    if failed:
+        raise RuntimeError(f"official event batch had {failed} failed item(s); per-event evidence was preserved")
+    return results
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="監測官方重大事件與已核對價格訊號")
     parser.add_argument("--write-status", action="store_true")
     parser.add_argument("--send", action="store_true")
     parser.add_argument("--expected-key")
+    parser.add_argument("--send-batch", action="store_true")
+    parser.add_argument("--expected-keys-file", type=Path)
     parser.add_argument("--prepared", action="store_true")
     return parser.parse_args()
 
@@ -1433,8 +1711,12 @@ def main() -> None:
         write_status_output(event, snapshot, publish_snapshot=True)
     if args.send:
         send_current_event(args.expected_key, prepared=args.prepared)
-    if not args.write_status and not args.send:
-        raise ValueError("請指定 --write-status 或 --send")
+    if args.send_batch:
+        if args.expected_keys_file is None:
+            raise ValueError("--send-batch requires --expected-keys-file")
+        send_current_event_batch(args.expected_keys_file, prepared=args.prepared)
+    if not args.write_status and not args.send and not args.send_batch:
+        raise ValueError("請指定 --write-status、--send 或 --send-batch")
 
 
 if __name__ == "__main__":

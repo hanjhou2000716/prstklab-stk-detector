@@ -7,11 +7,17 @@ def test_official_event_workflow_is_dispatchable_and_idempotent():
     terminal = (root / "src" / "notification_terminal.py").read_text(encoding="utf-8")
 
     assert "official-event-check" in workflow
-    assert "official-event-${{ steps.status.outputs.key }}" in workflow
-    assert "official-event-monitor-${{ github.ref }}" in workflow
+    assert "official-event-monitor-${{ github.ref }}" not in workflow
+    assert "monitor-admission" in workflow
+    assert "official-monitor-admission-v1" in workflow
+    assert "Bind idempotency lock to the complete selected batch" in workflow
+    assert "--timeout-seconds 600" in workflow
     assert "cancel-in-progress: false" in workflow
     assert '- cron: "*/5 * * * *"' in workflow
-    assert "python -m src.official_event_monitor --send" in workflow
+    assert "--send-batch --prepared --expected-keys-file" in workflow
+    assert "--expected-alert-targets-file" in workflow
+    assert "--notification-keys-file" in workflow
+    assert "official-event-batch-${{ hashFiles('.official-event-batch-keys.json') }}" in workflow
     assert "DASHBOARD_URL" in workflow
     assert "delivered_count" in workflow or "delivery_status" in workflow
     assert "src.delivery_callback" in workflow
@@ -71,6 +77,9 @@ def test_gmail_history_dispatches_realtime_monitor_after_new_reviewed_rows():
     assert "priority_candidate_count" in workflow
     assert "priority_event_refs" in workflow
     assert "client_payload[priority_event_refs]" in workflow
+    assert "dispatch_id=\"gmail-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}\"" in workflow
+    assert "Audit official monitor liveness" in workflow
+    assert "Notify once when a monitor stall incident opens" in workflow
     assert "priority_recovery_scan_status" in workflow
     dispatcher = (root / "scripts" / "official_monitor_dispatch.py").read_text(encoding="utf-8")
     assert "scripts/official_monitor_dispatch.py" in workflow

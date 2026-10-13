@@ -1,8 +1,18 @@
+import json
+import os
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import pytest
+
 from src import official_event_monitor as monitor
-from src.official_event_monitor import build_official_event_brief, event_key, select_official_event
+from src.official_event_monitor import (
+    build_official_event_brief,
+    event_key,
+    select_official_event,
+    select_official_event_batch,
+)
 from src.release_gate import ReleaseGateResult
 from src.telegram_client import TextDeliveryReceipt, alert_mini_app_url
 
@@ -123,6 +133,86 @@ def test_monitor_prioritizes_eligible_financialjuice_vendor_priority_event():
 
     assert selected is not None
     assert selected["source_key"] == "financialjuice"
+
+
+def test_event_batch_reserves_price_and_official_slots_while_prioritizing_oldest_fj():
+    published_now = datetime.now(UTC)
+    taiwan_now = datetime(2026, 10, 13, 10, 0, tzinfo=ZoneInfo("Asia/Taipei"))
+    fj_events = [
+        {
+            "kind": "external_event",
+            "source_key": "financialjuice",
+            "notification_status": "eligible",
+            "vendor_importance": 9,
+            "vendor_priority_notification": True,
+            "notification_id": f"fj-{index}",
+            "event_cluster_key": f"fj-cluster-{index}",
+            "title": f"FJ verified fact {index}",
+            "source_published_at": (published_now - timedelta(minutes=index)).isoformat(),
+        }
+        for index in range(12)
+    ]
+    official = {
+        "kind": "major_event", "source_key": "official", "source_tier": "official",
+        "notification_status": "eligible", "notification_id": "official-1",
+        "event_cluster_key": "official-cluster-1", "title": "Official emergency event",
+    }
+    signal = {
+        "kind": "market_signal", "notification_id": "market-1",
+        "event_cluster_key": "market-cluster-1", "brief_title": "TAIEX threshold move",
+        "instrument": {"ticker": "TAIEX", "snapshot_id": "snapshot-1", "observation_id": "obs-1"},
+        "snapshot_id": "snapshot-1", "observation_id": "obs-1",
+        "source_trace": {"snapshot_id": "snapshot-1", "observation_id": "obs-1"},
+    }
+    batch = select_official_event_batch(
+        {"official_events": {"items": []}, "events": {"items": [*fj_events, official, signal]}},
+        now=taiwan_now,
+        max_count=10,
+    )
+
+    assert len(batch) == 10
+    assert len({event_key(item) for item in batch}) == 10
+    assert any(item.get("kind") == "market_signal" for item in batch)
+    assert any(item.get("source_tier") == "official" for item in batch)
+    selected_fj = [item for item in batch if item.get("source_key") == "financialjuice"]
+    assert len(selected_fj) == 8
+    assert selected_fj[0]["notification_id"] == "fj-11"
+
+
+def test_event_batch_preserves_each_result_and_continues_after_one_sender_error(monkeypatch, tmp_path):
+    candidate_file = tmp_path / "candidates.json"
+    result_file = tmp_path / "results.json"
+    output_file = tmp_path / "github-output.txt"
+    candidates = [
+        {"key": "event-1", "notification_key": "claim-1", "notification_id": "alert-1", "snapshot_id": "snap"},
+        {"key": "event-2", "notification_key": "claim-2", "notification_id": "alert-2", "snapshot_id": "snap"},
+    ]
+    candidate_file.write_text(json.dumps(candidates), encoding="utf-8")
+    monkeypatch.setenv("OFFICIAL_EVENT_BATCH_RESULTS_PATH", str(result_file))
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output_file))
+    calls: list[tuple[str, bool]] = []
+
+    def fake_send(key, *, prepared, exact_candidate):
+        calls.append((key, exact_candidate))
+        if key == "event-1":
+            raise OSError("simulated recipient transport failure")
+        Path(os.environ["GITHUB_OUTPUT"]).write_text(
+            "sent=true\nnotification_key=claim-2\ntrace_id=trace-2\ndelivery_status=delivered\n"
+            "delivered_count=4\nfailed_count=0\nrelease_id=release-1\nsnapshot_id=snap\n",
+            encoding="utf-8",
+        )
+        return True
+
+    monkeypatch.setattr(monitor, "send_current_event", fake_send)
+    with pytest.raises(RuntimeError, match="per-event evidence was preserved"):
+        monitor.send_current_event_batch(candidate_file, prepared=True)
+
+    saved = json.loads(result_file.read_text(encoding="utf-8"))
+    assert calls == [("event-1", True), ("event-2", True)]
+    assert saved[0]["error_type"] == "OSError"
+    assert saved[1]["notification_key"] == "claim-2"
+    assert saved[1]["receipt_required"] is True
+    assert "batch_results_file=" in output_file.read_text(encoding="utf-8")
 
 
 def test_realtime_external_projection_adds_eligible_fj_to_shared_event_lane(monkeypatch, tmp_path):
@@ -660,6 +750,41 @@ def test_duplicate_top_candidate_does_not_starve_later_valid_candidate(monkeypat
     monkeypatch.setattr(monitor, "send_text_briefs_audited", sender)
     assert monitor.send_current_event(expected_key=monitor.event_key(later)) is True
     assert captured["alert_id"] == "official-next"
+
+
+def test_exact_batch_candidate_does_not_fall_through_after_theme_suppression(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    event = {
+        "source_key": "official", "source": "issuer", "notification_id": "candidate-1",
+        "event_cluster_key": "cluster-1", "notification_status": "eligible",
+        "title": "Repeated verified theme", "source_url": "https://example.test/event",
+    }
+    snapshot = {"snapshot_id": "snap-1", "events": {"items": [event, {"title": "must not replace candidate"}]}}
+    monkeypatch.setattr(monitor, "prepare_snapshot", lambda: (snapshot, event))
+    monkeypatch.setattr(monitor, "verify_release_for_delivery", lambda **_kwargs: ReleaseGateResult(True, release_id="release-1", snapshot_id="snap-1"))
+    monkeypatch.setattr(monitor, "build_official_event_brief", lambda _event: "verified complete brief")
+    monkeypatch.setattr(monitor, "select_official_event", lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("exact batch item must not fall through")))
+
+    class FakeLedger:
+        delivery_claims = {}
+
+        def theme_decision(self, _event):
+            return {"allowed": False, "status": "suppressed", "reason": "same_theme_unchanged"}
+
+        def record_decision(self, _event, decision):
+            return decision
+
+        def save(self):
+            return None
+
+    monkeypatch.setattr(monitor, "EventLedger", FakeLedger)
+    monkeypatch.setattr(monitor, "send_text_briefs_audited", lambda **_kwargs: (_ for _ in ()).throw(AssertionError("suppressed candidate must not send")))
+
+    assert monitor.send_current_event(
+        expected_key=monitor.event_key(event), exact_candidate=True,
+    ) is False
+    assert "reason=theme:same_theme_unchanged" in output.read_text(encoding="utf-8")
 
 
 

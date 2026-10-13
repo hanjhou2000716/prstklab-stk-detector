@@ -71,8 +71,8 @@ def test_failed_notification_attempts_still_persist_receipts():
         "- name: Persist Telegram delivery receipt", 1
     )[1].split("- name:", 1)[0]
     assert "steps.send.outcome != 'skipped'" in official_receipt
-    assert "steps.send.outputs.trace_id != ''" in official_receipt
-    assert "steps.send.outputs.delivery_status != ''" in official_receipt
+    assert "steps.send.outputs.batch_results_file != ''" in official_receipt
+    assert "src.delivery_callback --results-file \"$BATCH_RESULTS_FILE\"" in official_receipt
 
 
 def test_controlled_photo_input_is_text_only_and_fixed_to_editor():
