@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "ea1d20bc216ac279",
-  "snapshot_id": "news-ff15919182853271",
+  "market_snapshot_id": "85208a7daa84f71b",
+  "snapshot_id": "news-f4dea6f6706b392c",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -4745,16 +4745,16 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "NVDA": 4,
-          "2330": 27,
-          "TSM": 27
+          "2330": 32,
+          "TSM": 32,
+          "NVDA": 4
         },
         "sector_interest": {},
         "topic_interest": {
           "石油": 1
         },
         "market_interest": {
-          "taiwan": 103
+          "taiwan": 108
         },
         "context": {
           "tracked_tickers": [
@@ -4833,9 +4833,9 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "NVDA": 4,
-            "2330": 27,
-            "TSM": 27
+            "2330": 32,
+            "TSM": 32,
+            "NVDA": 4
           },
           "research_candidate": {},
           "tracked_sector": {},
@@ -4845,10 +4845,11 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 31,
+      "excluded_count": 34,
       "exclusion_reasons": {
-        "incomplete_normalized_fact": 6,
-        "insufficient_market_relevance": 18,
+        "incomplete_normalized_fact": 8,
+        "insufficient_market_relevance": 20,
+        "missing_published_at": 1,
         "outside_calendar_window": 16,
         "outside_trading_session_window": 3
       },
@@ -4860,33 +4861,34 @@
         "successful_provider_count": 5,
         "failed_provider_count": 0,
         "disabled_provider_count": 0,
-        "fetched": 41,
-        "normalized": 41,
+        "fetched": 44,
+        "normalized": 44,
         "eligible": 10,
-        "excluded": 31,
-        "date_eligible_current": 22,
-        "date_excluded_current": 19,
+        "excluded": 34,
+        "date_eligible_current": 24,
+        "date_excluded_current": 20,
         "date_exclusion_reasons_current": {
+          "missing_published_at": 1,
           "outside_calendar_window": 16,
           "outside_trading_session_window": 3
         },
-        "date_eligible_inventory": 62,
+        "date_eligible_inventory": 64,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-13T19:33:37.195778+00:00",
+        "reference_time": "2026-10-13T19:38:15.925816+00:00",
         "deduped": 10,
         "publicly_ranked": 5,
         "current_eligible": 10,
-        "inventory_considered": 62,
+        "inventory_considered": 64,
         "inventory_eligible": 50,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 31,
-        "fetched_story_count": 41,
-        "normalized_story_count": 41,
+        "filtered_story_count": 34,
+        "fetched_story_count": 44,
+        "normalized_story_count": 44,
         "eligible_story_count": 10,
         "deduped_story_count": 10,
         "ranked_story_count": 5
@@ -4895,7 +4897,7 @@
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 62,
+        "considered": 64,
         "eligible": 50,
         "selected": 0,
         "target_count": 5,
@@ -4908,8 +4910,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 41,
-          "checked_at": "2026-10-13T19:33:37.195815+00:00"
+          "item_count": 44,
+          "checked_at": "2026-10-13T19:38:15.925853+00:00"
         },
         {
           "provider": "twse",
@@ -4920,10 +4922,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-10-13T19:33:37.195815+00:00",
+          "checked_at": "2026-10-13T19:38:15.925853+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+          "last_success_at": "2026-10-13T19:38:15.925853+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4948,10 +4950,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-10-13T19:33:37.195815+00:00",
+          "checked_at": "2026-10-13T19:38:15.925853+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+          "last_success_at": "2026-10-13T19:38:15.925853+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4976,23 +4978,24 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 0,
-          "checked_at": "2026-10-13T19:33:37.195815+00:00",
+          "checked_at": "2026-10-13T19:38:15.925853+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+          "last_success_at": "2026-10-13T19:38:15.925853+00:00",
           "last_failure_at": null,
-          "stories_ingested": 1,
+          "stories_ingested": 4,
           "stories_deduped": 0,
           "ranked_count": 0,
           "relevance_distribution": {
-            "market": 1
+            "market": 4,
+            "tracked_ticker": 3
           },
           "funnel": {
-            "fetched_count": 1,
-            "normalized_count": 1,
-            "market_compatible_count": 1,
+            "fetched_count": 4,
+            "normalized_count": 4,
+            "market_compatible_count": 4,
             "eligible_count": 0,
-            "excluded_count": 1,
+            "excluded_count": 4,
             "deduped_count": 0,
             "ranked_count": 0
           },
@@ -5007,10 +5010,10 @@
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
           "item_count": 1,
-          "checked_at": "2026-10-13T19:33:37.195815+00:00",
+          "checked_at": "2026-10-13T19:38:15.925853+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 1,
-          "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+          "last_success_at": "2026-10-13T19:38:15.925853+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 1,
@@ -5038,10 +5041,10 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
           "item_count": 4,
-          "checked_at": "2026-10-13T19:33:37.195815+00:00",
+          "checked_at": "2026-10-13T19:38:15.925853+00:00",
           "raw_item_count": 30,
           "filtered_item_count": 4,
-          "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+          "last_success_at": "2026-10-13T19:38:15.925853+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
           "stories_deduped": 9,
@@ -5062,31 +5065,32 @@
         }
       ],
       "observability": {
-        "stories_ingested": 41,
+        "stories_ingested": 44,
         "stories_deduped": 10,
         "ranked_count": 5,
         "relevance_distribution": {
-          "market": 41,
-          "tracked_ticker": 9
+          "market": 44,
+          "tracked_ticker": 12
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+            "last_success_at": "2026-10-13T19:38:15.925853+00:00",
             "last_failure_at": null,
-            "stories_ingested": 1,
+            "stories_ingested": 4,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 1
+              "market": 4,
+              "tracked_ticker": 3
             },
             "funnel": {
-              "fetched_count": 1,
-              "normalized_count": 1,
-              "market_compatible_count": 1,
+              "fetched_count": 4,
+              "normalized_count": 4,
+              "market_compatible_count": 4,
               "eligible_count": 0,
-              "excluded_count": 1,
+              "excluded_count": 4,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -5094,7 +5098,7 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+            "last_success_at": "2026-10-13T19:38:15.925853+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
             "stories_deduped": 9,
@@ -5116,7 +5120,7 @@
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+            "last_success_at": "2026-10-13T19:38:15.925853+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5135,7 +5139,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+            "last_success_at": "2026-10-13T19:38:15.925853+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5154,7 +5158,7 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+            "last_success_at": "2026-10-13T19:38:15.925853+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 1,
@@ -9415,7 +9419,7 @@
           "gold": 1
         },
         "market_interest": {
-          "us": 141
+          "us": 140
         },
         "context": {
           "tracked_tickers": [
@@ -9514,9 +9518,10 @@
       "excluded_count": 49,
       "exclusion_reasons": {
         "generic_official_filing": 20,
-        "incomplete_normalized_fact": 18,
+        "incomplete_normalized_fact": 16,
         "insufficient_market_relevance": 16,
         "market_scope_mismatch": 8,
+        "missing_published_at": 1,
         "outside_calendar_window": 17,
         "outside_trading_session_window": 1
       },
@@ -9532,20 +9537,21 @@
         "normalized": 60,
         "eligible": 11,
         "excluded": 49,
-        "date_eligible_current": 42,
-        "date_excluded_current": 18,
+        "date_eligible_current": 41,
+        "date_excluded_current": 19,
         "date_exclusion_reasons_current": {
+          "missing_published_at": 1,
           "outside_calendar_window": 17,
           "outside_trading_session_window": 1
         },
-        "date_eligible_inventory": 81,
+        "date_eligible_inventory": 80,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-13T19:33:37.195778+00:00",
+        "reference_time": "2026-10-13T19:38:15.925816+00:00",
         "deduped": 10,
         "publicly_ranked": 5,
         "current_eligible": 11,
-        "inventory_considered": 81,
+        "inventory_considered": 80,
         "inventory_eligible": 50,
         "inventory_selected": 0,
         "final_public_count": 5,
@@ -9563,7 +9569,7 @@
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 81,
+        "considered": 80,
         "eligible": 50,
         "selected": 0,
         "target_count": 5,
@@ -9577,7 +9583,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 60,
-          "checked_at": "2026-10-13T19:33:37.195815+00:00"
+          "checked_at": "2026-10-13T19:38:15.925853+00:00"
         },
         {
           "provider": "sec",
@@ -9588,10 +9594,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-10-13T19:33:37.195815+00:00",
+          "checked_at": "2026-10-13T19:38:15.925853+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+          "last_success_at": "2026-10-13T19:38:15.925853+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9619,12 +9625,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-10-13T19:33:37.195815+00:00",
+          "checked_at": "2026-10-13T19:38:15.925853+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-10-13T19:33:37.195815+00:00",
+          "last_failure_at": "2026-10-13T19:38:15.925853+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9647,10 +9653,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-10-13T19:33:37.195815+00:00",
+          "checked_at": "2026-10-13T19:38:15.925853+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+          "last_success_at": "2026-10-13T19:38:15.925853+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9675,10 +9681,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 1,
-          "checked_at": "2026-10-13T19:33:37.195815+00:00",
+          "checked_at": "2026-10-13T19:38:15.925853+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 1,
-          "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+          "last_success_at": "2026-10-13T19:38:15.925853+00:00",
           "last_failure_at": null,
           "stories_ingested": 2,
           "stories_deduped": 1,
@@ -9705,10 +9711,10 @@
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
           "item_count": 2,
-          "checked_at": "2026-10-13T19:33:37.195815+00:00",
+          "checked_at": "2026-10-13T19:38:15.925853+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 2,
-          "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+          "last_success_at": "2026-10-13T19:38:15.925853+00:00",
           "last_failure_at": null,
           "stories_ingested": 4,
           "stories_deduped": 2,
@@ -9736,10 +9742,10 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
           "item_count": 2,
-          "checked_at": "2026-10-13T19:33:37.195815+00:00",
+          "checked_at": "2026-10-13T19:38:15.925853+00:00",
           "raw_item_count": 40,
           "filtered_item_count": 2,
-          "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+          "last_success_at": "2026-10-13T19:38:15.925853+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
           "stories_deduped": 7,
@@ -9775,7 +9781,7 @@
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+            "last_success_at": "2026-10-13T19:38:15.925853+00:00",
             "last_failure_at": null,
             "stories_ingested": 2,
             "stories_deduped": 1,
@@ -9797,7 +9803,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-10-13T19:33:37.195815+00:00",
+            "last_failure_at": "2026-10-13T19:38:15.925853+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9815,7 +9821,7 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+            "last_success_at": "2026-10-13T19:38:15.925853+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
             "stories_deduped": 7,
@@ -9839,7 +9845,7 @@
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+            "last_success_at": "2026-10-13T19:38:15.925853+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9858,7 +9864,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+            "last_success_at": "2026-10-13T19:38:15.925853+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -9900,7 +9906,7 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-13T19:33:37.195815+00:00",
+            "last_success_at": "2026-10-13T19:38:15.925853+00:00",
             "last_failure_at": null,
             "stories_ingested": 4,
             "stories_deduped": 2,
