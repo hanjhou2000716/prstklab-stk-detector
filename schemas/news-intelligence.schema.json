@@ -82,6 +82,39 @@
           "type": "integer",
           "minimum": 0
         },
+        "date_eligible_current": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "date_excluded_current": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "date_exclusion_reasons_current": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "date_eligible_inventory": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "date_excluded_inventory": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "date_exclusion_reasons_inventory": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "reference_time": {
+          "type": "string"
+        },
         "deduped": {
           "type": "integer",
           "minimum": 0

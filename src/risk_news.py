@@ -6,20 +6,23 @@ import json
 import math
 import os
 import re
+import time
 import unicodedata
 from collections import Counter
 from collections.abc import Iterable
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import TimeoutError as FuturesTimeoutError
 from datetime import UTC, datetime, timedelta
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urljoin, urlsplit, urlunsplit
 from xml.etree import ElementTree
-from zoneinfo import ZoneInfo
 
 import requests
 
-from src.news_feed_adapters import fetch_official_market_news
+from src.news_feed_adapters import clean_feed_text, fetch_official_market_news
+from src.news_freshness import NEWS_MAX_CALENDAR_DAYS, NEWS_MAX_TRADING_SESSIONS, qualify_market_news_date
 from src.news_intelligence import NEWS_ELIGIBILITY_RULESET, build_news_intelligence, provider_registry
 from src.taiwan_macro_fgi import FGIUnavailableError, calculate_taiwan_macro_fgi
 
@@ -75,8 +78,8 @@ NEWS_TERMS = {
 }
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; PRStKInvestmentSystem/1.0)"}
 NEWS_CACHE_MAX_AGE_MINUTES = int(os.getenv("NEWS_CACHE_MAX_AGE_MINUTES", "360"))
-NEWS_INVENTORY_MAX_TRADING_SESSIONS = 5
-NEWS_INVENTORY_MAX_CALENDAR_DAYS = 10
+NEWS_INVENTORY_MAX_TRADING_SESSIONS = NEWS_MAX_TRADING_SESSIONS
+NEWS_INVENTORY_MAX_CALENDAR_DAYS = NEWS_MAX_CALENDAR_DAYS
 NEWS_INVENTORY_MAX_ITEMS = 50
 _LAST_OFFICIAL_NEWS_HEALTH: dict[str, dict[str, Any]] = {}
 
@@ -220,49 +223,9 @@ def _parse_news_time(value: Any) -> datetime | None:
 def _inventory_age(
     published_at: Any, market: str, now: datetime | None = None,
 ) -> int | None:
-    """Return a market-session age, where the source session is age one.
-
-    Calendar sessions are used instead of 72-hour arithmetic so a Friday
-    story remains eligible on the following weekend and exchange holidays do
-    not consume an artificial session.
-    """
-    published = _parse_news_time(published_at)
-    current = _parse_news_time(now or datetime.now(UTC))
-    if published is None or current is None or published > current:
-        return None
-    if current - published > timedelta(days=NEWS_INVENTORY_MAX_CALENDAR_DAYS):
-        return None
-    try:
-        import pandas_market_calendars as mcal
-
-        calendar_name = "XTAI" if str(market).casefold() == "taiwan" else "NYSE"
-        local_zone = "Asia/Taipei" if str(market).casefold() == "taiwan" else "America/New_York"
-        exchange = mcal.get_calendar(calendar_name)
-        source_day = published.astimezone(ZoneInfo(local_zone)).date()
-        current_day = current.astimezone(ZoneInfo(local_zone)).date()
-        if source_day > current_day:
-            return None
-        schedule = exchange.schedule(start_date=source_day, end_date=current_day)
-        sessions = [index.date() for index in schedule.index]
-    except (ImportError, KeyError, TypeError, ValueError, IndexError):
-        return None
-    if not sessions or not any(session <= source_day for session in sessions):
-        # A weekend/holiday publication belongs to the most recent completed
-        # session.  Look back one bounded calendar week to find its anchor.
-        try:
-            schedule = exchange.schedule(
-                start_date=source_day - timedelta(days=7), end_date=current_day,
-            )
-            sessions = [index.date() for index in schedule.index]
-        except (TypeError, ValueError, IndexError):
-            return None
-    anchor_candidates = [session for session in sessions if session <= source_day]
-    if not anchor_candidates:
-        return None
-    anchor = anchor_candidates[-1]
-    current_sessions = [session for session in sessions if anchor <= session <= current_day]
-    age = len(current_sessions)
-    return age if 1 <= age <= NEWS_INVENTORY_MAX_TRADING_SESSIONS else None
+    """Compatibility wrapper for the shared current/inventory age gate."""
+    result = qualify_market_news_date(published_at, market, now)
+    return result.get("trading_sessions") if result.get("eligible") else None
 
 
 def _us_inventory_age(published_at: Any, now: datetime | None = None) -> int | None:
@@ -706,7 +669,7 @@ def build_risk_snapshot() -> dict[str, Any]:
     }
 
 
-def _news_from_html(html: str, market: str, limit: int = 5) -> list[dict[str, str]]:
+def _news_from_html(html: str, market: str, limit: int = 5) -> list[dict[str, Any]]:
     """Extract holding-related headlines, falling back to disclosed market focus."""
     from bs4 import BeautifulSoup
 
@@ -718,10 +681,14 @@ def _news_from_html(html: str, market: str, limit: int = 5) -> list[dict[str, st
     for link in soup.select('a[href^="/news/id/"]'):
         href = str(link.get("href", ""))
         title = " ".join(link.stripped_strings)
-        if not title or href in seen:
+        url = urljoin("https://news.cnyes.com", href)
+        parsed = urlsplit(url)
+        if (not title or href in seen or parsed.scheme != "https"
+                or parsed.hostname != "news.cnyes.com"
+                or not re.fullmatch(r"/news/id/\d+/?", parsed.path)):
             continue
         seen.add(href)
-        story = {"title": title, "url": f"https://news.cnyes.com{href}"}
+        story = {"title": title, "url": url, "provider": "anue", "source": "鉅亨網"}
         if any(term in title.lower() for term in terms):
             related.append({**story, "source": "鉅亨網｜持股關聯", "relevance": "holding"})
         else:
@@ -733,7 +700,141 @@ def _news_from_html(html: str, market: str, limit: int = 5) -> list[dict[str, st
     return market_focus[:limit]
 
 
-def fetch_market_news(market: str) -> list[dict[str, str]]:
+def _cnyes_article_fields(html: str, fallback: dict[str, Any]) -> dict[str, Any]:
+    """Read publication facts from structured article metadata or HTML time tags."""
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(html, "html.parser")
+    structured: list[dict[str, Any]] = []
+
+    def walk(value: Any) -> None:
+        if isinstance(value, dict):
+            structured.append(value)
+            for nested in value.values():
+                walk(nested)
+        elif isinstance(value, list):
+            for nested in value:
+                walk(nested)
+
+    for script in soup.select('script[type="application/ld+json"]'):
+        try:
+            walk(json.loads(script.string or script.get_text()))
+        except (TypeError, ValueError, json.JSONDecodeError):
+            continue
+
+    def node_attribute(name: str, attribute: str, value: str) -> str | None:
+        node: Any = soup.find(name, attrs={attribute: value})
+        raw = node.get("content") if node else None
+        return str(raw) if raw not in (None, "") else None
+
+    article = next((item for item in structured if item.get("datePublished")), {})
+    time_node: Any = soup.find("time", attrs={"datetime": True})
+    time_value = time_node.get("datetime") if time_node else None
+    published = (
+        article.get("datePublished")
+        or node_attribute("meta", "property", "article:published_time")
+        or node_attribute("meta", "itemprop", "datePublished")
+        or time_value
+    )
+    heading = soup.find("h1")
+    title = (
+        article.get("headline")
+        or node_attribute("meta", "property", "og:title")
+        or (heading.get_text(" ", strip=True) if heading else "")
+        or fallback.get("title")
+    )
+    description = (
+        article.get("description")
+        or node_attribute("meta", "property", "og:description")
+        or node_attribute("meta", "name", "description")
+        or ""
+    )
+    canonical_node: Any = soup.find("link", rel="canonical")
+    canonical = urljoin(str(fallback.get("url") or ""), str(canonical_node.get("href") or "")) if canonical_node else str(fallback.get("url") or "")
+    canonical_parts = urlsplit(canonical)
+    if canonical_parts.scheme != "https" or canonical_parts.hostname != "news.cnyes.com" or not re.fullmatch(r"/news/id/\d+/?", canonical_parts.path):
+        canonical = str(fallback.get("url") or "")
+    else:
+        canonical = urlunsplit((canonical_parts.scheme, canonical_parts.netloc, canonical_parts.path.rstrip("/"), "", ""))
+    summary = " ".join(BeautifulSoup(str(description), "html.parser").stripped_strings)[:1200]
+    return {
+        **fallback,
+        "title": " ".join(str(title or "").split())[:300],
+        "summary": summary,
+        "published_at": _rss_published_at(published),
+        "url": canonical,
+        "canonical_url": canonical,
+        "provider": "anue",
+    }
+
+
+def _enrich_cnyes_candidates(
+    candidates: list[dict[str, Any]], *, deadline: float,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Resolve up to five missing dates using at most two concurrent requests."""
+    eligible: list[tuple[int, dict[str, Any]]] = []
+    seen: set[str] = set()
+    for index, candidate in enumerate(candidates):
+        url = str(candidate.get("url") or "")
+        if candidate.get("published_at") or not url or url in seen:
+            continue
+        seen.add(url)
+        eligible.append((index, candidate))
+        if len(eligible) == 5:
+            break
+    diagnostics: dict[str, Any] = {"attempted": len(eligible), "enriched": 0, "failed": 0, "timed_out": 0, "reasons": {}}
+    if not eligible:
+        return candidates, diagnostics
+
+    def fetch_one(candidate: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return None, "timeout"
+        try:
+            response = requests.get(str(candidate["url"]), headers=HEADERS, timeout=min(8.0, remaining))
+            response.raise_for_status()
+            story = _cnyes_article_fields(response.text, candidate)
+            return (story, None) if story.get("published_at") else (None, "missing_published_at")
+        except requests.Timeout:
+            return None, "timeout"
+        except requests.HTTPError:
+            return None, "http_error"
+        except Exception:
+            return None, "parse_or_request_error"
+
+    executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="anue-article")
+    futures = {executor.submit(fetch_one, candidate): (index, candidate) for index, candidate in eligible}
+    enriched: dict[int, dict[str, Any]] = {}
+    try:
+        remaining = max(0.0, deadline - time.monotonic())
+        for future in as_completed(futures, timeout=remaining):
+            index, _candidate = futures[future]
+            try:
+                story, reason = future.result()
+            except Exception:
+                story, reason = None, "parse_or_request_error"
+            if story:
+                enriched[index] = story
+                diagnostics["enriched"] += 1
+            else:
+                diagnostics["failed"] += 1
+                if reason == "timeout":
+                    diagnostics["timed_out"] += 1
+                reasons = diagnostics["reasons"]
+                reasons[reason or "unknown"] = int(reasons.get(reason or "unknown", 0)) + 1
+    except FuturesTimeoutError:
+        pending = [future for future in futures if not future.done()]
+        diagnostics["failed"] += len(pending)
+        diagnostics["timed_out"] += len(pending)
+        diagnostics["reasons"]["timeout"] = int(diagnostics["reasons"].get("timeout", 0)) + len(pending)
+        for future in pending:
+            future.cancel()
+    finally:
+        executor.shutdown(wait=False, cancel_futures=True)
+    return [enriched.get(index, candidate) for index, candidate in enumerate(candidates)], diagnostics
+
+
+def fetch_market_news(market: str) -> list[dict[str, Any]]:
     """Fetch an additive official/market/discovery news pool.
 
     Official feeds are retained as first-party evidence, but no longer
@@ -754,13 +855,21 @@ def fetch_market_news(market: str) -> list[dict[str, str]]:
         source_urls = _market_news_rss_urls(market) if provider == "google_news" else [source_url]
         found_all: list[dict[str, Any]] = []
         failed_urls = 0
+        provider_deadline = time.monotonic() + 15.0
+        enrichment = {"attempted": 0, "enriched": 0, "failed": 0, "timed_out": 0, "reasons": {}}
+        provider_diagnostic: dict[str, Any] = {}
         try:
             for candidate_url in source_urls:
                 try:
-                    response = requests.get(candidate_url, headers=HEADERS, timeout=15)
+                    remaining = provider_deadline - time.monotonic()
+                    if provider == "anue" and remaining <= 0:
+                        raise requests.Timeout("provider budget exhausted")
+                    request_timeout = min(15.0, remaining) if provider == "anue" else 15
+                    response = requests.get(candidate_url, headers=HEADERS, timeout=request_timeout)
                     response.raise_for_status()
                     if provider == "anue":
                         found = _news_from_html(response.text, market, limit=10)
+                        found, enrichment = _enrich_cnyes_candidates(found, deadline=provider_deadline)
                     elif provider == "yahoo_finance":
                         found = _news_from_yahoo_rss(response.text, market, limit=10)
                     else:
@@ -768,7 +877,10 @@ def fetch_market_news(market: str) -> list[dict[str, str]]:
                     found_all.extend(found)
                 except Exception as exc:
                     failed_urls += 1
-                    errors.append({"provider": provider, "error": type(exc).__name__})
+                    status_code = getattr(getattr(exc, "response", None), "status_code", None)
+                    error_kind = "timeout" if isinstance(exc, requests.Timeout) else "http_error" if status_code else "request_or_parse_error"
+                    errors.append({"provider": provider, "stage": "category_fetch", "error": error_kind, "http_status": status_code})
+                    provider_diagnostic = {"error_stage": "category_fetch", "http_status": status_code, "data_gap": error_kind}
             found = list({
                 str(item.get("url") or item.get("title")): item
                 for item in found_all
@@ -783,11 +895,14 @@ def fetch_market_news(market: str) -> list[dict[str, str]]:
             status = "failed" if not found and failed_urls == len(source_urls) else "healthy" if found else "no_event"
             health.append({"provider": provider, "status": status,
                            "source_url": source_url, "item_count": len(found),
+                           "article_date_enrichment": enrichment,
+                           **provider_diagnostic,
                            "checked_at": datetime.now(UTC).isoformat(), "market": market,
                            "source_tier": "discovery" if provider == "google_news" else "market"})
         except Exception as exc:
             health.append({"provider": provider, "status": "failed", "source_url": source_url,
                            "item_count": 0, "checked_at": datetime.now(UTC).isoformat(),
+                           "error_stage": "provider_scan", "data_gap": "request_or_parse_error",
                            "market": market, "source_tier": "discovery" if provider == "google_news" else "market"})
             errors.append({"provider": provider, "error": type(exc).__name__})
     _LAST_OFFICIAL_NEWS_HEALTH[market] = {"source_health": health, "errors": errors}
@@ -867,7 +982,17 @@ def _news_from_rss(xml: str, market: str, limit: int = 5) -> list[dict[str, Any]
         stories.append({
             "title": title,
             "url": url,
+            "summary": clean_feed_text(
+                item.findtext("description")
+                or item.findtext("{*}summary")
+                or item.findtext("{*}content")
+                or item.findtext("{http://purl.org/rss/1.0/modules/content/}encoded")
+            ),
             "source": "Google News｜台股線索" if market == "taiwan" else "Google News｜美股線索",
+            "provider": "google_news",
+            "source_tier": "discovery",
+            "authority_tier": "discovery",
+            "market": market,
             "relevance": "market",
             "published_at": published_at,
         })
@@ -1199,6 +1324,7 @@ def build_news_snapshot(
         "creator_mentions": list(creator_mentions) if creator_mentions is not None else defaults["creator_mentions"],
     }
     checked_at = datetime.now().astimezone().isoformat()
+    scan_reference_time = _parse_news_time(checked_at) or datetime.now(UTC)
     result = _build_news_snapshot_primary()
     cache = _load_news_cache()
     markets = cache.setdefault("markets", {})
@@ -1327,6 +1453,7 @@ def build_news_snapshot(
             creator_mentions=interest_context["creator_mentions"],
             source_health=market_health,
             limit=max(len(current_stories), 1),
+            reference_time=scan_reference_time,
         )
         inventory_candidates = _inventory_candidates(
             cache, market, _parse_news_time(checked_at) or datetime.now(UTC),
@@ -1343,6 +1470,7 @@ def build_news_snapshot(
             source_health=market_health,
             limit=5,
             inventory_stories=inventory_candidates,
+            reference_time=scan_reference_time,
         )
         _update_news_inventory(
             cache, market, current_intelligence.get("stories", []), checked_at,

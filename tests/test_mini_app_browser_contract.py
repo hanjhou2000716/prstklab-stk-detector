@@ -416,6 +416,67 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
         "external_observations": [],
     }
     market_text = json.dumps(market, ensure_ascii=False, separators=(",", ":"))
+    event_ledger_text = json.dumps({"snapshot_id": "events-current", "items": []}, separators=(",", ":"))
+    bootstrap = {
+        "schema_version": "1.1",
+        "release_id": current_release,
+        "snapshot_id": "market-current",
+        "generated_at": "2026-09-04T08:00:00+00:00",
+        "data_status": "快速載入",
+        "markets": {},
+        "indices": [],
+        "quotes": [],
+        "events": {"items": []},
+        "risk": {},
+        "briefing": {},
+    }
+    bootstrap_text = json.dumps(bootstrap, ensure_ascii=False, separators=(",", ":"))
+    latest_news = {
+        "snapshot_id": "news-current",
+        "market_snapshot_id": "market-current",
+        "release_id": current_release,
+        "generated_at": "2026-10-13T09:10:00+08:00",
+        "provider_registry": [
+            {"provider_id": "anue", "domains": ["news.cnyes.com"]},
+            {"provider_id": "google_news", "domains": ["news.google.com"]},
+        ],
+        "source_health": [],
+        "markets": {
+            "taiwan": {
+                "stories": [{
+                    "title": "台股最新已核實焦點",
+                    "url": "https://news.cnyes.com/news/id/6628856",
+                    "provider": "anue",
+                    "source": "鉅亨網",
+                    "public_safe": True,
+                    "date_eligibility_status": "current",
+                    "published_at": "2026-10-13T09:00:00+08:00",
+                    "published_local_date": "2026-10-13",
+                }],
+                "scan_summary": {"provider_count": 1, "final_public_count": 1, "current_eligible": 1},
+                "source_diversity": {"status": "single_source", "independent_source_count": 1},
+                "checked_at": "2026-10-13T09:10:00+08:00",
+                "collection_state": "ready",
+            },
+            "us": {
+                "stories": [{
+                    "title": "美股近期已核實參考",
+                    "url": "https://news.google.com/rss/articles/fixture",
+                    "provider": "google_news",
+                    "source": "Google News",
+                    "public_safe": True,
+                    "date_eligibility_status": "recent_reference",
+                    "published_at": "2026-10-12T09:00:00-04:00",
+                    "published_local_date": "2026-10-12",
+                }],
+                "scan_summary": {"provider_count": 1, "final_public_count": 1, "current_eligible": 0, "inventory_selected": 1},
+                "source_diversity": {"status": "single_source", "independent_source_count": 1},
+                "checked_at": "2026-10-13T09:10:00+08:00",
+                "collection_state": "ready",
+            },
+        },
+    }
+    news_text = json.dumps(latest_news, ensure_ascii=False, separators=(",", ":"))
     research_groups = {
         ("taiwan", "price_action"): (["2359", "5471", "1810", "2457", "6741"], "2026-10-08", True),
         ("taiwan", "momentum"): (["2466", "6672", "4556", "3624", "6174"], "2026-10-08", True),
@@ -472,9 +533,17 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
         "status": "ready",
         "created_at": "2026-09-04T08:00:00+00:00",
         "market_snapshot_id": "market-current",
+        "bootstrap_artifacts": ["bootstrap.json"],
         "research_snapshot_id": "research-current",
+        "event_snapshot_id": "events-current",
+        "news_snapshot_id": "news-current",
         "artifact_hashes": {
             "market.json": hashlib.sha256(market_text.encode()).hexdigest(),
+            # Deliberately corrupt a non-news background artifact: the news
+            # panel must still independently verify and display its own file.
+            "event-ledger.json": "0" * 64,
+            "bootstrap.json": hashlib.sha256(bootstrap_text.encode()).hexdigest(),
+            "news.json": hashlib.sha256(news_text.encode()).hexdigest(),
             "research-report.json": hashlib.sha256(research_text.encode()).hexdigest(),
             "alert-index.json": hashlib.sha256(index_text.encode()).hexdigest(),
             "alert-lookup-root.json": hashlib.sha256(lookup_descriptor_text.encode()).hexdigest(),
@@ -482,6 +551,9 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
         },
         "artifact_paths": {
             "market.json": "data/market.json",
+            "event-ledger.json": "data/event-ledger.json",
+            "bootstrap.json": "data/bootstrap.json",
+            "news.json": "data/news.json",
             "research-report.json": "data/research-report.json",
             "alert-index.json": "data/alert-index.json",
             "alert-lookup-root.json": "data/alert-lookup-root.json",
@@ -499,13 +571,27 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
             page = browser.new_page()
+            news_fetches = 0
+            news_failures_remaining = 3
 
             def fulfill_release(route) -> None:  # type: ignore[no-untyped-def]
+                nonlocal news_fetches, news_failures_remaining
                 url = route.request.url
                 if "/data/release-manifest.json" in url:
                     route.fulfill(status=200, content_type="application/json", body=manifest_text)
                 elif "/data/market.json" in url:
                     route.fulfill(status=200, content_type="application/json", body=market_text)
+                elif "/data/bootstrap.json" in url:
+                    route.fulfill(status=200, content_type="application/json", body=bootstrap_text)
+                elif "/data/news.json" in url:
+                    news_fetches += 1
+                    if news_failures_remaining:
+                        news_failures_remaining -= 1
+                        route.fulfill(status=503, content_type="application/json", body="temporary fixture outage")
+                    else:
+                        route.fulfill(status=200, content_type="application/json", body=news_text)
+                elif "/data/event-ledger.json" in url:
+                    route.fulfill(status=200, content_type="application/json", body=event_ledger_text)
                 elif "/data/research-report.json" in url:
                     route.fulfill(status=200, content_type="application/json", body=research_text)
                 elif "/data/alert-index.json" in url:
@@ -541,10 +627,26 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
             assert page.locator("#index-evidence a").get_attribute("href").startswith("https://")
             assert page.locator("#index-system-analysis").get_attribute("open") is None
             assert "不應取代通知的目前事件" not in (page.locator("#alert-card").text_content() or "")
+            page.wait_for_function("document.querySelector('#taiwan-news')?.textContent.includes('新聞驗證失敗')")
+            assert page.locator("#taiwan-news-retry").is_visible()
+            assert "沒有符合條件的公開新聞" not in (page.locator("#taiwan-news").text_content() or "")
+            news_failures_remaining = 0
+            page.locator("#taiwan-news-retry").click()
+            page.wait_for_function("document.querySelector('#taiwan-news')?.textContent.includes('台股最新已核實焦點')")
+            assert page.locator("#taiwan-news a").get_attribute("href") == "https://news.cnyes.com/news/id/6628856"
+            assert page.locator("#taiwan-news-source-status").text_content().find(current_release) >= 0
+            assert news_fetches == 4
             page.wait_for_function("document.querySelector('#research-list')?.textContent.includes('2359')")
             assert page.evaluate("window.marketSnapshot.briefing.report_summary.text") == "原版總結：標普500最近收盤上漲0.58%。"
             assert page.evaluate("window.marketSnapshot.research_report === undefined")
             assert "已核實研究版本 research-current" in (page.locator("#research-notice").text_content() or "")
+            research_details = page.locator("#research-system-analysis")
+            assert research_details.get_attribute("open") is None
+            assert page.locator("#research-version-note").is_hidden()
+            assert page.locator("#research-notice").is_hidden()
+            research_details.locator("summary").click()
+            assert page.locator("#research-version-note").is_visible()
+            assert page.locator("#research-notice").is_visible()
             assert "通知原版" in (page.locator("#data-status").text_content() or "")
             assert "候選 40 檔" in (page.locator("#research-system-analysis").text_content() or "")
             for strategy_list in ("#research-list", "#momentum-list", "#resonance-list", "#value-list"):
@@ -559,6 +661,14 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
             assert "資料日 2026-10-09" in (page.locator('[data-research-meta="price_action"]').text_content() or "")
             assert page.locator("#value-list li.research-item").count() == 5
             assert page.locator("#value-list").text_content().find("ADBE") >= 0
+            page.locator('.news-tab[data-market="us"]').click()
+            assert page.locator("#us-news").is_visible()
+            assert "美股近期已核實參考" in (page.locator("#us-news").text_content() or "")
+            assert "近期參考" in (page.locator("#us-news").text_content() or "")
+            assert "2026-10-12" in (page.locator("#us-news").text_content() or "")
+            assert page.evaluate("window.marketSnapshot.briefing.report_summary.text") == "原版總結：標普500最近收盤上漲0.58%。"
+            assert page.evaluate("window.marketSnapshot.risk.us.sentiment.score") == 47.3
+            assert news_fetches == 4
 
             def republish_research(snapshot_id: str) -> None:
                 nonlocal research_text, manifest_text

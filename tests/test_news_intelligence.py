@@ -1,7 +1,8 @@
+from datetime import UTC, datetime
+
 from src.artifact_contract import validate_news_intelligence
 from src.news_intelligence import (
     build_interest_graph,
-    build_news_intelligence,
     canonicalize_url,
     deduplicate_and_rank,
     normalize_news_story,
@@ -9,6 +10,43 @@ from src.news_intelligence import (
     provider_supports_market,
     summarize_source_diversity,
 )
+from src.news_intelligence import (
+    build_news_intelligence as _build_news_intelligence,
+)
+
+
+def build_news_intelligence(stories, **kwargs):
+    """Keep content-gate fixtures independent from wall-clock freshness.
+
+    Date-window behavior has dedicated tests in ``test_news_freshness.py``.
+    The older relevance/contract fixtures predate that gate, so bind their
+    undated rows to a deterministic fixture time and evaluate dated rows at
+    the newest timestamp represented by that fixture batch.
+    """
+    current = [dict(story) for story in stories if isinstance(story, dict)]
+    inventory = [
+        dict(story)
+        for story in kwargs.pop("inventory_stories", ())
+        if isinstance(story, dict)
+    ]
+    dates: list[datetime] = []
+    for story in [*current, *inventory]:
+        value = story.get("published_at") or story.get("published")
+        if value in (None, ""):
+            continue
+        try:
+            parsed = datetime.fromisoformat(str(value).strip().replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            continue
+        dates.append(parsed.replace(tzinfo=UTC) if parsed.tzinfo is None else parsed.astimezone(UTC))
+    reference_time = kwargs.get("reference_time")
+    if reference_time is None:
+        reference_time = max(dates) if dates else datetime(2026, 10, 13, 12, tzinfo=UTC)
+        kwargs["reference_time"] = reference_time
+    for story in [*current, *inventory]:
+        if story.get("published_at") in (None, "") and story.get("published") in (None, ""):
+            story["published_at"] = reference_time.isoformat() if isinstance(reference_time, datetime) else str(reference_time)
+    return _build_news_intelligence(current, inventory_stories=inventory, **kwargs)
 
 
 def test_provider_contract_and_url_normalization_are_canonical():
@@ -136,12 +174,13 @@ def test_public_news_gate_rejects_sec_form_and_stock_selection_headlines():
 
 
 def test_market_and_discovery_news_without_publish_time_are_excluded():
-    payload = build_news_intelligence(
+    payload = _build_news_intelligence(
         [{
             "title": "Nasdaq futures rise on semiconductor earnings",
             "url": "https://news.google.com/rss/articles/no-time",
         }],
         market="us",
+        reference_time=datetime(2026, 10, 13, 12, tzinfo=UTC),
     )
     assert payload["stories"] == []
     assert payload["exclusion_reasons"] == {"missing_published_at": 1}
