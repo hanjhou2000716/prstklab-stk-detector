@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "2c6bb6b2476497b0",
-  "snapshot_id": "news-c601aa3bd7b9cfe6",
+  "market_snapshot_id": "1f1323dbb76148f9",
+  "snapshot_id": "news-7c1237df08e2e662",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -4795,8 +4795,8 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 31,
-          "TSM": 31,
+          "2330": 30,
+          "TSM": 30,
           "NVDA": 2
         },
         "sector_interest": {},
@@ -4804,7 +4804,7 @@
           "石油": 1
         },
         "market_interest": {
-          "taiwan": 108
+          "taiwan": 106
         },
         "context": {
           "tracked_tickers": [
@@ -4875,14 +4875,16 @@
             "地震",
             "石油",
             "荷姆茲",
-            "黃金"
+            "重大災害",
+            "黃金",
+            "黑天鵝"
           ],
           "creator_mentions": []
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 31,
-            "TSM": 31,
+            "2330": 30,
+            "TSM": 30,
             "NVDA": 2
           },
           "research_candidate": {},
@@ -4893,11 +4895,11 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 33,
+      "excluded_count": 32,
       "exclusion_reasons": {
         "incomplete_normalized_fact": 2,
-        "insufficient_market_relevance": 28,
-        "market_scope_mismatch": 2,
+        "insufficient_market_relevance": 24,
+        "market_scope_mismatch": 4,
         "outside_calendar_window": 16,
         "outside_trading_session_window": 1
       },
@@ -4909,33 +4911,33 @@
         "successful_provider_count": 5,
         "failed_provider_count": 0,
         "disabled_provider_count": 0,
-        "fetched": 41,
-        "normalized": 41,
+        "fetched": 40,
+        "normalized": 40,
         "eligible": 8,
-        "excluded": 33,
-        "date_eligible_current": 24,
+        "excluded": 32,
+        "date_eligible_current": 23,
         "date_excluded_current": 17,
         "date_exclusion_reasons_current": {
           "outside_calendar_window": 16,
           "outside_trading_session_window": 1
         },
-        "date_eligible_inventory": 67,
+        "date_eligible_inventory": 66,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-13T15:14:35.487107+00:00",
+        "reference_time": "2026-10-13T15:27:28.544838+00:00",
         "deduped": 8,
         "publicly_ranked": 5,
         "current_eligible": 8,
-        "inventory_considered": 67,
+        "inventory_considered": 66,
         "inventory_eligible": 51,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 33,
-        "fetched_story_count": 41,
-        "normalized_story_count": 41,
+        "filtered_story_count": 32,
+        "fetched_story_count": 40,
+        "normalized_story_count": 40,
         "eligible_story_count": 8,
         "deduped_story_count": 8,
         "ranked_story_count": 5
@@ -4944,7 +4946,7 @@
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 67,
+        "considered": 66,
         "eligible": 51,
         "selected": 0,
         "target_count": 5,
@@ -4957,8 +4959,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 41,
-          "checked_at": "2026-10-13T15:14:35.487151+00:00"
+          "item_count": 40,
+          "checked_at": "2026-10-13T15:27:28.544880+00:00"
         },
         {
           "provider": "twse",
@@ -4969,10 +4971,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-10-13T15:14:35.487151+00:00",
+          "checked_at": "2026-10-13T15:27:28.544880+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+          "last_success_at": "2026-10-13T15:27:28.544880+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4997,10 +4999,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-10-13T15:14:35.487151+00:00",
+          "checked_at": "2026-10-13T15:27:28.544880+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+          "last_success_at": "2026-10-13T15:27:28.544880+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -5025,27 +5027,25 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 0,
-          "checked_at": "2026-10-13T15:14:35.487151+00:00",
+          "checked_at": "2026-10-13T15:27:28.544880+00:00",
+          "data_gap": "filtered_no_market_match",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+          "last_success_at": "2026-10-13T15:27:28.544880+00:00",
           "last_failure_at": null,
-          "stories_ingested": 1,
+          "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
-          "relevance_distribution": {
-            "market": 1
-          },
+          "relevance_distribution": {},
           "funnel": {
-            "fetched_count": 1,
-            "normalized_count": 1,
-            "market_compatible_count": 1,
+            "fetched_count": 0,
+            "normalized_count": 0,
+            "market_compatible_count": 0,
             "eligible_count": 0,
-            "excluded_count": 1,
+            "excluded_count": 0,
             "deduped_count": 0,
             "ranked_count": 0
-          },
-          "data_gap": "filtered_no_market_match"
+          }
         },
         {
           "provider": "yahoo_finance",
@@ -5056,23 +5056,23 @@
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
           "item_count": 0,
-          "checked_at": "2026-10-13T15:14:35.487151+00:00",
+          "checked_at": "2026-10-13T15:27:28.544880+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+          "last_success_at": "2026-10-13T15:27:28.544880+00:00",
           "last_failure_at": null,
-          "stories_ingested": 9,
+          "stories_ingested": 8,
           "stories_deduped": 0,
           "ranked_count": 0,
           "relevance_distribution": {
-            "market": 9
+            "market": 8
           },
           "funnel": {
             "fetched_count": 10,
-            "normalized_count": 9,
-            "market_compatible_count": 9,
+            "normalized_count": 8,
+            "market_compatible_count": 8,
             "eligible_count": 0,
-            "excluded_count": 9,
+            "excluded_count": 8,
             "deduped_count": 0,
             "ranked_count": 0
           },
@@ -5087,17 +5087,17 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
           "item_count": 5,
-          "checked_at": "2026-10-13T15:14:35.487151+00:00",
+          "checked_at": "2026-10-13T15:27:28.544880+00:00",
           "raw_item_count": 30,
           "filtered_item_count": 5,
-          "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+          "last_success_at": "2026-10-13T15:27:28.544880+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
           "stories_deduped": 8,
           "ranked_count": 5,
           "relevance_distribution": {
             "market": 30,
-            "tracked_ticker": 8
+            "tracked_ticker": 7
           },
           "funnel": {
             "fetched_count": 30,
@@ -5111,31 +5111,29 @@
         }
       ],
       "observability": {
-        "stories_ingested": 41,
+        "stories_ingested": 40,
         "stories_deduped": 8,
         "ranked_count": 5,
         "relevance_distribution": {
-          "market": 41,
-          "tracked_ticker": 8
+          "market": 40,
+          "tracked_ticker": 7
         },
         "providers": [
           {
             "provider": "anue",
-            "status": "healthy",
-            "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+            "status": "no_event",
+            "last_success_at": "2026-10-13T15:27:28.544880+00:00",
             "last_failure_at": null,
-            "stories_ingested": 1,
+            "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
-            "relevance_distribution": {
-              "market": 1
-            },
+            "relevance_distribution": {},
             "funnel": {
-              "fetched_count": 1,
-              "normalized_count": 1,
-              "market_compatible_count": 1,
+              "fetched_count": 0,
+              "normalized_count": 0,
+              "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 1,
+              "excluded_count": 0,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -5143,14 +5141,14 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+            "last_success_at": "2026-10-13T15:27:28.544880+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
             "stories_deduped": 8,
             "ranked_count": 5,
             "relevance_distribution": {
               "market": 30,
-              "tracked_ticker": 8
+              "tracked_ticker": 7
             },
             "funnel": {
               "fetched_count": 30,
@@ -5165,7 +5163,7 @@
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+            "last_success_at": "2026-10-13T15:27:28.544880+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5184,7 +5182,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+            "last_success_at": "2026-10-13T15:27:28.544880+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5205,18 +5203,18 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 1,
+            "stories_ingested": 2,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 1
+              "market": 2
             },
             "funnel": {
-              "fetched_count": 1,
-              "normalized_count": 1,
+              "fetched_count": 2,
+              "normalized_count": 2,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 1,
+              "excluded_count": 2,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -5224,20 +5222,20 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+            "last_success_at": "2026-10-13T15:27:28.544880+00:00",
             "last_failure_at": null,
-            "stories_ingested": 9,
+            "stories_ingested": 8,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 9
+              "market": 8
             },
             "funnel": {
               "fetched_count": 10,
-              "normalized_count": 9,
-              "market_compatible_count": 9,
+              "normalized_count": 8,
+              "market_compatible_count": 8,
               "eligible_count": 0,
-              "excluded_count": 9,
+              "excluded_count": 8,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -5464,6 +5462,94 @@
       ],
       "stories": [
         {
+          "story_id": "news-714923013dd718e8b12e",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Nvidia Stock Slips on Fallout From Broadcom CEO and Microsoft’s New Chip",
+          "raw_title": "Nvidia Stock Slips on Fallout From Broadcom CEO and Microsoft’s New Chip",
+          "normalized_fact": "Nvidia stock has fallen back from record highs after news from Broadcom and Microsoft rocked the semiconductor sector。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Nvidia stock has fallen back from record highs after news from Broadcom and Microsoft rocked the semiconductor sector.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/m/a4aefd29-a37b-353f-96a9-5ef862fc5240/nvidia-stock-slips-on-fallout.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/m/a4aefd29-a37b-353f-96a9-5ef862fc5240/nvidia-stock-slips-on-fallout.html?.tsrc=rss",
+          "published_at": "2026-10-13T14:23:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-13",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "AVGO",
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [
+            "semiconductor"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "tracked_ticker:NVDA"
+          ],
+          "freshness": "published",
+          "dedupe_key": "nvidiastockhasfallenbackfromrecordhighsafternewsfrombroadcomandmicrosoftrockedthesemiconductorsector",
+          "event_cluster_key": "event-6dcd31551cc99acef9ae",
+          "published_time_bucket": "2026-10-13T14:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 135
+        },
+        {
           "story_id": "news-0205a0d5fdaf6092e720",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -5643,6 +5729,90 @@
           "ranking_score": 130
         },
         {
+          "story_id": "news-8613ea20ae7961bb36fb",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "The Dow's Bank Earnings Boost Didn't Last Long",
+          "raw_title": "The Dow's Bank Earnings Boost Didn't Last Long",
+          "normalized_fact": "The Dow Jones Industrial Average’s bank earnings boost didn’t last long。",
+          "market_topic": "company_industry",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "The Dow Jones Industrial Average’s bank earnings boost didn’t last long.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/m/5c82827c-a4a8-320d-bdf7-b23ad2a025b0/the-dow%27s-bank-earnings-boost.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/m/5c82827c-a4a8-320d-bdf7-b23ad2a025b0/the-dow%27s-bank-earnings-boost.html?.tsrc=rss",
+          "published_at": "2026-10-13T14:24:38+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-13",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "earnings"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "thedowjonesindustrialaveragesbankearningsboostdidntlastlong",
+          "event_cluster_key": "event-fac8d635d37da229778d",
+          "published_time_bucket": "2026-10-13T14:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
           "story_id": "news-52a8250d4523a311071d",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -5732,175 +5902,97 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        },
-        {
-          "story_id": "news-64a87a66a8161b1c0b54",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Fed’s Waller Says Higher US Yields Could Help Cool Demand - Bloomberg.com",
-          "raw_title": "Fed’s Waller Says Higher US Yields Could Help Cool Demand - Bloomberg.com",
-          "normalized_fact": "Fed’s Waller Says Higher US Yields Could Help Cool Demand Bloomberg.com。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Fed’s Waller Says Higher US Yields Could Help Cool Demand Bloomberg.com",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxQakVySTZHYVRiTDREcWZ6bDZ6TWhnN1hIOU1EQTh3N2czRVFSRDFpdGkzb3I5b0dnN2l4akdXdGY1dTkxWnczMldQWXJ5TEYzc2w5eHJ3YW1TR3NtVEpMMDdhaUJKUVBuV0VzREJVOEdRZDhLbFNXYnhpRFpzTnk2S2YxNTNTSkoyV01XRGtzaXd0X2RwbXRsTnNPeUFSNFFTOElLcXp0TGdqd0NqaHc",
-          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxQakVySTZHYVRiTDREcWZ6bDZ6TWhnN1hIOU1EQTh3N2czRVFSRDFpdGkzb3I5b0dnN2l4akdXdGY1dTkxWnczMldQWXJ5TEYzc2w5eHJ3YW1TR3NtVEpMMDdhaUJKUVBuV0VzREJVOEdRZDhLbFNXYnhpRFpzTnk2S2YxNTNTSkoyV01XRGtzaXd0X2RwbXRsTnNPeUFSNFFTOElLcXp0TGdqd0NqaHc",
-          "published_at": "2026-10-13T08:33:04+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-13",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "fedswallersayshigherusyieldscouldhelpcooldemandbloombergcom",
-          "event_cluster_key": "event-dc116943bbb247f4dc5e",
-          "published_time_bucket": "2026-10-13T08:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
-          "story_id": "news-f192f33d8e50d4f83300",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "U.S. Treasury yields fall as energy prices pull back - CNBC",
-          "raw_title": "U.S. Treasury yields fall as energy prices pull back - CNBC",
-          "normalized_fact": "U.S. Treasury yields fall as energy prices pull back CNBC。",
-          "market_topic": "company_industry",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "U.S. Treasury yields fall as energy prices pull back CNBC",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMib0FVX3lxTFA4ZHlxSG9mVUtMWVNJRGxvQ3M2cHB4bHViN2FmQkhWbE5PRl9WY19fUy1oamVTY2dPNmpMMk4tVFdRN2NFYy1QeGxHNDlORjYxVkxnOXl1cGl6bVczT1J3QXJITzFwVENQcVlHWnJRONIBdEFVX3lxTE5mYmhLcEthSnNNTjE5S1E2U1JtV2JZZlZhdTNYTEtRZlJsWHZZazV6Q19EcVAyUGhINXFKcGkzUUtQS1BjU285aEdTUmNDYktBaG1kbWE1OF8teTVVeWRXX0F2WXl2N3Y5Y2pDS1g1VWEzQ05T",
-          "url": "https://news.google.com/rss/articles/CBMib0FVX3lxTFA4ZHlxSG9mVUtMWVNJRGxvQ3M2cHB4bHViN2FmQkhWbE5PRl9WY19fUy1oamVTY2dPNmpMMk4tVFdRN2NFYy1QeGxHNDlORjYxVkxnOXl1cGl6bVczT1J3QXJITzFwVENQcVlHWnJRONIBdEFVX3lxTE5mYmhLcEthSnNNTjE5S1E2U1JtV2JZZlZhdTNYTEtRZlJsWHZZazV6Q19EcVAyUGhINXFKcGkzUUtQS1BjU285aEdTUmNDYktBaG1kbWE1OF8teTVVeWRXX0F2WXl2N3Y5Y2pDS1g1VWEzQ05T",
-          "published_at": "2026-10-13T07:58:17+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-13",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "ustreasuryyieldsfallasenergypricespullbackcnbc",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-10-13T07:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
         }
       ],
       "editorial_candidates": [
+        {
+          "story_id": "news-714923013dd718e8b12e",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Nvidia Stock Slips on Fallout From Broadcom CEO and Microsoft’s New Chip",
+          "raw_title": "Nvidia Stock Slips on Fallout From Broadcom CEO and Microsoft’s New Chip",
+          "normalized_fact": "Nvidia stock has fallen back from record highs after news from Broadcom and Microsoft rocked the semiconductor sector。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Nvidia stock has fallen back from record highs after news from Broadcom and Microsoft rocked the semiconductor sector.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/m/a4aefd29-a37b-353f-96a9-5ef862fc5240/nvidia-stock-slips-on-fallout.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/m/a4aefd29-a37b-353f-96a9-5ef862fc5240/nvidia-stock-slips-on-fallout.html?.tsrc=rss",
+          "published_at": "2026-10-13T14:23:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-13",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "AVGO",
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [
+            "semiconductor"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "tracked_ticker:NVDA"
+          ],
+          "freshness": "published",
+          "dedupe_key": "nvidiastockhasfallenbackfromrecordhighsafternewsfrombroadcomandmicrosoftrockedthesemiconductorsector",
+          "event_cluster_key": "event-6dcd31551cc99acef9ae",
+          "published_time_bucket": "2026-10-13T14:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 135
+        },
         {
           "story_id": "news-0205a0d5fdaf6092e720",
           "provider": "google_news",
@@ -6070,6 +6162,90 @@
           ],
           "exclusion_reason": null,
           "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "story_id": "news-8613ea20ae7961bb36fb",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "The Dow's Bank Earnings Boost Didn't Last Long",
+          "raw_title": "The Dow's Bank Earnings Boost Didn't Last Long",
+          "normalized_fact": "The Dow Jones Industrial Average’s bank earnings boost didn’t last long。",
+          "market_topic": "company_industry",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "The Dow Jones Industrial Average’s bank earnings boost didn’t last long.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/m/5c82827c-a4a8-320d-bdf7-b23ad2a025b0/the-dow%27s-bank-earnings-boost.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/m/5c82827c-a4a8-320d-bdf7-b23ad2a025b0/the-dow%27s-bank-earnings-boost.html?.tsrc=rss",
+          "published_at": "2026-10-13T14:24:38+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-13",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "earnings"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "thedowjonesindustrialaveragesbankearningsboostdidntlastlong",
+          "event_cluster_key": "event-fac8d635d37da229778d",
+          "published_time_bucket": "2026-10-13T14:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -9257,186 +9433,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 8
-        },
-        {
-          "story_id": "news-ce21bfa4dfd9041b8845",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Utilities Surge Lifts Wall Street as S&P 500 Closes Near 7,820 - Rate Cut Expectations - www.dars.gov.et",
-          "raw_title": "Utilities Surge Lifts Wall Street as S&P 500 Closes Near 7,820 - Rate Cut Expectations - www.dars.gov.et",
-          "normalized_fact": "Utilities Surge Lifts Wall Street as S&P 500 Closes Near 7,820 - Rate Cut Expectations - www.dars.gov.et。",
-          "market_topic": "global_market",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxOajRqZHVGano4VlpxN28yYkhLYng3bmlFS3hLNjBfQzRMMnFIUVozcnJienlCcnZpdEh6ZEVMY0plZjBsVnZEa0Q3QXJkbUhyNlZRZ2JFc0U0R090Q1hwTmh0ekZzTjJoY0gtWWs3R0gybUVzV050Q2w2eTdSMXNjVmI3NHB4R1M4MXk2SGJ5M1RfeUtmb09JZFpCTFA4SnZ6bWI3Zg",
-          "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxOajRqZHVGano4VlpxN28yYkhLYng3bmlFS3hLNjBfQzRMMnFIUVozcnJienlCcnZpdEh6ZEVMY0plZjBsVnZEa0Q3QXJkbUhyNlZRZ2JFc0U0R090Q1hwTmh0ekZzTjJoY0gtWWs3R0gybUVzV050Q2w2eTdSMXNjVmI3NHB4R1M4MXk2SGJ5M1RfeUtmb09JZFpCTFA4SnZ6bWI3Zg",
-          "published_at": "2026-10-07T11:06:51+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 5,
-          "published_local_date": "2026-10-07",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "material_positive",
-            "reason": "material_positive_keyword",
-            "matched_terms": [
-              "rate cut"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "research_candidate:P"
-          ],
-          "freshness": "published",
-          "dedupe_key": "utilitiessurgeliftswallstreetassp500closesnear7820ratecutexpectationswwwdarsgovet",
-          "event_cluster_key": "event-4c19ffd6c8db3ae5798e",
-          "published_time_bucket": "2026-10-07T11:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 5,
-          "inventory_saved_at": "2026-10-08T00:48:14.615232+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 8
-        },
-        {
-          "story_id": "news-5f502d57cd225127f269",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Fed rate hikes and rising Treasury yields fuel inflation fears - Fox Business",
-          "raw_title": "Fed rate hikes and rising Treasury yields fuel inflation fears - Fox Business",
-          "normalized_fact": "Fed rate hikes and rising Treasury yields fuel inflation fears - Fox Business。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiW0FVX3lxTE9JVlMyVUp1YklVbWlxZlU0b0tYWUFZQmlwUDZ3QVNaY0JCU1dnZTJha0U4aXJUWmt4RVZXMzdFRDdKdndPSVpzejVzdzdfLS1obFJ2WFZhVUxPak0",
-          "url": "https://news.google.com/rss/articles/CBMiW0FVX3lxTE9JVlMyVUp1YklVbWlxZlU0b0tYWUFZQmlwUDZ3QVNaY0JCU1dnZTJha0U4aXJUWmt4RVZXMzdFRDdKdndPSVpzejVzdzdfLS1obFJ2WFZhVUxPak0",
-          "published_at": "2026-10-08T13:16:20+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 4,
-          "published_local_date": "2026-10-08",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "rate"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "rate"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "rate",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "fedratehikesandrisingtreasuryyieldsfuelinflationfearsfoxbusiness",
-          "event_cluster_key": "event-c155724e59559966e46e",
-          "published_time_bucket": "2026-10-08T13:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "rate"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "rate",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 4,
-          "inventory_saved_at": "2026-10-08T14:56:57.517419+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 6
         }
       ],
       "source_diversity": {
@@ -9444,13 +9440,15 @@
         "status": "multi_source",
         "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 2,
-        "provider_count": 2,
+        "independent_source_count": 3,
+        "provider_count": 3,
         "provider_ids": [
           "anue",
-          "google_news"
+          "google_news",
+          "yahoo_finance"
         ],
         "source_domains": [
+          "finance.yahoo.com",
           "news.cnyes.com",
           "news.google.com"
         ],
@@ -9461,7 +9459,7 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "NVDA": 20,
+          "NVDA": 16,
           "WDC": 1,
           "TSM": 1
         },
@@ -9476,7 +9474,7 @@
           "wti": 1
         },
         "market_interest": {
-          "us": 144
+          "us": 141
         },
         "context": {
           "tracked_tickers": [
@@ -9547,13 +9545,15 @@
             "地震",
             "石油",
             "荷姆茲",
-            "黃金"
+            "重大災害",
+            "黃金",
+            "黑天鵝"
           ],
           "creator_mentions": []
         },
         "source_interest": {
           "tracked_ticker": {
-            "NVDA": 20,
+            "NVDA": 16,
             "TSM": 1
           },
           "research_candidate": {
@@ -9572,14 +9572,13 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 56,
+      "excluded_count": 53,
       "exclusion_reasons": {
         "generic_official_filing": 20,
         "incomplete_normalized_fact": 22,
-        "insufficient_market_relevance": 18,
+        "insufficient_market_relevance": 16,
         "listicle_or_selection": 4,
-        "market_scope_mismatch": 6,
-        "outside_calendar_window": 20,
+        "outside_calendar_window": 21,
         "outside_trading_session_window": 1
       },
       "status": "ready",
@@ -9590,43 +9589,43 @@
         "successful_provider_count": 4,
         "failed_provider_count": 1,
         "disabled_provider_count": 1,
-        "fetched": 61,
-        "normalized": 61,
-        "eligible": 5,
-        "excluded": 56,
-        "date_eligible_current": 40,
-        "date_excluded_current": 21,
+        "fetched": 60,
+        "normalized": 60,
+        "eligible": 7,
+        "excluded": 53,
+        "date_eligible_current": 38,
+        "date_excluded_current": 22,
         "date_exclusion_reasons_current": {
-          "outside_calendar_window": 20,
+          "outside_calendar_window": 21,
           "outside_trading_session_window": 1
         },
-        "date_eligible_inventory": 83,
+        "date_eligible_inventory": 81,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-13T15:14:35.487107+00:00",
-        "deduped": 5,
+        "reference_time": "2026-10-13T15:27:28.544838+00:00",
+        "deduped": 7,
         "publicly_ranked": 5,
-        "current_eligible": 5,
-        "inventory_considered": 83,
-        "inventory_eligible": 48,
+        "current_eligible": 7,
+        "inventory_considered": 81,
+        "inventory_eligible": 50,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 56,
-        "fetched_story_count": 61,
-        "normalized_story_count": 61,
-        "eligible_story_count": 5,
-        "deduped_story_count": 5,
+        "filtered_story_count": 53,
+        "fetched_story_count": 60,
+        "normalized_story_count": 60,
+        "eligible_story_count": 7,
+        "deduped_story_count": 7,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 83,
-        "eligible": 48,
+        "considered": 81,
+        "eligible": 50,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -9638,8 +9637,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 61,
-          "checked_at": "2026-10-13T15:14:35.487151+00:00"
+          "item_count": 60,
+          "checked_at": "2026-10-13T15:27:28.544880+00:00"
         },
         {
           "provider": "sec",
@@ -9650,10 +9649,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-10-13T15:14:35.487151+00:00",
+          "checked_at": "2026-10-13T15:27:28.544880+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+          "last_success_at": "2026-10-13T15:27:28.544880+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9681,12 +9680,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-10-13T15:14:35.487151+00:00",
+          "checked_at": "2026-10-13T15:27:28.544880+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-10-13T15:14:35.487151+00:00",
+          "last_failure_at": "2026-10-13T15:27:28.544880+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9709,10 +9708,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-10-13T15:14:35.487151+00:00",
+          "checked_at": "2026-10-13T15:27:28.544880+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+          "last_success_at": "2026-10-13T15:27:28.544880+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9737,10 +9736,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 1,
-          "checked_at": "2026-10-13T15:14:35.487151+00:00",
+          "checked_at": "2026-10-13T15:27:28.544880+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 1,
-          "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+          "last_success_at": "2026-10-13T15:27:28.544880+00:00",
           "last_failure_at": null,
           "stories_ingested": 2,
           "stories_deduped": 1,
@@ -9763,32 +9762,31 @@
           "key": "news_us_yahoo_finance",
           "legacy_key": "official_news_us_yahoo_finance",
           "label": "yahoo_finance market news",
-          "status": "no_event",
+          "status": "healthy",
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
-          "item_count": 0,
-          "checked_at": "2026-10-13T15:14:35.487151+00:00",
+          "item_count": 2,
+          "checked_at": "2026-10-13T15:27:28.544880+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 0,
-          "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+          "filtered_item_count": 2,
+          "last_success_at": "2026-10-13T15:27:28.544880+00:00",
           "last_failure_at": null,
-          "stories_ingested": 6,
-          "stories_deduped": 0,
-          "ranked_count": 0,
+          "stories_ingested": 8,
+          "stories_deduped": 2,
+          "ranked_count": 2,
           "relevance_distribution": {
-            "market": 6,
+            "market": 8,
             "tracked_ticker": 2
           },
           "funnel": {
-            "fetched_count": 9,
-            "normalized_count": 6,
-            "market_compatible_count": 6,
-            "eligible_count": 0,
+            "fetched_count": 8,
+            "normalized_count": 8,
+            "market_compatible_count": 8,
+            "eligible_count": 2,
             "excluded_count": 6,
-            "deduped_count": 0,
-            "ranked_count": 0
-          },
-          "data_gap": "filtered_no_market_match"
+            "deduped_count": 2,
+            "ranked_count": 2
+          }
         },
         {
           "provider": "google_news",
@@ -9798,15 +9796,15 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
-          "item_count": 4,
-          "checked_at": "2026-10-13T15:14:35.487151+00:00",
+          "item_count": 2,
+          "checked_at": "2026-10-13T15:27:28.544880+00:00",
           "raw_item_count": 40,
-          "filtered_item_count": 4,
-          "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+          "filtered_item_count": 2,
+          "last_success_at": "2026-10-13T15:27:28.544880+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
           "stories_deduped": 4,
-          "ranked_count": 4,
+          "ranked_count": 2,
           "relevance_distribution": {
             "active_event": 9,
             "market": 40,
@@ -9820,25 +9818,25 @@
             "eligible_count": 4,
             "excluded_count": 36,
             "deduped_count": 4,
-            "ranked_count": 4
+            "ranked_count": 2
           }
         }
       ],
       "observability": {
-        "stories_ingested": 61,
-        "stories_deduped": 5,
+        "stories_ingested": 60,
+        "stories_deduped": 7,
         "ranked_count": 5,
         "relevance_distribution": {
           "active_event": 9,
-          "market": 61,
+          "market": 60,
           "research_candidate": 1,
-          "tracked_ticker": 8
+          "tracked_ticker": 6
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+            "last_success_at": "2026-10-13T15:27:28.544880+00:00",
             "last_failure_at": null,
             "stories_ingested": 2,
             "stories_deduped": 1,
@@ -9860,7 +9858,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-10-13T15:14:35.487151+00:00",
+            "last_failure_at": "2026-10-13T15:27:28.544880+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9878,11 +9876,11 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+            "last_success_at": "2026-10-13T15:27:28.544880+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
             "stories_deduped": 4,
-            "ranked_count": 4,
+            "ranked_count": 2,
             "relevance_distribution": {
               "active_event": 9,
               "market": 40,
@@ -9896,13 +9894,13 @@
               "eligible_count": 4,
               "excluded_count": 36,
               "deduped_count": 4,
-              "ranked_count": 4
+              "ranked_count": 2
             }
           },
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+            "last_success_at": "2026-10-13T15:27:28.544880+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9921,7 +9919,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+            "last_success_at": "2026-10-13T15:27:28.544880+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -9940,47 +9938,25 @@
             }
           },
           {
-            "provider": "unknown",
-            "status": "healthy",
-            "last_success_at": null,
-            "last_failure_at": null,
-            "stories_ingested": 3,
-            "stories_deduped": 0,
-            "ranked_count": 0,
-            "relevance_distribution": {
-              "market": 3,
-              "tracked_ticker": 2
-            },
-            "funnel": {
-              "fetched_count": 3,
-              "normalized_count": 3,
-              "market_compatible_count": 0,
-              "eligible_count": 0,
-              "excluded_count": 3,
-              "deduped_count": 0,
-              "ranked_count": 0
-            }
-          },
-          {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-13T15:14:35.487151+00:00",
+            "last_success_at": "2026-10-13T15:27:28.544880+00:00",
             "last_failure_at": null,
-            "stories_ingested": 6,
-            "stories_deduped": 0,
-            "ranked_count": 0,
+            "stories_ingested": 8,
+            "stories_deduped": 2,
+            "ranked_count": 2,
             "relevance_distribution": {
-              "market": 6,
+              "market": 8,
               "tracked_ticker": 2
             },
             "funnel": {
-              "fetched_count": 9,
-              "normalized_count": 6,
-              "market_compatible_count": 6,
-              "eligible_count": 0,
+              "fetched_count": 8,
+              "normalized_count": 8,
+              "market_compatible_count": 8,
+              "eligible_count": 2,
               "excluded_count": 6,
-              "deduped_count": 0,
-              "ranked_count": 0
+              "deduped_count": 2,
+              "ranked_count": 2
             }
           }
         ]
