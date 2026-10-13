@@ -1,9 +1,10 @@
 import hashlib
 import json
+import os
 
 import pytest
 
-from src.delivery_callback import build_payload, send_callback
+from src.delivery_callback import build_payload, send_batch_callbacks, send_callback
 
 
 def test_delivery_callback_payload_contains_counts_and_only_failed_hashes(monkeypatch):
@@ -152,3 +153,34 @@ def test_delivery_callback_reports_both_backends_when_fallback_also_fails(monkey
     monkeypatch.setattr("src.delivery_callback.requests.post", lambda *args, **kwargs: Response())
     with pytest.raises(RuntimeError, match="backends unavailable"):
         send_callback()
+
+
+def test_delivery_callback_batch_continues_and_binds_each_claim(monkeypatch, tmp_path):
+    result_file = tmp_path / "batch.json"
+    result_file.write_text(json.dumps([
+        {
+            "receipt_required": True, "notification_key": "claim-1", "trace_id": "trace-1",
+            "release_id": "release", "snapshot_id": "snapshot", "delivery_status": "partial",
+            "delivered_count": 2, "failed_count": 2, "failed_recipient_hashes": ["a1b2c3d4e5f6"],
+        },
+        {
+            "receipt_required": True, "notification_key": "claim-2", "trace_id": "trace-2",
+            "release_id": "release", "snapshot_id": "snapshot", "delivery_status": "delivered",
+            "delivered_count": 4, "failed_count": 0, "failed_recipient_hashes": [],
+        },
+    ]), encoding="utf-8")
+    monkeypatch.setenv("GITHUB_OUTPUT", str(tmp_path / "output.txt"))
+    seen = []
+
+    def fake_send_callback():
+        seen.append((os.environ["TRACE_ID"], os.environ["NOTIFICATION_KEYS"]))
+        if os.environ["TRACE_ID"] == "trace-1":
+            raise RuntimeError("first callback unavailable")
+        return True
+
+    monkeypatch.setattr("src.delivery_callback.send_callback", fake_send_callback)
+    with pytest.raises(RuntimeError, match="1 batch receipt callback"):
+        send_batch_callbacks(result_file)
+
+    assert seen == [("trace-1", "claim-1"), ("trace-2", "claim-2")]
+    assert "callback_attempted_count=2" in (tmp_path / "output.txt").read_text(encoding="utf-8")

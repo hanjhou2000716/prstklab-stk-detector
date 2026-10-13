@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import os
+import sys
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
@@ -536,6 +537,7 @@ def verify_release_for_delivery(
     expected_notification_id: str | None = None,
     expected_alert_snapshot_id: str | None = None,
     expected_alert_observation_id: str | None = None,
+    expected_alert_targets: list[dict[str, Any]] | None = None,
     deployment_id: str | None = None,
 ) -> ReleaseGateResult:
     """Verify one immutable release locally and on Pages before delivery.
@@ -569,6 +571,8 @@ def verify_release_for_delivery(
         )
 
     errors: list[str] = []
+    if expected_alert_targets is not None and not expected_alert_targets:
+        errors.append("expected alert target list is empty")
     if manifest.get("status") not in PUBLISHABLE_RELEASE_STATUSES:
         errors.append("manifest status is not ready")
     release_id = str(manifest.get("release_id") or "")
@@ -743,16 +747,31 @@ def verify_release_for_delivery(
                                 else "deployed_artifact_mismatch"
                             )
                         else:
-                            target_errors = _validate_public_alert_target(
-                                loaded,
-                                remote,
-                                public_url=public_url,
-                                notification_id=str(expected_notification_id or ""),
-                                snapshot_id=str(expected_alert_snapshot_id or ""),
-                                observation_id=str(expected_alert_observation_id or ""),
-                                timeout=timeout,
-                                deadline=deadline,
-                            )
+                            targets = expected_alert_targets or ([{
+                                "notification_id": expected_notification_id,
+                                "snapshot_id": expected_alert_snapshot_id or "",
+                                "observation_id": expected_alert_observation_id or "",
+                            }] if expected_notification_id else [])
+                            target_errors: list[str] = []
+                            for target in targets:
+                                if not isinstance(target, dict):
+                                    target_errors.append("click target alert contract is invalid")
+                                    continue
+                                target_id = str(target.get("notification_id") or "").strip()
+                                if not target_id:
+                                    target_errors.append("click target alert identity is missing")
+                                    continue
+                                item_errors = _validate_public_alert_target(
+                                    loaded,
+                                    remote,
+                                    public_url=public_url,
+                                    notification_id=target_id,
+                                    snapshot_id=str(target.get("snapshot_id") or ""),
+                                    observation_id=str(target.get("observation_id") or ""),
+                                    timeout=timeout,
+                                    deadline=deadline,
+                                )
+                                target_errors.extend(f"alert {target_id[:80]}: {item}" for item in item_errors)
                             if target_errors:
                                 attempt_error = "; ".join(sorted(set(target_errors)))
                                 attempt_retryable = any(
@@ -862,7 +881,19 @@ def main() -> int:
     parser.add_argument("--expected-notification-id", default=None)
     parser.add_argument("--expected-alert-snapshot-id", default=None)
     parser.add_argument("--expected-alert-observation-id", default=None)
+    parser.add_argument("--expected-alert-targets-file", type=Path, default=None)
     args = parser.parse_args()
+    expected_alert_targets = None
+    if args.expected_alert_targets_file:
+        try:
+            raw_targets = json.loads(args.expected_alert_targets_file.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            print(f"Unable to read expected alert targets: {type(exc).__name__}", file=sys.stderr)
+            return 2
+        if not isinstance(raw_targets, list) or len(raw_targets) > 10:
+            print("Expected alert targets must be a list of at most 10 records", file=sys.stderr)
+            return 2
+        expected_alert_targets = raw_targets
     result = verify_release_for_delivery(
         manifest_path=args.manifest,
         expected_snapshot_id=args.expected_snapshot_id,
@@ -878,6 +909,7 @@ def main() -> int:
         expected_notification_id=args.expected_notification_id,
         expected_alert_snapshot_id=args.expected_alert_snapshot_id,
         expected_alert_observation_id=args.expected_alert_observation_id,
+        expected_alert_targets=expected_alert_targets,
     )
     values = {
         "allowed": result.allowed,

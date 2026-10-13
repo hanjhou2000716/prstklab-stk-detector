@@ -694,6 +694,64 @@ def test_release_gate_writes_actions_output_as_key_value_lines(tmp_path, monkeyp
     assert "attempts=[]" in text
 
 
+def test_release_gate_cli_loads_exact_alert_targets_file(tmp_path, monkeypatch):
+    from src import release_gate
+
+    targets = [
+        {"notification_id": "alert-a", "snapshot_id": "snapshot-a", "observation_id": "observation-a"},
+        {"notification_id": "alert-b", "snapshot_id": "snapshot-b", "observation_id": "observation-b"},
+    ]
+    targets_file = tmp_path / "targets.json"
+    targets_file.write_text(json.dumps(targets), encoding="utf-8")
+    output = tmp_path / "github-output"
+    captured = {}
+
+    def allow_release(**kwargs):
+        captured.update(kwargs)
+        return ReleaseGateResult(
+            allowed=True,
+            release_id="release-current",
+            snapshot_id="snapshot-current",
+            gate_status="allowed",
+            error_category="none",
+        )
+
+    monkeypatch.setattr(release_gate, "verify_release_for_delivery", allow_release)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["release_gate", "--expected-alert-targets-file", str(targets_file)],
+    )
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+
+    assert release_gate.main() == 0
+    assert captured["expected_alert_targets"] == targets
+    output_text = output.read_text(encoding="utf-8")
+    assert "allowed=true" in output_text
+    assert "release_id=release-current" in output_text
+
+
+@pytest.mark.parametrize(
+    ("payload", "reason"),
+    [
+        ("{", "JSONDecodeError"),
+        ("{}", "at most 10 records"),
+        (json.dumps([{"notification_id": f"alert-{index}"} for index in range(11)]), "at most 10 records"),
+    ],
+)
+def test_release_gate_cli_rejects_malformed_alert_target_files(tmp_path, monkeypatch, capsys, payload, reason):
+    from src import release_gate
+
+    targets_file = tmp_path / "targets.json"
+    targets_file.write_text(payload, encoding="utf-8")
+    monkeypatch.setattr(
+        "sys.argv",
+        ["release_gate", "--expected-alert-targets-file", str(targets_file)],
+    )
+
+    assert release_gate.main() == 2
+    assert reason in capsys.readouterr().err
+
+
 def test_release_gate_fails_fast_when_local_release_identity_changes(tmp_path, monkeypatch):
     path, manifest = _ready_release(tmp_path)
     calls = []
@@ -908,7 +966,49 @@ def test_release_gate_skips_sender_target_when_public_alert_is_not_indexed(tmp_p
     )
 
     assert result.allowed is False
-    assert "click target alert is not indexed in the published release" in result.errors
+    assert any(item.endswith("click target alert is not indexed in the published release") for item in result.errors)
+
+
+def test_release_gate_verifies_every_target_in_notification_batch(tmp_path, monkeypatch):
+    path, manifest = _ready_release(tmp_path)
+    checked: list[str] = []
+    monkeypatch.setattr(
+        "src.release_gate.requests.get",
+        lambda *_args, **_kwargs: _public_response(json.dumps(manifest).encode(), manifest),
+    )
+    monkeypatch.setattr(
+        "src.release_gate._fetch_public_release_artifacts",
+        lambda *_args, **_kwargs: ({"alert-index.json": {"alerts": []}}, []),
+    )
+
+    def verify_target(_loaded, _manifest, *, notification_id, **_kwargs):
+        checked.append(notification_id)
+        return ["click target alert hash mismatch"] if notification_id == "alert-2" else []
+
+    monkeypatch.setattr("src.release_gate._validate_public_alert_target", verify_target)
+    result = verify_release_for_delivery(
+        manifest_path=path,
+        expected_snapshot_id=manifest["market_snapshot_id"],
+        expected_release_id=manifest["release_id"],
+        public_url="https://example.test/",
+        expected_alert_targets=[
+            {"notification_id": "alert-1", "snapshot_id": manifest["market_snapshot_id"]},
+            {"notification_id": "alert-2", "snapshot_id": manifest["market_snapshot_id"]},
+        ],
+        public_attempts=1,
+        public_delay=0,
+    )
+
+    assert checked == ["alert-1", "alert-2"]
+    assert result.allowed is False
+    assert any("alert alert-2: click target alert hash mismatch" in item for item in result.errors)
+
+
+def test_release_gate_rejects_empty_explicit_alert_batch(tmp_path):
+    path, _manifest = _ready_release(tmp_path)
+    result = verify_release_for_delivery(manifest_path=path, expected_alert_targets=[])
+    assert result.allowed is False
+    assert "expected alert target list is empty" in result.errors
 
 
 def test_release_gate_retries_with_exponential_delay_and_stops_at_attempt_cap(

@@ -1,5 +1,7 @@
 name: Official macro and price monitor
 
+run-name: Official event monitor / ${{ github.event.client_payload.dispatch_id || github.run_id }}
+
 on:
   workflow_dispatch:
     inputs:
@@ -27,13 +29,63 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  monitor-admission:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      actions: read
+    steps:
+      - name: Record monitor admission evidence
+        env:
+          DISPATCH_ID: ${{ github.event.client_payload.dispatch_id || '' }}
+          EVENT_NAME: ${{ github.event_name }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          RUN_SHA: ${{ github.sha }}
+          RUN_CREATED_AT: ${{ github.event.created_at || '' }}
+          PRIORITY_REFS: ${{ toJSON(github.event.client_payload.priority_event_refs || github.event.client_payload.priority_pending_refs || fromJSON('[]')) }}
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from datetime import UTC, datetime
+          from pathlib import Path
+
+          refs = json.loads(os.environ.get("PRIORITY_REFS", "[]"))
+          refs = refs if isinstance(refs, list) else []
+          ref_digest = hashlib.sha256("\n".join(sorted(str(item) for item in refs)).encode()).hexdigest()
+          record = {
+              "schema_version": "official-monitor-admission-v1",
+              "dispatch_id": os.environ.get("DISPATCH_ID", "")[:80],
+              "event_name": os.environ.get("EVENT_NAME", "")[:40],
+              "run_id": os.environ.get("RUN_ID", "")[:30],
+              "run_attempt": os.environ.get("RUN_ATTEMPT", "")[:10],
+              "run_sha": os.environ.get("RUN_SHA", "")[:40],
+              "run_created_at": os.environ.get("RUN_CREATED_AT", "")[:40],
+              "admission_step_started_at": datetime.now(UTC).isoformat(),
+              "priority_ref_count": len(refs),
+              "priority_refs_sha256": ref_digest,
+          }
+          Path("official-monitor-admission.json").write_text(
+              json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(record, sort_keys=True))
+          PY
+      - name: Preserve monitor admission evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: official-monitor-admission-${{ github.run_id }}-${{ github.run_attempt }}
+          path: official-monitor-admission.json
+          if-no-files-found: error
+          retention-days: 14
+
   monitor-send-deploy:
+    needs: monitor-admission
     # Serialize scheduled and repository-dispatch monitors on the same main
     # release stream.  A second run must not publish a newer Pages release
     # between Telegram send and the recipient opening its deep link.
-    concurrency:
-      group: official-event-monitor-${{ github.ref }}
-      cancel-in-progress: false
     # A transient Pages outage is exposed by the retry action.  Contract and
     # release-gate failures remain hard failures and block Telegram delivery.
     environment:
@@ -108,12 +160,32 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
           echo "::error::Official notification preflight blocked (${PREFLIGHT_REASON}; content=${CANDIDATE_CONTENT_STATUS}); nothing was sent."
           exit 1
+      - name: Bind idempotency lock to the complete selected batch
+        if: steps.status.outputs.should_send == 'true'
+        env:
+          BATCH_CANDIDATES: ${{ steps.status.outputs.batch_candidates }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          rows = json.loads(os.environ.get("BATCH_CANDIDATES", "[]"))
+          if not isinstance(rows, list) or not rows or len(rows) > 10:
+              raise SystemExit("notification batch must contain 1..10 candidates")
+          keys = [str(row.get("notification_key") or "") for row in rows if isinstance(row, dict)]
+          if len(keys) != len(rows) or any(not key for key in keys) or len(set(keys)) != len(keys):
+              raise SystemExit("notification batch identities are incomplete or duplicated")
+          Path(".official-event-batch-keys.json").write_text(
+              json.dumps(keys, separators=(",", ":")) + "\n", encoding="utf-8"
+          )
+          PY
       - name: Wait for production writer queue
         id: writer_queue
         if: steps.status.outputs.ledger_changed == 'true' || steps.status.outputs.should_send == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: python -m src.writer_queue
+        run: python -m src.writer_queue --timeout-seconds 600
       - name: Revalidate prepared release base
         id: prepared_release
         if: steps.writer_queue.outputs.should_continue == 'true'
@@ -143,7 +215,7 @@ jobs:
         uses: actions/cache/restore@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: .official-event-lock
-          key: official-event-${{ steps.status.outputs.key }}
+          key: official-event-batch-${{ hashFiles('.official-event-batch-keys.json') }}
       - name: Build and publish event release
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && (steps.status.outputs.ledger_changed == 'true' || (steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'))
         id: publish_event
@@ -176,14 +248,28 @@ jobs:
       - name: Verify deployed release before delivery
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true' && steps.deployment.outputs.available == 'true'
         id: release_gate
+        env:
+          BATCH_ALERT_TARGETS: ${{ steps.status.outputs.batch_alert_targets }}
         run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          targets = json.loads(os.environ.get("BATCH_ALERT_TARGETS", "[]"))
+          if not isinstance(targets, list) or not targets or len(targets) > 10:
+              raise SystemExit("public alert gate requires 1..10 exact notification targets")
+          if any(not isinstance(row, dict) or not row.get("notification_id") for row in targets):
+              raise SystemExit("public alert target identity is missing")
+          Path(os.environ["RUNNER_TEMP"], "official-alert-targets.json").write_text(
+              json.dumps(targets, separators=(",", ":")) + "\n", encoding="utf-8"
+          )
+          PY
           python -m src.release_gate \
             --manifest "$MANIFEST_PATH" \
             --expected-snapshot-id "${{ steps.status.outputs.snapshot_id }}" \
             --public-url "${{ steps.deployment.outputs.page_url }}" \
-            --expected-notification-id "${{ steps.status.outputs.notification_id }}" \
-            --expected-alert-snapshot-id "${{ steps.status.outputs.snapshot_id }}" \
-            --expected-alert-observation-id "${{ steps.status.outputs.observation_id }}" \
+            --expected-alert-targets-file "$RUNNER_TEMP/official-alert-targets.json" \
             --public-attempts 12 \
             --public-delay 5 \
             >> "$GITHUB_OUTPUT"
@@ -194,13 +280,26 @@ jobs:
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true'
         id: send
         env:
+          BATCH_CANDIDATES: ${{ steps.status.outputs.batch_candidates }}
+          OFFICIAL_EVENT_BATCH_RESULTS_PATH: ${{ runner.temp }}/official-event-batch-results.json
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           PUBLIC_RELEASE_URL: ${{ steps.deployment.outputs.page_url }}
           RELEASE_ID: ${{ steps.release_gate.outputs.release_id }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           TELEGRAM_SUBSCRIPTIONS_ENABLED: "true"
-        run: python -m src.official_event_monitor --send --prepared --expected-key "${{ steps.status.outputs.key }}"
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          rows = json.loads(os.environ.get("BATCH_CANDIDATES", "[]"))
+          Path(os.environ["RUNNER_TEMP"], "official-event-batch-candidates.json").write_text(
+              json.dumps(rows, separators=(",", ":")) + "\n", encoding="utf-8"
+          )
+          PY
+          python -m src.official_event_monitor --send-batch --prepared --expected-keys-file "$RUNNER_TEMP/official-event-batch-candidates.json"
       - name: Publish sender stage (persistent receipt pending)
         if: always()
         env:
@@ -290,24 +389,15 @@ jobs:
         # A failed recipient attempt must still reach the receipt backend so
         # the next run can retry only pending recipients and the dashboard can
         # distinguish a transport failure from a skipped send.
-        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped' && steps.send.outputs.trace_id != '' && steps.send.outputs.delivery_status != ''
+        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped' && steps.send.outputs.batch_results_file != ''
         continue-on-error: true
         env:
           RECEIPT_CALLBACK_URL: ${{ vars.RECEIPT_CALLBACK_URL }}
           DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
           RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
           RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
-          TRACE_ID: ${{ steps.send.outputs.trace_id }}
-          RELEASE_ID: ${{ steps.send.outputs.release_id || steps.release_gate.outputs.release_id }}
-          SNAPSHOT_ID: ${{ steps.send.outputs.snapshot_id || steps.release_gate.outputs.snapshot_id }}
-          ALERT_ID: ${{ steps.send.outputs.alert_id }}
-          DELIVERY_MODE: ${{ steps.send.outputs.delivery_mode }}
-          DELIVERY_STATUS: ${{ steps.send.outputs.delivery_status }}
-          DELIVERED_COUNT: ${{ steps.send.outputs.delivered_count }}
-          FAILED_COUNT: ${{ steps.send.outputs.failed_count }}
-          FAILED_RECIPIENT_HASHES: ${{ steps.send.outputs.failed_recipient_hashes }}
-          FINANCIALJUICE_TRACE: ${{ steps.send.outputs.financialjuice_delivery_trace }}
-        run: python -m src.delivery_callback
+          BATCH_RESULTS_FILE: ${{ steps.send.outputs.batch_results_file }}
+        run: python -m src.delivery_callback --results-file "$BATCH_RESULTS_FILE"
       - name: Persist notification ledger state after delivery
         id: persist_notification_ledger
         if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped'
@@ -325,7 +415,7 @@ jobs:
         if: always() && steps.writer_queue.outputs.should_continue == 'true' && (steps.persist_notification_ledger.outcome == 'success' || steps.status.outputs.durable_receipt_verified == 'true')
         continue-on-error: true
         env:
-          NOTIFICATION_KEY: ${{ steps.send.outputs.notification_key || steps.status.outputs.notification_key || '' }}
+          BATCH_RESULTS_FILE: ${{ steps.send.outputs.batch_results_file || '' }}
           DATA_RELEASE_BRANCH: ${{ env.DATA_RELEASE_BRANCH }}
           SCHEDULED_RECIPIENT_SET_MANIFEST: ${{ vars.SCHEDULED_RECIPIENT_SET_MANIFEST || '' }}
           RECEIPT_SLOT_ANCHOR: ${{ steps.run_context.outputs.created_at || '' }}
@@ -334,7 +424,7 @@ jobs:
           if ! git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"; then
             LEDGER_COMMIT="" python -m src.delivery_receipt_verifier \
               --ledger "$RUNNER_TEMP/missing-event-ledger.json" \
-              --notification-key "$NOTIFICATION_KEY"
+              --notification-keys-file "$BATCH_RESULTS_FILE"
             exit 0
           fi
           ledger_commit="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"
@@ -342,12 +432,12 @@ jobs:
             || ! git show "${ledger_commit}:site/data/event-ledger.json" > "$RUNNER_TEMP/durable-event-ledger.json"; then
             LEDGER_COMMIT="${ledger_commit:-}" python -m src.delivery_receipt_verifier \
               --ledger "$RUNNER_TEMP/missing-event-ledger.json" \
-              --notification-key "$NOTIFICATION_KEY"
+              --notification-keys-file "$BATCH_RESULTS_FILE"
             exit 0
           fi
           LEDGER_COMMIT="$ledger_commit" python -m src.delivery_receipt_verifier \
             --ledger "$RUNNER_TEMP/durable-event-ledger.json" \
-            --notification-key "$NOTIFICATION_KEY"
+            --notification-keys-file "$BATCH_RESULTS_FILE"
       - name: Prepare reconciled Pages artifact
         if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success'
         run: |
@@ -377,14 +467,14 @@ jobs:
           --public-attempts 12
           --public-delay 5
       - name: Save event delivery lock
-        if: success() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.send.outputs.sent == 'true'
+        if: success() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.send.outputs.delivery_status == 'delivered' && steps.send.outputs.failed_count == '0'
         run: touch .official-event-lock
       - name: Persist event delivery lock
-        if: success() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.send.outputs.sent == 'true'
+        if: success() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.send.outputs.delivery_status == 'delivered' && steps.send.outputs.failed_count == '0'
         uses: actions/cache/save@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: .official-event-lock
-          key: official-event-${{ steps.status.outputs.key }}
+          key: official-event-batch-${{ hashFiles('.official-event-batch-keys.json') }}
       - name: Save official event diagnostic
         id: terminal_diagnostic
         if: always()

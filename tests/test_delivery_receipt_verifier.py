@@ -1,6 +1,10 @@
 import json
 
-from src.delivery_receipt_verifier import _effective_manifest_from_env, verify_delivery_claim
+from src.delivery_receipt_verifier import (
+    _effective_manifest_from_env,
+    verify_delivery_claim,
+    verify_delivery_claim_batch,
+)
 from src.scheduled_recipient_manifest import recipient_set_version
 
 
@@ -67,6 +71,31 @@ def test_durable_receipt_rejects_missing_claim_or_empty_recipients():
 
     assert missing["reason"] == "notification_claim_missing"
     assert empty["reason"] == "recipient_set_empty"
+
+
+def test_durable_receipt_batch_requires_every_independent_claim():
+    first_key = "official:event:first"
+    second_key = "official:event:second"
+    claim = _payload()["delivery_claims"]["scheduled-anchor:taiwan:2026-10-06:morning"]
+    payload = {"delivery_claims": {
+        first_key: {**claim, "notification_key": first_key},
+        second_key: {**claim, "notification_key": second_key},
+    }}
+    expected = {"a1b2c3d4e5f6", "0a1b2c3d4e5f"}
+
+    verified = verify_delivery_claim_batch(
+        payload, [first_key, second_key], expected_recipient_hashes=expected,
+    )
+    incomplete = verify_delivery_claim_batch(
+        {"delivery_claims": {first_key: payload["delivery_claims"][first_key]}},
+        [first_key, second_key], expected_recipient_hashes=expected,
+    )
+
+    assert verified["verified"] is True
+    assert verified["verified_count"] == 2
+    assert incomplete["verified"] is False
+    assert incomplete["failed_count"] == 1
+    assert incomplete["failure_reasons"] == {"notification_claim_missing": 1, "all_configured_recipient_receipts_persisted": 1}
 
 
 def test_effective_manifest_requires_original_slot_anchor(monkeypatch):

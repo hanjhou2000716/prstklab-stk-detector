@@ -14,6 +14,7 @@ import json
 import os
 import sys
 from datetime import UTC, datetime
+from pathlib import Path
 
 import requests
 
@@ -179,9 +180,80 @@ def send_callback() -> bool:
     return True
 
 
+def send_batch_callbacks(results_path: Path) -> tuple[int, int]:
+    """Persist each event's receipt independently while continuing after errors."""
+    try:
+        rows = json.loads(results_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"delivery batch results unreadable: {type(exc).__name__}") from exc
+    if not isinstance(rows, list) or len(rows) > 10:
+        raise ValueError("delivery batch results must be a list of at most 10 records")
+    env_names = (
+        "TRACE_ID", "RELEASE_ID", "SNAPSHOT_ID", "ALERT_ID", "DELIVERY_MODE",
+        "DELIVERY_STATUS", "DELIVERED_COUNT", "FAILED_COUNT", "FAILED_RECIPIENT_HASHES",
+        "NOTIFICATION_KEYS", "FINANCIALJUICE_TRACE",
+    )
+    previous = {name: os.environ.get(name) for name in env_names}
+    attempted = 0
+    failures = 0
+    try:
+        for row in rows:
+            if not isinstance(row, dict) or not row.get("receipt_required"):
+                continue
+            key = str(row.get("notification_key") or "").strip()
+            trace_id = str(row.get("trace_id") or "").strip()
+            status = str(row.get("delivery_status") or "").strip()
+            if not key or not trace_id or status not in {"delivered", "partial", "failed", "unknown", "suppressed"}:
+                failures += 1
+                print("Batch receipt rejected: incomplete event identity/status", file=sys.stderr)
+                continue
+            values = {
+                "TRACE_ID": trace_id,
+                "RELEASE_ID": str(row.get("release_id") or ""),
+                "SNAPSHOT_ID": str(row.get("snapshot_id") or ""),
+                "ALERT_ID": str(row.get("alert_id") or ""),
+                "DELIVERY_MODE": str(row.get("delivery_mode") or "text"),
+                "DELIVERY_STATUS": status,
+                "DELIVERED_COUNT": str(int(row.get("delivered_count") or 0)),
+                "FAILED_COUNT": str(int(row.get("failed_count") or 0)),
+                "FAILED_RECIPIENT_HASHES": ",".join(
+                    str(item) for item in row.get("failed_recipient_hashes", [])
+                    if isinstance(item, str) and len(item) == 12
+                ),
+                "NOTIFICATION_KEYS": key,
+                "FINANCIALJUICE_TRACE": str(row.get("financialjuice_delivery_trace") or ""),
+            }
+            for name, value in values.items():
+                os.environ[name] = value
+            attempted += 1
+            try:
+                send_callback()
+            except Exception as exc:
+                failures += 1
+                print(f"Batch delivery callback failed safely: trace_id={trace_id[:80]} error={type(exc).__name__}", file=sys.stderr)
+    finally:
+        for name, previous_value in previous.items():
+            if previous_value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = previous_value
+    output = os.getenv("GITHUB_OUTPUT", "").strip()
+    if output:
+        with open(output, "a", encoding="utf-8") as handle:
+            handle.write(f"callback_attempted_count={attempted}\ncallback_failed_count={failures}\n")
+    if failures:
+        raise RuntimeError(f"{failures} batch receipt callback(s) failed; other event callbacks were attempted")
+    return attempted, failures
+
+
 if __name__ == "__main__":
     try:
-        send_callback()
+        if len(sys.argv) == 3 and sys.argv[1] == "--results-file":
+            send_batch_callbacks(Path(sys.argv[2]))
+        elif len(sys.argv) == 1:
+            send_callback()
+        else:
+            raise ValueError("usage: python -m src.delivery_callback [--results-file PATH]")
     except Exception as error:
         print(f"Railway delivery callback failed: {type(error).__name__}", file=sys.stderr)
         raise
