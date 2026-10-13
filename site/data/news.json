@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "30c74549e77ef097",
-  "snapshot_id": "news-de6033af3f27ef5a",
+  "market_snapshot_id": "bf062296c67583d5",
+  "snapshot_id": "news-1c4bb04f1a8a410d",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -437,15 +437,15 @@
       ],
       "stories": [
         {
-          "story_id": "news-a5bb18e6405d9e439b5c",
+          "story_id": "news-0917761cc244faf528ba",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "【歐股盤後】收黑",
-          "raw_title": "【歐股盤後】收黑",
-          "normalized_fact": "（中央社台北2026年10月14日電）歐洲主要股市今天收黑，主因投資人正在評估德國最新公布的通膨報告。報告顯示，德國9月消費者物價指數年增率升至3.3%。明天，市場焦點將轉向西班牙與美國的通膨數據。倫。",
-          "market_topic": "rates_fx",
+          "title": "AI晶片變強不只靠製程！先進封裝成新關鍵 台積電布局受矚目",
+          "raw_title": "AI晶片變強不只靠製程！先進封裝成新關鍵 台積電布局受矚目",
+          "normalized_fact": "AI晶片競爭重心轉向先進封裝，從製程微縮延伸到晶片排列、連接與堆疊。 台積電以先進封裝整合AI運算晶片與HBM，封裝產能擴增數倍，周四將公布季度財報。 先進封裝成新焦點，帶動台積電與設備商商機，應用材。",
+          "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -453,11 +453,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "（中央社台北2026年10月14日電）歐洲主要股市今天收黑，主因投資人正在評估德國最新公布的通膨報告。報告顯示，德國9月消費者物價指數年增率升至3.3%。明天，市場焦點將轉向西班牙與美國的通膨數據。倫",
+          "summary": "AI晶片競爭重心轉向先進封裝，從製程微縮延伸到晶片排列、連接與堆疊。 台積電以先進封裝整合AI運算晶片與HBM，封裝產能擴增數倍，周四將公布季度財報。 先進封裝成新焦點，帶動台積電與設備商商機，應用材",
           "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E8%82%A1%E7%9B%A4%E5%BE%8C-%E6%94%B6%E9%BB%91-195856517.html",
-          "url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E8%82%A1%E7%9B%A4%E5%BE%8C-%E6%94%B6%E9%BB%91-195856517.html",
-          "published_at": "2026-10-13T19:58:56+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/ai%E6%99%B6%E7%89%87%E8%AE%8A%E5%BC%B7%E4%B8%8D%E5%8F%AA%E9%9D%A0%E8%A3%BD%E7%A8%8B-%E5%85%88%E9%80%B2%E5%B0%81%E8%A3%9D%E6%88%90%E6%96%B0%E9%97%9C%E9%8D%B5-%E5%8F%B0%E7%A9%8D%E9%9B%BB%E5%B8%83%E5%B1%80%E5%8F%97%E7%9F%9A%E7%9B%AE-194003092.html",
+          "url": "https://tw.stock.yahoo.com/news/ai%E6%99%B6%E7%89%87%E8%AE%8A%E5%BC%B7%E4%B8%8D%E5%8F%AA%E9%9D%A0%E8%A3%BD%E7%A8%8B-%E5%85%88%E9%80%B2%E5%B0%81%E8%A3%9D%E6%88%90%E6%96%B0%E9%97%9C%E9%8D%B5-%E5%8F%B0%E7%A9%8D%E9%9B%BB%E5%B8%83%E5%B1%80%E5%8F%97%E7%9F%9A%E7%9B%AE-194003092.html",
+          "published_at": "2026-10-13T19:40:03+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -467,26 +467,32 @@
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "2330",
+            "TSM"
+          ],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "ai",
+            "semiconductor"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "macro",
-            "reason": "macro_subject_action",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
             "matched_terms": [
-              "消費者物價",
-              "公布"
+              "ai",
+              "財報"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "消費者物價",
-              "公布"
+              "ai",
+              "財報"
             ],
-            "matched_subject": "消費者物價",
-            "matched_action": "公布",
-            "matched_market_object": "消費者物價",
+            "matched_subject": "ai",
+            "matched_action": "財報",
+            "matched_market_object": "ai",
             "input_fields": [
               "description",
               "summary",
@@ -494,24 +500,25 @@
             ]
           },
           "relevance_reasons": [
-            "market:cross_market",
-            "market:taiwan"
+            "market:taiwan",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM"
           ],
           "freshness": "published",
-          "dedupe_key": "中央社台北2026年10月14日電歐洲主要股市今天收黑主因投資人正在評估德國最新公布的通膨報告報告顯示德國9月消費者物價指數年增率升至33明天市場焦點將轉向西班牙與美國的通膨數據倫",
-          "event_cluster_key": "event-48eeb622e4df5ea0d0ee",
+          "dedupe_key": "ai晶片競爭重心轉向先進封裝從製程微縮延伸到晶片排列連接與堆疊台積電以先進封裝整合ai運算晶片與hbm封裝產能擴增數倍周四將公布季度財報先進封裝成新焦點帶動台積電與設備商商機應用材",
+          "event_cluster_key": "event-93a3e0fa9b96279b6774",
           "published_time_bucket": "2026-10-13T19:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "消費者物價",
-            "公布"
+            "ai",
+            "財報"
           ],
-          "matched_subject": "消費者物價",
-          "matched_action": "公布",
-          "matched_market_object": "消費者物價",
-          "decision_value_class": "macro",
+          "matched_subject": "ai",
+          "matched_action": "財報",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -526,7 +533,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 130
+          "ranking_score": 140
         },
         {
           "story_id": "news-ab7da08768a8d3fad750",
@@ -621,6 +628,98 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
+        },
+        {
+          "story_id": "news-a5bb18e6405d9e439b5c",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "【歐股盤後】收黑",
+          "raw_title": "【歐股盤後】收黑",
+          "normalized_fact": "（中央社台北2026年10月14日電）歐洲主要股市今天收黑，主因投資人正在評估德國最新公布的通膨報告。報告顯示，德國9月消費者物價指數年增率升至3.3%。明天，市場焦點將轉向西班牙與美國的通膨數據。倫。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "（中央社台北2026年10月14日電）歐洲主要股市今天收黑，主因投資人正在評估德國最新公布的通膨報告。報告顯示，德國9月消費者物價指數年增率升至3.3%。明天，市場焦點將轉向西班牙與美國的通膨數據。倫",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E8%82%A1%E7%9B%A4%E5%BE%8C-%E6%94%B6%E9%BB%91-195856517.html",
+          "url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E8%82%A1%E7%9B%A4%E5%BE%8C-%E6%94%B6%E9%BB%91-195856517.html",
+          "published_at": "2026-10-13T19:58:56+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-14",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "macro",
+            "reason": "macro_subject_action",
+            "matched_terms": [
+              "消費者物價",
+              "公布"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "消費者物價",
+              "公布"
+            ],
+            "matched_subject": "消費者物價",
+            "matched_action": "公布",
+            "matched_market_object": "消費者物價",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "中央社台北2026年10月14日電歐洲主要股市今天收黑主因投資人正在評估德國最新公布的通膨報告報告顯示德國9月消費者物價指數年增率升至33明天市場焦點將轉向西班牙與美國的通膨數據倫",
+          "event_cluster_key": "event-48eeb622e4df5ea0d0ee",
+          "published_time_bucket": "2026-10-13T19:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "消費者物價",
+            "公布"
+          ],
+          "matched_subject": "消費者物價",
+          "matched_action": "公布",
+          "matched_market_object": "消費者物價",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "story_id": "news-5cb7c701f380992a2977",
@@ -816,16 +915,18 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
-        },
+        }
+      ],
+      "editorial_candidates": [
         {
-          "story_id": "news-ffc7bfdcbcc1965f79c5",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "整理包／台積電供應鏈全解析！護國神山法說會將至...先進製程 CoWoS、CoPoS 十大產業鏈、受惠台廠一次看 - 經濟日報",
-          "raw_title": "整理包／台積電供應鏈全解析！護國神山法說會將至...先進製程 CoWoS、CoPoS 十大產業鏈、受惠台廠一次看 - 經濟日報",
-          "normalized_fact": "整理包／台積電供應鏈全解析，護國神山法說會將至...先進製程 CoWoS、CoPoS 十大產業鏈、受惠台廠一次看 經濟日報。",
+          "story_id": "news-0917761cc244faf528ba",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "AI晶片變強不只靠製程！先進封裝成新關鍵 台積電布局受矚目",
+          "raw_title": "AI晶片變強不只靠製程！先進封裝成新關鍵 台積電布局受矚目",
+          "normalized_fact": "AI晶片競爭重心轉向先進封裝，從製程微縮延伸到晶片排列、連接與堆疊。 台積電以先進封裝整合AI運算晶片與HBM，封裝產能擴增數倍，周四將公布季度財報。 先進封裝成新焦點，帶動台積電與設備商商機，應用材。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -834,17 +935,17 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "整理包／台積電供應鏈全解析！護國神山法說會將至...先進製程 CoWoS、CoPoS 十大產業鏈、受惠台廠一次看 經濟日報",
+          "summary": "AI晶片競爭重心轉向先進封裝，從製程微縮延伸到晶片排列、連接與堆疊。 台積電以先進封裝整合AI運算晶片與HBM，封裝產能擴增數倍，周四將公布季度財報。 先進封裝成新焦點，帶動台積電與設備商商機，應用材",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTE9ZLVp5RjlPenFrcTRSSnFmem04R1h0SVZPSzhaVjdZVkJ1UG5WMWl5Tm5Gc2J6Wjlia0g0R3NQa2JkekdsUnRudWNwQWtHcGRpaDNleE5iNEJNc3o4",
-          "url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTE9ZLVp5RjlPenFrcTRSSnFmem04R1h0SVZPSzhaVjdZVkJ1UG5WMWl5Tm5Gc2J6Wjlia0g0R3NQa2JkekdsUnRudWNwQWtHcGRpaDNleE5iNEJNc3o4",
-          "published_at": "2026-10-11T03:34:54+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/ai%E6%99%B6%E7%89%87%E8%AE%8A%E5%BC%B7%E4%B8%8D%E5%8F%AA%E9%9D%A0%E8%A3%BD%E7%A8%8B-%E5%85%88%E9%80%B2%E5%B0%81%E8%A3%9D%E6%88%90%E6%96%B0%E9%97%9C%E9%8D%B5-%E5%8F%B0%E7%A9%8D%E9%9B%BB%E5%B8%83%E5%B1%80%E5%8F%97%E7%9F%9A%E7%9B%AE-194003092.html",
+          "url": "https://tw.stock.yahoo.com/news/ai%E6%99%B6%E7%89%87%E8%AE%8A%E5%BC%B7%E4%B8%8D%E5%8F%AA%E9%9D%A0%E8%A3%BD%E7%A8%8B-%E5%85%88%E9%80%B2%E5%B0%81%E8%A3%9D%E6%88%90%E6%96%B0%E9%97%9C%E9%8D%B5-%E5%8F%B0%E7%A9%8D%E9%9B%BB%E5%B8%83%E5%B1%80%E5%8F%97%E7%9F%9A%E7%9B%AE-194003092.html",
+          "published_at": "2026-10-13T19:40:03+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
+          "date_eligibility_status": "current",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 4,
-          "published_local_date": "2026-10-11",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-14",
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
@@ -853,24 +954,27 @@
             "TSM"
           ],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "ai",
+            "semiconductor"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
             "category": "semiconductor",
             "reason": "semiconductor_subject_action",
             "matched_terms": [
-              "台積電",
-              "供應"
+              "ai",
+              "財報"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "台積電",
-              "供應"
+              "ai",
+              "財報"
             ],
-            "matched_subject": "台積電",
-            "matched_action": "供應",
-            "matched_market_object": "台積電",
+            "matched_subject": "ai",
+            "matched_action": "財報",
+            "matched_market_object": "ai",
             "input_fields": [
               "description",
               "summary",
@@ -883,114 +987,20 @@
             "tracked_ticker:TSM"
           ],
           "freshness": "published",
-          "dedupe_key": "整理包台積電供應鏈全解析護國神山法說會將至先進製程cowoscopos十大產業鏈受惠台廠一次看經濟日報",
-          "event_cluster_key": "event-f0a6cb116037e540b896",
-          "published_time_bucket": "2026-10-11T03:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "台積電",
-            "供應"
-          ],
-          "matched_subject": "台積電",
-          "matched_action": "供應",
-          "matched_market_object": "台積電",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 125
-        }
-      ],
-      "editorial_candidates": [
-        {
-          "story_id": "news-a5bb18e6405d9e439b5c",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "【歐股盤後】收黑",
-          "raw_title": "【歐股盤後】收黑",
-          "normalized_fact": "（中央社台北2026年10月14日電）歐洲主要股市今天收黑，主因投資人正在評估德國最新公布的通膨報告。報告顯示，德國9月消費者物價指數年增率升至3.3%。明天，市場焦點將轉向西班牙與美國的通膨數據。倫。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "（中央社台北2026年10月14日電）歐洲主要股市今天收黑，主因投資人正在評估德國最新公布的通膨報告。報告顯示，德國9月消費者物價指數年增率升至3.3%。明天，市場焦點將轉向西班牙與美國的通膨數據。倫",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E8%82%A1%E7%9B%A4%E5%BE%8C-%E6%94%B6%E9%BB%91-195856517.html",
-          "url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E8%82%A1%E7%9B%A4%E5%BE%8C-%E6%94%B6%E9%BB%91-195856517.html",
-          "published_at": "2026-10-13T19:58:56+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-14",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "macro",
-            "reason": "macro_subject_action",
-            "matched_terms": [
-              "消費者物價",
-              "公布"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "消費者物價",
-              "公布"
-            ],
-            "matched_subject": "消費者物價",
-            "matched_action": "公布",
-            "matched_market_object": "消費者物價",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "中央社台北2026年10月14日電歐洲主要股市今天收黑主因投資人正在評估德國最新公布的通膨報告報告顯示德國9月消費者物價指數年增率升至33明天市場焦點將轉向西班牙與美國的通膨數據倫",
-          "event_cluster_key": "event-48eeb622e4df5ea0d0ee",
+          "dedupe_key": "ai晶片競爭重心轉向先進封裝從製程微縮延伸到晶片排列連接與堆疊台積電以先進封裝整合ai運算晶片與hbm封裝產能擴增數倍周四將公布季度財報先進封裝成新焦點帶動台積電與設備商商機應用材",
+          "event_cluster_key": "event-93a3e0fa9b96279b6774",
           "published_time_bucket": "2026-10-13T19:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "消費者物價",
-            "公布"
+            "ai",
+            "財報"
           ],
-          "matched_subject": "消費者物價",
-          "matched_action": "公布",
-          "matched_market_object": "消費者物價",
-          "decision_value_class": "macro",
+          "matched_subject": "ai",
+          "matched_action": "財報",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -1005,7 +1015,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 130
+          "ranking_score": 140
         },
         {
           "story_id": "news-ab7da08768a8d3fad750",
@@ -1100,6 +1110,98 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
+        },
+        {
+          "story_id": "news-a5bb18e6405d9e439b5c",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "【歐股盤後】收黑",
+          "raw_title": "【歐股盤後】收黑",
+          "normalized_fact": "（中央社台北2026年10月14日電）歐洲主要股市今天收黑，主因投資人正在評估德國最新公布的通膨報告。報告顯示，德國9月消費者物價指數年增率升至3.3%。明天，市場焦點將轉向西班牙與美國的通膨數據。倫。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "（中央社台北2026年10月14日電）歐洲主要股市今天收黑，主因投資人正在評估德國最新公布的通膨報告。報告顯示，德國9月消費者物價指數年增率升至3.3%。明天，市場焦點將轉向西班牙與美國的通膨數據。倫",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E8%82%A1%E7%9B%A4%E5%BE%8C-%E6%94%B6%E9%BB%91-195856517.html",
+          "url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E8%82%A1%E7%9B%A4%E5%BE%8C-%E6%94%B6%E9%BB%91-195856517.html",
+          "published_at": "2026-10-13T19:58:56+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-14",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "macro",
+            "reason": "macro_subject_action",
+            "matched_terms": [
+              "消費者物價",
+              "公布"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "消費者物價",
+              "公布"
+            ],
+            "matched_subject": "消費者物價",
+            "matched_action": "公布",
+            "matched_market_object": "消費者物價",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "中央社台北2026年10月14日電歐洲主要股市今天收黑主因投資人正在評估德國最新公布的通膨報告報告顯示德國9月消費者物價指數年增率升至33明天市場焦點將轉向西班牙與美國的通膨數據倫",
+          "event_cluster_key": "event-48eeb622e4df5ea0d0ee",
+          "published_time_bucket": "2026-10-13T19:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "消費者物價",
+            "公布"
+          ],
+          "matched_subject": "消費者物價",
+          "matched_action": "公布",
+          "matched_market_object": "消費者物價",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "story_id": "news-5cb7c701f380992a2977",
@@ -4632,99 +4734,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 12
-        },
-        {
-          "story_id": "news-06ecffbc9bb01917d371",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "以AI鑄鏈，領跑工業供應鏈數智化 - 人民网-上海频道",
-          "raw_title": "以AI鑄鏈，領跑工業供應鏈數智化 - 人民网-上海频道",
-          "normalized_fact": "以AI鑄鏈，領跑工業供應鏈數智化 - 人民网-上海频道。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMicEFVX3lxTE5NSVhaUFhVNWtzTDlQNVAwaElCby1FUGxWUzRxdXZyOXBYZE1UNzg3UTNZQmxXQkdWWllhZkplS3ItRWJQTUVqcGhyaWNHZ2Q5M0h0Z0Vmc1ZUdVNNU0NuTTdvYk9vVDNhZjAxNVRUdlg",
-          "url": "https://news.google.com/rss/articles/CBMicEFVX3lxTE5NSVhaUFhVNWtzTDlQNVAwaElCby1FUGxWUzRxdXZyOXBYZE1UNzg3UTNZQmxXQkdWWllhZkplS3ItRWJQTUVqcGhyaWNHZ2Q5M0h0Z0Vmc1ZUdVNNU0NuTTdvYk9vVDNhZjAxNVRUdlg",
-          "published_at": "2026-10-12T11:20:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-10-12",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "以ai鑄鏈領跑工業供應鏈數智化人民网上海频道",
-          "event_cluster_key": "event-1550cd02c67212e37b3b",
-          "published_time_bucket": "2026-10-12T11:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 3,
-          "inventory_saved_at": "2026-10-12T13:03:52.365003+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 9
         }
       ],
       "source_diversity": {
@@ -4749,8 +4758,8 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 30,
-          "TSM": 30,
+          "2330": 28,
+          "TSM": 28,
           "NVDA": 3
         },
         "sector_interest": {},
@@ -4758,7 +4767,7 @@
           "石油": 1
         },
         "market_interest": {
-          "taiwan": 109
+          "taiwan": 102
         },
         "context": {
           "tracked_tickers": [
@@ -4837,8 +4846,8 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 30,
-            "TSM": 30,
+            "2330": 28,
+            "TSM": 28,
             "NVDA": 3
           },
           "research_candidate": {},
@@ -4849,11 +4858,12 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 34,
+      "excluded_count": 30,
       "exclusion_reasons": {
-        "incomplete_normalized_fact": 4,
-        "insufficient_market_relevance": 12,
-        "market_scope_mismatch": 14,
+        "incomplete_normalized_fact": 2,
+        "insufficient_market_relevance": 8,
+        "market_scope_mismatch": 10,
+        "missing_published_at": 1,
         "outside_calendar_window": 16,
         "outside_trading_session_window": 3
       },
@@ -4865,43 +4875,44 @@
         "successful_provider_count": 5,
         "failed_provider_count": 0,
         "disabled_provider_count": 0,
-        "fetched": 44,
-        "normalized": 44,
-        "eligible": 10,
-        "excluded": 34,
-        "date_eligible_current": 25,
-        "date_excluded_current": 19,
+        "fetched": 41,
+        "normalized": 41,
+        "eligible": 11,
+        "excluded": 30,
+        "date_eligible_current": 21,
+        "date_excluded_current": 20,
         "date_exclusion_reasons_current": {
+          "missing_published_at": 1,
           "outside_calendar_window": 16,
           "outside_trading_session_window": 3
         },
-        "date_eligible_inventory": 65,
+        "date_eligible_inventory": 61,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-13T20:23:44.855151+00:00",
-        "deduped": 10,
+        "reference_time": "2026-10-13T20:28:28.110725+00:00",
+        "deduped": 11,
         "publicly_ranked": 5,
-        "current_eligible": 10,
-        "inventory_considered": 65,
-        "inventory_eligible": 50,
+        "current_eligible": 11,
+        "inventory_considered": 61,
+        "inventory_eligible": 51,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 34,
-        "fetched_story_count": 44,
-        "normalized_story_count": 44,
-        "eligible_story_count": 10,
-        "deduped_story_count": 10,
+        "filtered_story_count": 30,
+        "fetched_story_count": 41,
+        "normalized_story_count": 41,
+        "eligible_story_count": 11,
+        "deduped_story_count": 11,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 65,
-        "eligible": 50,
+        "considered": 61,
+        "eligible": 51,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -4913,8 +4924,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 44,
-          "checked_at": "2026-10-13T20:23:44.855194+00:00"
+          "item_count": 41,
+          "checked_at": "2026-10-13T20:28:28.110820+00:00"
         },
         {
           "provider": "twse",
@@ -4925,10 +4936,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-10-13T20:23:44.855194+00:00",
+          "checked_at": "2026-10-13T20:28:28.110820+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+          "last_success_at": "2026-10-13T20:28:28.110820+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4953,10 +4964,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-10-13T20:23:44.855194+00:00",
+          "checked_at": "2026-10-13T20:28:28.110820+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+          "last_success_at": "2026-10-13T20:28:28.110820+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4981,24 +4992,23 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 0,
-          "checked_at": "2026-10-13T20:23:44.855194+00:00",
+          "checked_at": "2026-10-13T20:28:28.110820+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+          "last_success_at": "2026-10-13T20:28:28.110820+00:00",
           "last_failure_at": null,
-          "stories_ingested": 4,
+          "stories_ingested": 1,
           "stories_deduped": 0,
           "ranked_count": 0,
           "relevance_distribution": {
-            "market": 4,
-            "tracked_ticker": 2
+            "market": 1
           },
           "funnel": {
-            "fetched_count": 4,
-            "normalized_count": 4,
-            "market_compatible_count": 4,
+            "fetched_count": 1,
+            "normalized_count": 1,
+            "market_compatible_count": 1,
             "eligible_count": 0,
-            "excluded_count": 4,
+            "excluded_count": 1,
             "deduped_count": 0,
             "ranked_count": 0
           },
@@ -5012,26 +5022,27 @@
           "status": "healthy",
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
-          "item_count": 1,
-          "checked_at": "2026-10-13T20:23:44.855194+00:00",
+          "item_count": 2,
+          "checked_at": "2026-10-13T20:28:28.110820+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 1,
-          "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+          "filtered_item_count": 2,
+          "last_success_at": "2026-10-13T20:28:28.110820+00:00",
           "last_failure_at": null,
-          "stories_ingested": 3,
-          "stories_deduped": 1,
-          "ranked_count": 1,
+          "stories_ingested": 5,
+          "stories_deduped": 2,
+          "ranked_count": 2,
           "relevance_distribution": {
-            "market": 3
+            "market": 5,
+            "tracked_ticker": 1
           },
           "funnel": {
             "fetched_count": 10,
-            "normalized_count": 3,
-            "market_compatible_count": 3,
-            "eligible_count": 1,
-            "excluded_count": 2,
-            "deduped_count": 1,
-            "ranked_count": 1
+            "normalized_count": 5,
+            "market_compatible_count": 5,
+            "eligible_count": 2,
+            "excluded_count": 3,
+            "deduped_count": 2,
+            "ranked_count": 2
           }
         },
         {
@@ -5042,15 +5053,15 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
-          "item_count": 4,
-          "checked_at": "2026-10-13T20:23:44.855194+00:00",
+          "item_count": 3,
+          "checked_at": "2026-10-13T20:28:28.110820+00:00",
           "raw_item_count": 30,
-          "filtered_item_count": 4,
-          "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+          "filtered_item_count": 3,
+          "last_success_at": "2026-10-13T20:28:28.110820+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
           "stories_deduped": 9,
-          "ranked_count": 4,
+          "ranked_count": 3,
           "relevance_distribution": {
             "market": 30,
             "tracked_ticker": 8
@@ -5062,37 +5073,36 @@
             "eligible_count": 9,
             "excluded_count": 21,
             "deduped_count": 9,
-            "ranked_count": 4
+            "ranked_count": 3
           }
         }
       ],
       "observability": {
-        "stories_ingested": 44,
-        "stories_deduped": 10,
+        "stories_ingested": 41,
+        "stories_deduped": 11,
         "ranked_count": 5,
         "relevance_distribution": {
-          "market": 44,
-          "tracked_ticker": 10
+          "market": 41,
+          "tracked_ticker": 9
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+            "last_success_at": "2026-10-13T20:28:28.110820+00:00",
             "last_failure_at": null,
-            "stories_ingested": 4,
+            "stories_ingested": 1,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 4,
-              "tracked_ticker": 2
+              "market": 1
             },
             "funnel": {
-              "fetched_count": 4,
-              "normalized_count": 4,
-              "market_compatible_count": 4,
+              "fetched_count": 1,
+              "normalized_count": 1,
+              "market_compatible_count": 1,
               "eligible_count": 0,
-              "excluded_count": 4,
+              "excluded_count": 1,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -5100,11 +5110,11 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+            "last_success_at": "2026-10-13T20:28:28.110820+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
             "stories_deduped": 9,
-            "ranked_count": 4,
+            "ranked_count": 3,
             "relevance_distribution": {
               "market": 30,
               "tracked_ticker": 8
@@ -5116,13 +5126,13 @@
               "eligible_count": 9,
               "excluded_count": 21,
               "deduped_count": 9,
-              "ranked_count": 4
+              "ranked_count": 3
             }
           },
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+            "last_success_at": "2026-10-13T20:28:28.110820+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5141,7 +5151,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+            "last_success_at": "2026-10-13T20:28:28.110820+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5162,18 +5172,18 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 7,
+            "stories_ingested": 5,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 7
+              "market": 5
             },
             "funnel": {
-              "fetched_count": 7,
-              "normalized_count": 7,
+              "fetched_count": 5,
+              "normalized_count": 5,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 7,
+              "excluded_count": 5,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -5181,22 +5191,23 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+            "last_success_at": "2026-10-13T20:28:28.110820+00:00",
             "last_failure_at": null,
-            "stories_ingested": 3,
-            "stories_deduped": 1,
-            "ranked_count": 1,
+            "stories_ingested": 5,
+            "stories_deduped": 2,
+            "ranked_count": 2,
             "relevance_distribution": {
-              "market": 3
+              "market": 5,
+              "tracked_ticker": 1
             },
             "funnel": {
               "fetched_count": 10,
-              "normalized_count": 3,
-              "market_compatible_count": 3,
-              "eligible_count": 1,
-              "excluded_count": 2,
-              "deduped_count": 1,
-              "ranked_count": 1
+              "normalized_count": 5,
+              "market_compatible_count": 5,
+              "eligible_count": 2,
+              "excluded_count": 3,
+              "deduped_count": 2,
+              "ranked_count": 2
             }
           }
         ]
@@ -5610,15 +5621,15 @@
           "ranking_score": 120
         },
         {
-          "story_id": "news-f556bcf7f3962ce339b6",
+          "story_id": "news-4a46609c9dd99f01afdb",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "Service Properties Trust Third Quarter 2026 Conference Call Scheduled for Thursday, November 5th",
-          "raw_title": "Service Properties Trust Third Quarter 2026 Conference Call Scheduled for Thursday, November 5th",
-          "normalized_fact": "NEWTON, Mass., October 13, 2026--Service Properties Trust (Nasdaq: SVC) today announced that it will issue a press release containing its third quarter 2026 results after the Nasdaq closes on Wednesday, November 4, 2026. On Thursday, November 5, 2026 at 10:00 a.m. Eastern Time, President and Chief Executive Officer Chris Bilotto, Chief Financial Officer and Treasurer Brian Donley and Vice President Jesse Abair will host a conference call to discuss these results。",
-          "market_topic": "global_market",
+          "title": "Chips' Sixth Straight Loss Drags Nasdaq Into the Red",
+          "raw_title": "Chips' Sixth Straight Loss Drags Nasdaq Into the Red",
+          "normalized_fact": "Chip stocks marked their longest losing streak in more than a year to overshadow the earnings season kickoff。",
+          "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5626,11 +5637,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "NEWTON, Mass., October 13, 2026--Service Properties Trust (Nasdaq: SVC) today announced that it will issue a press release containing its third quarter 2026 results after the Nasdaq closes on Wednesday, November 4, 2026. On Thursday, November 5, 2026 at 10:00 a.m. Eastern Time, President and Chief Executive Officer Chris Bilotto, Chief Financial Officer and Treasurer Brian Donley and Vice President Jesse Abair will host a conference call to discuss these results.",
+          "summary": "Chip stocks marked their longest losing streak in more than a year to overshadow the earnings season kickoff.",
           "description": "",
-          "canonical_url": "https://finance.yahoo.com/real-estate/articles/properties-trust-third-quarter-2026-201500093.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/real-estate/articles/properties-trust-third-quarter-2026-201500093.html?.tsrc=rss",
-          "published_at": "2026-10-13T20:15:00+00:00",
+          "canonical_url": "https://finance.yahoo.com/m/db8e2cc0-b6f6-36c9-8b9f-1b1ae53acff5/chips%27-sixth-straight-loss.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/m/db8e2cc0-b6f6-36c9-8b9f-1b1ae53acff5/chips%27-sixth-straight-loss.html?.tsrc=rss",
+          "published_at": "2026-10-13T20:03:45+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -5640,20 +5651,28 @@
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "NASDAQ"
+          ],
           "sectors": [],
           "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "chip",
+              "earnings"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "chip",
+              "earnings"
+            ],
+            "matched_subject": "chip",
+            "matched_action": "earnings",
+            "matched_market_object": "chip",
             "input_fields": [
               "description",
               "summary",
@@ -5664,17 +5683,20 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "newtonmassoctober132026servicepropertiestrustnasdaqsvctodayannouncedthatitwillissueapressreleasecontainingitsthirdquarter2026resultsafterthenasdaqclosesonwednesdaynovember42026onthursdaynovember52026at1000ameasterntimepresidentandchiefexecutiveofficerchrisbilottochieffinancialofficerandtreasurerbriandonleyandvicepresidentjesseabairwillhostaconferencecalltodiscusstheseresults",
-          "event_cluster_key": "",
+          "dedupe_key": "chipstocksmarkedtheirlongestlosingstreakinmorethanayeartoovershadowtheearningsseasonkickoff",
+          "event_cluster_key": "event-8a793fac73b487e7846d",
           "published_time_bucket": "2026-10-13T20:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
+          "classification_evidence": [
+            "chip",
+            "earnings"
+          ],
+          "matched_subject": "chip",
+          "matched_action": "earnings",
+          "matched_market_object": "chip",
+          "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -5776,15 +5798,15 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-64a87a66a8161b1c0b54",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Fed’s Waller Says Higher US Yields Could Help Cool Demand - Bloomberg.com",
-          "raw_title": "Fed’s Waller Says Higher US Yields Could Help Cool Demand - Bloomberg.com",
-          "normalized_fact": "Fed’s Waller Says Higher US Yields Could Help Cool Demand Bloomberg.com。",
-          "market_topic": "rates_fx",
+          "story_id": "news-f556bcf7f3962ce339b6",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Service Properties Trust Third Quarter 2026 Conference Call Scheduled for Thursday, November 5th",
+          "raw_title": "Service Properties Trust Third Quarter 2026 Conference Call Scheduled for Thursday, November 5th",
+          "normalized_fact": "NEWTON, Mass., October 13, 2026--Service Properties Trust (Nasdaq: SVC) today announced that it will issue a press release containing its third quarter 2026 results after the Nasdaq closes on Wednesday, November 4, 2026. On Thursday, November 5, 2026 at 10:00 a.m. Eastern Time, President and Chief Executive Officer Chris Bilotto, Chief Financial Officer and Treasurer Brian Donley and Vice President Jesse Abair will host a conference call to discuss these results。",
+          "market_topic": "global_market",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5792,11 +5814,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "Fed’s Waller Says Higher US Yields Could Help Cool Demand Bloomberg.com",
+          "summary": "NEWTON, Mass., October 13, 2026--Service Properties Trust (Nasdaq: SVC) today announced that it will issue a press release containing its third quarter 2026 results after the Nasdaq closes on Wednesday, November 4, 2026. On Thursday, November 5, 2026 at 10:00 a.m. Eastern Time, President and Chief Executive Officer Chris Bilotto, Chief Financial Officer and Treasurer Brian Donley and Vice President Jesse Abair will host a conference call to discuss these results.",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxQakVySTZHYVRiTDREcWZ6bDZ6TWhnN1hIOU1EQTh3N2czRVFSRDFpdGkzb3I5b0dnN2l4akdXdGY1dTkxWnczMldQWXJ5TEYzc2w5eHJ3YW1TR3NtVEpMMDdhaUJKUVBuV0VzREJVOEdRZDhLbFNXYnhpRFpzTnk2S2YxNTNTSkoyV01XRGtzaXd0X2RwbXRsTnNPeUFSNFFTOElLcXp0TGdqd0NqaHc",
-          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxQakVySTZHYVRiTDREcWZ6bDZ6TWhnN1hIOU1EQTh3N2czRVFSRDFpdGkzb3I5b0dnN2l4akdXdGY1dTkxWnczMldQWXJ5TEYzc2w5eHJ3YW1TR3NtVEpMMDdhaUJKUVBuV0VzREJVOEdRZDhLbFNXYnhpRFpzTnk2S2YxNTNTSkoyV01XRGtzaXd0X2RwbXRsTnNPeUFSNFFTOElLcXp0TGdqd0NqaHc",
-          "published_at": "2026-10-13T08:33:04+00:00",
+          "canonical_url": "https://finance.yahoo.com/real-estate/articles/properties-trust-third-quarter-2026-201500093.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/real-estate/articles/properties-trust-third-quarter-2026-201500093.html?.tsrc=rss",
+          "published_at": "2026-10-13T20:15:00+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -5808,9 +5830,7 @@
           "tickers": [],
           "entities": [],
           "sectors": [],
-          "topics": [
-            "rates"
-          ],
+          "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
@@ -5832,9 +5852,9 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "fedswallersayshigherusyieldscouldhelpcooldemandbloombergcom",
-          "event_cluster_key": "event-dc116943bbb247f4dc5e",
-          "published_time_bucket": "2026-10-13T08:00:00+00:00",
+          "dedupe_key": "newtonmassoctober132026servicepropertiestrustnasdaqsvctodayannouncedthatitwillissueapressreleasecontainingitsthirdquarter2026resultsafterthenasdaqclosesonwednesdaynovember42026onthursdaynovember52026at1000ameasterntimepresidentandchiefexecutiveofficerchrisbilottochieffinancialofficerandtreasurerbriandonleyandvicepresidentjesseabairwillhostaconferencecalltodiscusstheseresults",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-10-13T20:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
@@ -5848,7 +5868,7 @@
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Google News｜美股線索",
+          "source": "Yahoo Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -5857,7 +5877,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 115
+          "ranking_score": 130
         }
       ],
       "editorial_candidates": [
@@ -6049,6 +6069,99 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 120
+        },
+        {
+          "story_id": "news-4a46609c9dd99f01afdb",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Chips' Sixth Straight Loss Drags Nasdaq Into the Red",
+          "raw_title": "Chips' Sixth Straight Loss Drags Nasdaq Into the Red",
+          "normalized_fact": "Chip stocks marked their longest losing streak in more than a year to overshadow the earnings season kickoff。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Chip stocks marked their longest losing streak in more than a year to overshadow the earnings season kickoff.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/m/db8e2cc0-b6f6-36c9-8b9f-1b1ae53acff5/chips%27-sixth-straight-loss.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/m/db8e2cc0-b6f6-36c9-8b9f-1b1ae53acff5/chips%27-sixth-straight-loss.html?.tsrc=rss",
+          "published_at": "2026-10-13T20:03:45+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-13",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NASDAQ"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "chip",
+              "earnings"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "chip",
+              "earnings"
+            ],
+            "matched_subject": "chip",
+            "matched_action": "earnings",
+            "matched_market_object": "chip",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "chipstocksmarkedtheirlongestlosingstreakinmorethanayeartoovershadowtheearningsseasonkickoff",
+          "event_cluster_key": "event-8a793fac73b487e7846d",
+          "published_time_bucket": "2026-10-13T20:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "chip",
+            "earnings"
+          ],
+          "matched_subject": "chip",
+          "matched_action": "earnings",
+          "matched_market_object": "chip",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "story_id": "news-f556bcf7f3962ce339b6",
@@ -9308,88 +9421,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 9
-        },
-        {
-          "story_id": "news-be0d9b8bb6e9e05f8acc",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "10-year Treasury yield hits 5.34% — a 24-year high now driving mortgage rates, car loans and your portfolio - Yahoo Finance",
-          "raw_title": "10-year Treasury yield hits 5.34% — a 24-year high now driving mortgage rates, car loans and your portfolio - Yahoo Finance",
-          "normalized_fact": "10-year Treasury yield hits 5.34% — a 24-year high now driving mortgage rates, car loans and your portfolio。",
-          "market_topic": "company_industry",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": true,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxNdVotYm9neXBRR290SUUxQU4tZElzZDRFeWtVMjJQdDRFTUx3RGVIMzgtZ0FyRlZQakp5YUttTU1oaHBPbVJkUEoyQTRjcHAwWmlRRXhSTXRpQVlzRTlIY1dXWS1sdnczY2hPdDFRUkhiUE1fRVd4T0I4OU50Vkg5TWFXRmpJR1Qya3lsUG9XSUVRYWJCeWtNRw",
-          "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxNdVotYm9neXBRR290SUUxQU4tZElzZDRFeWtVMjJQdDRFTUx3RGVIMzgtZ0FyRlZQakp5YUttTU1oaHBPbVJkUEoyQTRjcHAwWmlRRXhSTXRpQVlzRTlIY1dXWS1sdnczY2hPdDFRUkhiUE1fRVd4T0I4OU50Vkg5TWFXRmpJR1Qya3lsUG9XSUVRYWJCeWtNRw",
-          "published_at": "2026-10-10T11:45:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-10-10",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "10yeartreasuryyieldhits534a24yearhighnowdrivingmortgageratescarloansandyourportfolio",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-10-10T11:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 3,
-          "inventory_saved_at": "2026-10-10T22:26:05.298455+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 9
         }
       ],
       "source_diversity": {
@@ -9414,20 +9445,21 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "TSM": 3,
           "WDC": 1,
-          "NVDA": 16
+          "NVDA": 16,
+          "TSM": 1
         },
         "sector_interest": {},
         "topic_interest": {
+          "hormuz": 2,
+          "oil": 14,
           "iran": 4,
-          "oil": 12,
           "war": 3,
           "sanctions": 2,
           "gold": 1
         },
         "market_interest": {
-          "us": 142
+          "us": 138
         },
         "context": {
           "tracked_tickers": [
@@ -9506,16 +9538,17 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "TSM": 3,
-            "NVDA": 16
+            "NVDA": 16,
+            "TSM": 1
           },
           "research_candidate": {
             "WDC": 1
           },
           "tracked_sector": {},
           "active_event": {
+            "hormuz": 2,
+            "oil": 14,
             "iran": 4,
-            "oil": 12,
             "war": 3,
             "sanctions": 2,
             "gold": 1
@@ -9523,14 +9556,14 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 50,
+      "excluded_count": 48,
       "exclusion_reasons": {
         "generic_official_filing": 20,
-        "incomplete_normalized_fact": 16,
-        "insufficient_market_relevance": 16,
-        "market_scope_mismatch": 10,
+        "incomplete_normalized_fact": 14,
+        "insufficient_market_relevance": 14,
+        "market_scope_mismatch": 8,
         "missing_published_at": 1,
-        "outside_calendar_window": 17,
+        "outside_calendar_window": 18,
         "outside_trading_session_window": 1
       },
       "status": "ready",
@@ -9541,43 +9574,43 @@
         "successful_provider_count": 4,
         "failed_provider_count": 1,
         "disabled_provider_count": 1,
-        "fetched": 60,
-        "normalized": 60,
-        "eligible": 10,
-        "excluded": 50,
-        "date_eligible_current": 41,
-        "date_excluded_current": 19,
+        "fetched": 59,
+        "normalized": 59,
+        "eligible": 11,
+        "excluded": 48,
+        "date_eligible_current": 39,
+        "date_excluded_current": 20,
         "date_exclusion_reasons_current": {
           "missing_published_at": 1,
-          "outside_calendar_window": 17,
+          "outside_calendar_window": 18,
           "outside_trading_session_window": 1
         },
-        "date_eligible_inventory": 82,
+        "date_eligible_inventory": 79,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-13T20:23:44.855151+00:00",
-        "deduped": 9,
+        "reference_time": "2026-10-13T20:28:28.110725+00:00",
+        "deduped": 10,
         "publicly_ranked": 5,
-        "current_eligible": 10,
-        "inventory_considered": 82,
+        "current_eligible": 11,
+        "inventory_considered": 79,
         "inventory_eligible": 51,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 50,
-        "fetched_story_count": 60,
-        "normalized_story_count": 60,
-        "eligible_story_count": 10,
-        "deduped_story_count": 9,
+        "filtered_story_count": 48,
+        "fetched_story_count": 59,
+        "normalized_story_count": 59,
+        "eligible_story_count": 11,
+        "deduped_story_count": 10,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 82,
+        "considered": 79,
         "eligible": 51,
         "selected": 0,
         "target_count": 5,
@@ -9590,8 +9623,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 60,
-          "checked_at": "2026-10-13T20:23:44.855194+00:00"
+          "item_count": 59,
+          "checked_at": "2026-10-13T20:28:28.110820+00:00"
         },
         {
           "provider": "sec",
@@ -9602,10 +9635,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-10-13T20:23:44.855194+00:00",
+          "checked_at": "2026-10-13T20:28:28.110820+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+          "last_success_at": "2026-10-13T20:28:28.110820+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9633,12 +9666,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-10-13T20:23:44.855194+00:00",
+          "checked_at": "2026-10-13T20:28:28.110820+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-10-13T20:23:44.855194+00:00",
+          "last_failure_at": "2026-10-13T20:28:28.110820+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9661,10 +9694,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-10-13T20:23:44.855194+00:00",
+          "checked_at": "2026-10-13T20:28:28.110820+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+          "last_success_at": "2026-10-13T20:28:28.110820+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9689,10 +9722,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 0,
-          "checked_at": "2026-10-13T20:23:44.855194+00:00",
+          "checked_at": "2026-10-13T20:28:28.110820+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+          "last_success_at": "2026-10-13T20:28:28.110820+00:00",
           "last_failure_at": null,
           "stories_ingested": 2,
           "stories_deduped": 0,
@@ -9719,27 +9752,26 @@
           "status": "healthy",
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
-          "item_count": 2,
-          "checked_at": "2026-10-13T20:23:44.855194+00:00",
+          "item_count": 3,
+          "checked_at": "2026-10-13T20:28:28.110820+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 2,
-          "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+          "filtered_item_count": 3,
+          "last_success_at": "2026-10-13T20:28:28.110820+00:00",
           "last_failure_at": null,
           "stories_ingested": 3,
-          "stories_deduped": 2,
-          "ranked_count": 2,
+          "stories_deduped": 3,
+          "ranked_count": 3,
           "relevance_distribution": {
-            "market": 3,
-            "tracked_ticker": 1
+            "market": 3
           },
           "funnel": {
-            "fetched_count": 8,
+            "fetched_count": 7,
             "normalized_count": 3,
             "market_compatible_count": 3,
-            "eligible_count": 2,
-            "excluded_count": 1,
-            "deduped_count": 2,
-            "ranked_count": 2
+            "eligible_count": 3,
+            "excluded_count": 0,
+            "deduped_count": 3,
+            "ranked_count": 3
           }
         },
         {
@@ -9750,15 +9782,15 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
-          "item_count": 3,
-          "checked_at": "2026-10-13T20:23:44.855194+00:00",
+          "item_count": 2,
+          "checked_at": "2026-10-13T20:28:28.110820+00:00",
           "raw_item_count": 40,
-          "filtered_item_count": 3,
-          "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+          "filtered_item_count": 2,
+          "last_success_at": "2026-10-13T20:28:28.110820+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
           "stories_deduped": 7,
-          "ranked_count": 3,
+          "ranked_count": 2,
           "relevance_distribution": {
             "active_event": 8,
             "market": 40,
@@ -9772,25 +9804,25 @@
             "eligible_count": 8,
             "excluded_count": 32,
             "deduped_count": 7,
-            "ranked_count": 3
+            "ranked_count": 2
           }
         }
       ],
       "observability": {
-        "stories_ingested": 60,
-        "stories_deduped": 9,
+        "stories_ingested": 59,
+        "stories_deduped": 10,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 8,
-          "market": 60,
+          "active_event": 9,
+          "market": 59,
           "research_candidate": 1,
-          "tracked_ticker": 6
+          "tracked_ticker": 5
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+            "last_success_at": "2026-10-13T20:28:28.110820+00:00",
             "last_failure_at": null,
             "stories_ingested": 2,
             "stories_deduped": 0,
@@ -9812,7 +9844,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-10-13T20:23:44.855194+00:00",
+            "last_failure_at": "2026-10-13T20:28:28.110820+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9830,11 +9862,11 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+            "last_success_at": "2026-10-13T20:28:28.110820+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
             "stories_deduped": 7,
-            "ranked_count": 3,
+            "ranked_count": 2,
             "relevance_distribution": {
               "active_event": 8,
               "market": 40,
@@ -9848,13 +9880,13 @@
               "eligible_count": 8,
               "excluded_count": 32,
               "deduped_count": 7,
-              "ranked_count": 3
+              "ranked_count": 2
             }
           },
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+            "last_success_at": "2026-10-13T20:28:28.110820+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9873,7 +9905,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+            "last_success_at": "2026-10-13T20:28:28.110820+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -9896,18 +9928,19 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 5,
+            "stories_ingested": 4,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 5
+              "active_event": 1,
+              "market": 4
             },
             "funnel": {
-              "fetched_count": 5,
-              "normalized_count": 5,
+              "fetched_count": 4,
+              "normalized_count": 4,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 5,
+              "excluded_count": 4,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -9915,23 +9948,22 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-13T20:23:44.855194+00:00",
+            "last_success_at": "2026-10-13T20:28:28.110820+00:00",
             "last_failure_at": null,
             "stories_ingested": 3,
-            "stories_deduped": 2,
-            "ranked_count": 2,
+            "stories_deduped": 3,
+            "ranked_count": 3,
             "relevance_distribution": {
-              "market": 3,
-              "tracked_ticker": 1
+              "market": 3
             },
             "funnel": {
-              "fetched_count": 8,
+              "fetched_count": 7,
               "normalized_count": 3,
               "market_compatible_count": 3,
-              "eligible_count": 2,
-              "excluded_count": 1,
-              "deduped_count": 2,
-              "ranked_count": 2
+              "eligible_count": 3,
+              "excluded_count": 0,
+              "deduped_count": 3,
+              "ranked_count": 3
             }
           }
         ]
