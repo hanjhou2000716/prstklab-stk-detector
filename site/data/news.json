@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "52680bd5ea3429a5",
-  "snapshot_id": "news-77f4d86ee488e1c8",
+  "market_snapshot_id": "dd91419c8635bb93",
+  "snapshot_id": "news-f35b5e62ca069728",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -437,14 +437,107 @@
       ],
       "stories": [
         {
-          "story_id": "news-006d1a45aea426aefac6",
+          "story_id": "news-d9174eda7c7e82f31179",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "每年採購600萬噸阿拉斯加天然氣 經濟部回應證實20年台美能源合作計畫",
+          "raw_title": "每年採購600萬噸阿拉斯加天然氣 經濟部回應證實20年台美能源合作計畫",
+          "normalized_fact": "經濟部證實，台灣去年3月與阿拉斯加 LNG 簽 LOI，經近一年半協商後，專案已有重大進展。 依目前規劃，雙方合作涵蓋每年採購600萬噸 LNG，並參與開發，最高投資44億美元。 經濟部指阿拉斯加 LNG 可自2032年起供應台灣，透過太平洋航線分散運輸風險、強化能源韌性。",
+          "market_topic": "energy_geopolitics",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "經濟部證實，台灣去年3月與阿拉斯加 LNG 簽 LOI，經近一年半協商後，專案已有重大進展。 依目前規劃，雙方合作涵蓋每年採購600萬噸 LNG，並參與開發，最高投資44億美元。 經濟部指阿拉斯加 LNG 可自2032年起供應台灣，透過太平洋航線分散運輸風險、強化能源韌性。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6630121",
+          "url": "https://news.cnyes.com/news/id/6630121",
+          "published_at": "2026-10-14T05:15:16+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-14",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "energy"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "energy",
+            "reason": "energy_subject_action",
+            "matched_terms": [
+              "能源",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "能源",
+              "供應"
+            ],
+            "matched_subject": "能源",
+            "matched_action": "供應",
+            "matched_market_object": "能源",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "經濟部證實台灣去年3月與阿拉斯加lng簽loi經近一年半協商後專案已有重大進展依目前規劃雙方合作涵蓋每年採購600萬噸lng並參與開發最高投資44億美元經濟部指阿拉斯加lng可自2032年起供應台灣透過太平洋航線分散運輸風險強化能源韌性",
+          "event_cluster_key": "event-935df254e38f3e62e187",
+          "published_time_bucket": "2026-10-14T05:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "能源",
+            "供應"
+          ],
+          "matched_subject": "能源",
+          "matched_action": "供應",
+          "matched_market_object": "能源",
+          "decision_value_class": "energy",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "story_id": "news-ea391287f7d209b61fc0",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "10月升息重回討論！華爾街憂通膨擴散 有人喊12月升2碼",
-          "raw_title": "10月升息重回討論！華爾街憂通膨擴散 有人喊12月升2碼",
-          "normalized_fact": "美國9月CPI年增3.7%、核心CPI月增0.3%年增2.6%，通膨高於預期 分析師分歧，10月升息重回討論，多數仍押注Fed在12月再升1碼 若油價續漲，12月不排除升息2碼；科技股、中小型股等利率。",
+          "title": "分析：油價高 推升中國9月CPI漲幅擴大",
+          "raw_title": "分析：油價高 推升中國9月CPI漲幅擴大",
+          "normalized_fact": "（中央社記者馮昭上海2026年10月14日電）中國國家統計局今天公布9月消費者物價指數（CPI），年增率漲幅比8月擴大。經濟專家分析，9月中東局勢造成國際油價再上漲，油價漲幅擴大，是推動當月整體CPI。",
           "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
@@ -453,11 +546,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "美國9月CPI年增3.7%、核心CPI月增0.3%年增2.6%，通膨高於預期 分析師分歧，10月升息重回討論，多數仍押注Fed在12月再升1碼 若油價續漲，12月不排除升息2碼；科技股、中小型股等利率",
+          "summary": "（中央社記者馮昭上海2026年10月14日電）中國國家統計局今天公布9月消費者物價指數（CPI），年增率漲幅比8月擴大。經濟專家分析，9月中東局勢造成國際油價再上漲，油價漲幅擴大，是推動當月整體CPI",
           "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/10%E6%9C%88%E5%8D%87%E6%81%AF%E9%87%8D%E5%9B%9E%E8%A8%8E%E8%AB%96-%E8%8F%AF%E7%88%BE%E8%A1%97%E6%86%82%E9%80%9A%E8%86%A8%E6%93%B4%E6%95%A3-%E6%9C%89%E4%BA%BA%E5%96%8A12%E6%9C%88%E5%8D%872%E7%A2%BC-135007982.html",
-          "url": "https://tw.stock.yahoo.com/news/10%E6%9C%88%E5%8D%87%E6%81%AF%E9%87%8D%E5%9B%9E%E8%A8%8E%E8%AB%96-%E8%8F%AF%E7%88%BE%E8%A1%97%E6%86%82%E9%80%9A%E8%86%A8%E6%93%B4%E6%95%A3-%E6%9C%89%E4%BA%BA%E5%96%8A12%E6%9C%88%E5%8D%872%E7%A2%BC-135007982.html",
-          "published_at": "2026-10-14T13:50:07+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%88%86%E6%9E%90-%E6%B2%B9%E5%83%B9%E9%AB%98-%E6%8E%A8%E5%8D%87%E4%B8%AD%E5%9C%8B9%E6%9C%88cpi%E6%BC%B2%E5%B9%85%E6%93%B4%E5%A4%A7-141610362.html",
+          "url": "https://tw.stock.yahoo.com/news/%E5%88%86%E6%9E%90-%E6%B2%B9%E5%83%B9%E9%AB%98-%E6%8E%A8%E5%8D%87%E4%B8%AD%E5%9C%8B9%E6%9C%88cpi%E6%BC%B2%E5%B9%85%E6%93%B4%E5%A4%A7-141610362.html",
+          "published_at": "2026-10-14T14:16:10+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -473,20 +566,20 @@
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
+            "category": "macro",
+            "reason": "macro_subject_action",
             "matched_terms": [
-              "fed",
-              "利率"
+              "cpi",
+              "公布"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "fed",
-              "利率"
+              "cpi",
+              "公布"
             ],
-            "matched_subject": "fed",
-            "matched_action": "利率",
-            "matched_market_object": "fed",
+            "matched_subject": "cpi",
+            "matched_action": "公布",
+            "matched_market_object": "cpi",
             "input_fields": [
               "description",
               "summary",
@@ -498,19 +591,19 @@
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "美國9月cpi年增37核心cpi月增03年增26通膨高於預期分析師分歧10月升息重回討論多數仍押注fed在12月再升1碼若油價續漲12月不排除升息2碼科技股中小型股等利率",
-          "event_cluster_key": "event-d32f8666022ae4e70b1c",
-          "published_time_bucket": "2026-10-14T13:00:00+00:00",
+          "dedupe_key": "中央社記者馮昭上海2026年10月14日電中國國家統計局今天公布9月消費者物價指數cpi年增率漲幅比8月擴大經濟專家分析9月中東局勢造成國際油價再上漲油價漲幅擴大是推動當月整體cpi",
+          "event_cluster_key": "event-f673d8ba8f5acb4ad512",
+          "published_time_bucket": "2026-10-14T14:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "fed",
-            "利率"
+            "cpi",
+            "公布"
           ],
-          "matched_subject": "fed",
-          "matched_action": "利率",
-          "matched_market_object": "fed",
+          "matched_subject": "cpi",
+          "matched_action": "公布",
+          "matched_market_object": "cpi",
           "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
@@ -526,7 +619,13 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 130
+          "ranking_score": 130,
+          "supporting_sources": [
+            {
+              "provider": "yahoo_finance",
+              "url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%9C%8B9%E6%9C%88cpi%E5%B9%B4%E5%A2%9E%E7%8E%873-7-%E9%AB%98%E5%87%BA%E5%B8%82%E5%A0%B4%E9%A0%90%E6%9C%9F-141608840.html"
+            }
+          ]
         },
         {
           "story_id": "news-2e01175cfca7d381cd25",
@@ -626,104 +725,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
-        },
-        {
-          "story_id": "news-ea391287f7d209b61fc0",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "分析：油價高 推升中國9月CPI漲幅擴大",
-          "raw_title": "分析：油價高 推升中國9月CPI漲幅擴大",
-          "normalized_fact": "（中央社記者馮昭上海2026年10月14日電）中國國家統計局今天公布9月消費者物價指數（CPI），年增率漲幅比8月擴大。經濟專家分析，9月中東局勢造成國際油價再上漲，油價漲幅擴大，是推動當月整體CPI。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "（中央社記者馮昭上海2026年10月14日電）中國國家統計局今天公布9月消費者物價指數（CPI），年增率漲幅比8月擴大。經濟專家分析，9月中東局勢造成國際油價再上漲，油價漲幅擴大，是推動當月整體CPI",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%88%86%E6%9E%90-%E6%B2%B9%E5%83%B9%E9%AB%98-%E6%8E%A8%E5%8D%87%E4%B8%AD%E5%9C%8B9%E6%9C%88cpi%E6%BC%B2%E5%B9%85%E6%93%B4%E5%A4%A7-141610362.html",
-          "url": "https://tw.stock.yahoo.com/news/%E5%88%86%E6%9E%90-%E6%B2%B9%E5%83%B9%E9%AB%98-%E6%8E%A8%E5%8D%87%E4%B8%AD%E5%9C%8B9%E6%9C%88cpi%E6%BC%B2%E5%B9%85%E6%93%B4%E5%A4%A7-141610362.html",
-          "published_at": "2026-10-14T14:16:10+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-14",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "macro",
-            "reason": "macro_subject_action",
-            "matched_terms": [
-              "cpi",
-              "公布"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "cpi",
-              "公布"
-            ],
-            "matched_subject": "cpi",
-            "matched_action": "公布",
-            "matched_market_object": "cpi",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "中央社記者馮昭上海2026年10月14日電中國國家統計局今天公布9月消費者物價指數cpi年增率漲幅比8月擴大經濟專家分析9月中東局勢造成國際油價再上漲油價漲幅擴大是推動當月整體cpi",
-          "event_cluster_key": "event-f673d8ba8f5acb4ad512",
-          "published_time_bucket": "2026-10-14T14:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "cpi",
-            "公布"
-          ],
-          "matched_subject": "cpi",
-          "matched_action": "公布",
-          "matched_market_object": "cpi",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130,
-          "supporting_sources": [
-            {
-              "provider": "yahoo_finance",
-              "url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%9C%8B9%E6%9C%88cpi%E5%B9%B4%E5%A2%9E%E7%8E%873-7-%E9%AB%98%E5%87%BA%E5%B8%82%E5%A0%B4%E9%A0%90%E6%9C%9F-141608840.html"
-            }
-          ]
         },
         {
           "story_id": "news-390a565261a08ed9ecdc",
@@ -925,14 +926,107 @@
       ],
       "editorial_candidates": [
         {
-          "story_id": "news-006d1a45aea426aefac6",
+          "story_id": "news-d9174eda7c7e82f31179",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "每年採購600萬噸阿拉斯加天然氣 經濟部回應證實20年台美能源合作計畫",
+          "raw_title": "每年採購600萬噸阿拉斯加天然氣 經濟部回應證實20年台美能源合作計畫",
+          "normalized_fact": "經濟部證實，台灣去年3月與阿拉斯加 LNG 簽 LOI，經近一年半協商後，專案已有重大進展。 依目前規劃，雙方合作涵蓋每年採購600萬噸 LNG，並參與開發，最高投資44億美元。 經濟部指阿拉斯加 LNG 可自2032年起供應台灣，透過太平洋航線分散運輸風險、強化能源韌性。",
+          "market_topic": "energy_geopolitics",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "經濟部證實，台灣去年3月與阿拉斯加 LNG 簽 LOI，經近一年半協商後，專案已有重大進展。 依目前規劃，雙方合作涵蓋每年採購600萬噸 LNG，並參與開發，最高投資44億美元。 經濟部指阿拉斯加 LNG 可自2032年起供應台灣，透過太平洋航線分散運輸風險、強化能源韌性。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6630121",
+          "url": "https://news.cnyes.com/news/id/6630121",
+          "published_at": "2026-10-14T05:15:16+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-14",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "energy"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "energy",
+            "reason": "energy_subject_action",
+            "matched_terms": [
+              "能源",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "能源",
+              "供應"
+            ],
+            "matched_subject": "能源",
+            "matched_action": "供應",
+            "matched_market_object": "能源",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "經濟部證實台灣去年3月與阿拉斯加lng簽loi經近一年半協商後專案已有重大進展依目前規劃雙方合作涵蓋每年採購600萬噸lng並參與開發最高投資44億美元經濟部指阿拉斯加lng可自2032年起供應台灣透過太平洋航線分散運輸風險強化能源韌性",
+          "event_cluster_key": "event-935df254e38f3e62e187",
+          "published_time_bucket": "2026-10-14T05:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "能源",
+            "供應"
+          ],
+          "matched_subject": "能源",
+          "matched_action": "供應",
+          "matched_market_object": "能源",
+          "decision_value_class": "energy",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "story_id": "news-ea391287f7d209b61fc0",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "10月升息重回討論！華爾街憂通膨擴散 有人喊12月升2碼",
-          "raw_title": "10月升息重回討論！華爾街憂通膨擴散 有人喊12月升2碼",
-          "normalized_fact": "美國9月CPI年增3.7%、核心CPI月增0.3%年增2.6%，通膨高於預期 分析師分歧，10月升息重回討論，多數仍押注Fed在12月再升1碼 若油價續漲，12月不排除升息2碼；科技股、中小型股等利率。",
+          "title": "分析：油價高 推升中國9月CPI漲幅擴大",
+          "raw_title": "分析：油價高 推升中國9月CPI漲幅擴大",
+          "normalized_fact": "（中央社記者馮昭上海2026年10月14日電）中國國家統計局今天公布9月消費者物價指數（CPI），年增率漲幅比8月擴大。經濟專家分析，9月中東局勢造成國際油價再上漲，油價漲幅擴大，是推動當月整體CPI。",
           "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
@@ -941,11 +1035,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "美國9月CPI年增3.7%、核心CPI月增0.3%年增2.6%，通膨高於預期 分析師分歧，10月升息重回討論，多數仍押注Fed在12月再升1碼 若油價續漲，12月不排除升息2碼；科技股、中小型股等利率",
+          "summary": "（中央社記者馮昭上海2026年10月14日電）中國國家統計局今天公布9月消費者物價指數（CPI），年增率漲幅比8月擴大。經濟專家分析，9月中東局勢造成國際油價再上漲，油價漲幅擴大，是推動當月整體CPI",
           "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/10%E6%9C%88%E5%8D%87%E6%81%AF%E9%87%8D%E5%9B%9E%E8%A8%8E%E8%AB%96-%E8%8F%AF%E7%88%BE%E8%A1%97%E6%86%82%E9%80%9A%E8%86%A8%E6%93%B4%E6%95%A3-%E6%9C%89%E4%BA%BA%E5%96%8A12%E6%9C%88%E5%8D%872%E7%A2%BC-135007982.html",
-          "url": "https://tw.stock.yahoo.com/news/10%E6%9C%88%E5%8D%87%E6%81%AF%E9%87%8D%E5%9B%9E%E8%A8%8E%E8%AB%96-%E8%8F%AF%E7%88%BE%E8%A1%97%E6%86%82%E9%80%9A%E8%86%A8%E6%93%B4%E6%95%A3-%E6%9C%89%E4%BA%BA%E5%96%8A12%E6%9C%88%E5%8D%872%E7%A2%BC-135007982.html",
-          "published_at": "2026-10-14T13:50:07+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%88%86%E6%9E%90-%E6%B2%B9%E5%83%B9%E9%AB%98-%E6%8E%A8%E5%8D%87%E4%B8%AD%E5%9C%8B9%E6%9C%88cpi%E6%BC%B2%E5%B9%85%E6%93%B4%E5%A4%A7-141610362.html",
+          "url": "https://tw.stock.yahoo.com/news/%E5%88%86%E6%9E%90-%E6%B2%B9%E5%83%B9%E9%AB%98-%E6%8E%A8%E5%8D%87%E4%B8%AD%E5%9C%8B9%E6%9C%88cpi%E6%BC%B2%E5%B9%85%E6%93%B4%E5%A4%A7-141610362.html",
+          "published_at": "2026-10-14T14:16:10+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -961,20 +1055,20 @@
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
+            "category": "macro",
+            "reason": "macro_subject_action",
             "matched_terms": [
-              "fed",
-              "利率"
+              "cpi",
+              "公布"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "fed",
-              "利率"
+              "cpi",
+              "公布"
             ],
-            "matched_subject": "fed",
-            "matched_action": "利率",
-            "matched_market_object": "fed",
+            "matched_subject": "cpi",
+            "matched_action": "公布",
+            "matched_market_object": "cpi",
             "input_fields": [
               "description",
               "summary",
@@ -986,19 +1080,19 @@
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "美國9月cpi年增37核心cpi月增03年增26通膨高於預期分析師分歧10月升息重回討論多數仍押注fed在12月再升1碼若油價續漲12月不排除升息2碼科技股中小型股等利率",
-          "event_cluster_key": "event-d32f8666022ae4e70b1c",
-          "published_time_bucket": "2026-10-14T13:00:00+00:00",
+          "dedupe_key": "中央社記者馮昭上海2026年10月14日電中國國家統計局今天公布9月消費者物價指數cpi年增率漲幅比8月擴大經濟專家分析9月中東局勢造成國際油價再上漲油價漲幅擴大是推動當月整體cpi",
+          "event_cluster_key": "event-f673d8ba8f5acb4ad512",
+          "published_time_bucket": "2026-10-14T14:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "fed",
-            "利率"
+            "cpi",
+            "公布"
           ],
-          "matched_subject": "fed",
-          "matched_action": "利率",
-          "matched_market_object": "fed",
+          "matched_subject": "cpi",
+          "matched_action": "公布",
+          "matched_market_object": "cpi",
           "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
@@ -1014,7 +1108,13 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 130
+          "ranking_score": 130,
+          "supporting_sources": [
+            {
+              "provider": "yahoo_finance",
+              "url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%9C%8B9%E6%9C%88cpi%E5%B9%B4%E5%A2%9E%E7%8E%873-7-%E9%AB%98%E5%87%BA%E5%B8%82%E5%A0%B4%E9%A0%90%E6%9C%9F-141608840.html"
+            }
+          ]
         },
         {
           "story_id": "news-2e01175cfca7d381cd25",
@@ -1114,104 +1214,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
-        },
-        {
-          "story_id": "news-ea391287f7d209b61fc0",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "分析：油價高 推升中國9月CPI漲幅擴大",
-          "raw_title": "分析：油價高 推升中國9月CPI漲幅擴大",
-          "normalized_fact": "（中央社記者馮昭上海2026年10月14日電）中國國家統計局今天公布9月消費者物價指數（CPI），年增率漲幅比8月擴大。經濟專家分析，9月中東局勢造成國際油價再上漲，油價漲幅擴大，是推動當月整體CPI。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "（中央社記者馮昭上海2026年10月14日電）中國國家統計局今天公布9月消費者物價指數（CPI），年增率漲幅比8月擴大。經濟專家分析，9月中東局勢造成國際油價再上漲，油價漲幅擴大，是推動當月整體CPI",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%88%86%E6%9E%90-%E6%B2%B9%E5%83%B9%E9%AB%98-%E6%8E%A8%E5%8D%87%E4%B8%AD%E5%9C%8B9%E6%9C%88cpi%E6%BC%B2%E5%B9%85%E6%93%B4%E5%A4%A7-141610362.html",
-          "url": "https://tw.stock.yahoo.com/news/%E5%88%86%E6%9E%90-%E6%B2%B9%E5%83%B9%E9%AB%98-%E6%8E%A8%E5%8D%87%E4%B8%AD%E5%9C%8B9%E6%9C%88cpi%E6%BC%B2%E5%B9%85%E6%93%B4%E5%A4%A7-141610362.html",
-          "published_at": "2026-10-14T14:16:10+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-14",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "macro",
-            "reason": "macro_subject_action",
-            "matched_terms": [
-              "cpi",
-              "公布"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "cpi",
-              "公布"
-            ],
-            "matched_subject": "cpi",
-            "matched_action": "公布",
-            "matched_market_object": "cpi",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "中央社記者馮昭上海2026年10月14日電中國國家統計局今天公布9月消費者物價指數cpi年增率漲幅比8月擴大經濟專家分析9月中東局勢造成國際油價再上漲油價漲幅擴大是推動當月整體cpi",
-          "event_cluster_key": "event-f673d8ba8f5acb4ad512",
-          "published_time_bucket": "2026-10-14T14:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "cpi",
-            "公布"
-          ],
-          "matched_subject": "cpi",
-          "matched_action": "公布",
-          "matched_market_object": "cpi",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130,
-          "supporting_sources": [
-            {
-              "provider": "yahoo_finance",
-              "url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%9C%8B9%E6%9C%88cpi%E5%B9%B4%E5%A2%9E%E7%8E%873-7-%E9%AB%98%E5%87%BA%E5%B8%82%E5%A0%B4%E9%A0%90%E6%9C%9F-141608840.html"
-            }
-          ]
         },
         {
           "story_id": "news-390a565261a08ed9ecdc",
@@ -2655,6 +2657,98 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 35
+        },
+        {
+          "story_id": "news-006d1a45aea426aefac6",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "10月升息重回討論！華爾街憂通膨擴散 有人喊12月升2碼",
+          "raw_title": "10月升息重回討論！華爾街憂通膨擴散 有人喊12月升2碼",
+          "normalized_fact": "美國9月CPI年增3.7%、核心CPI月增0.3%年增2.6%，通膨高於預期 分析師分歧，10月升息重回討論，多數仍押注Fed在12月再升1碼 若油價續漲，12月不排除升息2碼；科技股、中小型股等利率。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美國9月CPI年增3.7%、核心CPI月增0.3%年增2.6%，通膨高於預期 分析師分歧，10月升息重回討論，多數仍押注Fed在12月再升1碼 若油價續漲，12月不排除升息2碼；科技股、中小型股等利率",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/10%E6%9C%88%E5%8D%87%E6%81%AF%E9%87%8D%E5%9B%9E%E8%A8%8E%E8%AB%96-%E8%8F%AF%E7%88%BE%E8%A1%97%E6%86%82%E9%80%9A%E8%86%A8%E6%93%B4%E6%95%A3-%E6%9C%89%E4%BA%BA%E5%96%8A12%E6%9C%88%E5%8D%872%E7%A2%BC-135007982.html",
+          "url": "https://tw.stock.yahoo.com/news/10%E6%9C%88%E5%8D%87%E6%81%AF%E9%87%8D%E5%9B%9E%E8%A8%8E%E8%AB%96-%E8%8F%AF%E7%88%BE%E8%A1%97%E6%86%82%E9%80%9A%E8%86%A8%E6%93%B4%E6%95%A3-%E6%9C%89%E4%BA%BA%E5%96%8A12%E6%9C%88%E5%8D%872%E7%A2%BC-135007982.html",
+          "published_at": "2026-10-14T13:50:07+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-14",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美國9月cpi年增37核心cpi月增03年增26通膨高於預期分析師分歧10月升息重回討論多數仍押注fed在12月再升1碼若油價續漲12月不排除升息2碼科技股中小型股等利率",
+          "event_cluster_key": "event-d32f8666022ae4e70b1c",
+          "published_time_bucket": "2026-10-14T13:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-14T14:38:07.184769+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 30
         },
         {
           "story_id": "news-14df48852e6325cb149d",
@@ -4568,98 +4662,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 30
-        },
-        {
-          "story_id": "news-eecdc205c0b21e32ee77",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "科技股走弱 亞股多收跌",
-          "raw_title": "科技股走弱 亞股多收跌",
-          "normalized_fact": "（中央社香港2026年10月14日綜合外電報導）市場對荷蘭半導體巨頭艾司摩爾出現失望情緒，投資人難以填平前一交易日科技股重挫下的大幅虧損。隨著市場聚焦美國即將公布的通膨數據，亞洲股市主要指數今天大多收。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "（中央社香港2026年10月14日綜合外電報導）市場對荷蘭半導體巨頭艾司摩爾出現失望情緒，投資人難以填平前一交易日科技股重挫下的大幅虧損。隨著市場聚焦美國即將公布的通膨數據，亞洲股市主要指數今天大多收",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%A7%91%E6%8A%80%E8%82%A1%E8%B5%B0%E5%BC%B1-%E4%BA%9E%E8%82%A1%E5%A4%9A%E6%94%B6%E8%B7%8C-101732765.html",
-          "url": "https://tw.stock.yahoo.com/news/%E7%A7%91%E6%8A%80%E8%82%A1%E8%B5%B0%E5%BC%B1-%E4%BA%9E%E8%82%A1%E5%A4%9A%E6%94%B6%E8%B7%8C-101732765.html",
-          "published_at": "2026-10-14T10:17:32+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-14",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "macro",
-            "reason": "macro_subject_action",
-            "matched_terms": [
-              "通膨",
-              "公布"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "通膨",
-              "公布"
-            ],
-            "matched_subject": "通膨",
-            "matched_action": "公布",
-            "matched_market_object": "通膨",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "中央社香港2026年10月14日綜合外電報導市場對荷蘭半導體巨頭艾司摩爾出現失望情緒投資人難以填平前一交易日科技股重挫下的大幅虧損隨著市場聚焦美國即將公布的通膨數據亞洲股市主要指數今天大多收",
-          "event_cluster_key": "event-761697a9b2c51720e223",
-          "published_time_bucket": "2026-10-14T10:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "通膨",
-            "公布"
-          ],
-          "matched_subject": "通膨",
-          "matched_action": "公布",
-          "matched_market_object": "通膨",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 1,
-          "inventory_saved_at": "2026-10-14T10:43:40.419986+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 30
         }
       ],
       "source_diversity": {
@@ -4667,13 +4669,15 @@
         "status": "multi_source",
         "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 2,
-        "provider_count": 2,
+        "independent_source_count": 3,
+        "provider_count": 3,
         "provider_ids": [
+          "anue",
           "google_news",
           "yahoo_finance"
         ],
         "source_domains": [
+          "news.cnyes.com",
           "news.google.com",
           "tw.stock.yahoo.com"
         ],
@@ -4684,8 +4688,8 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 23,
-          "TSM": 23,
+          "2330": 25,
+          "TSM": 25,
           "NVDA": 2
         },
         "sector_interest": {},
@@ -4693,7 +4697,7 @@
           "石油": 3
         },
         "market_interest": {
-          "taiwan": 101
+          "taiwan": 104
         },
         "context": {
           "tracked_tickers": [
@@ -4772,8 +4776,8 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 23,
-            "TSM": 23,
+            "2330": 25,
+            "TSM": 25,
             "NVDA": 2
           },
           "research_candidate": {},
@@ -4784,11 +4788,11 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 27,
+      "excluded_count": 28,
       "exclusion_reasons": {
         "incomplete_normalized_fact": 2,
         "insufficient_market_relevance": 8,
-        "market_scope_mismatch": 6,
+        "market_scope_mismatch": 8,
         "outside_calendar_window": 16,
         "outside_trading_session_window": 3
       },
@@ -4800,33 +4804,33 @@
         "successful_provider_count": 5,
         "failed_provider_count": 0,
         "disabled_provider_count": 0,
-        "fetched": 40,
-        "normalized": 40,
+        "fetched": 41,
+        "normalized": 41,
         "eligible": 13,
-        "excluded": 27,
-        "date_eligible_current": 21,
+        "excluded": 28,
+        "date_eligible_current": 22,
         "date_excluded_current": 19,
         "date_exclusion_reasons_current": {
           "outside_calendar_window": 16,
           "outside_trading_session_window": 3
         },
-        "date_eligible_inventory": 61,
+        "date_eligible_inventory": 63,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-14T14:54:00.686214+00:00",
+        "reference_time": "2026-10-14T15:00:19.364348+00:00",
         "deduped": 12,
         "publicly_ranked": 5,
         "current_eligible": 13,
-        "inventory_considered": 61,
-        "inventory_eligible": 53,
+        "inventory_considered": 63,
+        "inventory_eligible": 54,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 27,
-        "fetched_story_count": 40,
-        "normalized_story_count": 40,
+        "filtered_story_count": 28,
+        "fetched_story_count": 41,
+        "normalized_story_count": 41,
         "eligible_story_count": 13,
         "deduped_story_count": 12,
         "ranked_story_count": 5
@@ -4835,8 +4839,8 @@
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 61,
-        "eligible": 53,
+        "considered": 63,
+        "eligible": 54,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -4848,8 +4852,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 40,
-          "checked_at": "2026-10-14T14:54:00.686256+00:00"
+          "item_count": 41,
+          "checked_at": "2026-10-14T15:00:19.364385+00:00"
         },
         {
           "provider": "twse",
@@ -4860,10 +4864,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-10-14T14:54:00.686256+00:00",
+          "checked_at": "2026-10-14T15:00:19.364385+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+          "last_success_at": "2026-10-14T15:00:19.364385+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4888,10 +4892,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-10-14T14:54:00.686256+00:00",
+          "checked_at": "2026-10-14T15:00:19.364385+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+          "last_success_at": "2026-10-14T15:00:19.364385+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4912,28 +4916,29 @@
           "key": "news_taiwan_anue",
           "legacy_key": "official_news_taiwan_anue",
           "label": "anue market news",
-          "status": "no_event",
+          "status": "healthy",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 0,
-          "checked_at": "2026-10-14T14:54:00.686256+00:00",
-          "data_gap": "filtered_no_market_match",
+          "item_count": 1,
+          "checked_at": "2026-10-14T15:00:19.364385+00:00",
           "raw_item_count": 5,
-          "filtered_item_count": 0,
-          "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-10-14T15:00:19.364385+00:00",
           "last_failure_at": null,
-          "stories_ingested": 0,
-          "stories_deduped": 0,
-          "ranked_count": 0,
-          "relevance_distribution": {},
+          "stories_ingested": 1,
+          "stories_deduped": 1,
+          "ranked_count": 1,
+          "relevance_distribution": {
+            "market": 1
+          },
           "funnel": {
-            "fetched_count": 0,
-            "normalized_count": 0,
-            "market_compatible_count": 0,
-            "eligible_count": 0,
+            "fetched_count": 1,
+            "normalized_count": 1,
+            "market_compatible_count": 1,
+            "eligible_count": 1,
             "excluded_count": 0,
-            "deduped_count": 0,
-            "ranked_count": 0
+            "deduped_count": 1,
+            "ranked_count": 1
           }
         },
         {
@@ -4944,26 +4949,26 @@
           "status": "healthy",
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
-          "item_count": 2,
-          "checked_at": "2026-10-14T14:54:00.686256+00:00",
+          "item_count": 1,
+          "checked_at": "2026-10-14T15:00:19.364385+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 2,
-          "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-10-14T15:00:19.364385+00:00",
           "last_failure_at": null,
-          "stories_ingested": 7,
-          "stories_deduped": 2,
-          "ranked_count": 2,
+          "stories_ingested": 6,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
-            "market": 7
+            "market": 6
           },
           "funnel": {
             "fetched_count": 10,
-            "normalized_count": 7,
-            "market_compatible_count": 7,
-            "eligible_count": 3,
+            "normalized_count": 6,
+            "market_compatible_count": 6,
+            "eligible_count": 2,
             "excluded_count": 4,
-            "deduped_count": 2,
-            "ranked_count": 2
+            "deduped_count": 1,
+            "ranked_count": 1
           }
         },
         {
@@ -4975,10 +4980,10 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
           "item_count": 3,
-          "checked_at": "2026-10-14T14:54:00.686256+00:00",
+          "checked_at": "2026-10-14T15:00:19.364385+00:00",
           "raw_item_count": 30,
           "filtered_item_count": 3,
-          "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+          "last_success_at": "2026-10-14T15:00:19.364385+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
           "stories_deduped": 10,
@@ -4999,38 +5004,40 @@
         }
       ],
       "observability": {
-        "stories_ingested": 40,
+        "stories_ingested": 41,
         "stories_deduped": 12,
         "ranked_count": 5,
         "relevance_distribution": {
           "active_event": 1,
-          "market": 40,
-          "tracked_ticker": 10
+          "market": 41,
+          "tracked_ticker": 11
         },
         "providers": [
           {
             "provider": "anue",
-            "status": "no_event",
-            "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+            "status": "healthy",
+            "last_success_at": "2026-10-14T15:00:19.364385+00:00",
             "last_failure_at": null,
-            "stories_ingested": 0,
-            "stories_deduped": 0,
-            "ranked_count": 0,
-            "relevance_distribution": {},
+            "stories_ingested": 1,
+            "stories_deduped": 1,
+            "ranked_count": 1,
+            "relevance_distribution": {
+              "market": 1
+            },
             "funnel": {
-              "fetched_count": 0,
-              "normalized_count": 0,
-              "market_compatible_count": 0,
-              "eligible_count": 0,
+              "fetched_count": 1,
+              "normalized_count": 1,
+              "market_compatible_count": 1,
+              "eligible_count": 1,
               "excluded_count": 0,
-              "deduped_count": 0,
-              "ranked_count": 0
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           },
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+            "last_success_at": "2026-10-14T15:00:19.364385+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
             "stories_deduped": 10,
@@ -5052,7 +5059,7 @@
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+            "last_success_at": "2026-10-14T15:00:19.364385+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5071,7 +5078,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+            "last_success_at": "2026-10-14T15:00:19.364385+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5092,19 +5099,20 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 3,
+            "stories_ingested": 4,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
               "active_event": 1,
-              "market": 3
+              "market": 4,
+              "tracked_ticker": 1
             },
             "funnel": {
-              "fetched_count": 3,
-              "normalized_count": 3,
+              "fetched_count": 4,
+              "normalized_count": 4,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 3,
+              "excluded_count": 4,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -5112,22 +5120,22 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+            "last_success_at": "2026-10-14T15:00:19.364385+00:00",
             "last_failure_at": null,
-            "stories_ingested": 7,
-            "stories_deduped": 2,
-            "ranked_count": 2,
+            "stories_ingested": 6,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
-              "market": 7
+              "market": 6
             },
             "funnel": {
               "fetched_count": 10,
-              "normalized_count": 7,
-              "market_compatible_count": 7,
-              "eligible_count": 3,
+              "normalized_count": 6,
+              "market_compatible_count": 6,
+              "eligible_count": 2,
               "excluded_count": 4,
-              "deduped_count": 2,
-              "ranked_count": 2
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           }
         ]
@@ -5352,6 +5360,99 @@
       ],
       "stories": [
         {
+          "story_id": "news-9cec686d00b58e700604",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Fed本月會出手？美國9月CPI增速超預期 升息機率跳上五成",
+          "raw_title": "Fed本月會出手？美國9月CPI增速超預期 升息機率跳上五成",
+          "normalized_fact": "美國9月CPI月增0.6%、年增3.7%，核心CPI年增2.6%，皆高於預期，顯示通膨再升溫。 數據公布後，市場對Fed 10月升息預期機率由約22%跳升至約50%，2年期美債殖利率也急升。 汽油漲9.1%、屋主設算租金增0.3%；此報告亦牽動期中選舉與2027年社安福利COLA。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美國9月CPI月增0.6%、年增3.7%，核心CPI年增2.6%，皆高於預期，顯示通膨再升溫。 數據公布後，市場對Fed 10月升息預期機率由約22%跳升至約50%，2年期美債殖利率也急升。 汽油漲9.1%、屋主設算租金增0.3%；此報告亦牽動期中選舉與2027年社安福利COLA。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6630400",
+          "url": "https://news.cnyes.com/news/id/6630400",
+          "published_at": "2026-10-14T12:36:20+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-14",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美國9月cpi月增06年增37核心cpi年增26皆高於預期顯示通膨再升溫數據公布後市場對fed10月升息預期機率由約22跳升至約502年期美債殖利率也急升汽油漲91屋主設算租金增03此報告亦牽動期中選舉與2027年社安福利cola",
+          "event_cluster_key": "event-ac907ad61853b891c5b9",
+          "published_time_bucket": "2026-10-14T12:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜持股關聯",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
           "story_id": "news-0802393a553f2737b70d",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -5445,101 +5546,6 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-f1f4cf6129a921148ef1",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "〈美股盤後〉美光跌3.9%拖累費半、那指 油價走高、銀行財報季登場",
-          "raw_title": "〈美股盤後〉美光跌3.9%拖累費半、那指 油價走高、銀行財報季登場",
-          "normalized_fact": "美股周一漲跌互見，那指跌0.44%，費半重挫2.67%；油價因利雅德國際機場遇攻擊上漲近2美元。 美國大型銀行高盛、花旗、摩根大通將率先公布第三季財報，市場並等待9月CPI、PPI與零售銷售數據。 微軟市值破4兆美元；Meta漲逾3%，美光跌3.8%拖累晶片股，Fed官員稱應迅速轉向更限制性政策。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "美股周一漲跌互見，那指跌0.44%，費半重挫2.67%；油價因利雅德國際機場遇攻擊上漲近2美元。 美國大型銀行高盛、花旗、摩根大通將率先公布第三季財報，市場並等待9月CPI、PPI與零售銷售數據。 微軟市值破4兆美元；Meta漲逾3%，美光跌3.8%拖累晶片股，Fed官員稱應迅速轉向更限制性政策。",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6628057",
-          "url": "https://news.cnyes.com/news/id/6628057",
-          "published_at": "2026-10-12T21:52:45+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-10-12",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "SOX"
-          ],
-          "sectors": [],
-          "topics": [
-            "earnings"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "政策"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "政策"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "政策",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美股周一漲跌互見那指跌044費半重挫267油價因利雅德國際機場遇攻擊上漲近2美元美國大型銀行高盛花旗摩根大通將率先公布第三季財報市場並等待9月cpippi與零售銷售數據微軟市值破4兆美元meta漲逾3美光跌38拖累晶片股fed官員稱應迅速轉向更限制性政策",
-          "event_cluster_key": "event-f92de8930d4a9d8a69aa",
-          "published_time_bucket": "2026-10-12T21:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "政策"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "政策",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
           "story_id": "news-4011bcfb44af2498390a",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -5607,99 +5613,6 @@
           "matched_action": "",
           "matched_market_object": "",
           "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
-          "story_id": "news-827323fdc9e82cc7efa1",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Treasuries Slump as Hot Inflation Lifts Fed Rate-Hike Bets - Bloomberg.com",
-          "raw_title": "Treasuries Slump as Hot Inflation Lifts Fed Rate-Hike Bets - Bloomberg.com",
-          "normalized_fact": "Treasuries Slump as Hot Inflation Lifts Fed Rate-Hike Bets Bloomberg.com。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Treasuries Slump as Hot Inflation Lifts Fed Rate-Hike Bets Bloomberg.com",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxPSzlnUlRIcHpyNkR3U0tfY0RXVEl0WGRuMTZuSTVvbnNhWXNTVjN3Yzhudmhqbjh1RU9mTzF2WHhkTGdhQU15UkZRTG5wSVFSNzZSN0dIQk5HaE55TTk5VGxtYmcxczM1aWk2S19NMVlpbzFQRHpvTm1SRk83N1l4Mng3Q2N0OGxvYWRpLXJNazR4V2xOcE9KdVRDU0pRSVBMY2pQWjdRMnRNWWZXV3ItaDhn",
-          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxPSzlnUlRIcHpyNkR3U0tfY0RXVEl0WGRuMTZuSTVvbnNhWXNTVjN3Yzhudmhqbjh1RU9mTzF2WHhkTGdhQU15UkZRTG5wSVFSNzZSN0dIQk5HaE55TTk5VGxtYmcxczM1aWk2S19NMVlpbzFQRHpvTm1SRk83N1l4Mng3Q2N0OGxvYWRpLXJNazR4V2xOcE9KdVRDU0pRSVBMY2pQWjdRMnRNWWZXV3ItaDhn",
-          "published_at": "2026-10-14T12:44:25+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-14",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "rate"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "rate"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "rate",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "treasuriesslumpashotinflationliftsfedratehikebetsbloombergcom",
-          "event_cluster_key": "event-ac907ad61853b891c5b9",
-          "published_time_bucket": "2026-10-14T12:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "rate"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "rate",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -5806,9 +5719,186 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
+        },
+        {
+          "story_id": "news-b2139765a028a3a893b2",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "VIEW Hot September CPI sends rate-hike bets soaring - Reuters",
+          "raw_title": "VIEW Hot September CPI sends rate-hike bets soaring - Reuters",
+          "normalized_fact": "VIEW Hot September CPI sends rate-hike bets soaring Reuters。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "VIEW Hot September CPI sends rate-hike bets soaring Reuters",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPVXp1eVNTSWNkc1FiNVdUMTd0NEY1SDlkR0FKTUlOd0s2SU9rZEJUVkJ1d3lQSXVCeEpIS25fTkF5UkFzZUdEMXp2SUkxVDVPREpIT2ZtbHh6aFB3NnlBR1BVSWpDbHY0UFBOclp1SFVZcTdMWENmVHp0NlJzVzNoeG4tTUJGOXBxTWdlRS14WkVpUGI2b0ZzY1pFdW4",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPVXp1eVNTSWNkc1FiNVdUMTd0NEY1SDlkR0FKTUlOd0s2SU9rZEJUVkJ1d3lQSXVCeEpIS25fTkF5UkFzZUdEMXp2SUkxVDVPREpIT2ZtbHh6aFB3NnlBR1BVSWpDbHY0UFBOclp1SFVZcTdMWENmVHp0NlJzVzNoeG4tTUJGOXBxTWdlRS14WkVpUGI2b0ZzY1pFdW4",
+          "published_at": "2026-10-14T13:32:08+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-14",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "viewhotseptembercpisendsratehikebetssoaringreuters",
+          "event_cluster_key": "event-92943b9a051a164c1a10",
+          "published_time_bucket": "2026-10-14T13:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
         }
       ],
       "editorial_candidates": [
+        {
+          "story_id": "news-9cec686d00b58e700604",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Fed本月會出手？美國9月CPI增速超預期 升息機率跳上五成",
+          "raw_title": "Fed本月會出手？美國9月CPI增速超預期 升息機率跳上五成",
+          "normalized_fact": "美國9月CPI月增0.6%、年增3.7%，核心CPI年增2.6%，皆高於預期，顯示通膨再升溫。 數據公布後，市場對Fed 10月升息預期機率由約22%跳升至約50%，2年期美債殖利率也急升。 汽油漲9.1%、屋主設算租金增0.3%；此報告亦牽動期中選舉與2027年社安福利COLA。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美國9月CPI月增0.6%、年增3.7%，核心CPI年增2.6%，皆高於預期，顯示通膨再升溫。 數據公布後，市場對Fed 10月升息預期機率由約22%跳升至約50%，2年期美債殖利率也急升。 汽油漲9.1%、屋主設算租金增0.3%；此報告亦牽動期中選舉與2027年社安福利COLA。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6630400",
+          "url": "https://news.cnyes.com/news/id/6630400",
+          "published_at": "2026-10-14T12:36:20+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-14",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美國9月cpi月增06年增37核心cpi年增26皆高於預期顯示通膨再升溫數據公布後市場對fed10月升息預期機率由約22跳升至約502年期美債殖利率也急升汽油漲91屋主設算租金增03此報告亦牽動期中選舉與2027年社安福利cola",
+          "event_cluster_key": "event-ac907ad61853b891c5b9",
+          "published_time_bucket": "2026-10-14T12:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜持股關聯",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
         {
           "story_id": "news-0802393a553f2737b70d",
           "provider": "google_news",
@@ -5903,101 +5993,6 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-f1f4cf6129a921148ef1",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "〈美股盤後〉美光跌3.9%拖累費半、那指 油價走高、銀行財報季登場",
-          "raw_title": "〈美股盤後〉美光跌3.9%拖累費半、那指 油價走高、銀行財報季登場",
-          "normalized_fact": "美股周一漲跌互見，那指跌0.44%，費半重挫2.67%；油價因利雅德國際機場遇攻擊上漲近2美元。 美國大型銀行高盛、花旗、摩根大通將率先公布第三季財報，市場並等待9月CPI、PPI與零售銷售數據。 微軟市值破4兆美元；Meta漲逾3%，美光跌3.8%拖累晶片股，Fed官員稱應迅速轉向更限制性政策。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "美股周一漲跌互見，那指跌0.44%，費半重挫2.67%；油價因利雅德國際機場遇攻擊上漲近2美元。 美國大型銀行高盛、花旗、摩根大通將率先公布第三季財報，市場並等待9月CPI、PPI與零售銷售數據。 微軟市值破4兆美元；Meta漲逾3%，美光跌3.8%拖累晶片股，Fed官員稱應迅速轉向更限制性政策。",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6628057",
-          "url": "https://news.cnyes.com/news/id/6628057",
-          "published_at": "2026-10-12T21:52:45+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-10-12",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "SOX"
-          ],
-          "sectors": [],
-          "topics": [
-            "earnings"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "政策"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "政策"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "政策",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美股周一漲跌互見那指跌044費半重挫267油價因利雅德國際機場遇攻擊上漲近2美元美國大型銀行高盛花旗摩根大通將率先公布第三季財報市場並等待9月cpippi與零售銷售數據微軟市值破4兆美元meta漲逾3美光跌38拖累晶片股fed官員稱應迅速轉向更限制性政策",
-          "event_cluster_key": "event-f92de8930d4a9d8a69aa",
-          "published_time_bucket": "2026-10-12T21:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "政策"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "政策",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
           "story_id": "news-4011bcfb44af2498390a",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -6065,99 +6060,6 @@
           "matched_action": "",
           "matched_market_object": "",
           "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
-          "story_id": "news-827323fdc9e82cc7efa1",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Treasuries Slump as Hot Inflation Lifts Fed Rate-Hike Bets - Bloomberg.com",
-          "raw_title": "Treasuries Slump as Hot Inflation Lifts Fed Rate-Hike Bets - Bloomberg.com",
-          "normalized_fact": "Treasuries Slump as Hot Inflation Lifts Fed Rate-Hike Bets Bloomberg.com。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Treasuries Slump as Hot Inflation Lifts Fed Rate-Hike Bets Bloomberg.com",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxPSzlnUlRIcHpyNkR3U0tfY0RXVEl0WGRuMTZuSTVvbnNhWXNTVjN3Yzhudmhqbjh1RU9mTzF2WHhkTGdhQU15UkZRTG5wSVFSNzZSN0dIQk5HaE55TTk5VGxtYmcxczM1aWk2S19NMVlpbzFQRHpvTm1SRk83N1l4Mng3Q2N0OGxvYWRpLXJNazR4V2xOcE9KdVRDU0pRSVBMY2pQWjdRMnRNWWZXV3ItaDhn",
-          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxPSzlnUlRIcHpyNkR3U0tfY0RXVEl0WGRuMTZuSTVvbnNhWXNTVjN3Yzhudmhqbjh1RU9mTzF2WHhkTGdhQU15UkZRTG5wSVFSNzZSN0dIQk5HaE55TTk5VGxtYmcxczM1aWk2S19NMVlpbzFQRHpvTm1SRk83N1l4Mng3Q2N0OGxvYWRpLXJNazR4V2xOcE9KdVRDU0pRSVBMY2pQWjdRMnRNWWZXV3ItaDhn",
-          "published_at": "2026-10-14T12:44:25+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-14",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "rate"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "rate"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "rate",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "treasuriesslumpashotinflationliftsfedratehikebetsbloombergcom",
-          "event_cluster_key": "event-ac907ad61853b891c5b9",
-          "published_time_bucket": "2026-10-14T12:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "rate"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "rate",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -6707,6 +6609,88 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 120
+        },
+        {
+          "story_id": "news-b3ee3adc801f20affe4f",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "10-year Treasury yield falls as energy prices stabilize - CNBC",
+          "raw_title": "10-year Treasury yield falls as energy prices stabilize - CNBC",
+          "normalized_fact": "10-year Treasury yield falls as energy prices stabilize CNBC。",
+          "market_topic": "company_industry",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "10-year Treasury yield falls as energy prices stabilize CNBC",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMib0FVX3lxTFA4ZHlxSG9mVUtMWVNJRGxvQ3M2cHB4bHViN2FmQkhWbE5PRl9WY19fUy1oamVTY2dPNmpMMk4tVFdRN2NFYy1QeGxHNDlORjYxVkxnOXl1cGl6bVczT1J3QXJITzFwVENQcVlHWnJRONIBdEFVX3lxTE5mYmhLcEthSnNNTjE5S1E2U1JtV2JZZlZhdTNYTEtRZlJsWHZZazV6Q19EcVAyUGhINXFKcGkzUUtQS1BjU285aEdTUmNDYktBaG1kbWE1OF8teTVVeWRXX0F2WXl2N3Y5Y2pDS1g1VWEzQ05T",
+          "url": "https://news.google.com/rss/articles/CBMib0FVX3lxTFA4ZHlxSG9mVUtMWVNJRGxvQ3M2cHB4bHViN2FmQkhWbE5PRl9WY19fUy1oamVTY2dPNmpMMk4tVFdRN2NFYy1QeGxHNDlORjYxVkxnOXl1cGl6bVczT1J3QXJITzFwVENQcVlHWnJRONIBdEFVX3lxTE5mYmhLcEthSnNNTjE5S1E2U1JtV2JZZlZhdTNYTEtRZlJsWHZZazV6Q19EcVAyUGhINXFKcGkzUUtQS1BjU285aEdTUmNDYktBaG1kbWE1OF8teTVVeWRXX0F2WXl2N3Y5Y2pDS1g1VWEzQ05T",
+          "published_at": "2026-10-13T07:58:17+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-13",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "10yeartreasuryyieldfallsasenergypricesstabilizecnbc",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-10-13T07:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
         },
         {
           "story_id": "news-1967074365af1e713d59",
@@ -9409,7 +9393,6 @@
       "interest_graph": {
         "ticker_interest": {
           "NVDA": 20,
-          "PKG": 2,
           "TSM": 1
         },
         "sector_interest": {},
@@ -9423,7 +9406,7 @@
           "荷姆茲": 1
         },
         "market_interest": {
-          "us": 147
+          "us": 143
         },
         "context": {
           "tracked_tickers": [
@@ -9505,9 +9488,7 @@
             "NVDA": 20,
             "TSM": 1
           },
-          "research_candidate": {
-            "PKG": 2
-          },
+          "research_candidate": {},
           "tracked_sector": {},
           "active_event": {
             "oil": 14,
@@ -9521,12 +9502,12 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 50,
+      "excluded_count": 48,
       "exclusion_reasons": {
         "generic_official_filing": 20,
         "incomplete_normalized_fact": 14,
-        "insufficient_market_relevance": 20,
-        "listicle_or_selection": 10,
+        "insufficient_market_relevance": 18,
+        "listicle_or_selection": 8,
         "market_scope_mismatch": 6,
         "outside_calendar_window": 14,
         "outside_trading_session_window": 1
@@ -9539,33 +9520,33 @@
         "successful_provider_count": 4,
         "failed_provider_count": 1,
         "disabled_provider_count": 1,
-        "fetched": 60,
-        "normalized": 60,
+        "fetched": 58,
+        "normalized": 58,
         "eligible": 10,
-        "excluded": 50,
-        "date_eligible_current": 45,
+        "excluded": 48,
+        "date_eligible_current": 43,
         "date_excluded_current": 15,
         "date_exclusion_reasons_current": {
           "outside_calendar_window": 14,
           "outside_trading_session_window": 1
         },
-        "date_eligible_inventory": 87,
+        "date_eligible_inventory": 85,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-14T14:54:00.686214+00:00",
+        "reference_time": "2026-10-14T15:00:19.364348+00:00",
         "deduped": 10,
         "publicly_ranked": 5,
         "current_eligible": 10,
-        "inventory_considered": 87,
+        "inventory_considered": 85,
         "inventory_eligible": 52,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 50,
-        "fetched_story_count": 60,
-        "normalized_story_count": 60,
+        "filtered_story_count": 48,
+        "fetched_story_count": 58,
+        "normalized_story_count": 58,
         "eligible_story_count": 10,
         "deduped_story_count": 10,
         "ranked_story_count": 5
@@ -9574,7 +9555,7 @@
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 87,
+        "considered": 85,
         "eligible": 52,
         "selected": 0,
         "target_count": 5,
@@ -9587,8 +9568,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 60,
-          "checked_at": "2026-10-14T14:54:00.686256+00:00"
+          "item_count": 58,
+          "checked_at": "2026-10-14T15:00:19.364385+00:00"
         },
         {
           "provider": "sec",
@@ -9599,10 +9580,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-10-14T14:54:00.686256+00:00",
+          "checked_at": "2026-10-14T15:00:19.364385+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+          "last_success_at": "2026-10-14T15:00:19.364385+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9630,12 +9611,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-10-14T14:54:00.686256+00:00",
+          "checked_at": "2026-10-14T15:00:19.364385+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-10-14T14:54:00.686256+00:00",
+          "last_failure_at": "2026-10-14T15:00:19.364385+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9658,10 +9639,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-10-14T14:54:00.686256+00:00",
+          "checked_at": "2026-10-14T15:00:19.364385+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+          "last_success_at": "2026-10-14T15:00:19.364385+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9686,23 +9667,23 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 1,
-          "checked_at": "2026-10-14T14:54:00.686256+00:00",
+          "checked_at": "2026-10-14T15:00:19.364385+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 1,
-          "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+          "last_success_at": "2026-10-14T15:00:19.364385+00:00",
           "last_failure_at": null,
-          "stories_ingested": 2,
+          "stories_ingested": 1,
           "stories_deduped": 1,
           "ranked_count": 1,
           "relevance_distribution": {
-            "market": 2
+            "market": 1
           },
           "funnel": {
-            "fetched_count": 2,
-            "normalized_count": 2,
-            "market_compatible_count": 2,
+            "fetched_count": 1,
+            "normalized_count": 1,
+            "market_compatible_count": 1,
             "eligible_count": 1,
-            "excluded_count": 1,
+            "excluded_count": 0,
             "deduped_count": 1,
             "ranked_count": 1
           }
@@ -9716,25 +9697,24 @@
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
           "item_count": 0,
-          "checked_at": "2026-10-14T14:54:00.686256+00:00",
+          "checked_at": "2026-10-14T15:00:19.364385+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+          "last_success_at": "2026-10-14T15:00:19.364385+00:00",
           "last_failure_at": null,
-          "stories_ingested": 5,
+          "stories_ingested": 4,
           "stories_deduped": 0,
           "ranked_count": 0,
           "relevance_distribution": {
-            "market": 5,
-            "research_candidate": 1,
+            "market": 4,
             "tracked_ticker": 1
           },
           "funnel": {
-            "fetched_count": 8,
-            "normalized_count": 5,
-            "market_compatible_count": 5,
+            "fetched_count": 7,
+            "normalized_count": 4,
+            "market_compatible_count": 4,
             "eligible_count": 0,
-            "excluded_count": 5,
+            "excluded_count": 4,
             "deduped_count": 0,
             "ranked_count": 0
           },
@@ -9749,10 +9729,10 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
           "item_count": 4,
-          "checked_at": "2026-10-14T14:54:00.686256+00:00",
+          "checked_at": "2026-10-14T15:00:19.364385+00:00",
           "raw_item_count": 40,
           "filtered_item_count": 4,
-          "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+          "last_success_at": "2026-10-14T15:00:19.364385+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
           "stories_deduped": 9,
@@ -9774,33 +9754,32 @@
         }
       ],
       "observability": {
-        "stories_ingested": 60,
+        "stories_ingested": 58,
         "stories_deduped": 10,
         "ranked_count": 5,
         "relevance_distribution": {
           "active_event": 9,
-          "market": 60,
-          "research_candidate": 1,
+          "market": 58,
           "tracked_ticker": 7
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+            "last_success_at": "2026-10-14T15:00:19.364385+00:00",
             "last_failure_at": null,
-            "stories_ingested": 2,
+            "stories_ingested": 1,
             "stories_deduped": 1,
             "ranked_count": 1,
             "relevance_distribution": {
-              "market": 2
+              "market": 1
             },
             "funnel": {
-              "fetched_count": 2,
-              "normalized_count": 2,
-              "market_compatible_count": 2,
+              "fetched_count": 1,
+              "normalized_count": 1,
+              "market_compatible_count": 1,
               "eligible_count": 1,
-              "excluded_count": 1,
+              "excluded_count": 0,
               "deduped_count": 1,
               "ranked_count": 1
             }
@@ -9809,7 +9788,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-10-14T14:54:00.686256+00:00",
+            "last_failure_at": "2026-10-14T15:00:19.364385+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9827,7 +9806,7 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+            "last_success_at": "2026-10-14T15:00:19.364385+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
             "stories_deduped": 9,
@@ -9850,7 +9829,7 @@
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+            "last_success_at": "2026-10-14T15:00:19.364385+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9869,7 +9848,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+            "last_success_at": "2026-10-14T15:00:19.364385+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -9912,22 +9891,21 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-14T14:54:00.686256+00:00",
+            "last_success_at": "2026-10-14T15:00:19.364385+00:00",
             "last_failure_at": null,
-            "stories_ingested": 5,
+            "stories_ingested": 4,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 5,
-              "research_candidate": 1,
+              "market": 4,
               "tracked_ticker": 1
             },
             "funnel": {
-              "fetched_count": 8,
-              "normalized_count": 5,
-              "market_compatible_count": 5,
+              "fetched_count": 7,
+              "normalized_count": 4,
+              "market_compatible_count": 4,
               "eligible_count": 0,
-              "excluded_count": 5,
+              "excluded_count": 4,
               "deduped_count": 0,
               "ranked_count": 0
             }
