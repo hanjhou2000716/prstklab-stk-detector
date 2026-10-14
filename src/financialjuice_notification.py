@@ -611,7 +611,7 @@ def deliver_financialjuice_event(
     if reasons:
         return {
             "status": "blocked",
-            "notification_key": notification_key,
+            "notification_key": "",
             "reasons": reasons,
             "receipts": [],
             "release_id": release_id,
@@ -621,7 +621,7 @@ def deliver_financialjuice_event(
     if not is_valid_public_summary(caption, source="financialjuice"):
         return {
             "status": "blocked",
-            "notification_key": notification_key,
+            "notification_key": "",
             "reasons": ["content_incomplete"],
             "receipts": [],
             "release_id": release_id,
@@ -630,8 +630,17 @@ def deliver_financialjuice_event(
     if not notification_key:
         return {
             "status": "blocked",
-            "notification_key": notification_key,
+            "notification_key": "",
             "reasons": ["notification_key_missing"],
+            "receipts": [],
+            "release_id": release_id,
+            "snapshot_id": snapshot_id,
+        }
+    if ledger is None or not callable(getattr(ledger, "claim_notification", None)):
+        return {
+            "status": "blocked",
+            "notification_key": "",
+            "reasons": ["notification_claim_store_unavailable"],
             "receipts": [],
             "release_id": release_id,
             "snapshot_id": snapshot_id,
@@ -643,30 +652,51 @@ def deliver_financialjuice_event(
         if not _history_delivered(history, notification_keys, _recipient_hash(chat_id))
     )
     claim: dict[str, Any] | None = None
-    if ledger is not None and hasattr(ledger, "claim_notification"):
-        claim = ledger.claim_notification(
-            notification_key,
-            slot_key=slot_key,
-            recipient_hashes=tuple(_recipient_hash(chat_id) for chat_id in chat_ids),
-            aliases=tuple(notification_keys[1:]),
-            run_id=run_id,
-        )
-        claim_status = str(claim.get("status") or "")
-        if claim_status in {"already_delivered", "in_flight", "uncertain"}:
-            return {
-                "status": "already_delivered" if claim_status == "already_delivered" else "blocked",
-                "notification_key": notification_key,
-                "reasons": [claim_status],
-                "receipts": [],
-                "release_id": release_id,
-                "snapshot_id": snapshot_id,
-            }
-        allowed_hashes = set(str(item) for item in claim.get("pending_recipient_hashes") or [])
-        pending_ids = tuple(chat_id for chat_id in pending_ids if _recipient_hash(chat_id) in allowed_hashes)
+    actual_notification_key = ""
+    claim = ledger.claim_notification(
+        notification_key,
+        slot_key=slot_key,
+        recipient_hashes=tuple(_recipient_hash(chat_id) for chat_id in chat_ids),
+        aliases=tuple(notification_keys[1:]),
+        run_id=run_id,
+    )
+    actual_notification_key = _text(claim.get("notification_key"))
+    claim_status = str(claim.get("status") or "")
+    if claim_status in {"already_delivered", "in_flight", "uncertain"}:
+        return {
+            "status": "already_delivered" if claim_status == "already_delivered" else "blocked",
+            "notification_key": actual_notification_key,
+            "reasons": [claim_status],
+            "receipts": [],
+            "release_id": release_id,
+            "snapshot_id": snapshot_id,
+        }
+    if claim_status == "claimed" and actual_notification_key != notification_key:
+        if actual_notification_key and hasattr(ledger, "complete_notification_claim"):
+            ledger.complete_notification_claim(actual_notification_key, uncertain=True)
+        return {
+            "status": "blocked",
+            "notification_key": actual_notification_key,
+            "reasons": ["notification_claim_identity_mismatch"],
+            "receipts": [],
+            "release_id": release_id,
+            "snapshot_id": snapshot_id,
+        }
+    if claim_status != "claimed" or not actual_notification_key:
+        return {
+            "status": "blocked",
+            "notification_key": actual_notification_key,
+            "reasons": [f"notification_claim_{claim_status or 'invalid'}"],
+            "receipts": [],
+            "release_id": release_id,
+            "snapshot_id": snapshot_id,
+        }
+    allowed_hashes = set(str(item) for item in claim.get("pending_recipient_hashes") or [])
+    pending_ids = tuple(chat_id for chat_id in pending_ids if _recipient_hash(chat_id) in allowed_hashes)
     if not pending_ids:
         return {
             "status": "already_delivered",
-            "notification_key": notification_key,
+            "notification_key": actual_notification_key,
             "reasons": ["already_delivered"],
             "receipts": [],
             "release_id": release_id,
@@ -675,7 +705,12 @@ def deliver_financialjuice_event(
 
     # notification_id is the primary immutable alert identity.  Cluster/item
     # aliases remain only for legacy rows that predate the identity contract.
-    alert_id = _text(event.get("notification_id") or event.get("event_cluster_key") or event.get("item_id") or event.get("observation_id"))
+    alert_id = _text(event.get("notification_id"))
+    if not alert_id or alert_id != notification_key:
+        # The release projection and delivery claim use the same immutable
+        # public identity. Ingress-only fj-item/cluster IDs are provenance,
+        # not valid links into the public alert index.
+        alert_id = notification_key
     observation_id = _text(event.get("observation_id"))
     target_url = alert_mini_app_url(
         mini_app_url,
@@ -704,10 +739,10 @@ def deliver_financialjuice_event(
         )
     except Exception as exc:  # transport adapters must fail closed
         if ledger is not None and hasattr(ledger, "complete_notification_claim"):
-            ledger.complete_notification_claim(notification_key, uncertain=True)
+            ledger.complete_notification_claim(actual_notification_key, uncertain=True)
         return {
             "status": "failed",
-            "notification_key": notification_key,
+            "notification_key": actual_notification_key,
             "reasons": [f"delivery_exception:{type(exc).__name__}"],
             "receipts": [],
             "release_id": release_id,
@@ -718,7 +753,7 @@ def deliver_financialjuice_event(
     receipts: list[dict[str, Any]] = []
     for receipt in delivered:
         receipts.append({
-            "notification_key": notification_key,
+            "notification_key": actual_notification_key,
             "recipient_hash": receipt.chat_id_hash,
             "delivery_status": receipt.status,
             "message_id": receipt.message_id,
@@ -738,7 +773,7 @@ def deliver_financialjuice_event(
     status = "delivered" if failed_count == 0 and delivered_count else "partial" if delivered_count else "failed"
     if ledger is not None and hasattr(ledger, "complete_notification_claim"):
         ledger.complete_notification_claim(
-            notification_key,
+            actual_notification_key,
             delivered_recipient_hashes=tuple(
                 str(row.get("recipient_hash") or "") for row in receipts
                 if row.get("delivery_status") == "delivered"
@@ -750,7 +785,7 @@ def deliver_financialjuice_event(
         )
     return {
         "status": status,
-        "notification_key": notification_key,
+        "notification_key": actual_notification_key,
         "reasons": [] if status == "delivered" else ["recipient_delivery_partial" if delivered_count else "recipient_delivery_failed"],
         "failure_classes": failure_classes,
         "receipts": receipts,

@@ -78,8 +78,10 @@ def test_gmail_history_dispatches_realtime_monitor_after_new_reviewed_rows():
     assert "priority_event_refs" in workflow
     assert "client_payload[priority_event_refs]" in workflow
     assert "dispatch_id=\"gmail-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}\"" in workflow
-    assert "Audit official monitor liveness" in workflow
-    assert "Notify once when a monitor stall incident opens" in workflow
+    assert "Audit official monitor liveness" not in workflow
+    audit_workflow = (root / ".github" / "workflows" / "official-monitor-liveness-audit.yml").read_text(encoding="utf-8")
+    assert "Audit monitor startup independently from Gmail sync" in audit_workflow
+    assert 'cron: "*/5 * * * *"' in audit_workflow
     assert "priority_recovery_scan_status" in workflow
     dispatcher = (root / "scripts" / "official_monitor_dispatch.py").read_text(encoding="utf-8")
     assert "scripts/official_monitor_dispatch.py" in workflow

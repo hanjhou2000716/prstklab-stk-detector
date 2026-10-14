@@ -184,16 +184,17 @@ def test_event_batch_preserves_each_result_and_continues_after_one_sender_error(
     result_file = tmp_path / "results.json"
     output_file = tmp_path / "github-output.txt"
     candidates = [
-        {"key": "event-1", "notification_key": "claim-1", "notification_id": "alert-1", "snapshot_id": "snap"},
-        {"key": "event-2", "notification_key": "claim-2", "notification_id": "alert-2", "snapshot_id": "snap"},
+        {"schema_version": "official-event-batch-candidate-v1", "key": "event-1", "notification_key": "claim-1", "notification_id": "alert-1", "snapshot_id": "snap"},
+        {"schema_version": "official-event-batch-candidate-v1", "key": "event-2", "notification_key": "claim-2", "notification_id": "alert-2", "snapshot_id": "snap"},
     ]
     candidate_file.write_text(json.dumps(candidates), encoding="utf-8")
     monkeypatch.setenv("OFFICIAL_EVENT_BATCH_RESULTS_PATH", str(result_file))
     monkeypatch.setenv("GITHUB_OUTPUT", str(output_file))
     calls: list[tuple[str, bool]] = []
 
-    def fake_send(key, *, prepared, exact_candidate):
+    def fake_send(key, *, prepared, exact_candidate, expected_binding):
         calls.append((key, exact_candidate))
+        assert expected_binding["notification_key"] in {"claim-1", "claim-2"}
         if key == "event-1":
             raise OSError("simulated recipient transport failure")
         Path(os.environ["GITHUB_OUTPUT"]).write_text(
@@ -562,6 +563,9 @@ def test_financialjuice_event_uses_immediate_text_lane_and_records_receipt(monke
         def delivery_history(self):
             return []
 
+        def claim_notification(self, key, **_kwargs):
+            return {"status": "claimed", "notification_key": key, "pending_recipient_hashes": ["hash"]}
+
         def record_delivery(self, payload, **_kwargs):
             recorded.update(payload)
 
@@ -671,6 +675,9 @@ def test_official_text_lane_passes_alert_deep_link(monkeypatch, tmp_path):
         def delivery_history(self):
             return []
 
+        def claim_notification(self, key, **_kwargs):
+            return {"status": "claimed", "notification_key": key, "pending_recipient_hashes": ["hash"]}
+
         def record_delivery(self, payload, **_kwargs):
             return payload
 
@@ -691,11 +698,35 @@ def test_official_text_lane_passes_alert_deep_link(monkeypatch, tmp_path):
     assert monitor.send_current_event() is True
     assert captured["target_url"] == alert_mini_app_url(
         "https://example.test/app",
-        alert_id="official-cluster-1",
+        alert_id=monitor.notification_key_for_event(event),
         release_id="release-1",
         snapshot_id="snap-1",
         observation_id="official-observation-1",
     )
+
+
+def test_batch_release_identity_mismatch_blocks_before_any_sender(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    event = {"source_key": "official", "event_cluster_key": "event-1", "title": "Verified event"}
+    snapshot = {"snapshot_id": "snap-1", "events": {"items": [event]}}
+    monkeypatch.setattr(monitor, "prepare_snapshot", lambda: (snapshot, event))
+    monkeypatch.setattr(monitor, "event_key", lambda _event: "event-1")
+    monkeypatch.setattr(monitor, "send_text_briefs_audited", lambda **_kwargs: (_ for _ in ()).throw(AssertionError("identity mismatch must block sender")))
+
+    sent = monitor.send_current_event(
+        "event-1",
+        expected_binding={
+            "notification_key": "wrong-key", "notification_id": "wrong-key",
+            "snapshot_id": "snap-1", "observation_id": "", "canonical_fact_key": "",
+            "material_fact_version": "", "source_key": "official",
+        },
+    )
+
+    assert sent is False
+    output_text = output.read_text(encoding="utf-8")
+    assert "batch_release_identity_mismatch:notification_key,public_notification_id" in output_text
+    assert "notification_key=\n" in output_text
 
 
 def test_duplicate_top_candidate_does_not_starve_later_valid_candidate(monkeypatch, tmp_path):
@@ -726,6 +757,9 @@ def test_duplicate_top_candidate_does_not_starve_later_valid_candidate(monkeypat
     class FakeLedger:
         def delivery_history(self):
             return []
+
+        def claim_notification(self, key, **_kwargs):
+            return {"status": "claimed", "notification_key": key, "pending_recipient_hashes": ["h"]}
 
         def theme_decision(self, event):
             if event is fj:

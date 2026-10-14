@@ -599,6 +599,67 @@ def test_active_gate_job_with_runner_but_missing_step_is_recovered_not_deferred(
         )
 
 
+def test_current_registered_gate_invocation_survives_delayed_empty_steps(monkeypatch):
+    candidate = {
+        "id": 1048,
+        "run_attempt": 1,
+        "path": ".github/workflows/official-event-monitor.yml",
+        "workflow_id": 320209983,
+        "status": "in_progress",
+        "head_sha": "a" * 40,
+    }
+    job = {
+        "id": 123456,
+        "name": "monitor-send-deploy",
+        "status": "in_progress",
+        "runner_id": 42,
+        "started_at": "2026-10-14T01:00:00Z",
+        "steps": [],
+    }
+    monkeypatch.setenv("GITHUB_RUN_ID", "1048")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "1")
+    monkeypatch.setenv("GITHUB_JOB", "monitor-send-deploy")
+    monkeypatch.setenv("GITHUB_SHA", "a" * 40)
+    monkeypatch.setattr(writer_queue, "_fetch_attempt_jobs", lambda **_kwargs: [job])
+
+    deferred = writer_queue._annotate_publication_gate(
+        candidate,
+        api_url="https://api.github.test",
+        repository="owner/repo",
+        token="token",
+        deadline_monotonic=None,
+    )
+
+    assert deferred is None
+    assert candidate["queue_gate_state"] == "admitted"
+    assert candidate["queue_gate_evidence"] == "current_registered_gate_invocation"
+    assert candidate["queue_gate_step_status"] == "in_progress_api_steps_delayed"
+
+
+def test_current_gate_invocation_with_wrong_sha_does_not_bypass_missing_step(monkeypatch):
+    from src.writer_queue import RetryableQueueSnapshotError
+
+    candidate = {
+        "id": 1048, "run_attempt": 1,
+        "path": ".github/workflows/official-event-monitor.yml",
+        "workflow_id": 320209983, "status": "in_progress", "head_sha": "a" * 40,
+    }
+    monkeypatch.setenv("GITHUB_RUN_ID", "1048")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "1")
+    monkeypatch.setenv("GITHUB_JOB", "monitor-send-deploy")
+    monkeypatch.setenv("GITHUB_SHA", "b" * 40)
+    monkeypatch.setattr(writer_queue, "_fetch_attempt_jobs", lambda **_kwargs: [{
+        "id": 123456, "name": "monitor-send-deploy", "status": "in_progress",
+        "runner_id": 42, "steps": [],
+    }])
+
+    with pytest.raises(RetryableQueueSnapshotError, match="writer_publication_gate_step_not_visible"):
+        writer_queue._annotate_publication_gate(
+            candidate, api_url="https://api.github.test", repository="owner/repo",
+            token="token", deadline_monotonic=None,
+        )
+
+
 def test_started_collection_before_pending_gate_is_deferred_but_later_step_is_not():
     from src.writer_queue import RetryableQueueSnapshotError
 

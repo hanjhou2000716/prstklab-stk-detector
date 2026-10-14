@@ -4,12 +4,25 @@ from datetime import UTC, datetime
 from src.financialjuice_notification import (
     deliver_financialjuice_event,
     financialjuice_caption,
+    financialjuice_notification_key,
     financialjuice_public_short_message,
     financialjuice_public_summary,
 )
 from src.financialjuice_notification_e2e import run_financialjuice_notification_e2e
 from src.financialjuice_summary_contract import summary_contract_status
 from src.telegram_client import TextDeliveryReceipt, alert_mini_app_url
+
+
+class _ClaimLedger:
+    def claim_notification(self, notification_key, *, recipient_hashes=(), **_kwargs):
+        return {
+            "status": "claimed",
+            "notification_key": notification_key,
+            "pending_recipient_hashes": list(recipient_hashes),
+        }
+
+    def complete_notification_claim(self, _notification_key, **_kwargs):
+        return None
 
 
 def _railway_email_router():
@@ -320,11 +333,123 @@ def test_financialjuice_delivery_suppresses_incomplete_attribution() -> None:
         release_ready=True,
         token="token",
         chat_ids=("recipient",),
+        ledger=_ClaimLedger(),
         text_sender=sender,
     )
     assert result["status"] == "blocked"
     assert result["reasons"] == ["content_incomplete"]
+    assert result["notification_key"] == ""
     assert calls == []
+
+
+def test_financialjuice_delivery_requires_persistent_claim_before_sender() -> None:
+    calls: list[dict[str, object]] = []
+    result = deliver_financialjuice_event(
+        {
+            "source_key": "financialjuice",
+            "canonical_fact_key": "financialjuice-fact:no-ledger",
+            "material_fact_version": "v1",
+            "vendor_importance": 9,
+            "vendor_priority_notification": True,
+            "delivery_policy": "fj_priority",
+            "notification_status": "eligible",
+            "freshness_status": "fresh",
+            "public_summary_version": "public-summary-v3",
+            "public_summary_status": "ready",
+            "public_short_message": "🟣 FJ 9/10｜官方證實供應中斷。",
+        },
+        release_id="release-1", snapshot_id="snapshot-1",
+        mini_app_url="https://example.test/app", release_ready=True,
+        token="token", chat_ids=("recipient",),
+        text_sender=lambda **kwargs: (calls.append(kwargs) or ()),
+    )
+    assert result["status"] == "blocked"
+    assert result["notification_key"] == ""
+    assert result["reasons"] == ["notification_claim_store_unavailable"]
+    assert calls == []
+
+
+def test_financialjuice_returns_the_actual_persistent_claim_key() -> None:
+    from src.financialjuice_notification import _recipient_hash
+
+    event = {
+        "source_key": "financialjuice",
+        "canonical_fact_key": "financialjuice-fact:contract-1",
+        "material_fact_version": "v2",
+        "vendor_importance": 9,
+        "vendor_priority_notification": True,
+        "delivery_policy": "fj_priority",
+        "notification_status": "eligible",
+        "freshness_status": "fresh",
+        "public_summary_version": "public-summary-v3",
+        "public_summary_status": "ready",
+        "public_short_message": "🟣 FJ 9/10｜官方證實供應中斷。",
+        "title": "供應中斷",
+    }
+    expected_key = financialjuice_notification_key(event)
+    claims: list[str] = []
+
+    class Ledger:
+        def claim_notification(self, key, **_kwargs):
+            claims.append(key)
+            return {
+                "status": "claimed", "notification_key": expected_key,
+                "pending_recipient_hashes": [_recipient_hash("recipient")],
+            }
+
+        def complete_notification_claim(self, key, **_kwargs):
+            assert key == expected_key
+
+    result = deliver_financialjuice_event(
+        event,
+        release_id="release-1",
+        snapshot_id="snapshot-1",
+        mini_app_url="https://example.test/app",
+        release_ready=True,
+        token="token",
+        chat_ids=("recipient",),
+        ledger=Ledger(),
+        text_sender=lambda **kwargs: (TextDeliveryReceipt(
+            kwargs["alert_id"], kwargs["release_id"], kwargs["snapshot_id"],
+            _recipient_hash("recipient"), "delivered", message_id=9,
+        ),),
+    )
+
+    assert claims == [expected_key]
+    assert result["notification_key"] == expected_key
+    assert result["receipts"][0]["notification_key"] == expected_key
+
+
+def test_financialjuice_claim_key_conflict_blocks_delivery_and_marks_claim_uncertain() -> None:
+    event = {
+        "source_key": "financialjuice", "canonical_fact_key": "fact-1", "material_fact_version": "v1",
+        "vendor_importance": 9, "vendor_priority_notification": True, "delivery_policy": "fj_priority",
+        "notification_status": "eligible", "freshness_status": "fresh", "title": "Verified event",
+        "public_summary_version": "public-summary-v3", "public_summary_status": "ready",
+        "public_short_message": "🟣 FJ 9/10｜官方確認供應中斷。",
+    }
+    completed: list[tuple[str, bool]] = []
+    sends: list[object] = []
+
+    class Ledger:
+        def claim_notification(self, _key, **_kwargs):
+            return {"status": "claimed", "notification_key": "different-ledger-key", "pending_recipient_hashes": []}
+
+        def complete_notification_claim(self, key, *, uncertain=False, **_kwargs):
+            completed.append((key, uncertain))
+
+    result = deliver_financialjuice_event(
+        event,
+        release_id="release-1", snapshot_id="snapshot-1", mini_app_url="https://example.test/app",
+        release_ready=True, token="token", chat_ids=("recipient",), ledger=Ledger(),
+        text_sender=lambda **kwargs: (sends.append(kwargs) or ()),
+    )
+
+    assert result["status"] == "blocked"
+    assert result["notification_key"] == "different-ledger-key"
+    assert result["reasons"] == ["notification_claim_identity_mismatch"]
+    assert completed == [("different-ledger-key", True)]
+    assert sends == []
 
 
 def test_financialjuice_delivery_reaches_text_sender_with_alert_deep_link() -> None:
@@ -362,13 +487,14 @@ def test_financialjuice_delivery_reaches_text_sender_with_alert_deep_link() -> N
         release_ready=True,
         token="token",
         chat_ids=("recipient",),
+        ledger=_ClaimLedger(),
         text_sender=sender,
     )
 
     assert result["status"] == "delivered"
     assert captured["target_url"] == alert_mini_app_url(
         "https://example.test/app",
-        alert_id="fj-cluster-1",
+        alert_id=financialjuice_notification_key(event),
         release_id="release-1",
         snapshot_id="snapshot-1",
         observation_id="fj-observation-1",
@@ -406,6 +532,7 @@ def test_versioned_summary_is_authoritative_at_delivery_boundary() -> None:
         release_ready=True,
         token="token",
         chat_ids=("recipient",),
+        ledger=_ClaimLedger(),
         text_sender=sender,
     )
     assert result["status"] == "delivered"
@@ -491,6 +618,7 @@ def test_financialjuice_delivery_returns_safe_failure_classes() -> None:
         release_ready=True,
         token="token",
         chat_ids=("recipient",),
+        ledger=_ClaimLedger(),
         text_sender=lambda **_kwargs: (TextDeliveryReceipt(
             "alert", "release-1", "snapshot-1", "recipient-hash", "failed",
             error_class="recipient_unavailable",
@@ -520,8 +648,9 @@ def test_financialjuice_delivery_prefers_notification_id_for_alert_deep_link() -
         event, release_id="release-1", snapshot_id="snapshot-1",
         mini_app_url="https://example.test/app", release_ready=True,
         token="token", chat_ids=("recipient",), text_sender=sender,
+        ledger=_ClaimLedger(),
     )
-    assert captured["alert_id"] == "fj-notification-1"
+    assert captured["alert_id"] == financialjuice_notification_key(event)
 
 
 def test_rich_email_to_priority_to_telegram_preserves_semantics() -> None:

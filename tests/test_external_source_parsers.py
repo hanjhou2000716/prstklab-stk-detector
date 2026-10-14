@@ -144,6 +144,57 @@ def test_financialjuice_compact_live_labels_preserve_original_translation_analys
     assert result["vendor_possible_impact"] == "油價與高估值科技股波動可能升高。"
 
 
+def test_financialjuice_parser_keeps_complete_multiline_translation_and_does_not_split_prose() -> None:
+    translation_lines = [
+        "市場正觀望政策後續。",
+        "官員表示通膨仍高於目標。",
+        "決策者可能維持利率不變。",
+        "債券殖利率同步上升。",
+        "企業融資成本因而提高。",
+        "消費需求出現降溫跡象。",
+        "能源價格仍有不確定性。",
+        "分析師提醒波動可能擴大。",
+        "央行尚未作出正式決定。",
+        "市場等待下一份經濟數據。",
+        "升息訊息仍是本則新聞的重要內容。",
+    ]
+    result = parse_financialjuice_email(
+        sender="jetmaie.fintech@gmail.com",
+        subject="FinancialJuice breaking news",
+        body=(
+            "重要性評分: 10/10\n📝 繁體中文翻譯:\n"
+            + "\n".join(translation_lines)
+            + "\n💡 AI 評論: Analysis of the report remains preliminary.\n"
+            "⚠️ 可能影響: 利率敏感資產仍需觀察。"
+        ),
+        message_id="fj-eleven-line-translation",
+    )
+
+    assert result["parse_status"] == "parsed"
+    assert "升息訊息仍是本則新聞的重要內容。" in result["vendor_translation"]
+    assert result["vendor_analysis"] == "Analysis of the report remains preliminary."
+    assert result["vendor_possible_impact"] == "利率敏感資產仍需觀察。"
+
+
+def test_financialjuice_parser_normalizes_literal_newlines_and_fails_closed_on_oversize_field() -> None:
+    normalized = parse_financialjuice_email(
+        sender="alerts@financialjuice.com", subject="FinancialJuice alert",
+        body=r"Importance: 9/10\nTranslation: Literal line one\nLiteral line two\nOriginal headline: Headline",
+        message_id="fj-literal-newline",
+    )
+    oversized = parse_financialjuice_email(
+        sender="alerts@financialjuice.com", subject="FinancialJuice alert",
+        body="Importance: 9/10\nTranslation: " + ("x" * 601) + "\nOriginal headline: Headline",
+        message_id="fj-oversized-field",
+    )
+
+    assert normalized["parse_status"] == "parsed"
+    assert normalized["vendor_translation"] == "Literal line one Literal line two"
+    assert oversized["parse_status"] == "parse_failed"
+    assert oversized["failure_reason"] == "financialjuice_field_exceeds_limit"
+    assert oversized["parser_diagnostics"]["truncated_fields"] == ["translation"]
+
+
 def test_financialjuice_parser_keeps_explicit_source_url_domain_aligned() -> None:
     result = parse_financialjuice_email(
         sender="alerts@financialjuice.com", subject="FinancialJuice alert",

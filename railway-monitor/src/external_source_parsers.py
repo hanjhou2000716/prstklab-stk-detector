@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/external_source_parsers.py
-# Canonical source SHA256: 100e2c80ac58ad02d6f651898709175958c9d78ccc2f5e2aa5187d482079b382
+# Canonical source SHA256: 111cfa5c3c547bb7c5691beda69364e49e97954eae40ace71ec5908f7c917727
 
 """Deterministic parsers for sanitized external intelligence mail.
 
@@ -27,6 +27,7 @@ from src.financialjuice_contract import FINANCIALJUICE_SOURCE_URL, normalize_fin
 from src.financialjuice_summary_contract import SUMMARY_CONTRACT_VERSION
 
 MAX_FIELD_CHARS = 600
+PARSER_VERSION = "financialjuice-v2"
 DLQ_STATES = {"parse_failed", "unsupported_template", "invalid_source", "duplicate"}
 
 
@@ -44,7 +45,7 @@ def _plain_text(body: str) -> str:
     fixture and replay) receives the same deterministic input.  Plain text is
     returned unchanged apart from normalising line endings.
     """
-    raw = str(body or "")
+    raw = str(body or "").replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\r", "\n")
     # Some Gmail relays omit ``html``/``body`` and send a table fragment only
     # (for example ``<table><tr><td>...``).  Treat any actual HTML element as
     # markup so labels and values are extracted from rendered text instead of
@@ -65,6 +66,8 @@ _FJ_SECTION_LABELS = (
     "ai commentary", "vendor analysis", "analysis", "AI分析", "AI 分析", "ai 評論", "AI 評論", "AI評論", "分析",
     "possible impact", "vendor impact", "impact", "可能影響", "市場影響",
     "source url", "來源連結", "url",
+    "published at", "published", "vendor tags", "tags", "entities",
+    "importance", "重要性評分", "重要性", "重要度",
 )
 
 
@@ -74,32 +77,47 @@ def _marker_pattern(labels: tuple[str, ...]) -> re.Pattern[str]:
 
 
 def _section(body: str, labels: tuple[str, ...]) -> str:
+    value, _truncated = _section_with_diagnostics(body, labels)
+    return value
+
+
+def _label_match(line: str, labels: tuple[str, ...]) -> re.Match[str] | None:
+    """Match a field label only at a line boundary and before its delimiter.
+
+    Searching for words such as ``analysis`` inside prose used to end a field
+    in the middle of a sentence. Requiring a leading label and delimiter
+    keeps ordinary news text intact while accepting emoji/bullet prefixes.
+    """
+    choices = sorted({label for label in labels if label}, key=len, reverse=True)
+    pattern = re.compile(
+        r"(?:^\s*[\\*#>•▪▫◦‣\-–—📰📝💡⚠️📄📌🔎📈📉📊🚨\ufe0f\s]*|"
+        r"(?<=[\s📰📝💡⚠️📄📌🔎📈📉📊🚨])(?:📰|📝|💡|⚠️|📄|📌|🔎|📈|📉|📊|🚨)\s*)"
+        r"(?:" + "|".join(re.escape(label) for label in choices) + r")"
+        r"\s*(?:[:：]|[-–—])\s*(?P<value>.*?)(?=$|\s+(?:📰|📝|💡|⚠️|📄|📌|🔎|📈|📉|📊|🚨)\s*(?:"
+        + "|".join(re.escape(label) for label in sorted({label for label in _FJ_SECTION_LABELS if label}, key=len, reverse=True))
+        + r")\s*(?:[:：]|[-–—]))",
+        re.IGNORECASE,
+    )
+    return pattern.search(line)
+
+
+def _section_with_diagnostics(body: str, labels: tuple[str, ...]) -> tuple[str, bool]:
     lines = [line.strip() for line in body.splitlines() if line.strip()]
-    target_pattern = _marker_pattern(labels)
-    boundary_pattern = _marker_pattern(_FJ_SECTION_LABELS)
     for index, line in enumerate(lines):
-        match = target_pattern.search(line)
-        if not match:
+        match = _label_match(line, labels)
+        if match is None:
             continue
-        inline = re.sub(r"^[\s:：\-–—]+", "", line[match.end():])
-        # A value can legitimately begin with the same words as its label,
-        # e.g. ``可能影響: 可能影響 ...``.  Do not mistake that first token for
-        # the next field boundary; only look for a boundary after it.
-        next_marker = boundary_pattern.search(inline, 1)
-        if next_marker:
-            inline = re.sub(
-                r"[\s:：\-–—📝💡⚠️📄📌🔎📈📉📊🚨\ufe0f]+$", "", inline[:next_marker.start()]
-            )
-        if inline:
-            return _clip(inline)
-        following: list[str] = []
-        for candidate in lines[index + 1:index + 4]:
-            if boundary_pattern.search(candidate):
+        values = [match.group("value").strip()] if match.group("value").strip() else []
+        for candidate in lines[index + 1:]:
+            if _label_match(candidate, _FJ_SECTION_LABELS) is not None:
                 break
-            following.append(candidate)
-        if following:
-            return _clip(" ".join(following))
-    return ""
+            # Ignore common provider footers without manufacturing content.
+            if re.match(r"^(?:unsubscribe|manage preferences|view in browser|financialjuice news)", candidate, re.IGNORECASE):
+                break
+            values.append(candidate)
+        normalized = " ".join(" ".join(values).split()).strip()
+        return normalized[:MAX_FIELD_CHARS].strip(), len(normalized) > MAX_FIELD_CHARS
+    return "", False
 
 
 def _first_line(body: str) -> str:
@@ -173,13 +191,7 @@ def _compound_blocks(body: str) -> list[str]:
 
 def _item_record(block: str) -> dict[str, Any]:
     def strict(labels: tuple[str, ...]) -> str:
-        for raw in block.splitlines():
-            line = raw.strip()
-            for label in labels:
-                match = re.match(rf"{re.escape(label)}\s*:\s*(.+)$", line, re.IGNORECASE)
-                if match:
-                    return _clip(match.group(1))
-        return ""
+        return _section(block, labels)
 
     headline = strict(("original headline", "vendor original headline", "headline", "title"))
     translation = strict(("translation", "chinese translation"))
@@ -313,20 +325,33 @@ def parse_financialjuice_email(
     if compound.get("parse_status") == "compound_unresolved":
         return compound
     importance = _importance(body)
-    headline = _section(
+    headline, headline_truncated = _section_with_diagnostics(
         body,
         ("original headline", "原始標題", "headline", "original content", "原文內容", "原文"),
     )
-    translation = _section(body, ("translation", "繁體中文翻譯", "中文翻譯", "翻譯"))
+    translation, translation_truncated = _section_with_diagnostics(body, ("translation", "繁體中文翻譯", "中文翻譯", "翻譯"))
     headline = headline or translation or _subject_headline(subject) or _first_line(body)
-    analysis = _section(
+    analysis, analysis_truncated = _section_with_diagnostics(
         body,
         ("ai commentary", "AI分析", "AI commentary", "AI 評論", "AI評論", "分析"),
     )
-    impact = _section(body, ("possible impact", "可能影響", "市場影響", "impact"))
+    impact, impact_truncated = _section_with_diagnostics(body, ("possible impact", "可能影響", "市場影響", "impact"))
     source_url = _section(body, ("source url", "來源連結", "url")) or FINANCIALJUICE_SOURCE_URL
     if not headline:
         return {"parse_status": "parse_failed", "failure_reason": "missing_headline", "message_id": message_id}
+    truncated_fields = [
+        name for name, truncated in (
+            ("headline", headline_truncated), ("translation", translation_truncated),
+            ("analysis", analysis_truncated), ("impact", impact_truncated),
+        ) if truncated
+    ]
+    if truncated_fields:
+        return {
+            "parse_status": "parse_failed", "failure_reason": "financialjuice_field_exceeds_limit",
+            "parser_version": PARSER_VERSION,
+            "parser_diagnostics": {"schema_version": "financialjuice-parser-diagnostics-v1", "truncated_fields": truncated_fields},
+            "message_id": message_id,
+        }
     identity_record = {
         "original_headline": headline,
         "chinese_translation": translation,
@@ -350,7 +375,15 @@ def parse_financialjuice_email(
     )
     return {
         "parse_status": "parsed",
-        "parser_version": "financialjuice-v1",
+        "parser_version": PARSER_VERSION,
+        "parser_diagnostics": {
+            "schema_version": "financialjuice-parser-diagnostics-v1",
+            "truncated_fields": [],
+            "missing_optional_fields": [
+                name for name, value in (("translation", translation), ("analysis", analysis), ("impact", impact))
+                if not value
+            ],
+        },
         "message_id": message_id,
         "content_origin": "financialjuice",
         "content_type": "breaking_news",

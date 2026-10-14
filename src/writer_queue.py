@@ -580,6 +580,27 @@ def _annotate_publication_gate(
         for step in steps
         if isinstance(step, Mapping)
     )
+    current_invocation = (
+        str(os.environ.get("GITHUB_RUN_ID") or "") == str(run_id)
+        and str(os.environ.get("GITHUB_RUN_ATTEMPT") or "1") == str(attempt)
+        and str(os.environ.get("GITHUB_JOB") or "") == str(gate["job_name"])
+        and str(os.environ.get("GITHUB_SHA") or "") == str(run.get("head_sha") or "")
+    )
+    if current_invocation and run_active and job_status == "in_progress":
+        # This process is running inside the registered queue step itself.
+        # GitHub's Jobs API can lag and temporarily return steps=[] for the
+        # running job. The local invocation plus exact run/attempt/job/SHA is
+        # execution evidence for this writer only; it does not grant publish
+        # permission or remove any other blocker from the queue.
+        gate_started = _timestamp(job, "started_at") or datetime.now(UTC)
+        run.update({
+            "queue_gate_state": "admitted",
+            "queue_gate_started_at": gate_started.isoformat(),
+            "queue_gate_job_id": job_id,
+            "queue_gate_step_status": "in_progress_api_steps_delayed",
+            "queue_gate_evidence": "current_registered_gate_invocation",
+        })
+        return None
     if run_active and job_status in ACTIVE_STATUSES and no_runner and not steps_started:
         run.update({
             "queue_gate_state": "deferred",
@@ -608,8 +629,8 @@ def _annotate_publication_gate(
             raise RetryableQueueSnapshotError("writer_publication_gate_step_not_visible")
         raise WriterQueueError("writer_publication_gate_step_missing")
     step = gate_steps[0]
-    gate_started = _timestamp(step, "started_at")
-    if gate_started is None:
+    gate_step_started = _timestamp(step, "started_at")
+    if gate_step_started is None:
         step_status = str(step.get("status") or "").casefold()
         if step_status == "completed" and str(step.get("conclusion") or "").casefold() == "skipped":
             run.update({"queue_gate_state": "deferred", "queue_gate_reason": "publication_gate_skipped"})
@@ -628,7 +649,7 @@ def _annotate_publication_gate(
         raise WriterQueueError("writer_publication_gate_started_at_unavailable")
     run.update({
         "queue_gate_state": "admitted",
-        "queue_gate_started_at": gate_started.isoformat(),
+        "queue_gate_started_at": gate_step_started.isoformat(),
         "queue_gate_job_id": job_id,
         "queue_gate_step_status": str(step.get("status") or "unknown"),
     })
