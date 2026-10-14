@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import tempfile
+from collections.abc import Mapping
 from datetime import UTC, datetime, time
 from pathlib import Path
 from typing import Any
@@ -499,8 +500,15 @@ def _financialjuice_delivery_history(history: list[dict[str, Any]]) -> list[dict
 
 def build_official_event_brief(event: dict[str, Any]) -> str:
     """Make a neutral watch-sized alert through the single public formatter."""
-    from src.event_output import short_event_message
-    text = short_event_message(event)
+    source_key = str(event.get("source_key") or event.get("source") or "").strip().casefold()
+    if source_key == "financialjuice":
+        from src.financialjuice_notification import financialjuice_public_short_message
+
+        text = financialjuice_public_short_message(event)
+    else:
+        from src.event_output import short_event_message
+
+        text = short_event_message(event)
     if text:
         validate_brief(text)
     return text
@@ -872,15 +880,25 @@ def write_status_output(
     batch_candidates = batch_candidates[:10]
     batch_rows = [
         {
+            "schema_version": "official-event-batch-candidate-v1",
             "key": event_key(item),
             "notification_key": notification_key_for_event(item),
-            "notification_id": str(item.get("notification_id") or ""),
-            "snapshot_id": str(item.get("snapshot_id") or (snapshot.get("snapshot_id") if isinstance(snapshot, dict) else "") or ""),
+            # The immutable release projection uses this canonical key as its
+            # public notification ID. Source observation IDs remain provenance.
+            "notification_id": notification_key_for_event(item),
+            "snapshot_id": str(
+                item.get("snapshot_id")
+                or (snapshot.get("snapshot_id") if isinstance(snapshot, dict) else "")
+                or ""
+            ),
             "observation_id": str(
                 item.get("observation_id")
                 or ((item.get("instrument") or {}).get("observation_id") if isinstance(item.get("instrument"), dict) else "")
                 or ""
             ),
+            "canonical_fact_key": str(item.get("canonical_fact_key") or ""),
+            "material_fact_version": str(item.get("material_fact_version") or item.get("fact_version") or ""),
+            "event_ref": str(item.get("priority_pending_ref") or item.get("event_ref") or ""),
             "source_key": str(item.get("source_key") or item.get("source") or "").strip().casefold(),
             "kind": str(item.get("kind") or ""),
         }
@@ -906,7 +924,7 @@ def write_status_output(
         f"key={event_key(event) if event else ''}",
         f"notification_key={notification_key_for_event(event) if event else ''}",
         f"snapshot_publish_failed={'true' if snapshot_publish_failed else 'false'}",
-        f"notification_id={event.get('notification_id', '') if event else ''}",
+        f"notification_id={notification_key_for_event(event) if event else ''}",
         f"snapshot_id={event.get('snapshot_id', '') if event else ''}",
         f"observation_id={event.get('observation_id', '') if event else ''}",
         f"candidate_type={summary['candidate_type']}",
@@ -1011,9 +1029,13 @@ def write_send_output(
     last_telegram_attempt_at: str | None = None,
     last_receipt_status: str | None = None,
     notification_expected: bool | None = None,
+    actual_notification_key: str = "",
 ) -> None:
     """Expose delivery result to GitHub Actions without failing a safe skip."""
-    lines = [f"sent={'true' if sent else 'false'}", f"reason={reason}"]
+    lines = [
+        f"sent={'true' if sent else 'false'}", f"reason={reason}",
+        f"notification_key={actual_notification_key.strip()}",
+    ]
     status = notification_status or ("delivered" if sent else "suppressed")
     summary = decision_summary(
         event=event,
@@ -1053,6 +1075,7 @@ def _write_delivery_output(
     budget: dict[str, Any] | None = None, delivery_status: str | None = None,
     delivered_count: int | None = None, failed_count: int | None = None,
     failed_recipient_hashes: list[str] | None = None,
+    actual_notification_key: str = "",
 ) -> None:
     delivered_count = (
         sum(getattr(item, "status", "") == "delivered" for item in deliveries)
@@ -1069,6 +1092,7 @@ def _write_delivery_output(
     computed_status = "delivered" if failed_count == 0 and delivered_count else "partial" if delivered_count else "failed"
     lines = [
         f"trace_id={trace_id}",
+        f"notification_key={actual_notification_key.strip()}",
         f"release_id={os.environ.get('RELEASE_ID', '')}",
         f"delivered_count={delivered_count}",
         f"failed_count={failed_count}",
@@ -1077,10 +1101,10 @@ def _write_delivery_output(
         f"failed_recipient_hashes={','.join(failed_hashes)}",
     ]
     if event:
+        public_notification_id = notification_key_for_event(event)
         lines.extend([
-            f"notification_key={notification_key_for_event(event)}",
-            f"alert_id={event.get('notification_id') or event.get('event_cluster_key') or event.get('event_key') or ''}",
-            f"notification_id={event.get('notification_id') or ''}",
+            f"alert_id={public_notification_id or event.get('notification_id') or event.get('event_cluster_key') or event.get('event_key') or ''}",
+            f"notification_id={public_notification_id or event.get('notification_id') or ''}",
             f"snapshot_id={event.get('snapshot_id') or ''}",
             f"observation_id={event.get('observation_id') or (event.get('instrument') or {}).get('observation_id') or ''}",
             f"notification_expected={'true' if event.get('notification_expected') else 'false'}",
@@ -1136,6 +1160,7 @@ def _write_delivery_output(
 
 def send_current_event(
     expected_key: str | None = None, *, prepared: bool = False, exact_candidate: bool = False,
+    expected_binding: Mapping[str, str] | None = None,
 ) -> bool:
     """Send one verified event, safely skipping it if it changes between steps."""
     if prepared:
@@ -1171,6 +1196,45 @@ def send_current_event(
         write_send_output(False, "event_changed_before_delivery", event=event, notification_status="suppressed")
         print("Official event changed before delivery; skipped safely.")
         return False
+    if expected_binding:
+        actual_notification_key = notification_key_for_event(event)
+        actual_snapshot_id = str(event.get("snapshot_id") or snapshot.get("snapshot_id") or "")
+        actual_observation_id = str(
+            event.get("observation_id")
+            or ((event.get("instrument") or {}).get("observation_id") if isinstance(event.get("instrument"), dict) else "")
+            or ""
+        )
+        expected_fact_key = expected_binding.get("canonical_fact_key", "")
+        expected_fact_version = expected_binding.get("material_fact_version", "")
+        expected_observation_id = expected_binding.get("observation_id", "")
+        expected_source_key = expected_binding.get("source_key", "")
+        mismatches = []
+        if not actual_notification_key or actual_notification_key != expected_binding.get("notification_key"):
+            mismatches.append("notification_key")
+        if actual_notification_key != expected_binding.get("notification_id"):
+            mismatches.append("public_notification_id")
+        if not actual_snapshot_id or actual_snapshot_id != expected_binding.get("snapshot_id"):
+            mismatches.append("snapshot_id")
+        if expected_observation_id and actual_observation_id != expected_observation_id:
+            mismatches.append("observation_id")
+        actual_source_key = str(event.get("source_key") or event.get("source") or "").strip().casefold()
+        if expected_source_key and actual_source_key != expected_source_key:
+            mismatches.append("source_key")
+        if expected_fact_key and str(event.get("canonical_fact_key") or "") != expected_fact_key:
+            mismatches.append("canonical_fact_key")
+        if expected_fact_version and str(event.get("material_fact_version") or event.get("fact_version") or "") != expected_fact_version:
+            mismatches.append("material_fact_version")
+        if mismatches:
+            reason = "batch_release_identity_mismatch:" + ",".join(mismatches)
+            write_send_output(False, reason, event=event, notification_status="blocked")
+            print("Official event batch identity changed before delivery; skipped safely.")
+            return False
+    # Public release manifests derive notification_id from this exact stable
+    # delivery identity. Normalize the in-memory event to that value too, so
+    # the Telegram deep link cannot keep an ingress-only fj-item identifier.
+    public_notification_id = notification_key_for_event(event)
+    if public_notification_id:
+        event = {**event, "notification_id": public_notification_id}
     # Price signals must be bound to the exact published observation. This is
     # the final guard against a stale event surviving a refresh race.
     if event.get("kind") == "market_signal":
@@ -1328,9 +1392,16 @@ def send_current_event(
     event = {**event, "release_ready_at": release_ready_at}
     observation_id = str(event.get("observation_id") or (event.get("instrument") or {}).get("observation_id") or "")
     trace_id = f"official-{observation_id or current_key[:20]}"
-    event_id = str(event.get("notification_id") or event.get("event_cluster_key") or event.get("event_key") or observation_id or trace_id)
+    event_id = str(
+        notification_key_for_event(event)
+        or event.get("notification_id")
+        or event.get("event_cluster_key")
+        or event.get("event_key")
+        or observation_id
+        or trace_id
+    )
     caption = build_official_event_brief(event)
-    snapshot_id = str(snapshot.get("snapshot_id") or "")
+    snapshot_id = str(event.get("snapshot_id") or snapshot.get("snapshot_id") or "")
     release_id = gate.release_id or ""
     target_url = alert_mini_app_url(
         settings.dashboard_url,
@@ -1357,6 +1428,7 @@ def send_current_event(
             ledger=ledger,
             run_id=os.getenv("GITHUB_RUN_ID", ""),
         )
+        actual_claim_key = str(fj_result.get("notification_key") or "").strip()
         fj_receipts = [row for row in fj_result.get("receipts", []) if isinstance(row, dict)]
         delivered_count = sum(str(row.get("delivery_status") or "") == "delivered" for row in fj_receipts)
         failed_count = len(fj_receipts) - delivered_count
@@ -1367,6 +1439,7 @@ def send_current_event(
             _write_delivery_output(
                 trace_id=trace_id, deliveries=(), event={**event, "snapshot_id": snapshot_id}, budget=budget,
                 delivery_status="suppressed", delivered_count=0, failed_count=0,
+                actual_notification_key=actual_claim_key,
             )
             write_send_output(
                 False,
@@ -1374,13 +1447,17 @@ def send_current_event(
                 event=event,
                 notification_status="suppressed",
                 last_receipt_status="already_delivered",
+                actual_notification_key=actual_claim_key,
             )
             return False
         if fj_status == "blocked" and not fj_receipts:
             if hasattr(ledger, "record_decision"):
                 ledger.record_decision(event, {"allowed": False, "status": "suppressed", "reason": "financialjuice_delivery_blocked", "reasons": list(fj_result.get("reasons") or [])})
                 ledger.save()
-            write_send_output(False, "financialjuice_delivery_blocked", event=event, notification_status="blocked")
+            write_send_output(
+                False, "financialjuice_delivery_blocked", event=event, notification_status="blocked",
+                actual_notification_key=actual_claim_key,
+            )
             return False
         delivery_status = "delivered" if fj_status == "delivered" else "partial" if delivered_count else "failed"
         failed_hashes = [
@@ -1392,6 +1469,7 @@ def send_current_event(
             trace_id=trace_id, deliveries=(), event={**event, "snapshot_id": snapshot_id}, budget=budget,
             delivery_status=delivery_status, delivered_count=delivered_count,
             failed_count=failed_count, failed_recipient_hashes=failed_hashes,
+            actual_notification_key=actual_claim_key,
         )
         if not delivered_count:
             failure_classes = [str(item) for item in (fj_result.get("failure_classes") or []) if str(item).strip()]
@@ -1407,6 +1485,7 @@ def send_current_event(
                 failed_count=failed_count,
                 failure_classes=failure_classes,
                 last_receipt_status=delivery_status,
+                actual_notification_key=actual_claim_key,
             )
             raise RuntimeError("Telegram FinancialJuice delivery failed for every configured recipient")
         ledger.record_delivery(
@@ -1431,8 +1510,10 @@ def send_current_event(
             failed_count=failed_count,
             last_telegram_attempt_at=event.get("telegram_attempted_at"),
             last_receipt_status=delivery_status,
+            actual_notification_key=actual_claim_key,
         )
         return True
+    actual_claim_key = ""
     try:
         if content_is_incomplete(event, caption):
             if hasattr(ledger, "record_decision"):
@@ -1440,16 +1521,32 @@ def send_current_event(
                 ledger.save()
             write_send_output(False, "content_incomplete", event=event, notification_status="suppressed")
             return False
-        claim = (
-            ledger.claim_notification(
+        if hasattr(ledger, "claim_notification"):
+            claim = ledger.claim_notification(
                 notification_key,
                 recipient_hashes=tuple(recipient_hash(chat_id) for chat_id in settings.telegram_chat_ids),
                 run_id=os.getenv("GITHUB_RUN_ID", ""),
             )
-            if hasattr(ledger, "claim_notification") else {"status": "claimed"}
-        )
+        else:
+            claim = {
+                "status": "blocked", "reason": "notification_claim_store_unavailable",
+                "notification_key": "",
+            }
+        actual_claim_key = str(claim.get("notification_key") or "").strip()
+        if claim.get("status") == "claimed" and actual_claim_key != notification_key:
+            if hasattr(ledger, "complete_notification_claim") and actual_claim_key:
+                ledger.complete_notification_claim(actual_claim_key, uncertain=True)
+            write_send_output(
+                False, "notification_claim_identity_mismatch", event=event,
+                notification_status="blocked", actual_notification_key=actual_claim_key,
+            )
+            return False
         if claim.get("status") != "claimed":
-            write_send_output(False, f"notification_{claim.get('status', 'blocked')}", event=event, notification_status="suppressed", last_receipt_status=str(claim.get("status") or "blocked"))
+            write_send_output(
+                False, f"notification_{claim.get('status', 'blocked')}", event=event,
+                notification_status="suppressed", last_receipt_status=str(claim.get("status") or "blocked"),
+                actual_notification_key=actual_claim_key,
+            )
             return False
         pending_hashes = set(str(item) for item in claim.get("pending_recipient_hashes") or [])
         send_chat_ids = settings.telegram_chat_ids
@@ -1472,17 +1569,23 @@ def send_current_event(
             prstk_risk_level=canonical_prstk_risk_level(event),
         )
     except (OSError, ValueError) as exc:
-        if hasattr(ledger, "complete_notification_claim"):
-            ledger.complete_notification_claim(notification_key, uncertain=True)
-        write_send_output(False, "text_delivery_failed", event=event, notification_status="failed")
+        if hasattr(ledger, "complete_notification_claim") and actual_claim_key:
+            ledger.complete_notification_claim(actual_claim_key, uncertain=True)
+        write_send_output(
+            False, "text_delivery_failed", event=event, notification_status="failed",
+            actual_notification_key=actual_claim_key,
+        )
         print(f"Text delivery blocked official event: {type(exc).__name__}")
         return False
-    _write_delivery_output(trace_id=trace_id, deliveries=deliveries, event=event, budget=budget)
+    _write_delivery_output(
+        trace_id=trace_id, deliveries=deliveries, event=event, budget=budget,
+        actual_notification_key=actual_claim_key,
+    )
     delivered_count = sum(item.status == "delivered" for item in deliveries)
     failed_count = len(deliveries) - delivered_count
     if hasattr(ledger, "complete_notification_claim"):
         ledger.complete_notification_claim(
-            notification_key,
+            actual_claim_key,
             delivered_recipient_hashes=tuple(item.chat_id_hash for item in deliveries if item.status == "delivered"),
             failed_recipient_hashes=tuple(item.chat_id_hash for item in deliveries if item.status != "delivered"),
         )
@@ -1513,6 +1616,7 @@ def send_current_event(
             "release_id": release_id,
             "snapshot_id": snapshot_id,
             "notification_id": event.get("notification_id"),
+            "notification_key": actual_claim_key,
             "release_ready_at": release_ready_at,
             "telegram_attempted_at": event.get("telegram_attempted_at"),
             "delivery_result": "delivered" if failed_count == 0 else "partial",
@@ -1537,6 +1641,7 @@ def send_current_event(
         failed_count=failed_count,
         last_telegram_attempt_at=event.get("telegram_attempted_at"),
         last_receipt_status="partial" if failed_count else "delivered",
+        actual_notification_key=actual_claim_key,
     )
     return True
 
@@ -1567,18 +1672,30 @@ def send_current_event_batch(expected_file: Path, *, prepared: bool = False) -> 
     for item in candidates:
         if not isinstance(item, dict):
             raise ValueError("batch candidate record is invalid")
+        if item.get("schema_version") != "official-event-batch-candidate-v1":
+            raise ValueError("batch candidate schema version is missing or unsupported")
         key = str(item.get("key") or "").strip()
         notification_key = str(item.get("notification_key") or "").strip()
-        if not key or not notification_key or key in seen:
+        notification_id = str(item.get("notification_id") or "").strip()
+        snapshot_id = str(item.get("snapshot_id") or "").strip()
+        if not key or not notification_key or not notification_id or not snapshot_id or key in seen:
             raise ValueError("batch candidate identity is missing or duplicated")
         seen.add(key)
         normalized.append({
             "key": key,
             "notification_key": notification_key,
-            "notification_id": str(item.get("notification_id") or ""),
-            "snapshot_id": str(item.get("snapshot_id") or ""),
+            "notification_id": notification_id,
+            "snapshot_id": snapshot_id,
             "observation_id": str(item.get("observation_id") or ""),
+            "canonical_fact_key": str(item.get("canonical_fact_key") or ""),
+            "material_fact_version": str(item.get("material_fact_version") or ""),
+            "event_ref": str(item.get("event_ref") or ""),
+            "source_key": str(item.get("source_key") or "").strip().casefold(),
         })
+        if normalized[-1]["source_key"] == "financialjuice" and (
+            not normalized[-1]["canonical_fact_key"] or not normalized[-1]["material_fact_version"]
+        ):
+            raise ValueError("FinancialJuice batch fact identity is incomplete")
 
     results: list[dict[str, Any]] = []
     original_output = os.environ.get("GITHUB_OUTPUT")
@@ -1593,14 +1710,19 @@ def send_current_event_batch(expected_file: Path, *, prepared: bool = False) -> 
                 os.environ["GITHUB_STEP_SUMMARY"] = str(summary_path)
                 error_type = ""
                 try:
-                    send_current_event(candidate["key"], prepared=prepared, exact_candidate=True)
+                    send_current_event(
+                        candidate["key"], prepared=prepared, exact_candidate=True,
+                        expected_binding=candidate,
+                    )
                 except Exception as exc:
                     # A failed event does not starve later independent candidates.
                     error_type = type(exc).__name__
                     print(f"Event batch item failed safely: key={candidate['key'][:80]} error={error_type}")
                 values = _read_action_outputs(output_path)
-                actual_notification_key = values.get("notification_key") or candidate["notification_key"]
-                if actual_notification_key != candidate["notification_key"]:
+                actual_notification_key = values.get("notification_key", "").strip()
+                if not actual_notification_key:
+                    error_type = error_type or "sender_notification_key_missing"
+                elif actual_notification_key != candidate["notification_key"]:
                     error_type = error_type or "notification_key_mismatch"
                 trace_id = values.get("trace_id", "")
                 delivery_status = values.get("delivery_status", "")
@@ -1623,7 +1745,7 @@ def send_current_event_batch(expected_file: Path, *, prepared: bool = False) -> 
                         if len(item) == 12 and all(char in "0123456789abcdef" for char in item)
                     ],
                     "financialjuice_delivery_trace": values.get("financialjuice_delivery_trace", "")[:2000],
-                    "receipt_required": bool(trace_id and delivery_status),
+                    "receipt_required": bool(actual_notification_key and trace_id and delivery_status),
                     "error_type": error_type,
                 })
         finally:

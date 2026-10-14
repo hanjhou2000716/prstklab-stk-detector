@@ -66,6 +66,32 @@ def run_financialjuice_notification_e2e() -> dict[str, Any]:
         return tuple(result)
 
     recipients = ("e2e-fj-recipient-a", "e2e-fj-recipient-b")
+    class SimulatedPersistentLedger:
+        """Offline stand-in for the production claim API and recipient ledger."""
+
+        def __init__(self) -> None:
+            self.claims: dict[str, dict[str, Any]] = {}
+
+        def claim_notification(self, key: str, *, recipient_hashes: tuple[str, ...], **_kwargs: Any) -> dict[str, Any]:
+            claim = self.claims.setdefault(key, {"delivered": set(), "recipients": set()})
+            claim["recipients"].update(recipient_hashes)
+            pending = sorted(set(recipient_hashes) - claim["delivered"])
+            if not pending:
+                return {"status": "already_delivered", "notification_key": key, "pending_recipient_hashes": []}
+            return {"status": "claimed", "notification_key": key, "pending_recipient_hashes": pending}
+
+        def complete_notification_claim(
+            self, key: str, *, delivered_recipient_hashes: tuple[str, ...] = (),
+            failed_recipient_hashes: tuple[str, ...] = (), uncertain: bool = False,
+        ) -> None:
+            claim = self.claims.setdefault(key, {"delivered": set(), "recipients": set()})
+            claim["delivered"].update(delivered_recipient_hashes)
+            if uncertain:
+                claim["uncertain"] = True
+            elif failed_recipient_hashes:
+                claim["retryable"] = True
+
+    ledger = SimulatedPersistentLedger()
     first = deliver_financialjuice_event(
             event,
             release_id="e2e-release-fj",
@@ -74,6 +100,7 @@ def run_financialjuice_notification_e2e() -> dict[str, Any]:
             release_ready=True,
             token="offline-token",
             chat_ids=recipients,
+            ledger=ledger,
             text_sender=fake_sender,
     )
     history = [
@@ -93,6 +120,7 @@ def run_financialjuice_notification_e2e() -> dict[str, Any]:
             token="offline-token",
             chat_ids=recipients,
             delivery_history=history,
+            ledger=ledger,
             text_sender=fake_sender,
     )
     replay_history = history + [
@@ -112,6 +140,7 @@ def run_financialjuice_notification_e2e() -> dict[str, Any]:
             token="offline-token",
             chat_ids=recipients,
             delivery_history=replay_history,
+            ledger=ledger,
             text_sender=fake_sender,
         )
 

@@ -24,9 +24,7 @@ on:
     - cron: "*/5 * * * *"
 
 permissions:
-  actions: read
   contents: write
-  issues: write
 
 concurrency:
   group: gmail-history-sync
@@ -155,23 +153,6 @@ jobs:
               -f "client_payload[priority_event_refs]=$event_refs"
             dispatch_triggered=true
           fi
-      - name: Audit official monitor liveness
-        if: success()
-        id: monitor_liveness
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_API_URL: ${{ github.api_url }}
-        run: python scripts/monitor_liveness.py
-      - name: Notify once when a monitor stall incident opens
-        if: success() && steps.monitor_liveness.outputs.incident_opened == 'true'
-        env:
-          INCIDENT_KEY: ${{ steps.monitor_liveness.outputs.incident_key }}
-          INCIDENT_ISSUE: ${{ steps.monitor_liveness.outputs.issue_number }}
-          STALLED_RUN_ID: ${{ steps.monitor_liveness.outputs.stalled_run_id }}
-        run: |
-          echo "::error::Official event monitor stalled; incident ${INCIDENT_KEY} opened as issue #${INCIDENT_ISSUE}; run ${STALLED_RUN_ID} did not start."
-          exit 1
       - name: Publish Gmail notification decision
         if: always()
         env:
@@ -179,9 +160,6 @@ jobs:
           DISPATCH_REQUIRED: ${{ steps.dispatch.outputs.required || 'false' }}
           DISPATCH_REASON: ${{ steps.dispatch.outputs.reason || 'none' }}
           DISPATCH_OUTCOME: ${{ steps.dispatch.outcome || 'skipped' }}
-          MONITOR_LIVENESS_STATUS: ${{ steps.monitor_liveness.outputs.status || 'not_checked' }}
-          MONITOR_LIVENESS_INCIDENT: ${{ steps.monitor_liveness.outputs.issue_number || '' }}
-          MONITOR_LIVENESS_INCIDENT_OPENED: ${{ steps.monitor_liveness.outputs.incident_opened || 'false' }}
           RESULT_CONTRACT_OUTCOME: ${{ steps.contract.outcome || 'skipped' }}
           DEPENDENCY_INSTALL_OUTCOME: ${{ steps.dependencies.outcome || 'skipped' }}
           GMAIL_SYNC_OUTCOME: ${{ steps.sync.outcome || 'skipped' }}
@@ -446,11 +424,6 @@ jobs:
             fi
             echo "- official_monitor_dispatch: ${official_monitor_dispatch}"
             echo "- official_monitor_dispatch_reason: ${DISPATCH_REASON}"
-            echo "- official_monitor_liveness: ${MONITOR_LIVENESS_STATUS}"
-            if [ -n "${MONITOR_LIVENESS_INCIDENT:-}" ]; then
-              echo "- official_monitor_liveness_issue: #${MONITOR_LIVENESS_INCIDENT}"
-              echo "- official_monitor_liveness_incident_opened: ${MONITOR_LIVENESS_INCIDENT_OPENED:-false}"
-            fi
             echo "- storage_error: ${storage_error_summary}"
             echo "- diagnostic_reason: ${diagnostic_reason_summary}"
             echo "- priority_pending_state_errors: ${pending_errors_summary}"

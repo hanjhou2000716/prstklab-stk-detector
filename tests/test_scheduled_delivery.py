@@ -1081,7 +1081,8 @@ def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path
         captured.update(kwargs)
         return (TextDeliveryReceipt(
             kwargs["alert_id"], kwargs["release_id"], kwargs["snapshot_id"],
-            "hash", "delivered", message_id=2, observation_id=kwargs.get("observation_id", ""),
+            scheduled_delivery.recipient_hash(kwargs["chat_ids"][0]),
+            "delivered", message_id=2, observation_id=kwargs.get("observation_id", ""),
         ),)
 
     monkeypatch.setattr(scheduled_delivery, "send_text_briefs_audited", sender)
@@ -1091,6 +1092,16 @@ def test_scheduled_delivery_emits_financialjuice_release_delivery_trace(tmp_path
     class FakeLedger:
         def delivery_history(self):
             return []
+
+        def claim_notification(self, notification_key, *, recipient_hashes=(), **_kwargs):
+            return {
+                "status": "claimed",
+                "notification_key": notification_key,
+                "pending_recipient_hashes": list(recipient_hashes),
+            }
+
+        def complete_notification_claim(self, _notification_key, **_kwargs):
+            return None
 
         def record_delivery(self, payload, **_kwargs):
             recorded.update(payload)
