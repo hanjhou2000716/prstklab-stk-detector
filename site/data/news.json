@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "00176b13c97ba782",
-  "snapshot_id": "news-a257828f05764ea0",
+  "market_snapshot_id": "4d32294e6df6e189",
+  "snapshot_id": "news-7f526645c94b9675",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -1705,13 +1705,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 115,
-          "supporting_sources": [
-            {
-              "provider": "google_news",
-              "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTFBxaXozamZrcWFCU3RCVFdsNFEtdldPbHFrcndNMEdMbHgwcHJQalV3c1duLXBGdi1pVmZQQXdfLUpGcmIwYnh2UFAyX3ZkNVktQzhRNlVrZFdPbFdfV1ow"
-            }
-          ]
+          "ranking_score": 115
         },
         {
           "story_id": "news-ffc7bfdcbcc1965f79c5",
@@ -1808,6 +1802,99 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
+        },
+        {
+          "story_id": "news-42d942cbc92ddfd8eb98",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "AI熱潮擴大，台灣供應鏈同受其惠 - Taiwan Business TOPICS",
+          "raw_title": "AI熱潮擴大，台灣供應鏈同受其惠 - Taiwan Business TOPICS",
+          "normalized_fact": "AI熱潮擴大，台灣供應鏈同受其惠 Taiwan Business TOPICS。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "AI熱潮擴大，台灣供應鏈同受其惠 Taiwan Business TOPICS",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMi_AFBVV95cUxQODB6Zk1qY1JzSVpWbkNYYVdYVGVMYWs4ejQyYWhKZVNpMFZ3UnZVVXlrT00ybE9MazI5dWdNQ0tZZXFKX1lZV2l4YUpJWlMteml2NGZQVjdVdVU5SlozaFIyZ08yS2NWeUVpYmVpVGpYTy1fZnpUM0tiQkpuUVNfTDNWelM2VmZpdUxUTjRNNmtSX0VyemNUT19XTnFZNzZiVTJPWndCaFBsX183MmFzN29JTUE1aEFZU1h3QWkzT0hremxvTGRHcjVwdTZCWHMzc0JKY2hJRDNBU1M1c1lldldTc1A1ZE4yYWoyMUIzeU1HSTMtTzFHaF8ydkg",
+          "url": "https://news.google.com/rss/articles/CBMi_AFBVV95cUxQODB6Zk1qY1JzSVpWbkNYYVdYVGVMYWs4ejQyYWhKZVNpMFZ3UnZVVXlrT00ybE9MazI5dWdNQ0tZZXFKX1lZV2l4YUpJWlMteml2NGZQVjdVdVU5SlozaFIyZ08yS2NWeUVpYmVpVGpYTy1fZnpUM0tiQkpuUVNfTDNWelM2VmZpdUxUTjRNNmtSX0VyemNUT19XTnFZNzZiVTJPWndCaFBsX183MmFzN29JTUE1aEFZU1h3QWkzT0hremxvTGRHcjVwdTZCWHMzc0JKY2hJRDNBU1M1c1lldldTc1A1ZE4yYWoyMUIzeU1HSTMtTzFHaF8ydkg",
+          "published_at": "2026-10-12T08:52:39+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 3,
+          "published_local_date": "2026-10-12",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "ai熱潮擴大台灣供應鏈同受其惠taiwanbusinesstopics",
+          "event_cluster_key": "event-4c580830c0c9db5c1164",
+          "published_time_bucket": "2026-10-12T08:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜台股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
         },
         {
           "story_id": "news-5ac34e16c5daf9bcf432",
@@ -4577,99 +4664,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 15
-        },
-        {
-          "story_id": "news-540cadb2a1c9d4db31c9",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "AI伺服器供應鏈需求發燙！微軟下單先進製程，記憶體族群為何遭逢逆風？-財經焦點情報站 - CMoney投資網誌",
-          "raw_title": "AI伺服器供應鏈需求發燙！微軟下單先進製程，記憶體族群為何遭逢逆風？-財經焦點情報站 - CMoney投資網誌",
-          "normalized_fact": "AI伺服器供應鏈需求發燙，微軟下單先進製程，記憶體族群為何遭逢逆風？-財經焦點情報站 CMoney投資網誌。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "AI伺服器供應鏈需求發燙！微軟下單先進製程，記憶體族群為何遭逢逆風？-財經焦點情報站 CMoney投資網誌",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPWTdvTXZjWFozVXdqUG5oWm04YW5MYi04OWNnWmcwVDlXUDhmRWJVMUw2Vi1hVGhsRjI4M3Z6TzRPV2J3cnlBTVlLVzFFQUZFX182YmhOVy04R0hCRVRLbVZ5MVB6UVU1MVVGc0hxS09mckpDQlE4LU5hUUF0a29fYkVB",
-          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPWTdvTXZjWFozVXdqUG5oWm04YW5MYi04OWNnWmcwVDlXUDhmRWJVMUw2Vi1hVGhsRjI4M3Z6TzRPV2J3cnlBTVlLVzFFQUZFX182YmhOVy04R0hCRVRLbVZ5MVB6UVU1MVVGc0hxS09mckpDQlE4LU5hUUF0a29fYkVB",
-          "published_at": "2026-10-13T21:56:26+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-14",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "ai伺服器供應鏈需求發燙微軟下單先進製程記憶體族群為何遭逢逆風財經焦點情報站cmoney投資網誌",
-          "event_cluster_key": "event-ad872a832000037c51c7",
-          "published_time_bucket": "2026-10-13T21:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 1,
-          "inventory_saved_at": "2026-10-13T23:19:33.159158+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 15
         }
       ],
       "source_diversity": {
@@ -4794,9 +4788,8 @@
       },
       "excluded_count": 31,
       "exclusion_reasons": {
-        "incomplete_normalized_fact": 2,
-        "insufficient_market_relevance": 18,
-        "market_scope_mismatch": 4,
+        "insufficient_market_relevance": 22,
+        "market_scope_mismatch": 2,
         "outside_calendar_window": 16,
         "outside_trading_session_window": 3
       },
@@ -4821,8 +4814,8 @@
         "date_eligible_inventory": 63,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-14T11:18:25.640243+00:00",
-        "deduped": 9,
+        "reference_time": "2026-10-14T11:23:48.548173+00:00",
+        "deduped": 10,
         "publicly_ranked": 5,
         "current_eligible": 10,
         "inventory_considered": 63,
@@ -4836,7 +4829,7 @@
         "fetched_story_count": 41,
         "normalized_story_count": 41,
         "eligible_story_count": 10,
-        "deduped_story_count": 9,
+        "deduped_story_count": 10,
         "ranked_story_count": 5
       },
       "inventory": {
@@ -4857,7 +4850,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 41,
-          "checked_at": "2026-10-14T11:18:25.640289+00:00"
+          "checked_at": "2026-10-14T11:23:48.548216+00:00"
         },
         {
           "provider": "twse",
@@ -4868,10 +4861,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-10-14T11:18:25.640289+00:00",
+          "checked_at": "2026-10-14T11:23:48.548216+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+          "last_success_at": "2026-10-14T11:23:48.548216+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4896,10 +4889,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-10-14T11:18:25.640289+00:00",
+          "checked_at": "2026-10-14T11:23:48.548216+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+          "last_success_at": "2026-10-14T11:23:48.548216+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4924,10 +4917,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 0,
-          "checked_at": "2026-10-14T11:18:25.640289+00:00",
+          "checked_at": "2026-10-14T11:23:48.548216+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+          "last_success_at": "2026-10-14T11:23:48.548216+00:00",
           "last_failure_at": null,
           "stories_ingested": 1,
           "stories_deduped": 0,
@@ -4955,23 +4948,23 @@
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
           "item_count": 0,
-          "checked_at": "2026-10-14T11:18:25.640289+00:00",
+          "checked_at": "2026-10-14T11:23:48.548216+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+          "last_success_at": "2026-10-14T11:23:48.548216+00:00",
           "last_failure_at": null,
-          "stories_ingested": 8,
+          "stories_ingested": 9,
           "stories_deduped": 0,
           "ranked_count": 0,
           "relevance_distribution": {
-            "market": 8
+            "market": 9
           },
           "funnel": {
             "fetched_count": 10,
-            "normalized_count": 8,
-            "market_compatible_count": 8,
+            "normalized_count": 9,
+            "market_compatible_count": 9,
             "eligible_count": 0,
-            "excluded_count": 8,
+            "excluded_count": 9,
             "deduped_count": 0,
             "ranked_count": 0
           },
@@ -4986,13 +4979,13 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
           "item_count": 5,
-          "checked_at": "2026-10-14T11:18:25.640289+00:00",
+          "checked_at": "2026-10-14T11:23:48.548216+00:00",
           "raw_item_count": 30,
           "filtered_item_count": 5,
-          "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+          "last_success_at": "2026-10-14T11:23:48.548216+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
-          "stories_deduped": 9,
+          "stories_deduped": 10,
           "ranked_count": 5,
           "relevance_distribution": {
             "market": 30,
@@ -5004,14 +4997,14 @@
             "market_compatible_count": 30,
             "eligible_count": 10,
             "excluded_count": 20,
-            "deduped_count": 9,
+            "deduped_count": 10,
             "ranked_count": 5
           }
         }
       ],
       "observability": {
         "stories_ingested": 41,
-        "stories_deduped": 9,
+        "stories_deduped": 10,
         "ranked_count": 5,
         "relevance_distribution": {
           "market": 41,
@@ -5021,7 +5014,7 @@
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+            "last_success_at": "2026-10-14T11:23:48.548216+00:00",
             "last_failure_at": null,
             "stories_ingested": 1,
             "stories_deduped": 0,
@@ -5042,10 +5035,10 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+            "last_success_at": "2026-10-14T11:23:48.548216+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
-            "stories_deduped": 9,
+            "stories_deduped": 10,
             "ranked_count": 5,
             "relevance_distribution": {
               "market": 30,
@@ -5057,14 +5050,14 @@
               "market_compatible_count": 30,
               "eligible_count": 10,
               "excluded_count": 20,
-              "deduped_count": 9,
+              "deduped_count": 10,
               "ranked_count": 5
             }
           },
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+            "last_success_at": "2026-10-14T11:23:48.548216+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5083,7 +5076,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+            "last_success_at": "2026-10-14T11:23:48.548216+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5104,18 +5097,18 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 2,
+            "stories_ingested": 1,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 2
+              "market": 1
             },
             "funnel": {
-              "fetched_count": 2,
-              "normalized_count": 2,
+              "fetched_count": 1,
+              "normalized_count": 1,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 2,
+              "excluded_count": 1,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -5123,20 +5116,20 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+            "last_success_at": "2026-10-14T11:23:48.548216+00:00",
             "last_failure_at": null,
-            "stories_ingested": 8,
+            "stories_ingested": 9,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 8
+              "market": 9
             },
             "funnel": {
               "fetched_count": 10,
-              "normalized_count": 8,
-              "market_compatible_count": 8,
+              "normalized_count": 9,
+              "market_compatible_count": 9,
               "eligible_count": 0,
-              "excluded_count": 8,
+              "excluded_count": 9,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -5363,15 +5356,15 @@
       ],
       "stories": [
         {
-          "story_id": "news-7a77013f96a111e8684c",
+          "story_id": "news-1b35d9936c6a61858042",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "How soaring interest rates are threatening AI stocks",
-          "raw_title": "How soaring interest rates are threatening AI stocks",
-          "normalized_fact": "Gabelli Funds Portfolio Manager Justin Bergner and NYSE Senior Market Strategist Michael Reinking break down how rapidly spiking bond yields and heavy AI spending are impacting the stock market。",
-          "market_topic": "semiconductor_ai",
+          "title": "Premarket movers: Alibaba gains on new AI glasses; Liquidia rallies as legal eases",
+          "raw_title": "Premarket movers: Alibaba gains on new AI glasses; Liquidia rallies as legal eases",
+          "normalized_fact": "Investing.com - U.S. stock futures edged higher on Wednesday as investors prepared for key inflation data and a fresh batch of quarterly earnings from major banks. Gains in Dow and S&P 500 futures contrasted with a largely flat Nasdaq futures contract as investors assessed developments across artificial intelligence, healthcare and telecommunications。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5379,11 +5372,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "Gabelli Funds Portfolio Manager Justin Bergner and NYSE Senior Market Strategist Michael Reinking break down how rapidly spiking bond yields and heavy AI spending are impacting the stock market.",
+          "summary": "Investing.com - U.S. stock futures edged higher on Wednesday as investors prepared for key inflation data and a fresh batch of quarterly earnings from major banks. Gains in Dow and S&P 500 futures contrasted with a largely flat Nasdaq futures contract as investors assessed developments across artificial intelligence, healthcare and telecommunications.",
           "description": "",
-          "canonical_url": "https://finance.yahoo.com/video/soaring-interest-rates-threatening-ai-110000387.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/video/soaring-interest-rates-threatening-ai-110000387.html?.tsrc=rss",
-          "published_at": "2026-10-14T11:00:00+00:00",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/premarket-movers-alibaba-gains-ai-111122644.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/premarket-movers-alibaba-gains-ai-111122644.html?.tsrc=rss",
+          "published_at": "2026-10-14T11:11:22+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -5401,14 +5394,20 @@
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
+            "category": "macro",
+            "reason": "macro_subject_action",
+            "matched_terms": [
+              "inflation",
+              "data"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "inflation",
+              "data"
+            ],
+            "matched_subject": "inflation",
+            "matched_action": "data",
+            "matched_market_object": "inflation",
             "input_fields": [
               "description",
               "summary",
@@ -5419,17 +5418,20 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "gabellifundsportfoliomanagerjustinbergnerandnyseseniormarketstrategistmichaelreinkingbreakdownhowrapidlyspikingbondyieldsandheavyaispendingareimpactingthestockmarket",
-          "event_cluster_key": "event-dad456140dbc1a78c1d2",
+          "dedupe_key": "investingcomusstockfuturesedgedhigheronwednesdayasinvestorspreparedforkeyinflationdataandafreshbatchofquarterlyearningsfrommajorbanksgainsindowandsp500futurescontrastedwithalargelyflatnasdaqfuturescontractasinvestorsassesseddevelopmentsacrossartificialintelligencehealthcareandtelecommunications",
+          "event_cluster_key": "event-a489d1041dc66d48a15b",
           "published_time_bucket": "2026-10-14T11:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
+          "classification_evidence": [
+            "inflation",
+            "data"
+          ],
+          "matched_subject": "inflation",
+          "matched_action": "data",
+          "matched_market_object": "inflation",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -5639,14 +5641,14 @@
           "ranking_score": 130
         },
         {
-          "story_id": "news-c5ca3e213b3fae4d4ac7",
+          "story_id": "news-7a77013f96a111e8684c",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "What the interest rate danger zone means for your money",
-          "raw_title": "What the interest rate danger zone means for your money",
-          "normalized_fact": "Gabelli Funds Portfolio Manager Justin Bergner and NYSE Senior Market Strategist Michael Reinking break down how the AI boom, rising interest rates, and geopolitical tensions are fundamentally reshaping the stock market。",
+          "title": "How soaring interest rates are threatening AI stocks",
+          "raw_title": "How soaring interest rates are threatening AI stocks",
+          "normalized_fact": "Gabelli Funds Portfolio Manager Justin Bergner and NYSE Senior Market Strategist Michael Reinking break down how rapidly spiking bond yields and heavy AI spending are impacting the stock market。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -5655,11 +5657,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "Gabelli Funds Portfolio Manager Justin Bergner and NYSE Senior Market Strategist Michael Reinking break down how the AI boom, rising interest rates, and geopolitical tensions are fundamentally reshaping the stock market.",
+          "summary": "Gabelli Funds Portfolio Manager Justin Bergner and NYSE Senior Market Strategist Michael Reinking break down how rapidly spiking bond yields and heavy AI spending are impacting the stock market.",
           "description": "",
-          "canonical_url": "https://finance.yahoo.com/video/interest-rate-danger-zone-means-100000241.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/video/interest-rate-danger-zone-means-100000241.html?.tsrc=rss",
-          "published_at": "2026-10-14T10:00:00+00:00",
+          "canonical_url": "https://finance.yahoo.com/video/soaring-interest-rates-threatening-ai-110000387.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/video/soaring-interest-rates-threatening-ai-110000387.html?.tsrc=rss",
+          "published_at": "2026-10-14T11:00:00+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -5672,7 +5674,7 @@
           "entities": [],
           "sectors": [],
           "topics": [
-            "rates"
+            "ai"
           ],
           "event_classification": {
             "schema_version": "1.0",
@@ -5695,9 +5697,9 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "gabellifundsportfoliomanagerjustinbergnerandnyseseniormarketstrategistmichaelreinkingbreakdownhowtheaiboomrisinginterestratesandgeopoliticaltensionsarefundamentallyreshapingthestockmarket",
-          "event_cluster_key": "event-778ce6894dec6c400d3d",
-          "published_time_bucket": "2026-10-14T10:00:00+00:00",
+          "dedupe_key": "gabellifundsportfoliomanagerjustinbergnerandnyseseniormarketstrategistmichaelreinkingbreakdownhowrapidlyspikingbondyieldsandheavyaispendingareimpactingthestockmarket",
+          "event_cluster_key": "event-dad456140dbc1a78c1d2",
+          "published_time_bucket": "2026-10-14T11:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
@@ -5816,15 +5818,15 @@
       ],
       "editorial_candidates": [
         {
-          "story_id": "news-7a77013f96a111e8684c",
+          "story_id": "news-1b35d9936c6a61858042",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "How soaring interest rates are threatening AI stocks",
-          "raw_title": "How soaring interest rates are threatening AI stocks",
-          "normalized_fact": "Gabelli Funds Portfolio Manager Justin Bergner and NYSE Senior Market Strategist Michael Reinking break down how rapidly spiking bond yields and heavy AI spending are impacting the stock market。",
-          "market_topic": "semiconductor_ai",
+          "title": "Premarket movers: Alibaba gains on new AI glasses; Liquidia rallies as legal eases",
+          "raw_title": "Premarket movers: Alibaba gains on new AI glasses; Liquidia rallies as legal eases",
+          "normalized_fact": "Investing.com - U.S. stock futures edged higher on Wednesday as investors prepared for key inflation data and a fresh batch of quarterly earnings from major banks. Gains in Dow and S&P 500 futures contrasted with a largely flat Nasdaq futures contract as investors assessed developments across artificial intelligence, healthcare and telecommunications。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5832,11 +5834,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "Gabelli Funds Portfolio Manager Justin Bergner and NYSE Senior Market Strategist Michael Reinking break down how rapidly spiking bond yields and heavy AI spending are impacting the stock market.",
+          "summary": "Investing.com - U.S. stock futures edged higher on Wednesday as investors prepared for key inflation data and a fresh batch of quarterly earnings from major banks. Gains in Dow and S&P 500 futures contrasted with a largely flat Nasdaq futures contract as investors assessed developments across artificial intelligence, healthcare and telecommunications.",
           "description": "",
-          "canonical_url": "https://finance.yahoo.com/video/soaring-interest-rates-threatening-ai-110000387.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/video/soaring-interest-rates-threatening-ai-110000387.html?.tsrc=rss",
-          "published_at": "2026-10-14T11:00:00+00:00",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/premarket-movers-alibaba-gains-ai-111122644.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/premarket-movers-alibaba-gains-ai-111122644.html?.tsrc=rss",
+          "published_at": "2026-10-14T11:11:22+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -5854,14 +5856,20 @@
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
+            "category": "macro",
+            "reason": "macro_subject_action",
+            "matched_terms": [
+              "inflation",
+              "data"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "inflation",
+              "data"
+            ],
+            "matched_subject": "inflation",
+            "matched_action": "data",
+            "matched_market_object": "inflation",
             "input_fields": [
               "description",
               "summary",
@@ -5872,17 +5880,20 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "gabellifundsportfoliomanagerjustinbergnerandnyseseniormarketstrategistmichaelreinkingbreakdownhowrapidlyspikingbondyieldsandheavyaispendingareimpactingthestockmarket",
-          "event_cluster_key": "event-dad456140dbc1a78c1d2",
+          "dedupe_key": "investingcomusstockfuturesedgedhigheronwednesdayasinvestorspreparedforkeyinflationdataandafreshbatchofquarterlyearningsfrommajorbanksgainsindowandsp500futurescontrastedwithalargelyflatnasdaqfuturescontractasinvestorsassesseddevelopmentsacrossartificialintelligencehealthcareandtelecommunications",
+          "event_cluster_key": "event-a489d1041dc66d48a15b",
           "published_time_bucket": "2026-10-14T11:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
+          "classification_evidence": [
+            "inflation",
+            "data"
+          ],
+          "matched_subject": "inflation",
+          "matched_action": "data",
+          "matched_market_object": "inflation",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -6081,6 +6092,90 @@
           ],
           "exclusion_reason": null,
           "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "story_id": "news-7a77013f96a111e8684c",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "How soaring interest rates are threatening AI stocks",
+          "raw_title": "How soaring interest rates are threatening AI stocks",
+          "normalized_fact": "Gabelli Funds Portfolio Manager Justin Bergner and NYSE Senior Market Strategist Michael Reinking break down how rapidly spiking bond yields and heavy AI spending are impacting the stock market。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Gabelli Funds Portfolio Manager Justin Bergner and NYSE Senior Market Strategist Michael Reinking break down how rapidly spiking bond yields and heavy AI spending are impacting the stock market.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/video/soaring-interest-rates-threatening-ai-110000387.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/video/soaring-interest-rates-threatening-ai-110000387.html?.tsrc=rss",
+          "published_at": "2026-10-14T11:00:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-14",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "gabellifundsportfoliomanagerjustinbergnerandnyseseniormarketstrategistmichaelreinkingbreakdownhowrapidlyspikingbondyieldsandheavyaispendingareimpactingthestockmarket",
+          "event_cluster_key": "event-dad456140dbc1a78c1d2",
+          "published_time_bucket": "2026-10-14T11:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -8930,93 +9025,6 @@
           "ranking_score": 27
         },
         {
-          "story_id": "news-12617a1a8a9a781f3251",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Asia stocks mixed as oil retreats, earnings season gathers pace",
-          "raw_title": "Asia stocks mixed as oil retreats, earnings season gathers pace",
-          "normalized_fact": "Asia stocks mixed as oil retreats, earnings season gathers pace。",
-          "market_topic": "company_industry",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/world-indices/articles/asia-stocks-mixed-oil-retreats-035535247.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/world-indices/articles/asia-stocks-mixed-oil-retreats-035535247.html?.tsrc=rss",
-          "published_at": "2026-10-12T03:55:35+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 4,
-          "published_local_date": "2026-10-11",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "earnings",
-            "energy"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:global",
-            "active_event:oil",
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "asiastocksmixedasoilretreatsearningsseasongatherspace",
-          "event_cluster_key": "event-374dbd8d30b6086492f5",
-          "published_time_bucket": "2026-10-12T03:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 4,
-          "inventory_saved_at": "2026-10-12T06:41:28.913155+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 26
-        },
-        {
           "story_id": "news-2beb1258d0421cf60437",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -9396,14 +9404,14 @@
         },
         "sector_interest": {},
         "topic_interest": {
-          "oil": 14,
+          "oil": 13,
           "iran": 3,
           "war": 2,
           "hormuz": 2,
           "sanctions": 1
         },
         "market_interest": {
-          "us": 146
+          "us": 145
         },
         "context": {
           "tracked_tickers": [
@@ -9488,7 +9496,7 @@
           "research_candidate": {},
           "tracked_sector": {},
           "active_event": {
-            "oil": 14,
+            "oil": 13,
             "iran": 3,
             "war": 2,
             "hormuz": 2,
@@ -9497,13 +9505,13 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 48,
+      "excluded_count": 47,
       "exclusion_reasons": {
         "generic_official_filing": 20,
         "incomplete_normalized_fact": 20,
         "insufficient_market_relevance": 20,
         "listicle_or_selection": 2,
-        "market_scope_mismatch": 10,
+        "market_scope_mismatch": 8,
         "outside_calendar_window": 11,
         "outside_trading_session_window": 1
       },
@@ -9517,40 +9525,40 @@
         "disabled_provider_count": 1,
         "fetched": 59,
         "normalized": 59,
-        "eligible": 11,
-        "excluded": 48,
+        "eligible": 12,
+        "excluded": 47,
         "date_eligible_current": 47,
         "date_excluded_current": 12,
         "date_exclusion_reasons_current": {
           "outside_calendar_window": 11,
           "outside_trading_session_window": 1
         },
-        "date_eligible_inventory": 87,
+        "date_eligible_inventory": 86,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-14T11:18:25.640243+00:00",
-        "deduped": 10,
+        "reference_time": "2026-10-14T11:23:48.548173+00:00",
+        "deduped": 11,
         "publicly_ranked": 5,
-        "current_eligible": 11,
-        "inventory_considered": 87,
+        "current_eligible": 12,
+        "inventory_considered": 86,
         "inventory_eligible": 51,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 48,
+        "filtered_story_count": 47,
         "fetched_story_count": 59,
         "normalized_story_count": 59,
-        "eligible_story_count": 11,
-        "deduped_story_count": 10,
+        "eligible_story_count": 12,
+        "deduped_story_count": 11,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 87,
+        "considered": 86,
         "eligible": 51,
         "selected": 0,
         "target_count": 5,
@@ -9564,7 +9572,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 59,
-          "checked_at": "2026-10-14T11:18:25.640289+00:00"
+          "checked_at": "2026-10-14T11:23:48.548216+00:00"
         },
         {
           "provider": "sec",
@@ -9575,10 +9583,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-10-14T11:18:25.640289+00:00",
+          "checked_at": "2026-10-14T11:23:48.548216+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+          "last_success_at": "2026-10-14T11:23:48.548216+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9606,12 +9614,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-10-14T11:18:25.640289+00:00",
+          "checked_at": "2026-10-14T11:23:48.548216+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-10-14T11:18:25.640289+00:00",
+          "last_failure_at": "2026-10-14T11:23:48.548216+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9634,10 +9642,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-10-14T11:18:25.640289+00:00",
+          "checked_at": "2026-10-14T11:23:48.548216+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+          "last_success_at": "2026-10-14T11:23:48.548216+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9662,10 +9670,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 1,
-          "checked_at": "2026-10-14T11:18:25.640289+00:00",
+          "checked_at": "2026-10-14T11:23:48.548216+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 1,
-          "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+          "last_success_at": "2026-10-14T11:23:48.548216+00:00",
           "last_failure_at": null,
           "stories_ingested": 2,
           "stories_deduped": 1,
@@ -9692,24 +9700,24 @@
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
           "item_count": 2,
-          "checked_at": "2026-10-14T11:18:25.640289+00:00",
+          "checked_at": "2026-10-14T11:23:48.548216+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 2,
-          "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+          "last_success_at": "2026-10-14T11:23:48.548216+00:00",
           "last_failure_at": null,
-          "stories_ingested": 2,
-          "stories_deduped": 2,
+          "stories_ingested": 3,
+          "stories_deduped": 3,
           "ranked_count": 2,
           "relevance_distribution": {
-            "market": 2
+            "market": 3
           },
           "funnel": {
             "fetched_count": 7,
-            "normalized_count": 2,
-            "market_compatible_count": 2,
-            "eligible_count": 2,
+            "normalized_count": 3,
+            "market_compatible_count": 3,
+            "eligible_count": 3,
             "excluded_count": 0,
-            "deduped_count": 2,
+            "deduped_count": 3,
             "ranked_count": 2
           }
         },
@@ -9722,10 +9730,10 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
           "item_count": 2,
-          "checked_at": "2026-10-14T11:18:25.640289+00:00",
+          "checked_at": "2026-10-14T11:23:48.548216+00:00",
           "raw_item_count": 40,
           "filtered_item_count": 2,
-          "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+          "last_success_at": "2026-10-14T11:23:48.548216+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
           "stories_deduped": 7,
@@ -9748,7 +9756,7 @@
       ],
       "observability": {
         "stories_ingested": 59,
-        "stories_deduped": 10,
+        "stories_deduped": 11,
         "ranked_count": 5,
         "relevance_distribution": {
           "active_event": 8,
@@ -9759,7 +9767,7 @@
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+            "last_success_at": "2026-10-14T11:23:48.548216+00:00",
             "last_failure_at": null,
             "stories_ingested": 2,
             "stories_deduped": 1,
@@ -9781,7 +9789,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-10-14T11:18:25.640289+00:00",
+            "last_failure_at": "2026-10-14T11:23:48.548216+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9799,7 +9807,7 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+            "last_success_at": "2026-10-14T11:23:48.548216+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
             "stories_deduped": 7,
@@ -9822,7 +9830,7 @@
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+            "last_success_at": "2026-10-14T11:23:48.548216+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9841,7 +9849,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+            "last_success_at": "2026-10-14T11:23:48.548216+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -9864,19 +9872,19 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 5,
+            "stories_ingested": 4,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 5,
+              "market": 4,
               "tracked_ticker": 2
             },
             "funnel": {
-              "fetched_count": 5,
-              "normalized_count": 5,
+              "fetched_count": 4,
+              "normalized_count": 4,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 5,
+              "excluded_count": 4,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -9884,21 +9892,21 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-14T11:18:25.640289+00:00",
+            "last_success_at": "2026-10-14T11:23:48.548216+00:00",
             "last_failure_at": null,
-            "stories_ingested": 2,
-            "stories_deduped": 2,
+            "stories_ingested": 3,
+            "stories_deduped": 3,
             "ranked_count": 2,
             "relevance_distribution": {
-              "market": 2
+              "market": 3
             },
             "funnel": {
               "fetched_count": 7,
-              "normalized_count": 2,
-              "market_compatible_count": 2,
-              "eligible_count": 2,
+              "normalized_count": 3,
+              "market_compatible_count": 3,
+              "eligible_count": 3,
               "excluded_count": 0,
-              "deduped_count": 2,
+              "deduped_count": 3,
               "ranked_count": 2
             }
           }
