@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "3fc6b49f69cac7e6",
-  "snapshot_id": "news-b0a69c831609cf56",
+  "market_snapshot_id": "4dac77309b163151",
+  "snapshot_id": "news-2e2e0a3dc650c3eb",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -437,15 +437,15 @@
       ],
       "stories": [
         {
-          "story_id": "news-f9420784f70d3005d78d",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
+          "story_id": "news-5ac34e16c5daf9bcf432",
+          "provider": "anue",
+          "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "敘利亞捨俄油轉購沙烏地美國油 緩解燃料短缺及物價飆漲",
-          "raw_title": "敘利亞捨俄油轉購沙烏地美國油 緩解燃料短缺及物價飆漲",
-          "normalized_fact": "圖／本報資料庫商傳媒｜吳承岳／台北報導為解決國內嚴重的燃料短缺與物價飆漲問題，長期受內戰和國際制裁影響的敘利亞，正轉向從美國及沙烏地阿拉伯進口石油產品。此舉意味著敘利亞改變了過去的能源供應策略，放棄了。",
-          "market_topic": "energy_geopolitics",
+          "title": "台股震盪千點免驚！定海神針撐盤，這『三大供應鏈』將迎利多！！",
+          "raw_title": "台股震盪千點免驚！定海神針撐盤，這『三大供應鏈』將迎利多！！",
+          "normalized_fact": "CPU持續漲價，主因先進製程/封裝成本升高且供不應求；陳立武稱供應僅滿足一半需求，蘇姿丰指明年需求增速將快於供給。 英特爾、超微、輝達與微軟AI晶片多採台積電3奈米、2奈米代工，台積電在AI伺服器CPU、GPU、ASIC供應鏈地位吃重。",
+          "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -453,11 +453,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "圖／本報資料庫商傳媒｜吳承岳／台北報導為解決國內嚴重的燃料短缺與物價飆漲問題，長期受內戰和國際制裁影響的敘利亞，正轉向從美國及沙烏地阿拉伯進口石油產品。此舉意味著敘利亞改變了過去的能源供應策略，放棄了",
+          "summary": "CPU持續漲價，主因先進製程/封裝成本升高且供不應求；陳立武稱供應僅滿足一半需求，蘇姿丰指明年需求增速將快於供給。 英特爾、超微、輝達與微軟AI晶片多採台積電3奈米、2奈米代工，台積電在AI伺服器CPU、GPU、ASIC供應鏈地位吃重。",
           "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%95%98%E5%88%A9%E4%BA%9E%E6%8D%A8%E4%BF%84%E6%B2%B9%E8%BD%89%E8%B3%BC%E6%B2%99%E7%83%8F%E5%9C%B0%E7%BE%8E%E5%9C%8B%E6%B2%B9-%E7%B7%A9%E8%A7%A3%E7%87%83%E6%96%99%E7%9F%AD%E7%BC%BA%E5%8F%8A%E7%89%A9%E5%83%B9%E9%A3%86%E6%BC%B2-090436893.html",
-          "url": "https://tw.stock.yahoo.com/news/%E6%95%98%E5%88%A9%E4%BA%9E%E6%8D%A8%E4%BF%84%E6%B2%B9%E8%BD%89%E8%B3%BC%E6%B2%99%E7%83%8F%E5%9C%B0%E7%BE%8E%E5%9C%8B%E6%B2%B9-%E7%B7%A9%E8%A7%A3%E7%87%83%E6%96%99%E7%9F%AD%E7%BC%BA%E5%8F%8A%E7%89%A9%E5%83%B9%E9%A3%86%E6%BC%B2-090436893.html",
-          "published_at": "2026-10-14T09:04:36+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6629376",
+          "url": "https://news.cnyes.com/news/id/6629376",
+          "published_at": "2026-10-14T00:30:04+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -467,26 +467,28 @@
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "TAIEX"
+          ],
           "sectors": [],
           "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "energy",
-            "reason": "energy_subject_action",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
             "matched_terms": [
-              "石油",
+              "ai",
               "供應"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "石油",
+              "ai",
               "供應"
             ],
-            "matched_subject": "石油",
+            "matched_subject": "ai",
             "matched_action": "供應",
-            "matched_market_object": "石油",
+            "matched_market_object": "ai",
             "input_fields": [
               "description",
               "summary",
@@ -494,31 +496,32 @@
             ]
           },
           "relevance_reasons": [
-            "market:cross_market",
-            "active_event:石油",
-            "market:taiwan"
+            "market:taiwan",
+            "tracked_ticker:2330",
+            "tracked_ticker:NVDA",
+            "tracked_ticker:TSM"
           ],
           "freshness": "published",
-          "dedupe_key": "圖本報資料庫商傳媒吳承岳台北報導為解決國內嚴重的燃料短缺與物價飆漲問題長期受內戰和國際制裁影響的敘利亞正轉向從美國及沙烏地阿拉伯進口石油產品此舉意味著敘利亞改變了過去的能源供應策略放棄了",
-          "event_cluster_key": "event-271c7c1ddcd0b0f38527",
-          "published_time_bucket": "2026-10-14T09:00:00+00:00",
+          "dedupe_key": "cpu持續漲價主因先進製程封裝成本升高且供不應求陳立武稱供應僅滿足一半需求蘇姿丰指明年需求增速將快於供給英特爾超微輝達與微軟ai晶片多採台積電3奈米2奈米代工台積電在ai伺服器cpugpuasic供應鏈地位吃重",
+          "event_cluster_key": "event-22347cfeeb44da488975",
+          "published_time_bucket": "2026-10-14T00:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "石油",
+            "ai",
             "供應"
           ],
-          "matched_subject": "石油",
+          "matched_subject": "ai",
           "matched_action": "供應",
-          "matched_market_object": "石油",
-          "decision_value_class": "energy",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
+          "source": "鉅亨網｜持股關聯",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -527,7 +530,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 135
+          "ranking_score": 145
         },
         {
           "story_id": "news-2e01175cfca7d381cd25",
@@ -923,15 +926,15 @@
       ],
       "editorial_candidates": [
         {
-          "story_id": "news-f9420784f70d3005d78d",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
+          "story_id": "news-5ac34e16c5daf9bcf432",
+          "provider": "anue",
+          "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "敘利亞捨俄油轉購沙烏地美國油 緩解燃料短缺及物價飆漲",
-          "raw_title": "敘利亞捨俄油轉購沙烏地美國油 緩解燃料短缺及物價飆漲",
-          "normalized_fact": "圖／本報資料庫商傳媒｜吳承岳／台北報導為解決國內嚴重的燃料短缺與物價飆漲問題，長期受內戰和國際制裁影響的敘利亞，正轉向從美國及沙烏地阿拉伯進口石油產品。此舉意味著敘利亞改變了過去的能源供應策略，放棄了。",
-          "market_topic": "energy_geopolitics",
+          "title": "台股震盪千點免驚！定海神針撐盤，這『三大供應鏈』將迎利多！！",
+          "raw_title": "台股震盪千點免驚！定海神針撐盤，這『三大供應鏈』將迎利多！！",
+          "normalized_fact": "CPU持續漲價，主因先進製程/封裝成本升高且供不應求；陳立武稱供應僅滿足一半需求，蘇姿丰指明年需求增速將快於供給。 英特爾、超微、輝達與微軟AI晶片多採台積電3奈米、2奈米代工，台積電在AI伺服器CPU、GPU、ASIC供應鏈地位吃重。",
+          "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -939,11 +942,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "圖／本報資料庫商傳媒｜吳承岳／台北報導為解決國內嚴重的燃料短缺與物價飆漲問題，長期受內戰和國際制裁影響的敘利亞，正轉向從美國及沙烏地阿拉伯進口石油產品。此舉意味著敘利亞改變了過去的能源供應策略，放棄了",
+          "summary": "CPU持續漲價，主因先進製程/封裝成本升高且供不應求；陳立武稱供應僅滿足一半需求，蘇姿丰指明年需求增速將快於供給。 英特爾、超微、輝達與微軟AI晶片多採台積電3奈米、2奈米代工，台積電在AI伺服器CPU、GPU、ASIC供應鏈地位吃重。",
           "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%95%98%E5%88%A9%E4%BA%9E%E6%8D%A8%E4%BF%84%E6%B2%B9%E8%BD%89%E8%B3%BC%E6%B2%99%E7%83%8F%E5%9C%B0%E7%BE%8E%E5%9C%8B%E6%B2%B9-%E7%B7%A9%E8%A7%A3%E7%87%83%E6%96%99%E7%9F%AD%E7%BC%BA%E5%8F%8A%E7%89%A9%E5%83%B9%E9%A3%86%E6%BC%B2-090436893.html",
-          "url": "https://tw.stock.yahoo.com/news/%E6%95%98%E5%88%A9%E4%BA%9E%E6%8D%A8%E4%BF%84%E6%B2%B9%E8%BD%89%E8%B3%BC%E6%B2%99%E7%83%8F%E5%9C%B0%E7%BE%8E%E5%9C%8B%E6%B2%B9-%E7%B7%A9%E8%A7%A3%E7%87%83%E6%96%99%E7%9F%AD%E7%BC%BA%E5%8F%8A%E7%89%A9%E5%83%B9%E9%A3%86%E6%BC%B2-090436893.html",
-          "published_at": "2026-10-14T09:04:36+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6629376",
+          "url": "https://news.cnyes.com/news/id/6629376",
+          "published_at": "2026-10-14T00:30:04+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -953,26 +956,28 @@
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "TAIEX"
+          ],
           "sectors": [],
           "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "energy",
-            "reason": "energy_subject_action",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
             "matched_terms": [
-              "石油",
+              "ai",
               "供應"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "石油",
+              "ai",
               "供應"
             ],
-            "matched_subject": "石油",
+            "matched_subject": "ai",
             "matched_action": "供應",
-            "matched_market_object": "石油",
+            "matched_market_object": "ai",
             "input_fields": [
               "description",
               "summary",
@@ -980,31 +985,32 @@
             ]
           },
           "relevance_reasons": [
-            "market:cross_market",
-            "active_event:石油",
-            "market:taiwan"
+            "market:taiwan",
+            "tracked_ticker:2330",
+            "tracked_ticker:NVDA",
+            "tracked_ticker:TSM"
           ],
           "freshness": "published",
-          "dedupe_key": "圖本報資料庫商傳媒吳承岳台北報導為解決國內嚴重的燃料短缺與物價飆漲問題長期受內戰和國際制裁影響的敘利亞正轉向從美國及沙烏地阿拉伯進口石油產品此舉意味著敘利亞改變了過去的能源供應策略放棄了",
-          "event_cluster_key": "event-271c7c1ddcd0b0f38527",
-          "published_time_bucket": "2026-10-14T09:00:00+00:00",
+          "dedupe_key": "cpu持續漲價主因先進製程封裝成本升高且供不應求陳立武稱供應僅滿足一半需求蘇姿丰指明年需求增速將快於供給英特爾超微輝達與微軟ai晶片多採台積電3奈米2奈米代工台積電在ai伺服器cpugpuasic供應鏈地位吃重",
+          "event_cluster_key": "event-22347cfeeb44da488975",
+          "published_time_bucket": "2026-10-14T00:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "石油",
+            "ai",
             "供應"
           ],
-          "matched_subject": "石油",
+          "matched_subject": "ai",
           "matched_action": "供應",
-          "matched_market_object": "石油",
-          "decision_value_class": "energy",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
+          "source": "鉅亨網｜持股關聯",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -1013,7 +1019,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 135
+          "ranking_score": 145
         },
         {
           "story_id": "news-2e01175cfca7d381cd25",
@@ -1887,102 +1893,6 @@
           "ranking_score": 125
         },
         {
-          "story_id": "news-5ac34e16c5daf9bcf432",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "台股震盪千點免驚！定海神針撐盤，這『三大供應鏈』將迎利多！！",
-          "raw_title": "台股震盪千點免驚！定海神針撐盤，這『三大供應鏈』將迎利多！！",
-          "normalized_fact": "CPU持續漲價，主因先進製程/封裝成本升高且供不應求；陳立武稱供應僅滿足一半需求，蘇姿丰指明年需求增速將快於供給。 英特爾、超微、輝達與微軟AI晶片多採台積電3奈米、2奈米代工，台積電在AI伺服器CPU、GPU、ASIC供應鏈地位吃重。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "CPU持續漲價，主因先進製程/封裝成本升高且供不應求；陳立武稱供應僅滿足一半需求，蘇姿丰指明年需求增速將快於供給。 英特爾、超微、輝達與微軟AI晶片多採台積電3奈米、2奈米代工，台積電在AI伺服器CPU、GPU、ASIC供應鏈地位吃重。",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6629376",
-          "url": "https://news.cnyes.com/news/id/6629376",
-          "published_at": "2026-10-14T00:30:04+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-14",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "TAIEX"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:NVDA",
-            "tracked_ticker:TSM"
-          ],
-          "freshness": "published",
-          "dedupe_key": "cpu持續漲價主因先進製程封裝成本升高且供不應求陳立武稱供應僅滿足一半需求蘇姿丰指明年需求增速將快於供給英特爾超微輝達與微軟ai晶片多採台積電3奈米2奈米代工台積電在ai伺服器cpugpuasic供應鏈地位吃重",
-          "event_cluster_key": "event-22347cfeeb44da488975",
-          "published_time_bucket": "2026-10-14T00:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜持股關聯",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 1,
-          "inventory_saved_at": "2026-10-14T05:23:39.340967+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 45
-        },
-        {
           "story_id": "news-1063be21863d8d7cce16",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -2270,6 +2180,99 @@
           "inventory_used": true,
           "inventory_age_trading_sessions": 1,
           "inventory_saved_at": "2026-10-14T05:28:59.178219+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 35
+        },
+        {
+          "story_id": "news-f9420784f70d3005d78d",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "敘利亞捨俄油轉購沙烏地美國油 緩解燃料短缺及物價飆漲",
+          "raw_title": "敘利亞捨俄油轉購沙烏地美國油 緩解燃料短缺及物價飆漲",
+          "normalized_fact": "圖／本報資料庫商傳媒｜吳承岳／台北報導為解決國內嚴重的燃料短缺與物價飆漲問題，長期受內戰和國際制裁影響的敘利亞，正轉向從美國及沙烏地阿拉伯進口石油產品。此舉意味著敘利亞改變了過去的能源供應策略，放棄了。",
+          "market_topic": "energy_geopolitics",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "圖／本報資料庫商傳媒｜吳承岳／台北報導為解決國內嚴重的燃料短缺與物價飆漲問題，長期受內戰和國際制裁影響的敘利亞，正轉向從美國及沙烏地阿拉伯進口石油產品。此舉意味著敘利亞改變了過去的能源供應策略，放棄了",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%95%98%E5%88%A9%E4%BA%9E%E6%8D%A8%E4%BF%84%E6%B2%B9%E8%BD%89%E8%B3%BC%E6%B2%99%E7%83%8F%E5%9C%B0%E7%BE%8E%E5%9C%8B%E6%B2%B9-%E7%B7%A9%E8%A7%A3%E7%87%83%E6%96%99%E7%9F%AD%E7%BC%BA%E5%8F%8A%E7%89%A9%E5%83%B9%E9%A3%86%E6%BC%B2-090436893.html",
+          "url": "https://tw.stock.yahoo.com/news/%E6%95%98%E5%88%A9%E4%BA%9E%E6%8D%A8%E4%BF%84%E6%B2%B9%E8%BD%89%E8%B3%BC%E6%B2%99%E7%83%8F%E5%9C%B0%E7%BE%8E%E5%9C%8B%E6%B2%B9-%E7%B7%A9%E8%A7%A3%E7%87%83%E6%96%99%E7%9F%AD%E7%BC%BA%E5%8F%8A%E7%89%A9%E5%83%B9%E9%A3%86%E6%BC%B2-090436893.html",
+          "published_at": "2026-10-14T09:04:36+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-14",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "energy",
+            "reason": "energy_subject_action",
+            "matched_terms": [
+              "石油",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "石油",
+              "供應"
+            ],
+            "matched_subject": "石油",
+            "matched_action": "供應",
+            "matched_market_object": "石油",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "active_event:石油",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "圖本報資料庫商傳媒吳承岳台北報導為解決國內嚴重的燃料短缺與物價飆漲問題長期受內戰和國際制裁影響的敘利亞正轉向從美國及沙烏地阿拉伯進口石油產品此舉意味著敘利亞改變了過去的能源供應策略放棄了",
+          "event_cluster_key": "event-271c7c1ddcd0b0f38527",
+          "published_time_bucket": "2026-10-14T09:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "石油",
+            "供應"
+          ],
+          "matched_subject": "石油",
+          "matched_action": "供應",
+          "matched_market_object": "石油",
+          "decision_value_class": "energy",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-14T09:08:26.140827+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 35
@@ -4655,12 +4658,12 @@
         "independent_source_count": 2,
         "provider_count": 2,
         "provider_ids": [
-          "google_news",
-          "yahoo_finance"
+          "anue",
+          "google_news"
         ],
         "source_domains": [
-          "news.google.com",
-          "tw.stock.yahoo.com"
+          "news.cnyes.com",
+          "news.google.com"
         ],
         "supporting_source_count": 0,
         "inventory_only": false,
@@ -4669,16 +4672,16 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 21,
-          "TSM": 21,
-          "NVDA": 2
+          "2330": 22,
+          "NVDA": 3,
+          "TSM": 22
         },
         "sector_interest": {},
         "topic_interest": {
-          "石油": 2
+          "石油": 1
         },
         "market_interest": {
-          "taiwan": 102
+          "taiwan": 105
         },
         "context": {
           "tracked_tickers": [
@@ -4757,23 +4760,24 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 21,
-            "TSM": 21,
-            "NVDA": 2
+            "2330": 22,
+            "NVDA": 3,
+            "TSM": 22
           },
           "research_candidate": {},
           "tracked_sector": {},
           "active_event": {
-            "石油": 2
+            "石油": 1
           },
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 30,
+      "excluded_count": 32,
       "exclusion_reasons": {
         "incomplete_normalized_fact": 2,
-        "insufficient_market_relevance": 10,
+        "insufficient_market_relevance": 12,
         "market_scope_mismatch": 6,
+        "missing_published_at": 1,
         "non_investment_content": 4,
         "outside_calendar_window": 16,
         "outside_trading_session_window": 3
@@ -4786,33 +4790,34 @@
         "successful_provider_count": 5,
         "failed_provider_count": 0,
         "disabled_provider_count": 0,
-        "fetched": 41,
-        "normalized": 41,
+        "fetched": 43,
+        "normalized": 43,
         "eligible": 11,
-        "excluded": 30,
-        "date_eligible_current": 22,
-        "date_excluded_current": 19,
+        "excluded": 32,
+        "date_eligible_current": 23,
+        "date_excluded_current": 20,
         "date_exclusion_reasons_current": {
+          "missing_published_at": 1,
           "outside_calendar_window": 16,
           "outside_trading_session_window": 3
         },
-        "date_eligible_inventory": 61,
+        "date_eligible_inventory": 62,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-14T09:33:57.061957+00:00",
+        "reference_time": "2026-10-14T09:38:26.849177+00:00",
         "deduped": 10,
         "publicly_ranked": 5,
         "current_eligible": 11,
-        "inventory_considered": 61,
+        "inventory_considered": 62,
         "inventory_eligible": 50,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 30,
-        "fetched_story_count": 41,
-        "normalized_story_count": 41,
+        "filtered_story_count": 32,
+        "fetched_story_count": 43,
+        "normalized_story_count": 43,
         "eligible_story_count": 11,
         "deduped_story_count": 10,
         "ranked_story_count": 5
@@ -4821,7 +4826,7 @@
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 61,
+        "considered": 62,
         "eligible": 50,
         "selected": 0,
         "target_count": 5,
@@ -4834,8 +4839,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 41,
-          "checked_at": "2026-10-14T09:33:57.061985+00:00"
+          "item_count": 43,
+          "checked_at": "2026-10-14T09:38:26.849215+00:00"
         },
         {
           "provider": "twse",
@@ -4846,10 +4851,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-10-14T09:33:57.061985+00:00",
+          "checked_at": "2026-10-14T09:38:26.849215+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+          "last_success_at": "2026-10-14T09:38:26.849215+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4874,10 +4879,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-10-14T09:33:57.061985+00:00",
+          "checked_at": "2026-10-14T09:38:26.849215+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+          "last_success_at": "2026-10-14T09:38:26.849215+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4898,62 +4903,62 @@
           "key": "news_taiwan_anue",
           "legacy_key": "official_news_taiwan_anue",
           "label": "anue market news",
-          "status": "no_event",
+          "status": "healthy",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 0,
-          "checked_at": "2026-10-14T09:33:57.061985+00:00",
+          "item_count": 1,
+          "checked_at": "2026-10-14T09:38:26.849215+00:00",
           "raw_item_count": 5,
-          "filtered_item_count": 0,
-          "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-10-14T09:38:26.849215+00:00",
           "last_failure_at": null,
-          "stories_ingested": 1,
-          "stories_deduped": 0,
-          "ranked_count": 0,
+          "stories_ingested": 3,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
-            "market": 1
+            "market": 3,
+            "tracked_ticker": 1
           },
           "funnel": {
-            "fetched_count": 1,
-            "normalized_count": 1,
-            "market_compatible_count": 1,
-            "eligible_count": 0,
-            "excluded_count": 1,
-            "deduped_count": 0,
-            "ranked_count": 0
-          },
-          "data_gap": "filtered_no_market_match"
+            "fetched_count": 3,
+            "normalized_count": 3,
+            "market_compatible_count": 3,
+            "eligible_count": 1,
+            "excluded_count": 2,
+            "deduped_count": 1,
+            "ranked_count": 1
+          }
         },
         {
           "provider": "yahoo_finance",
           "key": "news_taiwan_yahoo_finance",
           "legacy_key": "official_news_taiwan_yahoo_finance",
           "label": "yahoo_finance market news",
-          "status": "healthy",
+          "status": "no_event",
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
-          "item_count": 1,
-          "checked_at": "2026-10-14T09:33:57.061985+00:00",
+          "item_count": 0,
+          "checked_at": "2026-10-14T09:38:26.849215+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 1,
-          "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+          "filtered_item_count": 0,
+          "last_success_at": "2026-10-14T09:38:26.849215+00:00",
           "last_failure_at": null,
           "stories_ingested": 7,
-          "stories_deduped": 1,
-          "ranked_count": 1,
+          "stories_deduped": 0,
+          "ranked_count": 0,
           "relevance_distribution": {
-            "active_event": 1,
             "market": 7
           },
           "funnel": {
             "fetched_count": 10,
             "normalized_count": 7,
             "market_compatible_count": 7,
-            "eligible_count": 1,
-            "excluded_count": 6,
-            "deduped_count": 1,
-            "ranked_count": 1
-          }
+            "eligible_count": 0,
+            "excluded_count": 7,
+            "deduped_count": 0,
+            "ranked_count": 0
+          },
+          "data_gap": "filtered_no_market_match"
         },
         {
           "provider": "google_news",
@@ -4964,10 +4969,10 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
           "item_count": 4,
-          "checked_at": "2026-10-14T09:33:57.061985+00:00",
+          "checked_at": "2026-10-14T09:38:26.849215+00:00",
           "raw_item_count": 30,
           "filtered_item_count": 4,
-          "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+          "last_success_at": "2026-10-14T09:38:26.849215+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
           "stories_deduped": 9,
@@ -4988,40 +4993,40 @@
         }
       ],
       "observability": {
-        "stories_ingested": 41,
+        "stories_ingested": 43,
         "stories_deduped": 10,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 1,
-          "market": 41,
-          "tracked_ticker": 9
+          "market": 43,
+          "tracked_ticker": 10
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+            "last_success_at": "2026-10-14T09:38:26.849215+00:00",
             "last_failure_at": null,
-            "stories_ingested": 1,
-            "stories_deduped": 0,
-            "ranked_count": 0,
+            "stories_ingested": 3,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
-              "market": 1
+              "market": 3,
+              "tracked_ticker": 1
             },
             "funnel": {
-              "fetched_count": 1,
-              "normalized_count": 1,
-              "market_compatible_count": 1,
-              "eligible_count": 0,
-              "excluded_count": 1,
-              "deduped_count": 0,
-              "ranked_count": 0
+              "fetched_count": 3,
+              "normalized_count": 3,
+              "market_compatible_count": 3,
+              "eligible_count": 1,
+              "excluded_count": 2,
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           },
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+            "last_success_at": "2026-10-14T09:38:26.849215+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
             "stories_deduped": 9,
@@ -5043,7 +5048,7 @@
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+            "last_success_at": "2026-10-14T09:38:26.849215+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5062,7 +5067,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+            "last_success_at": "2026-10-14T09:38:26.849215+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5102,23 +5107,22 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+            "last_success_at": "2026-10-14T09:38:26.849215+00:00",
             "last_failure_at": null,
             "stories_ingested": 7,
-            "stories_deduped": 1,
-            "ranked_count": 1,
+            "stories_deduped": 0,
+            "ranked_count": 0,
             "relevance_distribution": {
-              "active_event": 1,
               "market": 7
             },
             "funnel": {
               "fetched_count": 10,
               "normalized_count": 7,
               "market_compatible_count": 7,
-              "eligible_count": 1,
-              "excluded_count": 6,
-              "deduped_count": 1,
-              "ranked_count": 1
+              "eligible_count": 0,
+              "excluded_count": 7,
+              "deduped_count": 0,
+              "ranked_count": 0
             }
           }
         ]
@@ -5700,15 +5704,15 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-6e1744968c2cebe38dc8",
+          "story_id": "news-8dd2720d480563b8993f",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "3 Industrials Stocks on Our Watchlist",
-          "raw_title": "3 Industrials Stocks on Our Watchlist",
-          "normalized_fact": "Industrials businesses quietly power the physical things we depend on, from cars and homes to e-commerce infrastructure. Still, their generally high capital requirements expose them to the ups and downs of economic cycles, and the market seems to be baking in a prolonged downturn as the industry has shed 7.2% over the past six months. This drop is a noticeable divergence from the S&P 500’s 12% return。",
-          "market_topic": "global_market",
+          "title": "Stock market today: Dow, S&P 500, Nasdaq futures edge higher ahead of CPI inflation data, earnings",
+          "raw_title": "Stock market today: Dow, S&P 500, Nasdaq futures edge higher ahead of CPI inflation data, earnings",
+          "normalized_fact": "Stocks rose as the third quarter earnings season got underway and investors awaited fresh inflation data。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5716,11 +5720,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "Industrials businesses quietly power the physical things we depend on, from cars and homes to e-commerce infrastructure. Still, their generally high capital requirements expose them to the ups and downs of economic cycles, and the market seems to be baking in a prolonged downturn as the industry has shed 7.2% over the past six months. This drop is a noticeable divergence from the S&P 500’s 12% return.",
+          "summary": "Stocks rose as the third quarter earnings season got underway and investors awaited fresh inflation data.",
           "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/3-industrials-stocks-watchlist-081047309.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/3-industrials-stocks-watchlist-081047309.html?.tsrc=rss",
-          "published_at": "2026-10-14T08:10:47+00:00",
+          "canonical_url": "https://finance.yahoo.com/markets/live/stock-market-today-wednesday-october-14-dow-sp-500-nasdaq-081136597.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/live/stock-market-today-wednesday-october-14-dow-sp-500-nasdaq-081136597.html?.tsrc=rss",
+          "published_at": "2026-10-14T08:11:36+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -5730,26 +5734,30 @@
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "NASDAQ"
+          ],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "earnings"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "market",
-            "reason": "market_subject_action",
+            "category": "macro",
+            "reason": "macro_subject_action",
             "matched_terms": [
-              "s&p 500",
-              "drop"
+              "cpi",
+              "data"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "s&p 500",
-              "drop"
+              "cpi",
+              "data"
             ],
-            "matched_subject": "s&p 500",
-            "matched_action": "drop",
-            "matched_market_object": "s&p 500",
+            "matched_subject": "cpi",
+            "matched_action": "data",
+            "matched_market_object": "cpi",
             "input_fields": [
               "description",
               "summary",
@@ -5760,20 +5768,20 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "industrialsbusinessesquietlypowerthephysicalthingswedependonfromcarsandhomestoecommerceinfrastructurestilltheirgenerallyhighcapitalrequirementsexposethemtotheupsanddownsofeconomiccyclesandthemarketseemstobebakinginaprolongeddownturnastheindustryhasshed72overthepastsixmonthsthisdropisanoticeabledivergencefromthesp500s12return",
-          "event_cluster_key": "event-e65bdfb840ffa75352fe",
+          "dedupe_key": "stocksroseasthethirdquarterearningsseasongotunderwayandinvestorsawaitedfreshinflationdata",
+          "event_cluster_key": "event-def9cb531c44d2a32f5d",
           "published_time_bucket": "2026-10-14T08:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "s&p 500",
-            "drop"
+            "cpi",
+            "data"
           ],
-          "matched_subject": "s&p 500",
-          "matched_action": "drop",
-          "matched_market_object": "s&p 500",
-          "decision_value_class": "market_context",
+          "matched_subject": "cpi",
+          "matched_action": "data",
+          "matched_market_object": "cpi",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -6042,97 +6050,6 @@
           "matched_action": "release",
           "matched_market_object": "cpi",
           "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
-          "story_id": "news-6e1744968c2cebe38dc8",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "3 Industrials Stocks on Our Watchlist",
-          "raw_title": "3 Industrials Stocks on Our Watchlist",
-          "normalized_fact": "Industrials businesses quietly power the physical things we depend on, from cars and homes to e-commerce infrastructure. Still, their generally high capital requirements expose them to the ups and downs of economic cycles, and the market seems to be baking in a prolonged downturn as the industry has shed 7.2% over the past six months. This drop is a noticeable divergence from the S&P 500’s 12% return。",
-          "market_topic": "global_market",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Industrials businesses quietly power the physical things we depend on, from cars and homes to e-commerce infrastructure. Still, their generally high capital requirements expose them to the ups and downs of economic cycles, and the market seems to be baking in a prolonged downturn as the industry has shed 7.2% over the past six months. This drop is a noticeable divergence from the S&P 500’s 12% return.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/3-industrials-stocks-watchlist-081047309.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/3-industrials-stocks-watchlist-081047309.html?.tsrc=rss",
-          "published_at": "2026-10-14T08:10:47+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-14",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "market",
-            "reason": "market_subject_action",
-            "matched_terms": [
-              "s&p 500",
-              "drop"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "s&p 500",
-              "drop"
-            ],
-            "matched_subject": "s&p 500",
-            "matched_action": "drop",
-            "matched_market_object": "s&p 500",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "industrialsbusinessesquietlypowerthephysicalthingswedependonfromcarsandhomestoecommerceinfrastructurestilltheirgenerallyhighcapitalrequirementsexposethemtotheupsanddownsofeconomiccyclesandthemarketseemstobebakinginaprolongeddownturnastheindustryhasshed72overthepastsixmonthsthisdropisanoticeabledivergencefromthesp500s12return",
-          "event_cluster_key": "event-e65bdfb840ffa75352fe",
-          "published_time_bucket": "2026-10-14T08:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "s&p 500",
-            "drop"
-          ],
-          "matched_subject": "s&p 500",
-          "matched_action": "drop",
-          "matched_market_object": "s&p 500",
-          "decision_value_class": "market_context",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -7484,6 +7401,97 @@
           "inventory_used": true,
           "inventory_age_trading_sessions": 1,
           "inventory_saved_at": "2026-10-14T08:03:46.067537+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 30
+        },
+        {
+          "story_id": "news-6e1744968c2cebe38dc8",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "3 Industrials Stocks on Our Watchlist",
+          "raw_title": "3 Industrials Stocks on Our Watchlist",
+          "normalized_fact": "Industrials businesses quietly power the physical things we depend on, from cars and homes to e-commerce infrastructure. Still, their generally high capital requirements expose them to the ups and downs of economic cycles, and the market seems to be baking in a prolonged downturn as the industry has shed 7.2% over the past six months. This drop is a noticeable divergence from the S&P 500’s 12% return。",
+          "market_topic": "global_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Industrials businesses quietly power the physical things we depend on, from cars and homes to e-commerce infrastructure. Still, their generally high capital requirements expose them to the ups and downs of economic cycles, and the market seems to be baking in a prolonged downturn as the industry has shed 7.2% over the past six months. This drop is a noticeable divergence from the S&P 500’s 12% return.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/3-industrials-stocks-watchlist-081047309.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/3-industrials-stocks-watchlist-081047309.html?.tsrc=rss",
+          "published_at": "2026-10-14T08:02:47+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-14",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "market",
+            "reason": "market_subject_action",
+            "matched_terms": [
+              "s&p 500",
+              "drop"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "s&p 500",
+              "drop"
+            ],
+            "matched_subject": "s&p 500",
+            "matched_action": "drop",
+            "matched_market_object": "s&p 500",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "industrialsbusinessesquietlypowerthephysicalthingswedependonfromcarsandhomestoecommerceinfrastructurestilltheirgenerallyhighcapitalrequirementsexposethemtotheupsanddownsofeconomiccyclesandthemarketseemstobebakinginaprolongeddownturnastheindustryhasshed72overthepastsixmonthsthisdropisanoticeabledivergencefromthesp500s12return",
+          "event_cluster_key": "event-e65bdfb840ffa75352fe",
+          "published_time_bucket": "2026-10-14T08:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "s&p 500",
+            "drop"
+          ],
+          "matched_subject": "s&p 500",
+          "matched_action": "drop",
+          "matched_market_object": "s&p 500",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-14T08:09:06.909222+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 30
@@ -9383,7 +9391,7 @@
           "iran": 3,
           "war": 2,
           "hormuz": 2,
-          "sanctions": 2
+          "sanctions": 1
         },
         "market_interest": {
           "us": 140
@@ -9475,19 +9483,19 @@
             "iran": 3,
             "war": 2,
             "hormuz": 2,
-            "sanctions": 2
+            "sanctions": 1
           },
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 45,
+      "excluded_count": 46,
       "exclusion_reasons": {
         "generic_official_filing": 20,
-        "incomplete_normalized_fact": 16,
+        "incomplete_normalized_fact": 14,
         "insufficient_market_relevance": 20,
         "listicle_or_selection": 2,
-        "market_scope_mismatch": 4,
-        "outside_calendar_window": 13,
+        "market_scope_mismatch": 6,
+        "outside_calendar_window": 14,
         "outside_trading_session_window": 1
       },
       "status": "ready",
@@ -9500,21 +9508,21 @@
         "disabled_provider_count": 1,
         "fetched": 59,
         "normalized": 59,
-        "eligible": 14,
-        "excluded": 45,
-        "date_eligible_current": 45,
-        "date_excluded_current": 14,
+        "eligible": 13,
+        "excluded": 46,
+        "date_eligible_current": 44,
+        "date_excluded_current": 15,
         "date_exclusion_reasons_current": {
-          "outside_calendar_window": 13,
+          "outside_calendar_window": 14,
           "outside_trading_session_window": 1
         },
         "date_eligible_inventory": 81,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-14T09:33:57.061957+00:00",
-        "deduped": 13,
+        "reference_time": "2026-10-14T09:38:26.849177+00:00",
+        "deduped": 12,
         "publicly_ranked": 5,
-        "current_eligible": 14,
+        "current_eligible": 13,
         "inventory_considered": 81,
         "inventory_eligible": 50,
         "inventory_selected": 0,
@@ -9522,11 +9530,11 @@
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 45,
+        "filtered_story_count": 46,
         "fetched_story_count": 59,
         "normalized_story_count": 59,
-        "eligible_story_count": 14,
-        "deduped_story_count": 13,
+        "eligible_story_count": 13,
+        "deduped_story_count": 12,
         "ranked_story_count": 5
       },
       "inventory": {
@@ -9547,7 +9555,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 59,
-          "checked_at": "2026-10-14T09:33:57.061985+00:00"
+          "checked_at": "2026-10-14T09:38:26.849215+00:00"
         },
         {
           "provider": "sec",
@@ -9558,10 +9566,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-10-14T09:33:57.061985+00:00",
+          "checked_at": "2026-10-14T09:38:26.849215+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+          "last_success_at": "2026-10-14T09:38:26.849215+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9589,12 +9597,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-10-14T09:33:57.061985+00:00",
+          "checked_at": "2026-10-14T09:38:26.849215+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-10-14T09:33:57.061985+00:00",
+          "last_failure_at": "2026-10-14T09:38:26.849215+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9617,10 +9625,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-10-14T09:33:57.061985+00:00",
+          "checked_at": "2026-10-14T09:38:26.849215+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+          "last_success_at": "2026-10-14T09:38:26.849215+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9645,10 +9653,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 0,
-          "checked_at": "2026-10-14T09:33:57.061985+00:00",
+          "checked_at": "2026-10-14T09:38:26.849215+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+          "last_success_at": "2026-10-14T09:38:26.849215+00:00",
           "last_failure_at": null,
           "stories_ingested": 1,
           "stories_deduped": 0,
@@ -9676,24 +9684,24 @@
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
           "item_count": 3,
-          "checked_at": "2026-10-14T09:33:57.061985+00:00",
+          "checked_at": "2026-10-14T09:38:26.849215+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 3,
-          "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+          "last_success_at": "2026-10-14T09:38:26.849215+00:00",
           "last_failure_at": null,
-          "stories_ingested": 6,
-          "stories_deduped": 5,
+          "stories_ingested": 5,
+          "stories_deduped": 4,
           "ranked_count": 3,
           "relevance_distribution": {
-            "market": 6
+            "market": 5
           },
           "funnel": {
             "fetched_count": 8,
-            "normalized_count": 6,
-            "market_compatible_count": 6,
-            "eligible_count": 6,
+            "normalized_count": 5,
+            "market_compatible_count": 5,
+            "eligible_count": 5,
             "excluded_count": 0,
-            "deduped_count": 5,
+            "deduped_count": 4,
             "ranked_count": 3
           }
         },
@@ -9706,10 +9714,10 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
           "item_count": 2,
-          "checked_at": "2026-10-14T09:33:57.061985+00:00",
+          "checked_at": "2026-10-14T09:38:26.849215+00:00",
           "raw_item_count": 40,
           "filtered_item_count": 2,
-          "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+          "last_success_at": "2026-10-14T09:38:26.849215+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
           "stories_deduped": 8,
@@ -9732,7 +9740,7 @@
       ],
       "observability": {
         "stories_ingested": 59,
-        "stories_deduped": 13,
+        "stories_deduped": 12,
         "ranked_count": 5,
         "relevance_distribution": {
           "active_event": 8,
@@ -9743,7 +9751,7 @@
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+            "last_success_at": "2026-10-14T09:38:26.849215+00:00",
             "last_failure_at": null,
             "stories_ingested": 1,
             "stories_deduped": 0,
@@ -9765,7 +9773,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-10-14T09:33:57.061985+00:00",
+            "last_failure_at": "2026-10-14T09:38:26.849215+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9783,7 +9791,7 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+            "last_success_at": "2026-10-14T09:38:26.849215+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
             "stories_deduped": 8,
@@ -9806,7 +9814,7 @@
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+            "last_success_at": "2026-10-14T09:38:26.849215+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9825,7 +9833,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+            "last_success_at": "2026-10-14T09:38:26.849215+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -9848,19 +9856,19 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 2,
+            "stories_ingested": 3,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 2,
+              "market": 3,
               "tracked_ticker": 1
             },
             "funnel": {
-              "fetched_count": 2,
-              "normalized_count": 2,
+              "fetched_count": 3,
+              "normalized_count": 3,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 2,
+              "excluded_count": 3,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -9868,21 +9876,21 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-14T09:33:57.061985+00:00",
+            "last_success_at": "2026-10-14T09:38:26.849215+00:00",
             "last_failure_at": null,
-            "stories_ingested": 6,
-            "stories_deduped": 5,
+            "stories_ingested": 5,
+            "stories_deduped": 4,
             "ranked_count": 3,
             "relevance_distribution": {
-              "market": 6
+              "market": 5
             },
             "funnel": {
               "fetched_count": 8,
-              "normalized_count": 6,
-              "market_compatible_count": 6,
-              "eligible_count": 6,
+              "normalized_count": 5,
+              "market_compatible_count": 5,
+              "eligible_count": 5,
               "excluded_count": 0,
-              "deduped_count": 5,
+              "deduped_count": 4,
               "ranked_count": 3
             }
           }
