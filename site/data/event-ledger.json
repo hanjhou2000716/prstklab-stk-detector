@@ -44481,7 +44481,7 @@
       "location_fingerprint": "",
       "action_fingerprint": "",
       "first_discovered_at": "2026-10-15T12:34:41.254678+00:00",
-      "last_reminded_at": null,
+      "last_reminded_at": "2026-10-15T12:47:43.140324+00:00",
       "escalated": false,
       "risk_level": "持續觀察",
       "risk_rank": 0,
@@ -44492,7 +44492,7 @@
       "compound_item_id": null,
       "compound_event_cluster_key": null,
       "last_decision": {
-        "recorded_at": "2026-10-15T12:44:47.639326+00:00",
+        "recorded_at": "2026-10-15T12:47:39.921884+00:00",
         "allowed": true,
         "status": "eligible",
         "reason": "new_theme",
@@ -44547,9 +44547,59 @@
           "material_state_changed": true,
           "last_notified_at": null,
           "taiwan_priority": 4
+        },
+        {
+          "recorded_at": "2026-10-15T12:47:39.921884+00:00",
+          "allowed": true,
+          "status": "eligible",
+          "reason": "new_theme",
+          "reasons": [],
+          "notification_theme_key": "bls-ppi-444ea8336d",
+          "event_key": "4e6f0cc6bb47a7d4b1ce388ab6242b92",
+          "risk": "R1",
+          "theme_window": 7200,
+          "material_state_changed": true,
+          "last_notified_at": null,
+          "taiwan_priority": 4
         }
       ],
-      "updated_at": "2026-10-15T12:44:47.639326+00:00"
+      "updated_at": "2026-10-15T12:47:43.140324+00:00",
+      "delivery_history": [
+        {
+          "event_key": "4e6f0cc6bb47a7d4b1ce388ab6242b92",
+          "notification_id": "4e6f0cc6bb47a7d4b1ce388ab6242b92",
+          "sent_at": "2026-10-15T12:47:43.140324+00:00",
+          "importance": "normal",
+          "alert_type": "macro",
+          "lifecycle_state": "confirmed",
+          "reason": "official_event_monitor",
+          "notification_theme_key": "bls-ppi-444ea8336d",
+          "risk": "R1",
+          "taiwan_priority": 4,
+          "material_state_changed": true,
+          "release_id": "release-720b39c14c149d72",
+          "snapshot_id": "96b0b3babac4be45",
+          "delivery_status": "delivered",
+          "event_cluster_key": "evt-f7ad167dd6bef14b440e0c12",
+          "prstk_risk": {
+            "prstk_risk_level": "R1",
+            "source": "event_alerts"
+          },
+          "notification_key": "4e6f0cc6bb47a7d4b1ce388ab6242b92",
+          "release_ready_at": "2026-10-15T12:47:40.865595+00:00",
+          "telegram_attempted_at": "2026-10-15T12:47:40.989072+00:00",
+          "delivery_result": "delivered",
+          "delay_reason": "none",
+          "source_url": "https://www.bls.gov/news.release/archives/ppi_10152026.htm",
+          "source_domain": "bls.gov",
+          "alert_lane": "event",
+          "market_scope": "global",
+          "event_policy_reason": "event_materiality_available",
+          "trace_id": "official-10543ce551b2a81d"
+        }
+      ],
+      "last_theme_notification_at": "2026-10-15T12:47:43.140324+00:00",
+      "last_notified_at": "2026-10-15T12:47:43.140324+00:00"
     }
   },
   "delivery_claims": {
@@ -50228,6 +50278,35 @@
       "updated_at": "2026-10-15T08:06:15.549587+00:00",
       "failed_recipient_hashes": [],
       "delivered_at": "2026-10-15T08:06:15.549587+00:00"
+    },
+    "4e6f0cc6bb47a7d4b1ce388ab6242b92": {
+      "notification_key": "4e6f0cc6bb47a7d4b1ce388ab6242b92",
+      "slot_key": "",
+      "status": "delivered",
+      "recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d",
+        "59cf5c3e48bf"
+      ],
+      "delivered_recipient_hashes": [
+        "59cf5c3e48bf",
+        "5b1d66aae79d",
+        "7a30574fc065",
+        "d36bbcc2cd2d"
+      ],
+      "attempted_recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d",
+        "59cf5c3e48bf"
+      ],
+      "claimed_at": "2026-10-15T12:47:40.874709+00:00",
+      "lease_until": null,
+      "run_id_hash": "f65ddd8bd95c",
+      "updated_at": "2026-10-15T12:47:43.026893+00:00",
+      "failed_recipient_hashes": [],
+      "delivered_at": "2026-10-15T12:47:43.026893+00:00"
     }
   }
 }
