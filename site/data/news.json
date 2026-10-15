@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "3a351e6a17998866",
-  "snapshot_id": "news-04fca5159cf0faeb",
+  "market_snapshot_id": "fc8fb98efa1acdb8",
+  "snapshot_id": "news-5be8e67294ab72c2",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -437,6 +437,106 @@
       ],
       "stories": [
         {
+          "story_id": "news-711307422ad19cd66883",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6630669",
+          "url": "https://news.cnyes.com/news/id/6630669",
+          "published_at": "2026-10-14T22:02:35+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-15",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "SOX",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
+          "event_cluster_key": "event-40d27feb65b9f7fa705b",
+          "published_time_bucket": "2026-10-14T22:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜持股關聯",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 140
+        },
+        {
           "story_id": "news-c80c312f6d582ec2065b",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -633,15 +733,15 @@
           "ranking_score": 125
         },
         {
-          "story_id": "news-31012ae871165fe11407",
+          "story_id": "news-f6a3581485d7c585c848",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "毅嘉續拓AI光通訊、車用電子及先進製造領域，AI營收占比明年跳升至40%",
-          "raw_title": "毅嘉續拓AI光通訊、車用電子及先進製造領域，AI營收占比明年跳升至40%",
-          "normalized_fact": "【財訊快報／記者劉居全報導】毅嘉科技(2402)今(15)日舉行法說會，毅嘉執行長曾恭勝表示，未來三年將持續強化光、電、機整合能力，持續布局AI光通訊、車用電子及先進製造三大成長領域，期盼2028年營。",
-          "market_topic": "semiconductor_ai",
+          "title": "國際能源署下修全球石油需求預測 估今年日均減 260 萬桶",
+          "raw_title": "國際能源署下修全球石油需求預測 估今年日均減 260 萬桶",
+          "normalized_fact": "圖／本報資料庫商傳媒｜吳承岳／台北報導國際能源署（International Energy Agency, IEA），一個由主要消費國組成的政府間組織，近日宣布下調今年的全球石油需求預測。報告指出，受。",
+          "market_topic": "energy_geopolitics",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -649,11 +749,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "【財訊快報／記者劉居全報導】毅嘉科技(2402)今(15)日舉行法說會，毅嘉執行長曾恭勝表示，未來三年將持續強化光、電、機整合能力，持續布局AI光通訊、車用電子及先進製造三大成長領域，期盼2028年營",
+          "summary": "圖／本報資料庫商傳媒｜吳承岳／台北報導國際能源署（International Energy Agency, IEA），一個由主要消費國組成的政府間組織，近日宣布下調今年的全球石油需求預測。報告指出，受",
           "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%AF%85%E5%98%89%E7%BA%8C%E6%8B%93ai%E5%85%89%E9%80%9A%E8%A8%8A-%E8%BB%8A%E7%94%A8%E9%9B%BB%E5%AD%90%E5%8F%8A%E5%85%88%E9%80%B2%E8%A3%BD%E9%80%A0%E9%A0%98%E5%9F%9F-ai%E7%87%9F%E6%94%B6%E5%8D%A0%E6%AF%94%E6%98%8E%E5%B9%B4%E8%B7%B3%E5%8D%87%E8%87%B340-085507350.html",
-          "url": "https://tw.stock.yahoo.com/news/%E6%AF%85%E5%98%89%E7%BA%8C%E6%8B%93ai%E5%85%89%E9%80%9A%E8%A8%8A-%E8%BB%8A%E7%94%A8%E9%9B%BB%E5%AD%90%E5%8F%8A%E5%85%88%E9%80%B2%E8%A3%BD%E9%80%A0%E9%A0%98%E5%9F%9F-ai%E7%87%9F%E6%94%B6%E5%8D%A0%E6%AF%94%E6%98%8E%E5%B9%B4%E8%B7%B3%E5%8D%87%E8%87%B340-085507350.html",
-          "published_at": "2026-10-15T08:55:07+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%9C%8B%E9%9A%9B%E8%83%BD%E6%BA%90%E7%BD%B2%E4%B8%8B%E4%BF%AE%E5%85%A8%E7%90%83%E7%9F%B3%E6%B2%B9%E9%9C%80%E6%B1%82%E9%A0%90%E6%B8%AC-%E4%BC%B0%E4%BB%8A%E5%B9%B4%E6%97%A5%E5%9D%87%E6%B8%9B-260-%E8%90%AC%E6%A1%B6-091641496.html",
+          "url": "https://tw.stock.yahoo.com/news/%E5%9C%8B%E9%9A%9B%E8%83%BD%E6%BA%90%E7%BD%B2%E4%B8%8B%E4%BF%AE%E5%85%A8%E7%90%83%E7%9F%B3%E6%B2%B9%E9%9C%80%E6%B1%82%E9%A0%90%E6%B8%AC-%E4%BC%B0%E4%BB%8A%E5%B9%B4%E6%97%A5%E5%9D%87%E6%B8%9B-260-%E8%90%AC%E6%A1%B6-091641496.html",
+          "published_at": "2026-10-15T09:16:41+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -666,26 +766,19 @@
           "entities": [],
           "sectors": [],
           "topics": [
-            "ai",
-            "earnings"
+            "energy"
           ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "營收"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "營收"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "營收",
-            "matched_market_object": "ai",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
             "input_fields": [
               "description",
               "summary",
@@ -693,23 +786,21 @@
             ]
           },
           "relevance_reasons": [
+            "active_event:石油",
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "財訊快報記者劉居全報導毅嘉科技2402今15日舉行法說會毅嘉執行長曾恭勝表示未來三年將持續強化光電機整合能力持續布局ai光通訊車用電子及先進製造三大成長領域期盼2028年營",
-          "event_cluster_key": "event-28e4366529f4a40442e2",
-          "published_time_bucket": "2026-10-15T08:00:00+00:00",
+          "dedupe_key": "圖本報資料庫商傳媒吳承岳台北報導國際能源署internationalenergyagencyiea一個由主要消費國組成的政府間組織近日宣布下調今年的全球石油需求預測報告指出受",
+          "event_cluster_key": "event-d60b3ba4c8c1cf4ac326",
+          "published_time_bucket": "2026-10-15T09:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "營收"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "營收",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -724,30 +815,30 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 130
+          "ranking_score": 135
         },
         {
-          "story_id": "news-418395a3019bb49e350c",
+          "story_id": "news-e107aec3c515a04d5f28",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "從台積電法說會看台股下一步！CoWoS先進封裝爆發 00418A深入前300大卡位受惠供應鏈 - Yahoo新聞",
-          "raw_title": "從台積電法說會看台股下一步！CoWoS先進封裝爆發 00418A深入前300大卡位受惠供應鏈 - Yahoo新聞",
-          "normalized_fact": "從台積電法說會看台股下一步，CoWoS先進封裝爆發 00418A深入前300大卡位受惠供應鏈 Yahoo。",
+          "title": "【台積電法說】魏哲家：與格芯合作盼擴大後段產能 讓客戶獲供應鏈全面支持| 財經焦點 - 太報 TaiSounds",
+          "raw_title": "【台積電法說】魏哲家：與格芯合作盼擴大後段產能 讓客戶獲供應鏈全面支持| 財經焦點 - 太報 TaiSounds",
+          "normalized_fact": "【台積電法說】魏哲家：與格芯合作盼擴大後段產能 讓客戶獲供應鏈全面支持| 財經焦點 太報 TaiSounds。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
-          "byline_removed": true,
-          "publisher_removed": true,
+          "byline_removed": false,
+          "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "從台積電法說會看台股下一步！CoWoS先進封裝爆發 00418A深入前300大卡位受惠供應鏈 Yahoo新聞",
+          "summary": "【台積電法說】魏哲家：與格芯合作盼擴大後段產能 讓客戶獲供應鏈全面支持| 財經焦點 太報 TaiSounds",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMixgNBVV95cUxOTHBuNnNkc05vMmJacFNDOFMxVHVVYjc4OURtel80T05YODhHMW83M3Fsd0owRlNsQzBPUGFuWjlWNlNjWmUxakg0TWtxblJkREMtTzJBMXZXdUQ5X0d3OHY2eGF6aUlvamR0a2Z5b2l3RC01ODdmVFdOallHTHVhVkJncTJQdDVBT2JpUnJTYUJjT3ZmWTZXdllRak1tWV9CSjRjMDhrTDJEX3RZYkR2dWMwNWwwWTA5c0JzM0xmM2FXMnRqVFVqXzFpMEFaVzJNamdfSjE2V0xadmplVXdhY2traUdrdlIxWVhQWlN0cFFSdGswd01GTEVtWkZXMFJpZTVpSDdnYlRQYndWWVIxN3VlUmh4R0R5Uk0xMkR2ZVlFZzI5Y0JnRUFDVXVkeXZWclRVMUU1S05xRDFBUzBpTlozbjlfbG5aTUtvYWJHT2pxU2ZBOVAzOW56OU9aWktqZk9aN21BY0syR21MN3pYYlpYQkozb2JVX1pnQXFBbm5pclJJY3BVNWFDaS1iMWtHbndjbVY1T0NSenB1ZWM1OUVpSVcwa3gtYWhabmg3RS1sblJSa0ttaExUcFRkTnlEN0RLSzZn",
-          "url": "https://news.google.com/rss/articles/CBMixgNBVV95cUxOTHBuNnNkc05vMmJacFNDOFMxVHVVYjc4OURtel80T05YODhHMW83M3Fsd0owRlNsQzBPUGFuWjlWNlNjWmUxakg0TWtxblJkREMtTzJBMXZXdUQ5X0d3OHY2eGF6aUlvamR0a2Z5b2l3RC01ODdmVFdOallHTHVhVkJncTJQdDVBT2JpUnJTYUJjT3ZmWTZXdllRak1tWV9CSjRjMDhrTDJEX3RZYkR2dWMwNWwwWTA5c0JzM0xmM2FXMnRqVFVqXzFpMEFaVzJNamdfSjE2V0xadmplVXdhY2traUdrdlIxWVhQWlN0cFFSdGswd01GTEVtWkZXMFJpZTVpSDdnYlRQYndWWVIxN3VlUmh4R0R5Uk0xMkR2ZVlFZzI5Y0JnRUFDVXVkeXZWclRVMUU1S05xRDFBUzBpTlozbjlfbG5aTUtvYWJHT2pxU2ZBOVAzOW56OU9aWktqZk9aN21BY0syR21MN3pYYlpYQkozb2JVX1pnQXFBbm5pclJJY3BVNWFDaS1iMWtHbndjbVY1T0NSenB1ZWM1OUVpSVcwa3gtYWhabmg3RS1sblJSa0ttaExUcFRkTnlEN0RLSzZn",
-          "published_at": "2026-10-15T02:41:14+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTFBQZmNEZXRJNWVoZXUwOENvMmVYZ0ZVVF85b2hEYWl0MFVxa01iRHNSVFN3cjZ4NTJDTFlvVTB0cWpzV0JqNGtJb1B1Qm9yZGdsak5ZcFVXUjhIR0Zf",
+          "url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTFBQZmNEZXRJNWVoZXUwOENvMmVYZ0ZVVF85b2hEYWl0MFVxa01iRHNSVFN3cjZ4NTJDTFlvVTB0cWpzV0JqNGtJb1B1Qm9yZGdsak5ZcFVXUjhIR0Zf",
+          "published_at": "2026-10-15T07:44:13+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -759,7 +850,6 @@
           "tickers": [],
           "entities": [
             "2330",
-            "TAIEX",
             "TSM"
           ],
           "sectors": [],
@@ -771,15 +861,15 @@
             "reason": "semiconductor_subject_action",
             "matched_terms": [
               "台積電",
-              "供應"
+              "產能"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
               "台積電",
-              "供應"
+              "產能"
             ],
             "matched_subject": "台積電",
-            "matched_action": "供應",
+            "matched_action": "產能",
             "matched_market_object": "台積電",
             "input_fields": [
               "description",
@@ -788,24 +878,23 @@
             ]
           },
           "relevance_reasons": [
-            "market:cross_market",
+            "market:taiwan",
             "tracked_ticker:2330",
-            "tracked_ticker:TSM",
-            "market:taiwan"
+            "tracked_ticker:TSM"
           ],
           "freshness": "published",
-          "dedupe_key": "從台積電法說會看台股下一步cowos先進封裝爆發00418a深入前300大卡位受惠供應鏈yahoo",
-          "event_cluster_key": "event-dee836190dae7ac8aa88",
-          "published_time_bucket": "2026-10-15T02:00:00+00:00",
+          "dedupe_key": "台積電法說魏哲家與格芯合作盼擴大後段產能讓客戶獲供應鏈全面支持財經焦點太報taisounds",
+          "event_cluster_key": "event-c085d6089946fedba8fd",
+          "published_time_bucket": "2026-10-15T07:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
             "台積電",
-            "供應"
+            "產能"
           ],
           "matched_subject": "台積電",
-          "matched_action": "供應",
+          "matched_action": "產能",
           "matched_market_object": "台積電",
           "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
@@ -823,102 +912,110 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
-        },
-        {
-          "story_id": "news-cdff0bde313beed04682",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "外資狠甩賣！新台幣爆2485億元史上最大 收盤貶近2角",
-          "raw_title": "外資狠甩賣！新台幣爆2485億元史上最大 收盤貶近2角",
-          "normalized_fact": "美國通膨數據超乎預期、美股科技股與晶片股賣壓蔓延影響，台北金融市場今（15）日又上演股匯雙殺，新台幣兌美元終場以 32.265 元作收，重貶 1.92 角，台北外匯市場加上元太外匯市場，合計成交金。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "美國通膨數據超乎預期、美股科技股與晶片股賣壓蔓延影響，台北金融市場今（15）日又上演「股匯雙殺」，新台幣兌美元終場以 32.265 元作收，重貶 1.92 角，台北外匯市場加上元太外匯市場，合計成交金",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%A4%96%E8%B3%87%E7%8B%A0%E7%94%A9%E8%B3%A3%EF%BC%81%E6%96%B0%E5%8F%B0%E5%B9%A3%E7%88%862485%E5%84%84%E5%85%83%E5%8F%B2%E4%B8%8A%E6%9C%80%E5%A4%A7-%E6%94%B6%E7%9B%A4%E8%B2%B6%E8%BF%912%E8%A7%92-085447065.html",
-          "url": "https://tw.stock.yahoo.com/news/%E5%A4%96%E8%B3%87%E7%8B%A0%E7%94%A9%E8%B3%A3%EF%BC%81%E6%96%B0%E5%8F%B0%E5%B9%A3%E7%88%862485%E5%84%84%E5%85%83%E5%8F%B2%E4%B8%8A%E6%9C%80%E5%A4%A7-%E6%94%B6%E7%9B%A4%E8%B2%B6%E8%BF%912%E8%A7%92-085447065.html",
-          "published_at": "2026-10-15T08:49:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-15",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "macro",
-            "reason": "macro_subject_action",
-            "matched_terms": [
-              "通膨",
-              "數據"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "通膨",
-              "數據"
-            ],
-            "matched_subject": "通膨",
-            "matched_action": "數據",
-            "matched_market_object": "通膨",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美國通膨數據超乎預期美股科技股與晶片股賣壓蔓延影響台北金融市場今15日又上演股匯雙殺新台幣兌美元終場以32265元作收重貶192角台北外匯市場加上元太外匯市場合計成交金",
-          "event_cluster_key": "event-a9b80dc66493a0270eea",
-          "published_time_bucket": "2026-10-15T08:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "通膨",
-            "數據"
-          ],
-          "matched_subject": "通膨",
-          "matched_action": "數據",
-          "matched_market_object": "通膨",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
         }
       ],
       "editorial_candidates": [
         {
+          "story_id": "news-711307422ad19cd66883",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6630669",
+          "url": "https://news.cnyes.com/news/id/6630669",
+          "published_at": "2026-10-14T22:02:35+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-15",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "SOX",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
+          "event_cluster_key": "event-40d27feb65b9f7fa705b",
+          "published_time_bucket": "2026-10-14T22:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜持股關聯",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 140
+        },
+        {
           "story_id": "news-c80c312f6d582ec2065b",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -1115,6 +1212,91 @@
           "ranking_score": 125
         },
         {
+          "story_id": "news-f6a3581485d7c585c848",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "國際能源署下修全球石油需求預測 估今年日均減 260 萬桶",
+          "raw_title": "國際能源署下修全球石油需求預測 估今年日均減 260 萬桶",
+          "normalized_fact": "圖／本報資料庫商傳媒｜吳承岳／台北報導國際能源署（International Energy Agency, IEA），一個由主要消費國組成的政府間組織，近日宣布下調今年的全球石油需求預測。報告指出，受。",
+          "market_topic": "energy_geopolitics",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "圖／本報資料庫商傳媒｜吳承岳／台北報導國際能源署（International Energy Agency, IEA），一個由主要消費國組成的政府間組織，近日宣布下調今年的全球石油需求預測。報告指出，受",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%9C%8B%E9%9A%9B%E8%83%BD%E6%BA%90%E7%BD%B2%E4%B8%8B%E4%BF%AE%E5%85%A8%E7%90%83%E7%9F%B3%E6%B2%B9%E9%9C%80%E6%B1%82%E9%A0%90%E6%B8%AC-%E4%BC%B0%E4%BB%8A%E5%B9%B4%E6%97%A5%E5%9D%87%E6%B8%9B-260-%E8%90%AC%E6%A1%B6-091641496.html",
+          "url": "https://tw.stock.yahoo.com/news/%E5%9C%8B%E9%9A%9B%E8%83%BD%E6%BA%90%E7%BD%B2%E4%B8%8B%E4%BF%AE%E5%85%A8%E7%90%83%E7%9F%B3%E6%B2%B9%E9%9C%80%E6%B1%82%E9%A0%90%E6%B8%AC-%E4%BC%B0%E4%BB%8A%E5%B9%B4%E6%97%A5%E5%9D%87%E6%B8%9B-260-%E8%90%AC%E6%A1%B6-091641496.html",
+          "published_at": "2026-10-15T09:16:41+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-15",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "energy"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "active_event:石油",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "圖本報資料庫商傳媒吳承岳台北報導國際能源署internationalenergyagencyiea一個由主要消費國組成的政府間組織近日宣布下調今年的全球石油需求預測報告指出受",
+          "event_cluster_key": "event-d60b3ba4c8c1cf4ac326",
+          "published_time_bucket": "2026-10-15T09:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 135
+        },
+        {
           "story_id": "news-31012ae871165fe11407",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -1207,196 +1389,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 130
-        },
-        {
-          "story_id": "news-cdff0bde313beed04682",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "外資狠甩賣！新台幣爆2485億元史上最大 收盤貶近2角",
-          "raw_title": "外資狠甩賣！新台幣爆2485億元史上最大 收盤貶近2角",
-          "normalized_fact": "美國通膨數據超乎預期、美股科技股與晶片股賣壓蔓延影響，台北金融市場今（15）日又上演股匯雙殺，新台幣兌美元終場以 32.265 元作收，重貶 1.92 角，台北外匯市場加上元太外匯市場，合計成交金。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "美國通膨數據超乎預期、美股科技股與晶片股賣壓蔓延影響，台北金融市場今（15）日又上演「股匯雙殺」，新台幣兌美元終場以 32.265 元作收，重貶 1.92 角，台北外匯市場加上元太外匯市場，合計成交金",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%A4%96%E8%B3%87%E7%8B%A0%E7%94%A9%E8%B3%A3%EF%BC%81%E6%96%B0%E5%8F%B0%E5%B9%A3%E7%88%862485%E5%84%84%E5%85%83%E5%8F%B2%E4%B8%8A%E6%9C%80%E5%A4%A7-%E6%94%B6%E7%9B%A4%E8%B2%B6%E8%BF%912%E8%A7%92-085447065.html",
-          "url": "https://tw.stock.yahoo.com/news/%E5%A4%96%E8%B3%87%E7%8B%A0%E7%94%A9%E8%B3%A3%EF%BC%81%E6%96%B0%E5%8F%B0%E5%B9%A3%E7%88%862485%E5%84%84%E5%85%83%E5%8F%B2%E4%B8%8A%E6%9C%80%E5%A4%A7-%E6%94%B6%E7%9B%A4%E8%B2%B6%E8%BF%912%E8%A7%92-085447065.html",
-          "published_at": "2026-10-15T08:49:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-15",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "macro",
-            "reason": "macro_subject_action",
-            "matched_terms": [
-              "通膨",
-              "數據"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "通膨",
-              "數據"
-            ],
-            "matched_subject": "通膨",
-            "matched_action": "數據",
-            "matched_market_object": "通膨",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美國通膨數據超乎預期美股科技股與晶片股賣壓蔓延影響台北金融市場今15日又上演股匯雙殺新台幣兌美元終場以32265元作收重貶192角台北外匯市場加上元太外匯市場合計成交金",
-          "event_cluster_key": "event-a9b80dc66493a0270eea",
-          "published_time_bucket": "2026-10-15T08:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "通膨",
-            "數據"
-          ],
-          "matched_subject": "通膨",
-          "matched_action": "數據",
-          "matched_market_object": "通膨",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
-          "story_id": "news-418395a3019bb49e350c",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "從台積電法說會看台股下一步！CoWoS先進封裝爆發 00418A深入前300大卡位受惠供應鏈 - Yahoo新聞",
-          "raw_title": "從台積電法說會看台股下一步！CoWoS先進封裝爆發 00418A深入前300大卡位受惠供應鏈 - Yahoo新聞",
-          "normalized_fact": "從台積電法說會看台股下一步，CoWoS先進封裝爆發 00418A深入前300大卡位受惠供應鏈 Yahoo。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": true,
-          "publisher_removed": true,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "從台積電法說會看台股下一步！CoWoS先進封裝爆發 00418A深入前300大卡位受惠供應鏈 Yahoo新聞",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMixgNBVV95cUxOTHBuNnNkc05vMmJacFNDOFMxVHVVYjc4OURtel80T05YODhHMW83M3Fsd0owRlNsQzBPUGFuWjlWNlNjWmUxakg0TWtxblJkREMtTzJBMXZXdUQ5X0d3OHY2eGF6aUlvamR0a2Z5b2l3RC01ODdmVFdOallHTHVhVkJncTJQdDVBT2JpUnJTYUJjT3ZmWTZXdllRak1tWV9CSjRjMDhrTDJEX3RZYkR2dWMwNWwwWTA5c0JzM0xmM2FXMnRqVFVqXzFpMEFaVzJNamdfSjE2V0xadmplVXdhY2traUdrdlIxWVhQWlN0cFFSdGswd01GTEVtWkZXMFJpZTVpSDdnYlRQYndWWVIxN3VlUmh4R0R5Uk0xMkR2ZVlFZzI5Y0JnRUFDVXVkeXZWclRVMUU1S05xRDFBUzBpTlozbjlfbG5aTUtvYWJHT2pxU2ZBOVAzOW56OU9aWktqZk9aN21BY0syR21MN3pYYlpYQkozb2JVX1pnQXFBbm5pclJJY3BVNWFDaS1iMWtHbndjbVY1T0NSenB1ZWM1OUVpSVcwa3gtYWhabmg3RS1sblJSa0ttaExUcFRkTnlEN0RLSzZn",
-          "url": "https://news.google.com/rss/articles/CBMixgNBVV95cUxOTHBuNnNkc05vMmJacFNDOFMxVHVVYjc4OURtel80T05YODhHMW83M3Fsd0owRlNsQzBPUGFuWjlWNlNjWmUxakg0TWtxblJkREMtTzJBMXZXdUQ5X0d3OHY2eGF6aUlvamR0a2Z5b2l3RC01ODdmVFdOallHTHVhVkJncTJQdDVBT2JpUnJTYUJjT3ZmWTZXdllRak1tWV9CSjRjMDhrTDJEX3RZYkR2dWMwNWwwWTA5c0JzM0xmM2FXMnRqVFVqXzFpMEFaVzJNamdfSjE2V0xadmplVXdhY2traUdrdlIxWVhQWlN0cFFSdGswd01GTEVtWkZXMFJpZTVpSDdnYlRQYndWWVIxN3VlUmh4R0R5Uk0xMkR2ZVlFZzI5Y0JnRUFDVXVkeXZWclRVMUU1S05xRDFBUzBpTlozbjlfbG5aTUtvYWJHT2pxU2ZBOVAzOW56OU9aWktqZk9aN21BY0syR21MN3pYYlpYQkozb2JVX1pnQXFBbm5pclJJY3BVNWFDaS1iMWtHbndjbVY1T0NSenB1ZWM1OUVpSVcwa3gtYWhabmg3RS1sblJSa0ttaExUcFRkTnlEN0RLSzZn",
-          "published_at": "2026-10-15T02:41:14+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-15",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "TAIEX",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "台積電",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "台積電",
-              "供應"
-            ],
-            "matched_subject": "台積電",
-            "matched_action": "供應",
-            "matched_market_object": "台積電",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "從台積電法說會看台股下一步cowos先進封裝爆發00418a深入前300大卡位受惠供應鏈yahoo",
-          "event_cluster_key": "event-dee836190dae7ac8aa88",
-          "published_time_bucket": "2026-10-15T02:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "台積電",
-            "供應"
-          ],
-          "matched_subject": "台積電",
-          "matched_action": "供應",
-          "matched_market_object": "台積電",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 125
         },
         {
           "story_id": "news-e107aec3c515a04d5f28",
@@ -1653,6 +1645,100 @@
           "dedupe_key": "台灣供應鏈直面ai的供電散熱與連接挑戰tvbs新聞網",
           "event_cluster_key": "event-1afbe8f584d9f356d562",
           "published_time_bucket": "2026-10-15T06:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜台股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
+          "story_id": "news-fc077f6dccca9d2f58e4",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "美國經濟亮28個月綠燈 富蘭克林看好美股並點名科技、亞洲AI供應鏈 - Yahoo股市",
+          "raw_title": "美國經濟亮28個月綠燈 富蘭克林看好美股並點名科技、亞洲AI供應鏈 - Yahoo股市",
+          "normalized_fact": "美國經濟亮28個月綠燈 富蘭克林看好美股並點名科技、亞洲AI供應鏈 Yahoo股市。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美國經濟亮28個月綠燈 富蘭克林看好美股並點名科技、亞洲AI供應鏈 Yahoo股市",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMipwNBVV95cUxQc3hVT1NVR0w2ZmdnUE5CZ3RRZ2xWTjZJR0M3UUJLZHg1NjZyTWZ4dkpEOUp1RU8zNlR3RjQyWk1rVEJJT0ptNVQ0Zlk4NHJycFJlVDdDTWZGZWpVUWtkZlprZHY1bUN1Sm1tU2RjWkxDYVFFSFBleHpCd1RYcEx5NmlWTXU1MmFQX21pNlFGd203ZkVUcmhVRW9mNV9kdTVXd3hGYXRZZXFfTTFRdE1rRC1EVTlCZlJQeWtpcGFUeDlNLVlLR0t6dzVYWnZGOUFkTmlRZUlaQkRNRFV4cEJWWmc2NUFXSUw3OUhJVnRUQUhaQWlZUWpfeDRfMk50VXo1T3NvRGpma2FDdHItZ2p4YmRXYml6VkxJOWpVVmJ5NWV4U0VIQk1Id2xNempqeW9HVDlvNllCYzJEQjJhUXBOTjc4cnFzVTVMN25vWmh5MkdpSFJNOEg3d1FGN09TQWphSzhDQ2lsNWpNcDFKNUhoQkRtckF4V0ZUbUl3cHFlODBKb1htU1BLZm9hRHNRVFg0eUVkQm5ZQlBGWXJXbmJmVVhTcjFvUWs",
+          "url": "https://news.google.com/rss/articles/CBMipwNBVV95cUxQc3hVT1NVR0w2ZmdnUE5CZ3RRZ2xWTjZJR0M3UUJLZHg1NjZyTWZ4dkpEOUp1RU8zNlR3RjQyWk1rVEJJT0ptNVQ0Zlk4NHJycFJlVDdDTWZGZWpVUWtkZlprZHY1bUN1Sm1tU2RjWkxDYVFFSFBleHpCd1RYcEx5NmlWTXU1MmFQX21pNlFGd203ZkVUcmhVRW9mNV9kdTVXd3hGYXRZZXFfTTFRdE1rRC1EVTlCZlJQeWtpcGFUeDlNLVlLR0t6dzVYWnZGOUFkTmlRZUlaQkRNRFV4cEJWWmc2NUFXSUw3OUhJVnRUQUhaQWlZUWpfeDRfMk50VXo1T3NvRGpma2FDdHItZ2p4YmRXYml6VkxJOWpVVmJ5NWV4U0VIQk1Id2xNempqeW9HVDlvNllCYzJEQjJhUXBOTjc4cnFzVTVMN25vWmh5MkdpSFJNOEg3d1FGN09TQWphSzhDQ2lsNWpNcDFKNUhoQkRtckF4V0ZUbUl3cHFlODBKb1htU1BLZm9hRHNRVFg0eUVkQm5ZQlBGWXJXbmJmVVhTcjFvUWs",
+          "published_at": "2026-10-15T08:03:05+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-15",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美國經濟亮28個月綠燈富蘭克林看好美股並點名科技亞洲ai供應鏈yahoo股市",
+          "event_cluster_key": "event-be0e467bc62276461f32",
+          "published_time_bucket": "2026-10-15T08:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
@@ -2159,106 +2245,6 @@
           "inventory_used": true,
           "inventory_age_trading_sessions": 1,
           "inventory_saved_at": "2026-10-15T07:09:05.295294+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 40
-        },
-        {
-          "story_id": "news-711307422ad19cd66883",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6630669",
-          "url": "https://news.cnyes.com/news/id/6630669",
-          "published_at": "2026-10-14T22:02:35+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-15",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "SOX",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "利率"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "利率"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "利率",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
-          "event_cluster_key": "event-40d27feb65b9f7fa705b",
-          "published_time_bucket": "2026-10-14T22:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "利率"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "利率",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜持股關聯",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 1,
-          "inventory_saved_at": "2026-10-15T00:48:15.150170+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 40
@@ -3279,6 +3265,98 @@
           "ranking_score": 30
         },
         {
+          "story_id": "news-cdff0bde313beed04682",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "外資狠甩賣！新台幣爆2485億元史上最大 收盤貶近2角",
+          "raw_title": "外資狠甩賣！新台幣爆2485億元史上最大 收盤貶近2角",
+          "normalized_fact": "美國通膨數據超乎預期、美股科技股與晶片股賣壓蔓延影響，台北金融市場今（15）日又上演股匯雙殺，新台幣兌美元終場以 32.265 元作收，重貶 1.92 角，台北外匯市場加上元太外匯市場，合計成交金。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美國通膨數據超乎預期、美股科技股與晶片股賣壓蔓延影響，台北金融市場今（15）日又上演「股匯雙殺」，新台幣兌美元終場以 32.265 元作收，重貶 1.92 角，台北外匯市場加上元太外匯市場，合計成交金",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%A4%96%E8%B3%87%E7%8B%A0%E7%94%A9%E8%B3%A3%EF%BC%81%E6%96%B0%E5%8F%B0%E5%B9%A3%E7%88%862485%E5%84%84%E5%85%83%E5%8F%B2%E4%B8%8A%E6%9C%80%E5%A4%A7-%E6%94%B6%E7%9B%A4%E8%B2%B6%E8%BF%912%E8%A7%92-085447065.html",
+          "url": "https://tw.stock.yahoo.com/news/%E5%A4%96%E8%B3%87%E7%8B%A0%E7%94%A9%E8%B3%A3%EF%BC%81%E6%96%B0%E5%8F%B0%E5%B9%A3%E7%88%862485%E5%84%84%E5%85%83%E5%8F%B2%E4%B8%8A%E6%9C%80%E5%A4%A7-%E6%94%B6%E7%9B%A4%E8%B2%B6%E8%BF%912%E8%A7%92-085447065.html",
+          "published_at": "2026-10-15T08:31:06+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-15",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "macro",
+            "reason": "macro_subject_action",
+            "matched_terms": [
+              "通膨",
+              "數據"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "通膨",
+              "數據"
+            ],
+            "matched_subject": "通膨",
+            "matched_action": "數據",
+            "matched_market_object": "通膨",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美國通膨數據超乎預期美股科技股與晶片股賣壓蔓延影響台北金融市場今15日又上演股匯雙殺新台幣兌美元終場以32265元作收重貶192角台北外匯市場加上元太外匯市場合計成交金",
+          "event_cluster_key": "event-a9b80dc66493a0270eea",
+          "published_time_bucket": "2026-10-15T08:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "通膨",
+            "數據"
+          ],
+          "matched_subject": "通膨",
+          "matched_action": "數據",
+          "matched_market_object": "通膨",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-15T08:43:36.094967+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 30
+        },
+        {
           "story_id": "news-d20a02ced729faf3c6ae",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -3371,6 +3449,104 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 30
+        },
+        {
+          "story_id": "news-418395a3019bb49e350c",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "從台積電法說會看台股下一步！CoWoS先進封裝爆發 00418A深入前300大卡位受惠供應鏈 - Yahoo新聞",
+          "raw_title": "從台積電法說會看台股下一步！CoWoS先進封裝爆發 00418A深入前300大卡位受惠供應鏈 - Yahoo新聞",
+          "normalized_fact": "從台積電法說會看台股下一步，CoWoS先進封裝爆發 00418A深入前300大卡位受惠供應鏈 Yahoo。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": true,
+          "publisher_removed": true,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "從台積電法說會看台股下一步！CoWoS先進封裝爆發 00418A深入前300大卡位受惠供應鏈 Yahoo新聞",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMixgNBVV95cUxOTHBuNnNkc05vMmJacFNDOFMxVHVVYjc4OURtel80T05YODhHMW83M3Fsd0owRlNsQzBPUGFuWjlWNlNjWmUxakg0TWtxblJkREMtTzJBMXZXdUQ5X0d3OHY2eGF6aUlvamR0a2Z5b2l3RC01ODdmVFdOallHTHVhVkJncTJQdDVBT2JpUnJTYUJjT3ZmWTZXdllRak1tWV9CSjRjMDhrTDJEX3RZYkR2dWMwNWwwWTA5c0JzM0xmM2FXMnRqVFVqXzFpMEFaVzJNamdfSjE2V0xadmplVXdhY2traUdrdlIxWVhQWlN0cFFSdGswd01GTEVtWkZXMFJpZTVpSDdnYlRQYndWWVIxN3VlUmh4R0R5Uk0xMkR2ZVlFZzI5Y0JnRUFDVXVkeXZWclRVMUU1S05xRDFBUzBpTlozbjlfbG5aTUtvYWJHT2pxU2ZBOVAzOW56OU9aWktqZk9aN21BY0syR21MN3pYYlpYQkozb2JVX1pnQXFBbm5pclJJY3BVNWFDaS1iMWtHbndjbVY1T0NSenB1ZWM1OUVpSVcwa3gtYWhabmg3RS1sblJSa0ttaExUcFRkTnlEN0RLSzZn",
+          "url": "https://news.google.com/rss/articles/CBMixgNBVV95cUxOTHBuNnNkc05vMmJacFNDOFMxVHVVYjc4OURtel80T05YODhHMW83M3Fsd0owRlNsQzBPUGFuWjlWNlNjWmUxakg0TWtxblJkREMtTzJBMXZXdUQ5X0d3OHY2eGF6aUlvamR0a2Z5b2l3RC01ODdmVFdOallHTHVhVkJncTJQdDVBT2JpUnJTYUJjT3ZmWTZXdllRak1tWV9CSjRjMDhrTDJEX3RZYkR2dWMwNWwwWTA5c0JzM0xmM2FXMnRqVFVqXzFpMEFaVzJNamdfSjE2V0xadmplVXdhY2traUdrdlIxWVhQWlN0cFFSdGswd01GTEVtWkZXMFJpZTVpSDdnYlRQYndWWVIxN3VlUmh4R0R5Uk0xMkR2ZVlFZzI5Y0JnRUFDVXVkeXZWclRVMUU1S05xRDFBUzBpTlozbjlfbG5aTUtvYWJHT2pxU2ZBOVAzOW56OU9aWktqZk9aN21BY0syR21MN3pYYlpYQkozb2JVX1pnQXFBbm5pclJJY3BVNWFDaS1iMWtHbndjbVY1T0NSenB1ZWM1OUVpSVcwa3gtYWhabmg3RS1sblJSa0ttaExUcFRkTnlEN0RLSzZn",
+          "published_at": "2026-10-15T02:41:14+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-15",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "TAIEX",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "台積電",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "台積電",
+              "供應"
+            ],
+            "matched_subject": "台積電",
+            "matched_action": "供應",
+            "matched_market_object": "台積電",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "從台積電法說會看台股下一步cowos先進封裝爆發00418a深入前300大卡位受惠供應鏈yahoo",
+          "event_cluster_key": "event-dee836190dae7ac8aa88",
+          "published_time_bucket": "2026-10-15T02:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "台積電",
+            "供應"
+          ],
+          "matched_subject": "台積電",
+          "matched_action": "供應",
+          "matched_market_object": "台積電",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜台股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-15T04:18:50.218690+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 25
         },
         {
           "story_id": "news-68e2dec46c9c815067bb",
@@ -3756,100 +3932,6 @@
           "inventory_used": true,
           "inventory_age_trading_sessions": 1,
           "inventory_saved_at": "2026-10-15T06:33:58.039897+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 15
-        },
-        {
-          "story_id": "news-3673a20685dc8d59921f",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "美國經濟亮28個月綠燈 富蘭克林看好美股並點名科技、亞洲AI供應鏈 - 鉅亨網",
-          "raw_title": "美國經濟亮28個月綠燈 富蘭克林看好美股並點名科技、亞洲AI供應鏈 - 鉅亨網",
-          "normalized_fact": "美國經濟亮28個月綠燈 富蘭克林看好美股並點名科技、亞洲AI供應鏈 鉅亨網。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "美國經濟亮28個月綠燈 富蘭克林看好美股並點名科技、亞洲AI供應鏈 鉅亨網",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE16SHFNWW1xX0xHSFV5ZzktMkhfOWU1MHUwSEdqU3B2TzhNTklwbWxfRGxQbU1xWGVJSU1INTF4NUxuYzZobkpCN1c5WGVYRHc",
-          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE16SHFNWW1xX0xHSFV5ZzktMkhfOWU1MHUwSEdqU3B2TzhNTklwbWxfRGxQbU1xWGVJSU1INTF4NUxuYzZobkpCN1c5WGVYRHc",
-          "published_at": "2026-10-15T08:03:05+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-15",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美國經濟亮28個月綠燈富蘭克林看好美股並點名科技亞洲ai供應鏈鉅亨網",
-          "event_cluster_key": "event-be0e467bc62276461f32",
-          "published_time_bucket": "2026-10-15T08:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 1,
-          "inventory_saved_at": "2026-10-15T08:38:48.390673+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 15
@@ -4596,97 +4678,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 27
-        },
-        {
-          "story_id": "news-8ba3f458de27712c49c0",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "歐盟擬擴大對中貿易限制，滬指週三震盪收低0.88%，五大類股漲跌互見",
-          "raw_title": "歐盟擬擴大對中貿易限制，滬指週三震盪收低0.88%，五大類股漲跌互見",
-          "normalized_fact": "【財訊快報／劉敏夫】中國股市週三走勢震盪，因投資人持續權衡歐盟對中國的一系列潛在貿易防禦措施，以及中國新發布的通膨與貿易數據。收盤時，上證綜合指數下跌33.63點或0.88%，報3,767.23點；滬。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "【財訊快報／劉敏夫】中國股市週三走勢震盪，因投資人持續權衡歐盟對中國的一系列潛在貿易防禦措施，以及中國新發布的通膨與貿易數據。收盤時，上證綜合指數下跌33.63點或0.88%，報3,767.23點；滬",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E7%9B%9F%E6%93%AC%E6%93%B4%E5%A4%A7%E5%B0%8D%E4%B8%AD%E8%B2%BF%E6%98%93%E9%99%90%E5%88%B6-%E6%BB%AC%E6%8C%87%E9%80%B1%E4%B8%89%E9%9C%87%E7%9B%AA%E6%94%B6%E4%BD%8E0-88-%E4%BA%94%E5%A4%A7%E9%A1%9E%E8%82%A1%E6%BC%B2%E8%B7%8C%E4%BA%92%E8%A6%8B-073814906.html",
-          "url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E7%9B%9F%E6%93%AC%E6%93%B4%E5%A4%A7%E5%B0%8D%E4%B8%AD%E8%B2%BF%E6%98%93%E9%99%90%E5%88%B6-%E6%BB%AC%E6%8C%87%E9%80%B1%E4%B8%89%E9%9C%87%E7%9B%AA%E6%94%B6%E4%BD%8E0-88-%E4%BA%94%E5%A4%A7%E9%A1%9E%E8%82%A1%E6%BC%B2%E8%B7%8C%E4%BA%92%E8%A6%8B-073814906.html",
-          "published_at": "2026-10-14T07:38:14+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-14",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "macro",
-            "reason": "macro_subject_action",
-            "matched_terms": [
-              "通膨",
-              "發布"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "通膨",
-              "發布"
-            ],
-            "matched_subject": "通膨",
-            "matched_action": "發布",
-            "matched_market_object": "通膨",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "財訊快報劉敏夫中國股市週三走勢震盪因投資人持續權衡歐盟對中國的一系列潛在貿易防禦措施以及中國新發布的通膨與貿易數據收盤時上證綜合指數下跌3363點或088報376723點滬",
-          "event_cluster_key": "event-c792d91cf415e51a57be",
-          "published_time_bucket": "2026-10-14T07:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "通膨",
-            "發布"
-          ],
-          "matched_subject": "通膨",
-          "matched_action": "發布",
-          "matched_market_object": "通膨",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-14T07:43:48.868279+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 27
         }
       ],
       "source_diversity": {
@@ -4694,13 +4685,15 @@
         "status": "multi_source",
         "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 2,
-        "provider_count": 2,
+        "independent_source_count": 3,
+        "provider_count": 3,
         "provider_ids": [
+          "anue",
           "google_news",
           "yahoo_finance"
         ],
         "source_domains": [
+          "news.cnyes.com",
           "news.google.com",
           "tw.stock.yahoo.com"
         ],
@@ -4717,11 +4710,11 @@
         },
         "sector_interest": {},
         "topic_interest": {
-          "原油": 1,
-          "石油": 2
+          "石油": 4,
+          "原油": 1
         },
         "market_interest": {
-          "taiwan": 107
+          "taiwan": 108
         },
         "context": {
           "tracked_tickers": [
@@ -4787,19 +4780,19 @@
           "research_candidate": {},
           "tracked_sector": {},
           "active_event": {
-            "原油": 1,
-            "石油": 2
+            "石油": 4,
+            "原油": 1
           },
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 32,
+      "excluded_count": 31,
       "exclusion_reasons": {
         "incomplete_normalized_fact": 4,
         "insufficient_market_relevance": 18,
-        "market_scope_mismatch": 2,
-        "missing_published_at": 2,
-        "outside_calendar_window": 15,
+        "market_scope_mismatch": 4,
+        "missing_published_at": 1,
+        "outside_calendar_window": 14,
         "outside_trading_session_window": 3
       },
       "status": "ready",
@@ -4812,41 +4805,41 @@
         "disabled_provider_count": 0,
         "fetched": 42,
         "normalized": 42,
-        "eligible": 10,
-        "excluded": 32,
-        "date_eligible_current": 22,
-        "date_excluded_current": 20,
+        "eligible": 11,
+        "excluded": 31,
+        "date_eligible_current": 24,
+        "date_excluded_current": 18,
         "date_exclusion_reasons_current": {
-          "missing_published_at": 2,
-          "outside_calendar_window": 15,
+          "missing_published_at": 1,
+          "outside_calendar_window": 14,
           "outside_trading_session_window": 3
         },
-        "date_eligible_inventory": 65,
+        "date_eligible_inventory": 66,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-15T09:13:20.980449+00:00",
-        "deduped": 10,
+        "reference_time": "2026-10-15T09:23:30.281558+00:00",
+        "deduped": 11,
         "publicly_ranked": 5,
-        "current_eligible": 10,
-        "inventory_considered": 65,
+        "current_eligible": 11,
+        "inventory_considered": 66,
         "inventory_eligible": 53,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 32,
+        "filtered_story_count": 31,
         "fetched_story_count": 42,
         "normalized_story_count": 42,
-        "eligible_story_count": 10,
-        "deduped_story_count": 10,
+        "eligible_story_count": 11,
+        "deduped_story_count": 11,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 65,
+        "considered": 66,
         "eligible": 53,
         "selected": 0,
         "target_count": 5,
@@ -4860,7 +4853,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 42,
-          "checked_at": "2026-10-15T09:13:20.980489+00:00"
+          "checked_at": "2026-10-15T09:23:30.281596+00:00"
         },
         {
           "provider": "twse",
@@ -4871,10 +4864,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-10-15T09:13:20.980489+00:00",
+          "checked_at": "2026-10-15T09:23:30.281596+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+          "last_success_at": "2026-10-15T09:23:30.281596+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4899,10 +4892,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-10-15T09:13:20.980489+00:00",
+          "checked_at": "2026-10-15T09:23:30.281596+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+          "last_success_at": "2026-10-15T09:23:30.281596+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4923,18 +4916,18 @@
           "key": "news_taiwan_anue",
           "legacy_key": "official_news_taiwan_anue",
           "label": "anue market news",
-          "status": "no_event",
+          "status": "healthy",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 0,
-          "checked_at": "2026-10-15T09:13:20.980489+00:00",
+          "item_count": 1,
+          "checked_at": "2026-10-15T09:23:30.281596+00:00",
           "raw_item_count": 5,
-          "filtered_item_count": 0,
-          "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-10-15T09:23:30.281596+00:00",
           "last_failure_at": null,
           "stories_ingested": 2,
-          "stories_deduped": 0,
-          "ranked_count": 0,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
             "market": 2,
             "tracked_ticker": 2
@@ -4943,12 +4936,11 @@
             "fetched_count": 2,
             "normalized_count": 2,
             "market_compatible_count": 2,
-            "eligible_count": 0,
-            "excluded_count": 2,
-            "deduped_count": 0,
-            "ranked_count": 0
-          },
-          "data_gap": "filtered_no_market_match"
+            "eligible_count": 1,
+            "excluded_count": 1,
+            "deduped_count": 1,
+            "ranked_count": 1
+          }
         },
         {
           "provider": "yahoo_finance",
@@ -4958,27 +4950,28 @@
           "status": "healthy",
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
-          "item_count": 3,
-          "checked_at": "2026-10-15T09:13:20.980489+00:00",
+          "item_count": 2,
+          "checked_at": "2026-10-15T09:23:30.281596+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 3,
-          "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+          "filtered_item_count": 2,
+          "last_success_at": "2026-10-15T09:23:30.281596+00:00",
           "last_failure_at": null,
-          "stories_ingested": 9,
+          "stories_ingested": 8,
           "stories_deduped": 3,
-          "ranked_count": 3,
+          "ranked_count": 2,
           "relevance_distribution": {
-            "market": 9,
+            "active_event": 1,
+            "market": 8,
             "tracked_ticker": 1
           },
           "funnel": {
             "fetched_count": 10,
-            "normalized_count": 9,
-            "market_compatible_count": 9,
+            "normalized_count": 8,
+            "market_compatible_count": 8,
             "eligible_count": 3,
-            "excluded_count": 6,
+            "excluded_count": 5,
             "deduped_count": 3,
-            "ranked_count": 3
+            "ranked_count": 2
           }
         },
         {
@@ -4990,10 +4983,10 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
           "item_count": 2,
-          "checked_at": "2026-10-15T09:13:20.980489+00:00",
+          "checked_at": "2026-10-15T09:23:30.281596+00:00",
           "raw_item_count": 30,
           "filtered_item_count": 2,
-          "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+          "last_success_at": "2026-10-15T09:23:30.281596+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
           "stories_deduped": 7,
@@ -5015,9 +5008,10 @@
       ],
       "observability": {
         "stories_ingested": 42,
-        "stories_deduped": 10,
+        "stories_deduped": 11,
         "ranked_count": 5,
         "relevance_distribution": {
+          "active_event": 1,
           "market": 42,
           "tracked_ticker": 11
         },
@@ -5025,11 +5019,11 @@
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+            "last_success_at": "2026-10-15T09:23:30.281596+00:00",
             "last_failure_at": null,
             "stories_ingested": 2,
-            "stories_deduped": 0,
-            "ranked_count": 0,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
               "market": 2,
               "tracked_ticker": 2
@@ -5038,16 +5032,16 @@
               "fetched_count": 2,
               "normalized_count": 2,
               "market_compatible_count": 2,
-              "eligible_count": 0,
-              "excluded_count": 2,
-              "deduped_count": 0,
-              "ranked_count": 0
+              "eligible_count": 1,
+              "excluded_count": 1,
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           },
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+            "last_success_at": "2026-10-15T09:23:30.281596+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
             "stories_deduped": 7,
@@ -5069,7 +5063,7 @@
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+            "last_success_at": "2026-10-15T09:23:30.281596+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5088,7 +5082,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+            "last_success_at": "2026-10-15T09:23:30.281596+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5109,18 +5103,18 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 1,
+            "stories_ingested": 2,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 1
+              "market": 2
             },
             "funnel": {
-              "fetched_count": 1,
-              "normalized_count": 1,
+              "fetched_count": 2,
+              "normalized_count": 2,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 1,
+              "excluded_count": 2,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -5128,23 +5122,24 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+            "last_success_at": "2026-10-15T09:23:30.281596+00:00",
             "last_failure_at": null,
-            "stories_ingested": 9,
+            "stories_ingested": 8,
             "stories_deduped": 3,
-            "ranked_count": 3,
+            "ranked_count": 2,
             "relevance_distribution": {
-              "market": 9,
+              "active_event": 1,
+              "market": 8,
               "tracked_ticker": 1
             },
             "funnel": {
               "fetched_count": 10,
-              "normalized_count": 9,
-              "market_compatible_count": 9,
+              "normalized_count": 8,
+              "market_compatible_count": 8,
               "eligible_count": 3,
-              "excluded_count": 6,
+              "excluded_count": 5,
               "deduped_count": 3,
-              "ranked_count": 3
+              "ranked_count": 2
             }
           }
         ]
@@ -5369,103 +5364,6 @@
       ],
       "stories": [
         {
-          "story_id": "news-2c8015aae5943d987422",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "TSMC: Q3 Earnings Snapshot",
-          "raw_title": "TSMC: Q3 Earnings Snapshot",
-          "normalized_fact": "HSINCHU, Taiwan (AP) — HSINCHU, Taiwan (AP) — Taiwan Semiconductor Manufacturing Co. (TSM) on Thursday reported third-quarter profit of $23。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "HSINCHU, Taiwan (AP) — HSINCHU, Taiwan (AP) — Taiwan Semiconductor Manufacturing Co. (TSM) on Thursday reported third-quarter profit of $23.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/tsmc-q3-earnings-snapshot-055852237.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/tsmc-q3-earnings-snapshot-055852237.html?.tsrc=rss",
-          "published_at": "2026-10-15T05:58:52+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-15",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [
-            "earnings"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "tsmc",
-              "earnings"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "tsmc",
-              "earnings"
-            ],
-            "matched_subject": "tsmc",
-            "matched_action": "earnings",
-            "matched_market_object": "tsmc",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:TSM",
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "hsinchutaiwanaphsinchutaiwanaptaiwansemiconductormanufacturingcotsmonthursdayreportedthirdquarterprofitof23",
-          "event_cluster_key": "event-8e960d3297e3d102c337",
-          "published_time_bucket": "2026-10-15T05:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "tsmc",
-            "earnings"
-          ],
-          "matched_subject": "tsmc",
-          "matched_action": "earnings",
-          "matched_market_object": "tsmc",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 135
-        },
-        {
           "story_id": "news-5a467bce06bc97b434fd",
           "provider": "anue",
           "provider_name": "Anue",
@@ -5559,6 +5457,100 @@
           "ranking_score": 130
         },
         {
+          "story_id": "news-bedbd1300438fa2cccea",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Global chipmakers sink as inflation data fuels rate-hike fears, AI rout",
+          "raw_title": "Global chipmakers sink as inflation data fuels rate-hike fears, AI rout",
+          "normalized_fact": "Investing.com -- Global semiconductor stocks fell sharply Thursday, extending a rout from a day earlier after fresh U.S. inflation data stoked fears of further Federal Reserve interest-rate increases。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Investing.com -- Global semiconductor stocks fell sharply Thursday, extending a rout from a day earlier after fresh U.S. inflation data stoked fears of further Federal Reserve interest-rate increases.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/global-chipmakers-sink-inflation-data-082242323.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/global-chipmakers-sink-inflation-data-082242323.html?.tsrc=rss",
+          "published_at": "2026-10-15T08:22:42+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai",
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "federal reserve",
+              "rate"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "federal reserve",
+              "rate"
+            ],
+            "matched_subject": "federal reserve",
+            "matched_action": "rate",
+            "matched_market_object": "federal reserve",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "investingcomglobalsemiconductorstocksfellsharplythursdayextendingaroutfromadayearlierafterfreshusinflationdatastokedfearsoffurtherfederalreserveinterestrateincreases",
+          "event_cluster_key": "event-1c9d6b45e80fa2d04e4b",
+          "published_time_bucket": "2026-10-15T08:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "federal reserve",
+            "rate"
+          ],
+          "matched_subject": "federal reserve",
+          "matched_action": "rate",
+          "matched_market_object": "federal reserve",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
           "story_id": "news-7cac6a346d2d9eee29d2",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -5639,103 +5631,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        },
-        {
-          "story_id": "news-38071b6d9c4c0c26b86e",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "TSMC Q3 profit surges to record high on AI demand; says considering Texas fab",
-          "raw_title": "TSMC Q3 profit surges to record high on AI demand; says considering Texas fab",
-          "normalized_fact": "Investing.com-- Taiwan Semiconductor Manufacturing Co, or TSMC, clocked a stronger-than-expected third-quarter profit on Thursday, with earnings hitting another record high on robust demand from the artificial intelligence industry。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Investing.com-- Taiwan Semiconductor Manufacturing Co, or TSMC, clocked a stronger-than-expected third-quarter profit on Thursday, with earnings hitting another record high on robust demand from the artificial intelligence industry.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/technology/ai/articles/tsmc-q3-profit-surges-more-061034370.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/technology/ai/articles/tsmc-q3-profit-surges-more-061034370.html?.tsrc=rss",
-          "published_at": "2026-10-15T06:10:34+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-15",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "tsmc",
-              "earnings"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "tsmc",
-              "earnings"
-            ],
-            "matched_subject": "tsmc",
-            "matched_action": "earnings",
-            "matched_market_object": "tsmc",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:TSM",
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "investingcomtaiwansemiconductormanufacturingcoortsmcclockedastrongerthanexpectedthirdquarterprofitonthursdaywithearningshittinganotherrecordhighonrobustdemandfromtheartificialintelligenceindustry",
-          "event_cluster_key": "event-119c17a19a66c5bc6962",
-          "published_time_bucket": "2026-10-15T06:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "tsmc",
-            "earnings"
-          ],
-          "matched_subject": "tsmc",
-          "matched_action": "earnings",
-          "matched_market_object": "tsmc",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 135
         },
         {
           "story_id": "news-711307422ad19cd66883",
@@ -5836,19 +5731,17 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 140
-        }
-      ],
-      "editorial_candidates": [
+        },
         {
-          "story_id": "news-2c8015aae5943d987422",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "TSMC: Q3 Earnings Snapshot",
-          "raw_title": "TSMC: Q3 Earnings Snapshot",
-          "normalized_fact": "HSINCHU, Taiwan (AP) — HSINCHU, Taiwan (AP) — Taiwan Semiconductor Manufacturing Co. (TSM) on Thursday reported third-quarter profit of $23。",
-          "market_topic": "semiconductor_ai",
+          "story_id": "news-5020636cf7a3eff37ecd",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Oil Prices Rise, Middle East Tensions Continue to Threaten Global Supply - Morocco World News",
+          "raw_title": "Oil Prices Rise, Middle East Tensions Continue to Threaten Global Supply - Morocco World News",
+          "normalized_fact": "Oil Prices Rise, Middle East Tensions Continue to Threaten Global Supply Morocco World News。",
+          "market_topic": "energy_geopolitics",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5856,44 +5749,42 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "HSINCHU, Taiwan (AP) — HSINCHU, Taiwan (AP) — Taiwan Semiconductor Manufacturing Co. (TSM) on Thursday reported third-quarter profit of $23.",
+          "summary": "Oil Prices Rise, Middle East Tensions Continue to Threaten Global Supply Morocco World News",
           "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/tsmc-q3-earnings-snapshot-055852237.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/tsmc-q3-earnings-snapshot-055852237.html?.tsrc=rss",
-          "published_at": "2026-10-15T05:58:52+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQdTRhYi1ZMzBLaVZTUF9iQ3lrZ1B3MUM5aWdYVzJLOWVmaWZzemF4bkh5VzBtenZFVVdLU2lNRW9TMTVGdDA4SVpXNElYeDUwbVNCMW5HaXVRd093LVNPX0huYzJoTEJzZG5rZGstVndyZ203TVZ4eWxqWmlOSzl1YWFEazNLWVVNOHh1aVN1anpZMUp6Y2RBYW5hVzdpSjBkVG9KdDRZZHhhZWtBYlJubkNBSDQ5OEt3SHprQw",
+          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQdTRhYi1ZMzBLaVZTUF9iQ3lrZ1B3MUM5aWdYVzJLOWVmaWZzemF4bkh5VzBtenZFVVdLU2lNRW9TMTVGdDA4SVpXNElYeDUwbVNCMW5HaXVRd093LVNPX0huYzJoTEJzZG5rZGstVndyZ203TVZ4eWxqWmlOSzl1YWFEazNLWVVNOHh1aVN1anpZMUp6Y2RBYW5hVzdpSjBkVG9KdDRZZHhhZWtBYlJubkNBSDQ5OEt3SHprQw",
+          "published_at": "2026-10-14T18:07:14+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "current",
+          "date_eligibility_status": "recent_reference",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-15",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-14",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "TSM"
-          ],
+          "entities": [],
           "sectors": [],
           "topics": [
-            "earnings"
+            "energy"
           ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
+            "category": "energy",
+            "reason": "energy_subject_action",
             "matched_terms": [
-              "tsmc",
-              "earnings"
+              "oil",
+              "supply"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "tsmc",
-              "earnings"
+              "oil",
+              "supply"
             ],
-            "matched_subject": "tsmc",
-            "matched_action": "earnings",
-            "matched_market_object": "tsmc",
+            "matched_subject": "oil",
+            "matched_action": "supply",
+            "matched_market_object": "oil",
             "input_fields": [
               "description",
               "summary",
@@ -5901,31 +5792,30 @@
             ]
           },
           "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:TSM",
-            "market:us"
+            "market:us",
+            "active_event:oil"
           ],
           "freshness": "published",
-          "dedupe_key": "hsinchutaiwanaphsinchutaiwanaptaiwansemiconductormanufacturingcotsmonthursdayreportedthirdquarterprofitof23",
-          "event_cluster_key": "event-8e960d3297e3d102c337",
-          "published_time_bucket": "2026-10-15T05:00:00+00:00",
+          "dedupe_key": "oilpricesrisemiddleeasttensionscontinuetothreatenglobalsupplymoroccoworldnews",
+          "event_cluster_key": "event-9a723248627a69e5c400",
+          "published_time_bucket": "2026-10-14T18:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "tsmc",
-            "earnings"
+            "oil",
+            "supply"
           ],
-          "matched_subject": "tsmc",
-          "matched_action": "earnings",
-          "matched_market_object": "tsmc",
-          "decision_value_class": "semiconductor_ai",
+          "matched_subject": "oil",
+          "matched_action": "supply",
+          "matched_market_object": "oil",
+          "decision_value_class": "energy",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Yahoo Finance",
+          "source": "Google News｜美股線索",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -5934,8 +5824,10 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 135
-        },
+          "ranking_score": 120
+        }
+      ],
+      "editorial_candidates": [
         {
           "story_id": "news-5a467bce06bc97b434fd",
           "provider": "anue",
@@ -6030,6 +5922,100 @@
           "ranking_score": 130
         },
         {
+          "story_id": "news-bedbd1300438fa2cccea",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Global chipmakers sink as inflation data fuels rate-hike fears, AI rout",
+          "raw_title": "Global chipmakers sink as inflation data fuels rate-hike fears, AI rout",
+          "normalized_fact": "Investing.com -- Global semiconductor stocks fell sharply Thursday, extending a rout from a day earlier after fresh U.S. inflation data stoked fears of further Federal Reserve interest-rate increases。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Investing.com -- Global semiconductor stocks fell sharply Thursday, extending a rout from a day earlier after fresh U.S. inflation data stoked fears of further Federal Reserve interest-rate increases.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/global-chipmakers-sink-inflation-data-082242323.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/global-chipmakers-sink-inflation-data-082242323.html?.tsrc=rss",
+          "published_at": "2026-10-15T08:22:42+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai",
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "federal reserve",
+              "rate"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "federal reserve",
+              "rate"
+            ],
+            "matched_subject": "federal reserve",
+            "matched_action": "rate",
+            "matched_market_object": "federal reserve",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "investingcomglobalsemiconductorstocksfellsharplythursdayextendingaroutfromadayearlierafterfreshusinflationdatastokedfearsoffurtherfederalreserveinterestrateincreases",
+          "event_cluster_key": "event-1c9d6b45e80fa2d04e4b",
+          "published_time_bucket": "2026-10-15T08:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "federal reserve",
+            "rate"
+          ],
+          "matched_subject": "federal reserve",
+          "matched_action": "rate",
+          "matched_market_object": "federal reserve",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
           "story_id": "news-7cac6a346d2d9eee29d2",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -6110,103 +6096,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        },
-        {
-          "story_id": "news-38071b6d9c4c0c26b86e",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "TSMC Q3 profit surges to record high on AI demand; says considering Texas fab",
-          "raw_title": "TSMC Q3 profit surges to record high on AI demand; says considering Texas fab",
-          "normalized_fact": "Investing.com-- Taiwan Semiconductor Manufacturing Co, or TSMC, clocked a stronger-than-expected third-quarter profit on Thursday, with earnings hitting another record high on robust demand from the artificial intelligence industry。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Investing.com-- Taiwan Semiconductor Manufacturing Co, or TSMC, clocked a stronger-than-expected third-quarter profit on Thursday, with earnings hitting another record high on robust demand from the artificial intelligence industry.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/technology/ai/articles/tsmc-q3-profit-surges-more-061034370.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/technology/ai/articles/tsmc-q3-profit-surges-more-061034370.html?.tsrc=rss",
-          "published_at": "2026-10-15T06:10:34+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-15",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "tsmc",
-              "earnings"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "tsmc",
-              "earnings"
-            ],
-            "matched_subject": "tsmc",
-            "matched_action": "earnings",
-            "matched_market_object": "tsmc",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:TSM",
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "investingcomtaiwansemiconductormanufacturingcoortsmcclockedastrongerthanexpectedthirdquarterprofitonthursdaywithearningshittinganotherrecordhighonrobustdemandfromtheartificialintelligenceindustry",
-          "event_cluster_key": "event-119c17a19a66c5bc6962",
-          "published_time_bucket": "2026-10-15T06:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "tsmc",
-            "earnings"
-          ],
-          "matched_subject": "tsmc",
-          "matched_action": "earnings",
-          "matched_market_object": "tsmc",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 135
         },
         {
           "story_id": "news-711307422ad19cd66883",
@@ -6854,6 +6743,103 @@
           "ranking_score": 115
         },
         {
+          "story_id": "news-2c8015aae5943d987422",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "TSMC: Q3 Earnings Snapshot",
+          "raw_title": "TSMC: Q3 Earnings Snapshot",
+          "normalized_fact": "HSINCHU, Taiwan (AP) — HSINCHU, Taiwan (AP) — Taiwan Semiconductor Manufacturing Co. (TSM) on Thursday reported third-quarter profit of $23。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "HSINCHU, Taiwan (AP) — HSINCHU, Taiwan (AP) — Taiwan Semiconductor Manufacturing Co. (TSM) on Thursday reported third-quarter profit of $23.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/tsmc-q3-earnings-snapshot-055852237.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/tsmc-q3-earnings-snapshot-055852237.html?.tsrc=rss",
+          "published_at": "2026-10-15T05:58:52+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [
+            "earnings"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "tsmc",
+              "earnings"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "tsmc",
+              "earnings"
+            ],
+            "matched_subject": "tsmc",
+            "matched_action": "earnings",
+            "matched_market_object": "tsmc",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:TSM",
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "hsinchutaiwanaphsinchutaiwanaptaiwansemiconductormanufacturingcotsmonthursdayreportedthirdquarterprofitof23",
+          "event_cluster_key": "event-8e960d3297e3d102c337",
+          "published_time_bucket": "2026-10-15T05:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "tsmc",
+            "earnings"
+          ],
+          "matched_subject": "tsmc",
+          "matched_action": "earnings",
+          "matched_market_object": "tsmc",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-15T06:33:58.039897+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 35
+        },
+        {
           "story_id": "news-65e4e2a6c856b3269329",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -6945,6 +6931,103 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 15
+        },
+        {
+          "story_id": "news-38071b6d9c4c0c26b86e",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "TSMC Q3 profit surges to record high on AI demand; says considering Texas fab",
+          "raw_title": "TSMC Q3 profit surges to record high on AI demand; says considering Texas fab",
+          "normalized_fact": "Investing.com-- Taiwan Semiconductor Manufacturing Co, or TSMC, clocked a stronger-than-expected third-quarter profit on Thursday, with earnings hitting another record high on robust demand from the artificial intelligence industry。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Investing.com-- Taiwan Semiconductor Manufacturing Co, or TSMC, clocked a stronger-than-expected third-quarter profit on Thursday, with earnings hitting another record high on robust demand from the artificial intelligence industry.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/technology/ai/articles/tsmc-q3-profit-surges-more-061034370.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/technology/ai/articles/tsmc-q3-profit-surges-more-061034370.html?.tsrc=rss",
+          "published_at": "2026-10-15T06:10:34+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "tsmc",
+              "earnings"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "tsmc",
+              "earnings"
+            ],
+            "matched_subject": "tsmc",
+            "matched_action": "earnings",
+            "matched_market_object": "tsmc",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:TSM",
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "investingcomtaiwansemiconductormanufacturingcoortsmcclockedastrongerthanexpectedthirdquarterprofitonthursdaywithearningshittinganotherrecordhighonrobustdemandfromtheartificialintelligenceindustry",
+          "event_cluster_key": "event-119c17a19a66c5bc6962",
+          "published_time_bucket": "2026-10-15T06:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "tsmc",
+            "earnings"
+          ],
+          "matched_subject": "tsmc",
+          "matched_action": "earnings",
+          "matched_market_object": "tsmc",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-15T06:33:58.039897+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 35
         },
         {
           "story_id": "news-b11a4112d81626c2e6eb",
@@ -9233,88 +9316,6 @@
           "ranking_score": 24
         },
         {
-          "story_id": "news-f556bcf7f3962ce339b6",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Service Properties Trust Third Quarter 2026 Conference Call Scheduled for Thursday, November 5th",
-          "raw_title": "Service Properties Trust Third Quarter 2026 Conference Call Scheduled for Thursday, November 5th",
-          "normalized_fact": "NEWTON, Mass., October 13, 2026--Service Properties Trust (Nasdaq: SVC) today announced that it will issue a press release containing its third quarter 2026 results after the Nasdaq closes on Wednesday, November 4, 2026. On Thursday, November 5, 2026 at 10:00 a.m. Eastern Time, President and Chief Executive Officer Chris Bilotto, Chief Financial Officer and Treasurer Brian Donley and Vice President Jesse Abair will host a conference call to discuss these results。",
-          "market_topic": "global_market",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "NEWTON, Mass., October 13, 2026--Service Properties Trust (Nasdaq: SVC) today announced that it will issue a press release containing its third quarter 2026 results after the Nasdaq closes on Wednesday, November 4, 2026. On Thursday, November 5, 2026 at 10:00 a.m. Eastern Time, President and Chief Executive Officer Chris Bilotto, Chief Financial Officer and Treasurer Brian Donley and Vice President Jesse Abair will host a conference call to discuss these results.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/real-estate/articles/properties-trust-third-quarter-2026-201500093.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/real-estate/articles/properties-trust-third-quarter-2026-201500093.html?.tsrc=rss",
-          "published_at": "2026-10-13T20:15:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-10-13",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "newtonmassoctober132026servicepropertiestrustnasdaqsvctodayannouncedthatitwillissueapressreleasecontainingitsthirdquarter2026resultsafterthenasdaqclosesonwednesdaynovember42026onthursdaynovember52026at1000ameasterntimepresidentandchiefexecutiveofficerchrisbilottochieffinancialofficerandtreasurerbriandonleyandvicepresidentjesseabairwillhostaconferencecalltodiscusstheseresults",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-10-13T20:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 3,
-          "inventory_saved_at": "2026-10-13T20:23:44.855151+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 24
-        },
-        {
           "story_id": "news-ef37f0afaad022b5066d",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -9518,8 +9519,8 @@
       "interest_graph": {
         "ticker_interest": {
           "2330": 3,
-          "TSM": 16,
-          "NVDA": 13
+          "TSM": 18,
+          "NVDA": 11
         },
         "sector_interest": {},
         "topic_interest": {
@@ -9532,7 +9533,7 @@
           "荷姆茲": 1
         },
         "market_interest": {
-          "us": 150
+          "us": 151
         },
         "context": {
           "tracked_tickers": [
@@ -9592,8 +9593,8 @@
         "source_interest": {
           "tracked_ticker": {
             "2330": 3,
-            "TSM": 16,
-            "NVDA": 13
+            "TSM": 18,
+            "NVDA": 11
           },
           "research_candidate": {},
           "tracked_sector": {},
@@ -9609,13 +9610,13 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 51,
+      "excluded_count": 52,
       "exclusion_reasons": {
         "generic_official_filing": 20,
         "incomplete_normalized_fact": 20,
         "insufficient_market_relevance": 14,
         "listicle_or_selection": 4,
-        "market_scope_mismatch": 12,
+        "market_scope_mismatch": 14,
         "outside_calendar_window": 14,
         "outside_trading_session_window": 2
       },
@@ -9629,40 +9630,40 @@
         "disabled_provider_count": 1,
         "fetched": 62,
         "normalized": 62,
-        "eligible": 11,
-        "excluded": 51,
+        "eligible": 10,
+        "excluded": 52,
         "date_eligible_current": 46,
         "date_excluded_current": 16,
         "date_exclusion_reasons_current": {
           "outside_calendar_window": 14,
           "outside_trading_session_window": 2
         },
-        "date_eligible_inventory": 88,
+        "date_eligible_inventory": 89,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-15T09:13:20.980449+00:00",
-        "deduped": 11,
+        "reference_time": "2026-10-15T09:23:30.281558+00:00",
+        "deduped": 10,
         "publicly_ranked": 5,
-        "current_eligible": 11,
-        "inventory_considered": 88,
+        "current_eligible": 10,
+        "inventory_considered": 89,
         "inventory_eligible": 53,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 51,
+        "filtered_story_count": 52,
         "fetched_story_count": 62,
         "normalized_story_count": 62,
-        "eligible_story_count": 11,
-        "deduped_story_count": 11,
+        "eligible_story_count": 10,
+        "deduped_story_count": 10,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 88,
+        "considered": 89,
         "eligible": 53,
         "selected": 0,
         "target_count": 5,
@@ -9676,7 +9677,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 62,
-          "checked_at": "2026-10-15T09:13:20.980489+00:00"
+          "checked_at": "2026-10-15T09:23:30.281596+00:00"
         },
         {
           "provider": "sec",
@@ -9687,10 +9688,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-10-15T09:13:20.980489+00:00",
+          "checked_at": "2026-10-15T09:23:30.281596+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+          "last_success_at": "2026-10-15T09:23:30.281596+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9718,12 +9719,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-10-15T09:13:20.980489+00:00",
+          "checked_at": "2026-10-15T09:23:30.281596+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-10-15T09:13:20.980489+00:00",
+          "last_failure_at": "2026-10-15T09:23:30.281596+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9746,10 +9747,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-10-15T09:13:20.980489+00:00",
+          "checked_at": "2026-10-15T09:23:30.281596+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+          "last_success_at": "2026-10-15T09:23:30.281596+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9774,10 +9775,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 2,
-          "checked_at": "2026-10-15T09:13:20.980489+00:00",
+          "checked_at": "2026-10-15T09:23:30.281596+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 2,
-          "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+          "last_success_at": "2026-10-15T09:23:30.281596+00:00",
           "last_failure_at": null,
           "stories_ingested": 2,
           "stories_deduped": 2,
@@ -9804,27 +9805,27 @@
           "status": "healthy",
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
-          "item_count": 2,
-          "checked_at": "2026-10-15T09:13:20.980489+00:00",
+          "item_count": 1,
+          "checked_at": "2026-10-15T09:23:30.281596+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 2,
-          "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-10-15T09:23:30.281596+00:00",
           "last_failure_at": null,
-          "stories_ingested": 4,
-          "stories_deduped": 2,
-          "ranked_count": 2,
+          "stories_ingested": 3,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
-            "market": 4,
-            "tracked_ticker": 3
+            "market": 3,
+            "tracked_ticker": 1
           },
           "funnel": {
             "fetched_count": 10,
-            "normalized_count": 4,
-            "market_compatible_count": 4,
-            "eligible_count": 2,
+            "normalized_count": 3,
+            "market_compatible_count": 3,
+            "eligible_count": 1,
             "excluded_count": 2,
-            "deduped_count": 2,
-            "ranked_count": 2
+            "deduped_count": 1,
+            "ranked_count": 1
           }
         },
         {
@@ -9835,15 +9836,15 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
-          "item_count": 1,
-          "checked_at": "2026-10-15T09:13:20.980489+00:00",
+          "item_count": 2,
+          "checked_at": "2026-10-15T09:23:30.281596+00:00",
           "raw_item_count": 40,
-          "filtered_item_count": 1,
-          "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+          "filtered_item_count": 2,
+          "last_success_at": "2026-10-15T09:23:30.281596+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
           "stories_deduped": 7,
-          "ranked_count": 1,
+          "ranked_count": 2,
           "relevance_distribution": {
             "active_event": 8,
             "market": 40,
@@ -9856,24 +9857,24 @@
             "eligible_count": 7,
             "excluded_count": 33,
             "deduped_count": 7,
-            "ranked_count": 1
+            "ranked_count": 2
           }
         }
       ],
       "observability": {
         "stories_ingested": 62,
-        "stories_deduped": 11,
+        "stories_deduped": 10,
         "ranked_count": 5,
         "relevance_distribution": {
           "active_event": 8,
           "market": 62,
-          "tracked_ticker": 11
+          "tracked_ticker": 10
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+            "last_success_at": "2026-10-15T09:23:30.281596+00:00",
             "last_failure_at": null,
             "stories_ingested": 2,
             "stories_deduped": 2,
@@ -9896,7 +9897,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-10-15T09:13:20.980489+00:00",
+            "last_failure_at": "2026-10-15T09:23:30.281596+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9914,11 +9915,11 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+            "last_success_at": "2026-10-15T09:23:30.281596+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
             "stories_deduped": 7,
-            "ranked_count": 1,
+            "ranked_count": 2,
             "relevance_distribution": {
               "active_event": 8,
               "market": 40,
@@ -9931,13 +9932,13 @@
               "eligible_count": 7,
               "excluded_count": 33,
               "deduped_count": 7,
-              "ranked_count": 1
+              "ranked_count": 2
             }
           },
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+            "last_success_at": "2026-10-15T09:23:30.281596+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9956,7 +9957,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+            "last_success_at": "2026-10-15T09:23:30.281596+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -9979,19 +9980,19 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 6,
+            "stories_ingested": 7,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 6,
-              "tracked_ticker": 4
+              "market": 7,
+              "tracked_ticker": 5
             },
             "funnel": {
-              "fetched_count": 6,
-              "normalized_count": 6,
+              "fetched_count": 7,
+              "normalized_count": 7,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 6,
+              "excluded_count": 7,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -9999,23 +10000,23 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-15T09:13:20.980489+00:00",
+            "last_success_at": "2026-10-15T09:23:30.281596+00:00",
             "last_failure_at": null,
-            "stories_ingested": 4,
-            "stories_deduped": 2,
-            "ranked_count": 2,
+            "stories_ingested": 3,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
-              "market": 4,
-              "tracked_ticker": 3
+              "market": 3,
+              "tracked_ticker": 1
             },
             "funnel": {
               "fetched_count": 10,
-              "normalized_count": 4,
-              "market_compatible_count": 4,
-              "eligible_count": 2,
+              "normalized_count": 3,
+              "market_compatible_count": 3,
+              "eligible_count": 1,
               "excluded_count": 2,
-              "deduped_count": 2,
-              "ranked_count": 2
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           }
         ]
