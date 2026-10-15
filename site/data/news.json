@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "aa97fe79240adb60",
-  "snapshot_id": "news-7857b3265c7df5ab",
+  "market_snapshot_id": "bf0011a34f41d14a",
+  "snapshot_id": "news-b87ceba365ad5fb0",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -437,6 +437,107 @@
       ],
       "stories": [
         {
+          "story_id": "news-81506c1be9a83355da68",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "AI大廠搶設備搶到缺貨！艾司摩爾連兩年擴產仍不夠",
+          "raw_title": "AI大廠搶設備搶到缺貨！艾司摩爾連兩年擴產仍不夠",
+          "normalized_fact": "ASML坦言2027、2028年微影設備供應不足，正擴產、縮短組裝並調漲價格應對 市場擔憂AI投資回報、高利率與資料中心限制，ASML估值自逾45倍降至約30倍 台積電維持2026年600億至640億。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "ASML坦言2027、2028年微影設備供應不足，正擴產、縮短組裝並調漲價格應對 市場擔憂AI投資回報、高利率與資料中心限制，ASML估值自逾45倍降至約30倍 台積電維持2026年600億至640億",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/ai%E5%A4%A7%E5%BB%A0%E6%90%B6%E8%A8%AD%E5%82%99%E6%90%B6%E5%88%B0%E7%BC%BA%E8%B2%A8-%E8%89%BE%E5%8F%B8%E6%91%A9%E7%88%BE%E9%80%A3%E5%85%A9%E5%B9%B4%E6%93%B4%E7%94%A2%E4%BB%8D%E4%B8%8D%E5%A4%A0-183119620.html",
+          "url": "https://tw.stock.yahoo.com/news/ai%E5%A4%A7%E5%BB%A0%E6%90%B6%E8%A8%AD%E5%82%99%E6%90%B6%E5%88%B0%E7%BC%BA%E8%B2%A8-%E8%89%BE%E5%8F%B8%E6%91%A9%E7%88%BE%E9%80%A3%E5%85%A9%E5%B9%B4%E6%93%B4%E7%94%A2%E4%BB%8D%E4%B8%8D%E5%A4%A0-183119620.html",
+          "published_at": "2026-10-15T18:31:19+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "asml",
+              "限制"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "asml",
+              "限制"
+            ],
+            "matched_subject": "asml",
+            "matched_action": "限制",
+            "matched_market_object": "asml",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM"
+          ],
+          "freshness": "published",
+          "dedupe_key": "asml坦言20272028年微影設備供應不足正擴產縮短組裝並調漲價格應對市場擔憂ai投資回報高利率與資料中心限制asml估值自逾45倍降至約30倍台積電維持2026年600億至640億",
+          "event_cluster_key": "event-6ea85117d1e906f6f6a6",
+          "published_time_bucket": "2026-10-15T18:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "asml",
+            "限制"
+          ],
+          "matched_subject": "asml",
+          "matched_action": "限制",
+          "matched_market_object": "asml",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 140,
+          "supporting_sources": [
+            {
+              "provider": "yahoo_finance",
+              "url": "https://tw.stock.yahoo.com/news/em-client-11%E4%BA%9E%E6%B4%B2%E7%99%BC%E5%B8%83-%E9%80%99%E6%AC%BE%E7%94%B1ai%E9%A9%85%E5%8B%95%E7%9A%84outlook%E6%9B%BF%E4%BB%A3%E6%96%B9%E6%A1%88%E9%9B%86%E5%8D%93%E8%B6%8A%E7%9A%84%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87-%E9%9D%88%E6%B4%BB%E6%80%A7%E8%88%87%E6%A5%B5%E5%85%B7%E7%AB%B6%E7%88%AD%E5%8A%9B%E7%9A%84%E5%83%B9%E6%A0%BC%E6%96%BC-184400162.html"
+            }
+          ]
+        },
+        {
           "story_id": "news-525c0535945823f099b9",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -820,16 +921,18 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        },
+        }
+      ],
+      "editorial_candidates": [
         {
-          "story_id": "news-ab5dd967f2f8cdb8be27",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "AI供應鏈廠商組「台灣精品館」 首度參展日本先進科技展 - 你的公共電視",
-          "raw_title": "AI供應鏈廠商組「台灣精品館」 首度參展日本先進科技展 - 你的公共電視",
-          "normalized_fact": "AI供應鏈廠商組台灣精品館 首度參展日本先進科技展 你的公共電視。",
+          "story_id": "news-81506c1be9a83355da68",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "AI大廠搶設備搶到缺貨！艾司摩爾連兩年擴產仍不夠",
+          "raw_title": "AI大廠搶設備搶到缺貨！艾司摩爾連兩年擴產仍不夠",
+          "normalized_fact": "ASML坦言2027、2028年微影設備供應不足，正擴產、縮短組裝並調漲價格應對 市場擔憂AI投資回報、高利率與資料中心限制，ASML估值自逾45倍降至約30倍 台積電維持2026年600億至640億。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -838,17 +941,17 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "AI供應鏈廠商組「台灣精品館」 首度參展日本先進科技展 你的公共電視",
+          "summary": "ASML坦言2027、2028年微影設備供應不足，正擴產、縮短組裝並調漲價格應對 市場擔憂AI投資回報、高利率與資料中心限制，ASML估值自逾45倍降至約30倍 台積電維持2026年600億至640億",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE4yaDBBZGw0YnhiY0hSaElOaFhXaVFucUIwWEdZeUl0d2Y4Z3NIMzJLVHEtZEgzdU43WTlIak9vUVhtazZtMnRLaHQ4QjJQRWs",
-          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE4yaDBBZGw0YnhiY0hSaElOaFhXaVFucUIwWEdZeUl0d2Y4Z3NIMzJLVHEtZEgzdU43WTlIak9vUVhtazZtMnRLaHQ4QjJQRWs",
-          "published_at": "2026-10-15T12:02:08+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/ai%E5%A4%A7%E5%BB%A0%E6%90%B6%E8%A8%AD%E5%82%99%E6%90%B6%E5%88%B0%E7%BC%BA%E8%B2%A8-%E8%89%BE%E5%8F%B8%E6%91%A9%E7%88%BE%E9%80%A3%E5%85%A9%E5%B9%B4%E6%93%B4%E7%94%A2%E4%BB%8D%E4%B8%8D%E5%A4%A0-183119620.html",
+          "url": "https://tw.stock.yahoo.com/news/ai%E5%A4%A7%E5%BB%A0%E6%90%B6%E8%A8%AD%E5%82%99%E6%90%B6%E5%88%B0%E7%BC%BA%E8%B2%A8-%E8%89%BE%E5%8F%B8%E6%91%A9%E7%88%BE%E9%80%A3%E5%85%A9%E5%B9%B4%E6%93%B4%E7%94%A2%E4%BB%8D%E4%B8%8D%E5%A4%A0-183119620.html",
+          "published_at": "2026-10-15T18:31:19+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
+          "date_eligibility_status": "current",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-15",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
@@ -863,17 +966,17 @@
             "category": "semiconductor",
             "reason": "semiconductor_subject_action",
             "matched_terms": [
-              "ai",
-              "供應"
+              "asml",
+              "限制"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "ai",
-              "供應"
+              "asml",
+              "限制"
             ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
+            "matched_subject": "asml",
+            "matched_action": "限制",
+            "matched_market_object": "asml",
             "input_fields": [
               "description",
               "summary",
@@ -881,29 +984,31 @@
             ]
           },
           "relevance_reasons": [
-            "market:taiwan"
+            "market:taiwan",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM"
           ],
           "freshness": "published",
-          "dedupe_key": "ai供應鏈廠商組台灣精品館首度參展日本先進科技展你的公共電視",
-          "event_cluster_key": "event-cdd87e3a3daf807d76b3",
-          "published_time_bucket": "2026-10-15T12:00:00+00:00",
+          "dedupe_key": "asml坦言20272028年微影設備供應不足正擴產縮短組裝並調漲價格應對市場擔憂ai投資回報高利率與資料中心限制asml估值自逾45倍降至約30倍台積電維持2026年600億至640億",
+          "event_cluster_key": "event-6ea85117d1e906f6f6a6",
+          "published_time_bucket": "2026-10-15T18:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "ai",
-            "供應"
+            "asml",
+            "限制"
           ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
+          "matched_subject": "asml",
+          "matched_action": "限制",
+          "matched_market_object": "asml",
           "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Google News｜台股線索",
+          "source": "Yahoo Taiwan Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -912,10 +1017,14 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 115
-        }
-      ],
-      "editorial_candidates": [
+          "ranking_score": 140,
+          "supporting_sources": [
+            {
+              "provider": "yahoo_finance",
+              "url": "https://tw.stock.yahoo.com/news/em-client-11%E4%BA%9E%E6%B4%B2%E7%99%BC%E5%B8%83-%E9%80%99%E6%AC%BE%E7%94%B1ai%E9%A9%85%E5%8B%95%E7%9A%84outlook%E6%9B%BF%E4%BB%A3%E6%96%B9%E6%A1%88%E9%9B%86%E5%8D%93%E8%B6%8A%E7%9A%84%E5%B7%A5%E4%BD%9C%E6%95%88%E7%8E%87-%E9%9D%88%E6%B4%BB%E6%80%A7%E8%88%87%E6%A5%B5%E5%85%B7%E7%AB%B6%E7%88%AD%E5%8A%9B%E7%9A%84%E5%83%B9%E6%A0%BC%E6%96%BC-184400162.html"
+            }
+          ]
+        },
         {
           "story_id": "news-525c0535945823f099b9",
           "provider": "google_news",
@@ -4556,125 +4665,33 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 27
-        },
-        {
-          "story_id": "news-f22edf0a55db7d1911b9",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "台達電鄭平：電力基建跟不上 供電缺口成AI發展關鍵挑戰",
-          "raw_title": "台達電鄭平：電力基建跟不上 供電缺口成AI發展關鍵挑戰",
-          "normalized_fact": "（中央社記者曾仁凱台北2026年10月15日電）台達電(2308)董事長鄭平今天表示，AI運算用電量龐大、且各種應用成長快速，美國4大CSP（雲端服務供應商）估計今年資本支出金額為2022年的4.7倍。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "（中央社記者曾仁凱台北2026年10月15日電）台達電(2308)董事長鄭平今天表示，AI運算用電量龐大、且各種應用成長快速，美國4大CSP（雲端服務供應商）估計今年資本支出金額為2022年的4.7倍",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E9%81%94%E9%9B%BB%E9%84%AD%E5%B9%B3-%E9%9B%BB%E5%8A%9B%E5%9F%BA%E5%BB%BA%E8%B7%9F%E4%B8%8D%E4%B8%8A-%E4%BE%9B%E9%9B%BB%E7%BC%BA%E5%8F%A3%E6%88%90ai%E7%99%BC%E5%B1%95%E9%97%9C%E9%8D%B5%E6%8C%91%E6%88%B0-090328220.html",
-          "url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E9%81%94%E9%9B%BB%E9%84%AD%E5%B9%B3-%E9%9B%BB%E5%8A%9B%E5%9F%BA%E5%BB%BA%E8%B7%9F%E4%B8%8D%E4%B8%8A-%E4%BE%9B%E9%9B%BB%E7%BC%BA%E5%8F%A3%E6%88%90ai%E7%99%BC%E5%B1%95%E9%97%9C%E9%8D%B5%E6%8C%91%E6%88%B0-090328220.html",
-          "published_at": "2026-10-15T09:03:28+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-15",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "資本支出"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "資本支出"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "資本支出",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "中央社記者曾仁凱台北2026年10月15日電台達電2308董事長鄭平今天表示ai運算用電量龐大且各種應用成長快速美國4大csp雲端服務供應商估計今年資本支出金額為2022年的47倍",
-          "event_cluster_key": "event-111b95c473e4657cd6b8",
-          "published_time_bucket": "2026-10-15T09:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "資本支出"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "資本支出",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-15T09:33:43.700532+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 27
         }
       ],
       "source_diversity": {
         "schema_version": "1.0",
-        "status": "single_source",
-        "cross_checked": false,
+        "status": "multi_source",
+        "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 1,
-        "provider_count": 1,
+        "independent_source_count": 2,
+        "provider_count": 2,
         "provider_ids": [
-          "google_news"
+          "google_news",
+          "yahoo_finance"
         ],
         "source_domains": [
-          "news.google.com"
+          "news.google.com",
+          "tw.stock.yahoo.com"
         ],
-        "supporting_source_count": 0,
+        "supporting_source_count": 1,
         "inventory_only": false,
         "current_story_count": 5,
         "inventory_story_count": 0
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 29,
-          "TSM": 29,
-          "NVDA": 4
+          "2330": 30,
+          "TSM": 30,
+          "NVDA": 2
         },
         "sector_interest": {},
         "topic_interest": {
@@ -4682,7 +4699,7 @@
           "原油": 1
         },
         "market_interest": {
-          "taiwan": 111
+          "taiwan": 110
         },
         "context": {
           "tracked_tickers": [
@@ -4739,9 +4756,9 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 29,
-            "TSM": 29,
-            "NVDA": 4
+            "2330": 30,
+            "TSM": 30,
+            "NVDA": 2
           },
           "research_candidate": {},
           "tracked_sector": {},
@@ -4752,10 +4769,11 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 34,
+      "excluded_count": 32,
       "exclusion_reasons": {
-        "incomplete_normalized_fact": 6,
-        "insufficient_market_relevance": 28,
+        "incomplete_normalized_fact": 4,
+        "insufficient_market_relevance": 24,
+        "non_investment_content": 2,
         "outside_calendar_window": 15,
         "outside_trading_session_window": 2
       },
@@ -4769,41 +4787,41 @@
         "disabled_provider_count": 0,
         "fetched": 42,
         "normalized": 42,
-        "eligible": 8,
-        "excluded": 34,
+        "eligible": 10,
+        "excluded": 32,
         "date_eligible_current": 25,
         "date_excluded_current": 17,
         "date_exclusion_reasons_current": {
           "outside_calendar_window": 15,
           "outside_trading_session_window": 2
         },
-        "date_eligible_inventory": 69,
+        "date_eligible_inventory": 68,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-15T18:33:27.434703+00:00",
-        "deduped": 8,
+        "reference_time": "2026-10-15T20:13:25.257257+00:00",
+        "deduped": 9,
         "publicly_ranked": 5,
-        "current_eligible": 8,
-        "inventory_considered": 69,
-        "inventory_eligible": 52,
+        "current_eligible": 10,
+        "inventory_considered": 68,
+        "inventory_eligible": 53,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 34,
+        "filtered_story_count": 32,
         "fetched_story_count": 42,
         "normalized_story_count": 42,
-        "eligible_story_count": 8,
-        "deduped_story_count": 8,
+        "eligible_story_count": 10,
+        "deduped_story_count": 9,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 69,
-        "eligible": 52,
+        "considered": 68,
+        "eligible": 53,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -4816,7 +4834,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 42,
-          "checked_at": "2026-10-15T18:33:27.434733+00:00"
+          "checked_at": "2026-10-15T20:13:25.257294+00:00"
         },
         {
           "provider": "twse",
@@ -4827,10 +4845,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-10-15T18:33:27.434733+00:00",
+          "checked_at": "2026-10-15T20:13:25.257294+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+          "last_success_at": "2026-10-15T20:13:25.257294+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4855,10 +4873,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-10-15T18:33:27.434733+00:00",
+          "checked_at": "2026-10-15T20:13:25.257294+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+          "last_success_at": "2026-10-15T20:13:25.257294+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4883,10 +4901,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 0,
-          "checked_at": "2026-10-15T18:33:27.434733+00:00",
+          "checked_at": "2026-10-15T20:13:25.257294+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+          "last_success_at": "2026-10-15T20:13:25.257294+00:00",
           "last_failure_at": null,
           "stories_ingested": 2,
           "stories_deduped": 0,
@@ -4911,18 +4929,18 @@
           "key": "news_taiwan_yahoo_finance",
           "legacy_key": "official_news_taiwan_yahoo_finance",
           "label": "yahoo_finance market news",
-          "status": "no_event",
+          "status": "healthy",
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
-          "item_count": 0,
-          "checked_at": "2026-10-15T18:33:27.434733+00:00",
+          "item_count": 1,
+          "checked_at": "2026-10-15T20:13:25.257294+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 0,
-          "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-10-15T20:13:25.257294+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
-          "stories_deduped": 0,
-          "ranked_count": 0,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
             "market": 10,
             "tracked_ticker": 1
@@ -4931,12 +4949,11 @@
             "fetched_count": 10,
             "normalized_count": 10,
             "market_compatible_count": 10,
-            "eligible_count": 0,
-            "excluded_count": 10,
-            "deduped_count": 0,
-            "ranked_count": 0
-          },
-          "data_gap": "filtered_no_market_match"
+            "eligible_count": 2,
+            "excluded_count": 8,
+            "deduped_count": 1,
+            "ranked_count": 1
+          }
         },
         {
           "provider": "google_news",
@@ -4946,15 +4963,15 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
-          "item_count": 5,
-          "checked_at": "2026-10-15T18:33:27.434733+00:00",
+          "item_count": 4,
+          "checked_at": "2026-10-15T20:13:25.257294+00:00",
           "raw_item_count": 30,
-          "filtered_item_count": 5,
-          "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+          "filtered_item_count": 4,
+          "last_success_at": "2026-10-15T20:13:25.257294+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
           "stories_deduped": 8,
-          "ranked_count": 5,
+          "ranked_count": 4,
           "relevance_distribution": {
             "market": 30,
             "tracked_ticker": 7
@@ -4966,13 +4983,13 @@
             "eligible_count": 8,
             "excluded_count": 22,
             "deduped_count": 8,
-            "ranked_count": 5
+            "ranked_count": 4
           }
         }
       ],
       "observability": {
         "stories_ingested": 42,
-        "stories_deduped": 8,
+        "stories_deduped": 9,
         "ranked_count": 5,
         "relevance_distribution": {
           "market": 42,
@@ -4982,7 +4999,7 @@
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+            "last_success_at": "2026-10-15T20:13:25.257294+00:00",
             "last_failure_at": null,
             "stories_ingested": 2,
             "stories_deduped": 0,
@@ -5004,11 +5021,11 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+            "last_success_at": "2026-10-15T20:13:25.257294+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
             "stories_deduped": 8,
-            "ranked_count": 5,
+            "ranked_count": 4,
             "relevance_distribution": {
               "market": 30,
               "tracked_ticker": 7
@@ -5020,13 +5037,13 @@
               "eligible_count": 8,
               "excluded_count": 22,
               "deduped_count": 8,
-              "ranked_count": 5
+              "ranked_count": 4
             }
           },
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+            "last_success_at": "2026-10-15T20:13:25.257294+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5045,7 +5062,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+            "last_success_at": "2026-10-15T20:13:25.257294+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5064,11 +5081,11 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+            "last_success_at": "2026-10-15T20:13:25.257294+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
-            "stories_deduped": 0,
-            "ranked_count": 0,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
               "market": 10,
               "tracked_ticker": 1
@@ -5077,10 +5094,10 @@
               "fetched_count": 10,
               "normalized_count": 10,
               "market_compatible_count": 10,
-              "eligible_count": 0,
-              "excluded_count": 10,
-              "deduped_count": 0,
-              "ranked_count": 0
+              "eligible_count": 2,
+              "excluded_count": 8,
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           }
         ]
@@ -5305,6 +5322,99 @@
       ],
       "stories": [
         {
+          "story_id": "news-3e9d41dcbe78ceea519e",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "10-15-2026: Hot CPI and PPI, Yield Reversal, AI Angst + Staples Rally",
+          "raw_title": "10-15-2026: Hot CPI and PPI, Yield Reversal, AI Angst + Staples Rally",
+          "normalized_fact": "Eric Criscuolo, Market Strategist at the NYSE, reviews a choppy week in which the S&P 500 slipped about 1% after a hot core CPI print sent yields sharply higher, only for a full reversal to offer equities no relief. Tech led the retreat, down roughly 4% with memory names hit hardest, as AI spending doubts and slowing growth at Anthropic fueled the bear case. A hotter PPI and a core retail sales miss then pushed 10 and 30-year yields down 15-20 basis points. Strong breadth lifted the equal-weight index as investors rotated into Staples and Healthcare, both up about 4%. Looking ahead, Meta, Tesla, IBM, SAP, and Blackstone headline a very busy earnings slate。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Eric Criscuolo, Market Strategist at the NYSE, reviews a choppy week in which the S&P 500 slipped about 1% after a hot core CPI print sent yields sharply higher, only for a full reversal to offer equities no relief. Tech led the retreat, down roughly 4% with memory names hit hardest, as AI spending doubts and slowing growth at Anthropic fueled the bear case. A hotter PPI and a core retail sales miss then pushed 10 and 30-year yields down 15-20 basis points. Strong breadth lifted the equal-weight index as investors rotated into Staples and Healthcare, both up about 4%. Looking ahead, Meta, Tesla, IBM, SAP, and Blackstone headline a very busy earnings slate.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/video/10-15-2026-hot-cpi-192442924.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/video/10-15-2026-hot-cpi-192442924.html?.tsrc=rss",
+          "published_at": "2026-10-15T19:24:42+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "earnings"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "earnings"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "earnings",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "ericcriscuolomarketstrategistatthenysereviewsachoppyweekinwhichthesp500slippedabout1afterahotcorecpiprintsentyieldssharplyhigheronlyforafullreversaltoofferequitiesnorelieftechledtheretreatdownroughly4withmemorynameshithardestasaispendingdoubtsandslowinggrowthatanthropicfueledthebearcaseahotterppiandacoreretailsalesmissthenpushed10and30yearyieldsdown1520basispointsstrongbreadthliftedtheequalweightindexasinvestorsrotatedintostaplesandhealthcarebothupabout4lookingaheadmetateslaibmsapandblackstoneheadlineaverybusyearningsslate",
+          "event_cluster_key": "event-87eb4355e4356858c419",
+          "published_time_bucket": "2026-10-15T19:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "earnings"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "earnings",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
           "story_id": "news-5a467bce06bc97b434fd",
           "provider": "anue",
           "provider_name": "Anue",
@@ -5387,99 +5497,6 @@
           ],
           "exclusion_reason": null,
           "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
-          "story_id": "news-7e934d9c009b328bafd8",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Stock Market Today: Nasdaq Pares Loss As Yields Dive; Drug Giant Hits All-Time High (Live Coverage)",
-          "raw_title": "Stock Market Today: Nasdaq Pares Loss As Yields Dive; Drug Giant Hits All-Time High (Live Coverage)",
-          "normalized_fact": "The Dow Jones index rises Thursday while the Nasdaq slid on further tech weakness。",
-          "market_topic": "global_market",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "The Dow Jones index rises Thursday while the Nasdaq slid on further tech weakness.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/m/27f9f9ee-5b06-3a78-a91a-ddc2a33bd2d2/stock-market-today%3A-nasdaq.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/m/27f9f9ee-5b06-3a78-a91a-ddc2a33bd2d2/stock-market-today%3A-nasdaq.html?.tsrc=rss",
-          "published_at": "2026-10-15T17:49:37+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-15",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NASDAQ"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "market",
-            "reason": "market_subject_action",
-            "matched_terms": [
-              "nasdaq",
-              "rises"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "nasdaq",
-              "rises"
-            ],
-            "matched_subject": "nasdaq",
-            "matched_action": "rises",
-            "matched_market_object": "nasdaq",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "thedowjonesindexrisesthursdaywhilethenasdaqslidonfurthertechweakness",
-          "event_cluster_key": "event-c05c144990cbc4157f4b",
-          "published_time_bucket": "2026-10-15T17:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "nasdaq",
-            "rises"
-          ],
-          "matched_subject": "nasdaq",
-          "matched_action": "rises",
-          "matched_market_object": "nasdaq",
-          "decision_value_class": "company_event",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -5584,7 +5601,90 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-3a19271766a48e7bf0d1",
+          "story_id": "news-a2f8cf91d172c20470a1",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Commerce, monday.com, DigitalOcean, Sprinklr, and Fastly Shares Are Soaring and Falling, What You Need To Know",
+          "raw_title": "Commerce, monday.com, DigitalOcean, Sprinklr, and Fastly Shares Are Soaring and Falling, What You Need To Know",
+          "normalized_fact": "A number of stocks traded in opposite directions in the afternoon session after software-as-a-service and broader technology equities rebounded as falling Treasury yields attracted dip-buyers back into the market following a sharp, AI-driven sell-off in previous sessions。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "A number of stocks traded in opposite directions in the afternoon session after software-as-a-service and broader technology equities rebounded as falling Treasury yields attracted dip-buyers back into the market following a sharp, AI-driven sell-off in previous sessions.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/commerce-monday-com-digitalocean-sprinklr-195509323.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/commerce-monday-com-digitalocean-sprinklr-195509323.html?.tsrc=rss",
+          "published_at": "2026-10-15T19:55:09+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:global",
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "anumberofstockstradedinoppositedirectionsintheafternoonsessionaftersoftwareasaserviceandbroadertechnologyequitiesreboundedasfallingtreasuryyieldsattracteddipbuyersbackintothemarketfollowingasharpaidrivenselloffinprevioussessions",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-10-15T19:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "story_id": "news-3220e247b8c4b8f5e303",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
@@ -5602,9 +5702,9 @@
           "normalization_complete": true,
           "summary": "US Dollar Technical Outlook: DXY, Treasury Yields Retreat Despite Hot CPI FOREX.com",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNOG5RaHgybjdFdWdidzNYMzRFQXBTVUY5ekZOZG1nSy1zeDAtTm8tem5mMlJyWllSYS0wbU0tYjd6dkNCNG1NQzYtR0NlaFNwSHgzNVFCQ1JoVjBmaS1xQ1dmTVNMQmdPMTRNNGRtWVZEQmRjZkZBSldWZ2hubXQzT3drS2UxM3htZTZieXVneFBheWNLT0ZGV01QSENidmJGblY1RmJTRUJzY0hrNlRRMUtFOW9rLXN5MEN5ZnRudTY2WmNQ",
-          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNOG5RaHgybjdFdWdidzNYMzRFQXBTVUY5ekZOZG1nSy1zeDAtTm8tem5mMlJyWllSYS0wbU0tYjd6dkNCNG1NQzYtR0NlaFNwSHgzNVFCQ1JoVjBmaS1xQ1dmTVNMQmdPMTRNNGRtWVZEQmRjZkZBSldWZ2hubXQzT3drS2UxM3htZTZieXVneFBheWNLT0ZGV01QSENidmJGblY1RmJTRUJzY0hrNlRRMUtFOW9rLXN5MEN5ZnRudTY2WmNQ",
-          "published_at": "2026-10-15T15:58:07+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxPOHNsNk5IYlM5Y21TeFVCaFlIeER0WmYzWjEwQ0g0OFpaQ1JIaUVKbHpDd0N0RUp4VHZ4S3gweDNpLW9GaUdMN0dLMzFfc3dlU1V0X3R6Z0dTY3RrS2l5TURjYXVYMDdwdUVtcHFkNmU3clIybWJ3cDdOOV9Ic2ptaWlGNEpxZFdTTUhtY2syT20wenVmby1UdG9HZ3ZHdHJZYnZIdUNkVS16MFFzWE9TN0RiemR4S3NwQjZob2lTR21JOFotWUlvX9IB1AFBVV95cUxQZnYtanVPTS1tRmhsZk1iazF2RGEzSlZ6U2NUMnM5Zk5mMXFNRE1FeVVsTFFnM0ZDZ0pUME5lSVVUUnVkUUE3MUxiejJONVFvRTJmaHRVeEhTMldmdFRLTWVFZzQ2U1lMYUNINkdrcVJDd2FxTVkzUWlQSTFhQ0g3ci1SM18xZzBXVGN6SUQ3SG9Uc3pDWXh6b0RoZVVpQ2JTZGZtUnkwcVZDVzd5djc2elVRZ0xTNFhlRHVxWkdrQlZyQ05YTEFVYnI4Qm5zWktjZVB4Tw",
+          "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxPOHNsNk5IYlM5Y21TeFVCaFlIeER0WmYzWjEwQ0g0OFpaQ1JIaUVKbHpDd0N0RUp4VHZ4S3gweDNpLW9GaUdMN0dLMzFfc3dlU1V0X3R6Z0dTY3RrS2l5TURjYXVYMDdwdUVtcHFkNmU3clIybWJ3cDdOOV9Ic2ptaWlGNEpxZFdTTUhtY2syT20wenVmby1UdG9HZ3ZHdHJZYnZIdUNkVS16MFFzWE9TN0RiemR4S3NwQjZob2lTR21JOFotWUlvX9IB1AFBVV95cUxQZnYtanVPTS1tRmhsZk1iazF2RGEzSlZ6U2NUMnM5Zk5mMXFNRE1FeVVsTFFnM0ZDZ0pUME5lSVVUUnVkUUE3MUxiejJONVFvRTJmaHRVeEhTMldmdFRLTWVFZzQ2U1lMYUNINkdrcVJDd2FxTVkzUWlQSTFhQ0g3ci1SM18xZzBXVGN6SUQ3SG9Uc3pDWXh6b0RoZVVpQ2JTZGZtUnkwcVZDVzd5djc2elVRZ0xTNFhlRHVxWkdrQlZyQ05YTEFVYnI4Qm5zWktjZVB4Tw",
+          "published_at": "2026-10-15T15:20:14+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -5664,17 +5764,19 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        },
+        }
+      ],
+      "editorial_candidates": [
         {
-          "story_id": "news-711307422ad19cd66883",
-          "provider": "anue",
-          "provider_name": "Anue",
+          "story_id": "news-3e9d41dcbe78ceea519e",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
-          "market_topic": "rates_fx",
+          "title": "10-15-2026: Hot CPI and PPI, Yield Reversal, AI Angst + Staples Rally",
+          "raw_title": "10-15-2026: Hot CPI and PPI, Yield Reversal, AI Angst + Staples Rally",
+          "normalized_fact": "Eric Criscuolo, Market Strategist at the NYSE, reviews a choppy week in which the S&P 500 slipped about 1% after a hot core CPI print sent yields sharply higher, only for a full reversal to offer equities no relief. Tech led the retreat, down roughly 4% with memory names hit hardest, as AI spending doubts and slowing growth at Anthropic fueled the bear case. A hotter PPI and a core retail sales miss then pushed 10 and 30-year yields down 15-20 basis points. Strong breadth lifted the equal-weight index as investors rotated into Staples and Healthcare, both up about 4%. Looking ahead, Meta, Tesla, IBM, SAP, and Blackstone headline a very busy earnings slate。",
+          "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5682,25 +5784,21 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "summary": "Eric Criscuolo, Market Strategist at the NYSE, reviews a choppy week in which the S&P 500 slipped about 1% after a hot core CPI print sent yields sharply higher, only for a full reversal to offer equities no relief. Tech led the retreat, down roughly 4% with memory names hit hardest, as AI spending doubts and slowing growth at Anthropic fueled the bear case. A hotter PPI and a core retail sales miss then pushed 10 and 30-year yields down 15-20 basis points. Strong breadth lifted the equal-weight index as investors rotated into Staples and Healthcare, both up about 4%. Looking ahead, Meta, Tesla, IBM, SAP, and Blackstone headline a very busy earnings slate.",
           "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6630669",
-          "url": "https://news.cnyes.com/news/id/6630669",
-          "published_at": "2026-10-14T22:02:35+00:00",
+          "canonical_url": "https://finance.yahoo.com/video/10-15-2026-hot-cpi-192442924.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/video/10-15-2026-hot-cpi-192442924.html?.tsrc=rss",
+          "published_at": "2026-10-15T19:24:42+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
+          "date_eligibility_status": "current",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-14",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-15",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "2330",
-            "SOX",
-            "TSM"
-          ],
+          "entities": [],
           "sectors": [],
           "topics": [
             "ai"
@@ -5708,20 +5806,20 @@
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
             "matched_terms": [
-              "fed",
-              "利率"
+              "ai",
+              "earnings"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "fed",
-              "利率"
+              "ai",
+              "earnings"
             ],
-            "matched_subject": "fed",
-            "matched_action": "利率",
-            "matched_market_object": "fed",
+            "matched_subject": "ai",
+            "matched_action": "earnings",
+            "matched_market_object": "ai",
             "input_fields": [
               "description",
               "summary",
@@ -5729,32 +5827,29 @@
             ]
           },
           "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM",
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
-          "event_cluster_key": "event-40d27feb65b9f7fa705b",
-          "published_time_bucket": "2026-10-14T22:00:00+00:00",
+          "dedupe_key": "ericcriscuolomarketstrategistatthenysereviewsachoppyweekinwhichthesp500slippedabout1afterahotcorecpiprintsentyieldssharplyhigheronlyforafullreversaltoofferequitiesnorelieftechledtheretreatdownroughly4withmemorynameshithardestasaispendingdoubtsandslowinggrowthatanthropicfueledthebearcaseahotterppiandacoreretailsalesmissthenpushed10and30yearyieldsdown1520basispointsstrongbreadthliftedtheequalweightindexasinvestorsrotatedintostaplesandhealthcarebothupabout4lookingaheadmetateslaibmsapandblackstoneheadlineaverybusyearningsslate",
+          "event_cluster_key": "event-87eb4355e4356858c419",
+          "published_time_bucket": "2026-10-15T19:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "fed",
-            "利率"
+            "ai",
+            "earnings"
           ],
-          "matched_subject": "fed",
-          "matched_action": "利率",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
+          "matched_subject": "ai",
+          "matched_action": "earnings",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
+          "source": "Yahoo Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -5763,10 +5858,8 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 140
-        }
-      ],
-      "editorial_candidates": [
+          "ranking_score": 130
+        },
         {
           "story_id": "news-5a467bce06bc97b434fd",
           "provider": "anue",
@@ -5850,99 +5943,6 @@
           ],
           "exclusion_reason": null,
           "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
-          "story_id": "news-7e934d9c009b328bafd8",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Stock Market Today: Nasdaq Pares Loss As Yields Dive; Drug Giant Hits All-Time High (Live Coverage)",
-          "raw_title": "Stock Market Today: Nasdaq Pares Loss As Yields Dive; Drug Giant Hits All-Time High (Live Coverage)",
-          "normalized_fact": "The Dow Jones index rises Thursday while the Nasdaq slid on further tech weakness。",
-          "market_topic": "global_market",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "The Dow Jones index rises Thursday while the Nasdaq slid on further tech weakness.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/m/27f9f9ee-5b06-3a78-a91a-ddc2a33bd2d2/stock-market-today%3A-nasdaq.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/m/27f9f9ee-5b06-3a78-a91a-ddc2a33bd2d2/stock-market-today%3A-nasdaq.html?.tsrc=rss",
-          "published_at": "2026-10-15T17:49:37+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-15",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NASDAQ"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "market",
-            "reason": "market_subject_action",
-            "matched_terms": [
-              "nasdaq",
-              "rises"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "nasdaq",
-              "rises"
-            ],
-            "matched_subject": "nasdaq",
-            "matched_action": "rises",
-            "matched_market_object": "nasdaq",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "thedowjonesindexrisesthursdaywhilethenasdaqslidonfurthertechweakness",
-          "event_cluster_key": "event-c05c144990cbc4157f4b",
-          "published_time_bucket": "2026-10-15T17:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "nasdaq",
-            "rises"
-          ],
-          "matched_subject": "nasdaq",
-          "matched_action": "rises",
-          "matched_market_object": "nasdaq",
-          "decision_value_class": "company_event",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -6047,7 +6047,349 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-3a19271766a48e7bf0d1",
+          "story_id": "news-a2f8cf91d172c20470a1",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Commerce, monday.com, DigitalOcean, Sprinklr, and Fastly Shares Are Soaring and Falling, What You Need To Know",
+          "raw_title": "Commerce, monday.com, DigitalOcean, Sprinklr, and Fastly Shares Are Soaring and Falling, What You Need To Know",
+          "normalized_fact": "A number of stocks traded in opposite directions in the afternoon session after software-as-a-service and broader technology equities rebounded as falling Treasury yields attracted dip-buyers back into the market following a sharp, AI-driven sell-off in previous sessions。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "A number of stocks traded in opposite directions in the afternoon session after software-as-a-service and broader technology equities rebounded as falling Treasury yields attracted dip-buyers back into the market following a sharp, AI-driven sell-off in previous sessions.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/commerce-monday-com-digitalocean-sprinklr-195509323.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/commerce-monday-com-digitalocean-sprinklr-195509323.html?.tsrc=rss",
+          "published_at": "2026-10-15T19:55:09+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:global",
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "anumberofstockstradedinoppositedirectionsintheafternoonsessionaftersoftwareasaserviceandbroadertechnologyequitiesreboundedasfallingtreasuryyieldsattracteddipbuyersbackintothemarketfollowingasharpaidrivenselloffinprevioussessions",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-10-15T19:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "story_id": "news-c5ed787897bbfe69576c",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Frazier Life Sciences Acquisition Corp. II Announces Completion of $75,000,000 Initial Public Offering",
+          "raw_title": "Frazier Life Sciences Acquisition Corp. II Announces Completion of $75,000,000 Initial Public Offering",
+          "normalized_fact": "PALO ALTO, Calif., October 15, 2026--Frazier Life Sciences Acquisition Corp. II (the \"Company\"), a special purpose acquisition company, announced today the closing of its initial public offering of 7,500,000 Class A ordinary shares at a price of $10.00 per share. The Class A ordinary shares are listed on The Nasdaq Capital Market and began trading under the ticker symbol \"FLSC\" as of October 14, 2026。",
+          "market_topic": "global_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "PALO ALTO, Calif., October 15, 2026--Frazier Life Sciences Acquisition Corp. II (the \"Company\"), a special purpose acquisition company, announced today the closing of its initial public offering of 7,500,000 Class A ordinary shares at a price of $10.00 per share. The Class A ordinary shares are listed on The Nasdaq Capital Market and began trading under the ticker symbol \"FLSC\" as of October 14, 2026.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/frazier-life-sciences-acquisition-corp-200500615.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/frazier-life-sciences-acquisition-corp-200500615.html?.tsrc=rss",
+          "published_at": "2026-10-15T20:05:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "paloaltocalifoctober152026frazierlifesciencesacquisitioncorpiithecompanyaspecialpurposeacquisitioncompanyannouncedtodaytheclosingofitsinitialpublicofferingof7500000classaordinarysharesatapriceof1000persharetheclassaordinarysharesarelistedonthenasdaqcapitalmarketandbegantradingunderthetickersymbolflscasofoctober142026",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-10-15T20:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "story_id": "news-d216b4c024742279574d",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Freshworks, Braze, Procore Technologies, and Guidewire Software Shares Are Soaring, What You Need To Know",
+          "raw_title": "Freshworks, Braze, Procore Technologies, and Guidewire Software Shares Are Soaring, What You Need To Know",
+          "normalized_fact": "A number of stocks jumped in the afternoon session after software-as-a-service and broader technology equities rebounded as falling Treasury yields attracted dip-buyers back into the market following a sharp, AI-driven sell-off in previous sessions。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "A number of stocks jumped in the afternoon session after software-as-a-service and broader technology equities rebounded as falling Treasury yields attracted dip-buyers back into the market following a sharp, AI-driven sell-off in previous sessions.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/freshworks-braze-procore-technologies-guidewire-194709187.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/freshworks-braze-procore-technologies-guidewire-194709187.html?.tsrc=rss",
+          "published_at": "2026-10-15T19:47:09+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:global",
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "anumberofstocksjumpedintheafternoonsessionaftersoftwareasaserviceandbroadertechnologyequitiesreboundedasfallingtreasuryyieldsattracteddipbuyersbackintothemarketfollowingasharpaidrivenselloffinprevioussessions",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-10-15T19:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "story_id": "news-df427dc3b19c70b6acfd",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Stock Market Today: Nasdaq Higher As Yields Plunge; Dell Triggers Sell Signals (Live Coverage)",
+          "raw_title": "Stock Market Today: Nasdaq Higher As Yields Plunge; Dell Triggers Sell Signals (Live Coverage)",
+          "normalized_fact": "The Dow Jones index rises Thursday while the Nasdaq erases early losses。",
+          "market_topic": "global_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "The Dow Jones index rises Thursday while the Nasdaq erases early losses",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/m/27f9f9ee-5b06-3a78-a91a-ddc2a33bd2d2/stock-market-today%3A-nasdaq.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/m/27f9f9ee-5b06-3a78-a91a-ddc2a33bd2d2/stock-market-today%3A-nasdaq.html?.tsrc=rss",
+          "published_at": "2026-10-15T19:36:28+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NASDAQ"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "market",
+            "reason": "market_subject_action",
+            "matched_terms": [
+              "nasdaq",
+              "rises"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "nasdaq",
+              "rises"
+            ],
+            "matched_subject": "nasdaq",
+            "matched_action": "rises",
+            "matched_market_object": "nasdaq",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "thedowjonesindexrisesthursdaywhilethenasdaqerasesearlylosses",
+          "event_cluster_key": "event-32ce2b515bd4bbfc63cd",
+          "published_time_bucket": "2026-10-15T19:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "nasdaq",
+            "rises"
+          ],
+          "matched_subject": "nasdaq",
+          "matched_action": "rises",
+          "matched_market_object": "nasdaq",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "story_id": "news-3220e247b8c4b8f5e303",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
@@ -6065,9 +6407,9 @@
           "normalization_complete": true,
           "summary": "US Dollar Technical Outlook: DXY, Treasury Yields Retreat Despite Hot CPI FOREX.com",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNOG5RaHgybjdFdWdidzNYMzRFQXBTVUY5ekZOZG1nSy1zeDAtTm8tem5mMlJyWllSYS0wbU0tYjd6dkNCNG1NQzYtR0NlaFNwSHgzNVFCQ1JoVjBmaS1xQ1dmTVNMQmdPMTRNNGRtWVZEQmRjZkZBSldWZ2hubXQzT3drS2UxM3htZTZieXVneFBheWNLT0ZGV01QSENidmJGblY1RmJTRUJzY0hrNlRRMUtFOW9rLXN5MEN5ZnRudTY2WmNQ",
-          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNOG5RaHgybjdFdWdidzNYMzRFQXBTVUY5ekZOZG1nSy1zeDAtTm8tem5mMlJyWllSYS0wbU0tYjd6dkNCNG1NQzYtR0NlaFNwSHgzNVFCQ1JoVjBmaS1xQ1dmTVNMQmdPMTRNNGRtWVZEQmRjZkZBSldWZ2hubXQzT3drS2UxM3htZTZieXVneFBheWNLT0ZGV01QSENidmJGblY1RmJTRUJzY0hrNlRRMUtFOW9rLXN5MEN5ZnRudTY2WmNQ",
-          "published_at": "2026-10-15T15:58:07+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxPOHNsNk5IYlM5Y21TeFVCaFlIeER0WmYzWjEwQ0g0OFpaQ1JIaUVKbHpDd0N0RUp4VHZ4S3gweDNpLW9GaUdMN0dLMzFfc3dlU1V0X3R6Z0dTY3RrS2l5TURjYXVYMDdwdUVtcHFkNmU3clIybWJ3cDdOOV9Ic2ptaWlGNEpxZFdTTUhtY2syT20wenVmby1UdG9HZ3ZHdHJZYnZIdUNkVS16MFFzWE9TN0RiemR4S3NwQjZob2lTR21JOFotWUlvX9IB1AFBVV95cUxQZnYtanVPTS1tRmhsZk1iazF2RGEzSlZ6U2NUMnM5Zk5mMXFNRE1FeVVsTFFnM0ZDZ0pUME5lSVVUUnVkUUE3MUxiejJONVFvRTJmaHRVeEhTMldmdFRLTWVFZzQ2U1lMYUNINkdrcVJDd2FxTVkzUWlQSTFhQ0g3ci1SM18xZzBXVGN6SUQ3SG9Uc3pDWXh6b0RoZVVpQ2JTZGZtUnkwcVZDVzd5djc2elVRZ0xTNFhlRHVxWkdrQlZyQ05YTEFVYnI4Qm5zWktjZVB4Tw",
+          "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxPOHNsNk5IYlM5Y21TeFVCaFlIeER0WmYzWjEwQ0g0OFpaQ1JIaUVKbHpDd0N0RUp4VHZ4S3gweDNpLW9GaUdMN0dLMzFfc3dlU1V0X3R6Z0dTY3RrS2l5TURjYXVYMDdwdUVtcHFkNmU3clIybWJ3cDdOOV9Ic2ptaWlGNEpxZFdTTUhtY2syT20wenVmby1UdG9HZ3ZHdHJZYnZIdUNkVS16MFFzWE9TN0RiemR4S3NwQjZob2lTR21JOFotWUlvX9IB1AFBVV95cUxQZnYtanVPTS1tRmhsZk1iazF2RGEzSlZ6U2NUMnM5Zk5mMXFNRE1FeVVsTFFnM0ZDZ0pUME5lSVVUUnVkUUE3MUxiejJONVFvRTJmaHRVeEhTMldmdFRLTWVFZzQ2U1lMYUNINkdrcVJDd2FxTVkzUWlQSTFhQ0g3ci1SM18xZzBXVGN6SUQ3SG9Uc3pDWXh6b0RoZVVpQ2JTZGZtUnkwcVZDVzd5djc2elVRZ0xTNFhlRHVxWkdrQlZyQ05YTEFVYnI4Qm5zWktjZVB4Tw",
+          "published_at": "2026-10-15T15:20:14+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -6681,6 +7023,88 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 120
+        },
+        {
+          "story_id": "news-b3aaa0905595e78b0659",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "US Treasury yields fall after reversing inflation-led selloff - Investing.com",
+          "raw_title": "US Treasury yields fall after reversing inflation-led selloff - Investing.com",
+          "normalized_fact": "US Treasury yields fall after reversing inflation-led selloff Investing.com。",
+          "market_topic": "company_industry",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "US Treasury yields fall after reversing inflation-led selloff Investing.com",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxNSGt2UEZWc1ZEbzFpV1hVdmRVUWpiV0ZmUUNPcW84YnZrcE4wUVlkQ0dpSHduSWxTbjlCVlVhblZ1Z3ZfbzJiMUU5ZWpyTFIxSGdEN1c4WmRkOXZJMUZwR2dzTUJzSF8wYkkta0c5Ykc3ZXRfdHBHaHk5WjRhcndCTEV3c2o2eDBkWC0tOHhQdzJKOFlSY193N2poOW1sYnlMZGd4QWZQbUpwSElia3BWYlNuZFgtQUxPemc0WWkybw",
+          "url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxNSGt2UEZWc1ZEbzFpV1hVdmRVUWpiV0ZmUUNPcW84YnZrcE4wUVlkQ0dpSHduSWxTbjlCVlVhblZ1Z3ZfbzJiMUU5ZWpyTFIxSGdEN1c4WmRkOXZJMUZwR2dzTUJzSF8wYkkta0c5Ykc3ZXRfdHBHaHk5WjRhcndCTEV3c2o2eDBkWC0tOHhQdzJKOFlSY193N2poOW1sYnlMZGd4QWZQbUpwSElia3BWYlNuZFgtQUxPemc0WWkybw",
+          "published_at": "2026-10-15T03:19:56+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-14",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "ustreasuryyieldsfallafterreversinginflationledselloffinvestingcom",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-10-15T03:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
         },
         {
           "story_id": "news-0cf0235ba60ea0881b79",
@@ -9022,449 +9446,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 27
-        },
-        {
-          "story_id": "news-c22a6bdb1fcea3705192",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Asia stocks tumble as South Korea’s KOSPI triggers circuit breaker in tech rout",
-          "raw_title": "Asia stocks tumble as South Korea’s KOSPI triggers circuit breaker in tech rout",
-          "normalized_fact": "Investing.com -- Asian stocks tumbled on Thursday as a deepening tech rout triggered a circuit breaker in South Korea, where the KOSPI plunged nearly 9%, amid concerns over Chinese competition and hotter-than-expected U.S. inflation raised expectations for further Federal Reserve rate hikes。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Investing.com -- Asian stocks tumbled on Thursday as a deepening tech rout triggered a circuit breaker in South Korea, where the KOSPI plunged nearly 9%, amid concerns over Chinese competition and hotter-than-expected U.S. inflation raised expectations for further Federal Reserve rate hikes.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/world-indices/articles/asia-stocks-tumble-korea-kospi-032344474.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/world-indices/articles/asia-stocks-tumble-korea-kospi-032344474.html?.tsrc=rss",
-          "published_at": "2026-10-15T03:23:44+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-14",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "federal reserve",
-              "rate"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "federal reserve",
-              "rate"
-            ],
-            "matched_subject": "federal reserve",
-            "matched_action": "rate",
-            "matched_market_object": "federal reserve",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "investingcomasianstockstumbledonthursdayasadeepeningtechrouttriggeredacircuitbreakerinsouthkoreawherethekospiplungednearly9amidconcernsoverchinesecompetitionandhotterthanexpectedusinflationraisedexpectationsforfurtherfederalreserveratehikes",
-          "event_cluster_key": "event-2b25a9dc1974fd0181be",
-          "published_time_bucket": "2026-10-15T03:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "federal reserve",
-            "rate"
-          ],
-          "matched_subject": "federal reserve",
-          "matched_action": "rate",
-          "matched_market_object": "federal reserve",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-15T04:18:50.218690+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 27
-        },
-        {
-          "story_id": "news-c5ca3e213b3fae4d4ac7",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "What the interest rate danger zone means for your money",
-          "raw_title": "What the interest rate danger zone means for your money",
-          "normalized_fact": "Gabelli Funds Portfolio Manager Justin Bergner and NYSE Senior Market Strategist Michael Reinking break down how the AI boom, rising interest rates, and geopolitical tensions are fundamentally reshaping the stock market。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Gabelli Funds Portfolio Manager Justin Bergner and NYSE Senior Market Strategist Michael Reinking break down how the AI boom, rising interest rates, and geopolitical tensions are fundamentally reshaping the stock market.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/video/interest-rate-danger-zone-means-100000241.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/video/interest-rate-danger-zone-means-100000241.html?.tsrc=rss",
-          "published_at": "2026-10-14T10:00:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-14",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "gabellifundsportfoliomanagerjustinbergnerandnyseseniormarketstrategistmichaelreinkingbreakdownhowtheaiboomrisinginterestratesandgeopoliticaltensionsarefundamentallyreshapingthestockmarket",
-          "event_cluster_key": "event-778ce6894dec6c400d3d",
-          "published_time_bucket": "2026-10-14T10:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-14T10:23:09.470999+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 27
-        },
-        {
-          "story_id": "news-f2387c41ed0a19437cef",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "1 S&P 500 Stock with Solid Fundamentals and 2 We Avoid",
-          "raw_title": "1 S&P 500 Stock with Solid Fundamentals and 2 We Avoid",
-          "normalized_fact": "The S&P 500 (^GSPC) is often seen as a benchmark for strong businesses, but that doesn’t mean every stock is worth owning. Some companies face significant challenges, whether it’s stagnating growth, heavy debt, or disruptive new competitors。",
-          "market_topic": "global_market",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "The S&P 500 (^GSPC) is often seen as a benchmark for strong businesses, but that doesn’t mean every stock is worth owning. Some companies face significant challenges, whether it’s stagnating growth, heavy debt, or disruptive new competitors.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/1-p-500-stock-solid-091447788.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/1-p-500-stock-solid-091447788.html?.tsrc=rss",
-          "published_at": "2026-10-14T09:06:47+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-14",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "thesp500gspcisoftenseenasabenchmarkforstrongbusinessesbutthatdoesntmeaneverystockisworthowningsomecompaniesfacesignificantchallengeswhetheritsstagnatinggrowthheavydebtordisruptivenewcompetitors",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-10-14T09:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-14T09:18:21.668808+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 27
-        },
-        {
-          "story_id": "news-0802393a553f2737b70d",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "US inflation heats up in September; Fed rate hike this month back on table - Reuters",
-          "raw_title": "US inflation heats up in September; Fed rate hike this month back on table - Reuters",
-          "normalized_fact": "US inflation heats up in September; Fed rate hike this month back on table Reuters。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "US inflation heats up in September; Fed rate hike this month back on table Reuters",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiugFBVV95cUxNX3hkV3J5em1xWWY4V0hQODFTamFtU3NvdkpPRUUzMGY0TnlKaVlneXZPc0J6bFpWdDZWb2hLRkZZaHhZVElDSXNFbGNYMVVBRGR6c1RlNDA4cEhkMEcwck5VMFRtZ1QxOFJqNTkyaGJzWWFLSXp2Z0l1Z19vMDh5bGd6N1FJSkJFR2tZUXd1UWUzeVlvZi1xNTVONk00ejJ5cE0xSGY4THFsaUo0RGxPV3dpaW4tbEZseUE",
-          "url": "https://news.google.com/rss/articles/CBMiugFBVV95cUxNX3hkV3J5em1xWWY4V0hQODFTamFtU3NvdkpPRUUzMGY0TnlKaVlneXZPc0J6bFpWdDZWb2hLRkZZaHhZVElDSXNFbGNYMVVBRGR6c1RlNDA4cEhkMEcwck5VMFRtZ1QxOFJqNTkyaGJzWWFLSXp2Z0l1Z19vMDh5bGd6N1FJSkJFR2tZUXd1UWUzeVlvZi1xNTVONk00ejJ5cE0xSGY4THFsaUo0RGxPV3dpaW4tbEZseUE",
-          "published_at": "2026-10-14T17:25:53+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-14",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "rate"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "rate"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "rate",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "usinflationheatsupinseptemberfedratehikethismonthbackontablereuters",
-          "event_cluster_key": "event-9fadb44d81c037af479a",
-          "published_time_bucket": "2026-10-14T17:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "rate"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "rate",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-14T22:03:52.985814+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 12
-        },
-        {
-          "story_id": "news-2b72506cef8c39419650",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Dollar eases from 18-month high as Treasury yields fall; Fed hike bets ease - Reuters",
-          "raw_title": "Dollar eases from 18-month high as Treasury yields fall; Fed hike bets ease - Reuters",
-          "normalized_fact": "Dollar eases from 18-month high as Treasury yields fall; Fed hike bets ease Reuters。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Dollar eases from 18-month high as Treasury yields fall; Fed hike bets ease Reuters",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiywFBVV95cUxPbDE0ZWJRMm1PNWhpVzUwaDhHb2o1YkVXVExaeFVQWWFwcnJtemVfakY3WHV0aFFQWHR3dkR4eVN1OTZ3dXVqb0QzQ0ZuNkNhek1IbFRhVEtBXzNKcVpSQ1dHQm16ZGMxZHF1Z0txU2xHVUVsb0txUzhxLVljb0NXWWZzX2ZETk9QbHF1dm5XdmMybWFYRzl4d1VuS3J0NlU4enJvQVFuYTYydDNYUVVHM3pjandDUHdHbHhLT2otUU1HQk1PTVpReHpmTQ",
-          "url": "https://news.google.com/rss/articles/CBMiywFBVV95cUxPbDE0ZWJRMm1PNWhpVzUwaDhHb2o1YkVXVExaeFVQWWFwcnJtemVfakY3WHV0aFFQWHR3dkR4eVN1OTZ3dXVqb0QzQ0ZuNkNhek1IbFRhVEtBXzNKcVpSQ1dHQm16ZGMxZHF1Z0txU2xHVUVsb0txUzhxLVljb0NXWWZzX2ZETk9QbHF1dm5XdmMybWFYRzl4d1VuS3J0NlU4enJvQVFuYTYydDNYUVVHM3pjandDUHdHbHhLT2otUU1HQk1PTVpReHpmTQ",
-          "published_at": "2026-10-15T01:49:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-14",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "bets"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "bets"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "bets",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "dollareasesfrom18monthhighastreasuryyieldsfallfedhikebetseasereuters",
-          "event_cluster_key": "event-7de53753ce4133375d9a",
-          "published_time_bucket": "2026-10-15T01:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "bets"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "bets",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-15T08:43:36.094967+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 12
         }
       ],
       "source_diversity": {
@@ -9493,7 +9474,7 @@
         "ticker_interest": {
           "2330": 3,
           "TSM": 9,
-          "NVDA": 14
+          "NVDA": 12
         },
         "sector_interest": {},
         "topic_interest": {
@@ -9504,7 +9485,7 @@
           "hormuz": 2
         },
         "market_interest": {
-          "us": 141
+          "us": 144
         },
         "context": {
           "tracked_tickers": [
@@ -9563,7 +9544,7 @@
           "tracked_ticker": {
             "2330": 3,
             "TSM": 9,
-            "NVDA": 14
+            "NVDA": 12
           },
           "research_candidate": {},
           "tracked_sector": {},
@@ -9577,14 +9558,13 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 47,
+      "excluded_count": 43,
       "exclusion_reasons": {
         "generic_official_filing": 20,
-        "incomplete_normalized_fact": 26,
-        "insufficient_market_relevance": 16,
+        "incomplete_normalized_fact": 24,
+        "insufficient_market_relevance": 14,
         "listicle_or_selection": 2,
-        "market_scope_mismatch": 2,
-        "outside_calendar_window": 12,
+        "outside_calendar_window": 11,
         "outside_trading_session_window": 2
       },
       "status": "ready",
@@ -9595,43 +9575,43 @@
         "successful_provider_count": 4,
         "failed_provider_count": 1,
         "disabled_provider_count": 1,
-        "fetched": 57,
-        "normalized": 57,
-        "eligible": 10,
-        "excluded": 47,
-        "date_eligible_current": 43,
-        "date_excluded_current": 14,
+        "fetched": 58,
+        "normalized": 58,
+        "eligible": 15,
+        "excluded": 43,
+        "date_eligible_current": 45,
+        "date_excluded_current": 13,
         "date_exclusion_reasons_current": {
-          "outside_calendar_window": 12,
+          "outside_calendar_window": 11,
           "outside_trading_session_window": 2
         },
-        "date_eligible_inventory": 84,
+        "date_eligible_inventory": 86,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-15T18:33:27.434703+00:00",
-        "deduped": 10,
+        "reference_time": "2026-10-15T20:13:25.257257+00:00",
+        "deduped": 15,
         "publicly_ranked": 5,
-        "current_eligible": 10,
-        "inventory_considered": 84,
-        "inventory_eligible": 51,
+        "current_eligible": 15,
+        "inventory_considered": 86,
+        "inventory_eligible": 56,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 47,
-        "fetched_story_count": 57,
-        "normalized_story_count": 57,
-        "eligible_story_count": 10,
-        "deduped_story_count": 10,
+        "filtered_story_count": 43,
+        "fetched_story_count": 58,
+        "normalized_story_count": 58,
+        "eligible_story_count": 15,
+        "deduped_story_count": 15,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 84,
-        "eligible": 51,
+        "considered": 86,
+        "eligible": 56,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -9643,8 +9623,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 57,
-          "checked_at": "2026-10-15T18:33:27.434733+00:00"
+          "item_count": 58,
+          "checked_at": "2026-10-15T20:13:25.257294+00:00"
         },
         {
           "provider": "sec",
@@ -9655,10 +9635,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-10-15T18:33:27.434733+00:00",
+          "checked_at": "2026-10-15T20:13:25.257294+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+          "last_success_at": "2026-10-15T20:13:25.257294+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9686,12 +9666,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-10-15T18:33:27.434733+00:00",
+          "checked_at": "2026-10-15T20:13:25.257294+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-10-15T18:33:27.434733+00:00",
+          "last_failure_at": "2026-10-15T20:13:25.257294+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9714,10 +9694,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-10-15T18:33:27.434733+00:00",
+          "checked_at": "2026-10-15T20:13:25.257294+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+          "last_success_at": "2026-10-15T20:13:25.257294+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9741,15 +9721,15 @@
           "status": "healthy",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 2,
-          "checked_at": "2026-10-15T18:33:27.434733+00:00",
+          "item_count": 1,
+          "checked_at": "2026-10-15T20:13:25.257294+00:00",
           "raw_item_count": 5,
-          "filtered_item_count": 2,
-          "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-10-15T20:13:25.257294+00:00",
           "last_failure_at": null,
           "stories_ingested": 2,
           "stories_deduped": 2,
-          "ranked_count": 2,
+          "ranked_count": 1,
           "relevance_distribution": {
             "market": 2,
             "tracked_ticker": 1
@@ -9761,7 +9741,7 @@
             "eligible_count": 2,
             "excluded_count": 0,
             "deduped_count": 2,
-            "ranked_count": 2
+            "ranked_count": 1
           }
         },
         {
@@ -9772,27 +9752,26 @@
           "status": "healthy",
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
-          "item_count": 1,
-          "checked_at": "2026-10-15T18:33:27.434733+00:00",
+          "item_count": 2,
+          "checked_at": "2026-10-15T20:13:25.257294+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 1,
-          "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+          "filtered_item_count": 2,
+          "last_success_at": "2026-10-15T20:13:25.257294+00:00",
           "last_failure_at": null,
-          "stories_ingested": 4,
-          "stories_deduped": 1,
-          "ranked_count": 1,
+          "stories_ingested": 6,
+          "stories_deduped": 5,
+          "ranked_count": 2,
           "relevance_distribution": {
-            "market": 4,
-            "tracked_ticker": 1
+            "market": 6
           },
           "funnel": {
-            "fetched_count": 5,
-            "normalized_count": 4,
-            "market_compatible_count": 4,
-            "eligible_count": 1,
-            "excluded_count": 3,
-            "deduped_count": 1,
-            "ranked_count": 1
+            "fetched_count": 6,
+            "normalized_count": 6,
+            "market_compatible_count": 6,
+            "eligible_count": 5,
+            "excluded_count": 1,
+            "deduped_count": 5,
+            "ranked_count": 2
           }
         },
         {
@@ -9804,13 +9783,13 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
           "item_count": 2,
-          "checked_at": "2026-10-15T18:33:27.434733+00:00",
+          "checked_at": "2026-10-15T20:13:25.257294+00:00",
           "raw_item_count": 40,
           "filtered_item_count": 2,
-          "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+          "last_success_at": "2026-10-15T20:13:25.257294+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
-          "stories_deduped": 7,
+          "stories_deduped": 8,
           "ranked_count": 2,
           "relevance_distribution": {
             "active_event": 8,
@@ -9821,31 +9800,31 @@
             "fetched_count": 40,
             "normalized_count": 40,
             "market_compatible_count": 40,
-            "eligible_count": 7,
-            "excluded_count": 33,
-            "deduped_count": 7,
+            "eligible_count": 8,
+            "excluded_count": 32,
+            "deduped_count": 8,
             "ranked_count": 2
           }
         }
       ],
       "observability": {
-        "stories_ingested": 57,
-        "stories_deduped": 10,
+        "stories_ingested": 58,
+        "stories_deduped": 15,
         "ranked_count": 5,
         "relevance_distribution": {
           "active_event": 8,
-          "market": 57,
-          "tracked_ticker": 6
+          "market": 58,
+          "tracked_ticker": 5
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+            "last_success_at": "2026-10-15T20:13:25.257294+00:00",
             "last_failure_at": null,
             "stories_ingested": 2,
             "stories_deduped": 2,
-            "ranked_count": 2,
+            "ranked_count": 1,
             "relevance_distribution": {
               "market": 2,
               "tracked_ticker": 1
@@ -9857,14 +9836,14 @@
               "eligible_count": 2,
               "excluded_count": 0,
               "deduped_count": 2,
-              "ranked_count": 2
+              "ranked_count": 1
             }
           },
           {
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-10-15T18:33:27.434733+00:00",
+            "last_failure_at": "2026-10-15T20:13:25.257294+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9882,10 +9861,10 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+            "last_success_at": "2026-10-15T20:13:25.257294+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
-            "stories_deduped": 7,
+            "stories_deduped": 8,
             "ranked_count": 2,
             "relevance_distribution": {
               "active_event": 8,
@@ -9896,16 +9875,16 @@
               "fetched_count": 40,
               "normalized_count": 40,
               "market_compatible_count": 40,
-              "eligible_count": 7,
-              "excluded_count": 33,
-              "deduped_count": 7,
+              "eligible_count": 8,
+              "excluded_count": 32,
+              "deduped_count": 8,
               "ranked_count": 2
             }
           },
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+            "last_success_at": "2026-10-15T20:13:25.257294+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9924,7 +9903,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+            "last_success_at": "2026-10-15T20:13:25.257294+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -9943,46 +9922,24 @@
             }
           },
           {
-            "provider": "unknown",
-            "status": "healthy",
-            "last_success_at": null,
-            "last_failure_at": null,
-            "stories_ingested": 1,
-            "stories_deduped": 0,
-            "ranked_count": 0,
-            "relevance_distribution": {
-              "market": 1
-            },
-            "funnel": {
-              "fetched_count": 1,
-              "normalized_count": 1,
-              "market_compatible_count": 0,
-              "eligible_count": 0,
-              "excluded_count": 1,
-              "deduped_count": 0,
-              "ranked_count": 0
-            }
-          },
-          {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-15T18:33:27.434733+00:00",
+            "last_success_at": "2026-10-15T20:13:25.257294+00:00",
             "last_failure_at": null,
-            "stories_ingested": 4,
-            "stories_deduped": 1,
-            "ranked_count": 1,
+            "stories_ingested": 6,
+            "stories_deduped": 5,
+            "ranked_count": 2,
             "relevance_distribution": {
-              "market": 4,
-              "tracked_ticker": 1
+              "market": 6
             },
             "funnel": {
-              "fetched_count": 5,
-              "normalized_count": 4,
-              "market_compatible_count": 4,
-              "eligible_count": 1,
-              "excluded_count": 3,
-              "deduped_count": 1,
-              "ranked_count": 1
+              "fetched_count": 6,
+              "normalized_count": 6,
+              "market_compatible_count": 6,
+              "eligible_count": 5,
+              "excluded_count": 1,
+              "deduped_count": 5,
+              "ranked_count": 2
             }
           }
         ]
