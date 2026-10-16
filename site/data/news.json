@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "fdfbddcf2af82cd9",
-  "snapshot_id": "news-dd2a6087239636d3",
+  "market_snapshot_id": "cfb0c6224c4f10f7",
+  "snapshot_id": "news-6f1fab79ace2080f",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -535,6 +535,99 @@
           "ranking_score": 145
         },
         {
+          "story_id": "news-3ae407d39fd1f9f6bc1d",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "焦點股：液冷商機推升營收、台美擴產添動能，AMAX-KY力守月線並創新高",
+          "raw_title": "焦點股：液冷商機推升營收、台美擴產添動能，AMAX-KY力守月線並創新高",
+          "normalized_fact": "【財訊快報／研究員周佳蓉】鴻海(2317)轉投資的AMAX-KY(6933)，與鴻海在客戶分工與供應鏈上合作密切，鴻海主攻大型客戶，AMAX則鎖定中小型機房與新創客製化需求，公司營運主軸正從客製化AI。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "【財訊快報／研究員周佳蓉】鴻海(2317)轉投資的AMAX-KY(6933)，與鴻海在客戶分工與供應鏈上合作密切，鴻海主攻大型客戶，AMAX則鎖定中小型機房與新創客製化需求，公司營運主軸正從客製化AI",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%84%A6%E9%BB%9E%E8%82%A1-%E6%B6%B2%E5%86%B7%E5%95%86%E6%A9%9F%E6%8E%A8%E5%8D%87%E7%87%9F%E6%94%B6-%E5%8F%B0%E7%BE%8E%E6%93%B4%E7%94%A2%E6%B7%BB%E5%8B%95%E8%83%BD-amax-ky%E5%8A%9B%E5%AE%88%E6%9C%88%E7%B7%9A%E4%B8%A6%E5%89%B5%E6%96%B0%E9%AB%98-042307807.html",
+          "url": "https://tw.stock.yahoo.com/news/%E7%84%A6%E9%BB%9E%E8%82%A1-%E6%B6%B2%E5%86%B7%E5%95%86%E6%A9%9F%E6%8E%A8%E5%8D%87%E7%87%9F%E6%94%B6-%E5%8F%B0%E7%BE%8E%E6%93%B4%E7%94%A2%E6%B7%BB%E5%8B%95%E8%83%BD-amax-ky%E5%8A%9B%E5%AE%88%E6%9C%88%E7%B7%9A%E4%B8%A6%E5%89%B5%E6%96%B0%E9%AB%98-042307807.html",
+          "published_at": "2026-10-16T04:23:07+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "earnings"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "財訊快報研究員周佳蓉鴻海2317轉投資的amaxky6933與鴻海在客戶分工與供應鏈上合作密切鴻海主攻大型客戶amax則鎖定中小型機房與新創客製化需求公司營運主軸正從客製化ai",
+          "event_cluster_key": "event-a794674872cb1b9384fb",
+          "published_time_bucket": "2026-10-16T04:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
           "story_id": "news-525c0535945823f099b9",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -820,105 +913,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 120
-        },
-        {
-          "story_id": "news-d95250fa1fca7fa0ac24",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "台灣赴美建AI供應鏈德州首座園區最高砸40億美元龔明鑫：不只一座| 財經焦點| 產經 - UDN",
-          "raw_title": "台灣赴美建AI供應鏈德州首座園區最高砸40億美元龔明鑫：不只一座| 財經焦點| 產經 - UDN",
-          "normalized_fact": "台灣赴美建AI供應鏈德州首座園區最高砸40億美元龔明鑫：不只一座| 財經焦點| 產經 UDN。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "台灣赴美建AI供應鏈德州首座園區最高砸40億美元龔明鑫：不只一座| 財經焦點| 產經 UDN",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE1CS0NndHU1ekFIRlZQVXctYVQ0ZDJRZ2VjS1dmVDE3TTkzblgwR09pSlh1N0ZoNEVFdm11cEZQZ2VqdUJUbDdBRUx0WmdvVjBF",
-          "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE1CS0NndHU1ekFIRlZQVXctYVQ0ZDJRZ2VjS1dmVDE3TTkzblgwR09pSlh1N0ZoNEVFdm11cEZQZ2VqdUJUbDdBRUx0WmdvVjBF",
-          "published_at": "2026-10-16T02:07:31+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-16",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "台灣赴美建ai供應鏈德州首座園區最高砸40億美元龔明鑫不只一座財經焦點產經udn",
-          "event_cluster_key": "event-7ead38aa5e0691ae44f0",
-          "published_time_bucket": "2026-10-16T02:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115,
-          "supporting_sources": [
-            {
-              "provider": "google_news",
-              "url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTE5aak1Sd3R0STlBcTBwenZiX0tSYzV4VndTUWlXN0UzS0QzX1hHYTVnbXRZbV95MHFkQlJTb05mMTdLbUU3Z0VjRUl6MzVpVndLeVU3UnJPUnBBNTdINHc"
-            }
-          ]
         }
       ],
       "editorial_candidates": [
@@ -1019,6 +1013,99 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 145
+        },
+        {
+          "story_id": "news-3ae407d39fd1f9f6bc1d",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "焦點股：液冷商機推升營收、台美擴產添動能，AMAX-KY力守月線並創新高",
+          "raw_title": "焦點股：液冷商機推升營收、台美擴產添動能，AMAX-KY力守月線並創新高",
+          "normalized_fact": "【財訊快報／研究員周佳蓉】鴻海(2317)轉投資的AMAX-KY(6933)，與鴻海在客戶分工與供應鏈上合作密切，鴻海主攻大型客戶，AMAX則鎖定中小型機房與新創客製化需求，公司營運主軸正從客製化AI。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "【財訊快報／研究員周佳蓉】鴻海(2317)轉投資的AMAX-KY(6933)，與鴻海在客戶分工與供應鏈上合作密切，鴻海主攻大型客戶，AMAX則鎖定中小型機房與新創客製化需求，公司營運主軸正從客製化AI",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%84%A6%E9%BB%9E%E8%82%A1-%E6%B6%B2%E5%86%B7%E5%95%86%E6%A9%9F%E6%8E%A8%E5%8D%87%E7%87%9F%E6%94%B6-%E5%8F%B0%E7%BE%8E%E6%93%B4%E7%94%A2%E6%B7%BB%E5%8B%95%E8%83%BD-amax-ky%E5%8A%9B%E5%AE%88%E6%9C%88%E7%B7%9A%E4%B8%A6%E5%89%B5%E6%96%B0%E9%AB%98-042307807.html",
+          "url": "https://tw.stock.yahoo.com/news/%E7%84%A6%E9%BB%9E%E8%82%A1-%E6%B6%B2%E5%86%B7%E5%95%86%E6%A9%9F%E6%8E%A8%E5%8D%87%E7%87%9F%E6%94%B6-%E5%8F%B0%E7%BE%8E%E6%93%B4%E7%94%A2%E6%B7%BB%E5%8B%95%E8%83%BD-amax-ky%E5%8A%9B%E5%AE%88%E6%9C%88%E7%B7%9A%E4%B8%A6%E5%89%B5%E6%96%B0%E9%AB%98-042307807.html",
+          "published_at": "2026-10-16T04:23:07+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "earnings"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "財訊快報研究員周佳蓉鴻海2317轉投資的amaxky6933與鴻海在客戶分工與供應鏈上合作密切鴻海主攻大型客戶amax則鎖定中小型機房與新創客製化需求公司營運主軸正從客製化ai",
+          "event_cluster_key": "event-a794674872cb1b9384fb",
+          "published_time_bucket": "2026-10-16T04:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "story_id": "news-525c0535945823f099b9",
@@ -4553,100 +4640,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 27
-        },
-        {
-          "story_id": "news-d20a02ced729faf3c6ae",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "AI投資隱憂與美升息預期重擊，日經指數週四狂瀉4.9%，愛德萬大跌近15%",
-          "raw_title": "AI投資隱憂與美升息預期重擊，日經指數週四狂瀉4.9%，愛德萬大跌近15%",
-          "normalized_fact": "【財訊快報／劉敏夫】日本股市週四走跌，因對於人工智能投資的擔憂，以及美國持續的通膨加劇了市場對聯準會提前升息的預期。收盤時，東證第一部指數下跌97.44點或2.38%，報3,999.34點；日經225。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "【財訊快報／劉敏夫】日本股市週四走跌，因對於人工智能投資的擔憂，以及美國持續的通膨加劇了市場對聯準會提前升息的預期。收盤時，東證第一部指數下跌97.44點或2.38%，報3,999.34點；日經225",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/ai%E6%8A%95%E8%B3%87%E9%9A%B1%E6%86%82%E8%88%87%E7%BE%8E%E5%8D%87%E6%81%AF%E9%A0%90%E6%9C%9F%E9%87%8D%E6%93%8A-%E6%97%A5%E7%B6%93%E6%8C%87%E6%95%B8%E9%80%B1%E5%9B%9B%E7%8B%82%E7%80%894-9-%E6%84%9B%E5%BE%B7%E8%90%AC%E5%A4%A7%E8%B7%8C%E8%BF%9115-065506464.html",
-          "url": "https://tw.stock.yahoo.com/news/ai%E6%8A%95%E8%B3%87%E9%9A%B1%E6%86%82%E8%88%87%E7%BE%8E%E5%8D%87%E6%81%AF%E9%A0%90%E6%9C%9F%E9%87%8D%E6%93%8A-%E6%97%A5%E7%B6%93%E6%8C%87%E6%95%B8%E9%80%B1%E5%9B%9B%E7%8B%82%E7%80%894-9-%E6%84%9B%E5%BE%B7%E8%90%AC%E5%A4%A7%E8%B7%8C%E8%BF%9115-065506464.html",
-          "published_at": "2026-10-15T06:55:06+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-15",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "聯準會",
-              "升息"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "聯準會",
-              "升息"
-            ],
-            "matched_subject": "聯準會",
-            "matched_action": "升息",
-            "matched_market_object": "聯準會",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "財訊快報劉敏夫日本股市週四走跌因對於人工智能投資的擔憂以及美國持續的通膨加劇了市場對聯準會提前升息的預期收盤時東證第一部指數下跌9744點或238報399934點日經225",
-          "event_cluster_key": "event-d754e1ce0d281fcd7c62",
-          "published_time_bucket": "2026-10-15T06:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "聯準會",
-            "升息"
-          ],
-          "matched_subject": "聯準會",
-          "matched_action": "升息",
-          "matched_market_object": "聯準會",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-15T07:09:05.295294+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 27
         }
       ],
       "source_diversity": {
@@ -4654,17 +4647,19 @@
         "status": "multi_source",
         "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 2,
-        "provider_count": 2,
+        "independent_source_count": 3,
+        "provider_count": 3,
         "provider_ids": [
           "anue",
-          "google_news"
+          "google_news",
+          "yahoo_finance"
         ],
         "source_domains": [
           "news.cnyes.com",
-          "news.google.com"
+          "news.google.com",
+          "tw.stock.yahoo.com"
         ],
-        "supporting_source_count": 1,
+        "supporting_source_count": 0,
         "inventory_only": false,
         "current_story_count": 5,
         "inventory_story_count": 0
@@ -4672,11 +4667,12 @@
       "interest_graph": {
         "ticker_interest": {
           "2330": 28,
-          "NVDA": 5,
+          "NVDA": 7,
           "TSM": 28
         },
         "sector_interest": {},
         "topic_interest": {
+          "地震": 2,
           "石油": 1
         },
         "market_interest": {
@@ -4740,22 +4736,24 @@
         "source_interest": {
           "tracked_ticker": {
             "2330": 28,
-            "NVDA": 5,
+            "NVDA": 7,
             "TSM": 28
           },
           "research_candidate": {},
           "tracked_sector": {},
           "active_event": {
+            "地震": 2,
             "石油": 1
           },
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 34,
+      "excluded_count": 33,
       "exclusion_reasons": {
-        "incomplete_normalized_fact": 4,
-        "insufficient_market_relevance": 26,
-        "non_investment_content": 4,
+        "incomplete_normalized_fact": 6,
+        "insufficient_market_relevance": 22,
+        "market_scope_mismatch": 2,
+        "non_investment_content": 2,
         "outside_calendar_window": 15,
         "outside_trading_session_window": 2
       },
@@ -4769,8 +4767,8 @@
         "disabled_provider_count": 0,
         "fetched": 43,
         "normalized": 43,
-        "eligible": 9,
-        "excluded": 34,
+        "eligible": 10,
+        "excluded": 33,
         "date_eligible_current": 26,
         "date_excluded_current": 17,
         "date_exclusion_reasons_current": {
@@ -4780,22 +4778,22 @@
         "date_eligible_inventory": 67,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-16T04:23:18.672374+00:00",
-        "deduped": 8,
+        "reference_time": "2026-10-16T04:28:46.801891+00:00",
+        "deduped": 9,
         "publicly_ranked": 5,
-        "current_eligible": 9,
+        "current_eligible": 10,
         "inventory_considered": 67,
-        "inventory_eligible": 50,
+        "inventory_eligible": 51,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 34,
+        "filtered_story_count": 33,
         "fetched_story_count": 43,
         "normalized_story_count": 43,
-        "eligible_story_count": 9,
-        "deduped_story_count": 8,
+        "eligible_story_count": 10,
+        "deduped_story_count": 9,
         "ranked_story_count": 5
       },
       "inventory": {
@@ -4803,7 +4801,7 @@
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
         "considered": 67,
-        "eligible": 50,
+        "eligible": 51,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -4816,7 +4814,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 43,
-          "checked_at": "2026-10-16T04:23:18.672411+00:00"
+          "checked_at": "2026-10-16T04:28:46.801929+00:00"
         },
         {
           "provider": "twse",
@@ -4827,10 +4825,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-10-16T04:23:18.672411+00:00",
+          "checked_at": "2026-10-16T04:28:46.801929+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+          "last_success_at": "2026-10-16T04:28:46.801929+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4855,10 +4853,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-10-16T04:23:18.672411+00:00",
+          "checked_at": "2026-10-16T04:28:46.801929+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+          "last_success_at": "2026-10-16T04:28:46.801929+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4883,10 +4881,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 2,
-          "checked_at": "2026-10-16T04:23:18.672411+00:00",
+          "checked_at": "2026-10-16T04:28:46.801929+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 2,
-          "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+          "last_success_at": "2026-10-16T04:28:46.801929+00:00",
           "last_failure_at": null,
           "stories_ingested": 3,
           "stories_deduped": 2,
@@ -4910,32 +4908,31 @@
           "key": "news_taiwan_yahoo_finance",
           "legacy_key": "official_news_taiwan_yahoo_finance",
           "label": "yahoo_finance market news",
-          "status": "no_event",
+          "status": "healthy",
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
-          "item_count": 0,
-          "checked_at": "2026-10-16T04:23:18.672411+00:00",
+          "item_count": 1,
+          "checked_at": "2026-10-16T04:28:46.801929+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 0,
-          "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-10-16T04:28:46.801929+00:00",
           "last_failure_at": null,
-          "stories_ingested": 10,
-          "stories_deduped": 0,
-          "ranked_count": 0,
+          "stories_ingested": 9,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
-            "market": 10,
-            "tracked_ticker": 1
+            "market": 9,
+            "tracked_ticker": 2
           },
           "funnel": {
             "fetched_count": 10,
-            "normalized_count": 10,
-            "market_compatible_count": 10,
-            "eligible_count": 0,
-            "excluded_count": 10,
-            "deduped_count": 0,
-            "ranked_count": 0
-          },
-          "data_gap": "filtered_no_market_match"
+            "normalized_count": 9,
+            "market_compatible_count": 9,
+            "eligible_count": 1,
+            "excluded_count": 8,
+            "deduped_count": 1,
+            "ranked_count": 1
+          }
         },
         {
           "provider": "google_news",
@@ -4945,15 +4942,15 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
-          "item_count": 3,
-          "checked_at": "2026-10-16T04:23:18.672411+00:00",
+          "item_count": 2,
+          "checked_at": "2026-10-16T04:28:46.801929+00:00",
           "raw_item_count": 30,
-          "filtered_item_count": 3,
-          "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+          "filtered_item_count": 2,
+          "last_success_at": "2026-10-16T04:28:46.801929+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
           "stories_deduped": 6,
-          "ranked_count": 3,
+          "ranked_count": 2,
           "relevance_distribution": {
             "market": 30,
             "tracked_ticker": 6
@@ -4965,23 +4962,24 @@
             "eligible_count": 7,
             "excluded_count": 23,
             "deduped_count": 6,
-            "ranked_count": 3
+            "ranked_count": 2
           }
         }
       ],
       "observability": {
         "stories_ingested": 43,
-        "stories_deduped": 8,
+        "stories_deduped": 9,
         "ranked_count": 5,
         "relevance_distribution": {
+          "active_event": 1,
           "market": 43,
-          "tracked_ticker": 10
+          "tracked_ticker": 11
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+            "last_success_at": "2026-10-16T04:28:46.801929+00:00",
             "last_failure_at": null,
             "stories_ingested": 3,
             "stories_deduped": 2,
@@ -5003,11 +5001,11 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+            "last_success_at": "2026-10-16T04:28:46.801929+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
             "stories_deduped": 6,
-            "ranked_count": 3,
+            "ranked_count": 2,
             "relevance_distribution": {
               "market": 30,
               "tracked_ticker": 6
@@ -5019,13 +5017,13 @@
               "eligible_count": 7,
               "excluded_count": 23,
               "deduped_count": 6,
-              "ranked_count": 3
+              "ranked_count": 2
             }
           },
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+            "last_success_at": "2026-10-16T04:28:46.801929+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5044,7 +5042,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+            "last_success_at": "2026-10-16T04:28:46.801929+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5061,25 +5059,47 @@
             }
           },
           {
-            "provider": "yahoo_finance",
+            "provider": "unknown",
             "status": "healthy",
-            "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+            "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 10,
+            "stories_ingested": 1,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 10,
-              "tracked_ticker": 1
+              "active_event": 1,
+              "market": 1
+            },
+            "funnel": {
+              "fetched_count": 1,
+              "normalized_count": 1,
+              "market_compatible_count": 0,
+              "eligible_count": 0,
+              "excluded_count": 1,
+              "deduped_count": 0,
+              "ranked_count": 0
+            }
+          },
+          {
+            "provider": "yahoo_finance",
+            "status": "healthy",
+            "last_success_at": "2026-10-16T04:28:46.801929+00:00",
+            "last_failure_at": null,
+            "stories_ingested": 9,
+            "stories_deduped": 1,
+            "ranked_count": 1,
+            "relevance_distribution": {
+              "market": 9,
+              "tracked_ticker": 2
             },
             "funnel": {
               "fetched_count": 10,
-              "normalized_count": 10,
-              "market_compatible_count": 10,
-              "eligible_count": 0,
-              "excluded_count": 10,
-              "deduped_count": 0,
-              "ranked_count": 0
+              "normalized_count": 9,
+              "market_compatible_count": 9,
+              "eligible_count": 1,
+              "excluded_count": 8,
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           }
         ]
@@ -5304,14 +5324,14 @@
       ],
       "stories": [
         {
-          "story_id": "news-711307422ad19cd66883",
+          "story_id": "news-1c1ce9adcc80d6e0c63a",
           "provider": "anue",
           "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "title": "〈美股盤後〉黃仁勳力挺CoreWeave 道瓊勁揚556點 台積電ADR跌近2%",
+          "raw_title": "〈美股盤後〉黃仁勳力挺CoreWeave 道瓊勁揚556點 台積電ADR跌近2%",
+          "normalized_fact": "美股週四收高，道瓊漲556.21點、標普500終結連3跌，那指盤中翻黑後小漲0.08%。 AI類股漲跌分歧，CoreWeave反彈5.9%，輝達、AMD走弱；戴爾遭巴克萊降評重挫6.8%。 美國9月PPI月增1.3%、年增6.3%創2022年來最大，通膨升溫使市場再度押注聯準會升息。",
           "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
@@ -5320,46 +5340,43 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "summary": "美股週四收高，道瓊漲556.21點、標普500終結連3跌，那指盤中翻黑後小漲0.08%。 AI類股漲跌分歧，CoreWeave反彈5.9%，輝達、AMD走弱；戴爾遭巴克萊降評重挫6.8%。 美國9月PPI月增1.3%、年增6.3%創2022年來最大，通膨升溫使市場再度押注聯準會升息。",
           "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6630669",
-          "url": "https://news.cnyes.com/news/id/6630669",
-          "published_at": "2026-10-14T22:02:35+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6631442",
+          "url": "https://news.cnyes.com/news/id/6631442",
+          "published_at": "2026-10-15T21:44:31+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "recent_reference",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-10-14",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-15",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
           "entities": [
             "2330",
-            "SOX",
             "TSM"
           ],
           "sectors": [],
-          "topics": [
-            "ai"
-          ],
+          "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
             "category": "fed",
             "reason": "fed_subject_action",
             "matched_terms": [
-              "fed",
-              "利率"
+              "聯準會",
+              "升息"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "fed",
-              "利率"
+              "聯準會",
+              "升息"
             ],
-            "matched_subject": "fed",
-            "matched_action": "利率",
-            "matched_market_object": "fed",
+            "matched_subject": "聯準會",
+            "matched_action": "升息",
+            "matched_market_object": "聯準會",
             "input_fields": [
               "description",
               "summary",
@@ -5369,23 +5386,24 @@
           "relevance_reasons": [
             "market:cross_market",
             "tracked_ticker:2330",
+            "tracked_ticker:NVDA",
             "tracked_ticker:TSM",
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
-          "event_cluster_key": "event-40d27feb65b9f7fa705b",
-          "published_time_bucket": "2026-10-14T22:00:00+00:00",
+          "dedupe_key": "美股週四收高道瓊漲55621點標普500終結連3跌那指盤中翻黑後小漲008ai類股漲跌分歧coreweave反彈59輝達amd走弱戴爾遭巴克萊降評重挫68美國9月ppi月增13年增63創2022年來最大通膨升溫使市場再度押注聯準會升息",
+          "event_cluster_key": "event-c036234c6536777fb51b",
+          "published_time_bucket": "2026-10-15T21:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "fed",
-            "利率"
+            "聯準會",
+            "升息"
           ],
-          "matched_subject": "fed",
-          "matched_action": "利率",
-          "matched_market_object": "fed",
+          "matched_subject": "聯準會",
+          "matched_action": "升息",
+          "matched_market_object": "聯準會",
           "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
@@ -5401,7 +5419,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 140
+          "ranking_score": 145
         },
         {
           "story_id": "news-0b8a5e7cf0418876dc54",
@@ -5689,580 +5707,7 @@
           "ranking_score": 130
         },
         {
-          "story_id": "news-5a467bce06bc97b434fd",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "台達電鄭平：三因素限制電力設施建置 供電缺口成AI發展關鍵挑戰",
-          "raw_title": "台達電鄭平：三因素限制電力設施建置 供電缺口成AI發展關鍵挑戰",
-          "normalized_fact": "台達電董事長鄭平表示，AI資料中心擴張推升全球用電，電力供應難追上AI成長，將成重要挑戰。 美國四大CSP資本支出估達2022年4.7倍，2028年資料中心新增用電44GW，電網僅增25GW。 台達電布局微電網、SOFC與SST；SOFC效率85%且明年量產，SST可轉800V直流電。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "台達電董事長鄭平表示，AI資料中心擴張推升全球用電，電力供應難追上AI成長，將成重要挑戰。 美國四大CSP資本支出估達2022年4.7倍，2028年資料中心新增用電44GW，電網僅增25GW。 台達電布局微電網、SOFC與SST；SOFC效率85%且明年量產，SST可轉800V直流電。",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6630917",
-          "url": "https://news.cnyes.com/news/id/6630917",
-          "published_at": "2026-10-15T04:25:09+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-15",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "資本支出"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "資本支出"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "資本支出",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "台達電董事長鄭平表示ai資料中心擴張推升全球用電電力供應難追上ai成長將成重要挑戰美國四大csp資本支出估達2022年47倍2028年資料中心新增用電44gw電網僅增25gw台達電布局微電網sofc與sstsofc效率85且明年量產sst可轉800v直流電",
-          "event_cluster_key": "event-e1c6150d667e0cfcb097",
-          "published_time_bucket": "2026-10-15T04:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "資本支出"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "資本支出",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
-        }
-      ],
-      "editorial_candidates": [
-        {
-          "story_id": "news-711307422ad19cd66883",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6630669",
-          "url": "https://news.cnyes.com/news/id/6630669",
-          "published_at": "2026-10-14T22:02:35+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-10-14",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "SOX",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "利率"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "利率"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "利率",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM",
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
-          "event_cluster_key": "event-40d27feb65b9f7fa705b",
-          "published_time_bucket": "2026-10-14T22:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "利率"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "利率",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 140
-        },
-        {
-          "story_id": "news-0b8a5e7cf0418876dc54",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Taiwan plans $4 bln Texas park to support Nvidia’s AI supply chain - Bloomberg",
-          "raw_title": "Taiwan plans $4 bln Texas park to support Nvidia’s AI supply chain - Bloomberg",
-          "normalized_fact": "Investing.com-- Taiwan plans to develop multiple industrial parks in the U.S. to strengthen the supply chain for artificial intelligence hardware makers, with each complex requiring investments of up to $4 billion, Bloomberg News reported on Friday, citing Taiwan's Economy Minister Kung Ming-hsin。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Investing.com-- Taiwan plans to develop multiple industrial parks in the U.S. to strengthen the supply chain for artificial intelligence hardware makers, with each complex requiring investments of up to $4 billion, Bloomberg News reported on Friday, citing Taiwan's Economy Minister Kung Ming-hsin.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/technology/ai/articles/taiwan-plans-4-bln-texas-030702909.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/technology/ai/articles/taiwan-plans-4-bln-texas-030702909.html?.tsrc=rss",
-          "published_at": "2026-10-16T03:07:02+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-15",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "nvidia",
-              "supply"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "nvidia",
-              "supply"
-            ],
-            "matched_subject": "nvidia",
-            "matched_action": "supply",
-            "matched_market_object": "nvidia",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:NVDA",
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "investingcomtaiwanplanstodevelopmultipleindustrialparksintheustostrengthenthesupplychainforartificialintelligencehardwaremakerswitheachcomplexrequiringinvestmentsofupto4billionbloombergnewsreportedonfridaycitingtaiwanseconomyministerkungminghsin",
-          "event_cluster_key": "event-fb580f50e3fca69f3bc7",
-          "published_time_bucket": "2026-10-16T03:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "nvidia",
-            "supply"
-          ],
-          "matched_subject": "nvidia",
-          "matched_action": "supply",
-          "matched_market_object": "nvidia",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 135
-        },
-        {
-          "story_id": "news-98ca25bcebf3c1d06d77",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "\"Even with accelerated localization, supply remains insufficient\" Continued Nvidia dependence amid China's AI chip shortage, including smuggling and overseas cloud utilization - https://economy.ac/",
-          "raw_title": "\"Even with accelerated localization, supply remains insufficient\" Continued Nvidia dependence amid China's AI chip shortage, including smuggling and overseas cloud utilization - https://economy.ac/",
-          "normalized_fact": "\"Even with accelerated localization, supply remains insufficient\" Continued Nvidia dependence amid China's AI chip shortage, including smuggling and overseas cloud utilization https://economy.ac/。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "\"Even with accelerated localization, supply remains insufficient\" Continued Nvidia dependence amid China's AI chip shortage, including smuggling and overseas cloud utilization https://economy.ac/",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiV0FVX3lxTE02TFRqdC1sTjdmcmhrZXVsdGtFN21ZdHhKcEZPa0VqNE5XUVNzSEltUWVaSF9pWDM2YXRLSVVVZEl5QU1reWpRVUcxZ3RPM3pQckJ5ZE9Wcw",
-          "url": "https://news.google.com/rss/articles/CBMiV0FVX3lxTE02TFRqdC1sTjdmcmhrZXVsdGtFN21ZdHhKcEZPa0VqNE5XUVNzSEltUWVaSF9pWDM2YXRLSVVVZEl5QU1reWpRVUcxZ3RPM3pQckJ5ZE9Wcw",
-          "published_at": "2026-10-15T03:27:27+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-10-14",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "nvidia",
-              "supply"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "nvidia",
-              "supply"
-            ],
-            "matched_subject": "nvidia",
-            "matched_action": "supply",
-            "matched_market_object": "nvidia",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:NVDA"
-          ],
-          "freshness": "published",
-          "dedupe_key": "evenwithacceleratedlocalizationsupplyremainsinsufficientcontinuednvidiadependenceamidchinasaichipshortageincludingsmugglingandoverseascloudutilizationhttpseconomyac",
-          "event_cluster_key": "event-29e117621e2daddfd058",
-          "published_time_bucket": "2026-10-15T03:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "nvidia",
-            "supply"
-          ],
-          "matched_subject": "nvidia",
-          "matched_action": "supply",
-          "matched_market_object": "nvidia",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 120
-        },
-        {
-          "story_id": "news-5682c98a898509c4a0dc",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Asian stocks rise as tech bounces from rout, eyes on Warsh",
-          "raw_title": "Asian stocks rise as tech bounces from rout, eyes on Warsh",
-          "normalized_fact": "Most Asian markets bounced Friday after the previous day's tech rout fuelled by concerns over the AI boom, with traders also awaiting comments from Federal Reserve boss Kevin Warsh at the IMF's annual gathering.Traders are now awaiting comments at the International Monetary Fund's gathering in Bangkok, with hopes that he will give some insight into policymakers' thinking following this week's inflation-busting consumer inflation data。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Most Asian markets bounced Friday after the previous day's tech rout fuelled by concerns over the AI boom, with traders also awaiting comments from Federal Reserve boss Kevin Warsh at the IMF's annual gathering.Traders are now awaiting comments at the International Monetary Fund's gathering in Bangkok, with hopes that he will give some insight into policymakers' thinking following this week's inflation-busting consumer inflation data.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/world-indices/articles/asian-stocks-rise-tech-bounces-020836295.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/world-indices/articles/asian-stocks-rise-tech-bounces-020836295.html?.tsrc=rss",
-          "published_at": "2026-10-16T02:08:36+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-15",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "macro",
-            "reason": "macro_subject_action",
-            "matched_terms": [
-              "inflation",
-              "data"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "inflation",
-              "data"
-            ],
-            "matched_subject": "inflation",
-            "matched_action": "data",
-            "matched_market_object": "inflation",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "mostasianmarketsbouncedfridayafterthepreviousdaystechroutfuelledbyconcernsovertheaiboomwithtradersalsoawaitingcommentsfromfederalreservebosskevinwarshattheimfsannualgatheringtradersarenowawaitingcommentsattheinternationalmonetaryfundsgatheringinbangkokwithhopesthathewillgivesomeinsightintopolicymakersthinkingfollowingthisweeksinflationbustingconsumerinflationdata",
-          "event_cluster_key": "event-0d87e557068a68369a95",
-          "published_time_bucket": "2026-10-16T02:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "inflation",
-            "data"
-          ],
-          "matched_subject": "inflation",
-          "matched_action": "data",
-          "matched_market_object": "inflation",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
-          "story_id": "news-5a467bce06bc97b434fd",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "台達電鄭平：三因素限制電力設施建置 供電缺口成AI發展關鍵挑戰",
-          "raw_title": "台達電鄭平：三因素限制電力設施建置 供電缺口成AI發展關鍵挑戰",
-          "normalized_fact": "台達電董事長鄭平表示，AI資料中心擴張推升全球用電，電力供應難追上AI成長，將成重要挑戰。 美國四大CSP資本支出估達2022年4.7倍，2028年資料中心新增用電44GW，電網僅增25GW。 台達電布局微電網、SOFC與SST；SOFC效率85%且明年量產，SST可轉800V直流電。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "台達電董事長鄭平表示，AI資料中心擴張推升全球用電，電力供應難追上AI成長，將成重要挑戰。 美國四大CSP資本支出估達2022年4.7倍，2028年資料中心新增用電44GW，電網僅增25GW。 台達電布局微電網、SOFC與SST；SOFC效率85%且明年量產，SST可轉800V直流電。",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6630917",
-          "url": "https://news.cnyes.com/news/id/6630917",
-          "published_at": "2026-10-15T04:25:09+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-15",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "資本支出"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "資本支出"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "資本支出",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "台達電董事長鄭平表示ai資料中心擴張推升全球用電電力供應難追上ai成長將成重要挑戰美國四大csp資本支出估達2022年47倍2028年資料中心新增用電44gw電網僅增25gw台達電布局微電網sofc與sstsofc效率85且明年量產sst可轉800v直流電",
-          "event_cluster_key": "event-e1c6150d667e0cfcb097",
-          "published_time_bucket": "2026-10-15T04:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "資本支出"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "資本支出",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
-          "story_id": "news-3220e247b8c4b8f5e303",
+          "story_id": "news-3a19271766a48e7bf0d1",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
@@ -6280,9 +5725,476 @@
           "normalization_complete": true,
           "summary": "US Dollar Technical Outlook: DXY, Treasury Yields Retreat Despite Hot CPI FOREX.com",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxPOHNsNk5IYlM5Y21TeFVCaFlIeER0WmYzWjEwQ0g0OFpaQ1JIaUVKbHpDd0N0RUp4VHZ4S3gweDNpLW9GaUdMN0dLMzFfc3dlU1V0X3R6Z0dTY3RrS2l5TURjYXVYMDdwdUVtcHFkNmU3clIybWJ3cDdOOV9Ic2ptaWlGNEpxZFdTTUhtY2syT20wenVmby1UdG9HZ3ZHdHJZYnZIdUNkVS16MFFzWE9TN0RiemR4S3NwQjZob2lTR21JOFotWUlvX9IB1AFBVV95cUxQZnYtanVPTS1tRmhsZk1iazF2RGEzSlZ6U2NUMnM5Zk5mMXFNRE1FeVVsTFFnM0ZDZ0pUME5lSVVUUnVkUUE3MUxiejJONVFvRTJmaHRVeEhTMldmdFRLTWVFZzQ2U1lMYUNINkdrcVJDd2FxTVkzUWlQSTFhQ0g3ci1SM18xZzBXVGN6SUQ3SG9Uc3pDWXh6b0RoZVVpQ2JTZGZtUnkwcVZDVzd5djc2elVRZ0xTNFhlRHVxWkdrQlZyQ05YTEFVYnI4Qm5zWktjZVB4Tw",
-          "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxPOHNsNk5IYlM5Y21TeFVCaFlIeER0WmYzWjEwQ0g0OFpaQ1JIaUVKbHpDd0N0RUp4VHZ4S3gweDNpLW9GaUdMN0dLMzFfc3dlU1V0X3R6Z0dTY3RrS2l5TURjYXVYMDdwdUVtcHFkNmU3clIybWJ3cDdOOV9Ic2ptaWlGNEpxZFdTTUhtY2syT20wenVmby1UdG9HZ3ZHdHJZYnZIdUNkVS16MFFzWE9TN0RiemR4S3NwQjZob2lTR21JOFotWUlvX9IB1AFBVV95cUxQZnYtanVPTS1tRmhsZk1iazF2RGEzSlZ6U2NUMnM5Zk5mMXFNRE1FeVVsTFFnM0ZDZ0pUME5lSVVUUnVkUUE3MUxiejJONVFvRTJmaHRVeEhTMldmdFRLTWVFZzQ2U1lMYUNINkdrcVJDd2FxTVkzUWlQSTFhQ0g3ci1SM18xZzBXVGN6SUQ3SG9Uc3pDWXh6b0RoZVVpQ2JTZGZtUnkwcVZDVzd5djc2elVRZ0xTNFhlRHVxWkdrQlZyQ05YTEFVYnI4Qm5zWktjZVB4Tw",
-          "published_at": "2026-10-15T15:20:14+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNOG5RaHgybjdFdWdidzNYMzRFQXBTVUY5ekZOZG1nSy1zeDAtTm8tem5mMlJyWllSYS0wbU0tYjd6dkNCNG1NQzYtR0NlaFNwSHgzNVFCQ1JoVjBmaS1xQ1dmTVNMQmdPMTRNNGRtWVZEQmRjZkZBSldWZ2hubXQzT3drS2UxM3htZTZieXVneFBheWNLT0ZGV01QSENidmJGblY1RmJTRUJzY0hrNlRRMUtFOW9rLXN5MEN5ZnRudTY2WmNQ",
+          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNOG5RaHgybjdFdWdidzNYMzRFQXBTVUY5ekZOZG1nSy1zeDAtTm8tem5mMlJyWllSYS0wbU0tYjd6dkNCNG1NQzYtR0NlaFNwSHgzNVFCQ1JoVjBmaS1xQ1dmTVNMQmdPMTRNNGRtWVZEQmRjZkZBSldWZ2hubXQzT3drS2UxM3htZTZieXVneFBheWNLT0ZGV01QSENidmJGblY1RmJTRUJzY0hrNlRRMUtFOW9rLXN5MEN5ZnRudTY2WmNQ",
+          "published_at": "2026-10-15T15:58:07+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "usdollartechnicaloutlookdxytreasuryyieldsretreatdespitehotcpiforexcom",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-10-15T15:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        }
+      ],
+      "editorial_candidates": [
+        {
+          "story_id": "news-1c1ce9adcc80d6e0c63a",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈美股盤後〉黃仁勳力挺CoreWeave 道瓊勁揚556點 台積電ADR跌近2%",
+          "raw_title": "〈美股盤後〉黃仁勳力挺CoreWeave 道瓊勁揚556點 台積電ADR跌近2%",
+          "normalized_fact": "美股週四收高，道瓊漲556.21點、標普500終結連3跌，那指盤中翻黑後小漲0.08%。 AI類股漲跌分歧，CoreWeave反彈5.9%，輝達、AMD走弱；戴爾遭巴克萊降評重挫6.8%。 美國9月PPI月增1.3%、年增6.3%創2022年來最大，通膨升溫使市場再度押注聯準會升息。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美股週四收高，道瓊漲556.21點、標普500終結連3跌，那指盤中翻黑後小漲0.08%。 AI類股漲跌分歧，CoreWeave反彈5.9%，輝達、AMD走弱；戴爾遭巴克萊降評重挫6.8%。 美國9月PPI月增1.3%、年增6.3%創2022年來最大，通膨升溫使市場再度押注聯準會升息。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6631442",
+          "url": "https://news.cnyes.com/news/id/6631442",
+          "published_at": "2026-10-15T21:44:31+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "聯準會",
+              "升息"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "聯準會",
+              "升息"
+            ],
+            "matched_subject": "聯準會",
+            "matched_action": "升息",
+            "matched_market_object": "聯準會",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:NVDA",
+            "tracked_ticker:TSM",
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美股週四收高道瓊漲55621點標普500終結連3跌那指盤中翻黑後小漲008ai類股漲跌分歧coreweave反彈59輝達amd走弱戴爾遭巴克萊降評重挫68美國9月ppi月增13年增63創2022年來最大通膨升溫使市場再度押注聯準會升息",
+          "event_cluster_key": "event-c036234c6536777fb51b",
+          "published_time_bucket": "2026-10-15T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "聯準會",
+            "升息"
+          ],
+          "matched_subject": "聯準會",
+          "matched_action": "升息",
+          "matched_market_object": "聯準會",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 145
+        },
+        {
+          "story_id": "news-0b8a5e7cf0418876dc54",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Taiwan plans $4 bln Texas park to support Nvidia’s AI supply chain - Bloomberg",
+          "raw_title": "Taiwan plans $4 bln Texas park to support Nvidia’s AI supply chain - Bloomberg",
+          "normalized_fact": "Investing.com-- Taiwan plans to develop multiple industrial parks in the U.S. to strengthen the supply chain for artificial intelligence hardware makers, with each complex requiring investments of up to $4 billion, Bloomberg News reported on Friday, citing Taiwan's Economy Minister Kung Ming-hsin。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Investing.com-- Taiwan plans to develop multiple industrial parks in the U.S. to strengthen the supply chain for artificial intelligence hardware makers, with each complex requiring investments of up to $4 billion, Bloomberg News reported on Friday, citing Taiwan's Economy Minister Kung Ming-hsin.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/technology/ai/articles/taiwan-plans-4-bln-texas-030702909.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/technology/ai/articles/taiwan-plans-4-bln-texas-030702909.html?.tsrc=rss",
+          "published_at": "2026-10-16T03:07:02+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "nvidia",
+              "supply"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "nvidia",
+              "supply"
+            ],
+            "matched_subject": "nvidia",
+            "matched_action": "supply",
+            "matched_market_object": "nvidia",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:NVDA",
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "investingcomtaiwanplanstodevelopmultipleindustrialparksintheustostrengthenthesupplychainforartificialintelligencehardwaremakerswitheachcomplexrequiringinvestmentsofupto4billionbloombergnewsreportedonfridaycitingtaiwanseconomyministerkungminghsin",
+          "event_cluster_key": "event-fb580f50e3fca69f3bc7",
+          "published_time_bucket": "2026-10-16T03:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "nvidia",
+            "supply"
+          ],
+          "matched_subject": "nvidia",
+          "matched_action": "supply",
+          "matched_market_object": "nvidia",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 135
+        },
+        {
+          "story_id": "news-98ca25bcebf3c1d06d77",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "\"Even with accelerated localization, supply remains insufficient\" Continued Nvidia dependence amid China's AI chip shortage, including smuggling and overseas cloud utilization - https://economy.ac/",
+          "raw_title": "\"Even with accelerated localization, supply remains insufficient\" Continued Nvidia dependence amid China's AI chip shortage, including smuggling and overseas cloud utilization - https://economy.ac/",
+          "normalized_fact": "\"Even with accelerated localization, supply remains insufficient\" Continued Nvidia dependence amid China's AI chip shortage, including smuggling and overseas cloud utilization https://economy.ac/。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "\"Even with accelerated localization, supply remains insufficient\" Continued Nvidia dependence amid China's AI chip shortage, including smuggling and overseas cloud utilization https://economy.ac/",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiV0FVX3lxTE02TFRqdC1sTjdmcmhrZXVsdGtFN21ZdHhKcEZPa0VqNE5XUVNzSEltUWVaSF9pWDM2YXRLSVVVZEl5QU1reWpRVUcxZ3RPM3pQckJ5ZE9Wcw",
+          "url": "https://news.google.com/rss/articles/CBMiV0FVX3lxTE02TFRqdC1sTjdmcmhrZXVsdGtFN21ZdHhKcEZPa0VqNE5XUVNzSEltUWVaSF9pWDM2YXRLSVVVZEl5QU1reWpRVUcxZ3RPM3pQckJ5ZE9Wcw",
+          "published_at": "2026-10-15T03:27:27+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 3,
+          "published_local_date": "2026-10-14",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai",
+            "semiconductor"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "nvidia",
+              "supply"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "nvidia",
+              "supply"
+            ],
+            "matched_subject": "nvidia",
+            "matched_action": "supply",
+            "matched_market_object": "nvidia",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "tracked_ticker:NVDA"
+          ],
+          "freshness": "published",
+          "dedupe_key": "evenwithacceleratedlocalizationsupplyremainsinsufficientcontinuednvidiadependenceamidchinasaichipshortageincludingsmugglingandoverseascloudutilizationhttpseconomyac",
+          "event_cluster_key": "event-29e117621e2daddfd058",
+          "published_time_bucket": "2026-10-15T03:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "nvidia",
+            "supply"
+          ],
+          "matched_subject": "nvidia",
+          "matched_action": "supply",
+          "matched_market_object": "nvidia",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 120
+        },
+        {
+          "story_id": "news-5682c98a898509c4a0dc",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Asian stocks rise as tech bounces from rout, eyes on Warsh",
+          "raw_title": "Asian stocks rise as tech bounces from rout, eyes on Warsh",
+          "normalized_fact": "Most Asian markets bounced Friday after the previous day's tech rout fuelled by concerns over the AI boom, with traders also awaiting comments from Federal Reserve boss Kevin Warsh at the IMF's annual gathering.Traders are now awaiting comments at the International Monetary Fund's gathering in Bangkok, with hopes that he will give some insight into policymakers' thinking following this week's inflation-busting consumer inflation data。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Most Asian markets bounced Friday after the previous day's tech rout fuelled by concerns over the AI boom, with traders also awaiting comments from Federal Reserve boss Kevin Warsh at the IMF's annual gathering.Traders are now awaiting comments at the International Monetary Fund's gathering in Bangkok, with hopes that he will give some insight into policymakers' thinking following this week's inflation-busting consumer inflation data.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/markets/world-indices/articles/asian-stocks-rise-tech-bounces-020836295.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/world-indices/articles/asian-stocks-rise-tech-bounces-020836295.html?.tsrc=rss",
+          "published_at": "2026-10-16T02:08:36+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "macro",
+            "reason": "macro_subject_action",
+            "matched_terms": [
+              "inflation",
+              "data"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "inflation",
+              "data"
+            ],
+            "matched_subject": "inflation",
+            "matched_action": "data",
+            "matched_market_object": "inflation",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "mostasianmarketsbouncedfridayafterthepreviousdaystechroutfuelledbyconcernsovertheaiboomwithtradersalsoawaitingcommentsfromfederalreservebosskevinwarshattheimfsannualgatheringtradersarenowawaitingcommentsattheinternationalmonetaryfundsgatheringinbangkokwithhopesthathewillgivesomeinsightintopolicymakersthinkingfollowingthisweeksinflationbustingconsumerinflationdata",
+          "event_cluster_key": "event-0d87e557068a68369a95",
+          "published_time_bucket": "2026-10-16T02:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "inflation",
+            "data"
+          ],
+          "matched_subject": "inflation",
+          "matched_action": "data",
+          "matched_market_object": "inflation",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "story_id": "news-3a19271766a48e7bf0d1",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "US Dollar Technical Outlook: DXY, Treasury Yields Retreat Despite Hot CPI - FOREX.com",
+          "raw_title": "US Dollar Technical Outlook: DXY, Treasury Yields Retreat Despite Hot CPI - FOREX.com",
+          "normalized_fact": "US Dollar Technical Outlook: DXY, Treasury Yields Retreat Despite Hot CPI FOREX.com。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "US Dollar Technical Outlook: DXY, Treasury Yields Retreat Despite Hot CPI FOREX.com",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNOG5RaHgybjdFdWdidzNYMzRFQXBTVUY5ekZOZG1nSy1zeDAtTm8tem5mMlJyWllSYS0wbU0tYjd6dkNCNG1NQzYtR0NlaFNwSHgzNVFCQ1JoVjBmaS1xQ1dmTVNMQmdPMTRNNGRtWVZEQmRjZkZBSldWZ2hubXQzT3drS2UxM3htZTZieXVneFBheWNLT0ZGV01QSENidmJGblY1RmJTRUJzY0hrNlRRMUtFOW9rLXN5MEN5ZnRudTY2WmNQ",
+          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxNOG5RaHgybjdFdWdidzNYMzRFQXBTVUY5ekZOZG1nSy1zeDAtTm8tem5mMlJyWllSYS0wbU0tYjd6dkNCNG1NQzYtR0NlaFNwSHgzNVFCQ1JoVjBmaS1xQ1dmTVNMQmdPMTRNNGRtWVZEQmRjZkZBSldWZ2hubXQzT3drS2UxM3htZTZieXVneFBheWNLT0ZGV01QSENidmJGblY1RmJTRUJzY0hrNlRRMUtFOW9rLXN5MEN5ZnRudTY2WmNQ",
+          "published_at": "2026-10-15T15:58:07+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "recent_reference",
@@ -6696,104 +6608,6 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-1c1ce9adcc80d6e0c63a",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "〈美股盤後〉黃仁勳力挺CoreWeave 道瓊勁揚556點 台積電ADR跌近2%",
-          "raw_title": "〈美股盤後〉黃仁勳力挺CoreWeave 道瓊勁揚556點 台積電ADR跌近2%",
-          "normalized_fact": "美股週四收高，道瓊漲556.21點、標普500終結連3跌，那指盤中翻黑後小漲0.08%。 AI類股漲跌分歧，CoreWeave反彈5.9%，輝達、AMD走弱；戴爾遭巴克萊降評重挫6.8%。 美國9月PPI月增1.3%、年增6.3%創2022年來最大，通膨升溫使市場再度押注聯準會升息。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "美股週四收高，道瓊漲556.21點、標普500終結連3跌，那指盤中翻黑後小漲0.08%。 AI類股漲跌分歧，CoreWeave反彈5.9%，輝達、AMD走弱；戴爾遭巴克萊降評重挫6.8%。 美國9月PPI月增1.3%、年增6.3%創2022年來最大，通膨升溫使市場再度押注聯準會升息。",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6631442",
-          "url": "https://news.cnyes.com/news/id/6631442",
-          "published_at": "2026-10-15T21:44:31+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-15",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "聯準會",
-              "升息"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "聯準會",
-              "升息"
-            ],
-            "matched_subject": "聯準會",
-            "matched_action": "升息",
-            "matched_market_object": "聯準會",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:2330",
-            "tracked_ticker:NVDA",
-            "tracked_ticker:TSM",
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美股週四收高道瓊漲55621點標普500終結連3跌那指盤中翻黑後小漲008ai類股漲跌分歧coreweave反彈59輝達amd走弱戴爾遭巴克萊降評重挫68美國9月ppi月增13年增63創2022年來最大通膨升溫使市場再度押注聯準會升息",
-          "event_cluster_key": "event-c036234c6536777fb51b",
-          "published_time_bucket": "2026-10-15T21:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "聯準會",
-            "升息"
-          ],
-          "matched_subject": "聯準會",
-          "matched_action": "升息",
-          "matched_market_object": "聯準會",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-16T00:48:32.902907+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 42
-        },
-        {
           "story_id": "news-5020636cf7a3eff37ecd",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -6987,6 +6801,106 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 39
+        },
+        {
+          "story_id": "news-711307422ad19cd66883",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6630669",
+          "url": "https://news.cnyes.com/news/id/6630669",
+          "published_at": "2026-10-14T22:02:35+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 3,
+          "published_local_date": "2026-10-14",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "SOX",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
+          "event_cluster_key": "event-40d27feb65b9f7fa705b",
+          "published_time_bucket": "2026-10-14T22:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 3,
+          "inventory_saved_at": "2026-10-15T04:18:50.218690+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 34
         },
         {
           "story_id": "news-0cf0235ba60ea0881b79",
@@ -8306,6 +8220,99 @@
           "ranking_score": 27
         },
         {
+          "story_id": "news-5a467bce06bc97b434fd",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "台達電鄭平：三因素限制電力設施建置 供電缺口成AI發展關鍵挑戰",
+          "raw_title": "台達電鄭平：三因素限制電力設施建置 供電缺口成AI發展關鍵挑戰",
+          "normalized_fact": "台達電董事長鄭平表示，AI資料中心擴張推升全球用電，電力供應難追上AI成長，將成重要挑戰。 美國四大CSP資本支出估達2022年4.7倍，2028年資料中心新增用電44GW，電網僅增25GW。 台達電布局微電網、SOFC與SST；SOFC效率85%且明年量產，SST可轉800V直流電。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "台達電董事長鄭平表示，AI資料中心擴張推升全球用電，電力供應難追上AI成長，將成重要挑戰。 美國四大CSP資本支出估達2022年4.7倍，2028年資料中心新增用電44GW，電網僅增25GW。 台達電布局微電網、SOFC與SST；SOFC效率85%且明年量產，SST可轉800V直流電。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6630917",
+          "url": "https://news.cnyes.com/news/id/6630917",
+          "published_at": "2026-10-15T04:25:09+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "資本支出"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "資本支出"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "資本支出",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "台達電董事長鄭平表示ai資料中心擴張推升全球用電電力供應難追上ai成長將成重要挑戰美國四大csp資本支出估達2022年47倍2028年資料中心新增用電44gw電網僅增25gw台達電布局微電網sofc與sstsofc效率85且明年量產sst可轉800v直流電",
+          "event_cluster_key": "event-e1c6150d667e0cfcb097",
+          "published_time_bucket": "2026-10-15T04:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "資本支出"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "資本支出",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 2,
+          "inventory_saved_at": "2026-10-15T06:54:51.974341+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 27
+        },
+        {
           "story_id": "news-5c5c05d8271bb9d6a935",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -9505,12 +9512,12 @@
       "interest_graph": {
         "ticker_interest": {
           "2330": 4,
-          "TSM": 12,
-          "NVDA": 21
+          "NVDA": 24,
+          "TSM": 12
         },
         "sector_interest": {},
         "topic_interest": {
-          "oil": 11,
+          "oil": 10,
           "gold": 2,
           "iran": 3,
           "war": 3,
@@ -9577,13 +9584,13 @@
         "source_interest": {
           "tracked_ticker": {
             "2330": 4,
-            "TSM": 12,
-            "NVDA": 21
+            "NVDA": 24,
+            "TSM": 12
           },
           "research_candidate": {},
           "tracked_sector": {},
           "active_event": {
-            "oil": 11,
+            "oil": 10,
             "gold": 2,
             "iran": 3,
             "war": 3,
@@ -9592,14 +9599,14 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 52,
+      "excluded_count": 53,
       "exclusion_reasons": {
         "generic_official_filing": 20,
-        "incomplete_normalized_fact": 26,
-        "insufficient_market_relevance": 22,
+        "incomplete_normalized_fact": 24,
+        "insufficient_market_relevance": 24,
         "listicle_or_selection": 4,
         "market_scope_mismatch": 8,
-        "outside_calendar_window": 10,
+        "outside_calendar_window": 11,
         "outside_trading_session_window": 2
       },
       "status": "ready",
@@ -9612,21 +9619,21 @@
         "disabled_provider_count": 1,
         "fetched": 62,
         "normalized": 62,
-        "eligible": 10,
-        "excluded": 52,
-        "date_eligible_current": 50,
-        "date_excluded_current": 12,
+        "eligible": 9,
+        "excluded": 53,
+        "date_eligible_current": 49,
+        "date_excluded_current": 13,
         "date_exclusion_reasons_current": {
-          "outside_calendar_window": 10,
+          "outside_calendar_window": 11,
           "outside_trading_session_window": 2
         },
         "date_eligible_inventory": 91,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-16T04:23:18.672374+00:00",
-        "deduped": 10,
+        "reference_time": "2026-10-16T04:28:46.801891+00:00",
+        "deduped": 9,
         "publicly_ranked": 5,
-        "current_eligible": 10,
+        "current_eligible": 9,
         "inventory_considered": 91,
         "inventory_eligible": 51,
         "inventory_selected": 0,
@@ -9634,11 +9641,11 @@
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 52,
+        "filtered_story_count": 53,
         "fetched_story_count": 62,
         "normalized_story_count": 62,
-        "eligible_story_count": 10,
-        "deduped_story_count": 10,
+        "eligible_story_count": 9,
+        "deduped_story_count": 9,
         "ranked_story_count": 5
       },
       "inventory": {
@@ -9659,7 +9666,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 62,
-          "checked_at": "2026-10-16T04:23:18.672411+00:00"
+          "checked_at": "2026-10-16T04:28:46.801929+00:00"
         },
         {
           "provider": "sec",
@@ -9670,10 +9677,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-10-16T04:23:18.672411+00:00",
+          "checked_at": "2026-10-16T04:28:46.801929+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+          "last_success_at": "2026-10-16T04:28:46.801929+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9701,12 +9708,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-10-16T04:23:18.672411+00:00",
+          "checked_at": "2026-10-16T04:28:46.801929+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-10-16T04:23:18.672411+00:00",
+          "last_failure_at": "2026-10-16T04:28:46.801929+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9729,10 +9736,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-10-16T04:23:18.672411+00:00",
+          "checked_at": "2026-10-16T04:28:46.801929+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+          "last_success_at": "2026-10-16T04:28:46.801929+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9756,27 +9763,27 @@
           "status": "healthy",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 2,
-          "checked_at": "2026-10-16T04:23:18.672411+00:00",
+          "item_count": 1,
+          "checked_at": "2026-10-16T04:28:46.801929+00:00",
           "raw_item_count": 5,
-          "filtered_item_count": 2,
-          "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-10-16T04:28:46.801929+00:00",
           "last_failure_at": null,
           "stories_ingested": 2,
-          "stories_deduped": 2,
-          "ranked_count": 2,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
             "market": 2,
-            "tracked_ticker": 1
+            "tracked_ticker": 2
           },
           "funnel": {
             "fetched_count": 2,
             "normalized_count": 2,
             "market_compatible_count": 2,
-            "eligible_count": 2,
-            "excluded_count": 0,
-            "deduped_count": 2,
-            "ranked_count": 2
+            "eligible_count": 1,
+            "excluded_count": 1,
+            "deduped_count": 1,
+            "ranked_count": 1
           }
         },
         {
@@ -9788,10 +9795,10 @@
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
           "item_count": 2,
-          "checked_at": "2026-10-16T04:23:18.672411+00:00",
+          "checked_at": "2026-10-16T04:28:46.801929+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 2,
-          "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+          "last_success_at": "2026-10-16T04:28:46.801929+00:00",
           "last_failure_at": null,
           "stories_ingested": 6,
           "stories_deduped": 2,
@@ -9818,15 +9825,15 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
-          "item_count": 1,
-          "checked_at": "2026-10-16T04:23:18.672411+00:00",
+          "item_count": 2,
+          "checked_at": "2026-10-16T04:28:46.801929+00:00",
           "raw_item_count": 40,
-          "filtered_item_count": 1,
-          "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+          "filtered_item_count": 2,
+          "last_success_at": "2026-10-16T04:28:46.801929+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
           "stories_deduped": 6,
-          "ranked_count": 1,
+          "ranked_count": 2,
           "relevance_distribution": {
             "active_event": 7,
             "market": 40,
@@ -9839,47 +9846,47 @@
             "eligible_count": 6,
             "excluded_count": 34,
             "deduped_count": 6,
-            "ranked_count": 1
+            "ranked_count": 2
           }
         }
       ],
       "observability": {
         "stories_ingested": 62,
-        "stories_deduped": 10,
+        "stories_deduped": 9,
         "ranked_count": 5,
         "relevance_distribution": {
           "active_event": 7,
           "market": 62,
-          "tracked_ticker": 10
+          "tracked_ticker": 11
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+            "last_success_at": "2026-10-16T04:28:46.801929+00:00",
             "last_failure_at": null,
             "stories_ingested": 2,
-            "stories_deduped": 2,
-            "ranked_count": 2,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
               "market": 2,
-              "tracked_ticker": 1
+              "tracked_ticker": 2
             },
             "funnel": {
               "fetched_count": 2,
               "normalized_count": 2,
               "market_compatible_count": 2,
-              "eligible_count": 2,
-              "excluded_count": 0,
-              "deduped_count": 2,
-              "ranked_count": 2
+              "eligible_count": 1,
+              "excluded_count": 1,
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           },
           {
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-10-16T04:23:18.672411+00:00",
+            "last_failure_at": "2026-10-16T04:28:46.801929+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9897,11 +9904,11 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+            "last_success_at": "2026-10-16T04:28:46.801929+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
             "stories_deduped": 6,
-            "ranked_count": 1,
+            "ranked_count": 2,
             "relevance_distribution": {
               "active_event": 7,
               "market": 40,
@@ -9914,13 +9921,13 @@
               "eligible_count": 6,
               "excluded_count": 34,
               "deduped_count": 6,
-              "ranked_count": 1
+              "ranked_count": 2
             }
           },
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+            "last_success_at": "2026-10-16T04:28:46.801929+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9939,7 +9946,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+            "last_success_at": "2026-10-16T04:28:46.801929+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -9982,7 +9989,7 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-16T04:23:18.672411+00:00",
+            "last_success_at": "2026-10-16T04:28:46.801929+00:00",
             "last_failure_at": null,
             "stories_ingested": 6,
             "stories_deduped": 2,
