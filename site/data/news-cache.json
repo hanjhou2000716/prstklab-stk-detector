@@ -2,14 +2,17 @@
   "schema": 2,
   "markets": {
     "taiwan": {
-      "fetched_at": "2026-10-16T23:23:15.883530+00:00",
+      "fetched_at": "2026-10-16T23:28:37.840904+00:00",
       "stories": [
         {
-          "title": "1. 〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-          "url": "https://news.cnyes.com/news/id/6630669",
+          "title": "〈美股早盤〉AI疑慮壓抑晶片股、特斯拉撐盤 主要指數漲跌互現",
+          "url": "https://news.cnyes.com/news/id/6632278",
           "provider": "anue",
-          "source": "鉅亨網｜持股關聯",
-          "relevance": "holding",
+          "source": "鉅亨網｜市場焦點",
+          "relevance": "market",
+          "summary": "美股周五開盤漲跌互現，AI投資疑慮壓抑半導體與科技股，那指跌、費半重挫，台積電ADR跌4.60%。 特斯拉發表第二代Roadster與SpaceX推進器技術，股價走揚；蘋果iPhone Duo預購迅速售罄。 Fed未明確表態，交易員將10月升息押注降至約15%。",
+          "published_at": "2026-10-16T13:41:51+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6632278",
           "market_classification": {
             "market_scope": "cross_market",
             "taiwan_matches": [
@@ -18,14 +21,14 @@
             "us_matches": [
               "美股",
               "費半",
-              "cpi"
+              "fed"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
               "matched_term_count": 4,
-              "source_market_hint": null
+              "source_market_hint": "cross_market"
             }
           },
           "market_scope": "cross_market",
@@ -35,51 +38,100 @@
           "us_matches": [
             "美股",
             "費半",
-            "cpi"
+            "fed"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 4,
-            "source_market_hint": null
-          }
-        },
-        {
-          "title": "〈台積電法說〉Q3純益7630.64億元季增8% EPS29.43元續創單季新高",
-          "url": "https://news.cnyes.com/news/id/6631116",
-          "provider": "anue",
-          "source": "鉅亨網｜持股關聯",
-          "relevance": "holding",
-          "summary": "",
-          "published_at": "2026-10-15T06:01:21+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6631116",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台積電"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": null
-            }
+            "source_market_hint": "cross_market"
           },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台積電"
+          "story_id": "news-825c5294409d85bd406a",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "raw_title": "〈美股早盤〉AI疑慮壓抑晶片股、特斯拉撐盤 主要指數漲跌互現",
+          "normalized_fact": "美股周五開盤漲跌互現，AI投資疑慮壓抑半導體與科技股，那指跌、費半重挫，台積電ADR跌4.60%。 特斯拉發表第二代Roadster與SpaceX推進器技術，股價走揚；蘋果iPhone Duo預購迅速售罄。 Fed未明確表態，交易員將10月升息押注降至約15%。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": null,
+          "published_local_date": "",
+          "market": "cross_market",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai",
+            "semiconductor"
           ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": null
-          }
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "升息"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "升息"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "升息",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美股周五開盤漲跌互現ai投資疑慮壓抑半導體與科技股那指跌費半重挫台積電adr跌460特斯拉發表第二代roadster與spacex推進器技術股價走揚蘋果iphoneduo預購迅速售罄fed未明確表態交易員將10月升息押注降至約15",
+          "event_cluster_key": "event-003dd7d12061a0e42e63",
+          "published_time_bucket": "2026-10-16T13:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "升息"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "升息",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "title": "GSSI 發表 NX Control 行動應用 透過共用介面提升 GPR 資料管理效益",
@@ -904,21 +956,21 @@
           }
         },
         {
-          "title": "台積電ADR大漲帶動台股走強，買盤能擴散到AI供應鏈嗎？-孔明投資長 - CMoney投資網誌",
-          "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTFBDSVZzRVBMTTFvN3pzVkpaNGRXUUNxaTFiSWFCWERKVzIyVU15TzBNd3ZuNnJJRjlSTjBmVlNHTzZCeTBrZlY2bmhqeWtKY0lzZHpZRWFoMUZ1eFpDdDZsWXNzaHVvUzF0UXZVZjRaMTlwWUFXYWQxRldIV2tRZFE?oc=5",
-          "summary": "台積電ADR大漲帶動台股走強，買盤能擴散到AI供應鏈嗎？-孔明投資長 CMoney投資網誌",
+          "title": "加權指數跌破季線與四萬五，權值股與量能能否止穩？-子敏左側交易 - CMoney投資網誌",
+          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxOSDRCQWtzZkFZYUdfVUR1bWFGTS1yMGFrSWd2NWxWYzB4TUItaGxmdmJYbW1sb3pHUnF6dzlMdUpSQ3F2a3d0eTZUZTFVeDhUUXBQRGZuTTkxVXE5MXloal91dXYtVTl5d3JqMklGMWJpWGxkRWgyd1V6U25NcW5MRGt1bw?oc=5",
+          "summary": "加權指數跌破季線與四萬五，權值股與量能能否止穩？-子敏左側交易 CMoney投資網誌",
           "source": "Google News｜台股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-10-06T07:00:00+00:00",
+          "published_at": "2026-08-24T07:00:00+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
               "台股",
-              "台積電"
+              "加權指數"
             ],
             "us_matches": [],
             "global_matches": [],
@@ -932,7 +984,7 @@
           "market_scope": "taiwan",
           "taiwan_matches": [
             "台股",
-            "台積電"
+            "加權指數"
           ],
           "us_matches": [],
           "global_matches": [],
@@ -982,21 +1034,21 @@
           }
         },
         {
-          "title": "加權指數跌破季線與四萬五，權值股與量能能否止穩？-子敏左側交易 - CMoney投資網誌",
-          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxOSDRCQWtzZkFZYUdfVUR1bWFGTS1yMGFrSWd2NWxWYzB4TUItaGxmdmJYbW1sb3pHUnF6dzlMdUpSQ3F2a3d0eTZUZTFVeDhUUXBQRGZuTTkxVXE5MXloal91dXYtVTl5d3JqMklGMWJpWGxkRWgyd1V6U25NcW5MRGt1bw?oc=5",
-          "summary": "加權指數跌破季線與四萬五，權值股與量能能否止穩？-子敏左側交易 CMoney投資網誌",
+          "title": "台積電ADR大漲帶動台股走強，買盤能擴散到AI供應鏈嗎？-孔明投資長 - CMoney投資網誌",
+          "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTFBDSVZzRVBMTTFvN3pzVkpaNGRXUUNxaTFiSWFCWERKVzIyVU15TzBNd3ZuNnJJRjlSTjBmVlNHTzZCeTBrZlY2bmhqeWtKY0lzZHpZRWFoMUZ1eFpDdDZsWXNzaHVvUzF0UXZVZjRaMTlwWUFXYWQxRldIV2tRZFE?oc=5",
+          "summary": "台積電ADR大漲帶動台股走強，買盤能擴散到AI供應鏈嗎？-孔明投資長 CMoney投資網誌",
           "source": "Google News｜台股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-08-24T07:00:00+00:00",
+          "published_at": "2026-10-06T07:00:00+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
               "台股",
-              "加權指數"
+              "台積電"
             ],
             "us_matches": [],
             "global_matches": [],
@@ -1010,7 +1062,7 @@
           "market_scope": "taiwan",
           "taiwan_matches": [
             "台股",
-            "加權指數"
+            "台積電"
           ],
           "us_matches": [],
           "global_matches": [],
@@ -1480,128 +1532,6 @@
           }
         },
         {
-          "title": "AI前沿解密》從AI供應鏈走向價值創造 台灣產業下一步（朱玉昌） - 中時新聞網",
-          "url": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTFBiZllhQnhjcHJndWxtX2YtWDVIZW9ucUIxbWtLbng5bFhqVkh3QUpkR1IxQmY2RVAxRjlmSk1oWXZwVDhWZ1pSOE1abXhyQUlPZWFSaEg1aFJ5VU85bWJUcHI3MmV5aEU",
-          "summary": "AI前沿解密》從AI供應鏈走向價值創造 台灣產業下一步（朱玉昌） 中時新聞網",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-16T14:07:55+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股",
-              "台灣"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股",
-            "台灣"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "taiwan"
-          },
-          "story_id": "news-4212b0bb0cfaa6e20555",
-          "provider_name": "Google News",
-          "raw_title": "AI前沿解密》從AI供應鏈走向價值創造 台灣產業下一步（朱玉昌） - 中時新聞網",
-          "normalized_fact": "AI前沿解密》從AI供應鏈走向價值創造 台灣產業下一步（朱玉昌） 中時新聞網。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTFBiZllhQnhjcHJndWxtX2YtWDVIZW9ucUIxbWtLbng5bFhqVkh3QUpkR1IxQmY2RVAxRjlmSk1oWXZwVDhWZ1pSOE1abXhyQUlPZWFSaEg1aFJ5VU85bWJUcHI3MmV5aEU",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-16",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "ai前沿解密從ai供應鏈走向價值創造台灣產業下一步朱玉昌中時新聞網",
-          "event_cluster_key": "event-fa8e602f5e082bcdd570",
-          "published_time_bucket": "2026-10-16T14:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
           "title": "赴德州建AI供應鏈經部：每座園區投資估最高40億美元| 產經 - 中央社 CNA",
           "url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTE01cFhZOXlqRUg2WS03NGhIWXFJTm56dG5hV1dVaUU5NjN2Y3dmSU41SzlmYkRLWGFPOFFUQXFRYS1aaVgzU0ViY2F0VUwtc2xmZXA3THJOcGVteXROcnc",
           "summary": "赴德州建AI供應鏈經部：每座園區投資估最高40億美元| 產經 中央社 CNA",
@@ -1846,16 +1776,16 @@
           "ranking_score": 115
         },
         {
-          "title": "龔明鑫：台灣將赴美設多座園區 打造AI供應鏈基地 - 東森電視",
-          "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE9ZQWxaYVp1S1BUVW5xWG0tcV9ESl95Nkw2NFlTbE5BYXJwVmtPaW9HcTNjcS1uMDR0TldYeF9ERi1NX044SE04S1lUbkxWRmJRR014ZS1KNzJEUQ",
-          "summary": "龔明鑫：台灣將赴美設多座園區 打造AI供應鏈基地 東森電視",
+          "title": "AI前沿解密》從AI供應鏈走向價值創造 台灣產業下一步（朱玉昌） - 中時新聞網",
+          "url": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTFBiZllhQnhjcHJndWxtX2YtWDVIZW9ucUIxbWtLbng5bFhqVkh3QUpkR1IxQmY2RVAxRjlmSk1oWXZwVDhWZ1pSOE1abXhyQUlPZWFSaEg1aFJ5VU85bWJUcHI3MmV5aEU",
+          "summary": "AI前沿解密》從AI供應鏈走向價值創造 台灣產業下一步（朱玉昌） 中時新聞網",
           "source": "Google News｜台股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-10-16T06:24:00+00:00",
+          "published_at": "2026-10-16T14:07:55+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -1884,10 +1814,10 @@
             "matched_term_count": 2,
             "source_market_hint": "taiwan"
           },
-          "story_id": "news-19a7b75e385a675425a1",
+          "story_id": "news-4212b0bb0cfaa6e20555",
           "provider_name": "Google News",
-          "raw_title": "龔明鑫：台灣將赴美設多座園區 打造AI供應鏈基地 - 東森電視",
-          "normalized_fact": "龔明鑫：台灣將赴美設多座園區 打造AI供應鏈基地 東森電視。",
+          "raw_title": "AI前沿解密》從AI供應鏈走向價值創造 台灣產業下一步（朱玉昌） - 中時新聞網",
+          "normalized_fact": "AI前沿解密》從AI供應鏈走向價值創造 台灣產業下一步（朱玉昌） 中時新聞網。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -1897,7 +1827,7 @@
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE9ZQWxaYVp1S1BUVW5xWG0tcV9ESl95Nkw2NFlTbE5BYXJwVmtPaW9HcTNjcS1uMDR0TldYeF9ERi1NX044SE04S1lUbkxWRmJRR014ZS1KNzJEUQ",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTFBiZllhQnhjcHJndWxtX2YtWDVIZW9ucUIxbWtLbng5bFhqVkh3QUpkR1IxQmY2RVAxRjlmSk1oWXZwVDhWZ1pSOE1abXhyQUlPZWFSaEg1aFJ5VU85bWJUcHI3MmV5aEU",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "recent_reference",
@@ -1938,9 +1868,131 @@
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "龔明鑫台灣將赴美設多座園區打造ai供應鏈基地東森電視",
-          "event_cluster_key": "event-9bca43c4c8146eea61d7",
-          "published_time_bucket": "2026-10-16T06:00:00+00:00",
+          "dedupe_key": "ai前沿解密從ai供應鏈走向價值創造台灣產業下一步朱玉昌中時新聞網",
+          "event_cluster_key": "event-fa8e602f5e082bcdd570",
+          "published_time_bucket": "2026-10-16T14:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
+          "title": "台灣赴美打造AI供應鏈聚落 首站德州園區最高砸40億美元 - BigGo 財經",
+          "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTE1yZThHNndvbkUwWHJQNnBRcEkxZ2Vvd1VhV0x1akV1UjQxVUc2VjJOTlJ4bWFuNHJkX0tDOXdiQ3hMMjNrVmZYei1vX3NUTGxVcWgySzVsWVJ5VlJMQ21EY0hORUdSWmNKcGNkdHBNcWI1dFU1R1YwWU13",
+          "summary": "台灣赴美打造AI供應鏈聚落 首站德州園區最高砸40億美元 BigGo 財經",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-16T03:55:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股",
+              "台灣"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股",
+            "台灣"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "taiwan"
+          },
+          "story_id": "news-1dd6d3b42a56bf0a2372",
+          "provider_name": "Google News",
+          "raw_title": "台灣赴美打造AI供應鏈聚落 首站德州園區最高砸40億美元 - BigGo 財經",
+          "normalized_fact": "台灣赴美打造AI供應鏈聚落 首站德州園區最高砸40億美元 BigGo 財經。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiekFVX3lxTE1yZThHNndvbkUwWHJQNnBRcEkxZ2Vvd1VhV0x1akV1UjQxVUc2VjJOTlJ4bWFuNHJkX0tDOXdiQ3hMMjNrVmZYei1vX3NUTGxVcWgySzVsWVJ5VlJMQ21EY0hORUdSWmNKcGNkdHBNcWI1dFU1R1YwWU13",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "台灣赴美打造ai供應鏈聚落首站德州園區最高砸40億美元biggo財經",
+          "event_cluster_key": "event-1b43c16f3997a55bdaf8",
+          "published_time_bucket": "2026-10-16T03:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
@@ -7198,10 +7250,10 @@
           "ranking_score": 130
         }
       ],
-      "inventory_saved_at": "2026-10-16T23:23:15.883530+00:00"
+      "inventory_saved_at": "2026-10-16T23:28:37.840904+00:00"
     },
     "us": {
-      "fetched_at": "2026-10-16T23:23:15.883530+00:00",
+      "fetched_at": "2026-10-16T23:28:37.840904+00:00",
       "stories": [
         {
           "title": "8-K - NATIONAL RURAL UTILITIES COOPERATIVE FINANCE CORP /DC/ (0000070502) (Filer)",
@@ -7584,188 +7636,14 @@
           }
         },
         {
-          "title": "〈美股盤後〉VIX飆升！晶片、記憶體全面下殺 費半單週重挫逾11% 創逾1年半最慘",
-          "url": "https://news.cnyes.com/news/id/6632513",
+          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "url": "https://news.cnyes.com/news/id/6630669",
           "provider": "anue",
           "source": "鉅亨網｜市場焦點",
           "relevance": "market",
-          "summary": "美股週五收黑，那指跌2.15%、費半跌3.83%，市場憂AI回報、企業舉債擴張及中國競爭 CoreWeave慘跌近12%，全週重挫約25%；債務及相關財務義務已逾510億美元，融資成本受關注 油價因中東與俄烏供應風險走高，WTI本週漲10.7%；Fed10月按兵不動機率約82%",
-          "published_at": "2026-10-16T21:30:21+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6632513",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股",
-              "費半",
-              "fed"
-            ],
-            "global_matches": [
-              "wti"
-            ],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 4,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股",
-            "費半",
-            "fed"
-          ],
-          "global_matches": [
-            "wti"
-          ],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 4,
-            "source_market_hint": "us"
-          },
-          "story_id": "news-e89ff576a32fe3c2c63d",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "raw_title": "〈美股盤後〉VIX飆升！晶片、記憶體全面下殺 費半單週重挫逾11% 創逾1年半最慘",
-          "normalized_fact": "美股週五收黑，那指跌2.15%、費半跌3.83%，市場憂AI回報、企業舉債擴張及中國競爭 CoreWeave慘跌近12%，全週重挫約25%；債務及相關財務義務已逾510億美元，融資成本受關注 油價因中東與俄烏供應風險走高，WTI本週漲10.7%；Fed10月按兵不動機率約82%。",
-          "market_topic": "energy_geopolitics",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "description": "",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-16",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "SOX"
-          ],
-          "sectors": [],
-          "topics": [
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "energy",
-            "reason": "energy_subject_action",
-            "matched_terms": [
-              "wti",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "wti",
-              "供應"
-            ],
-            "matched_subject": "wti",
-            "matched_action": "供應",
-            "matched_market_object": "wti",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美股週五收黑那指跌215費半跌383市場憂ai回報企業舉債擴張及中國競爭coreweave慘跌近12全週重挫約25債務及相關財務義務已逾510億美元融資成本受關注油價因中東與俄烏供應風險走高wti本週漲107fed10月按兵不動機率約82",
-          "event_cluster_key": "event-948c2e6df341b4cdd1d8",
-          "published_time_bucket": "2026-10-16T21:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "wti",
-            "供應"
-          ],
-          "matched_subject": "wti",
-          "matched_action": "供應",
-          "matched_market_object": "wti",
-          "decision_value_class": "energy",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
-          "title": "AI股最好時光已過 巴克萊示警不再只漲不跌、選股看四條件",
-          "url": "https://news.cnyes.com/news/id/6632282",
-          "provider": "anue",
-          "source": "鉅亨網｜市場焦點",
-          "relevance": "market",
-          "summary": "巴克萊稱AI已非「只漲不跌」交易，投資人應更審慎選股、分散布局。\nCPI、PPI高於預期，推升聯準會再升息可能；中東緊張也帶動油價，布蘭特原油徘徊105美元。\n晶片股走弱、費半ETF自10月初跌約11%，巴克萊偏好財報前大型科技股與AI曝險較低的歐洲。",
-          "published_at": "2026-10-16T16:00:06+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6632282",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "費半",
-              "cpi",
-              "聯準會"
-            ],
-            "global_matches": [
-              "原油"
-            ],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 4,
-              "source_market_hint": null
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "費半",
-            "cpi",
-            "聯準會"
-          ],
-          "global_matches": [
-            "原油"
-          ],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 4,
-            "source_market_hint": null
-          }
-        },
-        {
-          "title": "〈美股早盤〉AI疑慮壓抑晶片股、特斯拉撐盤 主要指數漲跌互現",
-          "url": "https://news.cnyes.com/news/id/6632278",
-          "provider": "anue",
-          "source": "鉅亨網｜市場焦點",
-          "relevance": "market",
-          "summary": "美股周五開盤漲跌互現，AI投資疑慮壓抑半導體與科技股，那指跌、費半重挫，台積電ADR跌4.60%。 特斯拉發表第二代Roadster與SpaceX推進器技術，股價走揚；蘋果iPhone Duo預購迅速售罄。 Fed未明確表態，交易員將10月升息押注降至約15%。",
-          "published_at": "2026-10-16T13:41:51+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6632278",
+          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "published_at": "2026-10-14T22:02:35+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6630669",
           "market_classification": {
             "market_scope": "cross_market",
             "taiwan_matches": [
@@ -7773,14 +7651,16 @@
             ],
             "us_matches": [
               "美股",
+              "美國",
               "費半",
-              "fed"
+              "fed",
+              "cpi"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 4,
+              "matched_term_count": 6,
               "source_market_hint": "cross_market"
             }
           },
@@ -7790,22 +7670,24 @@
           ],
           "us_matches": [
             "美股",
+            "美國",
             "費半",
-            "fed"
+            "fed",
+            "cpi"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 4,
+            "matched_term_count": 6,
             "source_market_hint": "cross_market"
           },
-          "story_id": "news-825c5294409d85bd406a",
+          "story_id": "news-711307422ad19cd66883",
           "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "raw_title": "〈美股早盤〉AI疑慮壓抑晶片股、特斯拉撐盤 主要指數漲跌互現",
-          "normalized_fact": "美股周五開盤漲跌互現，AI投資疑慮壓抑半導體與科技股，那指跌、費半重挫，台積電ADR跌4.60%。 特斯拉發表第二代Roadster與SpaceX推進器技術，股價走揚；蘋果iPhone Duo預購迅速售罄。 Fed未明確表態，交易員將10月升息押注降至約15%。",
+          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
           "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
@@ -7824,11 +7706,14 @@
           "market": "cross_market",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "2330",
+            "SOX",
+            "TSM"
+          ],
           "sectors": [],
           "topics": [
-            "ai",
-            "semiconductor"
+            "ai"
           ],
           "event_classification": {
             "schema_version": "1.0",
@@ -7837,15 +7722,15 @@
             "reason": "fed_subject_action",
             "matched_terms": [
               "fed",
-              "升息"
+              "利率"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
               "fed",
-              "升息"
+              "利率"
             ],
             "matched_subject": "fed",
-            "matched_action": "升息",
+            "matched_action": "利率",
             "matched_market_object": "fed",
             "input_fields": [
               "description",
@@ -7857,18 +7742,18 @@
             "market:cross_market"
           ],
           "freshness": "published",
-          "dedupe_key": "美股周五開盤漲跌互現ai投資疑慮壓抑半導體與科技股那指跌費半重挫台積電adr跌460特斯拉發表第二代roadster與spacex推進器技術股價走揚蘋果iphoneduo預購迅速售罄fed未明確表態交易員將10月升息押注降至約15",
-          "event_cluster_key": "event-003dd7d12061a0e42e63",
-          "published_time_bucket": "2026-10-16T13:00:00+00:00",
+          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
+          "event_cluster_key": "event-40d27feb65b9f7fa705b",
+          "published_time_bucket": "2026-10-14T22:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
             "fed",
-            "升息"
+            "利率"
           ],
           "matched_subject": "fed",
-          "matched_action": "升息",
+          "matched_action": "利率",
           "matched_market_object": "fed",
           "decision_value_class": "macro",
           "quality_flags": [],
@@ -8265,6 +8150,44 @@
           }
         },
         {
+          "title": "First-half 2026 equity recap: Leadership comes in different forms - RBC Wealth Management",
+          "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxQbHRFbzNLbkhBZEhlcXgtcTBjZ2pUOVVNYUNCNDVjR1lmRVRVc0RReEJmbUwyRWJodU04OTFiUnZ0N3VvZ184aVc0cGJuUjZLd0VMYW5EeE9TRlZSTVQzZEdBbGhTdkpHZU5DZjdKQ0hBaWs1WGdHQ0NwdGZYM0V3NU1BMXJvaFZLQkhRX0RSSkVOUlR6Sld1Q2g1QmVMUVpHMFBNbngtR1FGV2hpcDBfWWp5MzFWTTc2?oc=5",
+          "summary": "First-half 2026 equity recap: Leadership comes in different forms RBC Wealth Management",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-07-01T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "us"
+          }
+        },
+        {
           "title": "Dow, S&P 500, Nasdaq Futures Mixed After S&P 500, Nasdaq Notch Record Highs: SPCX, NLST, PENG, WDC Stocks In Focus - TradingView",
           "url": "https://news.google.com/rss/articles/CBMi-wFBVV95cUxQb3BfU2FsQW5LNmhFemI5THZPaEs0WWVWek42SGl0YXl4MEIyeURmcVdBbzhiQm82NHRSMFROLW1aYmR2ME4tdUdPNHpKdURta1VuOTA0RnB2X1U3czNncUkxd0FWd09pNlZlcHBHbEdDUTB1TUJvUHI4NlY0VGxtRnZnbjNEb0hzeF96bEJXRmFkSWlWeGxpU0lXdkNlS2RWbTVKTnR2elZZVlA4NDVuNEVzWkx5U254VWNlTEhvMlIxVmxTSm9LeTRHcGNydTVmWnQ2LW0wd3lfNjBwc1pZS2hNa2NnaVYwOU93VDFhdXpmeV9FWWpxeU4wQQ?oc=5",
           "summary": "Dow, S&P 500, Nasdaq Futures Mixed After S&P 500, Nasdaq Notch Record Highs: SPCX, NLST, PENG, WDC Stocks In Focus TradingView",
@@ -8393,52 +8316,6 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 3,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "Dow, S&P 500, Nasdaq Futures Dip As Bond Yields Bite And Trump-Xi Meet Grabs Spotlight: Why META, MCD, GOOG, U Stocks Are Trending - TradingView",
-          "url": "https://news.google.com/rss/articles/CBMikwJBVV95cUxQcUw0M3BESEdNbDMyYmpDZlJ2V3U0ajFDMlRQV1RTT0hOdnVsWkswRkxtSWhmRklXeEJMOUxVRGNhS0hnOUN3SmVTRVdTWjJ0T3RaMkc2eDRfYzRTM0JOb3UxNlBWWVpGLS1tZG03c1dyZEthUGNwZmZGbTJNdkNQS3lhMGY1SVlEd0RJb3VGU0JtMldWUUZGaHlHdEFfa1I3Wm51N1JmaFFETkIyV1lKcGo0VERlNG51RkE0WlJ4eVl1NGltbzRpWS13Skh6SWN4VC13bV9tb2ZmR19oSGc4YXNJRjctT0ZteUJaM0xtUVVrWWVUWE5wRU5XdjZoNFBOdGItWEJTbGxLa2JKaDFKQVBKTQ?oc=5",
-          "summary": "Dow, S&P 500, Nasdaq Futures Dip As Bond Yields Bite And Trump-Xi Meet Grabs Spotlight: Why META, MCD, GOOG, U Stocks Are Trending TradingView",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-09-24T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股",
-              "nasdaq",
-              "s&p 500",
-              "trump",
-              "meta"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 5,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股",
-            "nasdaq",
-            "s&p 500",
-            "trump",
-            "meta"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 5,
             "source_market_hint": "us"
           }
         },
@@ -14632,7 +14509,7 @@
           "ranking_score": 115
         }
       ],
-      "inventory_saved_at": "2026-10-16T23:23:15.883530+00:00"
+      "inventory_saved_at": "2026-10-16T23:28:37.840904+00:00"
     }
   }
 }
