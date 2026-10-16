@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "d88f9396fa0e8827",
-  "snapshot_id": "news-0d1840dbfc1e4ee9",
+  "market_snapshot_id": "0a269771c5a3108e",
+  "snapshot_id": "news-a1ea61248867add3",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -535,15 +535,15 @@
           "ranking_score": 125
         },
         {
-          "story_id": "news-711307422ad19cd66883",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
-          "market_topic": "rates_fx",
+          "story_id": "news-b840feae5c675bc5decb",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "台積電航母出海！龔明鑫：集資1300億打造德州AI供應鏈園區 - 自由財經",
+          "raw_title": "台積電航母出海！龔明鑫：集資1300億打造德州AI供應鏈園區 - 自由財經",
+          "normalized_fact": "台積電航母出海，龔明鑫：集資1300億打造德州AI供應鏈園區 自由財經。",
+          "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -551,23 +551,22 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "summary": "台積電航母出海！龔明鑫：集資1300億打造德州AI供應鏈園區 自由財經",
           "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6630669",
-          "url": "https://news.cnyes.com/news/id/6630669",
-          "published_at": "2026-10-14T22:02:35+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTFBMcG9RcW1XdkJZdTI5MDBGVXN2MlB2N0JxSVY4VmN3QzRxXzRHV3dlR2hhSmRvSFVKV0FBdThDME9ENlh1cGE2bXlLMWpVNW8zNjFQb3BiVlc4WVRyOUFv0gFkQVVfeXFMT3ZkUWxCVExSWkdqaW8xM1dUWTNPOXhQZHhMR0Q4WDNnaGpuSVl2ODlPcUtQRGJseDFRUERPTGlrdXJjT0dBZ1RtLUFwcmZ2Y3p4NDktNkJCZ0d6QjFGQTZ5a0ExMA",
+          "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTFBMcG9RcW1XdkJZdTI5MDBGVXN2MlB2N0JxSVY4VmN3QzRxXzRHV3dlR2hhSmRvSFVKV0FBdThDME9ENlh1cGE2bXlLMWpVNW8zNjFQb3BiVlc4WVRyOUFv0gFkQVVfeXFMT3ZkUWxCVExSWkdqaW8xM1dUWTNPOXhQZHhMR0Q4WDNnaGpuSVl2ODlPcUtQRGJseDFRUERPTGlrdXJjT0dBZ1RtLUFwcmZ2Y3p4NDktNkJCZ0d6QjFGQTZ5a0ExMA",
+          "published_at": "2026-10-16T09:28:03+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
+          "date_eligibility_status": "current",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-15",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
           "entities": [
             "2330",
-            "SOX",
             "TSM"
           ],
           "sectors": [],
@@ -577,20 +576,20 @@
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
             "matched_terms": [
-              "fed",
-              "利率"
+              "ai",
+              "供應"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "fed",
-              "利率"
+              "ai",
+              "供應"
             ],
-            "matched_subject": "fed",
-            "matched_action": "利率",
-            "matched_market_object": "fed",
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
             "input_fields": [
               "description",
               "summary",
@@ -598,32 +597,31 @@
             ]
           },
           "relevance_reasons": [
-            "market:cross_market",
+            "market:taiwan",
             "tracked_ticker:2330",
-            "tracked_ticker:TSM",
-            "market:taiwan"
+            "tracked_ticker:TSM"
           ],
           "freshness": "published",
-          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
-          "event_cluster_key": "event-40d27feb65b9f7fa705b",
-          "published_time_bucket": "2026-10-14T22:00:00+00:00",
+          "dedupe_key": "台積電航母出海龔明鑫集資1300億打造德州ai供應鏈園區自由財經",
+          "event_cluster_key": "event-0cc12314b12a9af39110",
+          "published_time_bucket": "2026-10-16T09:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "fed",
-            "利率"
+            "ai",
+            "供應"
           ],
-          "matched_subject": "fed",
-          "matched_action": "利率",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "鉅亨網｜持股關聯",
+          "source": "Google News｜台股線索",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -632,7 +630,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 140
+          "ranking_score": 125
         },
         {
           "story_id": "news-5b93824e19cbf9b0cf68",
@@ -1017,15 +1015,15 @@
           "ranking_score": 125
         },
         {
-          "story_id": "news-711307422ad19cd66883",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
-          "market_topic": "rates_fx",
+          "story_id": "news-b840feae5c675bc5decb",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "台積電航母出海！龔明鑫：集資1300億打造德州AI供應鏈園區 - 自由財經",
+          "raw_title": "台積電航母出海！龔明鑫：集資1300億打造德州AI供應鏈園區 - 自由財經",
+          "normalized_fact": "台積電航母出海，龔明鑫：集資1300億打造德州AI供應鏈園區 自由財經。",
+          "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -1033,23 +1031,22 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "summary": "台積電航母出海！龔明鑫：集資1300億打造德州AI供應鏈園區 自由財經",
           "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6630669",
-          "url": "https://news.cnyes.com/news/id/6630669",
-          "published_at": "2026-10-14T22:02:35+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTFBMcG9RcW1XdkJZdTI5MDBGVXN2MlB2N0JxSVY4VmN3QzRxXzRHV3dlR2hhSmRvSFVKV0FBdThDME9ENlh1cGE2bXlLMWpVNW8zNjFQb3BiVlc4WVRyOUFv0gFkQVVfeXFMT3ZkUWxCVExSWkdqaW8xM1dUWTNPOXhQZHhMR0Q4WDNnaGpuSVl2ODlPcUtQRGJseDFRUERPTGlrdXJjT0dBZ1RtLUFwcmZ2Y3p4NDktNkJCZ0d6QjFGQTZ5a0ExMA",
+          "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTFBMcG9RcW1XdkJZdTI5MDBGVXN2MlB2N0JxSVY4VmN3QzRxXzRHV3dlR2hhSmRvSFVKV0FBdThDME9ENlh1cGE2bXlLMWpVNW8zNjFQb3BiVlc4WVRyOUFv0gFkQVVfeXFMT3ZkUWxCVExSWkdqaW8xM1dUWTNPOXhQZHhMR0Q4WDNnaGpuSVl2ODlPcUtQRGJseDFRUERPTGlrdXJjT0dBZ1RtLUFwcmZ2Y3p4NDktNkJCZ0d6QjFGQTZ5a0ExMA",
+          "published_at": "2026-10-16T09:28:03+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
+          "date_eligibility_status": "current",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-15",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
           "entities": [
             "2330",
-            "SOX",
             "TSM"
           ],
           "sectors": [],
@@ -1059,20 +1056,20 @@
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
             "matched_terms": [
-              "fed",
-              "利率"
+              "ai",
+              "供應"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "fed",
-              "利率"
+              "ai",
+              "供應"
             ],
-            "matched_subject": "fed",
-            "matched_action": "利率",
-            "matched_market_object": "fed",
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
             "input_fields": [
               "description",
               "summary",
@@ -1080,32 +1077,31 @@
             ]
           },
           "relevance_reasons": [
-            "market:cross_market",
+            "market:taiwan",
             "tracked_ticker:2330",
-            "tracked_ticker:TSM",
-            "market:taiwan"
+            "tracked_ticker:TSM"
           ],
           "freshness": "published",
-          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
-          "event_cluster_key": "event-40d27feb65b9f7fa705b",
-          "published_time_bucket": "2026-10-14T22:00:00+00:00",
+          "dedupe_key": "台積電航母出海龔明鑫集資1300億打造德州ai供應鏈園區自由財經",
+          "event_cluster_key": "event-0cc12314b12a9af39110",
+          "published_time_bucket": "2026-10-16T09:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "fed",
-            "利率"
+            "ai",
+            "供應"
           ],
-          "matched_subject": "fed",
-          "matched_action": "利率",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "鉅亨網｜持股關聯",
+          "source": "Google News｜台股線索",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -1114,7 +1110,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 140
+          "ranking_score": 125
         },
         {
           "story_id": "news-5b93824e19cbf9b0cf68",
@@ -4649,17 +4645,15 @@
       ],
       "source_diversity": {
         "schema_version": "1.0",
-        "status": "multi_source",
-        "cross_checked": true,
+        "status": "single_source",
+        "cross_checked": false,
         "minimum_required": 2,
-        "independent_source_count": 2,
-        "provider_count": 2,
+        "independent_source_count": 1,
+        "provider_count": 1,
         "provider_ids": [
-          "anue",
           "google_news"
         ],
         "source_domains": [
-          "news.cnyes.com",
           "news.google.com"
         ],
         "supporting_source_count": 0,
@@ -4669,16 +4663,16 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 21,
-          "TSM": 21,
-          "NVDA": 7
+          "2330": 20,
+          "TSM": 20,
+          "NVDA": 5
         },
         "sector_interest": {},
         "topic_interest": {
           "石油": 1
         },
         "market_interest": {
-          "taiwan": 110
+          "taiwan": 106
         },
         "context": {
           "tracked_tickers": [
@@ -4737,9 +4731,9 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 21,
-            "TSM": 21,
-            "NVDA": 7
+            "2330": 20,
+            "TSM": 20,
+            "NVDA": 5
           },
           "research_candidate": {},
           "tracked_sector": {},
@@ -4749,12 +4743,11 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 34,
+      "excluded_count": 32,
       "exclusion_reasons": {
         "incomplete_normalized_fact": 2,
-        "insufficient_market_relevance": 28,
-        "market_scope_mismatch": 2,
-        "non_investment_content": 2,
+        "insufficient_market_relevance": 20,
+        "market_scope_mismatch": 8,
         "outside_calendar_window": 15,
         "outside_trading_session_window": 2
       },
@@ -4766,33 +4759,33 @@
         "successful_provider_count": 5,
         "failed_provider_count": 0,
         "disabled_provider_count": 0,
-        "fetched": 42,
-        "normalized": 42,
+        "fetched": 40,
+        "normalized": 40,
         "eligible": 8,
-        "excluded": 34,
-        "date_eligible_current": 25,
+        "excluded": 32,
+        "date_eligible_current": 23,
         "date_excluded_current": 17,
         "date_exclusion_reasons_current": {
           "outside_calendar_window": 15,
           "outside_trading_session_window": 2
         },
-        "date_eligible_inventory": 68,
+        "date_eligible_inventory": 66,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-16T09:08:28.200427+00:00",
+        "reference_time": "2026-10-16T10:19:04.871378+00:00",
         "deduped": 8,
         "publicly_ranked": 5,
         "current_eligible": 8,
-        "inventory_considered": 68,
+        "inventory_considered": 66,
         "inventory_eligible": 51,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 34,
-        "fetched_story_count": 42,
-        "normalized_story_count": 42,
+        "filtered_story_count": 32,
+        "fetched_story_count": 40,
+        "normalized_story_count": 40,
         "eligible_story_count": 8,
         "deduped_story_count": 8,
         "ranked_story_count": 5
@@ -4801,7 +4794,7 @@
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 68,
+        "considered": 66,
         "eligible": 51,
         "selected": 0,
         "target_count": 5,
@@ -4814,8 +4807,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 42,
-          "checked_at": "2026-10-16T09:08:28.200486+00:00"
+          "item_count": 40,
+          "checked_at": "2026-10-16T10:19:04.871415+00:00"
         },
         {
           "provider": "twse",
@@ -4826,10 +4819,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-10-16T09:08:28.200486+00:00",
+          "checked_at": "2026-10-16T10:19:04.871415+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+          "last_success_at": "2026-10-16T10:19:04.871415+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4854,10 +4847,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-10-16T09:08:28.200486+00:00",
+          "checked_at": "2026-10-16T10:19:04.871415+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+          "last_success_at": "2026-10-16T10:19:04.871415+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4878,30 +4871,28 @@
           "key": "news_taiwan_anue",
           "legacy_key": "official_news_taiwan_anue",
           "label": "anue market news",
-          "status": "healthy",
+          "status": "no_event",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 1,
-          "checked_at": "2026-10-16T09:08:28.200486+00:00",
+          "item_count": 0,
+          "checked_at": "2026-10-16T10:19:04.871415+00:00",
+          "data_gap": "filtered_no_market_match",
           "raw_item_count": 5,
-          "filtered_item_count": 1,
-          "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+          "filtered_item_count": 0,
+          "last_success_at": "2026-10-16T10:19:04.871415+00:00",
           "last_failure_at": null,
-          "stories_ingested": 2,
-          "stories_deduped": 1,
-          "ranked_count": 1,
-          "relevance_distribution": {
-            "market": 2,
-            "tracked_ticker": 2
-          },
+          "stories_ingested": 0,
+          "stories_deduped": 0,
+          "ranked_count": 0,
+          "relevance_distribution": {},
           "funnel": {
-            "fetched_count": 2,
-            "normalized_count": 2,
-            "market_compatible_count": 2,
-            "eligible_count": 1,
-            "excluded_count": 1,
-            "deduped_count": 1,
-            "ranked_count": 1
+            "fetched_count": 0,
+            "normalized_count": 0,
+            "market_compatible_count": 0,
+            "eligible_count": 0,
+            "excluded_count": 0,
+            "deduped_count": 0,
+            "ranked_count": 0
           }
         },
         {
@@ -4913,24 +4904,24 @@
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
           "item_count": 0,
-          "checked_at": "2026-10-16T09:08:28.200486+00:00",
+          "checked_at": "2026-10-16T10:19:04.871415+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+          "last_success_at": "2026-10-16T10:19:04.871415+00:00",
           "last_failure_at": null,
-          "stories_ingested": 9,
+          "stories_ingested": 6,
           "stories_deduped": 0,
           "ranked_count": 0,
           "relevance_distribution": {
-            "market": 9,
+            "market": 6,
             "tracked_ticker": 1
           },
           "funnel": {
             "fetched_count": 10,
-            "normalized_count": 9,
-            "market_compatible_count": 9,
+            "normalized_count": 6,
+            "market_compatible_count": 6,
             "eligible_count": 0,
-            "excluded_count": 9,
+            "excluded_count": 6,
             "deduped_count": 0,
             "ranked_count": 0
           },
@@ -4944,87 +4935,84 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
-          "item_count": 4,
-          "checked_at": "2026-10-16T09:08:28.200486+00:00",
+          "item_count": 5,
+          "checked_at": "2026-10-16T10:19:04.871415+00:00",
           "raw_item_count": 30,
-          "filtered_item_count": 4,
-          "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+          "filtered_item_count": 5,
+          "last_success_at": "2026-10-16T10:19:04.871415+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
-          "stories_deduped": 7,
-          "ranked_count": 4,
+          "stories_deduped": 8,
+          "ranked_count": 5,
           "relevance_distribution": {
             "market": 30,
-            "tracked_ticker": 6
+            "tracked_ticker": 7
           },
           "funnel": {
             "fetched_count": 30,
             "normalized_count": 30,
             "market_compatible_count": 30,
-            "eligible_count": 7,
-            "excluded_count": 23,
-            "deduped_count": 7,
-            "ranked_count": 4
+            "eligible_count": 8,
+            "excluded_count": 22,
+            "deduped_count": 8,
+            "ranked_count": 5
           }
         }
       ],
       "observability": {
-        "stories_ingested": 42,
+        "stories_ingested": 40,
         "stories_deduped": 8,
         "ranked_count": 5,
         "relevance_distribution": {
-          "market": 42,
-          "tracked_ticker": 9
+          "market": 40,
+          "tracked_ticker": 8
         },
         "providers": [
           {
             "provider": "anue",
-            "status": "healthy",
-            "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+            "status": "no_event",
+            "last_success_at": "2026-10-16T10:19:04.871415+00:00",
             "last_failure_at": null,
-            "stories_ingested": 2,
-            "stories_deduped": 1,
-            "ranked_count": 1,
-            "relevance_distribution": {
-              "market": 2,
-              "tracked_ticker": 2
-            },
+            "stories_ingested": 0,
+            "stories_deduped": 0,
+            "ranked_count": 0,
+            "relevance_distribution": {},
             "funnel": {
-              "fetched_count": 2,
-              "normalized_count": 2,
-              "market_compatible_count": 2,
-              "eligible_count": 1,
-              "excluded_count": 1,
-              "deduped_count": 1,
-              "ranked_count": 1
+              "fetched_count": 0,
+              "normalized_count": 0,
+              "market_compatible_count": 0,
+              "eligible_count": 0,
+              "excluded_count": 0,
+              "deduped_count": 0,
+              "ranked_count": 0
             }
           },
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+            "last_success_at": "2026-10-16T10:19:04.871415+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
-            "stories_deduped": 7,
-            "ranked_count": 4,
+            "stories_deduped": 8,
+            "ranked_count": 5,
             "relevance_distribution": {
               "market": 30,
-              "tracked_ticker": 6
+              "tracked_ticker": 7
             },
             "funnel": {
               "fetched_count": 30,
               "normalized_count": 30,
               "market_compatible_count": 30,
-              "eligible_count": 7,
-              "excluded_count": 23,
-              "deduped_count": 7,
-              "ranked_count": 4
+              "eligible_count": 8,
+              "excluded_count": 22,
+              "deduped_count": 8,
+              "ranked_count": 5
             }
           },
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+            "last_success_at": "2026-10-16T10:19:04.871415+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5043,7 +5031,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+            "last_success_at": "2026-10-16T10:19:04.871415+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5064,18 +5052,18 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 1,
+            "stories_ingested": 4,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 1
+              "market": 4
             },
             "funnel": {
-              "fetched_count": 1,
-              "normalized_count": 1,
+              "fetched_count": 4,
+              "normalized_count": 4,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 1,
+              "excluded_count": 4,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -5083,21 +5071,21 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+            "last_success_at": "2026-10-16T10:19:04.871415+00:00",
             "last_failure_at": null,
-            "stories_ingested": 9,
+            "stories_ingested": 6,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 9,
+              "market": 6,
               "tracked_ticker": 1
             },
             "funnel": {
               "fetched_count": 10,
-              "normalized_count": 9,
-              "market_compatible_count": 9,
+              "normalized_count": 6,
+              "market_compatible_count": 6,
               "eligible_count": 0,
-              "excluded_count": 9,
+              "excluded_count": 6,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -5324,101 +5312,6 @@
       ],
       "stories": [
         {
-          "story_id": "news-dcbefee92b77a5acfd0f",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "3 AI Semiconductor Stocks Riding The Chip Supply Squeeze",
-          "raw_title": "3 AI Semiconductor Stocks Riding The Chip Supply Squeeze",
-          "normalized_fact": "AI chips moved from buzzword to headline driver when TSMC reported about NT$763.1b in Q3 net profit and confirmed that demand for advanced processors is running ahead of what can currently be built. That kind of supply squeeze attracts capital, but it can also punish late or poorly chosen bets. This piece walks through 3 stocks exposed to that same AI news wave so you can judge where the risk and potential opportunity might sit for you. The three stocks covered next are only a sample of what。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "AI chips moved from buzzword to headline driver when TSMC reported about NT$763.1b in Q3 net profit and confirmed that demand for advanced processors is running ahead of what can currently be built. That kind of supply squeeze attracts capital, but it can also punish late or poorly chosen bets. This piece walks through 3 stocks exposed to that same AI news wave so you can judge where the risk and potential opportunity might sit for you. The three stocks covered next are only a sample of what...",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/technology/ai/articles/3-ai-semiconductor-stocks-riding-061507826.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/technology/ai/articles/3-ai-semiconductor-stocks-riding-061507826.html?.tsrc=rss",
-          "published_at": "2026-10-16T06:15:07+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-16",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "tsmc",
-              "supply"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "tsmc",
-              "supply"
-            ],
-            "matched_subject": "tsmc",
-            "matched_action": "supply",
-            "matched_market_object": "tsmc",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:TSM"
-          ],
-          "freshness": "published",
-          "dedupe_key": "aichipsmovedfrombuzzwordtoheadlinedriverwhentsmcreportedaboutnt7631binq3netprofitandconfirmedthatdemandforadvancedprocessorsisrunningaheadofwhatcancurrentlybebuiltthatkindofsupplysqueezeattractscapitalbutitcanalsopunishlateorpoorlychosenbetsthispiecewalksthrough3stocksexposedtothatsameainewswavesoyoucanjudgewheretheriskandpotentialopportunitymightsitforyouthethreestockscoverednextareonlyasampleofwhat",
-          "event_cluster_key": "event-9bca43c4c8146eea61d7",
-          "published_time_bucket": "2026-10-16T06:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "tsmc",
-            "supply"
-          ],
-          "matched_subject": "tsmc",
-          "matched_action": "supply",
-          "matched_market_object": "tsmc",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 135
-        },
-        {
           "story_id": "news-9788ea0f83bf231e7f61",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -5609,15 +5502,15 @@
           "ranking_score": 130
         },
         {
-          "story_id": "news-5ccc5eeed9b0391f22d6",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Asian stocks rise as tech bounces from rout, Warsh upbeat on AI",
-          "raw_title": "Asian stocks rise as tech bounces from rout, Warsh upbeat on AI",
-          "normalized_fact": "Most Asian markets bounced on Friday after the previous day's tech rout fuelled by concerns over the AI boom, which Federal Reserve boss Kevin Warsh said offered huge benefits to the global economy.At an event at the IMF-World Bank Annual Meetings in Bangkok, he said the AI investment boom would drive prices up in the short term, but \"there really is, I think, a huge benefit to the global economy, to the US economy over the horizon\"。",
-          "market_topic": "semiconductor_ai",
+          "story_id": "news-f0b605258eafe5ac244f",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Gold Prices Rise as Lower US Treasury Yields and Weaker Dollar Support Precious Metals - Yahoo Finance",
+          "raw_title": "Gold Prices Rise as Lower US Treasury Yields and Weaker Dollar Support Precious Metals - Yahoo Finance",
+          "normalized_fact": "Gold Prices Rise as Lower US Treasury Yields and Weaker Dollar Support Precious Metals Yahoo Finance。",
+          "market_topic": "company_industry",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5625,11 +5518,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "Most Asian markets bounced on Friday after the previous day's tech rout fuelled by concerns over the AI boom, which Federal Reserve boss Kevin Warsh said offered huge benefits to the global economy.At an event at the IMF-World Bank Annual Meetings in Bangkok, he said the AI investment boom would drive prices up in the short term, but \"there really is, I think, a huge benefit to the global economy, to the US economy over the horizon\".",
+          "summary": "Gold Prices Rise as Lower US Treasury Yields and Weaker Dollar Support Precious Metals Yahoo Finance",
           "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/world-indices/articles/asian-stocks-rise-tech-bounces-020836295.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/world-indices/articles/asian-stocks-rise-tech-bounces-020836295.html?.tsrc=rss",
-          "published_at": "2026-10-16T08:22:43+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxNT2RZenRjYVptbmQyak9SR0UybHlFWWVxSHpkNEMyOTRVak1YaVQ0VXNhNEpmRTNzdnM0c2cyTktJZzhxaGZZSk5fRk1VZ0tvaF9reFlUMGkxakNhdkxTSVUyeHVOaWtrZE10NzBHd0ZqUzV4Nm1mYTZ3RkRKeU9rVkFBNHB2LWMwR1I1RFl3ZWdMblNkVFRmTGktMA",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxNT2RZenRjYVptbmQyak9SR0UybHlFWWVxSHpkNEMyOTRVak1YaVQ0VXNhNEpmRTNzdnM0c2cyTktJZzhxaGZZSk5fRk1VZ0tvaF9reFlUMGkxakNhdkxTSVUyeHVOaWtrZE10NzBHd0ZqUzV4Nm1mYTZ3RkRKeU9rVkFBNHB2LWMwR1I1RFl3ZWdMblNkVFRmTGktMA",
+          "published_at": "2026-10-16T09:05:17+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -5641,9 +5534,7 @@
           "tickers": [],
           "entities": [],
           "sectors": [],
-          "topics": [
-            "ai"
-          ],
+          "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
@@ -5662,12 +5553,13 @@
             ]
           },
           "relevance_reasons": [
-            "market:us"
+            "market:us",
+            "active_event:gold"
           ],
           "freshness": "published",
-          "dedupe_key": "mostasianmarketsbouncedonfridayafterthepreviousdaystechroutfuelledbyconcernsovertheaiboomwhichfederalreservebosskevinwarshsaidofferedhugebenefitstotheglobaleconomyataneventattheimfworldbankannualmeetingsinbangkokhesaidtheaiinvestmentboomwoulddrivepricesupintheshorttermbuttherereallyisithinkahugebenefittotheglobaleconomytotheuseconomyoverthehorizon",
-          "event_cluster_key": "event-3582c00aaf21e08fec42",
-          "published_time_bucket": "2026-10-16T08:00:00+00:00",
+          "dedupe_key": "goldpricesriseaslowerustreasuryyieldsandweakerdollarsupportpreciousmetalsyahoofinance",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-10-16T09:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
@@ -5681,7 +5573,7 @@
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Yahoo Finance",
+          "source": "Google News｜美股線索",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -5690,7 +5582,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 130
+          "ranking_score": 120
         },
         {
           "story_id": "news-7a1326e42f01c9693814",
@@ -5775,19 +5667,17 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        }
-      ],
-      "editorial_candidates": [
+        },
         {
-          "story_id": "news-dcbefee92b77a5acfd0f",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "3 AI Semiconductor Stocks Riding The Chip Supply Squeeze",
-          "raw_title": "3 AI Semiconductor Stocks Riding The Chip Supply Squeeze",
-          "normalized_fact": "AI chips moved from buzzword to headline driver when TSMC reported about NT$763.1b in Q3 net profit and confirmed that demand for advanced processors is running ahead of what can currently be built. That kind of supply squeeze attracts capital, but it can also punish late or poorly chosen bets. This piece walks through 3 stocks exposed to that same AI news wave so you can judge where the risk and potential opportunity might sit for you. The three stocks covered next are only a sample of what。",
-          "market_topic": "semiconductor_ai",
+          "story_id": "news-185a50a3377450c7bbb4",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "SunSirs: Analysis of Market Impact from IEA’s Release of Crude Oil and Diesel Reserves - ChemNet News",
+          "raw_title": "SunSirs: Analysis of Market Impact from IEA’s Release of Crude Oil and Diesel Reserves - ChemNet News",
+          "normalized_fact": "SunSirs: Analysis of Market Impact from IEA’s Release of Crude Oil and Diesel Reserves ChemNet News。",
+          "market_topic": "company_industry",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5795,43 +5685,36 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "AI chips moved from buzzword to headline driver when TSMC reported about NT$763.1b in Q3 net profit and confirmed that demand for advanced processors is running ahead of what can currently be built. That kind of supply squeeze attracts capital, but it can also punish late or poorly chosen bets. This piece walks through 3 stocks exposed to that same AI news wave so you can judge where the risk and potential opportunity might sit for you. The three stocks covered next are only a sample of what...",
+          "summary": "SunSirs: Analysis of Market Impact from IEA’s Release of Crude Oil and Diesel Reserves ChemNet News",
           "description": "",
-          "canonical_url": "https://finance.yahoo.com/technology/ai/articles/3-ai-semiconductor-stocks-riding-061507826.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/technology/ai/articles/3-ai-semiconductor-stocks-riding-061507826.html?.tsrc=rss",
-          "published_at": "2026-10-16T06:15:07+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE5sakdfYTIza3NFZE5OMTBOcGgzNWFKZjRQdkNHRGdTT2xEeEhYTGQ1LVRNQjNpWWRzRGNPUXJwbGtvTmRvVWY3TWc1WkVVbnQyU3c",
+          "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE5sakdfYTIza3NFZE5OMTBOcGgzNWFKZjRQdkNHRGdTT2xEeEhYTGQ1LVRNQjNpWWRzRGNPUXJwbGtvTmRvVWY3TWc1WkVVbnQyU3c",
+          "published_at": "2026-10-16T02:25:01+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "current",
+          "date_eligibility_status": "recent_reference",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-16",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-15",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
           "entities": [],
           "sectors": [],
           "topics": [
-            "ai",
-            "semiconductor"
+            "energy"
           ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "tsmc",
-              "supply"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "tsmc",
-              "supply"
-            ],
-            "matched_subject": "tsmc",
-            "matched_action": "supply",
-            "matched_market_object": "tsmc",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
             "input_fields": [
               "description",
               "summary",
@@ -5840,29 +5723,26 @@
           },
           "relevance_reasons": [
             "market:us",
-            "tracked_ticker:TSM"
+            "active_event:oil"
           ],
           "freshness": "published",
-          "dedupe_key": "aichipsmovedfrombuzzwordtoheadlinedriverwhentsmcreportedaboutnt7631binq3netprofitandconfirmedthatdemandforadvancedprocessorsisrunningaheadofwhatcancurrentlybebuiltthatkindofsupplysqueezeattractscapitalbutitcanalsopunishlateorpoorlychosenbetsthispiecewalksthrough3stocksexposedtothatsameainewswavesoyoucanjudgewheretheriskandpotentialopportunitymightsitforyouthethreestockscoverednextareonlyasampleofwhat",
-          "event_cluster_key": "event-9bca43c4c8146eea61d7",
-          "published_time_bucket": "2026-10-16T06:00:00+00:00",
+          "dedupe_key": "sunsirsanalysisofmarketimpactfromieasreleaseofcrudeoilanddieselreserveschemnetnews",
+          "event_cluster_key": "event-1c385a549d89f8dbd797",
+          "published_time_bucket": "2026-10-16T02:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [
-            "tsmc",
-            "supply"
-          ],
-          "matched_subject": "tsmc",
-          "matched_action": "supply",
-          "matched_market_object": "tsmc",
-          "decision_value_class": "semiconductor_ai",
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Yahoo Finance",
+          "source": "Google News｜美股線索",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -5871,8 +5751,10 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 135
-        },
+          "ranking_score": 120
+        }
+      ],
+      "editorial_candidates": [
         {
           "story_id": "news-9788ea0f83bf231e7f61",
           "provider": "google_news",
@@ -6064,15 +5946,15 @@
           "ranking_score": 130
         },
         {
-          "story_id": "news-5ccc5eeed9b0391f22d6",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Asian stocks rise as tech bounces from rout, Warsh upbeat on AI",
-          "raw_title": "Asian stocks rise as tech bounces from rout, Warsh upbeat on AI",
-          "normalized_fact": "Most Asian markets bounced on Friday after the previous day's tech rout fuelled by concerns over the AI boom, which Federal Reserve boss Kevin Warsh said offered huge benefits to the global economy.At an event at the IMF-World Bank Annual Meetings in Bangkok, he said the AI investment boom would drive prices up in the short term, but \"there really is, I think, a huge benefit to the global economy, to the US economy over the horizon\"。",
-          "market_topic": "semiconductor_ai",
+          "story_id": "news-f0b605258eafe5ac244f",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Gold Prices Rise as Lower US Treasury Yields and Weaker Dollar Support Precious Metals - Yahoo Finance",
+          "raw_title": "Gold Prices Rise as Lower US Treasury Yields and Weaker Dollar Support Precious Metals - Yahoo Finance",
+          "normalized_fact": "Gold Prices Rise as Lower US Treasury Yields and Weaker Dollar Support Precious Metals Yahoo Finance。",
+          "market_topic": "company_industry",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -6080,11 +5962,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "Most Asian markets bounced on Friday after the previous day's tech rout fuelled by concerns over the AI boom, which Federal Reserve boss Kevin Warsh said offered huge benefits to the global economy.At an event at the IMF-World Bank Annual Meetings in Bangkok, he said the AI investment boom would drive prices up in the short term, but \"there really is, I think, a huge benefit to the global economy, to the US economy over the horizon\".",
+          "summary": "Gold Prices Rise as Lower US Treasury Yields and Weaker Dollar Support Precious Metals Yahoo Finance",
           "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/world-indices/articles/asian-stocks-rise-tech-bounces-020836295.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/world-indices/articles/asian-stocks-rise-tech-bounces-020836295.html?.tsrc=rss",
-          "published_at": "2026-10-16T08:22:43+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxNT2RZenRjYVptbmQyak9SR0UybHlFWWVxSHpkNEMyOTRVak1YaVQ0VXNhNEpmRTNzdnM0c2cyTktJZzhxaGZZSk5fRk1VZ0tvaF9reFlUMGkxakNhdkxTSVUyeHVOaWtrZE10NzBHd0ZqUzV4Nm1mYTZ3RkRKeU9rVkFBNHB2LWMwR1I1RFl3ZWdMblNkVFRmTGktMA",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxNT2RZenRjYVptbmQyak9SR0UybHlFWWVxSHpkNEMyOTRVak1YaVQ0VXNhNEpmRTNzdnM0c2cyTktJZzhxaGZZSk5fRk1VZ0tvaF9reFlUMGkxakNhdkxTSVUyeHVOaWtrZE10NzBHd0ZqUzV4Nm1mYTZ3RkRKeU9rVkFBNHB2LWMwR1I1RFl3ZWdMblNkVFRmTGktMA",
+          "published_at": "2026-10-16T09:05:17+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -6096,9 +5978,7 @@
           "tickers": [],
           "entities": [],
           "sectors": [],
-          "topics": [
-            "ai"
-          ],
+          "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
@@ -6117,12 +5997,13 @@
             ]
           },
           "relevance_reasons": [
-            "market:us"
+            "market:us",
+            "active_event:gold"
           ],
           "freshness": "published",
-          "dedupe_key": "mostasianmarketsbouncedonfridayafterthepreviousdaystechroutfuelledbyconcernsovertheaiboomwhichfederalreservebosskevinwarshsaidofferedhugebenefitstotheglobaleconomyataneventattheimfworldbankannualmeetingsinbangkokhesaidtheaiinvestmentboomwoulddrivepricesupintheshorttermbuttherereallyisithinkahugebenefittotheglobaleconomytotheuseconomyoverthehorizon",
-          "event_cluster_key": "event-3582c00aaf21e08fec42",
-          "published_time_bucket": "2026-10-16T08:00:00+00:00",
+          "dedupe_key": "goldpricesriseaslowerustreasuryyieldsandweakerdollarsupportpreciousmetalsyahoofinance",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-10-16T09:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
@@ -6136,7 +6017,7 @@
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Yahoo Finance",
+          "source": "Google News｜美股線索",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -6145,191 +6026,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
-          "story_id": "news-78987da753c41a8d3de5",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "1 Industrials Stock with Solid Fundamentals and 2 We Find Risky",
-          "raw_title": "1 Industrials Stock with Solid Fundamentals and 2 We Find Risky",
-          "normalized_fact": "Even if they go mostly unnoticed, industrial businesses are the backbone of our country. But they are at the whim of volatile macroeconomic factors that influence capital spending (like interest rates), and the market seems convinced that demand will slow. Due to this bearish outlook, the industry has tumbled by 7% over the past six months. This performance is a noticeable divergence from the S&P 500’s 9.7% return。",
-          "market_topic": "global_market",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Even if they go mostly unnoticed, industrial businesses are the backbone of our country. But they are at the whim of volatile macroeconomic factors that influence capital spending (like interest rates), and the market seems convinced that demand will slow. Due to this bearish outlook, the industry has tumbled by 7% over the past six months. This performance is a noticeable divergence from the S&P 500’s 9.7% return.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/1-industrials-stock-solid-fundamentals-081939447.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/1-industrials-stock-solid-fundamentals-081939447.html?.tsrc=rss",
-          "published_at": "2026-10-16T08:19:39+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-16",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "market",
-            "reason": "market_subject_action",
-            "matched_terms": [
-              "s&p 500",
-              "volatile"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "s&p 500",
-              "volatile"
-            ],
-            "matched_subject": "s&p 500",
-            "matched_action": "volatile",
-            "matched_market_object": "s&p 500",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "eveniftheygomostlyunnoticedindustrialbusinessesarethebackboneofourcountrybuttheyareatthewhimofvolatilemacroeconomicfactorsthatinfluencecapitalspendinglikeinterestratesandthemarketseemsconvincedthatdemandwillslowduetothisbearishoutlooktheindustryhastumbledby7overthepastsixmonthsthisperformanceisanoticeabledivergencefromthesp500s97return",
-          "event_cluster_key": "event-19eb9d2dd50afcf4bb52",
-          "published_time_bucket": "2026-10-16T08:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "s&p 500",
-            "volatile"
-          ],
-          "matched_subject": "s&p 500",
-          "matched_action": "volatile",
-          "matched_market_object": "s&p 500",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
-          "story_id": "news-8851a74a19bce1e410fd",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "US Stock Market Today: S&P 500 Futures Ease As Hot Core CPI Hits Rate Hopes",
-          "raw_title": "US Stock Market Today: S&P 500 Futures Ease As Hot Core CPI Hits Rate Hopes",
-          "normalized_fact": "The Morning Bull - US Market Morning Update Friday, Oct, 16 2026 US stocks look set for a cautious, slightly softer open, with the September inflation surprise still calling the shots. The mood is risk off as investors adjust to the idea of interest rates staying restrictive for longer. The key driver is the hotter core CPI print. Core inflation rose 0.3% month on month versus 0.2% expected, leaving annual core CPI at 2.6%. Together with a 5.2% monthly jump in energy prices and gasoline up。",
-          "market_topic": "global_market",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "The Morning Bull - US Market Morning Update Friday, Oct, 16 2026 US stocks look set for a cautious, slightly softer open, with the September inflation surprise still calling the shots. The mood is risk off as investors adjust to the idea of interest rates staying restrictive for longer. The key driver is the hotter core CPI print. Core inflation rose 0.3% month on month versus 0.2% expected, leaving annual core CPI at 2.6%. Together with a 5.2% monthly jump in energy prices and gasoline up...",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/us-stock-market-today-p-081318385.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/us-stock-market-today-p-081318385.html?.tsrc=rss",
-          "published_at": "2026-10-16T08:13:18+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-16",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "market",
-            "reason": "market_subject_action",
-            "matched_terms": [
-              "s&p 500",
-              "futures"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "s&p 500",
-              "futures"
-            ],
-            "matched_subject": "s&p 500",
-            "matched_action": "futures",
-            "matched_market_object": "s&p 500",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "themorningbullusmarketmorningupdatefridayoct162026usstockslooksetforacautiousslightlysofteropenwiththeseptemberinflationsurprisestillcallingtheshotsthemoodisriskoffasinvestorsadjusttotheideaofinterestratesstayingrestrictiveforlongerthekeydriveristhehottercorecpiprintcoreinflationrose03monthonmonthversus02expectedleavingannualcorecpiat26togetherwitha52monthlyjumpinenergypricesandgasolineup",
-          "event_cluster_key": "event-b51226b096ba653dd791",
-          "published_time_bucket": "2026-10-16T08:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "s&p 500",
-            "futures"
-          ],
-          "matched_subject": "s&p 500",
-          "matched_action": "futures",
-          "matched_market_object": "s&p 500",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
+          "ranking_score": 120
         },
         {
           "story_id": "news-7a1326e42f01c9693814",
@@ -6761,99 +6458,6 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-9239d59a312743810c2a",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Fed's Warsh sees US resilience, mum on rate-path view - Reuters",
-          "raw_title": "Fed's Warsh sees US resilience, mum on rate-path view - Reuters",
-          "normalized_fact": "Fed's Warsh sees US resilience, mum on rate-path view Reuters。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Fed's Warsh sees US resilience, mum on rate-path view Reuters",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMingFBVV95cUxPbUpNSUtZSU1FYnJCSDNWNnJRMmF3bmQ1QkdEaVhZb3I3c0lpYWhyQjNSemVVdGttRHE3UTFNOXg0enZ6eHAzcDY3UXBmQUJJRzl1T3gtMEZad0Z0Xy12TTlFcVRGeVdNYmVkZ3NPQThlUWRLUTh5c2J0UHFPVVRKT0hpR2RyU2tlRnJhVnBZZkxxUFhaTzRBVUlkbWFUUQ",
-          "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxPbUpNSUtZSU1FYnJCSDNWNnJRMmF3bmQ1QkdEaVhZb3I3c0lpYWhyQjNSemVVdGttRHE3UTFNOXg0enZ6eHAzcDY3UXBmQUJJRzl1T3gtMEZad0Z0Xy12TTlFcVRGeVdNYmVkZ3NPQThlUWRLUTh5c2J0UHFPVVRKT0hpR2RyU2tlRnJhVnBZZkxxUFhaTzRBVUlkbWFUUQ",
-          "published_at": "2026-10-16T03:57:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-15",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "rate"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "rate"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "rate",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "fedswarshseesusresiliencemumonratepathviewreuters",
-          "event_cluster_key": "event-6a75c4a145cd45cf11bb",
-          "published_time_bucket": "2026-10-16T03:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "rate"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "rate",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
           "story_id": "news-e1ab52b248f88a8be089",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -6934,6 +6538,101 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
+        },
+        {
+          "story_id": "news-dcbefee92b77a5acfd0f",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "3 AI Semiconductor Stocks Riding The Chip Supply Squeeze",
+          "raw_title": "3 AI Semiconductor Stocks Riding The Chip Supply Squeeze",
+          "normalized_fact": "AI chips moved from buzzword to headline driver when TSMC reported about NT$763.1b in Q3 net profit and confirmed that demand for advanced processors is running ahead of what can currently be built. That kind of supply squeeze attracts capital, but it can also punish late or poorly chosen bets. This piece walks through 3 stocks exposed to that same AI news wave so you can judge where the risk and potential opportunity might sit for you. The three stocks covered next are only a sample of what。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "AI chips moved from buzzword to headline driver when TSMC reported about NT$763.1b in Q3 net profit and confirmed that demand for advanced processors is running ahead of what can currently be built. That kind of supply squeeze attracts capital, but it can also punish late or poorly chosen bets. This piece walks through 3 stocks exposed to that same AI news wave so you can judge where the risk and potential opportunity might sit for you. The three stocks covered next are only a sample of what...",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/technology/ai/articles/3-ai-semiconductor-stocks-riding-061507826.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/technology/ai/articles/3-ai-semiconductor-stocks-riding-061507826.html?.tsrc=rss",
+          "published_at": "2026-10-16T06:15:07+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai",
+            "semiconductor"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "tsmc",
+              "supply"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "tsmc",
+              "supply"
+            ],
+            "matched_subject": "tsmc",
+            "matched_action": "supply",
+            "matched_market_object": "tsmc",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "tracked_ticker:TSM"
+          ],
+          "freshness": "published",
+          "dedupe_key": "aichipsmovedfrombuzzwordtoheadlinedriverwhentsmcreportedaboutnt7631binq3netprofitandconfirmedthatdemandforadvancedprocessorsisrunningaheadofwhatcancurrentlybebuiltthatkindofsupplysqueezeattractscapitalbutitcanalsopunishlateorpoorlychosenbetsthispiecewalksthrough3stocksexposedtothatsameainewswavesoyoucanjudgewheretheriskandpotentialopportunitymightsitforyouthethreestockscoverednextareonlyasampleofwhat",
+          "event_cluster_key": "event-9bca43c4c8146eea61d7",
+          "published_time_bucket": "2026-10-16T06:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "tsmc",
+            "supply"
+          ],
+          "matched_subject": "tsmc",
+          "matched_action": "supply",
+          "matched_market_object": "tsmc",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-16T07:49:14.699641+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 35
         },
         {
           "story_id": "news-1c1ce9adcc80d6e0c63a",
@@ -7111,6 +6810,190 @@
           "matched_action": "rate",
           "matched_market_object": "federal reserve",
           "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-16T08:39:00.310358+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 30
+        },
+        {
+          "story_id": "news-78987da753c41a8d3de5",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "1 Industrials Stock with Solid Fundamentals and 2 We Find Risky",
+          "raw_title": "1 Industrials Stock with Solid Fundamentals and 2 We Find Risky",
+          "normalized_fact": "Even if they go mostly unnoticed, industrial businesses are the backbone of our country. But they are at the whim of volatile macroeconomic factors that influence capital spending (like interest rates), and the market seems convinced that demand will slow. Due to this bearish outlook, the industry has tumbled by 7% over the past six months. This performance is a noticeable divergence from the S&P 500’s 9.7% return。",
+          "market_topic": "global_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Even if they go mostly unnoticed, industrial businesses are the backbone of our country. But they are at the whim of volatile macroeconomic factors that influence capital spending (like interest rates), and the market seems convinced that demand will slow. Due to this bearish outlook, the industry has tumbled by 7% over the past six months. This performance is a noticeable divergence from the S&P 500’s 9.7% return.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/1-industrials-stock-solid-fundamentals-081939447.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/1-industrials-stock-solid-fundamentals-081939447.html?.tsrc=rss",
+          "published_at": "2026-10-16T08:19:39+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "market",
+            "reason": "market_subject_action",
+            "matched_terms": [
+              "s&p 500",
+              "volatile"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "s&p 500",
+              "volatile"
+            ],
+            "matched_subject": "s&p 500",
+            "matched_action": "volatile",
+            "matched_market_object": "s&p 500",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "eveniftheygomostlyunnoticedindustrialbusinessesarethebackboneofourcountrybuttheyareatthewhimofvolatilemacroeconomicfactorsthatinfluencecapitalspendinglikeinterestratesandthemarketseemsconvincedthatdemandwillslowduetothisbearishoutlooktheindustryhastumbledby7overthepastsixmonthsthisperformanceisanoticeabledivergencefromthesp500s97return",
+          "event_cluster_key": "event-19eb9d2dd50afcf4bb52",
+          "published_time_bucket": "2026-10-16T08:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "s&p 500",
+            "volatile"
+          ],
+          "matched_subject": "s&p 500",
+          "matched_action": "volatile",
+          "matched_market_object": "s&p 500",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-16T08:28:43.400299+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 30
+        },
+        {
+          "story_id": "news-8851a74a19bce1e410fd",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "US Stock Market Today: S&P 500 Futures Ease As Hot Core CPI Hits Rate Hopes",
+          "raw_title": "US Stock Market Today: S&P 500 Futures Ease As Hot Core CPI Hits Rate Hopes",
+          "normalized_fact": "The Morning Bull - US Market Morning Update Friday, Oct, 16 2026 US stocks look set for a cautious, slightly softer open, with the September inflation surprise still calling the shots. The mood is risk off as investors adjust to the idea of interest rates staying restrictive for longer. The key driver is the hotter core CPI print. Core inflation rose 0.3% month on month versus 0.2% expected, leaving annual core CPI at 2.6%. Together with a 5.2% monthly jump in energy prices and gasoline up。",
+          "market_topic": "global_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "The Morning Bull - US Market Morning Update Friday, Oct, 16 2026 US stocks look set for a cautious, slightly softer open, with the September inflation surprise still calling the shots. The mood is risk off as investors adjust to the idea of interest rates staying restrictive for longer. The key driver is the hotter core CPI print. Core inflation rose 0.3% month on month versus 0.2% expected, leaving annual core CPI at 2.6%. Together with a 5.2% monthly jump in energy prices and gasoline up...",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/us-stock-market-today-p-081318385.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/us-stock-market-today-p-081318385.html?.tsrc=rss",
+          "published_at": "2026-10-16T08:13:18+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "market",
+            "reason": "market_subject_action",
+            "matched_terms": [
+              "s&p 500",
+              "futures"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "s&p 500",
+              "futures"
+            ],
+            "matched_subject": "s&p 500",
+            "matched_action": "futures",
+            "matched_market_object": "s&p 500",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "themorningbullusmarketmorningupdatefridayoct162026usstockslooksetforacautiousslightlysofteropenwiththeseptemberinflationsurprisestillcallingtheshotsthemoodisriskoffasinvestorsadjusttotheideaofinterestratesstayingrestrictiveforlongerthekeydriveristhehottercorecpiprintcoreinflationrose03monthonmonthversus02expectedleavingannualcorecpiat26togetherwitha52monthlyjumpinenergypricesandgasolineup",
+          "event_cluster_key": "event-b51226b096ba653dd791",
+          "published_time_bucket": "2026-10-16T08:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "s&p 500",
+            "futures"
+          ],
+          "matched_subject": "s&p 500",
+          "matched_action": "futures",
+          "matched_market_object": "s&p 500",
+          "decision_value_class": "market_context",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -8918,6 +8801,90 @@
           "ranking_score": 27
         },
         {
+          "story_id": "news-5ccc5eeed9b0391f22d6",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Asian stocks rise as tech bounces from rout, Warsh upbeat on AI",
+          "raw_title": "Asian stocks rise as tech bounces from rout, Warsh upbeat on AI",
+          "normalized_fact": "Most Asian markets bounced on Friday after the previous day's tech rout fuelled by concerns over the AI boom, which Federal Reserve boss Kevin Warsh said offered huge benefits to the global economy.At an event at the IMF-World Bank Annual Meetings in Bangkok, he said the AI investment boom would drive prices up in the short term, but \"there really is, I think, a huge benefit to the global economy, to the US economy over the horizon\"。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Most Asian markets bounced on Friday after the previous day's tech rout fuelled by concerns over the AI boom, which Federal Reserve boss Kevin Warsh said offered huge benefits to the global economy.At an event at the IMF-World Bank Annual Meetings in Bangkok, he said the AI investment boom would drive prices up in the short term, but \"there really is, I think, a huge benefit to the global economy, to the US economy over the horizon\".",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/markets/world-indices/articles/asian-stocks-rise-tech-bounces-020836295.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/world-indices/articles/asian-stocks-rise-tech-bounces-020836295.html?.tsrc=rss",
+          "published_at": "2026-10-16T02:08:36+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "mostasianmarketsbouncedonfridayafterthepreviousdaystechroutfuelledbyconcernsovertheaiboomwhichfederalreservebosskevinwarshsaidofferedhugebenefitstotheglobaleconomyataneventattheimfworldbankannualmeetingsinbangkokhesaidtheaiinvestmentboomwoulddrivepricesupintheshorttermbuttherereallyisithinkahugebenefittotheglobaleconomytotheuseconomyoverthehorizon",
+          "event_cluster_key": "event-29cfe1eb22d43bc01979",
+          "published_time_bucket": "2026-10-16T02:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 2,
+          "inventory_saved_at": "2026-10-16T03:53:59.312425+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 27
+        },
+        {
           "story_id": "news-6971da1d5399dd0ba1c5",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -9467,15 +9434,13 @@
         "status": "multi_source",
         "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 3,
-        "provider_count": 3,
+        "independent_source_count": 2,
+        "provider_count": 2,
         "provider_ids": [
           "anue",
-          "google_news",
-          "yahoo_finance"
+          "google_news"
         ],
         "source_domains": [
-          "finance.yahoo.com",
           "news.cnyes.com",
           "news.google.com"
         ],
@@ -9486,16 +9451,18 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "NVDA": 13,
-          "TSM": 15,
+          "NVDA": 23,
+          "TSM": 10,
           "2330": 3
         },
         "sector_interest": {},
         "topic_interest": {
-          "oil": 12,
-          "iran": 1,
+          "oil": 13,
+          "gold": 2,
+          "iran": 2,
           "war": 1,
-          "hormuz": 2
+          "hormuz": 2,
+          "sanctions": 1
         },
         "market_interest": {
           "us": 148
@@ -9557,30 +9524,32 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "NVDA": 13,
-            "TSM": 15,
+            "NVDA": 23,
+            "TSM": 10,
             "2330": 3
           },
           "research_candidate": {},
           "tracked_sector": {},
           "active_event": {
-            "oil": 12,
-            "iran": 1,
+            "oil": 13,
+            "gold": 2,
+            "iran": 2,
             "war": 1,
-            "hormuz": 2
+            "hormuz": 2,
+            "sanctions": 1
           },
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 46,
+      "excluded_count": 48,
       "exclusion_reasons": {
         "generic_official_filing": 20,
-        "incomplete_normalized_fact": 22,
-        "insufficient_market_relevance": 20,
+        "incomplete_normalized_fact": 30,
+        "insufficient_market_relevance": 14,
         "listicle_or_selection": 2,
         "market_scope_mismatch": 8,
-        "outside_calendar_window": 8,
-        "outside_trading_session_window": 2
+        "outside_calendar_window": 10,
+        "outside_trading_session_window": 1
       },
       "status": "ready",
       "collection_state": "degraded",
@@ -9590,43 +9559,43 @@
         "successful_provider_count": 4,
         "failed_provider_count": 1,
         "disabled_provider_count": 1,
-        "fetched": 59,
-        "normalized": 59,
-        "eligible": 13,
-        "excluded": 46,
-        "date_eligible_current": 49,
-        "date_excluded_current": 10,
+        "fetched": 57,
+        "normalized": 57,
+        "eligible": 9,
+        "excluded": 48,
+        "date_eligible_current": 46,
+        "date_excluded_current": 11,
         "date_exclusion_reasons_current": {
-          "outside_calendar_window": 8,
-          "outside_trading_session_window": 2
+          "outside_calendar_window": 10,
+          "outside_trading_session_window": 1
         },
-        "date_eligible_inventory": 89,
+        "date_eligible_inventory": 91,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-16T09:08:28.200427+00:00",
-        "deduped": 13,
+        "reference_time": "2026-10-16T10:19:04.871378+00:00",
+        "deduped": 9,
         "publicly_ranked": 5,
-        "current_eligible": 13,
-        "inventory_considered": 89,
-        "inventory_eligible": 53,
+        "current_eligible": 9,
+        "inventory_considered": 91,
+        "inventory_eligible": 54,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 46,
-        "fetched_story_count": 59,
-        "normalized_story_count": 59,
-        "eligible_story_count": 13,
-        "deduped_story_count": 13,
+        "filtered_story_count": 48,
+        "fetched_story_count": 57,
+        "normalized_story_count": 57,
+        "eligible_story_count": 9,
+        "deduped_story_count": 9,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 89,
-        "eligible": 53,
+        "considered": 91,
+        "eligible": 54,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -9638,8 +9607,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 59,
-          "checked_at": "2026-10-16T09:08:28.200486+00:00"
+          "item_count": 57,
+          "checked_at": "2026-10-16T10:19:04.871415+00:00"
         },
         {
           "provider": "sec",
@@ -9650,10 +9619,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-10-16T09:08:28.200486+00:00",
+          "checked_at": "2026-10-16T10:19:04.871415+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+          "last_success_at": "2026-10-16T10:19:04.871415+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9681,12 +9650,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-10-16T09:08:28.200486+00:00",
+          "checked_at": "2026-10-16T10:19:04.871415+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-10-16T09:08:28.200486+00:00",
+          "last_failure_at": "2026-10-16T10:19:04.871415+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9709,10 +9678,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-10-16T09:08:28.200486+00:00",
+          "checked_at": "2026-10-16T10:19:04.871415+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+          "last_success_at": "2026-10-16T10:19:04.871415+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9737,10 +9706,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 1,
-          "checked_at": "2026-10-16T09:08:28.200486+00:00",
+          "checked_at": "2026-10-16T10:19:04.871415+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 1,
-          "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+          "last_success_at": "2026-10-16T10:19:04.871415+00:00",
           "last_failure_at": null,
           "stories_ingested": 1,
           "stories_deduped": 1,
@@ -9763,31 +9732,32 @@
           "key": "news_us_yahoo_finance",
           "legacy_key": "official_news_us_yahoo_finance",
           "label": "yahoo_finance market news",
-          "status": "healthy",
+          "status": "no_event",
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
-          "item_count": 2,
-          "checked_at": "2026-10-16T09:08:28.200486+00:00",
+          "item_count": 0,
+          "checked_at": "2026-10-16T10:19:04.871415+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 2,
-          "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+          "filtered_item_count": 0,
+          "last_success_at": "2026-10-16T10:19:04.871415+00:00",
           "last_failure_at": null,
-          "stories_ingested": 4,
-          "stories_deduped": 4,
-          "ranked_count": 2,
+          "stories_ingested": 2,
+          "stories_deduped": 0,
+          "ranked_count": 0,
           "relevance_distribution": {
-            "market": 4,
-            "tracked_ticker": 1
+            "market": 2,
+            "tracked_ticker": 2
           },
           "funnel": {
-            "fetched_count": 8,
-            "normalized_count": 4,
-            "market_compatible_count": 4,
-            "eligible_count": 4,
-            "excluded_count": 0,
-            "deduped_count": 4,
-            "ranked_count": 2
-          }
+            "fetched_count": 6,
+            "normalized_count": 2,
+            "market_compatible_count": 2,
+            "eligible_count": 0,
+            "excluded_count": 2,
+            "deduped_count": 0,
+            "ranked_count": 0
+          },
+          "data_gap": "filtered_no_market_match"
         },
         {
           "provider": "google_news",
@@ -9797,17 +9767,17 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
-          "item_count": 2,
-          "checked_at": "2026-10-16T09:08:28.200486+00:00",
+          "item_count": 4,
+          "checked_at": "2026-10-16T10:19:04.871415+00:00",
           "raw_item_count": 40,
-          "filtered_item_count": 2,
-          "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+          "filtered_item_count": 4,
+          "last_success_at": "2026-10-16T10:19:04.871415+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
           "stories_deduped": 8,
-          "ranked_count": 2,
+          "ranked_count": 4,
           "relevance_distribution": {
-            "active_event": 7,
+            "active_event": 9,
             "market": 40,
             "tracked_ticker": 2
           },
@@ -9818,24 +9788,24 @@
             "eligible_count": 8,
             "excluded_count": 32,
             "deduped_count": 8,
-            "ranked_count": 2
+            "ranked_count": 4
           }
         }
       ],
       "observability": {
-        "stories_ingested": 59,
-        "stories_deduped": 13,
+        "stories_ingested": 57,
+        "stories_deduped": 9,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 7,
-          "market": 59,
-          "tracked_ticker": 5
+          "active_event": 9,
+          "market": 57,
+          "tracked_ticker": 8
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+            "last_success_at": "2026-10-16T10:19:04.871415+00:00",
             "last_failure_at": null,
             "stories_ingested": 1,
             "stories_deduped": 1,
@@ -9857,7 +9827,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-10-16T09:08:28.200486+00:00",
+            "last_failure_at": "2026-10-16T10:19:04.871415+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9875,13 +9845,13 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+            "last_success_at": "2026-10-16T10:19:04.871415+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
             "stories_deduped": 8,
-            "ranked_count": 2,
+            "ranked_count": 4,
             "relevance_distribution": {
-              "active_event": 7,
+              "active_event": 9,
               "market": 40,
               "tracked_ticker": 2
             },
@@ -9892,13 +9862,13 @@
               "eligible_count": 8,
               "excluded_count": 32,
               "deduped_count": 8,
-              "ranked_count": 2
+              "ranked_count": 4
             }
           },
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+            "last_success_at": "2026-10-16T10:19:04.871415+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9917,7 +9887,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+            "last_success_at": "2026-10-16T10:19:04.871415+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -9945,7 +9915,7 @@
             "ranked_count": 0,
             "relevance_distribution": {
               "market": 4,
-              "tracked_ticker": 2
+              "tracked_ticker": 4
             },
             "funnel": {
               "fetched_count": 4,
@@ -9960,23 +9930,23 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-16T09:08:28.200486+00:00",
+            "last_success_at": "2026-10-16T10:19:04.871415+00:00",
             "last_failure_at": null,
-            "stories_ingested": 4,
-            "stories_deduped": 4,
-            "ranked_count": 2,
+            "stories_ingested": 2,
+            "stories_deduped": 0,
+            "ranked_count": 0,
             "relevance_distribution": {
-              "market": 4,
-              "tracked_ticker": 1
+              "market": 2,
+              "tracked_ticker": 2
             },
             "funnel": {
-              "fetched_count": 8,
-              "normalized_count": 4,
-              "market_compatible_count": 4,
-              "eligible_count": 4,
-              "excluded_count": 0,
-              "deduped_count": 4,
-              "ranked_count": 2
+              "fetched_count": 6,
+              "normalized_count": 2,
+              "market_compatible_count": 2,
+              "eligible_count": 0,
+              "excluded_count": 2,
+              "deduped_count": 0,
+              "ranked_count": 0
             }
           }
         ]
