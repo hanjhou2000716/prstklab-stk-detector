@@ -2,17 +2,17 @@
   "schema": 2,
   "markets": {
     "taiwan": {
-      "fetched_at": "2026-10-16T04:38:16.026575+00:00",
+      "fetched_at": "2026-10-16T04:48:14.344613+00:00",
       "stories": [
         {
-          "title": "〈美股盤後〉黃仁勳力挺CoreWeave 道瓊勁揚556點 台積電ADR跌近2%",
-          "url": "https://news.cnyes.com/news/id/6631442",
+          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "url": "https://news.cnyes.com/news/id/6630669",
           "provider": "anue",
           "source": "鉅亨網｜持股關聯",
           "relevance": "holding",
-          "summary": "美股週四收高，道瓊漲556.21點、標普500終結連3跌，那指盤中翻黑後小漲0.08%。 AI類股漲跌分歧，CoreWeave反彈5.9%，輝達、AMD走弱；戴爾遭巴克萊降評重挫6.8%。 美國9月PPI月增1.3%、年增6.3%創2022年來最大，通膨升溫使市場再度押注聯準會升息。",
-          "published_at": "2026-10-15T21:44:31+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6631442",
+          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "published_at": "2026-10-14T22:02:35+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6630669",
           "market_classification": {
             "market_scope": "cross_market",
             "taiwan_matches": [
@@ -21,14 +21,15 @@
             "us_matches": [
               "美股",
               "美國",
-              "聯準會",
-              "amd"
+              "費半",
+              "fed",
+              "cpi"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 5,
+              "matched_term_count": 6,
               "source_market_hint": "cross_market"
             }
           },
@@ -39,22 +40,23 @@
           "us_matches": [
             "美股",
             "美國",
-            "聯準會",
-            "amd"
+            "費半",
+            "fed",
+            "cpi"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 5,
+            "matched_term_count": 6,
             "source_market_hint": "cross_market"
           },
-          "story_id": "news-1c1ce9adcc80d6e0c63a",
+          "story_id": "news-711307422ad19cd66883",
           "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "raw_title": "〈美股盤後〉黃仁勳力挺CoreWeave 道瓊勁揚556點 台積電ADR跌近2%",
-          "normalized_fact": "美股週四收高，道瓊漲556.21點、標普500終結連3跌，那指盤中翻黑後小漲0.08%。 AI類股漲跌分歧，CoreWeave反彈5.9%，輝達、AMD走弱；戴爾遭巴克萊降評重挫6.8%。 美國9月PPI月增1.3%、年增6.3%創2022年來最大，通膨升溫使市場再度押注聯準會升息。",
+          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
           "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
@@ -75,10 +77,255 @@
           "tickers": [],
           "entities": [
             "2330",
+            "SOX",
             "TSM"
           ],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
+          "event_cluster_key": "event-40d27feb65b9f7fa705b",
+          "published_time_bucket": "2026-10-14T22:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "title": "〈台積電法說〉Q3純益7630.64億元季增8% EPS29.43元續創單季新高",
+          "url": "https://news.cnyes.com/news/id/6631116",
+          "provider": "anue",
+          "source": "鉅亨網｜持股關聯",
+          "relevance": "holding",
+          "summary": "",
+          "published_at": "2026-10-15T06:01:21+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6631116",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台積電"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": null
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台積電"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": null
+          }
+        },
+        {
+          "title": "賴總統登財經網紅游庭皓首位嘉賓 大談6大政策直球對決",
+          "url": "https://tw.stock.yahoo.com/news/%E8%B3%B4%E7%B8%BD%E7%B5%B1%E7%99%BB%E8%B2%A1%E7%B6%93%E7%B6%B2%E7%B4%85%E6%B8%B8%E5%BA%AD%E7%9A%93%E9%A6%96%E4%BD%8D%E5%98%89%E8%B3%93-%E5%A4%A7%E8%AB%876%E5%A4%A7%E6%94%BF%E7%AD%96%E7%9B%B4%E7%90%83%E5%B0%8D%E6%B1%BA-044232901.html",
+          "summary": "財經中心／葉為襄、李澤民 台北報導今天（16）投資人總算可以鬆口氣，台股強勢反彈盤中漲超過500點，重返47500點，市場都在期盼台股今年站上5萬點大關，總統賴清德登上財經網紅游庭皓節目，除了談股市、",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-16T04:42:32+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股",
+              "taiwan",
+              "賴清德"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 3,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股",
+            "taiwan",
+            "賴清德"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 3,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "BT載板供需炸裂！高盛調升4台廠目標價",
+          "url": "https://tw.stock.yahoo.com/news/bt%E8%BC%89%E6%9D%BF%E4%BE%9B%E9%9C%80%E7%82%B8%E8%A3%82-%E9%AB%98%E7%9B%9B%E8%AA%BF%E5%8D%874%E5%8F%B0%E5%BB%A0%E7%9B%AE%E6%A8%99%E5%83%B9-043800325.html",
+          "summary": "高盛發布最新報告指出，受惠記憶體與AI伺服器強勁需求，加上主流廠商轉產ABF載板，BT載板供需缺口將於2028年擴大至14%，全面調升臻鼎、景碩、南電與欣興目標價。",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-16T04:38:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "聯準會不預告利率決定！華許靜默期前拒評10月是否升息",
+          "url": "https://tw.stock.yahoo.com/news/%E8%81%AF%E6%BA%96%E6%9C%83%E4%B8%8D%E9%A0%90%E5%91%8A%E5%88%A9%E7%8E%87%E6%B1%BA%E5%AE%9A-%E8%8F%AF%E8%A8%B1%E9%9D%9C%E9%BB%98%E6%9C%9F%E5%89%8D%E6%8B%92%E8%A9%9510%E6%9C%88%E6%98%AF%E5%90%A6%E5%8D%87%E6%81%AF-043707849.html",
+          "summary": "【財訊快報／劉敏夫】外電報導指出，美國聯準會主席華許未對同僚近期釋放的信號表示支援或反對。這些信號顯示，官員們並不急於在本月升息。華許表示，聯準會已不再提前預告政策決定。華許表示，他不會預判會議結果。",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "cross_market",
+          "relevance": "market",
+          "published_at": "2026-10-16T04:37:07+00:00",
+          "market_classification": {
+            "market_scope": "cross_market",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [
+              "美國",
+              "聯準會"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 3,
+              "source_market_hint": "cross_market"
+            }
+          },
+          "market_scope": "cross_market",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [
+            "美國",
+            "聯準會"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 3,
+            "source_market_hint": "cross_market"
+          },
+          "story_id": "news-6a843bce3c00df2717ee",
+          "provider_name": "Yahoo Taiwan Finance",
+          "raw_title": "聯準會不預告利率決定！華許靜默期前拒評10月是否升息",
+          "normalized_fact": "【財訊快報／劉敏夫】外電報導指出，美國聯準會主席華許未對同僚近期釋放的信號表示支援或反對。這些信號顯示，官員們並不急於在本月升息。華許表示，聯準會已不再提前預告政策決定。華許表示，他不會預判會議結果。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E8%81%AF%E6%BA%96%E6%9C%83%E4%B8%8D%E9%A0%90%E5%91%8A%E5%88%A9%E7%8E%87%E6%B1%BA%E5%AE%9A-%E8%8F%AF%E8%A8%B1%E9%9D%9C%E9%BB%98%E6%9C%9F%E5%89%8D%E6%8B%92%E8%A9%9510%E6%9C%88%E6%98%AF%E5%90%A6%E5%8D%87%E6%81%AF-043707849.html",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": null,
+          "published_local_date": "",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
@@ -86,15 +333,15 @@
             "reason": "fed_subject_action",
             "matched_terms": [
               "聯準會",
-              "升息"
+              "利率"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
               "聯準會",
-              "升息"
+              "利率"
             ],
             "matched_subject": "聯準會",
-            "matched_action": "升息",
+            "matched_action": "利率",
             "matched_market_object": "聯準會",
             "input_fields": [
               "description",
@@ -106,18 +353,18 @@
             "market:cross_market"
           ],
           "freshness": "published",
-          "dedupe_key": "美股週四收高道瓊漲55621點標普500終結連3跌那指盤中翻黑後小漲008ai類股漲跌分歧coreweave反彈59輝達amd走弱戴爾遭巴克萊降評重挫68美國9月ppi月增13年增63創2022年來最大通膨升溫使市場再度押注聯準會升息",
-          "event_cluster_key": "event-c036234c6536777fb51b",
-          "published_time_bucket": "2026-10-15T21:00:00+00:00",
+          "dedupe_key": "財訊快報劉敏夫外電報導指出美國聯準會主席華許未對同僚近期釋放的信號表示支援或反對這些信號顯示官員們並不急於在本月升息華許表示聯準會已不再提前預告政策決定華許表示他不會預判會議結果",
+          "event_cluster_key": "event-84b7be6c6a468810ada4",
+          "published_time_bucket": "2026-10-16T04:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
             "聯準會",
-            "升息"
+            "利率"
           ],
           "matched_subject": "聯準會",
-          "matched_action": "升息",
+          "matched_action": "利率",
           "matched_market_object": "聯準會",
           "decision_value_class": "macro",
           "quality_flags": [],
@@ -136,160 +383,46 @@
           "ranking_score": 130
         },
         {
-          "title": "〈台股盤前要聞〉台積電全年美元營收再上修至44%、外資爆砍3025億元創紀錄",
-          "url": "https://news.cnyes.com/news/id/6631568",
-          "provider": "anue",
-          "source": "鉅亨網｜持股關聯",
-          "relevance": "holding",
-          "summary": "",
-          "published_at": "2026-10-15T21:10:03+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6631568",
+          "title": "CoreWeave 債務風暴引 AI 產業賣壓 美晶片股市值蒸發 2 兆美元",
+          "url": "https://tw.stock.yahoo.com/news/coreweave-%E5%82%B5%E5%8B%99%E9%A2%A8%E6%9A%B4%E5%BC%95-ai-%E7%94%A2%E6%A5%AD%E8%B3%A3%E5%A3%93-%E7%BE%8E%E6%99%B6%E7%89%87%E8%82%A1%E5%B8%82%E5%80%BC%E8%92%B8%E7%99%BC-043354671.html",
+          "summary": "圖／本報資料庫商傳媒｜責任編輯／綜合外電報導美國科技股及相關債券週四（15日）賣壓加劇，原因在於借貸成本高漲，使市場重新審視人工智慧（AI）基礎建設龐大資金投入的合理性。其中，AI 雲端運算公司 Co",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-16T04:33:54+00:00",
           "market_classification": {
-            "market_scope": "taiwan",
+            "market_scope": "cross_market",
             "taiwan_matches": [
-              "台股",
-              "台積電"
+              "taiwan"
             ],
-            "us_matches": [],
+            "us_matches": [
+              "美國"
+            ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
               "matched_term_count": 2,
-              "source_market_hint": null
+              "source_market_hint": "taiwan"
             }
           },
-          "market_scope": "taiwan",
+          "market_scope": "cross_market",
           "taiwan_matches": [
-            "台股",
-            "台積電"
+            "taiwan"
           ],
-          "us_matches": [],
+          "us_matches": [
+            "美國"
+          ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 2,
-            "source_market_hint": null
-          }
-        },
-        {
-          "title": "馬斯克批記憶體廠「敲竹槓」 韓工程師回擊：特斯拉條件才「苛刻」 三星還被大量挖角",
-          "url": "https://news.cnyes.com/news/id/6631445",
-          "provider": "anue",
-          "source": "鉅亨網｜市場焦點",
-          "relevance": "market",
-          "summary": "馬斯克稱美光記憶體報價合理、批其他供應商過高，引發南韓半導體工程師反擊。 工程師指特斯拉談AI5、AI6代工時要求三星大幅壓價，還要晶圓廠內部資訊與稽核。 Terafab傳挖走三星泰勒廠人才；AI5擬由台積電、三星代工，三星目標2027年量產。",
-          "published_at": "2026-10-15T21:50:02+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6631445",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台積電"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台積電"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
             "source_market_hint": "taiwan"
-          },
-          "story_id": "news-ad7b886a858b1e8e6de4",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "raw_title": "馬斯克批記憶體廠「敲竹槓」 韓工程師回擊：特斯拉條件才「苛刻」 三星還被大量挖角",
-          "normalized_fact": "馬斯克稱美光記憶體報價合理、批其他供應商過高，引發南韓半導體工程師反擊。 工程師指特斯拉談AI5、AI6代工時要求三星大幅壓價，還要晶圓廠內部資訊與稽核。 Terafab傳挖走三星泰勒廠人才；AI5擬由台積電、三星代工，三星目標2027年量產。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "description": "",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-16",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "台積電",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "台積電",
-              "供應"
-            ],
-            "matched_subject": "台積電",
-            "matched_action": "供應",
-            "matched_market_object": "台積電",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "馬斯克稱美光記憶體報價合理批其他供應商過高引發南韓半導體工程師反擊工程師指特斯拉談ai5ai6代工時要求三星大幅壓價還要晶圓廠內部資訊與稽核terafab傳挖走三星泰勒廠人才ai5擬由台積電三星代工三星目標2027年量產",
-          "event_cluster_key": "event-c28c9690ffac1e8fc433",
-          "published_time_bucket": "2026-10-15T21:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "台積電",
-            "供應"
-          ],
-          "matched_subject": "台積電",
-          "matched_action": "供應",
-          "matched_market_object": "台積電",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
+          }
         },
         {
           "title": "Monotype（蒙納）最新研究揭露品牌一致性背後的營運挑戰",
@@ -326,6 +459,206 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "英國央行總裁稱通膨第二輪效應證據有限，市場11月升息預期仍在",
+          "url": "https://tw.stock.yahoo.com/news/%E8%8B%B1%E5%9C%8B%E5%A4%AE%E8%A1%8C%E7%B8%BD%E8%A3%81%E7%A8%B1%E9%80%9A%E8%86%A8%E7%AC%AC%E4%BA%8C%E8%BC%AA%E6%95%88%E6%87%89%E8%AD%89%E6%93%9A%E6%9C%89%E9%99%90-%E5%B8%82%E5%A0%B411%E6%9C%88%E5%8D%87%E6%81%AF%E9%A0%90%E6%9C%9F%E4%BB%8D%E5%9C%A8-043141504.html",
+          "summary": "【財訊快報／劉敏夫】外電報導指出，英國央行行長貝利(Andrew Bailey)表示，目前幾乎沒有證據顯示通膨正在深植於英國的價格和工資設定中。貝利週五在曼谷舉行的國際金融協會(IIF)年會上表示，英",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-16T04:31:41+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          },
+          "story_id": "news-8e0d854895191bdecb35",
+          "provider_name": "Yahoo Taiwan Finance",
+          "raw_title": "英國央行總裁稱通膨第二輪效應證據有限，市場11月升息預期仍在",
+          "normalized_fact": "【財訊快報／劉敏夫】外電報導指出，英國央行行長貝利(Andrew Bailey)表示，目前幾乎沒有證據顯示通膨正在深植於英國的價格和工資設定中。貝利週五在曼谷舉行的國際金融協會(IIF)年會上表示，英。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E8%8B%B1%E5%9C%8B%E5%A4%AE%E8%A1%8C%E7%B8%BD%E8%A3%81%E7%A8%B1%E9%80%9A%E8%86%A8%E7%AC%AC%E4%BA%8C%E8%BC%AA%E6%95%88%E6%87%89%E8%AD%89%E6%93%9A%E6%9C%89%E9%99%90-%E5%B8%82%E5%A0%B411%E6%9C%88%E5%8D%87%E6%81%AF%E9%A0%90%E6%9C%9F%E4%BB%8D%E5%9C%A8-043141504.html",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "央行",
+              "升息"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "央行",
+              "升息"
+            ],
+            "matched_subject": "央行",
+            "matched_action": "升息",
+            "matched_market_object": "央行",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "財訊快報劉敏夫外電報導指出英國央行行長貝利andrewbailey表示目前幾乎沒有證據顯示通膨正在深植於英國的價格和工資設定中貝利週五在曼谷舉行的國際金融協會iif年會上表示英",
+          "event_cluster_key": "event-84b7be6c6a468810ada4",
+          "published_time_bucket": "2026-10-16T04:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "央行",
+            "升息"
+          ],
+          "matched_subject": "央行",
+          "matched_action": "升息",
+          "matched_market_object": "央行",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "title": "睽違10年光寶科籌360億銀彈　全台近3月大型聯貸衝破2300億",
+          "url": "https://tw.stock.yahoo.com/news/%E7%9D%BD%E9%81%9510%E5%B9%B4%E5%85%89%E5%AF%B6%E7%A7%91%E7%B1%8C360%E5%84%84%E9%8A%80%E5%BD%88-%E5%85%A8%E5%8F%B0%E8%BF%913%E6%9C%88%E5%A4%A7%E5%9E%8B%E8%81%AF%E8%B2%B8%E8%A1%9D%E7%A0%B42300%E5%84%84-043100615.html",
+          "summary": "【記者林巧雁／台北報導】光寶科技公司360億元永續連結聯合授信案今日完成簽約，由台北富邦銀行擔任統籌主辦銀行，國泰世華銀行及兆豐商業銀行共同統籌主辦，此為光寶科首筆永續連結聯貸案，也是睽違10年再組聯",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-16T04:31:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "美綠卡政策緊縮恐癱瘓科技業 微軟總裁駁斥濫用指控",
+          "url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E7%B6%A0%E5%8D%A1%E6%94%BF%E7%AD%96%E7%B7%8A%E7%B8%AE%E6%81%90%E7%99%B1%E7%98%93%E7%A7%91%E6%8A%80%E6%A5%AD-%E5%BE%AE%E8%BB%9F%E7%B8%BD%E8%A3%81%E9%A7%81%E6%96%A5%E6%BF%AB%E7%94%A8%E6%8C%87%E6%8E%A7-043100038.html",
+          "summary": "圖／本報資料庫商傳媒｜責任編輯／綜合外電報導微軟總裁布拉德·史密斯（Brad Smith）近日警告，美國政府限制高技能外籍員工取得綠卡（美國永久居留證）的政策，恐將嚴重損害美國的科技競爭力。他表示，任",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-16T04:31:00+00:00",
+          "market_classification": {
+            "market_scope": "cross_market",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [
+              "美國"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "cross_market",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [
+            "美國"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
             "source_market_hint": "taiwan"
           }
         },
@@ -368,216 +701,52 @@
           }
         },
         {
-          "title": "焦點股：液冷商機推升營收、台美擴產添動能，AMAX-KY力守月線並創新高",
-          "url": "https://tw.stock.yahoo.com/news/%E7%84%A6%E9%BB%9E%E8%82%A1-%E6%B6%B2%E5%86%B7%E5%95%86%E6%A9%9F%E6%8E%A8%E5%8D%87%E7%87%9F%E6%94%B6-%E5%8F%B0%E7%BE%8E%E6%93%B4%E7%94%A2%E6%B7%BB%E5%8B%95%E8%83%BD-amax-ky%E5%8A%9B%E5%AE%88%E6%9C%88%E7%B7%9A%E4%B8%A6%E5%89%B5%E6%96%B0%E9%AB%98-042307807.html",
-          "summary": "【財訊快報／研究員周佳蓉】鴻海(2317)轉投資的AMAX-KY(6933)，與鴻海在客戶分工與供應鏈上合作密切，鴻海主攻大型客戶，AMAX則鎖定中小型機房與新創客製化需求，公司營運主軸正從客製化AI",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-16T04:23:07+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          },
-          "story_id": "news-3ae407d39fd1f9f6bc1d",
-          "provider_name": "Yahoo Taiwan Finance",
-          "raw_title": "焦點股：液冷商機推升營收、台美擴產添動能，AMAX-KY力守月線並創新高",
-          "normalized_fact": "【財訊快報／研究員周佳蓉】鴻海(2317)轉投資的AMAX-KY(6933)，與鴻海在客戶分工與供應鏈上合作密切，鴻海主攻大型客戶，AMAX則鎖定中小型機房與新創客製化需求，公司營運主軸正從客製化AI。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%84%A6%E9%BB%9E%E8%82%A1-%E6%B6%B2%E5%86%B7%E5%95%86%E6%A9%9F%E6%8E%A8%E5%8D%87%E7%87%9F%E6%94%B6-%E5%8F%B0%E7%BE%8E%E6%93%B4%E7%94%A2%E6%B7%BB%E5%8B%95%E8%83%BD-amax-ky%E5%8A%9B%E5%AE%88%E6%9C%88%E7%B7%9A%E4%B8%A6%E5%89%B5%E6%96%B0%E9%AB%98-042307807.html",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-16",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "earnings"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "財訊快報研究員周佳蓉鴻海2317轉投資的amaxky6933與鴻海在客戶分工與供應鏈上合作密切鴻海主攻大型客戶amax則鎖定中小型機房與新創客製化需求公司營運主軸正從客製化ai",
-          "event_cluster_key": "event-a794674872cb1b9384fb",
-          "published_time_bucket": "2026-10-16T04:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
-          "title": "光寶科睽違10年再籌聯貸，360億元永續連結授信超額認購達140%",
-          "url": "https://tw.stock.yahoo.com/news/%E5%85%89%E5%AF%B6%E7%A7%91%E7%9D%BD%E9%81%9510%E5%B9%B4%E5%86%8D%E7%B1%8C%E8%81%AF%E8%B2%B8-360%E5%84%84%E5%85%83%E6%B0%B8%E7%BA%8C%E9%80%A3%E7%B5%90%E6%8E%88%E4%BF%A1%E8%B6%85%E9%A1%8D%E8%AA%8D%E8%B3%BC%E9%81%94140-042117375.html",
-          "summary": "【財訊快報／記者劉居全報導】光寶科(2301)等值360億元永續連結聯合授信案今（16）日順利完成簽約。本案由台北富邦銀行擔任統籌主辦銀行，國泰世華銀行及兆豐商業銀行共同統籌主辦，不僅是光寶科首筆永續",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-16T04:21:17+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "台股重挫沒在怕！ 散戶進場狂撿「這檔ETF 」淨申購金額創新高",
-          "url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E8%82%A1%E9%87%8D%E6%8C%AB%E6%B2%92%E5%9C%A8%E6%80%95-%E6%95%A3%E6%88%B6%E9%80%B2%E5%A0%B4%E7%8B%82%E6%92%BF-%E9%80%99%E6%AA%94etf-%E6%B7%A8%E7%94%B3%E8%B3%BC%E9%87%91%E9%A1%8D%E5%89%B5%E6%96%B0%E9%AB%98-042000911.html",
-          "summary": "受美國CPI超預期影響，台股15日重挫逾1600點，外資大幅撤出，單日賣超達3025億元創歷史紀錄，不過散戶並未被龐大賣壓影響，反而趁勢逢低搶進元大台灣50（0050）、元大台灣50正2（00631L",
+          "title": "華許宣布，生產力和就業工作組聽證會下月召開",
+          "url": "https://tw.stock.yahoo.com/news/%E8%8F%AF%E8%A8%B1%E5%AE%A3%E5%B8%83-%E7%94%9F%E7%94%A2%E5%8A%9B%E5%92%8C%E5%B0%B1%E6%A5%AD%E5%B7%A5%E4%BD%9C%E7%B5%84%E8%81%BD%E8%AD%89%E6%9C%83%E4%B8%8B%E6%9C%88%E5%8F%AC%E9%96%8B-042841366.html",
+          "summary": "【財訊快報／劉敏夫】外電報導指出，美國聯準會主席華許表示，他的生產力和就業工作組將於下個月在舊金山灣區舉行實地聽證會。在週五上午於曼谷舉行的國際貨幣基金組織年會期間，華許在一場有主持人的討論會上宣布將",
           "source": "Yahoo Taiwan Finance",
           "provider": "yahoo_finance",
           "source_tier": "market",
           "authority_tier": "market",
           "market": "cross_market",
           "relevance": "market",
-          "published_at": "2026-10-16T04:20:00+00:00",
+          "published_at": "2026-10-16T04:28:41+00:00",
           "market_classification": {
             "market_scope": "cross_market",
             "taiwan_matches": [
-              "台股",
-              "taiwan",
-              "台灣",
-              "0050"
+              "taiwan"
             ],
             "us_matches": [
               "美國",
-              "cpi"
+              "聯準會"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 6,
+              "matched_term_count": 3,
               "source_market_hint": "cross_market"
             }
           },
           "market_scope": "cross_market",
           "taiwan_matches": [
-            "台股",
-            "taiwan",
-            "台灣",
-            "0050"
+            "taiwan"
           ],
           "us_matches": [
             "美國",
-            "cpi"
+            "聯準會"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 6,
+            "matched_term_count": 3,
             "source_market_hint": "cross_market"
           },
-          "story_id": "news-ed2ae27891950b615538",
+          "story_id": "news-dfe965a30be1bceb8476",
           "provider_name": "Yahoo Taiwan Finance",
-          "raw_title": "台股重挫沒在怕！ 散戶進場狂撿「這檔ETF 」淨申購金額創新高",
-          "normalized_fact": "受美國CPI超預期影響，台股15日重挫逾1600點，外資大幅撤出，單日賣超達3025億元創歷史紀錄，不過散戶並未被龐大賣壓影響，反而趁勢逢低搶進元大台灣50（0050）、元大台灣50正2（00631L。",
+          "raw_title": "華許宣布，生產力和就業工作組聽證會下月召開",
+          "normalized_fact": "【財訊快報／劉敏夫】外電報導指出，美國聯準會主席華許表示，他的生產力和就業工作組將於下個月在舊金山灣區舉行實地聽證會。在週五上午於曼谷舉行的國際貨幣基金組織年會期間，華許在一場有主持人的討論會上宣布將。",
           "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
@@ -587,7 +756,7 @@
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
           "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E8%82%A1%E9%87%8D%E6%8C%AB%E6%B2%92%E5%9C%A8%E6%80%95-%E6%95%A3%E6%88%B6%E9%80%B2%E5%A0%B4%E7%8B%82%E6%92%BF-%E9%80%99%E6%AA%94etf-%E6%B7%A8%E7%94%B3%E8%B3%BC%E9%87%91%E9%A1%8D%E5%89%B5%E6%96%B0%E9%AB%98-042000911.html",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E8%8F%AF%E8%A8%B1%E5%AE%A3%E5%B8%83-%E7%94%9F%E7%94%A2%E5%8A%9B%E5%92%8C%E5%B0%B1%E6%A5%AD%E5%B7%A5%E4%BD%9C%E7%B5%84%E8%81%BD%E8%AD%89%E6%9C%83%E4%B8%8B%E6%9C%88%E5%8F%AC%E9%96%8B-042841366.html",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "",
@@ -596,28 +765,20 @@
           "published_local_date": "",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "TAIEX"
-          ],
+          "entities": [],
           "sectors": [],
           "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "macro",
-            "reason": "macro_subject_action",
-            "matched_terms": [
-              "cpi",
-              "預期"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "cpi",
-              "預期"
-            ],
-            "matched_subject": "cpi",
-            "matched_action": "預期",
-            "matched_market_object": "cpi",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
             "input_fields": [
               "description",
               "summary",
@@ -628,20 +789,17 @@
             "market:cross_market"
           ],
           "freshness": "published",
-          "dedupe_key": "受美國cpi超預期影響台股15日重挫逾1600點外資大幅撤出單日賣超達3025億元創歷史紀錄不過散戶並未被龐大賣壓影響反而趁勢逢低搶進元大台灣500050元大台灣50正200631l",
-          "event_cluster_key": "event-64c963f9e1cc03f16ed0",
+          "dedupe_key": "財訊快報劉敏夫外電報導指出美國聯準會主席華許表示他的生產力和就業工作組將於下個月在舊金山灣區舉行實地聽證會在週五上午於曼谷舉行的國際貨幣基金組織年會期間華許在一場有主持人的討論會上宣布將",
+          "event_cluster_key": "",
           "published_time_bucket": "2026-10-16T04:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [
-            "cpi",
-            "預期"
-          ],
-          "matched_subject": "cpi",
-          "matched_action": "預期",
-          "matched_market_object": "cpi",
-          "decision_value_class": "macro",
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -656,214 +814,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 130
-        },
-        {
-          "title": "美國期權下週擴大交易時間 台積電、阿里巴巴納入",
-          "url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%9C%8B%E6%9C%9F%E6%AC%8A%E4%B8%8B%E9%80%B1%E6%93%B4%E5%A4%A7%E4%BA%A4%E6%98%93%E6%99%82%E9%96%93-%E5%8F%B0%E7%A9%8D%E9%9B%BB-%E9%98%BF%E9%87%8C%E5%B7%B4%E5%B7%B4%E7%B4%8D%E5%85%A5-041905154.html",
-          "summary": "圖／示意圖商傳媒｜何映辰／台北報導芝加哥期權交易所全球市場公司（Cboe）宣布，將於下週一，也就是 10 月 19 日起，針對部分股票與 ETF 期權啟動盤前與盤後交易時段。這項擴大的交易時間，將涵蓋",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-16T04:19:05+00:00",
-          "market_classification": {
-            "market_scope": "cross_market",
-            "taiwan_matches": [
-              "台積電",
-              "taiwan"
-            ],
-            "us_matches": [
-              "美國"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 3,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "cross_market",
-          "taiwan_matches": [
-            "台積電",
-            "taiwan"
-          ],
-          "us_matches": [
-            "美國"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 3,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "不能再叫張鈞甯概念股了！女明星出清 藥華藥不跌反大漲%",
-          "url": "https://tw.stock.yahoo.com/news/%E4%B8%8D%E8%83%BD%E5%86%8D%E5%8F%AB%E5%BC%B5%E9%88%9E%E7%94%AF%E6%A6%82%E5%BF%B5%E8%82%A1%E4%BA%86%EF%BC%81%E5%A5%B3%E6%98%8E%E6%98%9F%E5%87%BA%E6%B8%85-%E8%97%A5%E8%8F%AF%E8%97%A5%E4%B8%8D%E8%B7%8C%E5%8F%8D%E5%A4%A7%E6%BC%B2-041739265.html",
-          "summary": "藝人張鈞甯日前透露最新投資動向，證實今年已將手中的藥華藥（6446）持股「全數出清」。恰巧藥華藥今（16）日展現強勁走勢，盤中一路拉升至 1,300 元，較昨日收盤價 1,205 元大漲 95 元，漲",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-16T04:17:39+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "俄羅斯堪察加半島　發生規模6.9強震",
-          "url": "https://tw.news.yahoo.com/%E4%BF%84%E7%BE%85%E6%96%AF%E5%A0%AA%E5%AF%9F%E5%8A%A0%E5%8D%8A%E5%B3%B6-%E7%99%BC%E7%94%9F%E8%A6%8F%E6%A8%A16-9%E5%BC%B7%E9%9C%87-041651988.html",
-          "summary": "[NOWNEWS今日新聞]美國地質調查局（USGS）的數據顯示，俄羅斯遠東地區的堪察加半島（Kamchatka​Peninsularegionof⁠Russia），今天（16日）發生規模6.9地震，不",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-16T04:16:51+00:00",
-          "market_classification": {
-            "market_scope": "cross_market",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [
-              "美國"
-            ],
-            "global_matches": [
-              "地震"
-            ],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 3,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "cross_market",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [
-            "美國"
-          ],
-          "global_matches": [
-            "地震"
-          ],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 3,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "AI載板規格升級，壓膜、曝光、檢測等關鍵設備供給吃緊、交期拉長",
-          "url": "https://tw.stock.yahoo.com/news/ai%E8%BC%89%E6%9D%BF%E8%A6%8F%E6%A0%BC%E5%8D%87%E7%B4%9A-%E5%A3%93%E8%86%9C-%E6%9B%9D%E5%85%89-%E6%AA%A2%E6%B8%AC%E7%AD%89%E9%97%9C%E9%8D%B5%E8%A8%AD%E5%82%99%E4%BE%9B%E7%B5%A6%E5%90%83%E7%B7%8A-%E4%BA%A4%E6%9C%9F%E6%8B%89%E9%95%B7-041611524.html",
-          "summary": "【財訊快報／記者李純君報導】AI致使載板面積變大、層數變多，生產難度也更高，客戶群也從NVIDIA擴大到Google與亞馬遜等自研ASIC平台，整體載板需求大暴增，連帶更讓載板部分設備商滿手大單，包括",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-16T04:16:11+00:00",
-          "market_classification": {
-            "market_scope": "cross_market",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [
-              "nvidia"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "cross_market",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [
-            "nvidia"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "追強勢股隔天跳空殺！ 他以為洗盤又加碼 見鎖跌停崩潰了",
-          "url": "https://tw.stock.yahoo.com/news/%E8%BF%BD%E5%BC%B7%E5%8B%A2%E8%82%A1%E9%9A%94%E5%A4%A9%E8%B7%B3%E7%A9%BA%E6%AE%BA-%E4%BB%96%E4%BB%A5%E7%82%BA%E6%B4%97%E7%9B%A4%E5%8F%88%E5%8A%A0%E7%A2%BC-%E8%A6%8B%E9%8E%96%E8%B7%8C%E5%81%9C%E5%B4%A9%E6%BD%B0%E4%BA%86-041600035.html",
-          "summary": "有網友在《當沖勒戒所》社團發文表示，原本決定放棄當沖、改做波段操作，沒想到才剛轉換策略，就遇上熱門塑膠股南亞（1303）股價急漲後反轉。他前一天以每股348元買進2張，股價隨即衝上漲停，隔天開盤卻跳空",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-16T04:16:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
         },
         {
           "title": "台股反彈一天又遇逆風！台指夜盤重挫853點，台積電法說前必看三道關卡!! - Winner | 投資網誌 - 玩股網",
@@ -1024,6 +974,44 @@
           }
         },
         {
+          "title": "季線攻防怎麼看？8656億解凍就會反彈?? - Winner | 投資網誌 - 玩股網",
+          "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE1nMFJGc3lHSVpnQVlrQ1Jpckh1MlpPbzFyZGMwamhwMFY4SlJzcDMwZjRXS3dLLVB0TkZJV3YwWDNxeUxxSEhJOEg2NmxpclNMVk9zM0xn?oc=5",
+          "summary": "季線攻防怎麼看？8656億解凍就會反彈?? - Winner | 投資網誌 玩股網",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-09-16T00:23:03+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
           "title": "傳產三族群同步走強，成交量能否撐住這波輪動？-孔明投資長 - CMoney投資網誌",
           "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE5HMTZBcVZENm5tMVJMSnAyaE5hWTRaVUl4OW8yT1dRSDNGMnVqZlV0dG5IOU1RR0c2MTlqaFBYOFh4dF9fWXVwejEtNElxU3Z2bjkwWWU3Ui12OGVzSG1GeW9LdzV4UGd6eGFxN0VHV1YzUFdtQnVxRDg5YlBZSEk?oc=5",
           "summary": "傳產三族群同步走強，成交量能否撐住這波輪動？-孔明投資長 CMoney投資網誌",
@@ -1062,16 +1050,56 @@
           }
         },
         {
-          "title": "季線攻防怎麼看？8656億解凍就會反彈?? - Winner | 投資網誌 - 玩股網",
-          "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE1nMFJGc3lHSVpnQVlrQ1Jpckh1MlpPbzFyZGMwamhwMFY4SlJzcDMwZjRXS3dLLVB0TkZJV3YwWDNxeUxxSEhJOEg2NmxpclNMVk9zM0xn?oc=5",
-          "summary": "季線攻防怎麼看？8656億解凍就會反彈?? - Winner | 投資網誌 玩股網",
+          "title": "加權指數跌破季線與四萬五，權值股與量能能否止穩？-子敏左側交易 - CMoney投資網誌",
+          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxOSDRCQWtzZkFZYUdfVUR1bWFGTS1yMGFrSWd2NWxWYzB4TUItaGxmdmJYbW1sb3pHUnF6dzlMdUpSQ3F2a3d0eTZUZTFVeDhUUXBQRGZuTTkxVXE5MXloal91dXYtVTl5d3JqMklGMWJpWGxkRWgyd1V6U25NcW5MRGt1bw?oc=5",
+          "summary": "加權指數跌破季線與四萬五，權值股與量能能否止穩？-子敏左側交易 CMoney投資網誌",
           "source": "Google News｜台股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-09-16T00:23:03+00:00",
+          "published_at": "2026-08-24T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股",
+              "加權指數"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股",
+            "加權指數"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "升息1碼後，真的要止跌了嗎？ - Winner | 投資網誌 - 玩股網",
+          "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE1tU0VIVXJwRlV5SmQ0MWhNOFNZRVByUlhnUjJsdVY3VmdfaDVJaU5vLU13dEtoR2IwLUN0UlVFSHhPNVNUNC0zZTN4UlhuS1l2Q1pNdWd3?oc=5",
+          "summary": "升息1碼後，真的要止跌了嗎？ - Winner | 投資網誌 玩股網",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-09-17T07:00:00+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -1142,44 +1170,6 @@
           }
         },
         {
-          "title": "升息1碼後，真的要止跌了嗎？ - Winner | 投資網誌 - 玩股網",
-          "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE1tU0VIVXJwRlV5SmQ0MWhNOFNZRVByUlhnUjJsdVY3VmdfaDVJaU5vLU13dEtoR2IwLUN0UlVFSHhPNVNUNC0zZTN4UlhuS1l2Q1pNdWd3?oc=5",
-          "summary": "升息1碼後，真的要止跌了嗎？ - Winner | 投資網誌 玩股網",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-09-17T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
           "title": "台積電ADR大漲帶動台股走強，買盤能擴散到AI供應鏈嗎？-孔明投資長 - CMoney投資網誌",
           "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTFBDSVZzRVBMTTFvN3pzVkpaNGRXUUNxaTFiSWFCWERKVzIyVU15TzBNd3ZuNnJJRjlSTjBmVlNHTzZCeTBrZlY2bmhqeWtKY0lzZHpZRWFoMUZ1eFpDdDZsWXNzaHVvUzF0UXZVZjRaMTlwWUFXYWQxRldIV2tRZFE?oc=5",
           "summary": "台積電ADR大漲帶動台股走強，買盤能擴散到AI供應鏈嗎？-孔明投資長 CMoney投資網誌",
@@ -1209,46 +1199,6 @@
           "taiwan_matches": [
             "台股",
             "台積電"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "加權指數跌破季線與四萬五，權值股與量能能否止穩？-子敏左側交易 - CMoney投資網誌",
-          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxOSDRCQWtzZkFZYUdfVUR1bWFGTS1yMGFrSWd2NWxWYzB4TUItaGxmdmJYbW1sb3pHUnF6dzlMdUpSQ3F2a3d0eTZUZTFVeDhUUXBQRGZuTTkxVXE5MXloal91dXYtVTl5d3JqMklGMWJpWGxkRWgyd1V6U25NcW5MRGt1bw?oc=5",
-          "summary": "加權指數跌破季線與四萬五，權值股與量能能否止穩？-子敏左側交易 CMoney投資網誌",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-08-24T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股",
-              "加權指數"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股",
-            "加權指數"
           ],
           "us_matches": [],
           "global_matches": [],
@@ -1504,6 +1454,46 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
+        },
+        {
+          "title": "台灣 AI 紅利待擴散，學者籲拓展半導體上下游布局 - TechNews 科技新報",
+          "url": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxPNFhja0NySHA0Z1lfY3Z4REx2V3VCZDAtOTVSaG93aU5uYkdfaHBsR25DT1JGLUctRGJDZmUtWERTTFZ6RU9TME5nTDNadUctVnp6Y0FBYV9Ddll3czBveGhuWDlidkpuQlZFZUR3blNoYjJkSjhRNFFPZm1IcjExUl9FRms2MmlCR2lOczg3d1JneVI0NGltSnJrTmVlRF9JSDVkNjQycUZzNEZCLW1sSzlUYWRyMVBiTTFQQkpYQnVqZHBQektPTlZBcGd6bkNDYWQ0aQ?oc=5",
+          "summary": "台灣 AI 紅利待擴散，學者籲拓展半導體上下游布局 TechNews 科技新報",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-16T00:51:12+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股",
+              "台灣"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股",
+            "台灣"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "taiwan"
+          }
         },
         {
           "title": "AI供應鏈廠商組「台灣精品館」 首度參展日本先進科技展 - 你的公共電視",
@@ -1953,46 +1943,6 @@
           "ranking_score": 115
         },
         {
-          "title": "台灣 AI 紅利待擴散，學者籲拓展半導體上下游布局 - TechNews 科技新報",
-          "url": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxPNFhja0NySHA0Z1lfY3Z4REx2V3VCZDAtOTVSaG93aU5uYkdfaHBsR25DT1JGLUctRGJDZmUtWERTTFZ6RU9TME5nTDNadUctVnp6Y0FBYV9Ddll3czBveGhuWDlidkpuQlZFZUR3blNoYjJkSjhRNFFPZm1IcjExUl9FRms2MmlCR2lOczg3d1JneVI0NGltSnJrTmVlRF9JSDVkNjQycUZzNEZCLW1sSzlUYWRyMVBiTTFQQkpYQnVqZHBQektPTlZBcGd6bkNDYWQ0aQ?oc=5",
-          "summary": "台灣 AI 紅利待擴散，學者籲拓展半導體上下游布局 TechNews 科技新報",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-16T00:51:12+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股",
-              "台灣"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股",
-            "台灣"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
           "title": "TWA00 加權指數- AI需求狂飆！半導體與伺服器供應鏈全面擴產- 股市爆料同學會 - CMoney",
           "url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTFAyVW5rYmZpb2NPcG9pT1lfTGFad2E5VVBOSzh1ZDRIZzNhTWUyUm9hdW5uNkVuN0dTMm1QNmYwZlIxLUJHS2FKZEZQWE5WX1lOVHlvY0dTMm0",
           "summary": "TWA00 加權指數- AI需求狂飆！半導體與伺服器供應鏈全面擴產- 股市爆料同學會 CMoney",
@@ -2280,44 +2230,6 @@
           }
         },
         {
-          "title": "三大法人買賣超 – 外資買超(4958)臻鼎-KY、(3037)欣興，投信買超(2327)國巨*、(4958)臻鼎-KY，法人合計買超95.57億元 - 永豐金證券",
-          "url": "https://news.google.com/rss/articles/CBMiwwRBVV95cUxPTDFWR0lFN3ZhVUEya2dzaXpub1dhZ0FMYWsyd09pZjJqSUtjS3JQQ2loZjl5dF80cFQwbkd4TWFjdjMzajB5YXZ3ZEpDSS14ZjVQTmZXSmFCLVVqclBmSWRUWlhTdExiYmlrMHZ0d1BPVkNIZkh1THNJemRVLTZuWVpLU00xcW8yZUhWcXJMVS1tRl9xaTZKeW1fUUgzVUI1c0xRVC1DeGx1cFM0YklBWTgxVFBxV0ZNMExpV3VraXNwaXZLUENaM2d2Wk9YVDFJVExuTmpteEFLeUVRN05BTnZuSEVMYll5SFl1ZFFrdmQxOVp0YTljQ2NtU0pqUGk0QnJ0aE96anlSa0lIYU5DZUlhdUxkR2xUeGtOMUpuOXdGQkwzdUJnZTlSRVRWOS10TnFQUWhZbDd5SDNqQWlDN2l6RTVFZTQyYWF3UjJCaEtGVXMtZ2RWTEZXX0lJbzJtdlNuaDJWYVgzcnM3WVdOaTVSZ0RpcFpYT29GOU1LcVI2QTU0eUpqQm01Zk8wTE1kdEs3NnpfdUtCYUZOa0ctbHp4TktMZklnZm8zaGdWdm9qMnBfRW41X0JtSC1pMjVzc2pub3BuUmhpbElLUUI1c3JnSjJiYUctbDNxYXJhV2pPZzJEekU4dnpmdU5NSUxtdWxZSGZOM0QtUXRUNXFpM1BoeFJYWXdpNEpKcERPQzNQeF9RRzJ1bzFOaS1HTEpMWHo2Y2VRM2hQSnRUUWJhdXNTZFU3MG1oT1k3cXNUZzhnNEE?oc=5",
-          "summary": "三大法人買賣超 – 外資買超(4958)臻鼎-KY、(3037)欣興，投信買超(2327)國巨*、(4958)臻鼎-KY，法人合計買超95.57億元 永豐金證券",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-02T11:41:29+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
           "title": "南亞科大逃殺 外資+投信+自營商近5日爆賣超6萬張 記憶體賺很多卻危機重重 - 台灣好新聞",
           "url": "https://news.google.com/rss/articles/CBMi0gNBVV95cUxPb1VUUS1aMnBQMVA0SjZsVl9fQzFOemdOZ2hvZTNnaFBmSlEyS1FFVGdMQ2s2djRsb2JuVTA3MWR5dWs5ZjJNX0hqNDdYNHpaS1hXdWpqQWl6VUpTMFN6aU4yRkpjYm5JNTc1Q0gwOG5xa21DWlBVR1ZpakFLYXZXQ3ZBS0RBblJtUDlucnlaMjVFR2QxQWtRQnhHb3pfTWk0NEVDUEtZWUdxa0NHbU1na2lUMXItM2szcURiaksyaDY1WlpGWUFEZzdHeU5rQ1pySlhGbm5qMmpWYTNUeE5UV25GMkF2N2RJcjRDTTc3REpGVWNVYUlHcVVXY2tyc25JWXh3VVU1eDcxcTVYd3BPaGhXVzdNQUVfdTBYUWhSemZ6X0xiVnU2VVU0MlRXSXRmV0dDdTh5QVZCYVktX2UyLXp5YWVBaFdKLTg4SVdzVnZnaFhqR0xJaEFGWXU3eTNmOXNFQVVCenNrNWcyWGlFbWk3dXhyYU9TMm5ZTWdhdE5JQ3NJQlNxQ1JxazRHSzg4S1VWU3hocXNZT3NiczBudjd0dzQzcXFGcnZXVnhTTGJVZjQ3MUdHQmhaUzdhb1BiVi1hajJqOE9IOUd2RlRpenBn?oc=5",
           "summary": "南亞科大逃殺 外資+投信+自營商近5日爆賣超6萬張 記憶體賺很多卻危機重重 台灣好新聞",
@@ -2354,6 +2266,44 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 2,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "三大法人買賣超 – 外資買超(4958)臻鼎-KY、(3037)欣興，投信買超(2327)國巨*、(4958)臻鼎-KY，法人合計買超95.57億元 - 永豐金證券",
+          "url": "https://news.google.com/rss/articles/CBMiwwRBVV95cUxPTDFWR0lFN3ZhVUEya2dzaXpub1dhZ0FMYWsyd09pZjJqSUtjS3JQQ2loZjl5dF80cFQwbkd4TWFjdjMzajB5YXZ3ZEpDSS14ZjVQTmZXSmFCLVVqclBmSWRUWlhTdExiYmlrMHZ0d1BPVkNIZkh1THNJemRVLTZuWVpLU00xcW8yZUhWcXJMVS1tRl9xaTZKeW1fUUgzVUI1c0xRVC1DeGx1cFM0YklBWTgxVFBxV0ZNMExpV3VraXNwaXZLUENaM2d2Wk9YVDFJVExuTmpteEFLeUVRN05BTnZuSEVMYll5SFl1ZFFrdmQxOVp0YTljQ2NtU0pqUGk0QnJ0aE96anlSa0lIYU5DZUlhdUxkR2xUeGtOMUpuOXdGQkwzdUJnZTlSRVRWOS10TnFQUWhZbDd5SDNqQWlDN2l6RTVFZTQyYWF3UjJCaEtGVXMtZ2RWTEZXX0lJbzJtdlNuaDJWYVgzcnM3WVdOaTVSZ0RpcFpYT29GOU1LcVI2QTU0eUpqQm01Zk8wTE1kdEs3NnpfdUtCYUZOa0ctbHp4TktMZklnZm8zaGdWdm9qMnBfRW41X0JtSC1pMjVzc2pub3BuUmhpbElLUUI1c3JnSjJiYUctbDNxYXJhV2pPZzJEekU4dnpmdU5NSUxtdWxZSGZOM0QtUXRUNXFpM1BoeFJYWXdpNEpKcERPQzNQeF9RRzJ1bzFOaS1HTEpMWHo2Y2VRM2hQSnRUUWJhdXNTZFU3MG1oT1k3cXNUZzhnNEE?oc=5",
+          "summary": "三大法人買賣超 – 外資買超(4958)臻鼎-KY、(3037)欣興，投信買超(2327)國巨*、(4958)臻鼎-KY，法人合計買超95.57億元 永豐金證券",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-02T11:41:29+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
             "source_market_hint": "taiwan"
           }
         },
@@ -2510,6 +2460,44 @@
           }
         },
         {
+          "title": "三大法人買超台股470.37億外資連三買、大敲「這檔」23.6萬張投信加碼聯電、台達電| 財經 - Newtalk新聞",
+          "url": "https://news.google.com/rss/articles/CBMiW0FVX3lxTE5XQTY0Y0ZGWTdRSllwb2lsZjN5YlY1eEttbGNSVHZkQ2tVcmFlZmgxSWh5bzdObDE0VkxuZmRHTUYwVlpkakE3dmpJSDVCZWZZMXFEYUlKZ3Y3QUU?oc=5",
+          "summary": "三大法人買超台股470.37億外資連三買、大敲「這檔」23.6萬張投信加碼聯電、台達電| 財經 Newtalk新聞",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-09-21T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
           "title": "三大法人買賣超 – 外資買超(3443)創意、(3045)台灣大，投信買超(3017)奇鋐、(3653)健策，法人合計賣超708.48億元 - 永豐金證券",
           "url": "https://news.google.com/rss/articles/CBMixwRBVV95cUxOTzNWbnNWWFRRS0FidWM4Njg4VDBxVTlMd2dHbmtCZGs5YWJJa2oyYVRLLUhRZllsYzkyZnNBWHZRNjlhUk5fektJdE1WTTNwOElIaEM0X2JmRG9abTlsWmJaUXkzb0VsZVFxazd3U0lhdTl2aFExTTBxRWVlaUxsRUtELXl4UHpYN1JVelk3OFZ2TFhGOU9qYUwtaXdVRWRueXFia1VhUC1xY2xRVHNSSXBNUjF4OW1aY1F5RmYtQ3VJMkJmNDh2Ym1KcnNBem1rUGZkYUU0WlBjV1JSTWJDMjB1ajhVZDhZVlhvaXVuQkZLckFIWk9nZERZem91OFM1RF9DWXZNQ29PeWl4T2IxSS1EX09abkwxSWlGcVFScjNZWVBhcDNTRjNrNGdRZ2tGWUtwdTZJWHlLNHNSbDNTNko5bXp3ZFQ4dk1PZS1TdmtHbVpMRDA2eWU5Qjg1ckJ3YmhXR3EweHZ5eUl6eTRrTnFJaGVra3Z3SHFaNVdwUXNnZTRSUGNVUFN1SFQ5bEJrS19qRm9VeHR2d2hGNGhQZHpMOUdhUFEtQXo0UXlBOTBBMVV0dy1kalNZWHlndXZLdThUVGVRRmhBTmZoaC13UWdmSVB1Q1pwb2ZRRXpWZExDV1AzNnMwM1RZdUNFQnBaR0tvUnFVYVZoeE5pcm9TbDlnRHJkT3dyNmtENk5KdHF6QktoanVDNDZxQUxRUERSamdydkwwLXZJLUYyUXJKc3V1N3VYdzFxVV8xSzB6c1BOUlBwNXlJ?oc=5",
           "summary": "三大法人買賣超 – 外資買超(3443)創意、(3045)台灣大，投信買超(3017)奇鋐、(3653)健策，法人合計賣超708.48億元 永豐金證券",
@@ -2590,47 +2578,192 @@
             "matched_term_count": 1,
             "source_market_hint": "taiwan"
           }
-        },
-        {
-          "title": "台股跌220點，投信、外資卻同步搶進這兩大族群！ - 鉅亨網",
-          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE15RW9KZkI3amNmVHo0bGpSbGlRTTNRRWNiWkN2RG4xZkNZQ09QanBQZmoxNVlFS0Q4Q0xJQWp2WGotU0JkNi1GbVNfN3BmbTg?oc=5",
-          "summary": "台股跌220點，投信、外資卻同步搶進這兩大族群！ 鉅亨網",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-09-08T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
         }
       ],
       "eligible_inventory": [
+        {
+          "story_id": "news-6a843bce3c00df2717ee",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "聯準會不預告利率決定！華許靜默期前拒評10月是否升息",
+          "raw_title": "聯準會不預告利率決定！華許靜默期前拒評10月是否升息",
+          "normalized_fact": "【財訊快報／劉敏夫】外電報導指出，美國聯準會主席華許未對同僚近期釋放的信號表示支援或反對。這些信號顯示，官員們並不急於在本月升息。華許表示，聯準會已不再提前預告政策決定。華許表示，他不會預判會議結果。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "【財訊快報／劉敏夫】外電報導指出，美國聯準會主席華許未對同僚近期釋放的信號表示支援或反對。這些信號顯示，官員們並不急於在本月升息。華許表示，聯準會已不再提前預告政策決定。華許表示，他不會預判會議結果。",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E8%81%AF%E6%BA%96%E6%9C%83%E4%B8%8D%E9%A0%90%E5%91%8A%E5%88%A9%E7%8E%87%E6%B1%BA%E5%AE%9A-%E8%8F%AF%E8%A8%B1%E9%9D%9C%E9%BB%98%E6%9C%9F%E5%89%8D%E6%8B%92%E8%A9%9510%E6%9C%88%E6%98%AF%E5%90%A6%E5%8D%87%E6%81%AF-043707849.html",
+          "url": "https://tw.stock.yahoo.com/news/%E8%81%AF%E6%BA%96%E6%9C%83%E4%B8%8D%E9%A0%90%E5%91%8A%E5%88%A9%E7%8E%87%E6%B1%BA%E5%AE%9A-%E8%8F%AF%E8%A8%B1%E9%9D%9C%E9%BB%98%E6%9C%9F%E5%89%8D%E6%8B%92%E8%A9%9510%E6%9C%88%E6%98%AF%E5%90%A6%E5%8D%87%E6%81%AF-043707849.html",
+          "published_at": "2026-10-16T04:37:07+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "聯準會",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "聯準會",
+              "利率"
+            ],
+            "matched_subject": "聯準會",
+            "matched_action": "利率",
+            "matched_market_object": "聯準會",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "財訊快報劉敏夫外電報導指出美國聯準會主席華許未對同僚近期釋放的信號表示支援或反對這些信號顯示官員們並不急於在本月升息華許表示聯準會已不再提前預告政策決定華許表示他不會預判會議結果",
+          "event_cluster_key": "event-84b7be6c6a468810ada4",
+          "published_time_bucket": "2026-10-16T04:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "聯準會",
+            "利率"
+          ],
+          "matched_subject": "聯準會",
+          "matched_action": "利率",
+          "matched_market_object": "聯準會",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-16T04:48:14.344613+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130,
+          "supporting_sources": [
+            {
+              "provider": "yahoo_finance",
+              "url": "https://tw.stock.yahoo.com/news/%E8%8B%B1%E5%9C%8B%E5%A4%AE%E8%A1%8C%E7%B8%BD%E8%A3%81%E7%A8%B1%E9%80%9A%E8%86%A8%E7%AC%AC%E4%BA%8C%E8%BC%AA%E6%95%88%E6%87%89%E8%AD%89%E6%93%9A%E6%9C%89%E9%99%90-%E5%B8%82%E5%A0%B411%E6%9C%88%E5%8D%87%E6%81%AF%E9%A0%90%E6%9C%9F%E4%BB%8D%E5%9C%A8-043141504.html"
+            }
+          ]
+        },
+        {
+          "story_id": "news-dfe965a30be1bceb8476",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "華許宣布，生產力和就業工作組聽證會下月召開",
+          "raw_title": "華許宣布，生產力和就業工作組聽證會下月召開",
+          "normalized_fact": "【財訊快報／劉敏夫】外電報導指出，美國聯準會主席華許表示，他的生產力和就業工作組將於下個月在舊金山灣區舉行實地聽證會。在週五上午於曼谷舉行的國際貨幣基金組織年會期間，華許在一場有主持人的討論會上宣布將。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "【財訊快報／劉敏夫】外電報導指出，美國聯準會主席華許表示，他的生產力和就業工作組將於下個月在舊金山灣區舉行實地聽證會。在週五上午於曼谷舉行的國際貨幣基金組織年會期間，華許在一場有主持人的討論會上宣布將",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E8%8F%AF%E8%A8%B1%E5%AE%A3%E5%B8%83-%E7%94%9F%E7%94%A2%E5%8A%9B%E5%92%8C%E5%B0%B1%E6%A5%AD%E5%B7%A5%E4%BD%9C%E7%B5%84%E8%81%BD%E8%AD%89%E6%9C%83%E4%B8%8B%E6%9C%88%E5%8F%AC%E9%96%8B-042841366.html",
+          "url": "https://tw.stock.yahoo.com/news/%E8%8F%AF%E8%A8%B1%E5%AE%A3%E5%B8%83-%E7%94%9F%E7%94%A2%E5%8A%9B%E5%92%8C%E5%B0%B1%E6%A5%AD%E5%B7%A5%E4%BD%9C%E7%B5%84%E8%81%BD%E8%AD%89%E6%9C%83%E4%B8%8B%E6%9C%88%E5%8F%AC%E9%96%8B-042841366.html",
+          "published_at": "2026-10-16T04:28:41+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "財訊快報劉敏夫外電報導指出美國聯準會主席華許表示他的生產力和就業工作組將於下個月在舊金山灣區舉行實地聽證會在週五上午於曼谷舉行的國際貨幣基金組織年會期間華許在一場有主持人的討論會上宣布將",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-10-16T04:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-16T04:48:14.344613+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
         {
           "story_id": "news-3ae407d39fd1f9f6bc1d",
           "provider": "yahoo_finance",
@@ -7133,191 +7266,12 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        },
-        {
-          "story_id": "news-aee628fce3af7507b653",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "亞股恐慌殺盤！台股盤中摔逾1,800點，電子股面估值修正",
-          "raw_title": "亞股恐慌殺盤！台股盤中摔逾1,800點，電子股面估值修正",
-          "normalized_fact": "【財訊快報／黃冠豪】亞股今早慘跌，受美國9月消費者物價指數（CPI）年增3.7%、高於市場預期影響，聯準會升息疑慮再起，加上美股費城半導體指數重挫4.3%，亞洲科技股今全面面臨沉重賣壓，台股開盤隨即出。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "【財訊快報／黃冠豪】亞股今早慘跌！受美國9月消費者物價指數（CPI）年增3.7%、高於市場預期影響，聯準會升息疑慮再起，加上美股費城半導體指數重挫4.3%，亞洲科技股今全面面臨沉重賣壓，台股開盤隨即出",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E4%BA%9E%E8%82%A1%E6%81%90%E6%85%8C%E6%AE%BA%E7%9B%A4-%E5%8F%B0%E8%82%A1%E7%9B%A4%E4%B8%AD%E6%91%94%E9%80%BE1-800%E9%BB%9E-%E9%9B%BB%E5%AD%90%E8%82%A1%E9%9D%A2%E4%BC%B0%E5%80%BC%E4%BF%AE%E6%AD%A3-042109380.html",
-          "url": "https://tw.stock.yahoo.com/news/%E4%BA%9E%E8%82%A1%E6%81%90%E6%85%8C%E6%AE%BA%E7%9B%A4-%E5%8F%B0%E8%82%A1%E7%9B%A4%E4%B8%AD%E6%91%94%E9%80%BE1-800%E9%BB%9E-%E9%9B%BB%E5%AD%90%E8%82%A1%E9%9D%A2%E4%BC%B0%E5%80%BC%E4%BF%AE%E6%AD%A3-042109380.html",
-          "published_at": "2026-10-15T04:21:09+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-15",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "TAIEX"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "聯準會",
-              "升息"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "聯準會",
-              "升息"
-            ],
-            "matched_subject": "聯準會",
-            "matched_action": "升息",
-            "matched_market_object": "聯準會",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "財訊快報黃冠豪亞股今早慘跌受美國9月消費者物價指數cpi年增37高於市場預期影響聯準會升息疑慮再起加上美股費城半導體指數重挫43亞洲科技股今全面面臨沉重賣壓台股開盤隨即出",
-          "event_cluster_key": "event-90e8f1e0865ee4cbb4ce",
-          "published_time_bucket": "2026-10-15T04:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "聯準會",
-            "升息"
-          ],
-          "matched_subject": "聯準會",
-          "matched_action": "升息",
-          "matched_market_object": "聯準會",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-15T04:23:25.005280+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
-          "story_id": "news-1d902f54301280ea7258",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "台股慘崩不是因為通膨！阮慕驊爆最大問題 看誰先撐不住",
-          "raw_title": "台股慘崩不是因為通膨！阮慕驊爆最大問題 看誰先撐不住",
-          "normalized_fact": "美國通膨疑慮升高，升息機率居高不下，引發美股與亞股崩跌，韓股一度重挫超過7.8%，幾乎就要觸碰7月股災時的低點，台股也慘崩逾1600點失守47K大關，財經專家阮慕驊認為，下跌原因不是通膨而是看誰撐不。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "美國通膨疑慮升高，升息機率居高不下，引發美股與亞股崩跌，韓股一度重挫超過7.8%，幾乎就要觸碰7月股災時的低點，台股也慘崩逾1600點失守47K大關，財經專家阮慕驊認為，下跌原因不是通膨而是看誰「撐不",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E8%82%A1%E6%85%98%E5%B4%A9%E4%B8%8D%E6%98%AF%E5%9B%A0%E7%82%BA%E9%80%9A%E8%86%A8-%E9%98%AE%E6%85%95%E9%A9%8A%E7%88%86%E6%9C%80%E5%A4%A7%E5%95%8F%E9%A1%8C-%E7%9C%8B%E8%AA%B0%E5%85%88%E6%92%90%E4%B8%8D%E4%BD%8F-035950050.html",
-          "url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E8%82%A1%E6%85%98%E5%B4%A9%E4%B8%8D%E6%98%AF%E5%9B%A0%E7%82%BA%E9%80%9A%E8%86%A8-%E9%98%AE%E6%85%95%E9%A9%8A%E7%88%86%E6%9C%80%E5%A4%A7%E5%95%8F%E9%A1%8C-%E7%9C%8B%E8%AA%B0%E5%85%88%E6%92%90%E4%B8%8D%E4%BD%8F-035950050.html",
-          "published_at": "2026-10-15T03:59:50+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-15",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "TAIEX"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美國通膨疑慮升高升息機率居高不下引發美股與亞股崩跌韓股一度重挫超過78幾乎就要觸碰7月股災時的低點台股也慘崩逾1600點失守47k大關財經專家阮慕驊認為下跌原因不是通膨而是看誰撐不",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-10-15T03:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-15T04:23:25.005280+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
         }
       ],
-      "inventory_saved_at": "2026-10-16T04:38:16.026575+00:00"
+      "inventory_saved_at": "2026-10-16T04:48:14.344613+00:00"
     },
     "us": {
-      "fetched_at": "2026-10-16T04:38:16.026575+00:00",
+      "fetched_at": "2026-10-16T04:48:14.344613+00:00",
       "stories": [
         {
           "title": "8-K - NORTHRIM BANCORP INC (0001163370) (Filer)",
@@ -9835,46 +9789,6 @@
           }
         },
         {
-          "title": "U.S. Export Restrictions Drive Nvidia China AI Chip Market Share Down to 34% - TIKR.com",
-          "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxNUjJWSjl6UktlV2tqSDljbkJUVTF1eHZHVEdVMnRTSnZaTVlmTG9JMndIVlRnczNSYnNIa2g5UHFtWjZyMnI5SFVIdUozeWtkQWMzajgydkYwTFNScS02TnhCdVNIMHZnUFduOFV0MUxtLU1fYnZqdmh1NEROMU9IVDRNNnZWY1VUOTNEOG9lQ2hYSGtSSmlv?oc=5",
-          "summary": "U.S. Export Restrictions Drive Nvidia China AI Chip Market Share Down to 34% TIKR.com",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-10-13T12:58:24+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股",
-              "nvidia"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股",
-            "nvidia"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "us"
-          }
-        },
-        {
           "title": "First Shift: Chip capacity, export controls and trade shocks redraw supply networks - Supply Chain Management Review",
           "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxNXy1VSGIwaFQwNmhGUDVjY21sN3QwYTZvUlhwUi1YaTZiTHphYXlSRmNVS2RDVllwU0lycFlrWFVJeHBheFJMLW9NcUtkZ2phcWxNQk9mM1Y1Y1JxYjVOdVBJRjFVUFhWQk8xNlJRYU1wQUU0aHFsQ0FXclBCZ1U2eFl6UGllSlhHZkEzZVBicXNJSmlxV1hHUmR5N3FOM3VxODZEamdZNldPTkowQjUw",
           "summary": "First Shift: Chip capacity, export controls and trade shocks redraw supply networks Supply Chain Management Review",
@@ -9997,16 +9911,16 @@
           "ranking_score": 115
         },
         {
-          "title": "Nvidia CEO Calls for AI Safety Collaboration with China - The Tech Buzz",
-          "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxQUlBVd1J5N2ZsMVNsdlFEZVFJay12ZUpReWVaSTFKQkNDX1hvMS0wYnZkTDVmcnpWRDJGSUhWejdPYi04OTNPV0pLNnROQUNjM1hBU0JxNHliRDVpOFMzTXduZDdqc0QzWFZham0tbzNxY01ScHJlckJrQkplUlZGU3RDei1VSjljX0xDTDRHRmx6dw?oc=5",
-          "summary": "Nvidia CEO Calls for AI Safety Collaboration with China The Tech Buzz",
+          "title": "U.S. Export Restrictions Drive Nvidia China AI Chip Market Share Down to 34% - TIKR.com",
+          "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxNUjJWSjl6UktlV2tqSDljbkJUVTF1eHZHVEdVMnRTSnZaTVlmTG9JMndIVlRnczNSYnNIa2g5UHFtWjZyMnI5SFVIdUozeWtkQWMzajgydkYwTFNScS02TnhCdVNIMHZnUFduOFV0MUxtLU1fYnZqdmh1NEROMU9IVDRNNnZWY1VUOTNEOG9lQ2hYSGtSSmlv?oc=5",
+          "summary": "U.S. Export Restrictions Drive Nvidia China AI Chip Market Share Down to 34% TIKR.com",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-10-15T12:06:00+00:00",
+          "published_at": "2026-10-13T12:58:24+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
@@ -10196,6 +10110,46 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 1,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "CNAS Insights | America Must Expand AI Export Controls Amid Talks with China - Center for a New American Security | CNAS",
+          "url": "https://news.google.com/rss/articles/CBMi1wFBVV95cUxOVktjNG1fVTNrRXBvOERoRHpRQVNRaG5sQzliQ2dWQzlWTGw0Q2xWVUtqYnVYa2VTdWEzazdCbHFxZ2tKS3VlekpEdE1Ma2l3OGdqTFh6SUhxWFRWQnFkY19pRm9YVHhrQUV4amRtUXR3RHpSdnBlekxick0zN1FkUGdqZDRlRHhhclc2RGRVUGlWTC1lTkRBclEwaWUwbEtzUl9sdVZqTUFYT3FHOXhTSGEyQzlBZUxmTm1obHhyR2hVbnhvM003UTI3b0U4OXdVUm1fRFdyZw?oc=5",
+          "summary": "CNAS Insights | America Must Expand AI Export Controls Amid Talks with China Center for a New American Security | CNAS",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-09-17T21:57:56+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股",
+              "sec"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股",
+            "sec"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
             "source_market_hint": "us"
           }
         },
@@ -10446,6 +10400,48 @@
           }
         },
         {
+          "title": "Global Oil Inventories Depleted, Next Price Spike Could Roil Economies, Markets - EnergyNow.com",
+          "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxQTzJ2Rmxmd19zVGUwVzJ3bzdEeHp4NTczY0tCM0MxYzlnNUU5UTRIZk45cndabTA0TnNoblRoc1FsWE12bTYtWGVHSWhkdEpBcnNYeDExZC1XWFN5SWhjS20ySEh4M1pHeFJ0RTFaSW9DT0JXYlMzNzdHS1dsWFUxWVZISjNMT045RkZoZmZDOFRHT3pFNHVDTVc0TlJEZVo5cVdMajNZSERCSmJH?oc=5",
+          "summary": "Global Oil Inventories Depleted, Next Price Spike Could Roil Economies, Markets EnergyNow.com",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-15T16:12:13+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [
+              "oil"
+            ],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [
+            "oil"
+          ],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "us"
+          }
+        },
+        {
           "title": "The US military reveals the volume of oil shipments it secured for passage through the Strait of Hormuz - صوت الإمارات",
           "url": "https://news.google.com/rss/articles/CBMi6wFBVV95cUxOWmVpQ1g2R3FpRU1rYXZYWlJJZUpQVGVwSWk4eWZRb1BNNmw3VE1sTmRYdmRYR2RJdW9MXzU1WWpJNUVhMVlkN1BoMGlIX0FDSG9pOGlPSUlKTWFKQWE1TEZIS1dIWEEwSmQyOTNyV2Z4X0V1SUM4MFF0RnNIcXVRUTh6dEo1TW10b0N6b2ZFdGsxTTlnTmRJSnpsNnZuOHJYVG40SXRHM0RKN09sVVUtMlhpeUFqbnMtblRKSkFWMWZ3UGtnRllvM3RfTVJlRDU5Z3dnanpvcTNsNHJGRGFadnZmU0VKUHpLUzRn?oc=5",
           "summary": "The US military reveals the volume of oil shipments it secured for passage through the Strait of Hormuz صوت الإمارات",
@@ -10574,130 +10570,6 @@
             "matched_term_count": 2,
             "source_market_hint": "us"
           }
-        },
-        {
-          "title": "Oil Prices Rise, Middle East Tensions Continue to Threaten Global Supply - Morocco World News",
-          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQdTRhYi1ZMzBLaVZTUF9iQ3lrZ1B3MUM5aWdYVzJLOWVmaWZzemF4bkh5VzBtenZFVVdLU2lNRW9TMTVGdDA4SVpXNElYeDUwbVNCMW5HaXVRd093LVNPX0huYzJoTEJzZG5rZGstVndyZ203TVZ4eWxqWmlOSzl1YWFEazNLWVVNOHh1aVN1anpZMUp6Y2RBYW5hVzdpSjBkVG9KdDRZZHhhZWtBYlJubkNBSDQ5OEt3SHprQw",
-          "summary": "Oil Prices Rise, Middle East Tensions Continue to Threaten Global Supply Morocco World News",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-10-14T18:07:14+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股"
-            ],
-            "global_matches": [
-              "oil"
-            ],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股"
-          ],
-          "global_matches": [
-            "oil"
-          ],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "us"
-          },
-          "story_id": "news-5020636cf7a3eff37ecd",
-          "provider_name": "Google News",
-          "raw_title": "Oil Prices Rise, Middle East Tensions Continue to Threaten Global Supply - Morocco World News",
-          "normalized_fact": "Oil Prices Rise, Middle East Tensions Continue to Threaten Global Supply Morocco World News。",
-          "market_topic": "energy_geopolitics",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQdTRhYi1ZMzBLaVZTUF9iQ3lrZ1B3MUM5aWdYVzJLOWVmaWZzemF4bkh5VzBtenZFVVdLU2lNRW9TMTVGdDA4SVpXNElYeDUwbVNCMW5HaXVRd093LVNPX0huYzJoTEJzZG5rZGstVndyZ203TVZ4eWxqWmlOSzl1YWFEazNLWVVNOHh1aVN1anpZMUp6Y2RBYW5hVzdpSjBkVG9KdDRZZHhhZWtBYlJubkNBSDQ5OEt3SHprQw",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-10-14",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "energy"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "energy",
-            "reason": "energy_subject_action",
-            "matched_terms": [
-              "oil",
-              "supply"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "oil",
-              "supply"
-            ],
-            "matched_subject": "oil",
-            "matched_action": "supply",
-            "matched_market_object": "oil",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "oilpricesrisemiddleeasttensionscontinuetothreatenglobalsupplymoroccoworldnews",
-          "event_cluster_key": "event-9a723248627a69e5c400",
-          "published_time_bucket": "2026-10-14T18:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "oil",
-            "supply"
-          ],
-          "matched_subject": "oil",
-          "matched_action": "supply",
-          "matched_market_object": "oil",
-          "decision_value_class": "energy",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
         }
       ],
       "eligible_inventory": [
@@ -15297,7 +15169,7 @@
           "ranking_score": 130
         }
       ],
-      "inventory_saved_at": "2026-10-16T04:38:16.026575+00:00"
+      "inventory_saved_at": "2026-10-16T04:48:14.344613+00:00"
     }
   }
 }
