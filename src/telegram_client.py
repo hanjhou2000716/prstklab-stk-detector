@@ -30,7 +30,7 @@ MAX_FAILED_RECIPIENT_RETRIES = 3
 # captions keep their separate 40-character layout contract in the photo
 # delivery modules.
 PUBLIC_TEXT_MAX_CHARS = 60
-PUBLIC_SUMMARY_VERSION = "public-summary-v3"
+PUBLIC_SUMMARY_VERSION = "public-summary-v4"
 MINI_APP_INLINE_BUTTON_TEXT = "📡 D.iNV Detector"
 MINI_APP_MENU_BUTTON_TEXT = "📡D.iNV"
 PRSTK_RISK_LEVELS = frozenset({"R0", "R1", "R2", "R3", "R4"})

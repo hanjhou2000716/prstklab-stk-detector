@@ -22,7 +22,7 @@ def test_unstarted_job_with_populated_started_at_opens_one_incident(monkeypatch)
 
     def request(_api, _repo, _token, method, path, payload=None, *, response_headers=None, deadline_monotonic=None):
         calls.append((method, path, payload))
-        if path.startswith("actions/workflows/"):
+        if "actions/workflows/" in path:
             return {"workflow_runs": [run]}
         if path.startswith("actions/runs/1234/jobs?"):
             return {
@@ -67,7 +67,7 @@ def test_existing_incident_is_not_reopened_or_duplicated(monkeypatch):
 
     def request(_api, _repo, _token, method, path, payload=None, *, response_headers=None, deadline_monotonic=None):
         called_paths.append(path)
-        if path.startswith("actions/workflows/"):
+        if "actions/workflows/" in path:
             return {"workflow_runs": [run]}
         if path.startswith("actions/runs/5678/jobs?"):
             return {"total_count": 1, "jobs": [{"name": "monitor-send-deploy", "steps": []}]}
@@ -99,7 +99,7 @@ def test_real_monitor_step_start_closes_open_incident(monkeypatch):
 
     def request(_api, _repo, _token, method, path, payload=None, *, response_headers=None, deadline_monotonic=None):
         calls.append((method, path, payload))
-        if path.startswith("actions/workflows/"):
+        if "actions/workflows/" in path:
             return {"workflow_runs": [run]}
         if path.startswith("actions/runs/5678/jobs?"):
             return {
@@ -114,6 +114,8 @@ def test_real_monitor_step_start_closes_open_incident(monkeypatch):
             return [open_issue]
         if path == "issues/77":
             return {"number": 77, "state": "closed"}
+        if path == "issues/77/comments":
+            return {"id": 1}
         raise AssertionError((method, path))
 
     monkeypatch.setattr(monitor_liveness, "_request_json", request)
@@ -134,7 +136,7 @@ def test_incomplete_job_pagination_fails_closed(monkeypatch):
     run = _run(1234, now - timedelta(minutes=16))
 
     def request(_api, _repo, _token, method, path, payload=None, *, response_headers=None, deadline_monotonic=None):
-        if path.startswith("actions/workflows/"):
+        if "actions/workflows/" in path:
             return {"workflow_runs": [run]}
         if path.startswith("actions/runs/1234/jobs?"):
             return {"total_count": 2, "jobs": [{"name": "monitor-send-deploy", "steps": []}]}
@@ -149,7 +151,11 @@ def test_incomplete_job_pagination_fails_closed(monkeypatch):
 
 def test_run_pagination_reads_linked_pages_with_ten_records(monkeypatch):
     calls: list[str] = []
-    rows = [_run(index + 1, datetime(2026, 10, 13, tzinfo=UTC)) for index in range(12)]
+    reference = datetime(2026, 10, 13, 12, tzinfo=UTC)
+    rows = [_run(index + 1, reference - timedelta(minutes=index)) for index in range(12)]
+    from urllib.parse import urlencode
+
+    created_filter = f">={((reference - monitor_liveness.LOOKBACK).strftime('%Y-%m-%dT%H:%M:%SZ'))}"
 
     def request(_api, _repo, _token, method, path, payload=None, *, response_headers=None, deadline_monotonic=None):
         calls.append(path)
@@ -159,7 +165,7 @@ def test_run_pagination_reads_linked_pages_with_ten_records(monkeypatch):
         if response_headers is not None and page == 1:
             response_headers["link"] = (
                 '<https://api.github.com/repos/owner/repo/actions/workflows/'
-                'official-event-monitor.yml/runs?per_page=10&branch=main&page=2>; rel="next"'
+                f'320209983/runs?per_page=10&branch=main&created={urlencode({"v": created_filter}).split("=", 1)[1]}&page=2>; rel="next"'
             )
         return {"total_count": len(rows), "workflow_runs": page_rows}
 
@@ -167,11 +173,47 @@ def test_run_pagination_reads_linked_pages_with_ten_records(monkeypatch):
     result = monitor_liveness._get_runs(
         "https://api.github.com", "owner/repo", "test-token",
         deadline_monotonic=monitor_liveness.time.monotonic() + 90,
+        now=reference,
     )
 
     assert len(result) == 12
     assert len(calls) == 2
     assert "per_page=10" in calls[0]
+    assert "created=" in calls[0]
+
+
+def test_liveness_inspects_all_recent_runs_across_more_than_two_pages(monkeypatch):
+    reference = datetime(2026, 10, 13, 12, tzinfo=UTC)
+    rows = [_run(index + 1, reference - timedelta(seconds=index * 30), status="in_progress") for index in range(25)]
+    from urllib.parse import urlencode
+    created_filter = f">={(reference - monitor_liveness.LOOKBACK).strftime('%Y-%m-%dT%H:%M:%SZ')}"
+
+    def request(_api, _repo, _token, method, path, payload=None, *, response_headers=None, deadline_monotonic=None):
+        if "actions/workflows/" in path:
+            page = int(path.rsplit("page=", 1)[1])
+            start = (page - 1) * 10
+            if response_headers is not None and page < 3:
+                next_page = page + 1
+                response_headers["link"] = (
+                    '<https://api.github.com/repos/owner/repo/actions/workflows/official-event-monitor.yml/runs?'
+                    f'per_page=10&branch=main&created={urlencode({"v": created_filter}).split("=", 1)[1]}&page={next_page}>; rel="next"'
+                )
+            return {"total_count": len(rows), "workflow_runs": rows[start:start + 10]}
+        if path.startswith("actions/runs/"):
+            return {"total_count": 1, "jobs": [{
+                "name": "monitor-send-deploy", "status": "in_progress", "runner_id": 7,
+                "steps": [{"name": "Checkout", "started_at": reference.isoformat()}],
+            }]}
+        if path.startswith("issues?"):
+            return []
+        raise AssertionError((method, path, payload))
+
+    monkeypatch.setattr(monitor_liveness, "_request_json", request)
+    result = monitor_liveness.audit_liveness(
+        api_url="https://api.github.com", repository="owner/repo", token="token", now=reference,
+    )
+    assert result["status"] == "healthy"
+    assert result["inspected_run_count"] == 25
 
 
 def test_run_pagination_rejects_cross_host_link():
@@ -198,7 +240,7 @@ def test_existing_incident_is_reminded_after_thirty_minutes(monkeypatch):
     updates = []
 
     def request(_api, _repo, _token, method, path, payload=None, *, response_headers=None, deadline_monotonic=None):
-        if path.startswith("actions/workflows/"):
+        if "actions/workflows/" in path:
             return {"workflow_runs": [run]}
         if path.startswith("actions/runs/5678/jobs?"):
             return {"total_count": 1, "jobs": [{"name": "monitor-send-deploy", "steps": []}]}
@@ -207,6 +249,9 @@ def test_existing_incident_is_reminded_after_thirty_minutes(monkeypatch):
         if method == "PATCH" and path == "issues/77":
             updates.append(payload)
             return {"number": 77}
+        if method == "POST" and path == "issues/77/comments":
+            updates.append({"comment": payload})
+            return {"id": 1}
         raise AssertionError((method, path, payload))
 
     monkeypatch.setattr(monitor_liveness, "_request_json", request)
@@ -216,8 +261,9 @@ def test_existing_incident_is_reminded_after_thirty_minutes(monkeypatch):
 
     assert result["incident_active"] is True
     assert result["reminder_sent"] is True
-    assert len(updates) == 1
+    assert len(updates) == 2
     assert f"Next reminder at: {(now + timedelta(minutes=30)).isoformat()}" in updates[0]["body"]
+    assert "comment" in updates[1]
 
 
 def test_liveness_audit_error_is_deduplicated_in_issue_without_failing_the_workflow(monkeypatch, tmp_path, capsys):

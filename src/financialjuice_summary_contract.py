@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-SUMMARY_CONTRACT_VERSION = "fj-summary-contract-v2"
+SUMMARY_CONTRACT_VERSION = "fj-summary-contract-v3"
 PUBLIC_SUMMARY_MAX_CHARS = 60
 
 _ACTION_RE = re.compile(

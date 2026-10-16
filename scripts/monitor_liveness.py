@@ -7,6 +7,7 @@ import os
 import re
 import sys
 import time
+from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -19,8 +20,10 @@ ISSUE_TITLE_PREFIX = "Official event monitor stalled"
 INCIDENT_KEY = "official-monitor-stalled:main"
 AUDIT_ISSUE_TITLE_PREFIX = "Official monitor liveness audit degraded"
 AUDIT_INCIDENT_MARKER = "official-monitor-audit-incident="
+EVENT_ISSUE_TITLE_PREFIX = "Official event delivery degraded"
+EVENT_INCIDENT_MARKER = "official-event-incident="
 STALE_AFTER = timedelta(minutes=10)
-LOOKBACK = timedelta(hours=6)
+LOOKBACK = timedelta(minutes=20)
 PAGE_SIZE = 10
 MAX_PAGES = 10
 MAX_AUDIT_SECONDS = 90
@@ -91,9 +94,10 @@ def _next_link(
     link_header: str,
     *,
     api_url: str,
-    expected_path: str,
+    expected_path: str | tuple[str, ...],
     expected_page: int,
     per_page: int = PAGE_SIZE,
+    expected_query: Mapping[str, list[str]] | None = None,
 ) -> str | None:
     matches = re.findall(r"<([^>]+)>\s*;\s*rel=\"([^\"]+)\"", link_header)
     next_urls = [url for url, relation in matches if relation == "next"]
@@ -104,26 +108,44 @@ def _next_link(
     url = next_urls[0]
     parsed = urlsplit(url)
     api = urlsplit(api_url)
+    paths = (expected_path,) if isinstance(expected_path, str) else expected_path
     if (
         parsed.scheme.casefold() != "https"
         or parsed.netloc.casefold() != api.netloc.casefold()
-        or parsed.path != expected_path
+        or parsed.path not in paths
         or parsed.username is not None
         or parsed.password is not None
         or parsed.fragment
     ):
-        raise LivenessAuditError("monitor_liveness_pagination_identity_invalid")
+        safe_path = re.sub(r"[^A-Za-z0-9_./-]", "?", parsed.path)[:180]
+        safe_host = re.sub(r"[^A-Za-z0-9.:-]", "?", parsed.netloc)[:100]
+        raise LivenessAuditError(
+            "monitor_liveness_pagination_identity_invalid:"
+            f"host={safe_host};path={safe_path}"
+        )
     query = parse_qs(parsed.query, keep_blank_values=True)
-    if query.get("page") != [str(expected_page)] or query.get("per_page") != [str(per_page)]:
-        raise LivenessAuditError("monitor_liveness_pagination_query_invalid")
+    expected = {key: list(values) for key, values in (expected_query or {}).items()}
+    expected.update({"page": [str(expected_page)], "per_page": [str(per_page)]})
+    if query != expected:
+        raise LivenessAuditError(
+            "monitor_liveness_pagination_query_invalid:"
+            f"keys={','.join(sorted(query))[:160]}"
+        )
     return url
 
 
 def _get_runs(
     api_url: str, repository: str, token: str, *, deadline_monotonic: float,
+    now: datetime | None = None,
 ) -> list[dict[str, Any]]:
-    path = f"/repos/{repository}/actions/workflows/official-event-monitor.yml/runs"
-    query = urlencode({"per_page": PAGE_SIZE, "branch": "main", "page": 1})
+    paths = (
+        f"/repos/{repository}/actions/workflows/official-event-monitor.yml/runs",
+        f"/repos/{repository}/actions/workflows/320209983/runs",
+    )
+    cutoff = (now or datetime.now(UTC)).astimezone(UTC) - LOOKBACK
+    created_filter = f">={cutoff.strftime('%Y-%m-%dT%H:%M:%SZ')}"
+    filters = {"branch": "main", "created": created_filter}
+    query = urlencode({"per_page": PAGE_SIZE, **filters, "page": 1})
     request_path = f"actions/workflows/official-event-monitor.yml/runs?{query}"
     result: list[dict[str, Any]] = []
     for page in range(1, MAX_PAGES + 1):
@@ -139,14 +161,21 @@ def _get_runs(
             run_id = row.get("id")
             if not isinstance(run_id, int) or run_id <= 0:
                 raise LivenessAuditError("monitor_liveness_run_identity_invalid")
-            if str(row.get("head_branch") or "") == "main":
+            created_at = _parse_time(row.get("created_at"))
+            if created_at is None:
+                raise LivenessAuditError("monitor_liveness_run_created_at_invalid")
+            if (
+                str(row.get("head_branch") or "") == "main"
+                and created_at >= cutoff
+            ):
                 result.append(row)
         total = payload.get("total_count", len(rows))
         if not isinstance(total, int) or total < len(rows):
             raise LivenessAuditError("monitor_liveness_runs_total_count_invalid")
         next_url = _next_link(
-            headers.get("link", ""), api_url=api_url, expected_path=path,
+            headers.get("link", ""), api_url=api_url, expected_path=paths,
             expected_page=page + 1,
+            expected_query={key: [value] for key, value in filters.items()},
         )
         if next_url is None:
             if page * PAGE_SIZE < total:
@@ -257,6 +286,9 @@ def _open_incidents(api_url: str, repository: str, token: str, *, deadline_monot
         next_url = _next_link(
             headers.get("link", ""), api_url=api_url, expected_path=path,
             expected_page=page + 1,
+            expected_query={
+                "state": ["open"], "sort": ["created"], "direction": ["desc"],
+            },
         )
         if next_url is None:
             if len(payload) == PAGE_SIZE and len(payload) == PAGE_SIZE * page:
@@ -273,7 +305,9 @@ def _open_incidents(api_url: str, repository: str, token: str, *, deadline_monot
     for row in rows:
         if row.get("pull_request"):
             continue
-        if str(row.get("title") or "").startswith((ISSUE_TITLE_PREFIX, AUDIT_ISSUE_TITLE_PREFIX)):
+        if str(row.get("title") or "").startswith((
+            ISSUE_TITLE_PREFIX, AUDIT_ISSUE_TITLE_PREFIX, EVENT_ISSUE_TITLE_PREFIX,
+        )):
             if not isinstance(row.get("number"), int):
                 raise LivenessAuditError("monitor_liveness_issue_identity_invalid")
             result.append(row)
@@ -287,9 +321,14 @@ def audit_liveness(
         raise LivenessAuditError("monitor_liveness_configuration_invalid")
     current = (now or datetime.now(UTC)).astimezone(UTC)
     deadline_monotonic = time.monotonic() + MAX_AUDIT_SECONDS
-    runs = _get_runs(api_url, repository, token, deadline_monotonic=deadline_monotonic)
+    runs = _get_runs(
+        api_url, repository, token,
+        deadline_monotonic=deadline_monotonic, now=current,
+    )
     inspected: list[tuple[dict[str, Any], datetime]] = []
-    for run in runs[:20]:
+    # _get_runs already restricts this complete, bounded collection to the
+    # fixed twenty-minute window. Do not silently drop page three onward.
+    for run in runs:
         created = _parse_time(run.get("created_at"))
         if created is None:
             raise LivenessAuditError("monitor_liveness_run_created_at_invalid")
@@ -326,6 +365,11 @@ def audit_liveness(
     recovered_audit_incidents: list[int] = []
     for issue in audit_incidents:
         number = int(issue["number"])
+        _request_json(
+            api_url, repository, token, "POST", f"issues/{number}/comments",
+            {"body": f"Liveness audit recovered at {current.isoformat()}; a complete identity-verified audit succeeded."},
+            deadline_monotonic=deadline_monotonic,
+        )
         body = _updated_incident_body(issue, observed_at=current, next_reminder_at=None, recovered_at=current)
         _request_json(
             api_url, repository, token, "PATCH", f"issues/{number}",
@@ -337,6 +381,11 @@ def audit_liveness(
         closed: list[int] = []
         for issue in stall_incidents:
             number = int(issue["number"])
+            _request_json(
+                api_url, repository, token, "POST", f"issues/{number}/comments",
+                {"body": f"Monitor recovery verified at {current.isoformat()}; a real monitor step has started."},
+                deadline_monotonic=deadline_monotonic,
+            )
             body = _updated_incident_body(issue, observed_at=current, next_reminder_at=None, recovered_at=current)
             _request_json(
                 api_url, repository, token, "PATCH", f"issues/{number}",
@@ -390,6 +439,15 @@ def audit_liveness(
             _request_json(
                 api_url, repository, token, "PATCH", f"issues/{int(issue['number'])}",
                 {"body": updated_body}, deadline_monotonic=deadline_monotonic,
+            )
+            _request_json(
+                api_url, repository, token, "POST", f"issues/{int(issue['number'])}/comments",
+                {"body": (
+                    f"Still stalled: run {int(oldest_run['id'])} was created at "
+                    f"{oldest_created.isoformat()}; no official monitor step has started. "
+                    f"Checked at {current.isoformat()}. Next reminder is scheduled in 30 minutes."
+                )},
+                deadline_monotonic=deadline_monotonic,
             )
     return {
         "status": "stalled", "incident_opened": incident_opened,
@@ -499,6 +557,13 @@ def main() -> int:
                 os.environ.get("GITHUB_API_URL", "https://api.github.com"),
                 os.environ.get("GITHUB_REPOSITORY", ""), os.environ.get("GITHUB_TOKEN", ""),
                 "PATCH", f"issues/{int(issue['number'])}", {"body": body},
+                deadline_monotonic=deadline,
+            )
+            _request_json(
+                os.environ.get("GITHUB_API_URL", "https://api.github.com"),
+                os.environ.get("GITHUB_REPOSITORY", ""), os.environ.get("GITHUB_TOKEN", ""),
+                "POST", f"issues/{int(issue['number'])}/comments",
+                {"body": f"The liveness audit remains incomplete ({reason[:120]}). Checked at {current.isoformat()}; next reminder in 30 minutes."},
                 deadline_monotonic=deadline,
             )
         return {

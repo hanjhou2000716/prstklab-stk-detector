@@ -1,7 +1,7 @@
 # GENERATED FILE: do not edit manually.
 # Run scripts/sync_railway_canonical_parser.py to refresh it.
 # Canonical source: src/financialjuice_summary_contract.py
-# Canonical source SHA256: 2b0854a9aea74555ce46818bca7540e0136a0040e87a4bdb57e258802c833bde
+# Canonical source SHA256: a1c938f186c3bd6a02e026df143836905d41bdbbb70ac18da9f90791bc52f223
 
 """Shared, privacy-safe FinancialJuice summary readiness helpers.
 
@@ -15,7 +15,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-SUMMARY_CONTRACT_VERSION = "fj-summary-contract-v2"
+SUMMARY_CONTRACT_VERSION = "fj-summary-contract-v3"
 PUBLIC_SUMMARY_MAX_CHARS = 60
 
 _ACTION_RE = re.compile(

@@ -399,6 +399,64 @@ def _compact_market_fact(text: str) -> list[str]:
     return ["；".join(facts) + "。"]
 
 
+def _compact_commodity_settlement(text: str) -> list[str]:
+    """Compact a fully sourced futures settlement without dropping its units."""
+    compact = _summary_source_text(text)
+    venue_match = re.search(r"\bNYMEX\b|紐約(?:商業|商品)交易所", compact, re.IGNORECASE)
+    instrument_match = re.search(r"\bWTI\b|西德州中級原油|West Texas Intermediate", compact, re.IGNORECASE)
+    month_match = re.search(
+        r"(?P<month>1[0-2]|0?[1-9])\s*月|\b(?P<english_month>Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\b",
+        compact,
+        re.IGNORECASE,
+    )
+    price_match = re.search(
+        r"(?:結算價?(?:報)?|settle(?:d|ment)?(?:\s+price)?\s*(?:at)?|settles?\s*(?:at)?)\s*"
+        r"(?:每桶\s*)?(?:\$\s*)?(?P<price>\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?)\s*"
+        r"(?P<currency>美元|USD|\$)(?:\s*(?:/\s*桶|每桶|per\s+barrel|a\s+barrel))?",
+        compact,
+        re.IGNORECASE,
+    )
+    change_match = re.search(
+        r"(?P<direction>上漲|上涨|下跌|跌|漲|涨|up|down)\s*"
+        r"(?:\$\s*)?(?P<change>\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?)\s*"
+        r"(?P<currency>美元|USD|\$)\s*(?:，|,|；|;)??\s*"
+        r"(?:漲幅|涨幅|跌幅|變動|變化|change(?:\s+of)?|percent(?:age)?\s+change)?\s*"
+        r"(?P<percent>\d+(?:\.\d+)?)\s*%?",
+        compact,
+        re.IGNORECASE,
+    )
+    if not (venue_match and instrument_match and month_match and price_match and change_match):
+        return []
+
+    month = month_match.group("month")
+    if month:
+        month = f"{int(month)}月"
+    else:
+        month_number = {
+            "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+            "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+        }.get(month_match.group("english_month").lower()[:3])
+        if month_number is None:
+            return []
+        month = f"{month_number}月"
+    price = price_match.group("price").replace(",", "")
+    change = change_match.group("change").replace(",", "")
+    percent = change_match.group("percent")
+    direction = change_match.group("direction").casefold()
+    direction_text = "下跌" if direction in {"下跌", "跌", "down"} else "上漲"
+    if not re.search(r"(?:/桶|每桶|per\s+barrel|a\s+barrel)", price_match.group(0), re.IGNORECASE):
+        return []
+    currency = "美元" if price_match.group("currency").casefold() in {"美元", "usd", "$"} else ""
+    change_currency = "美元" if change_match.group("currency").casefold() in {"美元", "usd", "$"} else ""
+    if not currency or not change_currency:
+        return []
+    # The settlement date is not inferred here; month and all price fields are
+    # extracted from the same source sentence and retained in the caption.
+    return [
+        f"NYMEX WTI{month}期貨結算{price}{currency}/桶，{direction_text}{change}{change_currency}({percent}%)。"
+    ]
+
+
 def _compact_livestream_fact(text: str) -> list[str]:
     """Replace a relay's live-video wrapper with its stated discussion topic."""
     compact = _summary_source_text(text)
@@ -433,6 +491,7 @@ def _summary_variants(text: str) -> list[str]:
         compact_attributed_statement(text),
         compact_military_fact(text),
         compact_capacity_fact(text),
+        *_compact_commodity_settlement(text),
         _compress_fj_sentence(text),
         *_compact_policy_fact(text),
         *_compact_company_fact(text),
@@ -566,14 +625,15 @@ def deliver_financialjuice_event(
 
     stored_version = _text(event.get("public_summary_version"))
     stored_caption = _text(event.get("public_short_message"))
-    if stored_version == PUBLIC_SUMMARY_VERSION:
-        # The producer's v3 result is authoritative.  Delivery must not
+    supported_summary_versions = {"public-summary-v3", PUBLIC_SUMMARY_VERSION}
+    if stored_version in supported_summary_versions:
+        # A persisted producer result is authoritative.  Delivery must not
         # choose a different clause or create a second summary identity.
         caption = stored_caption
     else:
         caption = financialjuice_caption(event, limit=MAX_FINANCIALJUICE_CAPTION)
     reasons: list[str] = []
-    if stored_version == PUBLIC_SUMMARY_VERSION and event.get("public_summary_status") != "ready":
+    if stored_version in supported_summary_versions and event.get("public_summary_status") != "ready":
         reasons.append("summary_semantics_incomplete")
     if _text(event.get("source_key") or event.get("source")).casefold() != "financialjuice":
         reasons.append("source_not_financialjuice")

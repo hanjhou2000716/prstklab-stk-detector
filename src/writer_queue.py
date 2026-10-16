@@ -11,16 +11,21 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
 import os
 import re
 import time
+import zipfile
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlsplit
 from urllib.request import Request, urlopen
+
+from src.scheduled_slot_audit import _open_artifact_url
 
 # The run name is user-configurable (`run-name:`) and scheduled-brief uses it
 # to include the slot. Identify writers by the immutable workflow path and ID
@@ -78,16 +83,83 @@ WRITER_QUEUE_GATES = {
 }
 
 
-def publication_gate_contract_fingerprint(path: str, gate: Mapping[str, object]) -> str:
-    """Fingerprint the immutable gate identity; the run SHA identifies its workflow revision."""
+def publication_gate_contract_fingerprint(
+    path: str, gate: Mapping[str, object], workflow_content_sha256: str = "",
+) -> str:
+    """Fingerprint the gate identity together with the exact workflow source bytes."""
     canonical = "\n".join((
-        "writer-publication-gate-v1",
+        "writer-publication-gate-v2",
         path,
         str(gate.get("workflow_id") or ""),
         str(gate.get("job_name") or ""),
         str(gate.get("step_name") or ""),
+        str(workflow_content_sha256 or ""),
     ))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _workflow_path_from_env() -> str:
+    workflow_ref = os.environ.get("GITHUB_WORKFLOW_REF", "")
+    match = re.search(r"(\.github/workflows/[^@]+\.ya?ml)@", workflow_ref)
+    return match.group(1) if match else ""
+
+
+def _workflow_content_hash(path: str) -> str:
+    workspace = Path(os.environ.get("GITHUB_WORKSPACE", "."))
+    source = workspace / path
+    try:
+        return hashlib.sha256(source.read_bytes()).hexdigest()
+    except OSError as exc:
+        raise WriterQueueError("writer_publication_admission_workflow_unreadable") from exc
+
+
+def create_publication_admission() -> dict[str, object]:
+    """Write an attempt-bound record immediately before entering the writer queue."""
+    path = _workflow_path_from_env()
+    gate = WRITER_QUEUE_GATES.get(path)
+    if not gate:
+        raise WriterQueueError("writer_publication_admission_workflow_unregistered")
+    try:
+        run_id = int(os.environ.get("GITHUB_RUN_ID", "0"))
+        attempt = int(os.environ.get("GITHUB_RUN_ATTEMPT", "1"))
+    except (TypeError, ValueError) as exc:
+        raise WriterQueueError("writer_publication_admission_attempt_invalid") from exc
+    run_sha = os.environ.get("GITHUB_SHA", "").strip().lower()
+    repository = os.environ.get("GITHUB_REPOSITORY", "").strip()
+    token = os.environ.get("GITHUB_TOKEN", "").strip()
+    api_url = os.environ.get("GITHUB_API_URL", "https://api.github.com").strip()
+    if run_id <= 0 or attempt <= 0 or not re.fullmatch(r"[0-9a-f]{40}", run_sha) or not repository or not token:
+        raise WriterQueueError("writer_publication_admission_identity_invalid")
+    jobs = _fetch_attempt_jobs(
+        run_id=run_id, attempt=attempt, api_url=api_url,
+        repository=repository, token=token,
+        deadline_monotonic=time.monotonic() + 30,
+    )
+    matches = [job for job in jobs if str(job.get("name") or "") == str(gate["job_name"])]
+    if len(matches) != 1 or _positive_int(matches[0].get("id")) is None:
+        raise WriterQueueError("writer_publication_admission_job_identity_invalid")
+    workflow_id = _positive_int(gate.get("workflow_id"))
+    if workflow_id is None:
+        raise WriterQueueError("writer_publication_admission_workflow_unregistered")
+    content_hash = _workflow_content_hash(path)
+    record: dict[str, object] = {
+        "schema_version": "writer-publication-admission-v1",
+        "run_id": run_id,
+        "attempt": attempt,
+        "job_id": _positive_int(matches[0].get("id")),
+        "job_name": str(gate["job_name"]),
+        "workflow_id": workflow_id,
+        "workflow_path": path,
+        "workflow_sha": run_sha,
+        "workflow_content_sha256": content_hash,
+        "contract_fingerprint": publication_gate_contract_fingerprint(path, gate, content_hash),
+    }
+    output = Path(os.environ.get("WRITER_ADMISSION_PATH", "writer-publication-admission.json"))
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temporary = output.with_suffix(output.suffix + ".tmp")
+    temporary.write_text(json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
+    os.replace(temporary, output)
+    return record
 
 
 _WRITER_WORKFLOW_PATH_BY_ID = {value: key for key, value in WRITER_WORKFLOW_IDENTITIES.items()}
@@ -496,6 +568,107 @@ def _fetch_attempt_jobs(
     return list(rows.values())
 
 
+def _read_publication_admission(
+    *,
+    run: Mapping[str, object],
+    gate: Mapping[str, object],
+    job_id: int,
+    api_url: str,
+    repository: str,
+    token: str,
+    deadline_monotonic: float | None,
+) -> dict[str, object] | None:
+    """Read and verify the exact attempt's admission artifact, if one exists."""
+    run_id = _run_id(run)
+    attempt = _positive_int(run.get("run_attempt")) or 1
+    path = str(run.get("path") or "")
+    workflow_sha = str(run.get("head_sha") or "").lower()
+    if run_id is None or not workflow_sha:
+        raise WriterQueueError("writer_publication_admission_run_identity_invalid")
+    expected_name = f"writer-publication-admission-{run_id}-{attempt}"
+    endpoint = (
+        f"{api_url.rstrip('/')}/repos/{repository}/actions/runs/{run_id}/artifacts"
+        "?per_page=100&page=1"
+    )
+    payload, _link = _request_json(
+        endpoint, token=token, deadline_monotonic=deadline_monotonic,
+    )
+    rows = payload.get("artifacts") if isinstance(payload, Mapping) else None
+    total = payload.get("total_count") if isinstance(payload, Mapping) else None
+    if not isinstance(rows, list) or not isinstance(total, int) or total != len(rows) or total > 100:
+        raise RetryableQueueSnapshotError("writer_publication_admission_artifact_list_incomplete")
+    matches = [item for item in rows if isinstance(item, Mapping) and item.get("name") == expected_name]
+    if len(matches) > 1:
+        raise WriterQueueError("writer_publication_admission_artifact_ambiguous")
+    if not matches:
+        return None
+    artifact = matches[0]
+    artifact_id = _positive_int(artifact.get("id"))
+    created_at = _timestamp(artifact, "created_at")
+    workflow_run = artifact.get("workflow_run")
+    if (
+        artifact_id is None or created_at is None or artifact.get("expired") is True
+        or (isinstance(workflow_run, Mapping) and _positive_int(workflow_run.get("id")) != run_id)
+        or (isinstance(workflow_run, Mapping) and str(workflow_run.get("head_sha") or "").lower() != workflow_sha)
+    ):
+        raise WriterQueueError("writer_publication_admission_artifact_identity_invalid")
+    remaining = 15.0 if deadline_monotonic is None else deadline_monotonic - time.monotonic()
+    if remaining <= 0:
+        raise RetryableQueueSnapshotError("writer_publication_admission_download_deadline_exhausted")
+    archive_url = f"{api_url.rstrip('/')}/repos/{repository}/actions/artifacts/{artifact_id}/zip"
+    request = Request(archive_url, headers={
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {token}",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "prstk-publication-admission-audit",
+    })
+    try:
+        with _open_artifact_url(request, timeout=max(1, int(min(15.0, remaining)))) as response:
+            archive = response.read(1_048_577)
+    except (HTTPError, URLError, TimeoutError, OSError) as exc:
+        raise RetryableQueueSnapshotError(
+            f"writer_publication_admission_download_unavailable:{type(exc).__name__}"
+        ) from exc
+    if len(archive) > 1_048_576:
+        raise WriterQueueError("writer_publication_admission_archive_too_large")
+    try:
+        with zipfile.ZipFile(io.BytesIO(archive)) as bundle:
+            names = [name for name in bundle.namelist() if not name.endswith("/")]
+            if names != ["writer-publication-admission.json"]:
+                raise WriterQueueError("writer_publication_admission_archive_contract_invalid")
+            info = bundle.getinfo(names[0])
+            if info.file_size > 65_536:
+                raise WriterQueueError("writer_publication_admission_record_too_large")
+            record = json.loads(bundle.read(info).decode("utf-8"))
+    except (zipfile.BadZipFile, KeyError, UnicodeError, json.JSONDecodeError) as exc:
+        raise WriterQueueError("writer_publication_admission_archive_invalid") from exc
+    if not isinstance(record, Mapping):
+        raise WriterQueueError("writer_publication_admission_record_invalid")
+    content_hash = str(record.get("workflow_content_sha256") or "")
+    expected_fingerprint = publication_gate_contract_fingerprint(path, gate, content_hash)
+    if (
+        record.get("schema_version") != "writer-publication-admission-v1"
+        or _positive_int(record.get("run_id")) != run_id
+        or _positive_int(record.get("attempt")) != attempt
+        or _positive_int(record.get("job_id")) != job_id
+        or _positive_int(record.get("workflow_id")) != _positive_int(run.get("workflow_id"))
+        or str(record.get("job_name") or "") != str(gate.get("job_name") or "")
+        or str(record.get("workflow_path") or "") != path
+        or str(record.get("workflow_sha") or "").lower() != workflow_sha
+        or not re.fullmatch(r"[0-9a-f]{64}", content_hash)
+        or str(record.get("contract_fingerprint") or "") != expected_fingerprint
+    ):
+        raise WriterQueueError("writer_publication_admission_record_identity_invalid")
+    return {
+        "artifact_id": artifact_id,
+        "artifact_name": expected_name,
+        "created_at": created_at.isoformat(),
+        "job_id": job_id,
+        "contract_fingerprint": expected_fingerprint,
+        "workflow_content_sha256": content_hash,
+    }
+
+
 def _annotate_publication_gate(
     run: dict[str, object],
     *,
@@ -565,6 +738,19 @@ def _annotate_publication_gate(
     if job_id is None:
         raise WriterQueueError("writer_publication_gate_job_contract_invalid")
     run["queue_gate_job_id"] = job_id
+    admission = _read_publication_admission(
+        run=run, gate=gate, job_id=job_id,
+        api_url=api_url, repository=repository, token=token,
+        deadline_monotonic=deadline_monotonic,
+    )
+    if admission:
+        run.update({
+            "queue_gate_admission": admission,
+            "queue_gate_contract_fingerprint": admission["contract_fingerprint"],
+            "queue_gate_state": "admitted",
+            "queue_gate_started_at": str(admission["created_at"]),
+            "queue_gate_evidence": "writer_publication_admission_artifact",
+        })
     run.update({
         "queue_gate_observed_status": status,
         "queue_gate_job_status": job_status,
@@ -572,9 +758,13 @@ def _annotate_publication_gate(
         "queue_gate_observed_steps": len(steps) if isinstance(steps, list) else "unknown",
     })
     if not isinstance(steps, list):
+        if admission:
+            return None
         if run_active or job_status in ACTIVE_STATUSES:
             raise RetryableQueueSnapshotError("writer_publication_gate_steps_unavailable")
         raise WriterQueueError("writer_publication_gate_steps_unavailable")
+    if admission and not steps:
+        return None
     steps_started = any(
         _timestamp(step, "started_at") is not None
         for step in steps
@@ -592,13 +782,19 @@ def _annotate_publication_gate(
         # running job. The local invocation plus exact run/attempt/job/SHA is
         # execution evidence for this writer only; it does not grant publish
         # permission or remove any other blocker from the queue.
-        gate_started = _timestamp(job, "started_at") or datetime.now(UTC)
+        gate_started_at = (
+            str(admission["created_at"]) if admission
+            else (_timestamp(job, "started_at") or datetime.now(UTC)).isoformat()
+        )
         run.update({
             "queue_gate_state": "admitted",
-            "queue_gate_started_at": gate_started.isoformat(),
+            "queue_gate_started_at": gate_started_at,
             "queue_gate_job_id": job_id,
             "queue_gate_step_status": "in_progress_api_steps_delayed",
-            "queue_gate_evidence": "current_registered_gate_invocation",
+            "queue_gate_evidence": (
+                "writer_publication_admission_artifact" if admission
+                else "current_registered_gate_invocation"
+            ),
         })
         return None
     if run_active and job_status in ACTIVE_STATUSES and no_runner and not steps_started:
@@ -625,12 +821,16 @@ def _annotate_publication_gate(
     if len(gate_steps) > 1:
         raise WriterQueueError("writer_publication_gate_step_ambiguous")
     if not gate_steps:
+        if admission:
+            return None
         if run_active or job_status in ACTIVE_STATUSES:
             raise RetryableQueueSnapshotError("writer_publication_gate_step_not_visible")
         raise WriterQueueError("writer_publication_gate_step_missing")
     step = gate_steps[0]
     gate_step_started = _timestamp(step, "started_at")
     if gate_step_started is None:
+        if admission:
+            return None
         step_status = str(step.get("status") or "").casefold()
         if step_status == "completed" and str(step.get("conclusion") or "").casefold() == "skipped":
             run.update({"queue_gate_state": "deferred", "queue_gate_reason": "publication_gate_skipped"})
@@ -649,9 +849,14 @@ def _annotate_publication_gate(
         raise WriterQueueError("writer_publication_gate_started_at_unavailable")
     run.update({
         "queue_gate_state": "admitted",
-        "queue_gate_started_at": gate_step_started.isoformat(),
+        "queue_gate_started_at": (
+            str(admission["created_at"]) if admission else gate_step_started.isoformat()
+        ),
         "queue_gate_job_id": job_id,
         "queue_gate_step_status": str(step.get("status") or "unknown"),
+        "queue_gate_evidence": (
+            "writer_publication_admission_artifact" if admission else "workflow_gate_step"
+        ),
     })
     return None
 
@@ -1288,10 +1493,26 @@ def wait_for_slot(
 def main() -> int:
     parser = argparse.ArgumentParser(description="Wait for the production data-writer queue")
     parser.add_argument("--run-id", type=int, default=int(os.getenv("GITHUB_RUN_ID", "0") or 0))
+    parser.add_argument(
+        "--create-admission", action="store_true",
+        help="write the exact attempt/job/workflow admission artifact before queueing",
+    )
     parser.add_argument("--timeout-seconds", type=int, default=3300)
     parser.add_argument("--poll-seconds", type=int, default=20)
     parser.add_argument("--settle-seconds", type=int, default=10)
     args = parser.parse_args()
+    if args.create_admission:
+        try:
+            record = create_publication_admission()
+        except WriterQueueError as exc:
+            raise SystemExit(str(exc)) from exc
+        print(json.dumps({
+            "schema_version": record["schema_version"],
+            "run_id": record["run_id"], "attempt": record["attempt"],
+            "job_id": record["job_id"],
+            "contract_fingerprint": record["contract_fingerprint"],
+        }, sort_keys=True))
+        return 0
     if args.run_id <= 0:
         raise SystemExit("GITHUB_RUN_ID is required")
     created_raw = os.getenv("GITHUB_RUN_ATTEMPT_CREATED_AT")
@@ -1308,6 +1529,7 @@ def main() -> int:
         workflow_match = re.search(r"(\.github/workflows/[^@]+\.ya?ml)@", workflow_ref)
         workflow_path = workflow_match.group(1) if workflow_match else ""
         workflow_gate = WRITER_QUEUE_GATES.get(workflow_path, {})
+        workflow_content_hash = _workflow_content_hash(workflow_path) if workflow_gate else ""
         outputs: dict[str, object] = {
             "queue_diagnostic_schema_version": "writer-queue-v3",
             "queue_entry_at": queue_entry_at,
@@ -1315,7 +1537,7 @@ def main() -> int:
             "queue_workflow_path": workflow_path,
             "queue_workflow_sha": run_sha,
             "queue_gate_contract_fingerprint": (
-                publication_gate_contract_fingerprint(workflow_path, workflow_gate)
+                publication_gate_contract_fingerprint(workflow_path, workflow_gate, workflow_content_hash)
                 if workflow_gate else ""
             ),
         }

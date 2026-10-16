@@ -106,7 +106,8 @@ def test_fj_partial_or_uncertain_claim_never_becomes_delivered(
     assert "notification_status=blocked" in output
     assert f"notification_reason={reason}" in output
     assert "durable_receipt_verified=false" in output
-    assert "hard_failure=true" in output
+    assert "candidate_incident_count=1" in output
+    assert "hard_failure=false" in output
 
 
 def test_workflow_carries_durable_proof_to_both_outcome_summaries() -> None:

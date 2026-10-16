@@ -32,8 +32,23 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
+      - name: Record publication admission
+        id: publication_admission
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -m src.writer_queue --create-admission
+      - name: Upload publication admission evidence
+        id: publication_admission_artifact
+        if: steps.publication_admission.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: writer-publication-admission-${{ github.run_id }}-${{ github.run_attempt }}
+          path: writer-publication-admission.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Wait for production writer queue
         id: writer_queue
+        if: steps.publication_admission_artifact.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python -m src.writer_queue

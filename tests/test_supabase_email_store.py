@@ -329,6 +329,79 @@ def test_priority_pending_uses_idempotent_table_fallback_when_rpc_is_missing(mon
     assert calls[2][0] == "POST"
 
 
+def test_priority_pending_fallback_uses_state_guarded_cas_and_does_not_fake_progress(monkeypatch: pytest.MonkeyPatch) -> None:
+    from datetime import UTC, datetime
+
+    previous = {
+        "event_ref": "ref-1", "first_detected_at": "2026-10-16T01:00:00+00:00",
+        "expires_at": "2026-10-16T01:30:00+00:00", "attempt_count": 3,
+        "delivery_status": "summary_pending", "last_blocking_reason": "source_wait",
+        "summary_status": "pending", "summary_reason": "source_wait",
+        "last_checked_at": "2026-10-16T01:05:00+00:00",
+        "last_progress_at": "2026-10-16T01:01:00+00:00",
+    }
+    calls: list[tuple[str, str, dict[str, Any] | None]] = []
+
+    def request(method: str, url: str, **kwargs: Any) -> _Response:
+        calls.append((method, url, kwargs.get("json")))
+        if "/rpc/upsert_financialjuice_priority_pending" in url:
+            return _Response(404, {})
+        if method == "GET":
+            return _Response(200, [previous])
+        return _Response(200, [{**previous, **(kwargs.get("json") or {})}])
+
+    monkeypatch.setattr("supabase_email_store.requests.request", request)
+    store = SupabaseEmailStore("https://example.supabase.co", "key")
+    checked = datetime(2026, 10, 16, 1, 6, tzinfo=UTC)
+    store._upsert_priority_pending_rest(
+        key="fj:fact-1", version="v1", event_ref="ref-new", status="pending",
+        reason="same_pending_state", contract="public-summary-v4",
+        source_published_at="2026-10-16T01:00:00+00:00", checked_at=checked.isoformat(),
+        run_id="r2", run_sha="a" * 40,
+    )
+    method, url, payload = calls[-1]
+    assert method == "PATCH"
+    assert "delivery_status=eq.summary_pending" in url
+    assert "summary_status=eq.pending" in url
+    assert "last_checked_at=eq.2026-10-16T01%3A05%3A00%2B00%3A00" in url
+    assert payload["last_progress_at"] == previous["last_progress_at"]
+    assert payload["attempt_count"] == 3
+
+
+def test_priority_pending_cas_loser_returns_newer_ready_state_without_overwrite(monkeypatch: pytest.MonkeyPatch) -> None:
+    stale = {
+        "event_ref": "ref-1", "first_detected_at": "2026-10-16T01:00:00+00:00",
+        "expires_at": "2026-10-16T01:30:00+00:00", "attempt_count": 1,
+        "delivery_status": "summary_pending", "last_blocking_reason": "summary_wait",
+        "summary_status": "pending", "summary_reason": "summary_wait",
+        "last_checked_at": "2026-10-16T01:01:00+00:00",
+        "last_progress_at": "2026-10-16T01:00:30+00:00",
+    }
+    newer = {**stale, "delivery_status": "ready", "summary_status": "ready", "last_checked_at": "2026-10-16T01:02:00+00:00"}
+    reads = 0
+
+    def request(method: str, url: str, **_kwargs: Any) -> _Response:
+        nonlocal reads
+        if "/rpc/upsert_financialjuice_priority_pending" in url:
+            return _Response(404, {})
+        if method == "GET":
+            reads += 1
+            return _Response(200, [stale if reads == 1 else newer])
+        return _Response(200, [])
+
+    monkeypatch.setattr("supabase_email_store.requests.request", request)
+    store = SupabaseEmailStore("https://example.supabase.co", "key")
+    result = store._upsert_priority_pending_rest(
+        key="fj:fact-1", version="v1", event_ref="ref-1", status="pending",
+        reason="old_retry", contract="public-summary-v4",
+        source_published_at="2026-10-16T01:00:00+00:00", checked_at="2026-10-16T01:03:00+00:00",
+        run_id="r1", run_sha="b" * 40,
+    )
+    assert result["delivery_status"] == "ready"
+    assert result["summary_status"] == "ready"
+    assert reads == 2
+
+
 def test_priority_pending_events_reads_all_server_pages(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[str] = []
 

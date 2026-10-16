@@ -76,8 +76,12 @@ def test_loader_reads_safe_durable_priority_state_when_requested(monkeypatch) ->
         "delivery_status": "ready",
         "summary_status": "ready",
         "summary_reason": "complete_fact_selected",
+        "summary_contract_version": "",
         "source_published_at": "",
         "expires_at": "",
+        "first_detected_at": "",
+        "last_progress_at": "",
+        "last_checked_at": "",
         "last_blocking_reason": "",
     }]
 

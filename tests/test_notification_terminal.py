@@ -241,6 +241,43 @@ def test_official_incomplete_candidate_remains_blocked() -> None:
     assert result["reason"] == "content_incomplete_quarantined"
 
 
+def test_isolated_unknown_claim_is_degraded_without_blind_resend_or_batch_failure() -> None:
+    result = evaluate_official_terminal(official(
+        SHOULD_SEND="false",
+        NOTIFICATION_EXPECTED="true",
+        NOTIFICATION_STATUS="blocked",
+        NOTIFICATION_REASON="notification_claim_uncertain",
+        SEND_STATUS="blocked",
+        SEND_OUTCOME="skipped",
+    ))
+    assert result["status"] == "degraded_candidate_isolated"
+    assert result["failure"] is False
+    assert result["no_resend"] is True
+
+
+def test_other_events_can_deliver_while_one_candidate_is_incident_isolated() -> None:
+    result = evaluate_official_terminal(official(
+        CANDIDATE_INCIDENT_COUNT="1",
+        CANDIDATE_INCIDENT_REASON="notification_claim_uncertain",
+    ))
+    assert result["status"] == "degraded_event_batch"
+    assert result["failure"] is False
+    assert result["no_resend"] is True
+    assert result["durable_receipt_verified"] is True
+
+
+def test_isolated_sender_error_uses_degraded_status_but_preserves_no_resend() -> None:
+    result = evaluate_official_terminal(official(
+        BATCH_FAILED_EVENT_COUNT="1",
+        SEND_STATUS="failed",
+        DELIVERY_STATUS="failed",
+        SEND_SENT="true",
+    ))
+    assert result["status"] == "degraded_event_batch"
+    assert result["failure"] is False
+    assert result["no_resend"] is True
+
+
 def test_scheduled_publish_only_slots_do_not_become_delivery_failures() -> None:
     for obligation in ("expected_skip", "late_publish_only"):
         result = evaluate_scheduled_terminal(scheduled(
