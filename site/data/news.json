@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "dea0f354b18bd422",
-  "snapshot_id": "news-de691fa9f1ea4983",
+  "market_snapshot_id": "0a2134c2c924ec60",
+  "snapshot_id": "news-2753277b162d86ab",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -437,6 +437,100 @@
       ],
       "stories": [
         {
+          "story_id": "news-fef38504d34a89ca3a43",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "統一期貨：權值股領軍反彈，台指期震盪走高",
+          "raw_title": "統一期貨：權值股領軍反彈，台指期震盪走高",
+          "normalized_fact": "【財訊快報／編輯部】美國9月PPI高於預期，升息預期再度升溫，但避險買盤推升美債、帶動殖利率回落，美股三大指數小幅收高，市場靜待Fed主席Warsh談話釐清利率路徑。台股則受台積電法說優於預期、AI需。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "【財訊快報／編輯部】美國9月PPI高於預期，升息預期再度升溫，但避險買盤推升美債、帶動殖利率回落，美股三大指數小幅收高，市場靜待Fed主席Warsh談話釐清利率路徑。台股則受台積電法說優於預期、AI需",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%B5%B1-%E6%9C%9F%E8%B2%A8-%E6%AC%8A%E5%80%BC%E8%82%A1%E9%A0%98%E8%BB%8D%E5%8F%8D%E5%BD%88-%E5%8F%B0%E6%8C%87%E6%9C%9F%E9%9C%87%E7%9B%AA%E8%B5%B0%E9%AB%98-082349517.html",
+          "url": "https://tw.stock.yahoo.com/news/%E7%B5%B1-%E6%9C%9F%E8%B2%A8-%E6%AC%8A%E5%80%BC%E8%82%A1%E9%A0%98%E8%BB%8D%E5%8F%8D%E5%BD%88-%E5%8F%B0%E6%8C%87%E6%9C%9F%E9%9C%87%E7%9B%AA%E8%B5%B0%E9%AB%98-082349517.html",
+          "published_at": "2026-10-16T08:23:49+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "財訊快報編輯部美國9月ppi高於預期升息預期再度升溫但避險買盤推升美債帶動殖利率回落美股三大指數小幅收高市場靜待fed主席warsh談話釐清利率路徑台股則受台積電法說優於預期ai需",
+          "event_cluster_key": "event-30bfb20a391810676ade",
+          "published_time_bucket": "2026-10-16T08:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 140
+        },
+        {
           "story_id": "news-87a21da4c88372a4d7ad",
           "provider": "anue",
           "provider_name": "Anue",
@@ -625,6 +719,98 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
+        },
+        {
+          "story_id": "news-a5393a90ce149feed627",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "SpaceX股價盤前挫逾兩成 馬斯克澄清Starlink服務爭議",
+          "raw_title": "SpaceX股價盤前挫逾兩成 馬斯克澄清Starlink服務爭議",
+          "normalized_fact": "商傳媒｜林昭衡／綜合外電報導由馬斯克（Elon Musk）創辦的美國太空探索技術公司SpaceX，其股票於美國時間週四（10月15日）在那斯達克（Nasdaq）市場收盤下跌近三個百分點，報每股 152。",
+          "market_topic": "global_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "商傳媒｜林昭衡／綜合外電報導由馬斯克（Elon Musk）創辦的美國太空探索技術公司SpaceX，其股票於美國時間週四（10月15日）在那斯達克（Nasdaq）市場收盤下跌近三個百分點，報每股 152",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/spacex%E8%82%A1%E5%83%B9%E7%9B%A4%E5%89%8D%E6%8C%AB%E9%80%BE%E5%85%A9%E6%88%90-%E9%A6%AC%E6%96%AF%E5%85%8B%E6%BE%84%E6%B8%85starlink%E6%9C%8D%E5%8B%99%E7%88%AD%E8%AD%B0-083155374.html",
+          "url": "https://tw.stock.yahoo.com/news/spacex%E8%82%A1%E5%83%B9%E7%9B%A4%E5%89%8D%E6%8C%AB%E9%80%BE%E5%85%A9%E6%88%90-%E9%A6%AC%E6%96%AF%E5%85%8B%E6%BE%84%E6%B8%85starlink%E6%9C%8D%E5%8B%99%E7%88%AD%E8%AD%B0-083155374.html",
+          "published_at": "2026-10-16T08:31:55+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "market",
+            "reason": "market_subject_action",
+            "matched_terms": [
+              "nasdaq",
+              "下跌"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "nasdaq",
+              "下跌"
+            ],
+            "matched_subject": "nasdaq",
+            "matched_action": "下跌",
+            "matched_market_object": "nasdaq",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "商傳媒林昭衡綜合外電報導由馬斯克elonmusk創辦的美國太空探索技術公司spacex其股票於美國時間週四10月15日在那斯達克nasdaq市場收盤下跌近三個百分點報每股152",
+          "event_cluster_key": "event-19eb9d2dd50afcf4bb52",
+          "published_time_bucket": "2026-10-16T08:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "nasdaq",
+            "下跌"
+          ],
+          "matched_subject": "nasdaq",
+          "matched_action": "下跌",
+          "matched_market_object": "nasdaq",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "story_id": "news-5b93824e19cbf9b0cf68",
@@ -721,195 +907,103 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 120
-        },
-        {
-          "story_id": "news-19a7b75e385a675425a1",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "龔明鑫：台灣將赴美設多座園區 打造AI供應鏈基地 - 東森電視",
-          "raw_title": "龔明鑫：台灣將赴美設多座園區 打造AI供應鏈基地 - 東森電視",
-          "normalized_fact": "龔明鑫：台灣將赴美設多座園區 打造AI供應鏈基地 東森電視。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "龔明鑫：台灣將赴美設多座園區 打造AI供應鏈基地 東森電視",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE9ZQWxaYVp1S1BUVW5xWG0tcV9ESl95Nkw2NFlTbE5BYXJwVmtPaW9HcTNjcS1uMDR0TldYeF9ERi1NX044SE04S1lUbkxWRmJRR014ZS1KNzJEUQ",
-          "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE9ZQWxaYVp1S1BUVW5xWG0tcV9ESl95Nkw2NFlTbE5BYXJwVmtPaW9HcTNjcS1uMDR0TldYeF9ERi1NX044SE04S1lUbkxWRmJRR014ZS1KNzJEUQ",
-          "published_at": "2026-10-16T06:24:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-16",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "龔明鑫台灣將赴美設多座園區打造ai供應鏈基地東森電視",
-          "event_cluster_key": "event-9bca43c4c8146eea61d7",
-          "published_time_bucket": "2026-10-16T06:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
-          "story_id": "news-2952e0855c5f485d2b1b",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "赴德州建AI供應鏈經部：每座園區投資估最高40億美元| 產經 - 中央社 CNA",
-          "raw_title": "赴德州建AI供應鏈經部：每座園區投資估最高40億美元| 產經 - 中央社 CNA",
-          "normalized_fact": "赴德州建AI供應鏈經部：每座園區投資估最高40億美元| 產經 中央社 CNA。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "赴德州建AI供應鏈經部：每座園區投資估最高40億美元| 產經 中央社 CNA",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTE01cFhZOXlqRUg2WS03NGhIWXFJTm56dG5hV1dVaUU5NjN2Y3dmSU41SzlmYkRLWGFPOFFUQXFRYS1aaVgzU0ViY2F0VUwtc2xmZXA3THJOcGVteXROcnc",
-          "url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTE01cFhZOXlqRUg2WS03NGhIWXFJTm56dG5hV1dVaUU5NjN2Y3dmSU41SzlmYkRLWGFPOFFUQXFRYS1aaVgzU0ViY2F0VUwtc2xmZXA3THJOcGVteXROcnc",
-          "published_at": "2026-10-16T05:18:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-16",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "赴德州建ai供應鏈經部每座園區投資估最高40億美元產經中央社cna",
-          "event_cluster_key": "event-4eead37fb2d3f2fd371e",
-          "published_time_bucket": "2026-10-16T05:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
         }
       ],
       "editorial_candidates": [
+        {
+          "story_id": "news-fef38504d34a89ca3a43",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "統一期貨：權值股領軍反彈，台指期震盪走高",
+          "raw_title": "統一期貨：權值股領軍反彈，台指期震盪走高",
+          "normalized_fact": "【財訊快報／編輯部】美國9月PPI高於預期，升息預期再度升溫，但避險買盤推升美債、帶動殖利率回落，美股三大指數小幅收高，市場靜待Fed主席Warsh談話釐清利率路徑。台股則受台積電法說優於預期、AI需。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "【財訊快報／編輯部】美國9月PPI高於預期，升息預期再度升溫，但避險買盤推升美債、帶動殖利率回落，美股三大指數小幅收高，市場靜待Fed主席Warsh談話釐清利率路徑。台股則受台積電法說優於預期、AI需",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%B5%B1-%E6%9C%9F%E8%B2%A8-%E6%AC%8A%E5%80%BC%E8%82%A1%E9%A0%98%E8%BB%8D%E5%8F%8D%E5%BD%88-%E5%8F%B0%E6%8C%87%E6%9C%9F%E9%9C%87%E7%9B%AA%E8%B5%B0%E9%AB%98-082349517.html",
+          "url": "https://tw.stock.yahoo.com/news/%E7%B5%B1-%E6%9C%9F%E8%B2%A8-%E6%AC%8A%E5%80%BC%E8%82%A1%E9%A0%98%E8%BB%8D%E5%8F%8D%E5%BD%88-%E5%8F%B0%E6%8C%87%E6%9C%9F%E9%9C%87%E7%9B%AA%E8%B5%B0%E9%AB%98-082349517.html",
+          "published_at": "2026-10-16T08:23:49+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "財訊快報編輯部美國9月ppi高於預期升息預期再度升溫但避險買盤推升美債帶動殖利率回落美股三大指數小幅收高市場靜待fed主席warsh談話釐清利率路徑台股則受台積電法說優於預期ai需",
+          "event_cluster_key": "event-30bfb20a391810676ade",
+          "published_time_bucket": "2026-10-16T08:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 140
+        },
         {
           "story_id": "news-87a21da4c88372a4d7ad",
           "provider": "anue",
@@ -1099,6 +1193,98 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
+        },
+        {
+          "story_id": "news-a5393a90ce149feed627",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "SpaceX股價盤前挫逾兩成 馬斯克澄清Starlink服務爭議",
+          "raw_title": "SpaceX股價盤前挫逾兩成 馬斯克澄清Starlink服務爭議",
+          "normalized_fact": "商傳媒｜林昭衡／綜合外電報導由馬斯克（Elon Musk）創辦的美國太空探索技術公司SpaceX，其股票於美國時間週四（10月15日）在那斯達克（Nasdaq）市場收盤下跌近三個百分點，報每股 152。",
+          "market_topic": "global_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "商傳媒｜林昭衡／綜合外電報導由馬斯克（Elon Musk）創辦的美國太空探索技術公司SpaceX，其股票於美國時間週四（10月15日）在那斯達克（Nasdaq）市場收盤下跌近三個百分點，報每股 152",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/spacex%E8%82%A1%E5%83%B9%E7%9B%A4%E5%89%8D%E6%8C%AB%E9%80%BE%E5%85%A9%E6%88%90-%E9%A6%AC%E6%96%AF%E5%85%8B%E6%BE%84%E6%B8%85starlink%E6%9C%8D%E5%8B%99%E7%88%AD%E8%AD%B0-083155374.html",
+          "url": "https://tw.stock.yahoo.com/news/spacex%E8%82%A1%E5%83%B9%E7%9B%A4%E5%89%8D%E6%8C%AB%E9%80%BE%E5%85%A9%E6%88%90-%E9%A6%AC%E6%96%AF%E5%85%8B%E6%BE%84%E6%B8%85starlink%E6%9C%8D%E5%8B%99%E7%88%AD%E8%AD%B0-083155374.html",
+          "published_at": "2026-10-16T08:31:55+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "market",
+            "reason": "market_subject_action",
+            "matched_terms": [
+              "nasdaq",
+              "下跌"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "nasdaq",
+              "下跌"
+            ],
+            "matched_subject": "nasdaq",
+            "matched_action": "下跌",
+            "matched_market_object": "nasdaq",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "商傳媒林昭衡綜合外電報導由馬斯克elonmusk創辦的美國太空探索技術公司spacex其股票於美國時間週四10月15日在那斯達克nasdaq市場收盤下跌近三個百分點報每股152",
+          "event_cluster_key": "event-19eb9d2dd50afcf4bb52",
+          "published_time_bucket": "2026-10-16T08:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "nasdaq",
+            "下跌"
+          ],
+          "matched_subject": "nasdaq",
+          "matched_action": "下跌",
+          "matched_market_object": "nasdaq",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "story_id": "news-5b93824e19cbf9b0cf68",
@@ -4436,182 +4622,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 32
-        },
-        {
-          "story_id": "news-0fedccba4c7b72351bc9",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "美債拖累！富邦金、國泰金9月只合賺137億元 2壽險共貢獻24億元",
-          "raw_title": "美債拖累！富邦金、國泰金9月只合賺137億元 2壽險共貢獻24億元",
-          "normalized_fact": "美債拖累，受美財政赤字及升息擔憂，美債殖利率飆升衝擊二大壽險金控獲利，今（15）日最新出爐的富邦金（2881）、國泰金（2882）9月自結數，合計2大金控冠軍亞，單月合賺136.8億元，旗下二大壽險子。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "美債拖累！受美財政赤字及升息擔憂，美債殖利率飆升衝擊二大壽險金控獲利，今（15）日最新出爐的富邦金（2881）、國泰金（2882）9月自結數，合計2大金控冠軍亞，單月合賺136.8億元，旗下二大壽險子",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%82%B5%E6%8B%96%E7%B4%AF%EF%BC%81%E5%AF%8C%E9%82%A6%E9%87%91%E3%80%81%E5%9C%8B%E6%B3%B0%E9%87%919%E6%9C%88%E5%8F%AA%E5%90%88%E8%B3%BA137%E5%84%84%E5%85%83-2%E5%A3%BD%E9%9A%AA%E5%85%B1%E8%B2%A2%E7%8D%BB24%E5%84%84%E5%85%83-094843928.html",
-          "url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%82%B5%E6%8B%96%E7%B4%AF%EF%BC%81%E5%AF%8C%E9%82%A6%E9%87%91%E3%80%81%E5%9C%8B%E6%B3%B0%E9%87%919%E6%9C%88%E5%8F%AA%E5%90%88%E8%B3%BA137%E5%84%84%E5%85%83-2%E5%A3%BD%E9%9A%AA%E5%85%B1%E8%B2%A2%E7%8D%BB24%E5%84%84%E5%85%83-094843928.html",
-          "published_at": "2026-10-15T09:48:43+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-15",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美債拖累受美財政赤字及升息擔憂美債殖利率飆升衝擊二大壽險金控獲利今15日最新出爐的富邦金2881國泰金28829月自結數合計2大金控冠軍亞單月合賺1368億元旗下二大壽險子",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-10-15T09:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-15T09:53:10.389848+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 27
-        },
-        {
-          "story_id": "news-1f69ba08c431c6ccbfd7",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "台灣AI紅利待擴散 學者籲拓展半導體上下游布局",
-          "raw_title": "台灣AI紅利待擴散 學者籲拓展半導體上下游布局",
-          "normalized_fact": "（中央社記者李宗憲曼谷2026年10月15日專電）AI熱潮帶動半導體需求，WTO首席經濟學家史泰格表示，目前尚未看到AI熱潮放緩的跡象。港大經管學院副院長鄧希煒則指出，台灣雖然受惠於AI熱潮，但效益仍。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "（中央社記者李宗憲曼谷2026年10月15日專電）AI熱潮帶動半導體需求，WTO首席經濟學家史泰格表示，目前尚未看到AI熱潮放緩的跡象。港大經管學院副院長鄧希煒則指出，台灣雖然受惠於AI熱潮，但效益仍",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E7%81%A3ai%E7%B4%85%E5%88%A9%E5%BE%85%E6%93%B4%E6%95%A3-%E5%AD%B8%E8%80%85%E7%B1%B2%E6%8B%93%E5%B1%95%E5%8D%8A%E5%B0%8E%E9%AB%94%E4%B8%8A%E4%B8%8B%E6%B8%B8%E5%B8%83%E5%B1%80-110408087.html",
-          "url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E7%81%A3ai%E7%B4%85%E5%88%A9%E5%BE%85%E6%93%B4%E6%95%A3-%E5%AD%B8%E8%80%85%E7%B1%B2%E6%8B%93%E5%B1%95%E5%8D%8A%E5%B0%8E%E9%AB%94%E4%B8%8A%E4%B8%8B%E6%B8%B8%E5%B8%83%E5%B1%80-110408087.html",
-          "published_at": "2026-10-15T11:04:08+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-15",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "需求"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "需求"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "需求",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "中央社記者李宗憲曼谷2026年10月15日專電ai熱潮帶動半導體需求wto首席經濟學家史泰格表示目前尚未看到ai熱潮放緩的跡象港大經管學院副院長鄧希煒則指出台灣雖然受惠於ai熱潮但效益仍",
-          "event_cluster_key": "event-1acfb1cddf918d4e6032",
-          "published_time_bucket": "2026-10-15T11:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "需求"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "需求",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-15T11:28:32.932459+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 27
         }
       ],
       "source_diversity": {
@@ -4619,15 +4629,17 @@
         "status": "multi_source",
         "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 2,
-        "provider_count": 2,
+        "independent_source_count": 3,
+        "provider_count": 3,
         "provider_ids": [
           "anue",
-          "google_news"
+          "google_news",
+          "yahoo_finance"
         ],
         "source_domains": [
           "news.cnyes.com",
-          "news.google.com"
+          "news.google.com",
+          "tw.stock.yahoo.com"
         ],
         "supporting_source_count": 0,
         "inventory_only": false,
@@ -4636,8 +4648,8 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 18,
-          "TSM": 18,
+          "2330": 20,
+          "TSM": 20,
           "NVDA": 5
         },
         "sector_interest": {},
@@ -4704,8 +4716,8 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 18,
-            "TSM": 18,
+            "2330": 20,
+            "TSM": 20,
             "NVDA": 5
           },
           "research_candidate": {},
@@ -4716,10 +4728,10 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 33,
+      "excluded_count": 31,
       "exclusion_reasons": {
         "incomplete_normalized_fact": 4,
-        "insufficient_market_relevance": 28,
+        "insufficient_market_relevance": 24,
         "outside_calendar_window": 15,
         "outside_trading_session_window": 2
       },
@@ -4733,8 +4745,8 @@
         "disabled_provider_count": 0,
         "fetched": 41,
         "normalized": 41,
-        "eligible": 8,
-        "excluded": 33,
+        "eligible": 10,
+        "excluded": 31,
         "date_eligible_current": 24,
         "date_excluded_current": 17,
         "date_exclusion_reasons_current": {
@@ -4744,22 +4756,22 @@
         "date_eligible_inventory": 66,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-16T08:34:15.549663+00:00",
-        "deduped": 8,
+        "reference_time": "2026-10-16T08:39:00.310358+00:00",
+        "deduped": 10,
         "publicly_ranked": 5,
-        "current_eligible": 8,
+        "current_eligible": 10,
         "inventory_considered": 66,
-        "inventory_eligible": 50,
+        "inventory_eligible": 52,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 33,
+        "filtered_story_count": 31,
         "fetched_story_count": 41,
         "normalized_story_count": 41,
-        "eligible_story_count": 8,
-        "deduped_story_count": 8,
+        "eligible_story_count": 10,
+        "deduped_story_count": 10,
         "ranked_story_count": 5
       },
       "inventory": {
@@ -4767,7 +4779,7 @@
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
         "considered": 66,
-        "eligible": 50,
+        "eligible": 52,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -4780,7 +4792,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 41,
-          "checked_at": "2026-10-16T08:34:15.549696+00:00"
+          "checked_at": "2026-10-16T08:39:00.310400+00:00"
         },
         {
           "provider": "twse",
@@ -4791,10 +4803,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-10-16T08:34:15.549696+00:00",
+          "checked_at": "2026-10-16T08:39:00.310400+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+          "last_success_at": "2026-10-16T08:39:00.310400+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4819,10 +4831,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-10-16T08:34:15.549696+00:00",
+          "checked_at": "2026-10-16T08:39:00.310400+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+          "last_success_at": "2026-10-16T08:39:00.310400+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4847,10 +4859,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 1,
-          "checked_at": "2026-10-16T08:34:15.549696+00:00",
+          "checked_at": "2026-10-16T08:39:00.310400+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 1,
-          "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+          "last_success_at": "2026-10-16T08:39:00.310400+00:00",
           "last_failure_at": null,
           "stories_ingested": 1,
           "stories_deduped": 1,
@@ -4873,32 +4885,31 @@
           "key": "news_taiwan_yahoo_finance",
           "legacy_key": "official_news_taiwan_yahoo_finance",
           "label": "yahoo_finance market news",
-          "status": "no_event",
+          "status": "healthy",
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
-          "item_count": 0,
-          "checked_at": "2026-10-16T08:34:15.549696+00:00",
+          "item_count": 2,
+          "checked_at": "2026-10-16T08:39:00.310400+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 0,
-          "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+          "filtered_item_count": 2,
+          "last_success_at": "2026-10-16T08:39:00.310400+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
-          "stories_deduped": 0,
-          "ranked_count": 0,
+          "stories_deduped": 2,
+          "ranked_count": 2,
           "relevance_distribution": {
             "market": 10,
-            "tracked_ticker": 1
+            "tracked_ticker": 2
           },
           "funnel": {
             "fetched_count": 10,
             "normalized_count": 10,
             "market_compatible_count": 10,
-            "eligible_count": 0,
-            "excluded_count": 10,
-            "deduped_count": 0,
-            "ranked_count": 0
-          },
-          "data_gap": "filtered_no_market_match"
+            "eligible_count": 2,
+            "excluded_count": 8,
+            "deduped_count": 2,
+            "ranked_count": 2
+          }
         },
         {
           "provider": "google_news",
@@ -4908,15 +4919,15 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
-          "item_count": 4,
-          "checked_at": "2026-10-16T08:34:15.549696+00:00",
+          "item_count": 2,
+          "checked_at": "2026-10-16T08:39:00.310400+00:00",
           "raw_item_count": 30,
-          "filtered_item_count": 4,
-          "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+          "filtered_item_count": 2,
+          "last_success_at": "2026-10-16T08:39:00.310400+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
           "stories_deduped": 7,
-          "ranked_count": 4,
+          "ranked_count": 2,
           "relevance_distribution": {
             "market": 30,
             "tracked_ticker": 6
@@ -4928,23 +4939,23 @@
             "eligible_count": 7,
             "excluded_count": 23,
             "deduped_count": 7,
-            "ranked_count": 4
+            "ranked_count": 2
           }
         }
       ],
       "observability": {
         "stories_ingested": 41,
-        "stories_deduped": 8,
+        "stories_deduped": 10,
         "ranked_count": 5,
         "relevance_distribution": {
           "market": 41,
-          "tracked_ticker": 7
+          "tracked_ticker": 8
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+            "last_success_at": "2026-10-16T08:39:00.310400+00:00",
             "last_failure_at": null,
             "stories_ingested": 1,
             "stories_deduped": 1,
@@ -4965,11 +4976,11 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+            "last_success_at": "2026-10-16T08:39:00.310400+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
             "stories_deduped": 7,
-            "ranked_count": 4,
+            "ranked_count": 2,
             "relevance_distribution": {
               "market": 30,
               "tracked_ticker": 6
@@ -4981,13 +4992,13 @@
               "eligible_count": 7,
               "excluded_count": 23,
               "deduped_count": 7,
-              "ranked_count": 4
+              "ranked_count": 2
             }
           },
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+            "last_success_at": "2026-10-16T08:39:00.310400+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5006,7 +5017,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+            "last_success_at": "2026-10-16T08:39:00.310400+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5025,23 +5036,23 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+            "last_success_at": "2026-10-16T08:39:00.310400+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
-            "stories_deduped": 0,
-            "ranked_count": 0,
+            "stories_deduped": 2,
+            "ranked_count": 2,
             "relevance_distribution": {
               "market": 10,
-              "tracked_ticker": 1
+              "tracked_ticker": 2
             },
             "funnel": {
               "fetched_count": 10,
               "normalized_count": 10,
               "market_compatible_count": 10,
-              "eligible_count": 0,
-              "excluded_count": 10,
-              "deduped_count": 0,
-              "ranked_count": 0
+              "eligible_count": 2,
+              "excluded_count": 8,
+              "deduped_count": 2,
+              "ranked_count": 2
             }
           }
         ]
@@ -5559,15 +5570,15 @@
           "ranking_score": 140
         },
         {
-          "story_id": "news-5ccc5eeed9b0391f22d6",
+          "story_id": "news-418b71f58f76de909b31",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "Asian stocks rise as tech bounces from rout, Warsh upbeat on AI",
-          "raw_title": "Asian stocks rise as tech bounces from rout, Warsh upbeat on AI",
-          "normalized_fact": "Most Asian markets bounced on Friday after the previous day's tech rout fuelled by concerns over the AI boom, which Federal Reserve boss Kevin Warsh said offered huge benefits to the global economy.At an event at the IMF-World Bank Annual Meetings in Bangkok, he said the AI investment boom would drive prices up in the short term, but \"there really is, I think, a huge benefit to the global economy, to the US economy over the horizon\"。",
-          "market_topic": "semiconductor_ai",
+          "title": "Warsh avoids rate guidance; Tesla’s Roadster turns in air - what’s moving markets",
+          "raw_title": "Warsh avoids rate guidance; Tesla’s Roadster turns in air - what’s moving markets",
+          "normalized_fact": "Investing.com - Futures linked to the major U.S. averages point higher, after equities on Wall Street advanced in the prior session, rebounding from an artificial intelligence-driven selloff earlier in the week. Federal Reserve Chair Kevin Warsh declines to provide specific interest-rate guidance ahead of the central bank's October policy meeting, but says he has spoken with global central bankers about mounting inflationary pressures. Some investors reportedly temper their valuations for Claude。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5575,11 +5586,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "Most Asian markets bounced on Friday after the previous day's tech rout fuelled by concerns over the AI boom, which Federal Reserve boss Kevin Warsh said offered huge benefits to the global economy.At an event at the IMF-World Bank Annual Meetings in Bangkok, he said the AI investment boom would drive prices up in the short term, but \"there really is, I think, a huge benefit to the global economy, to the US economy over the horizon\".",
+          "summary": "Investing.com - Futures linked to the major U.S. averages point higher, after equities on Wall Street advanced in the prior session, rebounding from an artificial intelligence-driven selloff earlier in the week. Federal Reserve Chair Kevin Warsh declines to provide specific interest-rate guidance ahead of the central bank's October policy meeting, but says he has spoken with global central bankers about mounting inflationary pressures. Some investors reportedly temper their valuations for Claude",
           "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/world-indices/articles/asian-stocks-rise-tech-bounces-020836295.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/world-indices/articles/asian-stocks-rise-tech-bounces-020836295.html?.tsrc=rss",
-          "published_at": "2026-10-16T08:22:43+00:00",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/warsh-avoids-rate-guidance-tesla-082828263.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/warsh-avoids-rate-guidance-tesla-082828263.html?.tsrc=rss",
+          "published_at": "2026-10-16T08:28:28+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -5592,19 +5603,26 @@
           "entities": [],
           "sectors": [],
           "topics": [
-            "ai"
+            "guidance",
+            "rates"
           ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "federal reserve",
+              "rate"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "federal reserve",
+              "rate"
+            ],
+            "matched_subject": "federal reserve",
+            "matched_action": "rate",
+            "matched_market_object": "federal reserve",
             "input_fields": [
               "description",
               "summary",
@@ -5615,17 +5633,20 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "mostasianmarketsbouncedonfridayafterthepreviousdaystechroutfuelledbyconcernsovertheaiboomwhichfederalreservebosskevinwarshsaidofferedhugebenefitstotheglobaleconomyataneventattheimfworldbankannualmeetingsinbangkokhesaidtheaiinvestmentboomwoulddrivepricesupintheshorttermbuttherereallyisithinkahugebenefittotheglobaleconomytotheuseconomyoverthehorizon",
-          "event_cluster_key": "event-3582c00aaf21e08fec42",
+          "dedupe_key": "investingcomfutureslinkedtothemajorusaveragespointhigherafterequitiesonwallstreetadvancedinthepriorsessionreboundingfromanartificialintelligencedrivenselloffearlierintheweekfederalreservechairkevinwarshdeclinestoprovidespecificinterestrateguidanceaheadofthecentralbanksoctoberpolicymeetingbutsayshehasspokenwithglobalcentralbankersaboutmountinginflationarypressuressomeinvestorsreportedlytempertheirvaluationsforclaude",
+          "event_cluster_key": "event-39fe206de8761368ac06",
           "published_time_bucket": "2026-10-16T08:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
+          "classification_evidence": [
+            "federal reserve",
+            "rate"
+          ],
+          "matched_subject": "federal reserve",
+          "matched_action": "rate",
+          "matched_market_object": "federal reserve",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -6022,6 +6043,100 @@
           "ranking_score": 140
         },
         {
+          "story_id": "news-418b71f58f76de909b31",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Warsh avoids rate guidance; Tesla’s Roadster turns in air - what’s moving markets",
+          "raw_title": "Warsh avoids rate guidance; Tesla’s Roadster turns in air - what’s moving markets",
+          "normalized_fact": "Investing.com - Futures linked to the major U.S. averages point higher, after equities on Wall Street advanced in the prior session, rebounding from an artificial intelligence-driven selloff earlier in the week. Federal Reserve Chair Kevin Warsh declines to provide specific interest-rate guidance ahead of the central bank's October policy meeting, but says he has spoken with global central bankers about mounting inflationary pressures. Some investors reportedly temper their valuations for Claude。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Investing.com - Futures linked to the major U.S. averages point higher, after equities on Wall Street advanced in the prior session, rebounding from an artificial intelligence-driven selloff earlier in the week. Federal Reserve Chair Kevin Warsh declines to provide specific interest-rate guidance ahead of the central bank's October policy meeting, but says he has spoken with global central bankers about mounting inflationary pressures. Some investors reportedly temper their valuations for Claude",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/warsh-avoids-rate-guidance-tesla-082828263.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/warsh-avoids-rate-guidance-tesla-082828263.html?.tsrc=rss",
+          "published_at": "2026-10-16T08:28:28+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "guidance",
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "federal reserve",
+              "rate"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "federal reserve",
+              "rate"
+            ],
+            "matched_subject": "federal reserve",
+            "matched_action": "rate",
+            "matched_market_object": "federal reserve",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "investingcomfutureslinkedtothemajorusaveragespointhigherafterequitiesonwallstreetadvancedinthepriorsessionreboundingfromanartificialintelligencedrivenselloffearlierintheweekfederalreservechairkevinwarshdeclinestoprovidespecificinterestrateguidanceaheadofthecentralbanksoctoberpolicymeetingbutsayshehasspokenwithglobalcentralbankersaboutmountinginflationarypressuressomeinvestorsreportedlytempertheirvaluationsforclaude",
+          "event_cluster_key": "event-39fe206de8761368ac06",
+          "published_time_bucket": "2026-10-16T08:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "federal reserve",
+            "rate"
+          ],
+          "matched_subject": "federal reserve",
+          "matched_action": "rate",
+          "matched_market_object": "federal reserve",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
           "story_id": "news-5ccc5eeed9b0391f22d6",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -6178,6 +6293,99 @@
           ],
           "matched_subject": "s&p 500",
           "matched_action": "volatile",
+          "matched_market_object": "s&p 500",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "story_id": "news-8851a74a19bce1e410fd",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "US Stock Market Today: S&P 500 Futures Ease As Hot Core CPI Hits Rate Hopes",
+          "raw_title": "US Stock Market Today: S&P 500 Futures Ease As Hot Core CPI Hits Rate Hopes",
+          "normalized_fact": "The Morning Bull - US Market Morning Update Friday, Oct, 16 2026 US stocks look set for a cautious, slightly softer open, with the September inflation surprise still calling the shots. The mood is risk off as investors adjust to the idea of interest rates staying restrictive for longer. The key driver is the hotter core CPI print. Core inflation rose 0.3% month on month versus 0.2% expected, leaving annual core CPI at 2.6%. Together with a 5.2% monthly jump in energy prices and gasoline up。",
+          "market_topic": "global_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "The Morning Bull - US Market Morning Update Friday, Oct, 16 2026 US stocks look set for a cautious, slightly softer open, with the September inflation surprise still calling the shots. The mood is risk off as investors adjust to the idea of interest rates staying restrictive for longer. The key driver is the hotter core CPI print. Core inflation rose 0.3% month on month versus 0.2% expected, leaving annual core CPI at 2.6%. Together with a 5.2% monthly jump in energy prices and gasoline up...",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/us-stock-market-today-p-081318385.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/us-stock-market-today-p-081318385.html?.tsrc=rss",
+          "published_at": "2026-10-16T08:13:18+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "market",
+            "reason": "market_subject_action",
+            "matched_terms": [
+              "s&p 500",
+              "futures"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "s&p 500",
+              "futures"
+            ],
+            "matched_subject": "s&p 500",
+            "matched_action": "futures",
+            "matched_market_object": "s&p 500",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "themorningbullusmarketmorningupdatefridayoct162026usstockslooksetforacautiousslightlysofteropenwiththeseptemberinflationsurprisestillcallingtheshotsthemoodisriskoffasinvestorsadjusttotheideaofinterestratesstayingrestrictiveforlongerthekeydriveristhehottercorecpiprintcoreinflationrose03monthonmonthversus02expectedleavingannualcorecpiat26togetherwitha52monthlyjumpinenergypricesandgasolineup",
+          "event_cluster_key": "event-b51226b096ba653dd791",
+          "published_time_bucket": "2026-10-16T08:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "s&p 500",
+            "futures"
+          ],
+          "matched_subject": "s&p 500",
+          "matched_action": "futures",
           "matched_market_object": "s&p 500",
           "decision_value_class": "market_context",
           "quality_flags": [],
@@ -6372,91 +6580,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 130
-        },
-        {
-          "story_id": "news-185a50a3377450c7bbb4",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "SunSirs: Analysis of Market Impact from IEA’s Release of Crude Oil and Diesel Reserves - ChemNet News",
-          "raw_title": "SunSirs: Analysis of Market Impact from IEA’s Release of Crude Oil and Diesel Reserves - ChemNet News",
-          "normalized_fact": "SunSirs: Analysis of Market Impact from IEA’s Release of Crude Oil and Diesel Reserves ChemNet News。",
-          "market_topic": "company_industry",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "SunSirs: Analysis of Market Impact from IEA’s Release of Crude Oil and Diesel Reserves ChemNet News",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE5sakdfYTIza3NFZE5OMTBOcGgzNWFKZjRQdkNHRGdTT2xEeEhYTGQ1LVRNQjNpWWRzRGNPUXJwbGtvTmRvVWY3TWc1WkVVbnQyU3c",
-          "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE5sakdfYTIza3NFZE5OMTBOcGgzNWFKZjRQdkNHRGdTT2xEeEhYTGQ1LVRNQjNpWWRzRGNPUXJwbGtvTmRvVWY3TWc1WkVVbnQyU3c",
-          "published_at": "2026-10-16T02:25:01+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-15",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "energy"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "active_event:oil"
-          ],
-          "freshness": "published",
-          "dedupe_key": "sunsirsanalysisofmarketimpactfromieasreleaseofcrudeoilanddieselreserveschemnetnews",
-          "event_cluster_key": "event-1c385a549d89f8dbd797",
-          "published_time_bucket": "2026-10-16T02:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 120
         },
         {
           "story_id": "news-5020636cf7a3eff37ecd",
@@ -9319,97 +9442,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 24
-        },
-        {
-          "story_id": "news-c22a6bdb1fcea3705192",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Asia stocks tumble as South Korea’s KOSPI triggers circuit breaker in tech rout",
-          "raw_title": "Asia stocks tumble as South Korea’s KOSPI triggers circuit breaker in tech rout",
-          "normalized_fact": "Investing.com -- Asian stocks tumbled on Thursday as a deepening tech rout triggered a circuit breaker in South Korea, where the KOSPI plunged nearly 9%, amid concerns over Chinese competition and hotter-than-expected U.S. inflation raised expectations for further Federal Reserve rate hikes。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Investing.com -- Asian stocks tumbled on Thursday as a deepening tech rout triggered a circuit breaker in South Korea, where the KOSPI plunged nearly 9%, amid concerns over Chinese competition and hotter-than-expected U.S. inflation raised expectations for further Federal Reserve rate hikes.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/world-indices/articles/asia-stocks-tumble-korea-kospi-032344474.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/world-indices/articles/asia-stocks-tumble-korea-kospi-032344474.html?.tsrc=rss",
-          "published_at": "2026-10-15T03:23:44+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-10-14",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "federal reserve",
-              "rate"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "federal reserve",
-              "rate"
-            ],
-            "matched_subject": "federal reserve",
-            "matched_action": "rate",
-            "matched_market_object": "federal reserve",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "investingcomasianstockstumbledonthursdayasadeepeningtechrouttriggeredacircuitbreakerinsouthkoreawherethekospiplungednearly9amidconcernsoverchinesecompetitionandhotterthanexpectedusinflationraisedexpectationsforfurtherfederalreserveratehikes",
-          "event_cluster_key": "event-2b25a9dc1974fd0181be",
-          "published_time_bucket": "2026-10-15T03:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "federal reserve",
-            "rate"
-          ],
-          "matched_subject": "federal reserve",
-          "matched_action": "rate",
-          "matched_market_object": "federal reserve",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 3,
-          "inventory_saved_at": "2026-10-15T04:18:50.218690+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 24
         }
       ],
       "source_diversity": {
@@ -9448,7 +9480,7 @@
           "hormuz": 2
         },
         "market_interest": {
-          "us": 147
+          "us": 150
         },
         "context": {
           "tracked_tickers": [
@@ -9522,14 +9554,14 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 46,
+      "excluded_count": 47,
       "exclusion_reasons": {
         "generic_official_filing": 20,
-        "incomplete_normalized_fact": 22,
+        "incomplete_normalized_fact": 20,
         "insufficient_market_relevance": 18,
         "listicle_or_selection": 2,
         "market_scope_mismatch": 8,
-        "outside_calendar_window": 9,
+        "outside_calendar_window": 11,
         "outside_trading_session_window": 2
       },
       "status": "ready",
@@ -9540,43 +9572,43 @@
         "successful_provider_count": 4,
         "failed_provider_count": 1,
         "disabled_provider_count": 1,
-        "fetched": 59,
-        "normalized": 59,
-        "eligible": 13,
-        "excluded": 46,
+        "fetched": 61,
+        "normalized": 61,
+        "eligible": 14,
+        "excluded": 47,
         "date_eligible_current": 48,
-        "date_excluded_current": 11,
+        "date_excluded_current": 13,
         "date_exclusion_reasons_current": {
-          "outside_calendar_window": 9,
+          "outside_calendar_window": 11,
           "outside_trading_session_window": 2
         },
-        "date_eligible_inventory": 88,
+        "date_eligible_inventory": 89,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-16T08:34:15.549663+00:00",
-        "deduped": 13,
+        "reference_time": "2026-10-16T08:39:00.310358+00:00",
+        "deduped": 14,
         "publicly_ranked": 5,
-        "current_eligible": 13,
-        "inventory_considered": 88,
-        "inventory_eligible": 53,
+        "current_eligible": 14,
+        "inventory_considered": 89,
+        "inventory_eligible": 55,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 46,
-        "fetched_story_count": 59,
-        "normalized_story_count": 59,
-        "eligible_story_count": 13,
-        "deduped_story_count": 13,
+        "filtered_story_count": 47,
+        "fetched_story_count": 61,
+        "normalized_story_count": 61,
+        "eligible_story_count": 14,
+        "deduped_story_count": 14,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 88,
-        "eligible": 53,
+        "considered": 89,
+        "eligible": 55,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -9588,8 +9620,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 59,
-          "checked_at": "2026-10-16T08:34:15.549696+00:00"
+          "item_count": 61,
+          "checked_at": "2026-10-16T08:39:00.310400+00:00"
         },
         {
           "provider": "sec",
@@ -9600,10 +9632,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-10-16T08:34:15.549696+00:00",
+          "checked_at": "2026-10-16T08:39:00.310400+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+          "last_success_at": "2026-10-16T08:39:00.310400+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9631,12 +9663,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-10-16T08:34:15.549696+00:00",
+          "checked_at": "2026-10-16T08:39:00.310400+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-10-16T08:34:15.549696+00:00",
+          "last_failure_at": "2026-10-16T08:39:00.310400+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9659,10 +9691,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-10-16T08:34:15.549696+00:00",
+          "checked_at": "2026-10-16T08:39:00.310400+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+          "last_success_at": "2026-10-16T08:39:00.310400+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9687,10 +9719,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 1,
-          "checked_at": "2026-10-16T08:34:15.549696+00:00",
+          "checked_at": "2026-10-16T08:39:00.310400+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 1,
-          "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+          "last_success_at": "2026-10-16T08:39:00.310400+00:00",
           "last_failure_at": null,
           "stories_ingested": 2,
           "stories_deduped": 2,
@@ -9718,25 +9750,25 @@
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
           "item_count": 2,
-          "checked_at": "2026-10-16T08:34:15.549696+00:00",
+          "checked_at": "2026-10-16T08:39:00.310400+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 2,
-          "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+          "last_success_at": "2026-10-16T08:39:00.310400+00:00",
           "last_failure_at": null,
-          "stories_ingested": 3,
-          "stories_deduped": 3,
+          "stories_ingested": 5,
+          "stories_deduped": 5,
           "ranked_count": 2,
           "relevance_distribution": {
-            "market": 3,
+            "market": 5,
             "tracked_ticker": 1
           },
           "funnel": {
-            "fetched_count": 7,
-            "normalized_count": 3,
-            "market_compatible_count": 3,
-            "eligible_count": 3,
+            "fetched_count": 9,
+            "normalized_count": 5,
+            "market_compatible_count": 5,
+            "eligible_count": 5,
             "excluded_count": 0,
-            "deduped_count": 3,
+            "deduped_count": 5,
             "ranked_count": 2
           }
         },
@@ -9749,13 +9781,13 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
           "item_count": 2,
-          "checked_at": "2026-10-16T08:34:15.549696+00:00",
+          "checked_at": "2026-10-16T08:39:00.310400+00:00",
           "raw_item_count": 40,
           "filtered_item_count": 2,
-          "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+          "last_success_at": "2026-10-16T08:39:00.310400+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
-          "stories_deduped": 8,
+          "stories_deduped": 7,
           "ranked_count": 2,
           "relevance_distribution": {
             "active_event": 7,
@@ -9766,27 +9798,27 @@
             "fetched_count": 40,
             "normalized_count": 40,
             "market_compatible_count": 40,
-            "eligible_count": 8,
-            "excluded_count": 32,
-            "deduped_count": 8,
+            "eligible_count": 7,
+            "excluded_count": 33,
+            "deduped_count": 7,
             "ranked_count": 2
           }
         }
       ],
       "observability": {
-        "stories_ingested": 59,
-        "stories_deduped": 13,
+        "stories_ingested": 61,
+        "stories_deduped": 14,
         "ranked_count": 5,
         "relevance_distribution": {
           "active_event": 7,
-          "market": 59,
+          "market": 61,
           "tracked_ticker": 5
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+            "last_success_at": "2026-10-16T08:39:00.310400+00:00",
             "last_failure_at": null,
             "stories_ingested": 2,
             "stories_deduped": 2,
@@ -9809,7 +9841,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-10-16T08:34:15.549696+00:00",
+            "last_failure_at": "2026-10-16T08:39:00.310400+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9827,10 +9859,10 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+            "last_success_at": "2026-10-16T08:39:00.310400+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
-            "stories_deduped": 8,
+            "stories_deduped": 7,
             "ranked_count": 2,
             "relevance_distribution": {
               "active_event": 7,
@@ -9841,16 +9873,16 @@
               "fetched_count": 40,
               "normalized_count": 40,
               "market_compatible_count": 40,
-              "eligible_count": 8,
-              "excluded_count": 32,
-              "deduped_count": 8,
+              "eligible_count": 7,
+              "excluded_count": 33,
+              "deduped_count": 7,
               "ranked_count": 2
             }
           },
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+            "last_success_at": "2026-10-16T08:39:00.310400+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9869,7 +9901,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+            "last_success_at": "2026-10-16T08:39:00.310400+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -9912,22 +9944,22 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-16T08:34:15.549696+00:00",
+            "last_success_at": "2026-10-16T08:39:00.310400+00:00",
             "last_failure_at": null,
-            "stories_ingested": 3,
-            "stories_deduped": 3,
+            "stories_ingested": 5,
+            "stories_deduped": 5,
             "ranked_count": 2,
             "relevance_distribution": {
-              "market": 3,
+              "market": 5,
               "tracked_ticker": 1
             },
             "funnel": {
-              "fetched_count": 7,
-              "normalized_count": 3,
-              "market_compatible_count": 3,
-              "eligible_count": 3,
+              "fetched_count": 9,
+              "normalized_count": 5,
+              "market_compatible_count": 5,
+              "eligible_count": 5,
               "excluded_count": 0,
-              "deduped_count": 3,
+              "deduped_count": 5,
               "ranked_count": 2
             }
           }
