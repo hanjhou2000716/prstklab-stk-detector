@@ -2,17 +2,17 @@
   "schema": 2,
   "markets": {
     "taiwan": {
-      "fetched_at": "2026-10-16T22:33:44.237225+00:00",
+      "fetched_at": "2026-10-16T22:38:14.823319+00:00",
       "stories": [
         {
-          "title": "〈美股早盤〉AI疑慮壓抑晶片股、特斯拉撐盤 主要指數漲跌互現",
-          "url": "https://news.cnyes.com/news/id/6632278",
+          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "url": "https://news.cnyes.com/news/id/6630669",
           "provider": "anue",
-          "source": "鉅亨網｜市場焦點",
-          "relevance": "market",
-          "summary": "美股周五開盤漲跌互現，AI投資疑慮壓抑半導體與科技股，那指跌、費半重挫，台積電ADR跌4.60%。 特斯拉發表第二代Roadster與SpaceX推進器技術，股價走揚；蘋果iPhone Duo預購迅速售罄。 Fed未明確表態，交易員將10月升息押注降至約15%。",
-          "published_at": "2026-10-16T13:41:51+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6632278",
+          "source": "鉅亨網｜持股關聯",
+          "relevance": "holding",
+          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "published_at": "2026-10-14T22:02:35+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6630669",
           "market_classification": {
             "market_scope": "cross_market",
             "taiwan_matches": [
@@ -20,14 +20,16 @@
             ],
             "us_matches": [
               "美股",
+              "美國",
               "費半",
-              "fed"
+              "fed",
+              "cpi"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 4,
+              "matched_term_count": 6,
               "source_market_hint": "cross_market"
             }
           },
@@ -37,22 +39,24 @@
           ],
           "us_matches": [
             "美股",
+            "美國",
             "費半",
-            "fed"
+            "fed",
+            "cpi"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 4,
+            "matched_term_count": 6,
             "source_market_hint": "cross_market"
           },
-          "story_id": "news-825c5294409d85bd406a",
+          "story_id": "news-711307422ad19cd66883",
           "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "raw_title": "〈美股早盤〉AI疑慮壓抑晶片股、特斯拉撐盤 主要指數漲跌互現",
-          "normalized_fact": "美股周五開盤漲跌互現，AI投資疑慮壓抑半導體與科技股，那指跌、費半重挫，台積電ADR跌4.60%。 特斯拉發表第二代Roadster與SpaceX推進器技術，股價走揚；蘋果iPhone Duo預購迅速售罄。 Fed未明確表態，交易員將10月升息押注降至約15%。",
+          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
           "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
@@ -71,11 +75,14 @@
           "market": "cross_market",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "2330",
+            "SOX",
+            "TSM"
+          ],
           "sectors": [],
           "topics": [
-            "ai",
-            "semiconductor"
+            "ai"
           ],
           "event_classification": {
             "schema_version": "1.0",
@@ -84,15 +91,15 @@
             "reason": "fed_subject_action",
             "matched_terms": [
               "fed",
-              "升息"
+              "利率"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
               "fed",
-              "升息"
+              "利率"
             ],
             "matched_subject": "fed",
-            "matched_action": "升息",
+            "matched_action": "利率",
             "matched_market_object": "fed",
             "input_fields": [
               "description",
@@ -104,18 +111,18 @@
             "market:cross_market"
           ],
           "freshness": "published",
-          "dedupe_key": "美股周五開盤漲跌互現ai投資疑慮壓抑半導體與科技股那指跌費半重挫台積電adr跌460特斯拉發表第二代roadster與spacex推進器技術股價走揚蘋果iphoneduo預購迅速售罄fed未明確表態交易員將10月升息押注降至約15",
-          "event_cluster_key": "event-003dd7d12061a0e42e63",
-          "published_time_bucket": "2026-10-16T13:00:00+00:00",
+          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
+          "event_cluster_key": "event-40d27feb65b9f7fa705b",
+          "published_time_bucket": "2026-10-14T22:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
             "fed",
-            "升息"
+            "利率"
           ],
           "matched_subject": "fed",
-          "matched_action": "升息",
+          "matched_action": "利率",
           "matched_market_object": "fed",
           "decision_value_class": "macro",
           "quality_flags": [],
@@ -134,6 +141,42 @@
           "ranking_score": 130
         },
         {
+          "title": "〈台積電法說〉Q3純益7630.64億元季增8% EPS29.43元續創單季新高",
+          "url": "https://news.cnyes.com/news/id/6631116",
+          "provider": "anue",
+          "source": "鉅亨網｜持股關聯",
+          "relevance": "holding",
+          "summary": "",
+          "published_at": "2026-10-15T06:01:21+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6631116",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台積電"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": null
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台積電"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": null
+          }
+        },
+        {
           "title": "美股收黑　特斯拉有Roadster股價仍跌約2%",
           "url": "https://tw.news.yahoo.com/%E7%BE%8E%E8%82%A1%E6%94%B6%E9%BB%91-%E7%89%B9%E6%96%AF%E6%8B%89%E6%9C%89roadster%E8%82%A1%E5%83%B9%E4%BB%8D%E8%B7%8C%E7%B4%842-221051485.html",
           "summary": "[NOWNEWS今日新聞]由於投資人持續拋售科技和AI相關股票，加上中東戰事釀油價繼續上漲，美股週五普遍收黑，華爾街本週大部分時間都處於虧損狀態。綜合《CNBC》等外媒報導，本週科技股賣壓，從記憶體、",
@@ -144,6 +187,48 @@
           "market": "taiwan",
           "relevance": "market",
           "published_at": "2026-10-16T22:10:51+00:00",
+          "market_classification": {
+            "market_scope": "cross_market",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "cross_market",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "科技股遭拋售！美股全收黑　那指重挫572點",
+          "url": "https://tw.stock.yahoo.com/news/%E7%A7%91%E6%8A%80%E8%82%A1%E9%81%AD%E6%8B%8B%E5%94%AE-%E7%BE%8E%E8%82%A1%E5%85%A8%E6%94%B6%E9%BB%91-%E9%82%A3%E6%8C%87%E9%87%8D%E6%8C%AB572%E9%BB%9E-220518984.html",
+          "summary": "即時中心／綜合報導油價飆升令投資者在周末前感到恐慌，加上市場擔心科技公司負債過高，美股週五（16日）全面收黑，特別是以科技股為主的那斯達克指數重挫572點，收在26,140點，跌幅2.14%；道瓊工業",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-16T22:05:18+00:00",
           "market_classification": {
             "market_scope": "cross_market",
             "taiwan_matches": [
@@ -665,46 +750,6 @@
           "taiwan_matches": [
             "taiwan",
             "台灣"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "聯發科子公司3/27~10/16處分匯頂9,299,993股，認列其他綜合利益約4.46億人民幣",
-          "url": "https://tw.stock.yahoo.com/news/%E8%81%AF%E7%99%BC%E7%A7%91%E5%AD%90%E5%85%AC%E5%8F%B83-27-10-16%E8%99%95%E5%88%86%E5%8C%AF%E9%A0%829-299-203600445.html",
-          "summary": "公開資訊觀測站重大訊息公告(2454)聯發科-‎(補充115/03/20公告) 代子公司匯發國際(香港)有限公司(下稱「匯發國際」)公告處分有價證券1.證券名稱:深圳市匯頂科技股份有限公司(下稱「匯頂",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-16T20:36:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "taiwan",
-              "聯發科"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "taiwan",
-            "聯發科"
           ],
           "us_matches": [],
           "global_matches": [],
@@ -7247,10 +7292,10 @@
           "ranking_score": 140
         }
       ],
-      "inventory_saved_at": "2026-10-16T22:33:44.237225+00:00"
+      "inventory_saved_at": "2026-10-16T22:38:14.823319+00:00"
     },
     "us": {
-      "fetched_at": "2026-10-16T22:33:44.237225+00:00",
+      "fetched_at": "2026-10-16T22:38:14.823319+00:00",
       "stories": [
         {
           "title": "8-K - NATIONAL RURAL UTILITIES COOPERATIVE FINANCE CORP /DC/ (0000070502) (Filer)",
@@ -7889,6 +7934,48 @@
           "ranking_score": 130
         },
         {
+          "title": "Nasdaq 100 Records Worst Week In 18 Months As Investors Steer Clear Of Chipmakers — AAPL, MSTR, UBER, SOXX In Focus",
+          "url": "https://stocktwits.com/news-articles/markets/equity/nasdaq-100-records-worst-week-in-18-months/cZxK0vGRBt2?.tsrc=rss",
+          "summary": "The Philadelphia Semiconductor Index fell for an eighth straight day, the longest slide since 2008.",
+          "source": "Yahoo Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-16T22:15:34+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "nasdaq",
+              "sox",
+              "nasdaq-100"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 3,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "nasdaq",
+            "sox",
+            "nasdaq-100"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 3,
+            "source_market_hint": "us"
+          }
+        },
+        {
           "title": "Prediction: $1,000 Invested in Taiwan Semi (TSMC) Today Will Be Worth This Much by 2030.",
           "url": "https://www.fool.com/investing/2026/10/16/prediction-1000-invested-in-taiwan-semi-tsmc-today/?.tsrc=rss",
           "summary": "An investment in TSMC today could easily triple in value over the next four years.",
@@ -7923,250 +8010,6 @@
             "tsm"
           ],
           "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "Dow Jones Futures: S&P 500, Nasdaq Break Key Levels As CoreWeave, Dell Dive; Tesla, SpaceX, Meta Loom",
-          "url": "https://finance.yahoo.com/m/4342d021-69d3-3aa1-9753-76f72c9ba95d/dow-jones-futures%3A-s%26p-500%2C.html?.tsrc=rss",
-          "summary": "The S&P 500 and Nasdaq knifed below their 50-day lines as CoreWeave led a broad tech sell-off. Tesla, SpaceX, Meta earnings loom.",
-          "source": "Yahoo Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-10-16T21:08:07+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "nasdaq",
-              "s&p 500",
-              "dow jones",
-              "fed",
-              "meta"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 5,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "nasdaq",
-            "s&p 500",
-            "dow jones",
-            "fed",
-            "meta"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 5,
-            "source_market_hint": "us"
-          },
-          "story_id": "news-a1fad0203c394eaf1b27",
-          "provider_name": "Yahoo Taiwan Finance",
-          "raw_title": "Dow Jones Futures: S&P 500, Nasdaq Break Key Levels As CoreWeave, Dell Dive; Tesla, SpaceX, Meta Loom",
-          "normalized_fact": "The S&P 500 and Nasdaq knifed below their 50-day lines as CoreWeave led a broad tech sell-off. Tesla, SpaceX, Meta earnings loom。",
-          "market_topic": "global_market",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/m/4342d021-69d3-3aa1-9753-76f72c9ba95d/dow-jones-futures%3A-s%26p-500%2C.html?.tsrc=rss",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-16",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NASDAQ"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "market",
-            "reason": "market_subject_action",
-            "matched_terms": [
-              "nasdaq",
-              "futures"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "nasdaq",
-              "futures"
-            ],
-            "matched_subject": "nasdaq",
-            "matched_action": "futures",
-            "matched_market_object": "nasdaq",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "thesp500andnasdaqknifedbelowtheir50daylinesascoreweaveledabroadtechselloffteslaspacexmetaearningsloom",
-          "event_cluster_key": "event-e7060e02e062313ead03",
-          "published_time_bucket": "2026-10-16T21:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "nasdaq",
-            "futures"
-          ],
-          "matched_subject": "nasdaq",
-          "matched_action": "futures",
-          "matched_market_object": "nasdaq",
-          "decision_value_class": "company_event",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
-          "title": "Inflation Rose to 3.7% in September. Is It Time to Sell the S&P 500?",
-          "url": "https://www.fool.com/investing/2026/10/16/inflation-rose-to-3-7-in-september-is-it-time-to-sell-the-s-and-p-500/?.tsrc=rss",
-          "summary": "Should S&P 500 index fund owners change anything with inflation so hot?",
-          "source": "Yahoo Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-10-16T21:07:02+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "s&p 500"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "s&p 500"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "Nasdaq sinks more than 2% as investors raise questions about AI debt",
-          "url": "https://www.cnn.com/2026/10/16/investing/tech-stocks-ai-coreweave?.tsrc=rss",
-          "summary": "Tech stocks had a tumultuous week as concerns, including higher interest rates and mounting AI debt, continued to weigh on investor sentiment.",
-          "source": "Yahoo Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-10-16T21:02:57+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "nasdaq"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "nasdaq"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "Stock Market Today, Oct. 16: Tech Stocks Plunge as AI Software Valuations Reverse",
-          "url": "https://www.fool.com/coverage/stock-market-today/2026/10/16/stock-market-today-oct-16-tech-stocks-plunge-as-ai-software-valuations-reverse/?.tsrc=rss",
-          "summary": "AI-focused software shed $260 billion in value as Goldman Sachs raised alarms about debt financing, triggering sharp momentum reversal, today, Oct. 16, 2026.",
-          "source": "Yahoo Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-10-16T22:09:48+00:00",
-          "market_classification": {
-            "market_scope": "global",
-            "taiwan_matches": [],
-            "us_matches": [],
-            "global_matches": [
-              "war",
-              "gold"
-            ],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "global",
-          "taiwan_matches": [],
-          "us_matches": [],
-          "global_matches": [
-            "war",
-            "gold"
-          ],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
@@ -8431,44 +8274,6 @@
           }
         },
         {
-          "title": "First-half 2026 equity recap: Leadership comes in different forms - RBC Wealth Management",
-          "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxQbHRFbzNLbkhBZEhlcXgtcTBjZ2pUOVVNYUNCNDVjR1lmRVRVc0RReEJmbUwyRWJodU04OTFiUnZ0N3VvZ184aVc0cGJuUjZLd0VMYW5EeE9TRlZSTVQzZEdBbGhTdkpHZU5DZjdKQ0hBaWs1WGdHQ0NwdGZYM0V3NU1BMXJvaFZLQkhRX0RSSkVOUlR6Sld1Q2g1QmVMUVpHMFBNbngtR1FGV2hpcDBfWWp5MzFWTTc2?oc=5",
-          "summary": "First-half 2026 equity recap: Leadership comes in different forms RBC Wealth Management",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-07-01T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
           "title": "Dow, S&P 500, Nasdaq Futures Mixed After S&P 500, Nasdaq Notch Record Highs: SPCX, NLST, PENG, WDC Stocks In Focus - TradingView",
           "url": "https://news.google.com/rss/articles/CBMi-wFBVV95cUxQb3BfU2FsQW5LNmhFemI5THZPaEs0WWVWek42SGl0YXl4MEIyeURmcVdBbzhiQm82NHRSMFROLW1aYmR2ME4tdUdPNHpKdURta1VuOTA0RnB2X1U3czNncUkxd0FWd09pNlZlcHBHbEdDUTB1TUJvUHI4NlY0VGxtRnZnbjNEb0hzeF96bEJXRmFkSWlWeGxpU0lXdkNlS2RWbTVKTnR2elZZVlA4NDVuNEVzWkx5U254VWNlTEhvMlIxVmxTSm9LeTRHcGNydTVmWnQ2LW0wd3lfNjBwc1pZS2hNa2NnaVYwOU93VDFhdXpmeV9FWWpxeU4wQQ?oc=5",
           "summary": "Dow, S&P 500, Nasdaq Futures Mixed After S&P 500, Nasdaq Notch Record Highs: SPCX, NLST, PENG, WDC Stocks In Focus TradingView",
@@ -8601,6 +8406,52 @@
           }
         },
         {
+          "title": "Dow, S&P 500, Nasdaq Futures Dip As Bond Yields Bite And Trump-Xi Meet Grabs Spotlight: Why META, MCD, GOOG, U Stocks Are Trending - TradingView",
+          "url": "https://news.google.com/rss/articles/CBMikwJBVV95cUxQcUw0M3BESEdNbDMyYmpDZlJ2V3U0ajFDMlRQV1RTT0hOdnVsWkswRkxtSWhmRklXeEJMOUxVRGNhS0hnOUN3SmVTRVdTWjJ0T3RaMkc2eDRfYzRTM0JOb3UxNlBWWVpGLS1tZG03c1dyZEthUGNwZmZGbTJNdkNQS3lhMGY1SVlEd0RJb3VGU0JtMldWUUZGaHlHdEFfa1I3Wm51N1JmaFFETkIyV1lKcGo0VERlNG51RkE0WlJ4eVl1NGltbzRpWS13Skh6SWN4VC13bV9tb2ZmR19oSGc4YXNJRjctT0ZteUJaM0xtUVVrWWVUWE5wRU5XdjZoNFBOdGItWEJTbGxLa2JKaDFKQVBKTQ?oc=5",
+          "summary": "Dow, S&P 500, Nasdaq Futures Dip As Bond Yields Bite And Trump-Xi Meet Grabs Spotlight: Why META, MCD, GOOG, U Stocks Are Trending TradingView",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-09-24T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股",
+              "nasdaq",
+              "s&p 500",
+              "trump",
+              "meta"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 5,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股",
+            "nasdaq",
+            "s&p 500",
+            "trump",
+            "meta"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 5,
+            "source_market_hint": "us"
+          }
+        },
+        {
           "title": "Yields on Treasurys, European Government Bonds Edge Higher - WSJ",
           "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxQaTh2LXo3TUR2cXpfSTI2QlNFNGQwVlNtM0FMQW9EZ1ctdGZmSXd1WFpnTnN2a3VKTHdHdmNaLXlEd21pdnJWdEZOZ0MxV2dnZ29LZ1RoZXlRS2x5V2JLazF1a1puX2NjM1h0ai1fdXRFal9hTDZLMDNBSEk2SHJnc1BR?oc=5",
           "summary": "Yields on Treasurys, European Government Bonds Edge Higher WSJ",
@@ -8649,44 +8500,6 @@
           "market": "us",
           "relevance": "market",
           "published_at": "2026-10-16T08:03:01+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "Inflation, Yields and Equities: When Does the Pressure Actually Matter? - J.P. Morgan",
-          "url": "https://news.google.com/rss/articles/CBMi4AFBVV95cUxNOGtad0RLV1NYMGFPV3JiNE1TbDAwWXB6bEVIdm9wcm54R2IyazBEeTFKbmttWUE0NVl0NGV1LTh2UENjVDFQR2dYTS1PcVFDUGVTcHRyRE16akhHOGxXNXNwZVk5aHl5SGlYZUhIekJ1Z1dlcUw1WF9tVklhdjA4ak02dk16WGRjY1Nfc1NsMEdicmpWYVMzcW03cEJZckRnblBEQUpkWkJWVW83LXpYaWp6VnVTYWpLWENpVjVVSmJ0N2hFeTZVLUR4cjBqWmltRFBuM1c3MUtKT1Q3dDdXag?oc=5",
-          "summary": "Inflation, Yields and Equities: When Does the Pressure Actually Matter? J.P. Morgan",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-10-16T17:13:14+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
@@ -8837,6 +8650,44 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
+        },
+        {
+          "title": "Inflation, Yields and Equities: When Does the Pressure Actually Matter? - J.P. Morgan",
+          "url": "https://news.google.com/rss/articles/CBMi4AFBVV95cUxNOGtad0RLV1NYMGFPV3JiNE1TbDAwWXB6bEVIdm9wcm54R2IyazBEeTFKbmttWUE0NVl0NGV1LTh2UENjVDFQR2dYTS1PcVFDUGVTcHRyRE16akhHOGxXNXNwZVk5aHl5SGlYZUhIekJ1Z1dlcUw1WF9tVklhdjA4ak02dk16WGRjY1Nfc1NsMEdicmpWYVMzcW03cEJZckRnblBEQUpkWkJWVW83LXpYaWp6VnVTYWpLWENpVjVVSmJ0N2hFeTZVLUR4cjBqWmltRFBuM1c3MUtKT1Q3dDdXag?oc=5",
+          "summary": "Inflation, Yields and Equities: When Does the Pressure Actually Matter? J.P. Morgan",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-16T17:13:14+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "us"
+          }
         },
         {
           "title": "US Treasury yield peak still ahead as Fed likely to tighten again, PIMCO's Ivascyn says - Reuters",
@@ -9105,6 +8956,44 @@
           "ranking_score": 115
         },
         {
+          "title": "US Treasury Yields Retreat as Investors Assess Inflation Data - صحيفة مال",
+          "url": "https://news.google.com/rss/articles/CBMibEFVX3lxTE9EcTM5QWRRRUMtNW5KVmRLSGJfSWh0VXpFbWF0Yi13eVExeWpjY2lNS1lEaldWaHZvellkOXZpelNBcXppRl9QQkk5cnp4WDhJSWh6WS1MV1R2bTZIZmZhZ05NWHRvV0xSOV9vcQ?oc=5",
+          "summary": "US Treasury Yields Retreat as Investors Assess Inflation Data صحيفة مال",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-16T12:44:28+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "us"
+          }
+        },
+        {
           "title": "Analysis: Everyone expects the Fed to hold rates in October. Kevin Warsh could surprise us all - CNBC",
           "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxNZFl6VlNnRU5TX2V4NEx3eEEwWDhfZGMxS3FsUVd2Z0FMZzJLcnNfOEQ1Z2xxYmc5Nk1SYVNFQkhQeFZiX21fdFJTOWZ4aEhvTU1mQTRIdEFYMms2Q093RS0xMURjb3RwTVNfQXp0cVhjTHpGUEdENzBHeERCYW84dnRkRE1DVjRuTXo5c3M5aEkzOXNkMnlFX9IBngFBVV95cUxQUjQ0SjZBMDNsSDI4cDdJVTgtUFlVdnlhQXN4ZjViU2R2bWdobHQ4RDM2cDVIc1J5RGJwOXZsNnRUQTh6QkFyVEFjbUc0blFvNUE4M2tZN1NnRTJhbnVLa1AxYkk3R0xCTUpQN1dRV0dNckx2NzFXZktaLW1QOXlCMVJmN1FfWjJNZmJma3hQcGZvQUF6NkNaZGwySWtmQQ",
           "summary": "Analysis: Everyone expects the Fed to hold rates in October. Kevin Warsh could surprise us all CNBC",
@@ -9231,54 +9120,16 @@
           "ranking_score": 115
         },
         {
-          "title": "Treasury, Eurozone Yields Decline as Markets Look to U.S. Inflation Data - WSJ",
-          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQaVJGTVRQcWlpaDNiZVFTYW1od1ZiMVNKRU14QWVocUs2SnlZLW1KNzFwTVliUHczVUZhMURPSEtiay01cXJ0cnZOMkllU3phWk8xWVlIT2lzQlZFOE5rRTBFNlJjRTJYb1JPT2h5aFhrX2M2MjllVGc2NHhuNGJoMFVnOFFoY05SRnRsUEkxX25ZM1JndThkVGZjMW9XZDBrVFYtWEVDdmxmVFNseFotZW5pOExsSTZHRVVVNg?oc=5",
-          "summary": "Treasury, Eurozone Yields Decline as Markets Look to U.S. Inflation Data WSJ",
+          "title": "Dollar recedes from 18-month high as bond rally tempers impact of hot inflation data - Reuters",
+          "url": "https://news.google.com/rss/articles/CBMiywFBVV95cUxPbDE0ZWJRMm1PNWhpVzUwaDhHb2o1YkVXVExaeFVQWWFwcnJtemVfakY3WHV0aFFQWHR3dkR4eVN1OTZ3dXVqb0QzQ0ZuNkNhek1IbFRhVEtBXzNKcVpSQ1dHQm16ZGMxZHF1Z0txU2xHVUVsb0txUzhxLVljb0NXWWZzX2ZETk9QbHF1dm5XdmMybWFYRzl4d1VuS3J0NlU4enJvQVFuYTYydDNYUVVHM3pjandDUHdHbHhLT2otUU1HQk1PTVpReHpmTQ?oc=5",
+          "summary": "Dollar recedes from 18-month high as bond rally tempers impact of hot inflation data Reuters",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-10-13T18:47:00+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "US equity funds draw renewed inflows as Treasury yields ease - Reuters",
-          "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxPSnEzLXc5RkdoR3NSRUxDdzZoNGpOUTlsQTM2VmpCRlVTOE04SjRfN214eHpCTnVBUW5Od0pTbnppZXRhTXFlS2lJMlIxOUpab3ZHMDh1Q3JfNFBXbENmUEQzOU5LVkZYWUxhNVFTTmM5SXdPaGlLYVY0N3BEekdhRmZTMnBycE9NWFF3dlJ0ZW1DX0VYbWtqV3ZheG85d0hLbksySw?oc=5",
-          "summary": "US equity funds draw renewed inflows as Treasury yields ease Reuters",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-10-16T12:30:02+00:00",
+          "published_at": "2026-10-15T01:49:00+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
@@ -9423,82 +9274,6 @@
           }
         },
         {
-          "title": "China unveils draft export controls on AI technologies and chips - Financial Times",
-          "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxQZFJrS1d0QjRNNDFCeDlGc2x2cHJhTWN6SEJtWjFucjRFWnc2LWlUMFFMbjFuX3BOWGpJcVhLdnVRRnFjaUVpRXh0UHNQcWl6UkF3clZ3VExPc1dVX1hvc2o4Tnl3Mm15VE03Y1h6NHJzU3hnUmlFWlpha0hkeElUaUg1SFY?oc=5",
-          "summary": "China unveils draft export controls on AI technologies and chips Financial Times",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-10-16T12:51:49+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "China plans to tighten export controls on open-weight models and 23 key AI technologies - The Decoder",
-          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxPdU1Eb2ZqTHBnQlJISXdubUVnNHZLTXJOLXlpdDI3cFlRWjZLOUpWRGpCTTgwTmZZZk1ydlRSQnVnV29sZTJwSF9LOWxnbktBejZYeGhpN1lINUxEVlRDb2xON2JJekdvdXo1dzB2VzBjOV9TR3NzSF85Z0dYc0N1NzVhWU5OU3kyZTNHSEE2ZFljX1RJdFFyWXBHdmExekZ2X0tPTUI5U1AzRUxWWkl6MENR?oc=5",
-          "summary": "China plans to tighten export controls on open-weight models and 23 key AI technologies The Decoder",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-10-16T18:18:10+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
           "title": "China moves to curb tech exports, including AI, citing national security risks - AP News",
           "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxNMGpqZzJpbGpZRmVEdHJ1dEQzY1dTMld3RU92aGlhd0xOeFA4al9qalc4bHZLZ1BZZ1ViQXI3V19Ed2gyTVNibjZqS1VkZUJaR05WMjdjVmx0LWNvaUV3Mnh4SUx5eVFKMkkySzVnUW40OW9aU2VZVVp4Q1NJbjVzQS1IZV9RWUlXc3BUY0hJMVpZT083dDR2dFVhUnZCai1mT3dqUUJR?oc=5",
           "summary": "China moves to curb tech exports, including AI, citing national security risks AP News",
@@ -9581,16 +9356,16 @@
           }
         },
         {
-          "title": "China proposes export controls on its advanced AI models and chip designs - The Next Web",
-          "url": "https://news.google.com/rss/articles/CBMiakFVX3lxTFBYNFNYNldKX0VpQ1I4bW8yd0FMcWFQQ3RFZlBhMTQ5dElCUXVCajctTl95VzJBWkhGQlNwTnZaYTZHM3A5NE9kSmlyVEdUUEM3cWpNaVZjcUJPbXlpRVlpTWlsYjA2Z2Rvc2c?oc=5",
-          "summary": "China proposes export controls on its advanced AI models and chip designs The Next Web",
+          "title": "China plans to tighten export controls on open-weight models and 23 key AI technologies - The Decoder",
+          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxPdU1Eb2ZqTHBnQlJISXdubUVnNHZLTXJOLXlpdDI3cFlRWjZLOUpWRGpCTTgwTmZZZk1ydlRSQnVnV29sZTJwSF9LOWxnbktBejZYeGhpN1lINUxEVlRDb2xON2JJekdvdXo1dzB2VzBjOV9TR3NzSF85Z0dYc0N1NzVhWU5OU3kyZTNHSEE2ZFljX1RJdFFyWXBHdmExekZ2X0tPTUI5U1AzRUxWWkl6MENR?oc=5",
+          "summary": "China plans to tighten export controls on open-weight models and 23 key AI technologies The Decoder",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-10-16T13:10:06+00:00",
+          "published_at": "2026-10-16T18:18:10+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
@@ -9619,16 +9394,16 @@
           }
         },
         {
-          "title": "China Mirrors US Export Bans With 40-Tech Hit List [2026] - https://tech-insider.org/",
-          "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTFBreUl6bkYwNWxydFNxVzVHbFhXNThPZU52WlRJcWpTVG8weEQwdmlLREZZMjljQkppRWNYTVV6VzdzWVphYThVRTFkcUdOd0xfd2JSRER5bWwwSWdsZ0lLNi1jd3dfRWI5YzZ3dmE3dmw4U0hDMk9BbTZxa3E?oc=5",
-          "summary": "China Mirrors US Export Bans With 40-Tech Hit List [2026] https://tech-insider.org/",
+          "title": "China unveils draft export controls on AI technologies and chips - Financial Times",
+          "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxQZFJrS1d0QjRNNDFCeDlGc2x2cHJhTWN6SEJtWjFucjRFWnc2LWlUMFFMbjFuX3BOWGpJcVhLdnVRRnFjaUVpRXh0UHNQcWl6UkF3clZ3VExPc1dVX1hvc2o4Tnl3Mm15VE03Y1h6NHJzU3hnUmlFWlpha0hkeElUaUg1SFY?oc=5",
+          "summary": "China unveils draft export controls on AI technologies and chips Financial Times",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-10-16T17:53:48+00:00",
+          "published_at": "2026-10-16T12:51:49+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
@@ -9693,6 +9468,86 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 2,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "China Moves to Control AI Tech Exports While Taiwan Cracks Down on Smuggling - Barron's",
+          "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTFBFVGpQanppbWVHNWRNclEtTC1ORHlMTEVuY2ZKVm45WHQwNTZXNzE1X3M0TTlBNlducVRydGlxbmdFa19NUmFlSUNVcjgzRmd3elB1R0xHcWxQeDUwRC1CRGRtUllrbGFtbFFka0tfTGlCekliSGVFRll3?oc=5",
+          "summary": "China Moves to Control AI Tech Exports While Taiwan Cracks Down on Smuggling Barron's",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-16T16:37:00+00:00",
+          "market_classification": {
+            "market_scope": "cross_market",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "cross_market",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "China proposes export controls on its advanced AI models and chip designs - The Next Web",
+          "url": "https://news.google.com/rss/articles/CBMiakFVX3lxTFBYNFNYNldKX0VpQ1I4bW8yd0FMcWFQQ3RFZlBhMTQ5dElCUXVCajctTl95VzJBWkhGQlNwTnZaYTZHM3A5NE9kSmlyVEdUUEM3cWpNaVZjcUJPbXlpRVlpTWlsYjA2Z2Rvc2c?oc=5",
+          "summary": "China proposes export controls on its advanced AI models and chip designs The Next Web",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-16T13:10:06+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
             "source_market_hint": "us"
           }
         },
@@ -14776,7 +14631,7 @@
           "ranking_score": 115
         }
       ],
-      "inventory_saved_at": "2026-10-16T22:33:44.237225+00:00"
+      "inventory_saved_at": "2026-10-16T22:38:14.823319+00:00"
     }
   }
 }
