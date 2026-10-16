@@ -2,17 +2,17 @@
   "schema": 2,
   "markets": {
     "taiwan": {
-      "fetched_at": "2026-10-16T04:18:57.642784+00:00",
+      "fetched_at": "2026-10-16T04:23:18.672374+00:00",
       "stories": [
         {
-          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-          "url": "https://news.cnyes.com/news/id/6630669",
+          "title": "〈美股盤後〉黃仁勳力挺CoreWeave 道瓊勁揚556點 台積電ADR跌近2%",
+          "url": "https://news.cnyes.com/news/id/6631442",
           "provider": "anue",
           "source": "鉅亨網｜持股關聯",
           "relevance": "holding",
-          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
-          "published_at": "2026-10-14T22:02:35+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6630669",
+          "summary": "美股週四收高，道瓊漲556.21點、標普500終結連3跌，那指盤中翻黑後小漲0.08%。 AI類股漲跌分歧，CoreWeave反彈5.9%，輝達、AMD走弱；戴爾遭巴克萊降評重挫6.8%。 美國9月PPI月增1.3%、年增6.3%創2022年來最大，通膨升溫使市場再度押注聯準會升息。",
+          "published_at": "2026-10-15T21:44:31+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6631442",
           "market_classification": {
             "market_scope": "cross_market",
             "taiwan_matches": [
@@ -21,15 +21,14 @@
             "us_matches": [
               "美股",
               "美國",
-              "費半",
-              "fed",
-              "cpi"
+              "聯準會",
+              "amd"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 6,
+              "matched_term_count": 5,
               "source_market_hint": "cross_market"
             }
           },
@@ -40,23 +39,22 @@
           "us_matches": [
             "美股",
             "美國",
-            "費半",
-            "fed",
-            "cpi"
+            "聯準會",
+            "amd"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 6,
+            "matched_term_count": 5,
             "source_market_hint": "cross_market"
           },
-          "story_id": "news-711307422ad19cd66883",
+          "story_id": "news-1c1ce9adcc80d6e0c63a",
           "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "raw_title": "〈美股盤後〉黃仁勳力挺CoreWeave 道瓊勁揚556點 台積電ADR跌近2%",
+          "normalized_fact": "美股週四收高，道瓊漲556.21點、標普500終結連3跌，那指盤中翻黑後小漲0.08%。 AI類股漲跌分歧，CoreWeave反彈5.9%，輝達、AMD走弱；戴爾遭巴克萊降評重挫6.8%。 美國9月PPI月增1.3%、年增6.3%創2022年來最大，通膨升溫使市場再度押注聯準會升息。",
           "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
@@ -77,30 +75,27 @@
           "tickers": [],
           "entities": [
             "2330",
-            "SOX",
             "TSM"
           ],
           "sectors": [],
-          "topics": [
-            "ai"
-          ],
+          "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
             "category": "fed",
             "reason": "fed_subject_action",
             "matched_terms": [
-              "fed",
-              "利率"
+              "聯準會",
+              "升息"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "fed",
-              "利率"
+              "聯準會",
+              "升息"
             ],
-            "matched_subject": "fed",
-            "matched_action": "利率",
-            "matched_market_object": "fed",
+            "matched_subject": "聯準會",
+            "matched_action": "升息",
+            "matched_market_object": "聯準會",
             "input_fields": [
               "description",
               "summary",
@@ -111,19 +106,19 @@
             "market:cross_market"
           ],
           "freshness": "published",
-          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
-          "event_cluster_key": "event-40d27feb65b9f7fa705b",
-          "published_time_bucket": "2026-10-14T22:00:00+00:00",
+          "dedupe_key": "美股週四收高道瓊漲55621點標普500終結連3跌那指盤中翻黑後小漲008ai類股漲跌分歧coreweave反彈59輝達amd走弱戴爾遭巴克萊降評重挫68美國9月ppi月增13年增63創2022年來最大通膨升溫使市場再度押注聯準會升息",
+          "event_cluster_key": "event-c036234c6536777fb51b",
+          "published_time_bucket": "2026-10-15T21:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "fed",
-            "利率"
+            "聯準會",
+            "升息"
           ],
-          "matched_subject": "fed",
-          "matched_action": "利率",
-          "matched_market_object": "fed",
+          "matched_subject": "聯準會",
+          "matched_action": "升息",
+          "matched_market_object": "聯準會",
           "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
@@ -141,14 +136,52 @@
           "ranking_score": 130
         },
         {
-          "title": "〈台積電法說〉Q3純益7630.64億元季增8% EPS29.43元續創單季新高",
-          "url": "https://news.cnyes.com/news/id/6631116",
+          "title": "〈台股盤前要聞〉台積電全年美元營收再上修至44%、外資爆砍3025億元創紀錄",
+          "url": "https://news.cnyes.com/news/id/6631568",
           "provider": "anue",
           "source": "鉅亨網｜持股關聯",
           "relevance": "holding",
           "summary": "",
-          "published_at": "2026-10-15T06:01:21+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6631116",
+          "published_at": "2026-10-15T21:10:03+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6631568",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股",
+              "台積電"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": null
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股",
+            "台積電"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": null
+          }
+        },
+        {
+          "title": "馬斯克批記憶體廠「敲竹槓」 韓工程師回擊：特斯拉條件才「苛刻」 三星還被大量挖角",
+          "url": "https://news.cnyes.com/news/id/6631445",
+          "provider": "anue",
+          "source": "鉅亨網｜市場焦點",
+          "relevance": "market",
+          "summary": "馬斯克稱美光記憶體報價合理、批其他供應商過高，引發南韓半導體工程師反擊。 工程師指特斯拉談AI5、AI6代工時要求三星大幅壓價，還要晶圓廠內部資訊與稽核。 Terafab傳挖走三星泰勒廠人才；AI5擬由台積電、三星代工，三星目標2027年量產。",
+          "published_at": "2026-10-15T21:50:02+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6631445",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -160,7 +193,7 @@
             "routing_evidence": {
               "title_summary_scanned": true,
               "matched_term_count": 1,
-              "source_market_hint": null
+              "source_market_hint": "taiwan"
             }
           },
           "market_scope": "taiwan",
@@ -173,8 +206,90 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 1,
-            "source_market_hint": null
-          }
+            "source_market_hint": "taiwan"
+          },
+          "story_id": "news-ad7b886a858b1e8e6de4",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "raw_title": "馬斯克批記憶體廠「敲竹槓」 韓工程師回擊：特斯拉條件才「苛刻」 三星還被大量挖角",
+          "normalized_fact": "馬斯克稱美光記憶體報價合理、批其他供應商過高，引發南韓半導體工程師反擊。 工程師指特斯拉談AI5、AI6代工時要求三星大幅壓價，還要晶圓廠內部資訊與稽核。 Terafab傳挖走三星泰勒廠人才；AI5擬由台積電、三星代工，三星目標2027年量產。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "台積電",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "台積電",
+              "供應"
+            ],
+            "matched_subject": "台積電",
+            "matched_action": "供應",
+            "matched_market_object": "台積電",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "馬斯克稱美光記憶體報價合理批其他供應商過高引發南韓半導體工程師反擊工程師指特斯拉談ai5ai6代工時要求三星大幅壓價還要晶圓廠內部資訊與稽核terafab傳挖走三星泰勒廠人才ai5擬由台積電三星代工三星目標2027年量產",
+          "event_cluster_key": "event-c28c9690ffac1e8fc433",
+          "published_time_bucket": "2026-10-15T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "台積電",
+            "供應"
+          ],
+          "matched_subject": "台積電",
+          "matched_action": "供應",
+          "matched_market_object": "台積電",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "title": "不能再叫張鈞甯概念股了！女明星出清 藥華藥不跌反大漲%",
@@ -723,44 +838,6 @@
           }
         },
         {
-          "title": "傳產三族群同步走強，成交量能否撐住這波輪動？-孔明投資長 - CMoney投資網誌",
-          "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE5HMTZBcVZENm5tMVJMSnAyaE5hWTRaVUl4OW8yT1dRSDNGMnVqZlV0dG5IOU1RR0c2MTlqaFBYOFh4dF9fWXVwejEtNElxU3Z2bjkwWWU3Ui12OGVzSG1GeW9LdzV4UGd6eGFxN0VHV1YzUFdtQnVxRDg5YlBZSEk?oc=5",
-          "summary": "傳產三族群同步走強，成交量能否撐住這波輪動？-孔明投資長 CMoney投資網誌",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-01T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
           "title": "季線攻防怎麼看？8656億解凍就會反彈?? - Winner | 投資網誌 - 玩股網",
           "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE1nMFJGc3lHSVpnQVlrQ1Jpckh1MlpPbzFyZGMwamhwMFY4SlJzcDMwZjRXS3dLLVB0TkZJV3YwWDNxeUxxSEhJOEg2NmxpclNMVk9zM0xn?oc=5",
           "summary": "季線攻防怎麼看？8656億解凍就會反彈?? - Winner | 投資網誌 玩股網",
@@ -799,56 +876,16 @@
           }
         },
         {
-          "title": "台積電ADR大漲帶動台股走強，買盤能擴散到AI供應鏈嗎？-孔明投資長 - CMoney投資網誌",
-          "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTFBDSVZzRVBMTTFvN3pzVkpaNGRXUUNxaTFiSWFCWERKVzIyVU15TzBNd3ZuNnJJRjlSTjBmVlNHTzZCeTBrZlY2bmhqeWtKY0lzZHpZRWFoMUZ1eFpDdDZsWXNzaHVvUzF0UXZVZjRaMTlwWUFXYWQxRldIV2tRZFE?oc=5",
-          "summary": "台積電ADR大漲帶動台股走強，買盤能擴散到AI供應鏈嗎？-孔明投資長 CMoney投資網誌",
+          "title": "傳產三族群同步走強，成交量能否撐住這波輪動？-孔明投資長 - CMoney投資網誌",
+          "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE5HMTZBcVZENm5tMVJMSnAyaE5hWTRaVUl4OW8yT1dRSDNGMnVqZlV0dG5IOU1RR0c2MTlqaFBYOFh4dF9fWXVwejEtNElxU3Z2bjkwWWU3Ui12OGVzSG1GeW9LdzV4UGd6eGFxN0VHV1YzUFdtQnVxRDg5YlBZSEk?oc=5",
+          "summary": "傳產三族群同步走強，成交量能否撐住這波輪動？-孔明投資長 CMoney投資網誌",
           "source": "Google News｜台股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-10-06T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股",
-              "台積電"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股",
-            "台積電"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "升息1碼後，真的要止跌了嗎？ - Winner | 投資網誌 - 玩股網",
-          "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE1tU0VIVXJwRlV5SmQ0MWhNOFNZRVByUlhnUjJsdVY3VmdfaDVJaU5vLU13dEtoR2IwLUN0UlVFSHhPNVNUNC0zZTN4UlhuS1l2Q1pNdWd3?oc=5",
-          "summary": "升息1碼後，真的要止跌了嗎？ - Winner | 投資網誌 玩股網",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-09-17T07:00:00+00:00",
+          "published_at": "2026-10-01T07:00:00+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -917,6 +954,44 @@
           }
         },
         {
+          "title": "升息1碼後，真的要止跌了嗎？ - Winner | 投資網誌 - 玩股網",
+          "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE1tU0VIVXJwRlV5SmQ0MWhNOFNZRVByUlhnUjJsdVY3VmdfaDVJaU5vLU13dEtoR2IwLUN0UlVFSHhPNVNUNC0zZTN4UlhuS1l2Q1pNdWd3?oc=5",
+          "summary": "升息1碼後，真的要止跌了嗎？ - Winner | 投資網誌 玩股網",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-09-17T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
           "title": "台股站上四萬五，成交放大後漲勢會擴散嗎？-詠晴K線解密 - CMoney投資網誌",
           "url": "https://news.google.com/rss/articles/CBMihwFBVV95cUxNaENCTV9OQTZuWHVQak1XREdfV2pCeGNjUHY2eHdHYy1lQWgzcF9Jd09kZ2NRVnI5YlNua1VYTHJfUVNrYjBDVWZqcFFwdG9NdDE3MWFwLVNzVjFCS0Jua0J2eUtCLW8zZlEzZDAyX19oelVPbWtDNHNqaERQM0szLTQ2NFIyQ3c?oc=5",
           "summary": "台股站上四萬五，成交放大後漲勢會擴散嗎？-詠晴K線解密 CMoney投資網誌",
@@ -950,6 +1025,46 @@
           "us_matches": [
             "pce"
           ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "台積電ADR大漲帶動台股走強，買盤能擴散到AI供應鏈嗎？-孔明投資長 - CMoney投資網誌",
+          "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTFBDSVZzRVBMTTFvN3pzVkpaNGRXUUNxaTFiSWFCWERKVzIyVU15TzBNd3ZuNnJJRjlSTjBmVlNHTzZCeTBrZlY2bmhqeWtKY0lzZHpZRWFoMUZ1eFpDdDZsWXNzaHVvUzF0UXZVZjRaMTlwWUFXYWQxRldIV2tRZFE?oc=5",
+          "summary": "台積電ADR大漲帶動台股走強，買盤能擴散到AI供應鏈嗎？-孔明投資長 CMoney投資網誌",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-06T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股",
+              "台積電"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股",
+            "台積電"
+          ],
+          "us_matches": [],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
@@ -1652,40 +1767,42 @@
           "ranking_score": 115
         },
         {
-          "title": "台積法說利多出盡？大盤回測 48,000，非電防禦抗跌 - TechNews 科技新報",
-          "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxPREVLZFA0NHBJMUlxWmxmdXVDT3J1enlrMk5Zdm5OSURDYjVQeHhwa29tbWM2Z0ZPdFZRTzZ4NmVzVU1HTkxWSUhpZm9SYVh3VnNKU0xuLWNWS0wzRG16NVRoVnhtRThMWnAwYzBLVTB0NnVUSG55ZUxGSmVBMEwyRW8yc3IxM2NoWGpjZERSbWIxZnBxeDIyOGZWU3I0M0VpeEEzUnFXSTUzQjQtaDZISjlBanVPX0ZPQV9VckRWSER4V1g5aVA4?oc=5",
-          "summary": "台積法說利多出盡？大盤回測 48,000，非電防禦抗跌 TechNews 科技新報",
+          "title": "台灣 AI 紅利待擴散，學者籲拓展半導體上下游布局 - TechNews 科技新報",
+          "url": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxPNFhja0NySHA0Z1lfY3Z4REx2V3VCZDAtOTVSaG93aU5uYkdfaHBsR25DT1JGLUctRGJDZmUtWERTTFZ6RU9TME5nTDNadUctVnp6Y0FBYV9Ddll3czBveGhuWDlidkpuQlZFZUR3blNoYjJkSjhRNFFPZm1IcjExUl9FRms2MmlCR2lOczg3d1JneVI0NGltSnJrTmVlRF9JSDVkNjQycUZzNEZCLW1sSzlUYWRyMVBiTTFQQkpYQnVqZHBQektPTlZBcGd6bkNDYWQ0aQ?oc=5",
+          "summary": "台灣 AI 紅利待擴散，學者籲拓展半導體上下游布局 TechNews 科技新報",
           "source": "Google News｜台股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-10-16T02:02:36+00:00",
+          "published_at": "2026-10-16T00:51:12+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
-              "台股"
+              "台股",
+              "台灣"
             ],
             "us_matches": [],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 1,
+              "matched_term_count": 2,
               "source_market_hint": "taiwan"
             }
           },
           "market_scope": "taiwan",
           "taiwan_matches": [
-            "台股"
+            "台股",
+            "台灣"
           ],
           "us_matches": [],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 1,
+            "matched_term_count": 2,
             "source_market_hint": "taiwan"
           }
         },
@@ -2207,6 +2324,44 @@
           }
         },
         {
+          "title": "三大法人買超台股470.37億外資連三買、大敲「這檔」23.6萬張投信加碼聯電、台達電| 財經 - Newtalk新聞",
+          "url": "https://news.google.com/rss/articles/CBMiW0FVX3lxTE5XQTY0Y0ZGWTdRSllwb2lsZjN5YlY1eEttbGNSVHZkQ2tVcmFlZmgxSWh5bzdObDE0VkxuZmRHTUYwVlpkakE3dmpJSDVCZWZZMXFEYUlKZ3Y3QUU?oc=5",
+          "summary": "三大法人買超台股470.37億外資連三買、大敲「這檔」23.6萬張投信加碼聯電、台達電| 財經 Newtalk新聞",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-09-21T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
           "title": "三大法人買賣超 – 外資買超(3443)創意、(3045)台灣大，投信買超(3017)奇鋐、(3653)健策，法人合計賣超708.48億元 - 永豐金證券",
           "url": "https://news.google.com/rss/articles/CBMixwRBVV95cUxOTzNWbnNWWFRRS0FidWM4Njg4VDBxVTlMd2dHbmtCZGs5YWJJa2oyYVRLLUhRZllsYzkyZnNBWHZRNjlhUk5fektJdE1WTTNwOElIaEM0X2JmRG9abTlsWmJaUXkzb0VsZVFxazd3U0lhdTl2aFExTTBxRWVlaUxsRUtELXl4UHpYN1JVelk3OFZ2TFhGOU9qYUwtaXdVRWRueXFia1VhUC1xY2xRVHNSSXBNUjF4OW1aY1F5RmYtQ3VJMkJmNDh2Ym1KcnNBem1rUGZkYUU0WlBjV1JSTWJDMjB1ajhVZDhZVlhvaXVuQkZLckFIWk9nZERZem91OFM1RF9DWXZNQ29PeWl4T2IxSS1EX09abkwxSWlGcVFScjNZWVBhcDNTRjNrNGdRZ2tGWUtwdTZJWHlLNHNSbDNTNko5bXp3ZFQ4dk1PZS1TdmtHbVpMRDA2eWU5Qjg1ckJ3YmhXR3EweHZ5eUl6eTRrTnFJaGVra3Z3SHFaNVdwUXNnZTRSUGNVUFN1SFQ5bEJrS19qRm9VeHR2d2hGNGhQZHpMOUdhUFEtQXo0UXlBOTBBMVV0dy1kalNZWHlndXZLdThUVGVRRmhBTmZoaC13UWdmSVB1Q1pwb2ZRRXpWZExDV1AzNnMwM1RZdUNFQnBaR0tvUnFVYVZoeE5pcm9TbDlnRHJkT3dyNmtENk5KdHF6QktoanVDNDZxQUxRUERSamdydkwwLXZJLUYyUXJKc3V1N3VYdzFxVV8xSzB6c1BOUlBwNXlJ?oc=5",
           "summary": "三大法人買賣超 – 外資買超(3443)創意、(3045)台灣大，投信買超(3017)奇鋐、(3653)健策，法人合計賣超708.48億元 永豐金證券",
@@ -2261,44 +2416,6 @@
           "market": "taiwan",
           "relevance": "market",
           "published_at": "2026-08-17T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "台股跌220點，投信、外資卻同步搶進這兩大族群！ - 鉅亨網",
-          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE15RW9KZkI3amNmVHo0bGpSbGlRTTNRRWNiWkN2RG4xZkNZQ09QanBQZmoxNVlFS0Q4Q0xJQWp2WGotU0JkNi1GbVNfN3BmbTg?oc=5",
-          "summary": "台股跌220點，投信、外資卻同步搶進這兩大族群！ 鉅亨網",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-09-08T07:00:00+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -7016,10 +7133,10 @@
           "ranking_score": 125
         }
       ],
-      "inventory_saved_at": "2026-10-16T04:18:57.642784+00:00"
+      "inventory_saved_at": "2026-10-16T04:23:18.672374+00:00"
     },
     "us": {
-      "fetched_at": "2026-10-16T04:18:57.642784+00:00",
+      "fetched_at": "2026-10-16T04:23:18.672374+00:00",
       "stories": [
         {
           "title": "8-K - NORTHRIM BANCORP INC (0001163370) (Filer)",
@@ -7656,6 +7773,44 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 130
+        },
+        {
+          "title": "Lenders Are Getting Nervous About CoreWeave. I'd Still Buy Nvidia Stock.",
+          "url": "https://www.fool.com/investing/2026/10/15/lenders-are-getting-nervous-about-coreweave-i-d-still-buy-nvidia-stock/?.tsrc=rss",
+          "summary": "Bond buyers now want almost 15% to lend to a cloud company the AI chip leader has billions invested in. Should its shareholders worry?",
+          "source": "Yahoo Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-16T04:06:02+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "nvidia"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "nvidia"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "us"
+          }
         },
         {
           "title": "Dow Jones Futures Rise; Anthropic Valuation Report, Flying Tesla Roadster In Focus",
@@ -14875,7 +15030,7 @@
           "ranking_score": 130
         }
       ],
-      "inventory_saved_at": "2026-10-16T04:18:57.642784+00:00"
+      "inventory_saved_at": "2026-10-16T04:23:18.672374+00:00"
     }
   }
 }
