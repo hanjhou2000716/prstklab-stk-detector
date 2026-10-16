@@ -2,28 +2,34 @@
   "schema": 2,
   "markets": {
     "taiwan": {
-      "fetched_at": "2026-10-16T04:08:15.786038+00:00",
+      "fetched_at": "2026-10-16T04:13:49.845788+00:00",
       "stories": [
         {
-          "title": "1. 〈美股盤後〉黃仁勳力挺CoreWeave 道瓊勁揚556點 台積電ADR跌近2%",
+          "title": "〈美股盤後〉黃仁勳力挺CoreWeave 道瓊勁揚556點 台積電ADR跌近2%",
           "url": "https://news.cnyes.com/news/id/6631442",
           "provider": "anue",
           "source": "鉅亨網｜持股關聯",
           "relevance": "holding",
+          "summary": "美股週四收高，道瓊漲556.21點、標普500終結連3跌，那指盤中翻黑後小漲0.08%。 AI類股漲跌分歧，CoreWeave反彈5.9%，輝達、AMD走弱；戴爾遭巴克萊降評重挫6.8%。 美國9月PPI月增1.3%、年增6.3%創2022年來最大，通膨升溫使市場再度押注聯準會升息。",
+          "published_at": "2026-10-15T21:44:31+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6631442",
           "market_classification": {
             "market_scope": "cross_market",
             "taiwan_matches": [
               "台積電"
             ],
             "us_matches": [
-              "美股"
+              "美股",
+              "美國",
+              "聯準會",
+              "amd"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": null
+              "matched_term_count": 5,
+              "source_market_hint": "cross_market"
             }
           },
           "market_scope": "cross_market",
@@ -31,22 +37,113 @@
             "台積電"
           ],
           "us_matches": [
-            "美股"
+            "美股",
+            "美國",
+            "聯準會",
+            "amd"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": null
-          }
+            "matched_term_count": 5,
+            "source_market_hint": "cross_market"
+          },
+          "story_id": "news-1c1ce9adcc80d6e0c63a",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "raw_title": "〈美股盤後〉黃仁勳力挺CoreWeave 道瓊勁揚556點 台積電ADR跌近2%",
+          "normalized_fact": "美股週四收高，道瓊漲556.21點、標普500終結連3跌，那指盤中翻黑後小漲0.08%。 AI類股漲跌分歧，CoreWeave反彈5.9%，輝達、AMD走弱；戴爾遭巴克萊降評重挫6.8%。 美國9月PPI月增1.3%、年增6.3%創2022年來最大，通膨升溫使市場再度押注聯準會升息。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": null,
+          "published_local_date": "",
+          "market": "cross_market",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "聯準會",
+              "升息"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "聯準會",
+              "升息"
+            ],
+            "matched_subject": "聯準會",
+            "matched_action": "升息",
+            "matched_market_object": "聯準會",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美股週四收高道瓊漲55621點標普500終結連3跌那指盤中翻黑後小漲008ai類股漲跌分歧coreweave反彈59輝達amd走弱戴爾遭巴克萊降評重挫68美國9月ppi月增13年增63創2022年來最大通膨升溫使市場再度押注聯準會升息",
+          "event_cluster_key": "event-c036234c6536777fb51b",
+          "published_time_bucket": "2026-10-15T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "聯準會",
+            "升息"
+          ],
+          "matched_subject": "聯準會",
+          "matched_action": "升息",
+          "matched_market_object": "聯準會",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
-          "title": "4. 〈台股盤前要聞〉台積電全年美元營收再上修至44%、外資爆砍3025億元創紀錄",
+          "title": "〈台股盤前要聞〉台積電全年美元營收再上修至44%、外資爆砍3025億元創紀錄",
           "url": "https://news.cnyes.com/news/id/6631568",
           "provider": "anue",
           "source": "鉅亨網｜持股關聯",
           "relevance": "holding",
+          "summary": "",
+          "published_at": "2026-10-15T21:10:03+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6631568",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -75,6 +172,124 @@
             "matched_term_count": 2,
             "source_market_hint": null
           }
+        },
+        {
+          "title": "馬斯克批記憶體廠「敲竹槓」 韓工程師回擊：特斯拉條件才「苛刻」 三星還被大量挖角",
+          "url": "https://news.cnyes.com/news/id/6631445",
+          "provider": "anue",
+          "source": "鉅亨網｜市場焦點",
+          "relevance": "market",
+          "summary": "馬斯克稱美光記憶體報價合理、批其他供應商過高，引發南韓半導體工程師反擊。 工程師指特斯拉談AI5、AI6代工時要求三星大幅壓價，還要晶圓廠內部資訊與稽核。 Terafab傳挖走三星泰勒廠人才；AI5擬由台積電、三星代工，三星目標2027年量產。",
+          "published_at": "2026-10-15T21:50:02+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6631445",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台積電"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台積電"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          },
+          "story_id": "news-ad7b886a858b1e8e6de4",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "raw_title": "馬斯克批記憶體廠「敲竹槓」 韓工程師回擊：特斯拉條件才「苛刻」 三星還被大量挖角",
+          "normalized_fact": "馬斯克稱美光記憶體報價合理、批其他供應商過高，引發南韓半導體工程師反擊。 工程師指特斯拉談AI5、AI6代工時要求三星大幅壓價，還要晶圓廠內部資訊與稽核。 Terafab傳挖走三星泰勒廠人才；AI5擬由台積電、三星代工，三星目標2027年量產。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "台積電",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "台積電",
+              "供應"
+            ],
+            "matched_subject": "台積電",
+            "matched_action": "供應",
+            "matched_market_object": "台積電",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "馬斯克稱美光記憶體報價合理批其他供應商過高引發南韓半導體工程師反擊工程師指特斯拉談ai5ai6代工時要求三星大幅壓價還要晶圓廠內部資訊與稽核terafab傳挖走三星泰勒廠人才ai5擬由台積電三星代工三星目標2027年量產",
+          "event_cluster_key": "event-c28c9690ffac1e8fc433",
+          "published_time_bucket": "2026-10-15T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "台積電",
+            "供應"
+          ],
+          "matched_subject": "台積電",
+          "matched_action": "供應",
+          "matched_market_object": "台積電",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "title": "客戶調整採購策略及庫存管理，虎山營運先蹲後跳",
@@ -2783,6 +2998,197 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 130
+        },
+        {
+          "story_id": "news-ad7b886a858b1e8e6de4",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "馬斯克批記憶體廠「敲竹槓」 韓工程師回擊：特斯拉條件才「苛刻」 三星還被大量挖角",
+          "raw_title": "馬斯克批記憶體廠「敲竹槓」 韓工程師回擊：特斯拉條件才「苛刻」 三星還被大量挖角",
+          "normalized_fact": "馬斯克稱美光記憶體報價合理、批其他供應商過高，引發南韓半導體工程師反擊。 工程師指特斯拉談AI5、AI6代工時要求三星大幅壓價，還要晶圓廠內部資訊與稽核。 Terafab傳挖走三星泰勒廠人才；AI5擬由台積電、三星代工，三星目標2027年量產。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "馬斯克稱美光記憶體報價合理、批其他供應商過高，引發南韓半導體工程師反擊。 工程師指特斯拉談AI5、AI6代工時要求三星大幅壓價，還要晶圓廠內部資訊與稽核。 Terafab傳挖走三星泰勒廠人才；AI5擬由台積電、三星代工，三星目標2027年量產。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6631445",
+          "url": "https://news.cnyes.com/news/id/6631445",
+          "published_at": "2026-10-15T21:50:02+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "台積電",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "台積電",
+              "供應"
+            ],
+            "matched_subject": "台積電",
+            "matched_action": "供應",
+            "matched_market_object": "台積電",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM"
+          ],
+          "freshness": "published",
+          "dedupe_key": "馬斯克稱美光記憶體報價合理批其他供應商過高引發南韓半導體工程師反擊工程師指特斯拉談ai5ai6代工時要求三星大幅壓價還要晶圓廠內部資訊與稽核terafab傳挖走三星泰勒廠人才ai5擬由台積電三星代工三星目標2027年量產",
+          "event_cluster_key": "event-c28c9690ffac1e8fc433",
+          "published_time_bucket": "2026-10-15T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "台積電",
+            "供應"
+          ],
+          "matched_subject": "台積電",
+          "matched_action": "供應",
+          "matched_market_object": "台積電",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-16T04:13:49.845788+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 140
+        },
+        {
+          "story_id": "news-1c1ce9adcc80d6e0c63a",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈美股盤後〉黃仁勳力挺CoreWeave 道瓊勁揚556點 台積電ADR跌近2%",
+          "raw_title": "〈美股盤後〉黃仁勳力挺CoreWeave 道瓊勁揚556點 台積電ADR跌近2%",
+          "normalized_fact": "美股週四收高，道瓊漲556.21點、標普500終結連3跌，那指盤中翻黑後小漲0.08%。 AI類股漲跌分歧，CoreWeave反彈5.9%，輝達、AMD走弱；戴爾遭巴克萊降評重挫6.8%。 美國9月PPI月增1.3%、年增6.3%創2022年來最大，通膨升溫使市場再度押注聯準會升息。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美股週四收高，道瓊漲556.21點、標普500終結連3跌，那指盤中翻黑後小漲0.08%。 AI類股漲跌分歧，CoreWeave反彈5.9%，輝達、AMD走弱；戴爾遭巴克萊降評重挫6.8%。 美國9月PPI月增1.3%、年增6.3%創2022年來最大，通膨升溫使市場再度押注聯準會升息。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6631442",
+          "url": "https://news.cnyes.com/news/id/6631442",
+          "published_at": "2026-10-15T21:44:31+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "聯準會",
+              "升息"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "聯準會",
+              "升息"
+            ],
+            "matched_subject": "聯準會",
+            "matched_action": "升息",
+            "matched_market_object": "聯準會",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:NVDA",
+            "tracked_ticker:TSM",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美股週四收高道瓊漲55621點標普500終結連3跌那指盤中翻黑後小漲008ai類股漲跌分歧coreweave反彈59輝達amd走弱戴爾遭巴克萊降評重挫68美國9月ppi月增13年增63創2022年來最大通膨升溫使市場再度押注聯準會升息",
+          "event_cluster_key": "event-c036234c6536777fb51b",
+          "published_time_bucket": "2026-10-15T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "聯準會",
+            "升息"
+          ],
+          "matched_subject": "聯準會",
+          "matched_action": "升息",
+          "matched_market_object": "聯準會",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜持股關聯",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-16T04:13:49.845788+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 145
         },
         {
           "story_id": "news-c582e607952a95ccfa2c",
@@ -6805,208 +7211,12 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
-        },
-        {
-          "story_id": "news-418395a3019bb49e350c",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "從台積電法說會看台股下一步！CoWoS先進封裝爆發 00418A深入前300大卡位受惠供應鏈 - Yahoo新聞",
-          "raw_title": "從台積電法說會看台股下一步！CoWoS先進封裝爆發 00418A深入前300大卡位受惠供應鏈 - Yahoo新聞",
-          "normalized_fact": "從台積電法說會看台股下一步，CoWoS先進封裝爆發 00418A深入前300大卡位受惠供應鏈 Yahoo。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": true,
-          "publisher_removed": true,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "從台積電法說會看台股下一步！CoWoS先進封裝爆發 00418A深入前300大卡位受惠供應鏈 Yahoo新聞",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMixgNBVV95cUxOTHBuNnNkc05vMmJacFNDOFMxVHVVYjc4OURtel80T05YODhHMW83M3Fsd0owRlNsQzBPUGFuWjlWNlNjWmUxakg0TWtxblJkREMtTzJBMXZXdUQ5X0d3OHY2eGF6aUlvamR0a2Z5b2l3RC01ODdmVFdOallHTHVhVkJncTJQdDVBT2JpUnJTYUJjT3ZmWTZXdllRak1tWV9CSjRjMDhrTDJEX3RZYkR2dWMwNWwwWTA5c0JzM0xmM2FXMnRqVFVqXzFpMEFaVzJNamdfSjE2V0xadmplVXdhY2traUdrdlIxWVhQWlN0cFFSdGswd01GTEVtWkZXMFJpZTVpSDdnYlRQYndWWVIxN3VlUmh4R0R5Uk0xMkR2ZVlFZzI5Y0JnRUFDVXVkeXZWclRVMUU1S05xRDFBUzBpTlozbjlfbG5aTUtvYWJHT2pxU2ZBOVAzOW56OU9aWktqZk9aN21BY0syR21MN3pYYlpYQkozb2JVX1pnQXFBbm5pclJJY3BVNWFDaS1iMWtHbndjbVY1T0NSenB1ZWM1OUVpSVcwa3gtYWhabmg3RS1sblJSa0ttaExUcFRkTnlEN0RLSzZn",
-          "url": "https://news.google.com/rss/articles/CBMixgNBVV95cUxOTHBuNnNkc05vMmJacFNDOFMxVHVVYjc4OURtel80T05YODhHMW83M3Fsd0owRlNsQzBPUGFuWjlWNlNjWmUxakg0TWtxblJkREMtTzJBMXZXdUQ5X0d3OHY2eGF6aUlvamR0a2Z5b2l3RC01ODdmVFdOallHTHVhVkJncTJQdDVBT2JpUnJTYUJjT3ZmWTZXdllRak1tWV9CSjRjMDhrTDJEX3RZYkR2dWMwNWwwWTA5c0JzM0xmM2FXMnRqVFVqXzFpMEFaVzJNamdfSjE2V0xadmplVXdhY2traUdrdlIxWVhQWlN0cFFSdGswd01GTEVtWkZXMFJpZTVpSDdnYlRQYndWWVIxN3VlUmh4R0R5Uk0xMkR2ZVlFZzI5Y0JnRUFDVXVkeXZWclRVMUU1S05xRDFBUzBpTlozbjlfbG5aTUtvYWJHT2pxU2ZBOVAzOW56OU9aWktqZk9aN21BY0syR21MN3pYYlpYQkozb2JVX1pnQXFBbm5pclJJY3BVNWFDaS1iMWtHbndjbVY1T0NSenB1ZWM1OUVpSVcwa3gtYWhabmg3RS1sblJSa0ttaExUcFRkTnlEN0RLSzZn",
-          "published_at": "2026-10-15T02:41:14+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-15",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "TAIEX",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "台積電",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "台積電",
-              "供應"
-            ],
-            "matched_subject": "台積電",
-            "matched_action": "供應",
-            "matched_market_object": "台積電",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "從台積電法說會看台股下一步cowos先進封裝爆發00418a深入前300大卡位受惠供應鏈yahoo",
-          "event_cluster_key": "event-dee836190dae7ac8aa88",
-          "published_time_bucket": "2026-10-15T02:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "台積電",
-            "供應"
-          ],
-          "matched_subject": "台積電",
-          "matched_action": "供應",
-          "matched_market_object": "台積電",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-15T04:18:50.218690+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 125
-        },
-        {
-          "story_id": "news-68e2dec46c9c815067bb",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "通膨緊縮疑慮引爆亞股殺機！半導體供應鏈淪重災區，外資狂砍台積電-財經焦點情報站 - CMoney投資網誌",
-          "raw_title": "通膨緊縮疑慮引爆亞股殺機！半導體供應鏈淪重災區，外資狂砍台積電-財經焦點情報站 - CMoney投資網誌",
-          "normalized_fact": "通膨緊縮疑慮引爆亞股殺機，半導體供應鏈淪重災區，外資狂砍台積電-財經焦點情報站 CMoney投資網誌。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "通膨緊縮疑慮引爆亞股殺機！半導體供應鏈淪重災區，外資狂砍台積電-財經焦點情報站 CMoney投資網誌",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPREl2ZnFvVnNfWS1KUmxLV1M1SHNsbkM0Ukt3VHZzc0pidFh5ZXdwOUl6LU5QdUtYZE5DUVlzTVlVMC1ESHExcXpVbnNNZU9VNE9XandPNm1XQVVBYmpyWDFpdDl4Yi14NHFXRlJzWlBST00wY2tHazFXZS00dHR3bHRn",
-          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPREl2ZnFvVnNfWS1KUmxLV1M1SHNsbkM0Ukt3VHZzc0pidFh5ZXdwOUl6LU5QdUtYZE5DUVlzTVlVMC1ESHExcXpVbnNNZU9VNE9XandPNm1XQVVBYmpyWDFpdDl4Yi14NHFXRlJzWlBST00wY2tHazFXZS00dHR3bHRn",
-          "published_at": "2026-10-15T02:40:22+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-15",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "台積電",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "台積電",
-              "供應"
-            ],
-            "matched_subject": "台積電",
-            "matched_action": "供應",
-            "matched_market_object": "台積電",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM"
-          ],
-          "freshness": "published",
-          "dedupe_key": "通膨緊縮疑慮引爆亞股殺機半導體供應鏈淪重災區外資狂砍台積電財經焦點情報站cmoney投資網誌",
-          "event_cluster_key": "event-7aa5cf31ed1005c4e94f",
-          "published_time_bucket": "2026-10-15T02:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "台積電",
-            "供應"
-          ],
-          "matched_subject": "台積電",
-          "matched_action": "供應",
-          "matched_market_object": "台積電",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-15T04:18:50.218690+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 125
         }
       ],
-      "inventory_saved_at": "2026-10-16T04:08:15.786038+00:00"
+      "inventory_saved_at": "2026-10-16T04:13:49.845788+00:00"
     },
     "us": {
-      "fetched_at": "2026-10-16T04:08:15.786038+00:00",
+      "fetched_at": "2026-10-16T04:13:49.845788+00:00",
       "stories": [
         {
           "title": "8-K - NORTHRIM BANCORP INC (0001163370) (Filer)",
@@ -7389,14 +7599,14 @@
           }
         },
         {
-          "title": "〈美股盤後〉黃仁勳力挺CoreWeave 道瓊勁揚556點 台積電ADR跌近2%",
-          "url": "https://news.cnyes.com/news/id/6631442",
+          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "url": "https://news.cnyes.com/news/id/6630669",
           "provider": "anue",
           "source": "鉅亨網｜市場焦點",
           "relevance": "market",
-          "summary": "美股週四收高，道瓊漲556.21點、標普500終結連3跌，那指盤中翻黑後小漲0.08%。 AI類股漲跌分歧，CoreWeave反彈5.9%，輝達、AMD走弱；戴爾遭巴克萊降評重挫6.8%。 美國9月PPI月增1.3%、年增6.3%創2022年來最大，通膨升溫使市場再度押注聯準會升息。",
-          "published_at": "2026-10-15T21:44:31+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6631442",
+          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "published_at": "2026-10-14T22:02:35+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6630669",
           "market_classification": {
             "market_scope": "cross_market",
             "taiwan_matches": [
@@ -7405,14 +7615,15 @@
             "us_matches": [
               "美股",
               "美國",
-              "聯準會",
-              "amd"
+              "費半",
+              "fed",
+              "cpi"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 5,
+              "matched_term_count": 6,
               "source_market_hint": "cross_market"
             }
           },
@@ -7423,22 +7634,23 @@
           "us_matches": [
             "美股",
             "美國",
-            "聯準會",
-            "amd"
+            "費半",
+            "fed",
+            "cpi"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 5,
+            "matched_term_count": 6,
             "source_market_hint": "cross_market"
           },
-          "story_id": "news-1c1ce9adcc80d6e0c63a",
+          "story_id": "news-711307422ad19cd66883",
           "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "raw_title": "〈美股盤後〉黃仁勳力挺CoreWeave 道瓊勁揚556點 台積電ADR跌近2%",
-          "normalized_fact": "美股週四收高，道瓊漲556.21點、標普500終結連3跌，那指盤中翻黑後小漲0.08%。 AI類股漲跌分歧，CoreWeave反彈5.9%，輝達、AMD走弱；戴爾遭巴克萊降評重挫6.8%。 美國9月PPI月增1.3%、年增6.3%創2022年來最大，通膨升溫使市場再度押注聯準會升息。",
+          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
           "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
@@ -7459,27 +7671,30 @@
           "tickers": [],
           "entities": [
             "2330",
+            "SOX",
             "TSM"
           ],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "ai"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
             "category": "fed",
             "reason": "fed_subject_action",
             "matched_terms": [
-              "聯準會",
-              "升息"
+              "fed",
+              "利率"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "聯準會",
-              "升息"
+              "fed",
+              "利率"
             ],
-            "matched_subject": "聯準會",
-            "matched_action": "升息",
-            "matched_market_object": "聯準會",
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
             "input_fields": [
               "description",
               "summary",
@@ -7490,19 +7705,19 @@
             "market:cross_market"
           ],
           "freshness": "published",
-          "dedupe_key": "美股週四收高道瓊漲55621點標普500終結連3跌那指盤中翻黑後小漲008ai類股漲跌分歧coreweave反彈59輝達amd走弱戴爾遭巴克萊降評重挫68美國9月ppi月增13年增63創2022年來最大通膨升溫使市場再度押注聯準會升息",
-          "event_cluster_key": "event-c036234c6536777fb51b",
-          "published_time_bucket": "2026-10-15T21:00:00+00:00",
+          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
+          "event_cluster_key": "event-40d27feb65b9f7fa705b",
+          "published_time_bucket": "2026-10-14T22:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "聯準會",
-            "升息"
+            "fed",
+            "利率"
           ],
-          "matched_subject": "聯準會",
-          "matched_action": "升息",
-          "matched_market_object": "聯準會",
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
           "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
@@ -7520,40 +7735,124 @@
           "ranking_score": 130
         },
         {
-          "title": "輝達、AMD、戴爾續跌 AI概念股為何重挫？",
-          "url": "https://news.cnyes.com/news/id/6631664",
+          "title": "台達電鄭平：三因素限制電力設施建置 供電缺口成AI發展關鍵挑戰",
+          "url": "https://news.cnyes.com/news/id/6630917",
           "provider": "anue",
           "source": "鉅亨網｜市場焦點",
           "relevance": "market",
-          "summary": "AI概念股週四續跌，全球前20大AI與半導體股本週市值蒸發逾1兆美元。\n輝達、超微、英特爾與戴爾走弱；CoreWeave挫5.94%，黃仁勳稱輝達無需為其提供財務擔保。\n市場憂升息與融資成本升高、記憶體供給過剩；韓日歐科技股同步重挫，SK海力士跌逾10%。",
-          "published_at": "2026-10-15T22:30:05+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6631664",
+          "summary": "台達電董事長鄭平表示，AI資料中心擴張推升全球用電，電力供應難追上AI成長，將成重要挑戰。 美國四大CSP資本支出估達2022年4.7倍，2028年資料中心新增用電44GW，電網僅增25GW。 台達電布局微電網、SOFC與SST；SOFC效率85%且明年量產，SST可轉800V直流電。",
+          "published_at": "2026-10-15T04:25:09+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6630917",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
             "us_matches": [
-              "amd"
+              "美國"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
               "matched_term_count": 1,
-              "source_market_hint": null
+              "source_market_hint": "us"
             }
           },
           "market_scope": "us",
           "taiwan_matches": [],
           "us_matches": [
-            "amd"
+            "美國"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 1,
-            "source_market_hint": null
-          }
+            "source_market_hint": "us"
+          },
+          "story_id": "news-5a467bce06bc97b434fd",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "raw_title": "台達電鄭平：三因素限制電力設施建置 供電缺口成AI發展關鍵挑戰",
+          "normalized_fact": "台達電董事長鄭平表示，AI資料中心擴張推升全球用電，電力供應難追上AI成長，將成重要挑戰。 美國四大CSP資本支出估達2022年4.7倍，2028年資料中心新增用電44GW，電網僅增25GW。 台達電布局微電網、SOFC與SST；SOFC效率85%且明年量產，SST可轉800V直流電。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "資本支出"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "資本支出"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "資本支出",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "台達電董事長鄭平表示ai資料中心擴張推升全球用電電力供應難追上ai成長將成重要挑戰美國四大csp資本支出估達2022年47倍2028年資料中心新增用電44gw電網僅增25gw台達電布局微電網sofc與sstsofc效率85且明年量產sst可轉800v直流電",
+          "event_cluster_key": "event-e1c6150d667e0cfcb097",
+          "published_time_bucket": "2026-10-15T04:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "資本支出"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "資本支出",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "title": "Dow Jones Futures Rise; Anthropic Valuation Report, Flying Tesla Roadster In Focus",
@@ -9397,46 +9696,6 @@
           }
         },
         {
-          "title": "U.S. Export Restrictions Drive Nvidia China AI Chip Market Share Down to 34% - TIKR.com",
-          "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxNUjJWSjl6UktlV2tqSDljbkJUVTF1eHZHVEdVMnRTSnZaTVlmTG9JMndIVlRnczNSYnNIa2g5UHFtWjZyMnI5SFVIdUozeWtkQWMzajgydkYwTFNScS02TnhCdVNIMHZnUFduOFV0MUxtLU1fYnZqdmh1NEROMU9IVDRNNnZWY1VUOTNEOG9lQ2hYSGtSSmlv?oc=5",
-          "summary": "U.S. Export Restrictions Drive Nvidia China AI Chip Market Share Down to 34% TIKR.com",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-10-13T12:58:24+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股",
-              "nvidia"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股",
-            "nvidia"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "us"
-          }
-        },
-        {
           "title": "First Shift: Chip capacity, export controls and trade shocks redraw supply networks - Supply Chain Management Review",
           "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxNXy1VSGIwaFQwNmhGUDVjY21sN3QwYTZvUlhwUi1YaTZiTHphYXlSRmNVS2RDVllwU0lycFlrWFVJeHBheFJMLW9NcUtkZ2phcWxNQk9mM1Y1Y1JxYjVOdVBJRjFVUFhWQk8xNlJRYU1wQUU0aHFsQ0FXclBCZ1U2eFl6UGllSlhHZkEzZVBicXNJSmlxV1hHUmR5N3FOM3VxODZEamdZNldPTkowQjUw",
           "summary": "First Shift: Chip capacity, export controls and trade shocks redraw supply networks Supply Chain Management Review",
@@ -9557,6 +9816,46 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
+        },
+        {
+          "title": "U.S. Export Restrictions Drive Nvidia China AI Chip Market Share Down to 34% - TIKR.com",
+          "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxNUjJWSjl6UktlV2tqSDljbkJUVTF1eHZHVEdVMnRTSnZaTVlmTG9JMndIVlRnczNSYnNIa2g5UHFtWjZyMnI5SFVIdUozeWtkQWMzajgydkYwTFNScS02TnhCdVNIMHZnUFduOFV0MUxtLU1fYnZqdmh1NEROMU9IVDRNNnZWY1VUOTNEOG9lQ2hYSGtSSmlv?oc=5",
+          "summary": "U.S. Export Restrictions Drive Nvidia China AI Chip Market Share Down to 34% TIKR.com",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-13T12:58:24+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股",
+              "nvidia"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股",
+            "nvidia"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "us"
+          }
         },
         {
           "title": "Nvidia CEO Calls for AI Safety Collaboration with China - The Tech Buzz",
@@ -9724,16 +10023,16 @@
           "ranking_score": 115
         },
         {
-          "title": "Commerce Department Extends Export Controls to Advanced AI Models; Authorizes Release to Specific Trusted Partners - Mayer Brown",
-          "url": "https://news.google.com/rss/articles/CBMigwJBVV95cUxOWTQzZjJ5VGNUaGtJY3dTaTVwb0dWN01yWFY2RGtZX0gwZEpFVHM5NTZZQWRRZ04yZk1Hc2tCcFplcTg2VkxPZzVyUDhBeElfM21Id25YX3NpSXpRSmpLRVlkdXdkRWUyU1NMVXRydklfYmI4eWFrS1BqdnpNTlFmSnZ0RkZZeG9zYXRBRmdDYWIxOVA3R3E2aENra054OHl6WjhkTDVuWUY3eDdtc0J4WmVSR0lKbXNXaUNlaF9obXV5ajUwU0RNR3pLdjhlbGJYdllmNnZwZjNISUlvZFVUUkRGNTNoRWEyODgtVUQ3WXVKeDRUbHNYMEJXNnNQQWFyVGZN?oc=5",
-          "summary": "Commerce Department Extends Export Controls to Advanced AI Models; Authorizes Release to Specific Trusted Partners Mayer Brown",
+          "title": "Should Super Micro Computer (SMCI) Investors Worry About Export Risks And AI Progress? - Yahoo Finance",
+          "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxPdjZCaW45dlBTYml3OWVteHJ4cFVfUnBHNU1PZEdfS3BpblFHb011Yk5GeTZwYlpIYzVEa2QyYUpKTDJUM3VPbXhjX2NHcGtZUmJNT1hIU3dLZXh0OEdzTjBPTk5rNHVUaEhzbmp2UlNWc2RVeUg1ajY5cEtDS0VTcjVEZVNicnlvby1hcTlSd2xuRTV2LV9vZnAxcmJMb1hv?oc=5",
+          "summary": "Should Super Micro Computer (SMCI) Investors Worry About Export Risks And AI Progress? Yahoo Finance",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-06-30T07:00:00+00:00",
+          "published_at": "2026-10-13T12:10:13+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
@@ -12860,9 +13159,9 @@
           "published_at": "2026-10-15T04:25:09+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "current",
+          "date_eligibility_status": "recent_reference",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
+          "publication_age_trading_sessions": 2,
           "published_local_date": "2026-10-15",
           "market": "us",
           "market_compatible": true,
@@ -13705,7 +14004,7 @@
           "publication_time_invalid": false,
           "date_eligibility_status": "recent_reference",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
+          "publication_age_trading_sessions": 3,
           "published_local_date": "2026-10-14",
           "market": "us",
           "market_compatible": true,
@@ -14773,7 +15072,7 @@
           "ranking_score": 130
         }
       ],
-      "inventory_saved_at": "2026-10-16T04:08:15.786038+00:00"
+      "inventory_saved_at": "2026-10-16T04:13:49.845788+00:00"
     }
   }
 }
