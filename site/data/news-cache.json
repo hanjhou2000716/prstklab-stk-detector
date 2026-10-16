@@ -2,50 +2,62 @@
   "schema": 2,
   "markets": {
     "taiwan": {
-      "fetched_at": "2026-10-16T08:18:53.551269+00:00",
+      "fetched_at": "2026-10-16T08:23:43.972780+00:00",
       "stories": [
         {
-          "title": "稀土反制精準命中！歐盟傳擬解除中企限制 搶救ASML關鍵供應商",
-          "url": "https://news.cnyes.com/news/id/6631648",
+          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "url": "https://news.cnyes.com/news/id/6630669",
           "provider": "anue",
-          "source": "鉅亨網｜市場焦點",
-          "relevance": "market",
-          "summary": "歐盟傳與中國協商，擬解除一家中國企業限制，換取北京放寬對德國 Sindlhauser Materials 的出口管制 Sindlhauser 7月24日遭中方列入出口管制名單，原料仰賴中國稀土與關鍵礦產，恐數月內停業 德國與巴伐利亞政府已介入尋找替代供應；歐方若移出制裁名單，仍須會員國一致支持",
-          "published_at": "2026-10-16T00:00:47+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6631648",
+          "source": "鉅亨網｜持股關聯",
+          "relevance": "holding",
+          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "published_at": "2026-10-14T22:02:35+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6630669",
           "market_classification": {
-            "market_scope": "global",
-            "taiwan_matches": [],
-            "us_matches": [],
-            "global_matches": [
-              "制裁"
+            "market_scope": "cross_market",
+            "taiwan_matches": [
+              "台積電"
             ],
+            "us_matches": [
+              "美股",
+              "美國",
+              "費半",
+              "fed",
+              "cpi"
+            ],
+            "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "global"
+              "matched_term_count": 6,
+              "source_market_hint": "cross_market"
             }
           },
-          "market_scope": "global",
-          "taiwan_matches": [],
-          "us_matches": [],
-          "global_matches": [
-            "制裁"
+          "market_scope": "cross_market",
+          "taiwan_matches": [
+            "台積電"
           ],
+          "us_matches": [
+            "美股",
+            "美國",
+            "費半",
+            "fed",
+            "cpi"
+          ],
+          "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "global"
+            "matched_term_count": 6,
+            "source_market_hint": "cross_market"
           },
-          "story_id": "news-87a21da4c88372a4d7ad",
+          "story_id": "news-711307422ad19cd66883",
           "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "raw_title": "稀土反制精準命中！歐盟傳擬解除中企限制 搶救ASML關鍵供應商",
-          "normalized_fact": "歐盟傳與中國協商，擬解除一家中國企業限制，換取北京放寬對德國 Sindlhauser Materials 的出口管制 Sindlhauser 7月24日遭中方列入出口管制名單，原料仰賴中國稀土與關鍵礦產，恐數月內停業 德國與巴伐利亞政府已介入尋找替代供應；歐方若移出制裁名單，仍須會員國一致支持。",
-          "market_topic": "semiconductor_ai",
+          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -60,29 +72,35 @@
           "date_eligibility_reason": "",
           "publication_age_trading_sessions": null,
           "published_local_date": "",
-          "market": "global",
+          "market": "cross_market",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "2330",
+            "SOX",
+            "TSM"
+          ],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "ai"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
+            "category": "fed",
+            "reason": "fed_subject_action",
             "matched_terms": [
-              "asml",
-              "出口管制"
+              "fed",
+              "利率"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "asml",
-              "出口管制"
+              "fed",
+              "利率"
             ],
-            "matched_subject": "asml",
-            "matched_action": "出口管制",
-            "matched_market_object": "asml",
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
             "input_fields": [
               "description",
               "summary",
@@ -90,23 +108,23 @@
             ]
           },
           "relevance_reasons": [
-            "market:global"
+            "market:cross_market"
           ],
           "freshness": "published",
-          "dedupe_key": "歐盟傳與中國協商擬解除一家中國企業限制換取北京放寬對德國sindlhausermaterials的出口管制sindlhauser7月24日遭中方列入出口管制名單原料仰賴中國稀土與關鍵礦產恐數月內停業德國與巴伐利亞政府已介入尋找替代供應歐方若移出制裁名單仍須會員國一致支持",
-          "event_cluster_key": "event-dae7f8ec0eefc09c823c",
-          "published_time_bucket": "2026-10-16T00:00:00+00:00",
+          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
+          "event_cluster_key": "event-40d27feb65b9f7fa705b",
+          "published_time_bucket": "2026-10-14T22:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "asml",
-            "出口管制"
+            "fed",
+            "利率"
           ],
-          "matched_subject": "asml",
-          "matched_action": "出口管制",
-          "matched_market_object": "asml",
-          "decision_value_class": "semiconductor_ai",
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -121,6 +139,80 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 130
+        },
+        {
+          "title": "〈台積電法說〉Q3純益7630.64億元季增8% EPS29.43元續創單季新高",
+          "url": "https://news.cnyes.com/news/id/6631116",
+          "provider": "anue",
+          "source": "鉅亨網｜持股關聯",
+          "relevance": "holding",
+          "summary": "",
+          "published_at": "2026-10-15T06:01:21+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6631116",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台積電"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": null
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台積電"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": null
+          }
+        },
+        {
+          "title": "DEKRA 德凱攜手研華簽署合作備忘錄",
+          "url": "https://tw.stock.yahoo.com/news/dekra-%E5%BE%B7%E5%87%B1%E6%94%9C%E6%89%8B%E7%A0%94%E8%8F%AF%E7%B0%BD%E7%BD%B2%E5%90%88%E4%BD%9C%E5%82%99%E5%BF%98%E9%8C%84-081400498.html",
+          "summary": "隨著歐盟《網路韌性法案》（Cyber Resilience Act, CRA）逐步進入實施階段，資安合規正成為工業設備與邊緣 AI 產品進入全球市場的重要門檻。全球物聯網智能系統與嵌入式平台領導廠商研",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-16T08:14:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
         },
         {
           "title": "微軟擴大沙國AI版圖 斥資百億美元深耕中東市場",
@@ -528,16 +620,16 @@
           }
         },
         {
-          "title": "中國央行強調金融市場開放，推動人民幣債券成全球合格擔保品",
-          "url": "https://tw.stock.yahoo.com/news/%E4%B8%AD%E5%9C%8B%E5%A4%AE%E8%A1%8C%E5%BC%B7%E8%AA%BF%E9%87%91%E8%9E%8D%E5%B8%82%E5%A0%B4%E9%96%8B%E6%94%BE-%E6%8E%A8%E5%8B%95%E4%BA%BA%E6%B0%91%E5%B9%A3%E5%82%B5%E5%88%B8%E6%88%90%E5%85%A8%E7%90%83%E5%90%88%E6%A0%BC%E6%93%94%E4%BF%9D%E5%93%81-075557792.html",
-          "summary": "【財訊快報／劉敏夫】外電報導指出，中國央行行長潘功勝表示，將推動人民幣債券成為全球廣泛使用的合格擔保品。中國人民銀行公告，行長潘功勝出席新興市場研討會時表示，下一階段，央行將進一步支持全球投資者和發行",
+          "title": "凱基銀行贊助TLPGA未來賽　以高球串起財管貴賓交流  讓服務更貼近客戶需求",
+          "url": "https://tw.stock.yahoo.com/news/%E5%87%B1%E5%9F%BA%E9%8A%80%E8%A1%8C%E8%B4%8A%E5%8A%A9tlpga%E6%9C%AA%E4%BE%86%E8%B3%BD-%E4%BB%A5%E9%AB%98%E7%90%83%E4%B8%B2%E8%B5%B7%E8%B2%A1%E7%AE%A1%E8%B2%B4%E8%B3%93%E4%BA%A4%E6%B5%81-%E8%AE%93%E6%9C%8D%E5%8B%99%E6%9B%B4%E8%B2%BC%E8%BF%91%E5%AE%A2%E6%88%B6%E9%9C%80%E6%B1%82-075626157.html",
+          "summary": "財經中心/綜合報導從支持高球賽事、培育潛力選手，到進一步讓財管貴賓參與，凱基銀行持續延伸高球贊助的價值。凱基銀行冠名贊助「2026凱基銀行TLPGA未來賽」於15日圓滿落幕，今（16）日接續於台豐高爾",
           "source": "Yahoo Taiwan Finance",
           "provider": "yahoo_finance",
           "source_tier": "market",
           "authority_tier": "market",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-10-16T07:55:57+00:00",
+          "published_at": "2026-10-16T07:56:26+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -564,126 +656,6 @@
             "matched_term_count": 1,
             "source_market_hint": "taiwan"
           }
-        },
-        {
-          "title": "IMF估日本央行將再升息一次，政策利率步向中性水準",
-          "url": "https://tw.stock.yahoo.com/news/imf%E4%BC%B0%E6%97%A5%E6%9C%AC%E5%A4%AE%E8%A1%8C%E5%B0%87%E5%86%8D%E5%8D%87%E6%81%AF-%E6%AC%A1-%E6%94%BF%E7%AD%96%E5%88%A9%E7%8E%87%E6%AD%A5%E5%90%91%E4%B8%AD%E6%80%A7%E6%B0%B4%E6%BA%96-075240267.html",
-          "summary": "【財訊快報／劉敏夫】外電報導指出，國際貨幣基金組織(IMF)預計日本央行將再升息一次，使政策利率向中性利率靠攏，同時強調，面對全球不確定性升高，後續行動需要保持靈活。IMF駐日本代表團團長Rahul",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-16T07:52:40+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          },
-          "story_id": "news-af8ba484c5a02abf5533",
-          "provider_name": "Yahoo Taiwan Finance",
-          "raw_title": "IMF估日本央行將再升息一次，政策利率步向中性水準",
-          "normalized_fact": "【財訊快報／劉敏夫】外電報導指出，國際貨幣基金組織(IMF)預計日本央行將再升息一次，使政策利率向中性利率靠攏，同時強調，面對全球不確定性升高，後續行動需要保持靈活。IMF駐日本代表團團長Rahul。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/imf%E4%BC%B0%E6%97%A5%E6%9C%AC%E5%A4%AE%E8%A1%8C%E5%B0%87%E5%86%8D%E5%8D%87%E6%81%AF-%E6%AC%A1-%E6%94%BF%E7%AD%96%E5%88%A9%E7%8E%87%E6%AD%A5%E5%90%91%E4%B8%AD%E6%80%A7%E6%B0%B4%E6%BA%96-075240267.html",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-16",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "央行",
-              "利率"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "央行",
-              "利率"
-            ],
-            "matched_subject": "央行",
-            "matched_action": "利率",
-            "matched_market_object": "央行",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "財訊快報劉敏夫外電報導指出國際貨幣基金組織imf預計日本央行將再升息一次使政策利率向中性利率靠攏同時強調面對全球不確定性升高後續行動需要保持靈活imf駐日本代表團團長rahul",
-          "event_cluster_key": "event-011c43a34c9f289aea8e",
-          "published_time_bucket": "2026-10-16T07:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "央行",
-            "利率"
-          ],
-          "matched_subject": "央行",
-          "matched_action": "利率",
-          "matched_market_object": "央行",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
         },
         {
           "title": "台股反彈一天又遇逆風！台指夜盤重挫853點，台積電法說前必看三道關卡!! - Winner | 投資網誌 - 玩股網",
@@ -882,6 +854,46 @@
           }
         },
         {
+          "title": "台股收盤／下跌322點失守月線、46K 台積電跌30元 - TVBS新聞網",
+          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTFBCYVB3ZHE2UDVLNmNhU0RNN2JEb1N6Z3hwdVhDR0ZVZEJXQzAteTNhb2l1YWkyb2JRVDJwUEtYVVlIbTZFSGF2a2NlQnc4RDA?oc=5",
+          "summary": "台股收盤／下跌322點失守月線、46K 台積電跌30元 TVBS新聞網",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-09-14T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股",
+              "台積電"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股",
+            "台積電"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
           "title": "季線攻防怎麼看？8656億解凍就會反彈?? - Winner | 投資網誌 - 玩股網",
           "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE1nMFJGc3lHSVpnQVlrQ1Jpckh1MlpPbzFyZGMwamhwMFY4SlJzcDMwZjRXS3dLLVB0TkZJV3YwWDNxeUxxSEhJOEg2NmxpclNMVk9zM0xn?oc=5",
           "summary": "季線攻防怎麼看？8656億解凍就會反彈?? - Winner | 投資網誌 玩股網",
@@ -1029,48 +1041,6 @@
             "加權指數"
           ],
           "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "台股站上四萬五，成交放大後漲勢會擴散嗎？-詠晴K線解密 - CMoney投資網誌",
-          "url": "https://news.google.com/rss/articles/CBMihwFBVV95cUxNaENCTV9OQTZuWHVQak1XREdfV2pCeGNjUHY2eHdHYy1lQWgzcF9Jd09kZ2NRVnI5YlNua1VYTHJfUVNrYjBDVWZqcFFwdG9NdDE3MWFwLVNzVjFCS0Jua0J2eUtCLW8zZlEzZDAyX19oelVPbWtDNHNqaERQM0szLTQ2NFIyQ3c?oc=5",
-          "summary": "台股站上四萬五，成交放大後漲勢會擴散嗎？-詠晴K線解密 CMoney投資網誌",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-08-26T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "cross_market",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [
-              "pce"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "cross_market",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [
-            "pce"
-          ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
@@ -7088,10 +7058,10 @@
           "ranking_score": 135
         }
       ],
-      "inventory_saved_at": "2026-10-16T08:18:53.551269+00:00"
+      "inventory_saved_at": "2026-10-16T08:23:43.972780+00:00"
     },
     "us": {
-      "fetched_at": "2026-10-16T08:18:53.551269+00:00",
+      "fetched_at": "2026-10-16T08:23:43.972780+00:00",
       "stories": [
         {
           "title": "8-K - NORTHRIM BANCORP INC (0001163370) (Filer)",
@@ -7594,6 +7564,126 @@
           "matched_action": "利率",
           "matched_market_object": "fed",
           "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "title": "台達電鄭平：三因素限制電力設施建置 供電缺口成AI發展關鍵挑戰",
+          "url": "https://news.cnyes.com/news/id/6630917",
+          "provider": "anue",
+          "source": "鉅亨網｜市場焦點",
+          "relevance": "market",
+          "summary": "台達電董事長鄭平表示，AI資料中心擴張推升全球用電，電力供應難追上AI成長，將成重要挑戰。 美國四大CSP資本支出估達2022年4.7倍，2028年資料中心新增用電44GW，電網僅增25GW。 台達電布局微電網、SOFC與SST；SOFC效率85%且明年量產，SST可轉800V直流電。",
+          "published_at": "2026-10-15T04:25:09+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6630917",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美國"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美國"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "us"
+          },
+          "story_id": "news-5a467bce06bc97b434fd",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "raw_title": "台達電鄭平：三因素限制電力設施建置 供電缺口成AI發展關鍵挑戰",
+          "normalized_fact": "台達電董事長鄭平表示，AI資料中心擴張推升全球用電，電力供應難追上AI成長，將成重要挑戰。 美國四大CSP資本支出估達2022年4.7倍，2028年資料中心新增用電44GW，電網僅增25GW。 台達電布局微電網、SOFC與SST；SOFC效率85%且明年量產，SST可轉800V直流電。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "資本支出"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "資本支出"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "資本支出",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "台達電董事長鄭平表示ai資料中心擴張推升全球用電電力供應難追上ai成長將成重要挑戰美國四大csp資本支出估達2022年47倍2028年資料中心新增用電44gw電網僅增25gw台達電布局微電網sofc與sstsofc效率85且明年量產sst可轉800v直流電",
+          "event_cluster_key": "event-e1c6150d667e0cfcb097",
+          "published_time_bucket": "2026-10-15T04:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "資本支出"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "資本支出",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -8130,6 +8220,46 @@
           }
         },
         {
+          "title": "S&P 500 bull market turns four: what’s driving stocks and what comes next - Finimize",
+          "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxPQjRPQmVCcGwxVE1KVkxfRmxRandZVXI2eHJUNkd6cFhpOTlENm1HNHJvaGE5NHZ4Wm1wV0tGeFpFV2o5eTZVcUhZTWhiVUF2UnlIWEVMNDdhUWx4ZEVHWVpoNy1vdjZVNFp3WDZtbGJ3cVNOV1NHVS1xX00tTy1GWmU4MHR3VjNIRmZrZlZrQjdBODZRS0h1QnpXd3RQeUwx?oc=5",
+          "summary": "S&P 500 bull market turns four: what’s driving stocks and what comes next Finimize",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-15T03:08:54+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股",
+              "s&p 500"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股",
+            "s&p 500"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "us"
+          }
+        },
+        {
           "title": "Can AI Investment Drive S&P 500 Earnings Even Higher? - Goldman Sachs",
           "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxPemRqUVUwRkM4NkE3ajl3bVRncjNRY2s0b0dDWkhTLV9XcDhZQ1ljNXNNTV9OaVZjcS1Cek5rWUgybTlBYThmS015WmpyTHBWQnp5OE5JT0Fmd2RiR0FWTmlNRXQ2LUtjb0dnOHVFM2FwRkpJbS0xSmFzZHRwNjFLdko5OWl4TmlqSXRaaGNSeU5lQXd6aDBDT2Y0eEZFUUloZzN0NVVn?oc=5",
           "summary": "Can AI Investment Drive S&P 500 Earnings Even Higher? Goldman Sachs",
@@ -8170,46 +8300,6 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 3,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "S&P 500 bull market turns four: what’s driving stocks and what comes next - Finimize",
-          "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxPQjRPQmVCcGwxVE1KVkxfRmxRandZVXI2eHJUNkd6cFhpOTlENm1HNHJvaGE5NHZ4Wm1wV0tGeFpFV2o5eTZVcUhZTWhiVUF2UnlIWEVMNDdhUWx4ZEVHWVpoNy1vdjZVNFp3WDZtbGJ3cVNOV1NHVS1xX00tTy1GWmU4MHR3VjNIRmZrZlZrQjdBODZRS0h1QnpXd3RQeUwx?oc=5",
-          "summary": "S&P 500 bull market turns four: what’s driving stocks and what comes next Finimize",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-10-15T03:08:54+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股",
-              "s&p 500"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股",
-            "s&p 500"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
             "source_market_hint": "us"
           }
         },
@@ -9454,19 +9544,21 @@
           }
         },
         {
-          "title": "Moolenaar’s bipartisan bill would protect U.S. export controls for AI chips - Ripon Advance",
-          "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxPTWF3XzUzUFRabld2aHNrUXJPLTN2a1VFQnNsd0pySFlaQkp2NHV6VTctZUx2YkpQckJ3eHhVR1VDNlpkbTNtODNjeGNoOUZTUG1fTXBhaFJRalNNNWpLS0FlUXlQQnlndTg2Q0RyMFpCMzdHM01kcEhOeWQ2cVZhRlROQ1JNcjdDR25sN2FGdUdCdzJCOGVWSEZIdTJKR3pDN0w1SHhvSTdxcnM?oc=5",
-          "summary": "Moolenaar’s bipartisan bill would protect U.S. export controls for AI chips Ripon Advance",
+          "title": "Taiwan to curb AI chip sales to China for more U.S. alignment- Bloomberg - Investing.com",
+          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxPeXVUSnJqYmFHVVFOeHVnYjM4ZExpNjVMT3lzSU8wblVscWFoakZEYW9BUkx1ejJ3ZEZaTHJfMW1xa0p3MTBGNXJ2ZVliN25UX0NiRFJrdUVkMm51TmVRQkRRd0lVMVhfRmxja014VFJMX1FnNjdGWnUzNUNmcFhDcDItcDRxQmtOVnFtR2V2ZURoZy02S0U1QTZ3V1o5M251X2lDdE9RM3Y1TV9QV0ZJd2lBb0JjcldCTTBNUEhmVVRvOEU5?oc=5",
+          "summary": "Taiwan to curb AI chip sales to China for more U.S. alignment- Bloomberg Investing.com",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-10-13T16:59:03+00:00",
+          "published_at": "2026-10-16T06:11:13+00:00",
           "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
+            "market_scope": "cross_market",
+            "taiwan_matches": [
+              "taiwan"
+            ],
             "us_matches": [
               "美股"
             ],
@@ -9474,12 +9566,14 @@
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 1,
+              "matched_term_count": 2,
               "source_market_hint": "us"
             }
           },
-          "market_scope": "us",
-          "taiwan_matches": [],
+          "market_scope": "cross_market",
+          "taiwan_matches": [
+            "taiwan"
+          ],
           "us_matches": [
             "美股"
           ],
@@ -9487,7 +9581,7 @@
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 1,
+            "matched_term_count": 2,
             "source_market_hint": "us"
           }
         },
@@ -9820,6 +9914,121 @@
           }
         },
         {
+          "title": "Analysis of Market Impact from IEA’s Release of Crude Oil and Diesel Reserves - Sunsirs",
+          "url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTE1nbGJnUi1qTnk1Z3lGa2JCclJvbGJES3NxOUVKdWJ3Z05wUmlKaE9ibTFNdXQ3dkNCaFpHbzZSbzdJSFVvQkJhaWhFQnMwOVEwYlVUVFJVRXJHRkFwZEE",
+          "summary": "Analysis of Market Impact from IEA’s Release of Crude Oil and Diesel Reserves Sunsirs",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-16T03:31:41+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [
+              "oil"
+            ],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [
+            "oil"
+          ],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "us"
+          },
+          "story_id": "news-69fab34c45fac01aff30",
+          "provider_name": "Google News",
+          "raw_title": "Analysis of Market Impact from IEA’s Release of Crude Oil and Diesel Reserves - Sunsirs",
+          "normalized_fact": "Analysis of Market Impact from IEA’s Release of Crude Oil and Diesel Reserves Sunsirs。",
+          "market_topic": "company_industry",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTE1nbGJnUi1qTnk1Z3lGa2JCclJvbGJES3NxOUVKdWJ3Z05wUmlKaE9ibTFNdXQ3dkNCaFpHbzZSbzdJSFVvQkJhaWhFQnMwOVEwYlVUVFJVRXJHRkFwZEE",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-15",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "energy"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "analysisofmarketimpactfromieasreleaseofcrudeoilanddieselreservessunsirs",
+          "event_cluster_key": "event-6a1d0b4b4245bdda92ad",
+          "published_time_bucket": "2026-10-16T03:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
           "title": "Global diesel shortages could persist well into 2027, IEA says - Reuters",
           "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxPNmx3MC1ZNktjTUI0ODR3THRhZGw1dk1mWXozUDJqbHFJSGhvT2ZyYW1GZHlLQnh2dk1pMUE3YnhqYi1XX3lVRFA5MHdTS1lWSGtlNEFtclc4S2dMX3NqOTZPMURyZXN2WEJ0Ulo3b1hrNXlKeDJHbHRYRGFVVWluYXBCeVZadXJtRXJCZDVEN2xVWGs1cHYtbHJXQ29YRVlzZlBNVkJ3d3h1Zw?oc=5",
           "summary": "Global diesel shortages could persist well into 2027, IEA says Reuters",
@@ -9892,48 +10101,6 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "Global Oil Inventories Depleted, Next Price Spike Could Roil Economies, Markets - EnergyNow.com",
-          "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxQTzJ2Rmxmd19zVGUwVzJ3bzdEeHp4NTczY0tCM0MxYzlnNUU5UTRIZk45cndabTA0TnNoblRoc1FsWE12bTYtWGVHSWhkdEpBcnNYeDExZC1XWFN5SWhjS20ySEh4M1pHeFJ0RTFaSW9DT0JXYlMzNzdHS1dsWFUxWVZISjNMT045RkZoZmZDOFRHT3pFNHVDTVc0TlJEZVo5cVdMajNZSERCSmJH?oc=5",
-          "summary": "Global Oil Inventories Depleted, Next Price Spike Could Roil Economies, Markets EnergyNow.com",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-10-15T16:12:13+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股"
-            ],
-            "global_matches": [
-              "oil"
-            ],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股"
-          ],
-          "global_matches": [
-            "oil"
-          ],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
             "source_market_hint": "us"
           }
         },
@@ -14680,7 +14847,7 @@
           "ranking_score": 115
         }
       ],
-      "inventory_saved_at": "2026-10-16T08:18:53.551269+00:00"
+      "inventory_saved_at": "2026-10-16T08:23:43.972780+00:00"
     }
   }
 }
