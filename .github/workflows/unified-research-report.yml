@@ -397,9 +397,24 @@ jobs:
       - name: Refresh market data for prepared release
         if: env.SCAN_MODE == 'production'
         run: python -m src.refresh_market_data
+      - name: Record publication admission
+        id: publication_admission
+        if: env.SCAN_MODE == 'production'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -m src.writer_queue --create-admission
+      - name: Upload publication admission evidence
+        id: publication_admission_artifact
+        if: steps.publication_admission.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: writer-publication-admission-${{ github.run_id }}-${{ github.run_attempt }}
+          path: writer-publication-admission.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Recheck production revision before persistence
         id: writer_queue
-        if: env.SCAN_MODE == 'production'
+        if: env.SCAN_MODE == 'production' && steps.publication_admission_artifact.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python -m src.writer_queue --settle-seconds 0 --poll-seconds 10

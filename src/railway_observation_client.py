@@ -205,9 +205,13 @@ def load_railway_observations(
                     "event_ref": ref[:64],
                     "delivery_status": status_value,
                     "summary_status": str(item.get("summary_status") or "")[:40],
+                    "summary_contract_version": str(item.get("summary_contract_version") or "")[:40],
                     "summary_reason": str(item.get("summary_reason") or "")[:120],
                     "source_published_at": str(item.get("source_published_at") or "")[:80],
                     "expires_at": str(item.get("expires_at") or "")[:80],
+                    "first_detected_at": str(item.get("first_detected_at") or "")[:80],
+                    "last_progress_at": str(item.get("last_progress_at") or "")[:80],
+                    "last_checked_at": str(item.get("last_checked_at") or "")[:80],
                     "last_blocking_reason": str(item.get("last_blocking_reason") or "")[:120],
                 })
         health["priority_recovery"] = recovery

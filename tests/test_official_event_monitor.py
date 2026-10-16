@@ -4,8 +4,6 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-import pytest
-
 from src import official_event_monitor as monitor
 from src.official_event_monitor import (
     build_official_event_brief,
@@ -205,14 +203,15 @@ def test_event_batch_preserves_each_result_and_continues_after_one_sender_error(
         return True
 
     monkeypatch.setattr(monitor, "send_current_event", fake_send)
-    with pytest.raises(RuntimeError, match="per-event evidence was preserved"):
-        monitor.send_current_event_batch(candidate_file, prepared=True)
+    batch = monitor.send_current_event_batch(candidate_file, prepared=True)
 
     saved = json.loads(result_file.read_text(encoding="utf-8"))
     assert calls == [("event-1", True), ("event-2", True)]
     assert saved[0]["error_type"] == "OSError"
     assert saved[1]["notification_key"] == "claim-2"
     assert saved[1]["receipt_required"] is True
+    assert len(batch) == 2
+    assert "failed_event_count=1" in output_file.read_text(encoding="utf-8")
     assert "batch_results_file=" in output_file.read_text(encoding="utf-8")
 
 
@@ -503,6 +502,7 @@ def test_monitor_escalates_pending_summary_after_ten_minutes(monkeypatch, tmp_pa
         "notification_status": "content_incomplete",
         "freshness_status": "fresh",
         "source_published_at": (datetime.now(UTC) - timedelta(minutes=11)).isoformat(),
+        "first_detected_at": (datetime.now(UTC) - timedelta(minutes=11)).isoformat(),
     }
     monitor.write_status_output(None, {
         "financialjuice_priority_pending_events": [pending],
@@ -510,7 +510,27 @@ def test_monitor_escalates_pending_summary_after_ten_minutes(monkeypatch, tmp_pa
     text = output.read_text(encoding="utf-8")
     assert "notification_status=summary_timeout" in text
     assert "notification_reason=priority_summary_timeout" in text
-    assert "hard_failure=true" in text
+    assert "notification_expected=true" in text
+    assert "hard_failure=false" in text
+
+
+def test_pending_timeout_uses_detection_time_not_old_source_publication_time(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    pending = {
+        "source_key": "financialjuice",
+        "vendor_importance": 9,
+        "notification_status": "content_incomplete",
+        "freshness_status": "fresh",
+        "source_published_at": (datetime.now(UTC) - timedelta(hours=2)).isoformat(),
+        "first_detected_at": (datetime.now(UTC) - timedelta(minutes=2)).isoformat(),
+    }
+    monitor.write_status_output(None, {"financialjuice_priority_pending_events": [pending]})
+    text = output.read_text(encoding="utf-8")
+    assert "notification_status=summary_pending" in text
+    age = float(text.split("priority_pending_age_seconds=", 1)[1].splitlines()[0])
+    assert 0 <= age <= 130
+    assert "hard_failure=false" in text
 
 
 def test_incomplete_official_candidate_is_quarantined_before_sender_decision(monkeypatch, tmp_path):
@@ -525,12 +545,13 @@ def test_incomplete_official_candidate_is_quarantined_before_sender_decision(mon
 
     text = output.read_text(encoding="utf-8")
     assert "should_send=false" in text
-    assert "notification_expected=false" in text
+    assert "notification_expected=true" in text
     assert "notification_status=content_incomplete" in text
     assert "notification_reason=content_incomplete_quarantined" in text
     assert "candidate_content_status=incomplete" in text
-    assert "hard_failure_reason=content_incomplete_quarantined" in text
-    assert "hard_failure=true" in text
+    assert 'candidate_results=[{"content_status":"incomplete"' in text
+    assert "hard_failure_reason=" in text
+    assert "hard_failure=false" in text
 
 
 def test_financialjuice_event_uses_immediate_text_lane_and_records_receipt(monkeypatch, tmp_path):
@@ -902,7 +923,7 @@ def test_preflight_applies_daily_alert_budget_before_declaring_candidate_ready(m
     assert "hard_failure=false" in text
 
 
-def test_unknown_candidate_suppression_is_a_hard_failure(monkeypatch, tmp_path):
+def test_unknown_candidate_suppression_is_isolated_without_blind_resend(monkeypatch, tmp_path):
     output = tmp_path / "github-output.txt"
     monkeypatch.setenv("GITHUB_OUTPUT", str(output))
     event = {
@@ -932,7 +953,63 @@ def test_unknown_candidate_suppression_is_a_hard_failure(monkeypatch, tmp_path):
     text = output.read_text(encoding="utf-8")
     assert "notification_status=blocked" in text
     assert "notification_reason=preflight_sender_policy_disagreement" in text
-    assert "hard_failure=true" in text
+    assert "notification_expected=true" in text
+    assert "candidate_incident_count=1" in text
+    assert "hard_failure=false" in text
+
+
+def test_unknown_claim_on_top_event_does_not_block_later_ready_batch_item(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    blocked = {
+        "event_key": "blocked-event", "notification_key": "blocked-claim",
+        "source_key": "official", "title": "Claim in flight",
+        "source_url": "https://example.test/blocked", "risk_level": "R1",
+    }
+    ready = {
+        "event_key": "ready-event", "notification_key": "ready-claim",
+        "notification_id": "ready-alert", "snapshot_id": "snapshot-1",
+        "source_key": "official", "title": "Independent ready event",
+        "source_url": "https://example.test/ready", "risk_level": "R1",
+    }
+    snapshot = {"snapshot_id": "snapshot-1", "events": {"items": [blocked, ready]}}
+    monkeypatch.setattr(monitor, "event_key", lambda item: str(item.get("event_key") or "none"))
+    monkeypatch.setattr(monitor, "notification_key_for_event", lambda item: str(item.get("notification_key") or ""))
+    monkeypatch.setattr(monitor, "build_official_event_brief", lambda item: f"complete: {item['title']}")
+    monkeypatch.setattr(monitor, "content_is_incomplete", lambda *_args: False)
+    monkeypatch.setattr(
+        monitor, "_observe_event",
+        lambda item, **_kwargs: {"should_remind": True, "changed": False},
+    )
+
+    def select(_snapshot, now=None, *, baseline_official=False, excluded_event_keys=None):
+        excluded = excluded_event_keys or set()
+        return next((row for row in (blocked, ready) if monitor.event_key(row) not in excluded), None)
+
+    monkeypatch.setattr(monitor, "select_official_event", select)
+    monkeypatch.setattr(
+        monitor, "_candidate_delivery_policy",
+        lambda *_args, **_kwargs: ({"allowed": True}, {"allowed": True}),
+    )
+
+    class FakeLedger:
+        delivery_claims = {"blocked-claim": {"status": "in_flight"}}
+
+        def theme_decision(self, _event):
+            return {"allowed": True, "reason": "new_theme"}
+
+        def save(self):
+            return None
+
+    monkeypatch.setattr(monitor, "EventLedger", FakeLedger)
+    monitor.write_status_output(blocked, snapshot)
+    text = output.read_text(encoding="utf-8")
+    assert "should_send=true" in text
+    assert 'candidate_incident_count=1' in text
+    assert 'batch_count=1' in text
+    assert '"key":"ready-event"' in text
+    assert '"key":"blocked-event"' not in text.split("batch_candidates=", 1)[1].splitlines()[0]
+    assert "hard_failure=false" in text
 
 
 
@@ -975,7 +1052,9 @@ def test_already_delivered_candidate_requires_complete_durable_receipts(monkeypa
     partial = run_with_claim(["r1"])
     assert "notification_status=blocked" in partial
     assert "notification_reason=delivered_claim_missing_recipient_receipts" in partial
-    assert "hard_failure=true" in partial
+    assert "notification_expected=true" in partial
+    assert "candidate_incident_count=1" in partial
+    assert "hard_failure=false" in partial
 
 
 

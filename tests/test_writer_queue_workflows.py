@@ -57,7 +57,8 @@ def _transitive_job_dependencies(job_name: str, jobs: dict[str, object]) -> set[
 def test_every_shared_writer_has_an_id_and_safe_exit_contract() -> None:
     for name in WRITER_WORKFLOWS:
         steps = _step_blocks(name)
-        queue = next(step for step in steps if "src.writer_queue" in step)
+        queue = next(step for step in steps if "id: writer_queue" in step)
+        assert "src.writer_queue" in queue
         assert "id: writer_queue" in queue, name
         workflow_text = _workflow_text(name)
         assert "QUEUE_STATUS" in workflow_text, name
@@ -146,6 +147,20 @@ def test_every_writer_has_a_static_publication_gate_job_and_step_contract() -> N
         assert len(matches) == 1, path
         queue_index = matches[0]
         assert steps[queue_index].get("id") == "writer_queue", path
+        admission_index = next(
+            index for index, step in enumerate(steps)
+            if isinstance(step, dict) and step.get("id") == "publication_admission"
+        )
+        artifact_index = next(
+            index for index, step in enumerate(steps)
+            if isinstance(step, dict) and step.get("id") == "publication_admission_artifact"
+        )
+        assert admission_index < artifact_index < queue_index, path
+        assert "--create-admission" in str(steps[admission_index].get("run") or ""), path
+        assert "upload-artifact" in str(steps[artifact_index].get("uses") or ""), path
+        assert "steps.publication_admission_artifact.outcome == 'success'" in str(
+            steps[queue_index].get("if") or ""
+        ), path
         all_gate_steps = [
             (job_name, step)
             for job_name, candidate_job in jobs.items()

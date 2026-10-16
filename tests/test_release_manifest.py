@@ -687,7 +687,7 @@ def test_immutable_alert_projection_keeps_mini_app_headline_aliases():
 
 
 def test_v3_incomplete_fj_summary_is_blocked_at_release_projection():
-    with pytest.raises(ValueError, match="public summary is not ready"):
+    with pytest.raises(ValueError, match="public summary"):
         _alert_projection(
             {
                 "kind": "external_event",

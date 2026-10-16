@@ -1,6 +1,10 @@
+import hashlib
+import io
 import json
 import sys
+import zipfile
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 
@@ -14,6 +18,14 @@ from src.writer_queue import (
     main,
     wait_for_slot,
 )
+
+_read_publication_admission = writer_queue._read_publication_admission
+
+
+@pytest.fixture(autouse=True)
+def no_remote_admission_artifact_by_default(monkeypatch):
+    """Keep queue state-machine tests offline; admission is covered explicitly below."""
+    monkeypatch.setattr(writer_queue, "_read_publication_admission", lambda **_kwargs: None)
 
 
 def _run(
@@ -1030,3 +1042,67 @@ def test_unverified_handoff_parent_is_never_ignored(monkeypatch, tmp_path):
     monkeypatch.setenv("GITHUB_OUTPUT", str(output_path))
     assert main() == 1
     assert "handoff_parent_not_verified" in output_path.read_text(encoding="utf-8")
+
+
+def test_publication_admission_artifact_is_verified_against_run_attempt_and_job(monkeypatch):
+    run = _run(420, run_attempt=2)
+    run["head_sha"] = "a" * 40
+    gate = writer_queue.WRITER_QUEUE_GATES[str(run["path"])]
+    workflow_hash = "b" * 64
+    record = {
+        "schema_version": "writer-publication-admission-v1",
+        "run_id": 420, "attempt": 2, "job_id": 4200,
+        "job_name": gate["job_name"], "workflow_id": gate["workflow_id"],
+        "workflow_path": run["path"], "workflow_sha": "a" * 40,
+        "workflow_content_sha256": workflow_hash,
+        "contract_fingerprint": writer_queue.publication_gate_contract_fingerprint(
+            str(run["path"]), gate, workflow_hash,
+        ),
+    }
+    archive_buffer = io.BytesIO()
+    with zipfile.ZipFile(archive_buffer, "w") as archive:
+        archive.writestr("writer-publication-admission.json", json.dumps(record))
+    monkeypatch.setattr(writer_queue, "_request_json", lambda *_args, **_kwargs: ({
+        "total_count": 1,
+        "artifacts": [{
+            "id": 55, "name": "writer-publication-admission-420-2",
+            "expired": False, "created_at": "2026-10-16T02:00:00Z",
+            "workflow_run": {"id": 420, "head_sha": "a" * 40},
+        }],
+    }, None))
+    monkeypatch.setattr(writer_queue, "_open_artifact_url", lambda *_args, **_kwargs: io.BytesIO(archive_buffer.getvalue()))
+
+    evidence = _read_publication_admission(
+        run=run, gate=gate, job_id=4200,
+        api_url="https://api.github.com", repository="owner/repo", token="token",
+        deadline_monotonic=writer_queue.time.monotonic() + 10,
+    )
+    assert evidence is not None
+    assert evidence["artifact_id"] == 55
+    assert evidence["created_at"] == "2026-10-16T02:00:00+00:00"
+    assert evidence["contract_fingerprint"] == record["contract_fingerprint"]
+
+
+def test_create_publication_admission_binds_exact_checked_out_workflow(monkeypatch, tmp_path):
+    path = ".github/workflows/refresh-dashboard.yml"
+    monkeypatch.setenv("GITHUB_WORKFLOW_REF", f"owner/repo/{path}@main")
+    monkeypatch.setenv("GITHUB_WORKSPACE", str(Path(__file__).resolve().parents[1]))
+    monkeypatch.setenv("GITHUB_RUN_ID", "777")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "3")
+    monkeypatch.setenv("GITHUB_SHA", "c" * 40)
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+    monkeypatch.setenv("GITHUB_TOKEN", "token")
+    output = tmp_path / "admission.json"
+    monkeypatch.setenv("WRITER_ADMISSION_PATH", str(output))
+    gate = writer_queue.WRITER_QUEUE_GATES[path]
+    monkeypatch.setattr(writer_queue, "_fetch_attempt_jobs", lambda **_kwargs: [{
+        "id": 990, "name": gate["job_name"],
+    }])
+
+    record = writer_queue.create_publication_admission()
+    assert record["job_id"] == 990
+    assert record["attempt"] == 3
+    assert record["workflow_content_sha256"] == hashlib.sha256(
+        (Path(__file__).resolve().parents[1] / path).read_bytes()
+    ).hexdigest()
+    assert json.loads(output.read_text(encoding="utf-8")) == record

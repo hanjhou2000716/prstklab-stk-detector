@@ -111,6 +111,25 @@ def test_fj_summary_suppresses_contextless_fragment() -> None:
     assert financialjuice_public_short_message({"title": "更節能", "vendor_importance": 9}) == ""
 
 
+def test_fj_wti_settlement_is_compacted_from_complete_source_sentence() -> None:
+    source = (
+        "紐約商業交易所（NYMEX）西德州中級原油（WTI）11月期貨結算價報每桶97.97美元，"
+        "上漲2.88美元，漲幅3.03%。"
+    )
+    result = financialjuice_public_summary({
+        "chinese_translation": source,
+        "vendor_original_headline": (
+            "NYMEX WTI Crude November futures settle at $97.97 a barrel, "
+            "up $2.88, 3.03%."
+        ),
+        "vendor_importance": 9,
+    })
+    assert result["status"] == "ready"
+    assert result["source_field"] == "chinese_translation"
+    assert result["text"] == "🟣 FJ 9/10｜NYMEX WTI11月期貨結算97.97美元/桶，上漲2.88美元(3.03%)。"
+    assert result["char_count"] == len(result["text"]) <= 60
+
+
 def test_fj_summary_compacts_complete_military_event_without_losing_required_facts() -> None:
     result = financialjuice_public_summary({
         "event": "伊朗革命衛隊（IRGC）表示，在荷姆茲海峽附近擊落三架美軍MQ-9無人機，導致該地區緊張局勢進一步升級。",
@@ -679,7 +698,7 @@ def test_rich_email_to_priority_to_telegram_preserves_semantics() -> None:
     assert event["possible_linkage"].startswith("可能影響 AI 伺服器")
     assert "某公司據報" in telegram_text
     assert "FinancialJuice 公開快訊" not in telegram_text
-    assert event["public_summary_version"] == "public-summary-v3"
+    assert event["public_summary_version"] == "public-summary-v4"
     assert event["public_summary_status"] == "ready"
     assert event["public_short_message"] == telegram_text
     assert event["prstk_risk_level"] == "R0"

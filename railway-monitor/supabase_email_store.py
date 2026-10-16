@@ -481,12 +481,27 @@ class SupabaseEmailStore:
         """Use the private table directly when the compatibility RPC is absent."""
         encoded_key = quote(key, safe="")
         encoded_version = quote(version, safe="")
-        _status, payload = self._request(
-            "GET",
-            "financialjuice_priority_pending",
-            f"?canonical_fact_key=eq.{encoded_key}&material_fact_version=eq.{encoded_version}&select=event_ref,first_detected_at,expires_at,attempt_count,delivery_status,last_blocking_reason,summary_status&limit=1",
+        select_fields = (
+            "event_ref,first_detected_at,expires_at,attempt_count,delivery_status,"
+            "last_blocking_reason,summary_status,summary_reason,last_checked_at,last_progress_at"
         )
-        existing = payload[0] if isinstance(payload, list) and payload and isinstance(payload[0], dict) else {}
+        identity_filter = (
+            f"?canonical_fact_key=eq.{encoded_key}"
+            f"&material_fact_version=eq.{encoded_version}"
+        )
+
+        def read_existing() -> dict[str, Any]:
+            _read_status, read_payload = self._request(
+                "GET", "financialjuice_priority_pending",
+                f"{identity_filter}&select={select_fields}&limit=1",
+            )
+            return (
+                read_payload[0]
+                if isinstance(read_payload, list) and read_payload and isinstance(read_payload[0], dict)
+                else {}
+            )
+
+        existing = read_existing()
         first_detected_at = str(existing.get("first_detected_at") or checked_at)
         try:
             source_value = datetime.fromisoformat(source_published_at.replace("Z", "+00:00"))
@@ -496,17 +511,22 @@ class SupabaseEmailStore:
             raise ValueError("priority_pending_source_time_invalid") from error
         expires_at = str(existing.get("expires_at") or calculated_expiry)
         try:
-            attempts = max(0, int(existing.get("attempt_count") or 0)) + 1
+            previous_attempts = max(0, int(existing.get("attempt_count") or 0))
         except (TypeError, ValueError, OverflowError):
-            attempts = 1
+            previous_attempts = 0
+        previous_summary = str(existing.get("summary_status") or "").strip()
+        attempts = previous_attempts + (0 if previous_summary == status and existing else 1)
+        attempts = max(1, attempts)
         existing_delivery = str(existing.get("delivery_status") or "").strip()
-        if existing_delivery in {"delivered", "expired", "contract_failed", "delivery_pending"} or (
-            existing_delivery == "ready" and status == "pending"
-        ):
+        terminal_delivery = existing_delivery in {"delivered", "expired", "contract_failed", "delivery_pending"}
+        regresses_ready = existing_delivery == "ready" and status == "pending"
+        if terminal_delivery or regresses_ready:
             delivery_status = existing_delivery
             summary_status = str(existing.get("summary_status") or status)
             next_retry_at = None
             blocking_reason = str(existing.get("last_blocking_reason") or "") or None
+            summary_reason = str(existing.get("summary_reason") or reason)[:120]
+            last_progress_at = str(existing.get("last_progress_at") or checked_at)
         else:
             summary_status = status
             delivery_status = (
@@ -517,13 +537,19 @@ class SupabaseEmailStore:
             )
             next_retry_at = None if status in {"ready", "expired", "contract_failed"} else checked_at
             blocking_reason = None if status == "ready" else reason[:120]
+            summary_reason = reason[:120]
+            last_progress_at = (
+                checked_at if not existing or summary_status != previous_summary
+                or delivery_status != existing_delivery else
+                str(existing.get("last_progress_at") or checked_at)
+            )
         body = {
             "canonical_fact_key": key,
             "material_fact_version": version,
             "event_ref": str(existing.get("event_ref") or event_ref)[:64],
             "summary_contract_version": contract,
             "summary_status": summary_status,
-            "summary_reason": reason[:120],
+            "summary_reason": summary_reason,
             "source_published_at": source_published_at,
             "first_detected_at": first_detected_at,
             "last_checked_at": checked_at,
@@ -533,19 +559,61 @@ class SupabaseEmailStore:
             "last_run_sha": run_sha,
             "delivery_status": delivery_status,
             "next_retry_at": next_retry_at,
-            "last_progress_at": checked_at,
+            "last_progress_at": last_progress_at,
             "last_blocking_reason": blocking_reason,
             "updated_at": checked_at,
         }
-        _status, payload = self._request(
-            "POST",
-            "financialjuice_priority_pending",
-            "?on_conflict=canonical_fact_key%2Cmaterial_fact_version",
-            body,
-            prefer="resolution=merge-duplicates,return=representation",
+        if not existing:
+            _insert_status, insert_payload = self._request(
+                "POST", "financialjuice_priority_pending",
+                "?on_conflict=canonical_fact_key%2Cmaterial_fact_version", body,
+                prefer="resolution=ignore-duplicates,return=representation",
+            )
+            inserted = (
+                insert_payload[0]
+                if isinstance(insert_payload, list) and insert_payload and isinstance(insert_payload[0], dict)
+                else {}
+            )
+            if inserted:
+                return inserted
+            # Another synchronizer may have inserted the same fact.  Never
+            # replace it with a stale read; fall through to a state-guarded CAS.
+            existing = read_existing()
+            if not existing:
+                return {
+                    "event_ref": event_ref, "summary_status": status,
+                    "summary_reason": reason, "expires_at": expires_at,
+                    "attempt_count": attempts,
+                }
+
+        def expected_filter(field: str, value: object) -> str:
+            return f"&{field}=is.null" if value in (None, "") else f"&{field}=eq.{quote(str(value), safe='')}"
+
+        compare_filter = "".join((
+            expected_filter("delivery_status", existing.get("delivery_status")),
+            expected_filter("summary_status", existing.get("summary_status")),
+            expected_filter("last_checked_at", existing.get("last_checked_at")),
+        ))
+        _patch_status, patch_payload = self._request(
+            "PATCH", "financialjuice_priority_pending",
+            f"{identity_filter}{compare_filter}", body,
+            prefer="return=representation",
         )
-        row = payload[0] if isinstance(payload, list) and payload and isinstance(payload[0], dict) else {}
-        return row or {"event_ref": event_ref, "summary_status": status, "summary_reason": reason, "expires_at": expires_at, "attempt_count": attempts}
+        updated = (
+            patch_payload[0]
+            if isinstance(patch_payload, list) and patch_payload and isinstance(patch_payload[0], dict)
+            else {}
+        )
+        if updated:
+            return updated
+        # A stale worker lost the compare-and-set. Return the winner's current
+        # state without overwriting a newer ready/delivered/expired result.
+        current = read_existing()
+        return current or {
+            "event_ref": event_ref, "summary_status": status,
+            "summary_reason": reason, "expires_at": expires_at,
+            "attempt_count": attempts,
+        }
 
     def priority_pending_events(self, *, now: datetime | None = None, limit: int | None = None) -> list[dict[str, Any]]:
         """Read every non-terminal recovery row with deterministic pagination.

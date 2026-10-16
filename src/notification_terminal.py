@@ -267,10 +267,29 @@ def evaluate_official_terminal(values: Mapping[str, str]) -> dict[str, Any]:
         if status in {"summary_pending", "summary_timeout", "summary_pending_timeout"}:
             timed_out = status != "summary_pending"
             return _result(
-                values, "official", status="pending_timeout" if timed_out else "summary_pending",
-                reason=reason or status, expected=expected, failure=timed_out,
+                values, "official", status="degraded_summary_timeout" if timed_out else "summary_pending",
+                reason=reason or status, expected=expected, failure=False,
+                no_resend=True,
             )
-        if status == "content_incomplete" or status == "contract_mismatch" or expected:
+        if status == "content_incomplete":
+            return _result(
+                values, "official", status="degraded_content_quarantine",
+                reason=reason or "content_incomplete_quarantined",
+                expected=expected, failure=False, no_resend=True,
+            )
+        if status == "blocked" and reason in {
+            "notification_claim_state_unrecognized",
+            "notification_claim_uncertain",
+            "notification_claim_in_flight",
+            "notification_claim_state_conflict",
+            "delivered_claim_missing_recipient_receipts",
+            "candidate_policy_unresolved",
+        }:
+            return _result(
+                values, "official", status="degraded_candidate_isolated",
+                reason=reason, expected=expected, failure=False, no_resend=True,
+            )
+        if status == "contract_mismatch" or expected:
             return _result(
                 values, "official", status="blocked",
                 reason=reason or "expected_candidate_not_sendable", expected=expected, failure=True,
@@ -321,6 +340,40 @@ def evaluate_official_terminal(values: Mapping[str, str]) -> dict[str, Any]:
         return _result(
             values, "official", status="failed", reason="public_release_gate_blocked",
             expected=True, failure=True,
+        )
+
+    isolated_candidates = _count(values, "CANDIDATE_INCIDENT_COUNT") or 0
+    failed_events = _count(values, "BATCH_FAILED_EVENT_COUNT") or 0
+    partial_events = _count(values, "BATCH_PARTIAL_EVENT_COUNT") or 0
+    if isolated_candidates or failed_events or partial_events:
+        # Per-event outcomes are retained in the immutable trace and reported
+        # by the paced incident workflow. A degraded batch is never described
+        # as delivered/healthy, and any attempted send is protected from blind
+        # resend while the exact recipient ledger is reconciled.
+        if _flag(values, "SEND_SENT") and (
+            _text(values, "LEDGER_OUTCOME") != "success"
+            or _text(values, "RECONCILED_DEPLOYMENT_AVAILABLE") != "true"
+            or _text(values, "RECONCILED_RELEASE_GATE_OUTCOME") != "success"
+            or _text(values, "RECEIPT_OUTCOME") != "success"
+        ):
+            return _result(
+                values, "official", status="delivered_reconciliation_incomplete",
+                reason="isolated_event_failure_with_reconciliation_incomplete",
+                expected=True, failure=True, no_resend=True,
+            )
+        isolated_reason = _text(values, "CANDIDATE_INCIDENT_REASON")
+        if not isolated_reason:
+            isolated_reason = (
+                "event_batch_delivery_partial" if partial_events
+                else "event_batch_delivery_failed" if failed_events
+                else "candidate_preflight_isolated"
+            )
+        return _result(
+            values, "official", status="degraded_event_batch",
+            reason=isolated_reason, expected=True, failure=False,
+            no_resend=bool(
+                _flag(values, "SEND_SENT") or failed_events or partial_events
+            ),
         )
 
     delivered = _count(values, "DELIVERED_COUNT")

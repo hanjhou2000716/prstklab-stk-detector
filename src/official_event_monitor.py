@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import tempfile
@@ -178,6 +179,7 @@ def _attach_realtime_external_events(snapshot: dict[str, Any]) -> dict[str, Any]
             "source_published_at": item.get("source_published_at"),
             "received_at": item.get("received_at"),
             "candidate_at": item.get("candidate_at"),
+            "first_detected_at": item.get("first_detected_at"),
         }
         for item in projection["events"]
         if str(item.get("notification_status") or "") == "content_incomplete"
@@ -194,20 +196,33 @@ def _attach_realtime_external_events(snapshot: dict[str, Any]) -> dict[str, Any]
             continue
         if ref in pending_by_ref:
             pending_by_ref[ref]["summary_reason"] = str(durable.get("summary_reason") or "summary_semantics_incomplete")[:120]
+            pending_by_ref[ref]["summary_contract_version"] = str(durable.get("summary_contract_version") or "")[:40]
+            pending_by_ref[ref]["first_detected_at"] = str(durable.get("first_detected_at") or "")[:80]
             continue
         source = projected_by_ref.get(ref)
         if not isinstance(source, dict):
+            continue
+        # A current projection that has recovered to ready/deliverable must
+        # not be rolled backwards by a stale durable summary_pending row.
+        if (
+            str(source.get("notification_status") or "") != "content_incomplete"
+            or str(source.get("freshness_status") or "") != "fresh"
+        ):
             continue
         pending_by_ref[ref] = {
             "source_key": "financialjuice",
             "vendor_importance": source.get("vendor_importance"),
             "notification_status": "content_incomplete",
             "notification_reason": str(durable.get("summary_reason") or "summary_semantics_incomplete")[:120],
+            "summary_contract_version": str(durable.get("summary_contract_version") or "")[:40],
             "priority_pending_ref": ref,
             "freshness_status": source.get("freshness_status"),
             "source_published_at": durable.get("source_published_at") or source.get("source_published_at"),
             "received_at": source.get("received_at"),
             "candidate_at": source.get("candidate_at"),
+            "first_detected_at": (
+                durable.get("first_detected_at") or source.get("first_detected_at")
+            ),
         }
     snapshot["financialjuice_priority_pending_events"] = list(pending_by_ref.values())
     snapshot["financialjuice_observations"] = bind_financialjuice_semantic_views(
@@ -565,6 +580,63 @@ def _candidate_delivery_policy(
     return event_policy, budget
 
 
+def _batch_candidate_preflight(event: dict[str, Any]) -> tuple[str, str, bool]:
+    """Independently apply the sender's idempotency and policy gates per row."""
+    priority = is_financialjuice_priority_event(event)
+    expected = priority or bool(event.get("notification_expected", event.get("should_remind", True)))
+    try:
+        ledger = EventLedger()
+        claims = getattr(ledger, "delivery_claims", {})
+        claim_keys = [event_key(event), notification_key_for_event(event)]
+        source_key = str(event.get("source_key") or event.get("source") or "").strip().casefold()
+        if source_key == "financialjuice":
+            claim_keys.extend(financialjuice_notification_aliases(event))
+        matches = [
+            claims[key]
+            for key in dict.fromkeys(claim_keys)
+            if key and isinstance(claims, dict) and isinstance(claims.get(key), dict)
+        ]
+        statuses = [str(item.get("status") or "").strip().casefold() for item in matches]
+        if any(status not in {"delivered", "in_flight", "uncertain", "retryable"} for status in statuses):
+            return "unknown", "notification_claim_state_unrecognized", expected
+        if any(status in {"in_flight", "uncertain"} for status in statuses):
+            return "unknown", "notification_claim_uncertain", expected
+        if any(status == "delivered" for status in statuses):
+            if any(status != "delivered" for status in statuses):
+                return "unknown", "notification_claim_state_conflict", expected
+            complete = all(
+                isinstance(item.get("recipient_hashes"), (list, tuple, set))
+                and bool(item.get("recipient_hashes"))
+                and bool(set(item.get("recipient_hashes") or ()).issubset(
+                    set(item.get("delivered_recipient_hashes") or ())
+                ))
+                for item in matches if str(item.get("status") or "").casefold() == "delivered"
+            )
+            return (
+                ("suppressed", "already_delivered", False)
+                if complete else ("unknown", "delivered_claim_missing_recipient_receipts", expected)
+            )
+        if priority:
+            return "ready", "fj_priority_independent", True
+        observation = _observe_event(event)
+        if not observation.get("should_remind", True):
+            return "suppressed", str(observation.get("reason") or "event_not_due"), False
+        if callable(getattr(ledger, "theme_decision", None)):
+            theme = ledger.theme_decision(event)
+            if not theme.get("allowed", False):
+                return "suppressed", f"theme:{theme.get('reason') or 'suppressed'}", False
+        policy, budget = _candidate_delivery_policy(event, ledger, priority=False)
+        if not policy.get("allowed", False):
+            return "suppressed", f"event_policy:{policy.get('reason') or 'suppressed'}", False
+        if not budget.get("allowed", False):
+            return "suppressed", f"alert_budget:{budget.get('reason') or 'suppressed'}", False
+        return "ready", "candidate_ready", True
+    except (OSError, RuntimeError):
+        return "unknown", "notification_ledger_unavailable", expected
+    except (TypeError, ValueError):
+        return "unknown", "candidate_policy_unresolved", expected
+
+
 def write_status_output(
     event: dict[str, Any] | None,
     snapshot: dict[str, Any] | None = None,
@@ -582,6 +654,9 @@ def write_status_output(
     suppressed_candidates = 0
     snapshot_publish_failed = False
     durable_receipt_verified = False
+    candidate_decisions: list[dict[str, Any]] = []
+    candidate_incident_reason = ""
+    shared_ledger_failure = False
     if event:
         excluded: set[str] = set()
         candidates_value = (
@@ -593,25 +668,33 @@ def write_status_output(
         candidate = event
         for _ in range(candidate_limit):
             candidate_durable_receipt_verified = False
+            candidate_priority = is_financialjuice_priority_event(candidate)
+            candidate_should_send = False
+            candidate_suppressed = False
+            candidate_unknown_suppression = False
+            candidate_reason = ""
+            candidate_record: dict[str, Any] = {}
             try:
                 candidate_caption = build_official_event_brief(candidate)
             except (TypeError, ValueError):
                 candidate_caption = ""
             candidate_incomplete = content_is_incomplete(candidate, candidate_caption)
+            candidate_expected = candidate_priority or bool(
+                candidate.get("notification_expected", candidate.get("should_remind", True))
+            )
+            candidate_obligation = candidate_expected
             if candidate_incomplete:
                 content_blocked = True
                 content_status = "incomplete"
+                candidate_reason = "content_incomplete_quarantined"
             else:
                 content_blocked = False
                 content_status = "complete"
                 candidate_record = _observe_event(candidate)
-                candidate_priority = is_financialjuice_priority_event(candidate)
                 candidate_should_send = bool(
                     candidate_priority or candidate_record.get("should_remind", True)
                 )
-                candidate_suppressed = False
-                candidate_unknown_suppression = False
-                candidate_reason = ""
+                candidate_expected = candidate_priority or candidate_should_send
                 try:
                     theme_ledger = EventLedger()
                     claims = getattr(theme_ledger, "delivery_claims", {})
@@ -708,25 +791,68 @@ def write_status_output(
                             candidate_should_send = False
                             candidate_suppressed = True
                             candidate_reason = f"alert_budget:{budget.get('reason') or 'suppressed'}"
-                except (OSError, RuntimeError, TypeError, ValueError):
+                except (OSError, RuntimeError):
                     candidate_unknown_suppression = True
                     candidate_should_send = False
-                    candidate_reason = "theme_preflight_unavailable"
-                event = candidate
-                ledger_record = candidate_record
-                durable_receipt_verified = candidate_durable_receipt_verified
-                if candidate_should_send:
-                    should_send = True
-                    content_blocked = False
-                    policy_suppressed = False
-                    unknown_suppression = False
-                    break
-                policy_suppressed = candidate_suppressed
-                unknown_suppression = candidate_unknown_suppression
-                suppression_reason = candidate_reason
-                if candidate_unknown_suppression:
-                    event = candidate
-                    break
+                    candidate_reason = "notification_ledger_unavailable"
+                except (TypeError, ValueError):
+                    candidate_unknown_suppression = True
+                    candidate_should_send = False
+                    candidate_reason = "candidate_policy_unresolved"
+            candidate_expected = (candidate_priority or candidate_obligation) and not candidate_suppressed
+            candidate_decisions.append({
+                "event_ref": str(
+                    candidate.get("priority_pending_ref") or candidate.get("event_ref") or ""
+                )[:64],
+                "fact_fingerprint": hashlib.sha256(
+                    event_key(candidate).encode("utf-8")
+                ).hexdigest()[:16] if event_key(candidate) else "",
+                "key_fingerprint": hashlib.sha256(
+                    event_key(candidate).encode("utf-8")
+                ).hexdigest()[:16] if event_key(candidate) else "",
+                "notification_key": str(notification_key_for_event(candidate) or "")[:160],
+                "summary_contract_version": str(candidate.get("public_summary_version") or "")[:40],
+                "summary_fingerprint": hashlib.sha256(
+                    candidate_caption.encode("utf-8")
+                ).hexdigest() if candidate_caption else "",
+                "stage": "content_preflight" if candidate_incomplete else "notification_preflight",
+                "expected": candidate_expected,
+                "content_status": "incomplete" if candidate_incomplete else "complete",
+                "status": (
+                    "content_incomplete" if candidate_incomplete
+                    else "ready" if candidate_should_send
+                    else "unknown" if candidate_unknown_suppression
+                    else "suppressed"
+                ),
+                "reason": candidate_reason or (
+                    "candidate_ready" if candidate_should_send
+                    else "notification_policy_suppressed" if candidate_suppressed
+                    else "notification_policy_not_eligible"
+                ),
+                "source_published_at": str(candidate.get("source_published_at") or "")[:80],
+                "expires_at": str(candidate.get("expires_at") or "")[:80],
+                "first_detected_at": str(candidate.get("first_detected_at") or "")[:80],
+                "last_progress_at": str(candidate.get("last_progress_at") or "")[:80],
+                "recorded_at": datetime.now(UTC).isoformat(),
+            })
+            event = candidate
+            ledger_record = candidate_record
+            durable_receipt_verified = candidate_durable_receipt_verified
+            if candidate_should_send:
+                should_send = True
+                content_blocked = False
+                policy_suppressed = False
+                unknown_suppression = False
+                break
+            policy_suppressed = candidate_suppressed
+            unknown_suppression = candidate_unknown_suppression
+            suppression_reason = candidate_reason
+            if candidate_unknown_suppression and not candidate_incident_reason:
+                candidate_incident_reason = candidate_reason or "candidate_policy_unresolved"
+            if candidate_reason == "notification_ledger_unavailable":
+                shared_ledger_failure = True
+            if candidate_reason == "notification_ledger_unavailable":
+                break
             identity = event_key(candidate)
             if identity:
                 excluded.add(identity)
@@ -776,7 +902,7 @@ def write_status_output(
     else:
         missing_dispatch_refs = []
     pending_age_seconds = max(
-        (_event_age_seconds(item) for item in pending_events),
+        (_pending_detection_age_seconds(item) for item in pending_events),
         default=0,
     )
     contract_mismatch = bool(
@@ -792,6 +918,45 @@ def write_status_output(
         and not contract_mismatch
     )
     pending_timeout = bool(pending_events and pending_age_seconds > 600)
+    for pending in pending_events:
+        ref = str(pending.get("priority_pending_ref") or pending.get("event_ref") or "").strip()
+        if not ref:
+            continue
+        age = _pending_detection_age_seconds(pending)
+        item_status = "summary_timeout" if age > 600 else "summary_pending"
+        item_reason = "priority_summary_timeout" if age > 600 else "summary_semantics_incomplete"
+        existing_decision = next(
+            (row for row in candidate_decisions if str(row.get("event_ref") or "") == ref), None,
+        )
+        if existing_decision is not None:
+            existing_decision.update({
+                "stage": "summary",
+                "status": item_status,
+                "reason": item_reason,
+                "first_detected_at": str(pending.get("first_detected_at") or "")[:80],
+                "last_progress_at": str(pending.get("last_progress_at") or "")[:80],
+                "expires_at": str(pending.get("expires_at") or existing_decision.get("expires_at") or "")[:80],
+                "summary_contract_version": str(pending.get("summary_contract_version") or existing_decision.get("summary_contract_version") or "")[:40],
+            })
+        else:
+            candidate_decisions.append({
+                "event_ref": ref[:64],
+                "fact_fingerprint": "",
+                "key_fingerprint": "",
+                "notification_key": "",
+                "summary_contract_version": str(pending.get("summary_contract_version") or "")[:40],
+                "summary_fingerprint": "",
+                "stage": "summary",
+                "expected": True,
+                "content_status": "incomplete",
+                "status": item_status,
+                "reason": item_reason,
+                "source_published_at": str(pending.get("source_published_at") or "")[:80],
+                "expires_at": str(pending.get("expires_at") or "")[:80],
+                "first_detected_at": str(pending.get("first_detected_at") or "")[:80],
+                "last_progress_at": str(pending.get("last_progress_at") or "")[:80],
+                "recorded_at": datetime.now(UTC).isoformat(),
+            })
     diagnostic_event = event
     if not diagnostic_event and pending_events:
         # Only expose the provider category in bounded diagnostics.  The
@@ -811,7 +976,6 @@ def write_status_output(
     elif content_blocked:
         reason = "content_incomplete_quarantined"
         status = "content_incomplete"
-        hard_failure_reason = reason
     elif should_send and event:
         reason = "candidate_ready"
         status = "candidate_ready"
@@ -836,7 +1000,11 @@ def write_status_output(
     summary = decision_summary(
         event=diagnostic_event,
         scan_status="completed",
-        notification_expected=bool((event and should_send) or pending_events or contract_mismatch or unknown_suppression),
+        notification_expected=bool(
+            (event and should_send)
+            or any(bool(item.get("expected")) for item in candidate_decisions)
+            or pending_events or contract_mismatch or unknown_suppression
+        ),
         notification_status=status,
         notification_reason=reason,
         last_candidate_at=last_candidate_at,
@@ -873,6 +1041,86 @@ def write_status_output(
         select_official_event_batch(snapshot)
         if isinstance(snapshot, dict) and should_send else []
     )
+    batch_content_eligible: list[dict[str, Any]] = []
+    decisions_by_key = {
+        str(item.get("key_fingerprint") or ""): item
+        for item in candidate_decisions if str(item.get("key_fingerprint") or "")
+    }
+    for batch_candidate in batch_candidates:
+        batch_key = event_key(batch_candidate)
+        batch_fingerprint = hashlib.sha256(batch_key.encode("utf-8")).hexdigest()[:16] if batch_key else ""
+        prior_decision = decisions_by_key.get(batch_fingerprint)
+        if prior_decision and prior_decision.get("status") != "ready":
+            continue
+        try:
+            batch_caption = build_official_event_brief(batch_candidate)
+        except (TypeError, ValueError):
+            batch_caption = ""
+        if content_is_incomplete(batch_candidate, batch_caption):
+            if batch_key and not prior_decision:
+                row = {
+                    "event_ref": str(
+                        batch_candidate.get("priority_pending_ref") or batch_candidate.get("event_ref") or ""
+                    )[:64],
+                    "fact_fingerprint": hashlib.sha256(batch_key.encode("utf-8")).hexdigest()[:16],
+                    "key_fingerprint": batch_fingerprint,
+                    "notification_key": str(notification_key_for_event(batch_candidate) or "")[:160],
+                    "summary_contract_version": str(batch_candidate.get("public_summary_version") or "")[:40],
+                    "summary_fingerprint": "",
+                    "stage": "content_preflight",
+                    "expected": is_financialjuice_priority_event(batch_candidate) or bool(
+                        batch_candidate.get("notification_expected", batch_candidate.get("should_remind", True))
+                    ),
+                    "content_status": "incomplete",
+                    "status": "content_incomplete",
+                    "reason": "content_incomplete_quarantined",
+                    "source_published_at": str(batch_candidate.get("source_published_at") or "")[:80],
+                    "expires_at": str(batch_candidate.get("expires_at") or "")[:80],
+                    "first_detected_at": str(batch_candidate.get("first_detected_at") or "")[:80],
+                    "last_progress_at": str(batch_candidate.get("last_progress_at") or "")[:80],
+                    "recorded_at": datetime.now(UTC).isoformat(),
+                }
+                candidate_decisions.append(row)
+                decisions_by_key[batch_fingerprint] = row
+            continue
+        if prior_decision:
+            batch_content_eligible.append(batch_candidate)
+            continue
+        item_status, item_reason, item_expected = _batch_candidate_preflight(batch_candidate)
+        row = {
+            "event_ref": str(
+                batch_candidate.get("priority_pending_ref") or batch_candidate.get("event_ref") or ""
+            )[:64],
+            "fact_fingerprint": batch_fingerprint,
+            "key_fingerprint": batch_fingerprint,
+            "notification_key": str(notification_key_for_event(batch_candidate) or "")[:160],
+            "summary_contract_version": str(batch_candidate.get("public_summary_version") or "")[:40],
+            "summary_fingerprint": hashlib.sha256(batch_caption.encode("utf-8")).hexdigest(),
+            "stage": "notification_preflight",
+            "expected": item_expected,
+            "content_status": "complete",
+            "status": item_status,
+            "reason": item_reason,
+            "source_published_at": str(batch_candidate.get("source_published_at") or "")[:80],
+            "expires_at": str(batch_candidate.get("expires_at") or "")[:80],
+            "first_detected_at": str(batch_candidate.get("first_detected_at") or "")[:80],
+            "last_progress_at": str(batch_candidate.get("last_progress_at") or "")[:80],
+            "recorded_at": datetime.now(UTC).isoformat(),
+        }
+        candidate_decisions.append(row)
+        decisions_by_key[batch_fingerprint] = row
+        if item_status == "unknown" and not candidate_incident_reason:
+            candidate_incident_reason = item_reason
+        if item_reason == "notification_ledger_unavailable":
+            shared_ledger_failure = True
+        if item_status == "ready":
+            batch_content_eligible.append(batch_candidate)
+    batch_candidates = batch_content_eligible
+    if shared_ledger_failure:
+        batch_candidates = []
+        should_send = False
+        status = "blocked"
+        reason = "notification_ledger_unavailable"
     if should_send and event:
         expected_key = event_key(event)
         if expected_key and all(event_key(item) != expected_key for item in batch_candidates):
@@ -942,9 +1190,13 @@ def write_status_output(
         f"candidate_content_status={content_status}",
         f"batch_count={len(batch_rows)}",
         f"batch_candidates={json.dumps(batch_rows, separators=(',', ':'), sort_keys=True)}",
+        f"candidate_results={json.dumps(candidate_decisions, separators=(',', ':'), sort_keys=True)}",
+        f"degraded_candidate_count={sum(1 for item in candidate_decisions if item.get('status') in {'content_incomplete', 'unknown', 'summary_pending', 'summary_timeout'})}",
         f"batch_alert_targets={json.dumps(batch_targets, separators=(',', ':'), sort_keys=True)}",
-        f"hard_failure_reason={hard_failure_reason or ('notification_batch_contract_mismatch' if batch_contract_mismatch else 'priority_candidate_contract_mismatch' if contract_mismatch else 'priority_durable_observation_missing' if durable_source_missing else 'priority_summary_timeout' if pending_timeout and not should_send else '')}",
-        f"hard_failure={'true' if snapshot_publish_failed or batch_contract_mismatch or contract_mismatch or durable_source_missing or content_blocked or unknown_suppression or (pending_timeout and not should_send) else 'false'}",
+        f"candidate_incident_reason={candidate_incident_reason}",
+        f"candidate_incident_count={sum(1 for item in candidate_decisions if item.get('status') in {'unknown', 'content_incomplete', 'summary_pending', 'summary_timeout'})}",
+        f"hard_failure_reason={hard_failure_reason or ('notification_batch_contract_mismatch' if batch_contract_mismatch else 'priority_candidate_contract_mismatch' if contract_mismatch else 'priority_durable_observation_missing' if durable_source_missing else 'notification_ledger_unavailable' if shared_ledger_failure else '')}",
+        f"hard_failure={'true' if snapshot_publish_failed or batch_contract_mismatch or contract_mismatch or durable_source_missing or shared_ledger_failure else 'false'}",
         f"last_processed_at={summary['last_processed_at']}",
         f"last_candidate_at={summary['last_candidate_at'] or ''}",
     ]
@@ -1013,6 +1265,23 @@ def _event_age_seconds(event: dict[str, Any]) -> float:
         published = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
         published = published.replace(tzinfo=published.tzinfo or UTC).astimezone(UTC)
         return max(0.0, (datetime.now(UTC) - published).total_seconds())
+    except (TypeError, ValueError, OverflowError):
+        return 0.0
+
+
+def _pending_detection_age_seconds(event: dict[str, Any]) -> float:
+    """Measure summary work from its first detection, never from source age."""
+    raw = next((
+        event.get(field) for field in (
+            "first_detected_at", "summary_first_seen_at", "candidate_at", "received_at",
+        ) if event.get(field)
+    ), None)
+    if not raw:
+        return 0.0
+    try:
+        detected = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        detected = detected.replace(tzinfo=detected.tzinfo or UTC).astimezone(UTC)
+        return max(0.0, (datetime.now(UTC) - detected).total_seconds())
     except (TypeError, ValueError, OverflowError):
         return 0.0
 
@@ -1810,8 +2079,9 @@ def send_current_event_batch(expected_file: Path, *, prepared: bool = False) -> 
     else:
         print("\n".join(output_lines))
     write_summary("Official event batch delivery", summary)
-    if failed:
-        raise RuntimeError(f"official event batch had {failed} failed item(s); per-event evidence was preserved")
+    # The workflow's incident reconciler owns paced alerting for isolated item
+    # failures. Keep the batch step successful after recording every result so
+    # a single event cannot prevent unrelated rows from being attempted.
     return results
 
 
