@@ -2,54 +2,62 @@
   "schema": 2,
   "markets": {
     "taiwan": {
-      "fetched_at": "2026-10-17T06:28:03.939559+00:00",
+      "fetched_at": "2026-10-17T06:48:10.364708+00:00",
       "stories": [
         {
-          "title": "《彭博》專訪龔明鑫 台灣準備對中國緊縮AI晶片出口管制",
-          "url": "https://news.cnyes.com/news/id/6632534",
+          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "url": "https://news.cnyes.com/news/id/6630669",
           "provider": "anue",
-          "source": "鉅亨網｜市場焦點",
-          "relevance": "market",
-          "summary": "台灣擬加強 AI 伺服器與先進半導體出口管制，未經許可運往中國將依《貿易法》追刑責。 龔明鑫稱新制將與美國限制措施接軌，現行品項、範圍與實施時程仍待政府公布。 台灣規劃赴美設供應鏈園區，首站德州，每座成本約20億至40億美元，協助中小供應商。",
-          "published_at": "2026-10-16T22:20:03+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6632534",
+          "source": "鉅亨網｜持股關聯",
+          "relevance": "holding",
+          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "published_at": "2026-10-14T22:02:35+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6630669",
           "market_classification": {
             "market_scope": "cross_market",
             "taiwan_matches": [
-              "台灣"
+              "台積電"
             ],
             "us_matches": [
-              "美國"
+              "美股",
+              "美國",
+              "費半",
+              "fed",
+              "cpi"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 2,
+              "matched_term_count": 6,
               "source_market_hint": "cross_market"
             }
           },
           "market_scope": "cross_market",
           "taiwan_matches": [
-            "台灣"
+            "台積電"
           ],
           "us_matches": [
-            "美國"
+            "美股",
+            "美國",
+            "費半",
+            "fed",
+            "cpi"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 2,
+            "matched_term_count": 6,
             "source_market_hint": "cross_market"
           },
-          "story_id": "news-d9129ec8a6e1a8470e55",
+          "story_id": "news-711307422ad19cd66883",
           "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "raw_title": "《彭博》專訪龔明鑫 台灣準備對中國緊縮AI晶片出口管制",
-          "normalized_fact": "台灣擬加強 AI 伺服器與先進半導體出口管制，未經許可運往中國將依《貿易法》追刑責。 龔明鑫稱新制將與美國限制措施接軌，現行品項、範圍與實施時程仍待政府公布。 台灣規劃赴美設供應鏈園區，首站德州，每座成本約20億至40億美元，協助中小供應商。",
-          "market_topic": "company_industry",
+          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -67,30 +75,32 @@
           "market": "cross_market",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "2330",
+            "SOX",
+            "TSM"
+          ],
           "sectors": [],
           "topics": [
-            "ai",
-            "sanctions",
-            "semiconductor"
+            "ai"
           ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "policy",
-            "reason": "policy_subject_action",
+            "category": "fed",
+            "reason": "fed_subject_action",
             "matched_terms": [
-              "出口管制",
-              "實施"
+              "fed",
+              "利率"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "出口管制",
-              "實施"
+              "fed",
+              "利率"
             ],
-            "matched_subject": "出口管制",
-            "matched_action": "實施",
-            "matched_market_object": "出口管制",
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
             "input_fields": [
               "description",
               "summary",
@@ -101,20 +111,20 @@
             "market:cross_market"
           ],
           "freshness": "published",
-          "dedupe_key": "台灣擬加強ai伺服器與先進半導體出口管制未經許可運往中國將依貿易法追刑責龔明鑫稱新制將與美國限制措施接軌現行品項範圍與實施時程仍待政府公布台灣規劃赴美設供應鏈園區首站德州每座成本約20億至40億美元協助中小供應商",
-          "event_cluster_key": "event-bf4317b39b5301d45935",
-          "published_time_bucket": "2026-10-16T22:00:00+00:00",
+          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
+          "event_cluster_key": "event-40d27feb65b9f7fa705b",
+          "published_time_bucket": "2026-10-14T22:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "出口管制",
-            "實施"
+            "fed",
+            "利率"
           ],
-          "matched_subject": "出口管制",
-          "matched_action": "實施",
-          "matched_market_object": "出口管制",
-          "decision_value_class": "geopolitics_policy",
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -131,18 +141,18 @@
           "ranking_score": 130
         },
         {
-          "title": "兩岸收緊科技管制！中國擬管制AI等40項技術出口 台灣嚴堵晶片走私",
-          "url": "https://news.cnyes.com/news/id/6632558",
+          "title": "〈台積電法說〉Q3純益7630.64億元季增8% EPS29.43元續創單季新高",
+          "url": "https://news.cnyes.com/news/id/6631116",
           "provider": "anue",
-          "source": "鉅亨網｜市場焦點",
-          "relevance": "market",
-          "summary": "中國擬修訂出口技術目錄，新增40項技術、AI占23項，涵蓋大型模型、AI代理與運算叢集。\n商務部稱管制重點在技術轉移，API、App、SaaS等多數AI服務仍可海外拓展，已先要求相關出口登記。\n台灣擬將AI伺服器與先進半導體納入出口管制，違規運送中國將追究刑責。",
-          "published_at": "2026-10-16T23:10:03+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6632558",
+          "source": "鉅亨網｜持股關聯",
+          "relevance": "holding",
+          "summary": "",
+          "published_at": "2026-10-15T06:01:21+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6631116",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
-              "台灣"
+              "台積電"
             ],
             "us_matches": [],
             "global_matches": [],
@@ -155,7 +165,7 @@
           },
           "market_scope": "taiwan",
           "taiwan_matches": [
-            "台灣"
+            "台積電"
           ],
           "us_matches": [],
           "global_matches": [],
@@ -164,6 +174,124 @@
             "title_summary_scanned": true,
             "matched_term_count": 1,
             "source_market_hint": null
+          }
+        },
+        {
+          "title": "戴爾推兩款高階曲面顯示器 OLED機型鎖定電競玩家",
+          "url": "https://tw.stock.yahoo.com/news/%E6%88%B4%E7%88%BE%E6%8E%A8%E5%85%A9%E6%AC%BE%E9%AB%98%E9%9A%8E%E6%9B%B2%E9%9D%A2%E9%A1%AF%E7%A4%BA%E5%99%A8-oled%E6%A9%9F%E5%9E%8B%E9%8E%96%E5%AE%9A%E9%9B%BB%E7%AB%B6%E7%8E%A9%E5%AE%B6-063951818.html",
+          "summary": "商傳媒｜方承業／綜合外電報導專業科技分析公司 Jon Peddie Research 昨日指出，戴爾（Dell）推出兩款39吋5K × 2K曲面超寬顯示器，分別是 UltraSharp U4025QW",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-17T06:39:51+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "哥倫比亞兩大能源集團獲 5 億美元新融資 續拓南美市場",
+          "url": "https://tw.stock.yahoo.com/news/%E5%93%A5%E5%80%AB%E6%AF%94%E4%BA%9E%E5%85%A9%E5%A4%A7%E8%83%BD%E6%BA%90%E9%9B%86%E5%9C%98%E7%8D%B2-5-%E5%84%84%E7%BE%8E%E5%85%83%E6%96%B0%E8%9E%8D%E8%B3%87-%E7%BA%8C%E6%8B%93%E5%8D%97%E7%BE%8E%E5%B8%82%E5%A0%B4-063403451.html",
+          "summary": "商傳媒｜責任編輯／綜合外電報導哥倫比亞兩大能源集團 Grupo Energía Bogotá (GEB) 和 Empresas Públicas de Medellín (EPM) 近期成功取得近 5",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-17T06:34:03+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "SWI Group 砸 5 億美元收購 Genesis Digital Assets 擴大美國 AI 基礎設施版圖",
+          "url": "https://tw.stock.yahoo.com/news/swi-group-%E7%A0%B8-5-%E5%84%84%E7%BE%8E%E5%85%83%E6%94%B6%E8%B3%BC-063148356.html",
+          "summary": "商傳媒｜方承業／綜合外電報導SWI Group 今日宣布完成一項 5 億美元的美國數位基礎設施收購案，取得 Genesis Digital Assets 超過 70% 的有效控制股權。此舉不僅擴大 S",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-17T06:31:48+00:00",
+          "market_classification": {
+            "market_scope": "cross_market",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [
+              "美國"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "cross_market",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [
+            "美國"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "taiwan"
           }
         },
         {
@@ -514,6 +642,130 @@
           }
         },
         {
+          "title": "華爾街老將示警：美股早已「內部崩盤」！看好Nike、白銀布局機會",
+          "url": "https://tw.stock.yahoo.com/news/%E8%8F%AF%E7%88%BE%E8%A1%97%E8%80%81%E5%B0%87%E7%A4%BA%E8%AD%A6-%E7%BE%8E%E8%82%A1%E6%97%A9%E5%B7%B2-%E5%85%A7%E9%83%A8%E5%B4%A9%E7%9B%A4-%E7%9C%8B%E5%A5%BDnike-%E7%99%BD%E9%8A%80%E5%B8%83%E5%B1%80%E6%A9%9F%E6%9C%83-060007919.html",
+          "summary": "McDonald表示標普500創高但內部已崩盤，背離反映被動投資失靈與稅損賣壓。 他憂心CoreWeave反覆發行可轉債，類似1999與2021年，可能預示重大事件將至。 McDonald估Fed再降",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "cross_market",
+          "relevance": "market",
+          "published_at": "2026-10-17T06:00:07+00:00",
+          "market_classification": {
+            "market_scope": "cross_market",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [
+              "美股",
+              "fed"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 3,
+              "source_market_hint": "cross_market"
+            }
+          },
+          "market_scope": "cross_market",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [
+            "美股",
+            "fed"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 3,
+            "source_market_hint": "cross_market"
+          },
+          "story_id": "news-a49b914fe3686a1ef64d",
+          "provider_name": "Yahoo Taiwan Finance",
+          "raw_title": "華爾街老將示警：美股早已「內部崩盤」！看好Nike、白銀布局機會",
+          "normalized_fact": "McDonald表示標普500創高但內部已崩盤，背離反映被動投資失靈與稅損賣壓。 他憂心CoreWeave反覆發行可轉債，類似1999與2021年，可能預示重大事件將至。 McDonald估Fed再降。",
+          "market_topic": "global_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E8%8F%AF%E7%88%BE%E8%A1%97%E8%80%81%E5%B0%87%E7%A4%BA%E8%AD%A6-%E7%BE%8E%E8%82%A1%E6%97%A9%E5%B7%B2-%E5%85%A7%E9%83%A8%E5%B4%A9%E7%9B%A4-%E7%9C%8B%E5%A5%BDnike-%E7%99%BD%E9%8A%80%E5%B8%83%E5%B1%80%E6%A9%9F%E6%9C%83-060007919.html",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": null,
+          "published_local_date": "",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "market",
+            "reason": "market_subject_action",
+            "matched_terms": [
+              "標普",
+              "創高"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "標普",
+              "創高"
+            ],
+            "matched_subject": "標普",
+            "matched_action": "創高",
+            "matched_market_object": "標普",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market"
+          ],
+          "freshness": "published",
+          "dedupe_key": "mcdonald表示標普500創高但內部已崩盤背離反映被動投資失靈與稅損賣壓他憂心coreweave反覆發行可轉債類似1999與2021年可能預示重大事件將至mcdonald估fed再降",
+          "event_cluster_key": "event-59b6863ca89aaf60d361",
+          "published_time_bucket": "2026-10-17T06:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "標普",
+            "創高"
+          ],
+          "matched_subject": "標普",
+          "matched_action": "創高",
+          "matched_market_object": "標普",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
           "title": "西捷航空砍四條波音737 MAX歐洲航線 多數才營運一季",
           "url": "https://tw.stock.yahoo.com/news/%E8%A5%BF%E6%8D%B7%E8%88%AA%E7%A9%BA%E7%A0%8D%E5%9B%9B%E6%A2%9D%E6%B3%A2%E9%9F%B3737-max%E6%AD%90%E6%B4%B2%E8%88%AA%E7%B7%9A-%E5%A4%9A%E6%95%B8%E6%89%8D%E7%87%9F%E9%81%8B-%E5%AD%A3-054759101.html",
           "summary": "圖／本報資料庫商傳媒｜葉安庭／綜合外電報導加拿大西捷航空（WestJet）近期宣布，已取消四條往返歐洲的波音737 MAX 8客機航線，其中多條航線僅營運一個夏季便告終。這項調整將影響多倫多、哈里法克",
@@ -548,174 +800,6 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "喚醒感官：在富國WorldHotels長灘度假村盡享黃金時刻禮遇",
-          "url": "https://tw.stock.yahoo.com/news/%E5%96%9A%E9%86%92%E6%84%9F%E5%AE%98-%E5%9C%A8%E5%AF%8C%E5%9C%8Bworldhotels%E9%95%B7%E7%81%98%E5%BA%A6%E5%81%87%E6%9D%91%E7%9B%A1%E4%BA%AB%E9%BB%83%E9%87%91%E6%99%82%E5%88%BB%E7%A6%AE%E9%81%87-053700967.html",
-          "summary": "隨著黃金日落季的到來，越南首家WorldHotels品牌度假酒店——富國WorldHotels長灘度假村推出其「至尊全包」體驗，將海濱休閒、美食探索與難忘時刻融為一體，從日出到星光，全程相伴。",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-17T05:37:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [],
-            "global_matches": [
-              "黃金"
-            ],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [],
-          "global_matches": [
-            "黃金"
-          ],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "銀行阻擋AI代理人存取帳戶 金融科技新創推Agent Vault解決資安疑慮",
-          "url": "https://tw.stock.yahoo.com/news/%E9%8A%80%E8%A1%8C%E9%98%BB%E6%93%8Bai%E4%BB%A3%E7%90%86%E4%BA%BA%E5%AD%98%E5%8F%96%E5%B8%B3%E6%88%B6-%E9%87%91%E8%9E%8D%E7%A7%91%E6%8A%80%E6%96%B0%E5%89%B5%E6%8E%A8agent-vault%E8%A7%A3%E6%B1%BA%E8%B3%87%E5%AE%89%E7%96%91%E6%85%AE-052938584.html",
-          "summary": "圖／示意圖商傳媒｜責任編輯／綜合外電報導隨著人工智慧（AI）應用日益普及，金融業在擁抱技術創新的同時，也面臨嚴峻的資安挑戰。美國金融科技新創 Self Labs 於昨日（10月15日）正式推出 Age",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-17T05:29:38+00:00",
-          "market_classification": {
-            "market_scope": "cross_market",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [
-              "美國"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "cross_market",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [
-            "美國"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "惠普 OmniBook 5 14 筆電亮相：劍指蘋果 MacBook Neo 市場",
-          "url": "https://tw.stock.yahoo.com/news/%E6%83%A0%E6%99%AE-omnibook-5-14-%E7%AD%86%E9%9B%BB%E4%BA%AE%E7%9B%B8-052628603.html",
-          "summary": "圖／示意圖商傳媒｜何映辰／台北報導惠普（HP）近日發表全新 OmniBook 5 14 筆記型電腦，據《Notebookcheck》報導，這款新機以蘋果（Apple）MacBook Neo 為主要競爭",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-17T05:26:28+00:00",
-          "market_classification": {
-            "market_scope": "cross_market",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [
-              "apple"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "cross_market",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [
-            "apple"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "AI 助 XPO 優化物流營運 奧本海默看好第三季獲利能力",
-          "url": "https://tw.stock.yahoo.com/news/ai-%E5%8A%A9-xpo-%E5%84%AA%E5%8C%96%E7%89%A9%E6%B5%81%E7%87%9F%E9%81%8B-%E5%A5%A7%E6%9C%AC%E6%B5%B7%E9%BB%98%E7%9C%8B%E5%A5%BD%E7%AC%AC%E4%B8%89%E5%AD%A3%E7%8D%B2%E5%88%A9%E8%83%BD%E5%8A%9B-052610718.html",
-          "summary": "商傳媒｜葉安庭／綜合外電報導美國物流巨頭 XPO, Inc.（以下簡稱 XPO）正透過人工智慧（AI）工具，提升其營運效率。奧本海默控股（Oppenheimer）分析指出，XPO 的 AI 策略預期將",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-17T05:26:10+00:00",
-          "market_classification": {
-            "market_scope": "cross_market",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [
-              "美國"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "cross_market",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [
-            "美國"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
             "source_market_hint": "taiwan"
           }
         },
@@ -916,21 +1000,21 @@
           }
         },
         {
-          "title": "加權指數跌破季線與四萬五，權值股與量能能否止穩？-子敏左側交易 - CMoney投資網誌",
-          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxOSDRCQWtzZkFZYUdfVUR1bWFGTS1yMGFrSWd2NWxWYzB4TUItaGxmdmJYbW1sb3pHUnF6dzlMdUpSQ3F2a3d0eTZUZTFVeDhUUXBQRGZuTTkxVXE5MXloal91dXYtVTl5d3JqMklGMWJpWGxkRWgyd1V6U25NcW5MRGt1bw?oc=5",
-          "summary": "加權指數跌破季線與四萬五，權值股與量能能否止穩？-子敏左側交易 CMoney投資網誌",
+          "title": "台積電ADR大漲帶動台股走強，買盤能擴散到AI供應鏈嗎？-孔明投資長 - CMoney投資網誌",
+          "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTFBDSVZzRVBMTTFvN3pzVkpaNGRXUUNxaTFiSWFCWERKVzIyVU15TzBNd3ZuNnJJRjlSTjBmVlNHTzZCeTBrZlY2bmhqeWtKY0lzZHpZRWFoMUZ1eFpDdDZsWXNzaHVvUzF0UXZVZjRaMTlwWUFXYWQxRldIV2tRZFE?oc=5",
+          "summary": "台積電ADR大漲帶動台股走強，買盤能擴散到AI供應鏈嗎？-孔明投資長 CMoney投資網誌",
           "source": "Google News｜台股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-08-24T07:00:00+00:00",
+          "published_at": "2026-10-06T07:00:00+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
               "台股",
-              "加權指數"
+              "台積電"
             ],
             "us_matches": [],
             "global_matches": [],
@@ -944,7 +1028,7 @@
           "market_scope": "taiwan",
           "taiwan_matches": [
             "台股",
-            "加權指數"
+            "台積電"
           ],
           "us_matches": [],
           "global_matches": [],
@@ -994,46 +1078,6 @@
           }
         },
         {
-          "title": "台積電ADR大漲帶動台股走強，買盤能擴散到AI供應鏈嗎？-孔明投資長 - CMoney投資網誌",
-          "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTFBDSVZzRVBMTTFvN3pzVkpaNGRXUUNxaTFiSWFCWERKVzIyVU15TzBNd3ZuNnJJRjlSTjBmVlNHTzZCeTBrZlY2bmhqeWtKY0lzZHpZRWFoMUZ1eFpDdDZsWXNzaHVvUzF0UXZVZjRaMTlwWUFXYWQxRldIV2tRZFE?oc=5",
-          "summary": "台積電ADR大漲帶動台股走強，買盤能擴散到AI供應鏈嗎？-孔明投資長 CMoney投資網誌",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-06T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股",
-              "台積電"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股",
-            "台積電"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
           "title": "台股站上四萬五，成交放大後漲勢會擴散嗎？-詠晴K線解密 - CMoney投資網誌",
           "url": "https://news.google.com/rss/articles/CBMihwFBVV95cUxNaENCTV9OQTZuWHVQak1XREdfV2pCeGNjUHY2eHdHYy1lQWgzcF9Jd09kZ2NRVnI5YlNua1VYTHJfUVNrYjBDVWZqcFFwdG9NdDE3MWFwLVNzVjFCS0Jua0J2eUtCLW8zZlEzZDAyX19oelVPbWtDNHNqaERQM0szLTQ2NFIyQ3c?oc=5",
           "summary": "台股站上四萬五，成交放大後漲勢會擴散嗎？-詠晴K線解密 CMoney投資網誌",
@@ -1067,6 +1111,46 @@
           "us_matches": [
             "pce"
           ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "加權指數跌破季線與四萬五，權值股與量能能否止穩？-子敏左側交易 - CMoney投資網誌",
+          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxOSDRCQWtzZkFZYUdfVUR1bWFGTS1yMGFrSWd2NWxWYzB4TUItaGxmdmJYbW1sb3pHUnF6dzlMdUpSQ3F2a3d0eTZUZTFVeDhUUXBQRGZuTTkxVXE5MXloal91dXYtVTl5d3JqMklGMWJpWGxkRWgyd1V6U25NcW5MRGt1bw?oc=5",
+          "summary": "加權指數跌破季線與四萬五，權值股與量能能否止穩？-子敏左側交易 CMoney投資網誌",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-08-24T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股",
+              "加權指數"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股",
+            "加權指數"
+          ],
+          "us_matches": [],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
@@ -1116,6 +1200,127 @@
             "matched_term_count": 2,
             "source_market_hint": "taiwan"
           }
+        },
+        {
+          "title": "大摩記憶體與 AI 供應鏈展望，HBM 與 SSD 合約價飆升推動算力與網路列投資首選 - TechNews 科技新報",
+          "url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxOOVZZNDNiNzJjNGEtSXdPVjFSV2UtRUhEVGIxZGVlNjRsTlFpSlJTellqWnZ5ald6N1pDS0hEM3pfUklFZ3hZcFNPb2ZneE56NjVFZjFSejJGc3AzY0FjN0hhUU1mdGJKOUtsQnl4aHhSY1pkOUZ6VUFxTjZJWnJuLWZWTndXcllmU0tLWGh0bFJVUFk",
+          "summary": "大摩記憶體與 AI 供應鏈展望，HBM 與 SSD 合約價飆升推動算力與網路列投資首選 TechNews 科技新報",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-17T06:44:04+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          },
+          "story_id": "news-690b1d1766953b4fcd65",
+          "provider_name": "Google News",
+          "raw_title": "大摩記憶體與 AI 供應鏈展望，HBM 與 SSD 合約價飆升推動算力與網路列投資首選 - TechNews 科技新報",
+          "normalized_fact": "大摩記憶體與 AI 供應鏈展望，HBM 與 SSD 合約價飆升推動算力與網路列投資首選 TechNews 科技新報。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxOOVZZNDNiNzJjNGEtSXdPVjFSV2UtRUhEVGIxZGVlNjRsTlFpSlJTellqWnZ5ald6N1pDS0hEM3pfUklFZ3hZcFNPb2ZneE56NjVFZjFSejJGc3AzY0FjN0hhUU1mdGJKOUtsQnl4aHhSY1pkOUZ6VUFxTjZJWnJuLWZWTndXcllmU0tLWGh0bFJVUFk",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-17",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai",
+            "guidance"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "展望"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "展望"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "展望",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "大摩記憶體與ai供應鏈展望hbm與ssd合約價飆升推動算力與網路列投資首選technews科技新報",
+          "event_cluster_key": "event-d0c9b57d61f44d76d182",
+          "published_time_bucket": "2026-10-17T06:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "展望"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "展望",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
         },
         {
           "title": "AI 伺服器供應鏈發威！全年營收估增 44%，台積電與 3 檔概念股業績創高-財經焦點情報站 - CMoney投資網誌",
@@ -1343,127 +1548,6 @@
           "dedupe_key": "2330台積電大摩記憶體與ai供應鏈展望hbm與ssd合約價飆升推動算力與網路列投資首選股市爆料同學會cmoney",
           "event_cluster_key": "event-5865de254a43cd34abf7",
           "published_time_bucket": "2026-10-17T03:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "展望"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "展望",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
-          "title": "大摩記憶體與 AI 供應鏈展望，HBM 與 SSD 合約價飆升推動算力與網路列投資首選 - TechNews 科技新報",
-          "url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxOOVZZNDNiNzJjNGEtSXdPVjFSV2UtRUhEVGIxZGVlNjRsTlFpSlJTellqWnZ5ald6N1pDS0hEM3pfUklFZ3hZcFNPb2ZneE56NjVFZjFSejJGc3AzY0FjN0hhUU1mdGJKOUtsQnl4aHhSY1pkOUZ6VUFxTjZJWnJuLWZWTndXcllmU0tLWGh0bFJVUFk",
-          "summary": "大摩記憶體與 AI 供應鏈展望，HBM 與 SSD 合約價飆升推動算力與網路列投資首選 TechNews 科技新報",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-17T06:25:30+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          },
-          "story_id": "news-690b1d1766953b4fcd65",
-          "provider_name": "Google News",
-          "raw_title": "大摩記憶體與 AI 供應鏈展望，HBM 與 SSD 合約價飆升推動算力與網路列投資首選 - TechNews 科技新報",
-          "normalized_fact": "大摩記憶體與 AI 供應鏈展望，HBM 與 SSD 合約價飆升推動算力與網路列投資首選 TechNews 科技新報。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxOOVZZNDNiNzJjNGEtSXdPVjFSV2UtRUhEVGIxZGVlNjRsTlFpSlJTellqWnZ5ald6N1pDS0hEM3pfUklFZ3hZcFNPb2ZneE56NjVFZjFSejJGc3AzY0FjN0hhUU1mdGJKOUtsQnl4aHhSY1pkOUZ6VUFxTjZJWnJuLWZWTndXcllmU0tLWGh0bFJVUFk",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-17",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "guidance"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "展望"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "展望"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "展望",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "大摩記憶體與ai供應鏈展望hbm與ssd合約價飆升推動算力與網路列投資首選technews科技新報",
-          "event_cluster_key": "event-d0c9b57d61f44d76d182",
-          "published_time_bucket": "2026-10-17T06:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
@@ -2660,7 +2744,13 @@
           "inventory_saved_at": "2026-10-17T06:17:55.403178+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 130
+          "ranking_score": 130,
+          "supporting_sources": [
+            {
+              "provider": "yahoo_finance",
+              "url": "https://tw.stock.yahoo.com/news/%E8%8F%AF%E7%88%BE%E8%A1%97%E8%80%81%E5%B0%87%E7%A4%BA%E8%AD%A6-%E7%BE%8E%E8%82%A1%E6%97%A9%E5%B7%B2-%E5%85%A7%E9%83%A8%E5%B4%A9%E7%9B%A4-%E7%9C%8B%E5%A5%BDnike-%E7%99%BD%E9%8A%80%E5%B8%83%E5%B1%80%E6%A9%9F%E6%9C%83-060007919.html"
+            }
+          ]
         },
         {
           "story_id": "news-7e1640647d5cd6bddda2",
@@ -7181,10 +7271,10 @@
           "ranking_score": 115
         }
       ],
-      "inventory_saved_at": "2026-10-17T06:28:03.939559+00:00"
+      "inventory_saved_at": "2026-10-17T06:48:10.364708+00:00"
     },
     "us": {
-      "fetched_at": "2026-10-17T06:28:03.939559+00:00",
+      "fetched_at": "2026-10-17T06:48:10.364708+00:00",
       "stories": [
         {
           "title": "8-K - NATIONAL RURAL UTILITIES COOPERATIVE FINANCE CORP /DC/ (0000070502) (Filer)",
@@ -7567,58 +7657,302 @@
           }
         },
         {
-          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-          "url": "https://news.cnyes.com/news/id/6630669",
+          "title": "〈美股盤後〉VIX飆升！晶片、記憶體全面下殺 費半單週重挫逾11% 創逾1年半最慘",
+          "url": "https://news.cnyes.com/news/id/6632513",
           "provider": "anue",
           "source": "鉅亨網｜市場焦點",
           "relevance": "market",
-          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
-          "published_at": "2026-10-14T22:02:35+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6630669",
+          "summary": "美股週五收黑，那指跌2.15%、費半跌3.83%，市場憂AI回報、企業舉債擴張及中國競爭 CoreWeave慘跌近12%，全週重挫約25%；債務及相關財務義務已逾510億美元，融資成本受關注 油價因中東與俄烏供應風險走高，WTI本週漲10.7%；Fed10月按兵不動機率約82%",
+          "published_at": "2026-10-16T21:30:21+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6632513",
           "market_classification": {
-            "market_scope": "cross_market",
-            "taiwan_matches": [
-              "台積電"
-            ],
+            "market_scope": "us",
+            "taiwan_matches": [],
             "us_matches": [
               "美股",
-              "美國",
               "費半",
-              "fed",
-              "cpi"
+              "fed"
+            ],
+            "global_matches": [
+              "wti"
+            ],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 4,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股",
+            "費半",
+            "fed"
+          ],
+          "global_matches": [
+            "wti"
+          ],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 4,
+            "source_market_hint": "us"
+          },
+          "story_id": "news-e89ff576a32fe3c2c63d",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "raw_title": "〈美股盤後〉VIX飆升！晶片、記憶體全面下殺 費半單週重挫逾11% 創逾1年半最慘",
+          "normalized_fact": "美股週五收黑，那指跌2.15%、費半跌3.83%，市場憂AI回報、企業舉債擴張及中國競爭 CoreWeave慘跌近12%，全週重挫約25%；債務及相關財務義務已逾510億美元，融資成本受關注 油價因中東與俄烏供應風險走高，WTI本週漲10.7%；Fed10月按兵不動機率約82%。",
+          "market_topic": "energy_geopolitics",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "SOX"
+          ],
+          "sectors": [],
+          "topics": [
+            "semiconductor"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "energy",
+            "reason": "energy_subject_action",
+            "matched_terms": [
+              "wti",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "wti",
+              "供應"
+            ],
+            "matched_subject": "wti",
+            "matched_action": "供應",
+            "matched_market_object": "wti",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美股週五收黑那指跌215費半跌383市場憂ai回報企業舉債擴張及中國競爭coreweave慘跌近12全週重挫約25債務及相關財務義務已逾510億美元融資成本受關注油價因中東與俄烏供應風險走高wti本週漲107fed10月按兵不動機率約82",
+          "event_cluster_key": "event-948c2e6df341b4cdd1d8",
+          "published_time_bucket": "2026-10-16T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "wti",
+            "供應"
+          ],
+          "matched_subject": "wti",
+          "matched_action": "供應",
+          "matched_market_object": "wti",
+          "decision_value_class": "energy",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "title": "白宮新聞秘書上任僅五天就走人？川普證實建議她辭職",
+          "url": "https://news.cnyes.com/news/id/6632639",
+          "provider": "anue",
+          "source": "鉅亨網｜市場焦點",
+          "relevance": "market",
+          "summary": "白宮證實，新任新聞秘書Katie Zacharia上任僅5天後離職，川普稱是她自己決定辭去。\nZacharia首次記者會表現不佳、僅答3題即結束，且其法律背景與自稱attorney說法遭質疑。\n她任期短於Anthony Scaramucci的11天紀錄，川普政府近月亦有多名高階女性官員辭職或遭解職。",
+          "published_at": "2026-10-17T03:50:03+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6632639",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "白宮",
+              "川普",
+              "川普"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 6,
-              "source_market_hint": "cross_market"
+              "matched_term_count": 3,
+              "source_market_hint": null
             }
           },
-          "market_scope": "cross_market",
-          "taiwan_matches": [
-            "台積電"
-          ],
+          "market_scope": "us",
+          "taiwan_matches": [],
           "us_matches": [
-            "美股",
-            "美國",
-            "費半",
-            "fed",
-            "cpi"
+            "白宮",
+            "川普",
+            "川普"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 6,
-            "source_market_hint": "cross_market"
+            "matched_term_count": 3,
+            "source_market_hint": null
+          }
+        },
+        {
+          "title": "花旗點名2027年股市兩大風險",
+          "url": "https://news.cnyes.com/news/id/6631657",
+          "provider": "anue",
+          "source": "鉅亨網｜市場焦點",
+          "relevance": "market",
+          "summary": "花旗指2027年企業獲利增速恐放緩至16%，若EPS成長降20個百分點，股市報酬可能接近持平。\n科技業獲利增量占比料由今年50%升至2027年70%，美國更達約80%，成長集中度升高。\n花旗仍看好獲利支撐全球股市上行至2027年，但提醒地緣政治、利率與AI情緒風險。",
+          "published_at": "2026-10-17T04:10:04+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6631657",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美國"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": null
+            }
           },
-          "story_id": "news-711307422ad19cd66883",
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美國"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": null
+          }
+        },
+        {
+          "title": "歐洲正認清一個現實：川普越來越偏向普丁",
+          "url": "https://news.cnyes.com/news/id/6632330",
+          "provider": "anue",
+          "source": "鉅亨網｜市場焦點",
+          "relevance": "market",
+          "summary": "川普威逼烏克蘭、破壞對俄制裁，歐洲憂美國實質偏向莫斯科\n烏克蘭缺乏愛國者攔截飛彈、預算吃緊，冬季前軍援壓力升高\n歐盟決定無論華府如何反覆，都要持續支持基輔並維持對俄制裁",
+          "published_at": "2026-10-17T05:00:03+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6632330",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美國",
+              "川普",
+              "川普"
+            ],
+            "global_matches": [
+              "制裁"
+            ],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 4,
+              "source_market_hint": null
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美國",
+            "川普",
+            "川普"
+          ],
+          "global_matches": [
+            "制裁"
+          ],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 4,
+            "source_market_hint": null
+          }
+        },
+        {
+          "title": "財經專家：不要放棄這個變幻莫測市場",
+          "url": "https://news.cnyes.com/news/id/6630856",
+          "provider": "anue",
+          "source": "鉅亨網｜市場焦點",
+          "relevance": "market",
+          "summary": "Cramer稱通膨、利率與伊朗戰事交織，股市難預測，全面退出恐錯過下一波漲勢。 美9月CPI月增0.6%略高預期，殖利率先升後跌，Fed升息與油價走勢更添變數。 MS、ASML財報亮眼股價仍跌，顯示基本面與盤勢脫鉤，持股信心受考驗。",
+          "published_at": "2026-10-17T03:20:13+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6630856",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "fed",
+              "cpi"
+            ],
+            "global_matches": [
+              "伊朗"
+            ],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 3,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "fed",
+            "cpi"
+          ],
+          "global_matches": [
+            "伊朗"
+          ],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 3,
+            "source_market_hint": "us"
+          },
+          "story_id": "news-811a066ee4c2d44f55e4",
           "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "raw_title": "財經專家：不要放棄這個變幻莫測市場",
+          "normalized_fact": "Cramer稱通膨、利率與伊朗戰事交織，股市難預測，全面退出恐錯過下一波漲勢。 美9月CPI月增0.6%略高預期，殖利率先升後跌，Fed升息與油價走勢更添變數。 MS、ASML財報亮眼股價仍跌，顯示基本面與盤勢脫鉤，持股信心受考驗。",
           "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
@@ -7630,22 +7964,16 @@
           "description": "",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "",
+          "date_eligibility_status": "recent_reference",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": null,
-          "published_local_date": "",
-          "market": "cross_market",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "2330",
-            "SOX",
-            "TSM"
-          ],
+          "entities": [],
           "sectors": [],
-          "topics": [
-            "ai"
-          ],
+          "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
@@ -7670,12 +7998,12 @@
             ]
           },
           "relevance_reasons": [
-            "market:cross_market"
+            "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
-          "event_cluster_key": "event-40d27feb65b9f7fa705b",
-          "published_time_bucket": "2026-10-14T22:00:00+00:00",
+          "dedupe_key": "cramer稱通膨利率與伊朗戰事交織股市難預測全面退出恐錯過下一波漲勢美9月cpi月增06略高預期殖利率先升後跌fed升息與油價走勢更添變數msasml財報亮眼股價仍跌顯示基本面與盤勢脫鉤持股信心受考驗",
+          "event_cluster_key": "event-12d4f95337302073425e",
+          "published_time_bucket": "2026-10-17T03:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
@@ -7687,126 +8015,6 @@
           "matched_action": "利率",
           "matched_market_object": "fed",
           "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
-          "title": "台達電鄭平：三因素限制電力設施建置 供電缺口成AI發展關鍵挑戰",
-          "url": "https://news.cnyes.com/news/id/6630917",
-          "provider": "anue",
-          "source": "鉅亨網｜市場焦點",
-          "relevance": "market",
-          "summary": "台達電董事長鄭平表示，AI資料中心擴張推升全球用電，電力供應難追上AI成長，將成重要挑戰。 美國四大CSP資本支出估達2022年4.7倍，2028年資料中心新增用電44GW，電網僅增25GW。 台達電布局微電網、SOFC與SST；SOFC效率85%且明年量產，SST可轉800V直流電。",
-          "published_at": "2026-10-15T04:25:09+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6630917",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美國"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美國"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          },
-          "story_id": "news-5a467bce06bc97b434fd",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "raw_title": "台達電鄭平：三因素限制電力設施建置 供電缺口成AI發展關鍵挑戰",
-          "normalized_fact": "台達電董事長鄭平表示，AI資料中心擴張推升全球用電，電力供應難追上AI成長，將成重要挑戰。 美國四大CSP資本支出估達2022年4.7倍，2028年資料中心新增用電44GW，電網僅增25GW。 台達電布局微電網、SOFC與SST；SOFC效率85%且明年量產，SST可轉800V直流電。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "description": "",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-15",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "資本支出"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "資本支出"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "資本支出",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "台達電董事長鄭平表示ai資料中心擴張推升全球用電電力供應難追上ai成長將成重要挑戰美國四大csp資本支出估達2022年47倍2028年資料中心新增用電44gw電網僅增25gw台達電布局微電網sofc與sstsofc效率85且明年量產sst可轉800v直流電",
-          "event_cluster_key": "event-e1c6150d667e0cfcb097",
-          "published_time_bucket": "2026-10-15T04:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "資本支出"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "資本支出",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -8396,78 +8604,44 @@
           }
         },
         {
-          "title": "First-half 2026 equity recap: Leadership comes in different forms - RBC Wealth Management",
-          "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxQbHRFbzNLbkhBZEhlcXgtcTBjZ2pUOVVNYUNCNDVjR1lmRVRVc0RReEJmbUwyRWJodU04OTFiUnZ0N3VvZ184aVc0cGJuUjZLd0VMYW5EeE9TRlZSTVQzZEdBbGhTdkpHZU5DZjdKQ0hBaWs1WGdHQ0NwdGZYM0V3NU1BMXJvaFZLQkhRX0RSSkVOUlR6Sld1Q2g1QmVMUVpHMFBNbngtR1FGV2hpcDBfWWp5MzFWTTc2?oc=5",
-          "summary": "First-half 2026 equity recap: Leadership comes in different forms RBC Wealth Management",
+          "title": "Is Micron poised to snatch NVIDIA's top spot? The biggest driver of S&P 500 profit growth may soon change hands. - 富途牛牛",
+          "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxOc3UzM2JMOWRGekRoaVdzRktxb1ExU0tlSnZHRU1SVl9MOGItYXVCUUNoTVVTUmJjMTlHdHVpYU5OclVnWE0wOE51TzhfUVg2T1hOdnRLaThlNUFHNHJfWFZmdEZNYzdNMGRvbnBCZ2pja09LYWtwc05OT25rYUlLUlZWLWRwUGdjSzhxbTlvb0N0b21ONkE?oc=5",
+          "summary": "Is Micron poised to snatch NVIDIA's top spot? The biggest driver of S&P 500 profit growth may soon change hands. 富途牛牛",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-07-01T07:00:00+00:00",
+          "published_at": "2026-09-27T07:00:00+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
             "us_matches": [
-              "美股"
+              "美股",
+              "s&p 500",
+              "nvidia"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 1,
+              "matched_term_count": 3,
               "source_market_hint": "us"
             }
           },
           "market_scope": "us",
           "taiwan_matches": [],
           "us_matches": [
-            "美股"
+            "美股",
+            "s&p 500",
+            "nvidia"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "The Rally Is Back, But Risks Are Rising - Morgan Stanley",
-          "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxQcDZTY2g3eGlvbWRqQTQ4WU5kcmJIWUlZRFB2UDd4XzVMVExBSDRpX1RkODkwTFlYMWlFZUhjM2NzSXNzb3RjNFFZZkJpTXhPMjA2UGg3SE02UGlLUnVRY2pFWFVQUGd0Ni0yTWRHM1lGQ19DSktFRFJ0VktmNkZtU2NhRVBROXpZdnVhOW5kQ296YlpsS3g3Uk53?oc=5",
-          "summary": "The Rally Is Back, But Risks Are Rising Morgan Stanley",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-05-27T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
+            "matched_term_count": 3,
             "source_market_hint": "us"
           }
         },
@@ -8604,28 +8778,29 @@
           }
         },
         {
-          "title": "'Magnificent 7' stocks have lost $2 trillion so far this month, driving the S&P 500 decline: Chart of the Day - Yahoo Finance",
-          "url": "https://news.google.com/rss/articles/CBMi8gFBVV95cUxPb3l5YjdxN1dzUTVVMTc3Z3ZZbFpQVmptcTVfQ09QLWZDQTNJN2xtNkV3cGRHZ3ZfcmdGOGNuNFp1VlR5VEFXV3RUQzhDbFBRNHI1V1B4YUJHS3pXeldQd2RRTTd3aWRaUlpyQXRNcEF1NkRpXzRsMXNpZXpHbWNMYzBtNTFfVWR3a1RCdFFZb0VnOVkwTkVFenVNT3lseW1aY1BMeU5LOTFMS0YwV2k5TjZLZXZBR3p0ZFUwMWcyMHNSWW1QQ1dHNXJia3lrNGZhV21HNlB3aFR2eHFtcEtqSHpzeGFmRldvY3FCWUlRWWVQdw?oc=5",
-          "summary": "'Magnificent 7' stocks have lost $2 trillion so far this month, driving the S&P 500 decline: Chart of the Day Yahoo Finance",
+          "title": "S&P 500, Dow, Nasdaq Drop As Yields Spike Amid Calls For More Rate Hikes — AMZN, GOOGL, NFLX, SPCX, RKLB In Focus - TradingView",
+          "url": "https://news.google.com/rss/articles/CBMi-AFBVV95cUxQb2hpWExzenlhWHlFRGtDbkItOG5Uc2NXeWdZeGp5NHg2WWNZbnNzbndWTzMzYlM4UUhTUXBvOG55Si1ZdWhyeU1tYmtDSERvRldXS1pmeG9yaWdtWEJXVC1oTHFBeXB5bFVtQzE0ZW14MDBwTl9CMHBsNlVzbmNDNXFNRzZ6LXdjNGVfYUFkQVlKdm00SGZXUjVTekJMeWsxdlpGZERKOTRZejhFbzhHYVF4elg4OVhCSDdZQThOUkVmdll3MTMzaVFZUHI4SGtYUHFGR2EtZWpvM3RhdjJidFRfdV9pY0JDbTF4QUdEWE8yTnJtOTEyRw?oc=5",
+          "summary": "S&P 500, Dow, Nasdaq Drop As Yields Spike Amid Calls For More Rate Hikes — AMZN, GOOGL, NFLX, SPCX, RKLB In Focus TradingView",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-06-11T07:00:00+00:00",
+          "published_at": "2026-09-23T07:00:00+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
             "us_matches": [
               "美股",
+              "nasdaq",
               "s&p 500"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 2,
+              "matched_term_count": 3,
               "source_market_hint": "us"
             }
           },
@@ -8633,13 +8808,60 @@
           "taiwan_matches": [],
           "us_matches": [
             "美股",
+            "nasdaq",
             "s&p 500"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 2,
+            "matched_term_count": 3,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "Dow, S&P 500, Nasdaq Futures Dip As Bond Yields Bite And Trump-Xi Meet Grabs Spotlight: Why META, MCD, GOOG, U Stocks Are Trending - TradingView",
+          "url": "https://news.google.com/rss/articles/CBMikwJBVV95cUxQcUw0M3BESEdNbDMyYmpDZlJ2V3U0ajFDMlRQV1RTT0hOdnVsWkswRkxtSWhmRklXeEJMOUxVRGNhS0hnOUN3SmVTRVdTWjJ0T3RaMkc2eDRfYzRTM0JOb3UxNlBWWVpGLS1tZG03c1dyZEthUGNwZmZGbTJNdkNQS3lhMGY1SVlEd0RJb3VGU0JtMldWUUZGaHlHdEFfa1I3Wm51N1JmaFFETkIyV1lKcGo0VERlNG51RkE0WlJ4eVl1NGltbzRpWS13Skh6SWN4VC13bV9tb2ZmR19oSGc4YXNJRjctT0ZteUJaM0xtUVVrWWVUWE5wRU5XdjZoNFBOdGItWEJTbGxLa2JKaDFKQVBKTQ?oc=5",
+          "summary": "Dow, S&P 500, Nasdaq Futures Dip As Bond Yields Bite And Trump-Xi Meet Grabs Spotlight: Why META, MCD, GOOG, U Stocks Are Trending TradingView",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-09-24T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股",
+              "nasdaq",
+              "s&p 500",
+              "trump",
+              "meta"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 5,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股",
+            "nasdaq",
+            "s&p 500",
+            "trump",
+            "meta"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 5,
             "source_market_hint": "us"
           }
         },
@@ -9037,27 +9259,29 @@
           }
         },
         {
-          "title": "US Treasury Yields Retreat as Investors Assess Inflation Data - صحيفة مال",
-          "url": "https://news.google.com/rss/articles/CBMibEFVX3lxTE9EcTM5QWRRRUMtNW5KVmRLSGJfSWh0VXpFbWF0Yi13eVExeWpjY2lNS1lEaldWaHZvellkOXZpelNBcXppRl9QQkk5cnp4WDhJSWh6WS1MV1R2bTZIZmZhZ05NWHRvV0xSOV9vcQ?oc=5",
-          "summary": "US Treasury Yields Retreat as Investors Assess Inflation Data صحيفة مال",
+          "title": "Will 30-Year US Treasury Yields Climb Higher? - Goldman Sachs",
+          "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxNUC1EQ2IxSkxPWTQxRVQ0VG5DbklURTlXNEJqNzVycGxscEg5cU16QnEyRVJaQi13Tk55U0ZXWERqOVJJSWVRM2xRMFBEZkh5UFpTVWh0cERteVdMZVJaZjF2VXR3N2JyTE0tdUNtUDN1SWVxODF3am5kNWVTdnJnUERlVUdyWFgxVFFPbWRiVVFnSVNubkE?oc=5",
+          "summary": "Will 30-Year US Treasury Yields Climb Higher? Goldman Sachs",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-10-16T12:44:28+00:00",
+          "published_at": "2026-10-06T07:00:00+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
             "us_matches": [
               "美股"
             ],
-            "global_matches": [],
+            "global_matches": [
+              "gold"
+            ],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 1,
+              "matched_term_count": 2,
               "source_market_hint": "us"
             }
           },
@@ -9066,11 +9290,13 @@
           "us_matches": [
             "美股"
           ],
-          "global_matches": [],
+          "global_matches": [
+            "gold"
+          ],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 1,
+            "matched_term_count": 2,
             "source_market_hint": "us"
           }
         },
@@ -10320,6 +10546,98 @@
           "inventory_used": true,
           "inventory_age_trading_sessions": 1,
           "inventory_saved_at": "2026-10-17T05:48:10.121756+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 135
+        },
+        {
+          "story_id": "news-811a066ee4c2d44f55e4",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "財經專家：不要放棄這個變幻莫測市場",
+          "raw_title": "財經專家：不要放棄這個變幻莫測市場",
+          "normalized_fact": "Cramer稱通膨、利率與伊朗戰事交織，股市難預測，全面退出恐錯過下一波漲勢。 美9月CPI月增0.6%略高預期，殖利率先升後跌，Fed升息與油價走勢更添變數。 MS、ASML財報亮眼股價仍跌，顯示基本面與盤勢脫鉤，持股信心受考驗。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Cramer稱通膨、利率與伊朗戰事交織，股市難預測，全面退出恐錯過下一波漲勢。 美9月CPI月增0.6%略高預期，殖利率先升後跌，Fed升息與油價走勢更添變數。 MS、ASML財報亮眼股價仍跌，顯示基本面與盤勢脫鉤，持股信心受考驗。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6630856",
+          "url": "https://news.cnyes.com/news/id/6630856",
+          "published_at": "2026-10-17T03:20:13+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "active_event:伊朗"
+          ],
+          "freshness": "published",
+          "dedupe_key": "cramer稱通膨利率與伊朗戰事交織股市難預測全面退出恐錯過下一波漲勢美9月cpi月增06略高預期殖利率先升後跌fed升息與油價走勢更添變數msasml財報亮眼股價仍跌顯示基本面與盤勢脫鉤持股信心受考驗",
+          "event_cluster_key": "event-12d4f95337302073425e",
+          "published_time_bucket": "2026-10-17T03:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-17T06:48:10.364708+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 135
@@ -14668,96 +14986,9 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 135
-        },
-        {
-          "story_id": "news-0cf0235ba60ea0881b79",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Alice Collaborates with Inflection AI and AI21 to Demonstrate NVIDIA Nemotron Open Models Can Be Trained for Frontier Safety",
-          "raw_title": "Alice Collaborates with Inflection AI and AI21 to Demonstrate NVIDIA Nemotron Open Models Can Be Trained for Frontier Safety",
-          "normalized_fact": "Powerful open models can be trained for a range of safety and security challenges without compromising capability. Inflection AI and AI21 post-trained NVIDIA Nemotron open models with Alice’s safety data, demonstrating a path to responsibly deploying customizable AI.NEW YORK, Oct. 15, 2026 (GLOBE NEWSWIRE) -- Alice announced the results of two collaborations focused on aligning NVIDIA Nemotron models to company-specific safety and security policies. The results demonstrate how real-world threat。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Powerful open models can be trained for a range of safety and security challenges without compromising capability. Inflection AI and AI21 post-trained NVIDIA Nemotron open models with Alice’s safety data, demonstrating a path to responsibly deploying customizable AI.NEW YORK, Oct. 15, 2026 (GLOBE NEWSWIRE) -- Alice announced the results of two collaborations focused on aligning NVIDIA Nemotron models to company-specific safety and security policies. The results demonstrate how real-world threat",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/technology/ai/articles/alice-collaborates-inflection-ai-ai21-165800188.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/technology/ai/articles/alice-collaborates-inflection-ai-ai21-165800188.html?.tsrc=rss",
-          "published_at": "2026-10-15T16:58:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-15",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:NVDA"
-          ],
-          "freshness": "published",
-          "dedupe_key": "powerfulopenmodelscanbetrainedforarangeofsafetyandsecuritychallengeswithoutcompromisingcapabilityinflectionaiandai21posttrainednvidianemotronopenmodelswithalicessafetydatademonstratingapathtoresponsiblydeployingcustomizableainewyorkoct152026globenewswirealiceannouncedtheresultsoftwocollaborationsfocusedonaligningnvidianemotronmodelstocompanyspecificsafetyandsecuritypoliciestheresultsdemonstratehowrealworldthreat",
-          "event_cluster_key": "event-9c59f71d228c4bc5c795",
-          "published_time_bucket": "2026-10-15T16:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "company_event",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-15T17:28:24.077986+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 135
         }
       ],
-      "inventory_saved_at": "2026-10-17T06:28:03.939559+00:00"
+      "inventory_saved_at": "2026-10-17T06:48:10.364708+00:00"
     }
   }
 }
