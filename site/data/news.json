@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "5c229a521e7d1a6d",
-  "snapshot_id": "news-8a01db57438e84f5",
+  "market_snapshot_id": "d33ffa519ba8fb86",
+  "snapshot_id": "news-701637ec563085ac",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -538,6 +538,106 @@
           "ranking_score": 125
         },
         {
+          "story_id": "news-711307422ad19cd66883",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6630669",
+          "url": "https://news.cnyes.com/news/id/6630669",
+          "published_at": "2026-10-14T22:02:35+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-15",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "SOX",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
+          "event_cluster_key": "event-40d27feb65b9f7fa705b",
+          "published_time_bucket": "2026-10-14T22:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜持股關聯",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 140
+        },
+        {
           "story_id": "news-20473625839923c50b07",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -614,6 +714,99 @@
           "matched_subject": "ai",
           "matched_action": "供應",
           "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜台股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
+          "story_id": "news-5dca0040e3387670b214",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "半導體供應鏈赴歐洲設廠發酵！捷克航線載客率突破8成，星宇航空受惠-財經焦點情報站 - CMoney投資網誌",
+          "raw_title": "半導體供應鏈赴歐洲設廠發酵！捷克航線載客率突破8成，星宇航空受惠-財經焦點情報站 - CMoney投資網誌",
+          "normalized_fact": "半導體供應鏈赴歐洲設廠發酵，捷克航線載客率突破8成，星宇航空受惠-財經焦點情報站 CMoney投資網誌。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "半導體供應鏈赴歐洲設廠發酵！捷克航線載客率突破8成，星宇航空受惠-財經焦點情報站 CMoney投資網誌",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNYzlta3lobWw3VWxkMnVBTzhyenYzald4VXRtRC0yVzNmaUZOZmNjMWlkbXF2VEd3b0xUWDg3OUk5SDZNNjVULW03cWV2YnRJUVF0MmxiQ3luUllWX2VjYkV5Skw4T2JWQy1rYU9zdktQS20zN1J2M0JEeEN2b0lsWUp3",
+          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNYzlta3lobWw3VWxkMnVBTzhyenYzald4VXRtRC0yVzNmaUZOZmNjMWlkbXF2VEd3b0xUWDg3OUk5SDZNNjVULW03cWV2YnRJUVF0MmxiQ3luUllWX2VjYkV5Skw4T2JWQy1rYU9zdktQS20zN1J2M0JEeEN2b0lsWUp3",
+          "published_at": "2026-10-18T12:10:56+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-18",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "semiconductor"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "半導體",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "半導體",
+              "供應"
+            ],
+            "matched_subject": "半導體",
+            "matched_action": "供應",
+            "matched_market_object": "半導體",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "半導體供應鏈赴歐洲設廠發酵捷克航線載客率突破8成星宇航空受惠財經焦點情報站cmoney投資網誌",
+          "event_cluster_key": "event-2090ff78bb43571436e9",
+          "published_time_bucket": "2026-10-18T12:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "半導體",
+            "供應"
+          ],
+          "matched_subject": "半導體",
+          "matched_action": "供應",
+          "matched_market_object": "半導體",
           "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
@@ -731,198 +924,6 @@
               "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxNTUhPR3IwWWJ1SXNEX1NjUE5RdWNtR2tKMDZXcGJtdWtQTWpoc29WMnpURTNJLTZrMGVLSnJSMnVZMHhaREpfNU1MNXpYNU5uSHdsWGpmZTlHNXhsNjFYUk5LTDR2RHVUMnVJeGJ3ZFpKQTdZS0c0dW92SU14NFFqSTZ3VDh0Zw"
             }
           ]
-        },
-        {
-          "story_id": "news-c20c3d0df3fb3502c96d",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "AI供應鏈從驗證走到擴產，台股量縮下誰先看到營收-CY Research - CMoney投資網誌",
-          "raw_title": "AI供應鏈從驗證走到擴產，台股量縮下誰先看到營收-CY Research - CMoney投資網誌",
-          "normalized_fact": "AI供應鏈從驗證走到擴產，台股量縮下誰先看到營收-CY Research CMoney投資網誌。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "AI供應鏈從驗證走到擴產，台股量縮下誰先看到營收-CY Research CMoney投資網誌",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxPQVRLOHo0UzEyU1ZrczRrWXFKckxzQjREa013dVlsNDFoR1RJWlloUGMycDdaOWx0YXl3cTFJWDhVSUc3TW96WUh2RUtDbWRrU0ktT0FUMGw3Q01xZldoLXJqSVZ5aWs3RFpORXdBSVdDaGNOVTBWU2xfLU5XRnJTUjJHRQ",
-          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxPQVRLOHo0UzEyU1ZrczRrWXFKckxzQjREa013dVlsNDFoR1RJWlloUGMycDdaOWx0YXl3cTFJWDhVSUc3TW96WUh2RUtDbWRrU0ktT0FUMGw3Q01xZldoLXJqSVZ5aWs3RFpORXdBSVdDaGNOVTBWU2xfLU5XRnJTUjJHRQ",
-          "published_at": "2026-10-18T05:55:10+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-18",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "TAIEX"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "earnings"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "ai供應鏈從驗證走到擴產台股量縮下誰先看到營收cyresearchcmoney投資網誌",
-          "event_cluster_key": "event-104178e124eafbc2678d",
-          "published_time_bucket": "2026-10-18T05:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
-          "story_id": "news-5e9ec8389d0b4b9c5c30",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "一座晶圓廠要250億美元！台積電擴產紅利 法人點名8檔供應鏈 - 經濟日報",
-          "raw_title": "一座晶圓廠要250億美元！台積電擴產紅利 法人點名8檔供應鏈 - 經濟日報",
-          "normalized_fact": "一座晶圓廠要250億美元，台積電擴產紅利 法人點名8檔供應鏈 經濟日報。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "一座晶圓廠要250億美元！台積電擴產紅利 法人點名8檔供應鏈 經濟日報",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE5vN0FWcDBoeEQxd00yRWFOTmhWRlpaaVFqUWpfamI0V2NCMEpGMzdVWUdYT1hFc0xqSkdlZHZxYzNFR1JPOVJqZEFLV1c1VU81bTV5cnduV1FGd9IBX0FVX3lxTE5WWVVzMU9sNTFtVU1ZbXBPVVVrYk1Kci1JbDB1TG9CZEh2dzh3WUNid0hvWkV3UUNOa3FRY0NHWVpENGFxTnpFeUdfYzB5VGo2R3pYREJHMUt4VHBPR204",
-          "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE5vN0FWcDBoeEQxd00yRWFOTmhWRlpaaVFqUWpfamI0V2NCMEpGMzdVWUdYT1hFc0xqSkdlZHZxYzNFR1JPOVJqZEFLV1c1VU81bTV5cnduV1FGd9IBX0FVX3lxTE5WWVVzMU9sNTFtVU1ZbXBPVVVrYk1Kci1JbDB1TG9CZEh2dzh3WUNid0hvWkV3UUNOa3FRY0NHWVpENGFxTnpFeUdfYzB5VGo2R3pYREJHMUt4VHBPR204",
-          "published_at": "2026-10-17T09:00:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-17",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "台積電",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "台積電",
-              "供應"
-            ],
-            "matched_subject": "台積電",
-            "matched_action": "供應",
-            "matched_market_object": "台積電",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM"
-          ],
-          "freshness": "published",
-          "dedupe_key": "一座晶圓廠要250億美元台積電擴產紅利法人點名8檔供應鏈經濟日報",
-          "event_cluster_key": "event-b50dd64cebabf6e29fac",
-          "published_time_bucket": "2026-10-17T09:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "台積電",
-            "供應"
-          ],
-          "matched_subject": "台積電",
-          "matched_action": "供應",
-          "matched_market_object": "台積電",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 125
         }
       ],
       "editorial_candidates": [
@@ -1028,6 +1029,106 @@
           "ranking_score": 125
         },
         {
+          "story_id": "news-711307422ad19cd66883",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6630669",
+          "url": "https://news.cnyes.com/news/id/6630669",
+          "published_at": "2026-10-14T22:02:35+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-15",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "SOX",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
+          "event_cluster_key": "event-40d27feb65b9f7fa705b",
+          "published_time_bucket": "2026-10-14T22:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜持股關聯",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 140
+        },
+        {
           "story_id": "news-20473625839923c50b07",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -1104,6 +1205,99 @@
           "matched_subject": "ai",
           "matched_action": "供應",
           "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜台股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
+          "story_id": "news-5dca0040e3387670b214",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "半導體供應鏈赴歐洲設廠發酵！捷克航線載客率突破8成，星宇航空受惠-財經焦點情報站 - CMoney投資網誌",
+          "raw_title": "半導體供應鏈赴歐洲設廠發酵！捷克航線載客率突破8成，星宇航空受惠-財經焦點情報站 - CMoney投資網誌",
+          "normalized_fact": "半導體供應鏈赴歐洲設廠發酵，捷克航線載客率突破8成，星宇航空受惠-財經焦點情報站 CMoney投資網誌。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "半導體供應鏈赴歐洲設廠發酵！捷克航線載客率突破8成，星宇航空受惠-財經焦點情報站 CMoney投資網誌",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNYzlta3lobWw3VWxkMnVBTzhyenYzald4VXRtRC0yVzNmaUZOZmNjMWlkbXF2VEd3b0xUWDg3OUk5SDZNNjVULW03cWV2YnRJUVF0MmxiQ3luUllWX2VjYkV5Skw4T2JWQy1rYU9zdktQS20zN1J2M0JEeEN2b0lsWUp3",
+          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNYzlta3lobWw3VWxkMnVBTzhyenYzald4VXRtRC0yVzNmaUZOZmNjMWlkbXF2VEd3b0xUWDg3OUk5SDZNNjVULW03cWV2YnRJUVF0MmxiQ3luUllWX2VjYkV5Skw4T2JWQy1rYU9zdktQS20zN1J2M0JEeEN2b0lsWUp3",
+          "published_at": "2026-10-18T12:10:56+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-18",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "semiconductor"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "半導體",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "半導體",
+              "供應"
+            ],
+            "matched_subject": "半導體",
+            "matched_action": "供應",
+            "matched_market_object": "半導體",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "半導體供應鏈赴歐洲設廠發酵捷克航線載客率突破8成星宇航空受惠財經焦點情報站cmoney投資網誌",
+          "event_cluster_key": "event-2090ff78bb43571436e9",
+          "published_time_bucket": "2026-10-18T12:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "半導體",
+            "供應"
+          ],
+          "matched_subject": "半導體",
+          "matched_action": "供應",
+          "matched_market_object": "半導體",
           "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
@@ -1223,198 +1417,6 @@
           ]
         },
         {
-          "story_id": "news-c20c3d0df3fb3502c96d",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "AI供應鏈從驗證走到擴產，台股量縮下誰先看到營收-CY Research - CMoney投資網誌",
-          "raw_title": "AI供應鏈從驗證走到擴產，台股量縮下誰先看到營收-CY Research - CMoney投資網誌",
-          "normalized_fact": "AI供應鏈從驗證走到擴產，台股量縮下誰先看到營收-CY Research CMoney投資網誌。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "AI供應鏈從驗證走到擴產，台股量縮下誰先看到營收-CY Research CMoney投資網誌",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxPQVRLOHo0UzEyU1ZrczRrWXFKckxzQjREa013dVlsNDFoR1RJWlloUGMycDdaOWx0YXl3cTFJWDhVSUc3TW96WUh2RUtDbWRrU0ktT0FUMGw3Q01xZldoLXJqSVZ5aWs3RFpORXdBSVdDaGNOVTBWU2xfLU5XRnJTUjJHRQ",
-          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxPQVRLOHo0UzEyU1ZrczRrWXFKckxzQjREa013dVlsNDFoR1RJWlloUGMycDdaOWx0YXl3cTFJWDhVSUc3TW96WUh2RUtDbWRrU0ktT0FUMGw3Q01xZldoLXJqSVZ5aWs3RFpORXdBSVdDaGNOVTBWU2xfLU5XRnJTUjJHRQ",
-          "published_at": "2026-10-18T05:55:10+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-18",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "TAIEX"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "earnings"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "ai供應鏈從驗證走到擴產台股量縮下誰先看到營收cyresearchcmoney投資網誌",
-          "event_cluster_key": "event-104178e124eafbc2678d",
-          "published_time_bucket": "2026-10-18T05:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
-          "story_id": "news-5e9ec8389d0b4b9c5c30",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "一座晶圓廠要250億美元！台積電擴產紅利 法人點名8檔供應鏈 - 經濟日報",
-          "raw_title": "一座晶圓廠要250億美元！台積電擴產紅利 法人點名8檔供應鏈 - 經濟日報",
-          "normalized_fact": "一座晶圓廠要250億美元，台積電擴產紅利 法人點名8檔供應鏈 經濟日報。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "一座晶圓廠要250億美元！台積電擴產紅利 法人點名8檔供應鏈 經濟日報",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE5vN0FWcDBoeEQxd00yRWFOTmhWRlpaaVFqUWpfamI0V2NCMEpGMzdVWUdYT1hFc0xqSkdlZHZxYzNFR1JPOVJqZEFLV1c1VU81bTV5cnduV1FGd9IBX0FVX3lxTE5WWVVzMU9sNTFtVU1ZbXBPVVVrYk1Kci1JbDB1TG9CZEh2dzh3WUNid0hvWkV3UUNOa3FRY0NHWVpENGFxTnpFeUdfYzB5VGo2R3pYREJHMUt4VHBPR204",
-          "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE5vN0FWcDBoeEQxd00yRWFOTmhWRlpaaVFqUWpfamI0V2NCMEpGMzdVWUdYT1hFc0xqSkdlZHZxYzNFR1JPOVJqZEFLV1c1VU81bTV5cnduV1FGd9IBX0FVX3lxTE5WWVVzMU9sNTFtVU1ZbXBPVVVrYk1Kci1JbDB1TG9CZEh2dzh3WUNid0hvWkV3UUNOa3FRY0NHWVpENGFxTnpFeUdfYzB5VGo2R3pYREJHMUt4VHBPR204",
-          "published_at": "2026-10-17T09:00:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-17",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "台積電",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "台積電",
-              "供應"
-            ],
-            "matched_subject": "台積電",
-            "matched_action": "供應",
-            "matched_market_object": "台積電",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM"
-          ],
-          "freshness": "published",
-          "dedupe_key": "一座晶圓廠要250億美元台積電擴產紅利法人點名8檔供應鏈經濟日報",
-          "event_cluster_key": "event-b50dd64cebabf6e29fac",
-          "published_time_bucket": "2026-10-17T09:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "台積電",
-            "供應"
-          ],
-          "matched_subject": "台積電",
-          "matched_action": "供應",
-          "matched_market_object": "台積電",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 125
-        },
-        {
           "story_id": "news-b840feae5c675bc5decb",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -1513,14 +1515,14 @@
           "ranking_score": 125
         },
         {
-          "story_id": "news-ffc7bfdcbcc1965f79c5",
+          "story_id": "news-c225eca65d5d451b1d6d",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "整理包／台積電供應鏈全解析！護國神山法說會將至...先進製程 CoWoS、CoPoS 十大產業鏈、受惠台廠一次看 - 經濟日報",
-          "raw_title": "整理包／台積電供應鏈全解析！護國神山法說會將至...先進製程 CoWoS、CoPoS 十大產業鏈、受惠台廠一次看 - 經濟日報",
-          "normalized_fact": "整理包／台積電供應鏈全解析，護國神山法說會將至...先進製程 CoWoS、CoPoS 十大產業鏈、受惠台廠一次看 經濟日報。",
+          "title": "一座晶圓廠要250億美元！台積電擴產紅利 法人點名8檔供應鏈 | 產業熱點 | 產業 - 經濟日報",
+          "raw_title": "一座晶圓廠要250億美元！台積電擴產紅利 法人點名8檔供應鏈 | 產業熱點 | 產業 - 經濟日報",
+          "normalized_fact": "一座晶圓廠要250億美元，台積電擴產紅利 法人點名8檔供應鏈 | 產業熱點 | 產業 經濟日報。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -1529,10 +1531,10 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "整理包／台積電供應鏈全解析！護國神山法說會將至...先進製程 CoWoS、CoPoS 十大產業鏈、受惠台廠一次看 經濟日報",
+          "summary": "一座晶圓廠要250億美元！台積電擴產紅利 法人點名8檔供應鏈 | 產業熱點 | 產業 經濟日報",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTE9ZLVp5RjlPenFrcTRSSnFmem04R1h0SVZPSzhaVjdZVkJ1UG5WMWl5Tm5Gc2J6Wjlia0g0R3NQa2JkekdsUnRudWNwQWtHcGRpaDNleE5iNEJNc3o4",
-          "url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTE9ZLVp5RjlPenFrcTRSSnFmem04R1h0SVZPSzhaVjdZVkJ1UG5WMWl5Tm5Gc2J6Wjlia0g0R3NQa2JkekdsUnRudWNwQWtHcGRpaDNleE5iNEJNc3o4",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE5vN0FWcDBoeEQxd00yRWFOTmhWRlpaaVFqUWpfamI0V2NCMEpGMzdVWUdYT1hFc0xqSkdlZHZxYzNFR1JPOVJqZEFLV1c1VU81bTV5cnduV1FGdw",
+          "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE5vN0FWcDBoeEQxd00yRWFOTmhWRlpaaVFqUWpfamI0V2NCMEpGMzdVWUdYT1hFc0xqSkdlZHZxYzNFR1JPOVJqZEFLV1c1VU81bTV5cnduV1FGdw",
           "published_at": "2026-10-16T09:00:00+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
@@ -1578,7 +1580,7 @@
             "tracked_ticker:TSM"
           ],
           "freshness": "published",
-          "dedupe_key": "整理包台積電供應鏈全解析護國神山法說會將至先進製程cowoscopos十大產業鏈受惠台廠一次看經濟日報",
+          "dedupe_key": "一座晶圓廠要250億美元台積電擴產紅利法人點名8檔供應鏈產業熱點產業經濟日報",
           "event_cluster_key": "event-6a8986bdb1d9b959af25",
           "published_time_bucket": "2026-10-16T09:00:00+00:00",
           "public_safe": true,
@@ -1606,7 +1608,13 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 125
+          "ranking_score": 125,
+          "supporting_sources": [
+            {
+              "provider": "google_news",
+              "url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTE9ZLVp5RjlPenFrcTRSSnFmem04R1h0SVZPSzhaVjdZVkJ1UG5WMWl5Tm5Gc2J6Wjlia0g0R3NQa2JkekdsUnRudWNwQWtHcGRpaDNleE5iNEJNc3o4"
+            }
+          ]
         },
         {
           "story_id": "news-5b93824e19cbf9b0cf68",
@@ -1703,6 +1711,99 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 120
+        },
+        {
+          "story_id": "news-00dd42ff10c1117ddd1c",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "AI 供應鏈赴美 台灣價值不能外移 - 經濟日報",
+          "raw_title": "AI 供應鏈赴美 台灣價值不能外移 - 經濟日報",
+          "normalized_fact": "AI 供應鏈赴美 台灣價值不能外移 經濟日報。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "AI 供應鏈赴美 台灣價值不能外移 經濟日報",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE9uSElsUktJU25YajlWNmQtYkM2WUNQOHVLSGh3X3dhYnAzUDRoUXBoTTZYcW5OenY4ckR4MHhoWnZTaGdvOGRVc295UERhZ0g1MGFXa3dZUFJwUdIBX0FVX3lxTFBvVDVNTzI4dUtBM19SUXlidi1XNUtSQ3hfMjl0RnJZRXFMM2swaHVCUkVSSmtWLXFMZEJDcVRKd0NwakstaEFuVnVFRzNFazF1dlJpTDlZZmdGNGt4Rk1j",
+          "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE9uSElsUktJU25YajlWNmQtYkM2WUNQOHVLSGh3X3dhYnAzUDRoUXBoTTZYcW5OenY4ckR4MHhoWnZTaGdvOGRVc295UERhZ0g1MGFXa3dZUFJwUdIBX0FVX3lxTFBvVDVNTzI4dUtBM19SUXlidi1XNUtSQ3hfMjl0RnJZRXFMM2swaHVCUkVSSmtWLXFMZEJDcVRKd0NwakstaEFuVnVFRzNFazF1dlJpTDlZZmdGNGt4Rk1j",
+          "published_at": "2026-10-16T09:00:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-16",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "ai供應鏈赴美台灣價值不能外移經濟日報",
+          "event_cluster_key": "event-3caba87068509a31c84a",
+          "published_time_bucket": "2026-10-16T09:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜台股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
         },
         {
           "story_id": "news-1fdb121d78056e3af301",
@@ -2446,6 +2547,102 @@
           "inventory_used": true,
           "inventory_age_trading_sessions": 1,
           "inventory_saved_at": "2026-10-17T22:43:13.689506+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 15
+        },
+        {
+          "story_id": "news-c20c3d0df3fb3502c96d",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "AI供應鏈從驗證走到擴產，台股量縮下誰先看到營收-CY Research - CMoney投資網誌",
+          "raw_title": "AI供應鏈從驗證走到擴產，台股量縮下誰先看到營收-CY Research - CMoney投資網誌",
+          "normalized_fact": "AI供應鏈從驗證走到擴產，台股量縮下誰先看到營收-CY Research CMoney投資網誌。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "AI供應鏈從驗證走到擴產，台股量縮下誰先看到營收-CY Research CMoney投資網誌",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxPQVRLOHo0UzEyU1ZrczRrWXFKckxzQjREa013dVlsNDFoR1RJWlloUGMycDdaOWx0YXl3cTFJWDhVSUc3TW96WUh2RUtDbWRrU0ktT0FUMGw3Q01xZldoLXJqSVZ5aWs3RFpORXdBSVdDaGNOVTBWU2xfLU5XRnJTUjJHRQ",
+          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxPQVRLOHo0UzEyU1ZrczRrWXFKckxzQjREa013dVlsNDFoR1RJWlloUGMycDdaOWx0YXl3cTFJWDhVSUc3TW96WUh2RUtDbWRrU0ktT0FUMGw3Q01xZldoLXJqSVZ5aWs3RFpORXdBSVdDaGNOVTBWU2xfLU5XRnJTUjJHRQ",
+          "published_at": "2026-10-18T05:55:10+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-18",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "TAIEX"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai",
+            "earnings"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "ai供應鏈從驗證走到擴產台股量縮下誰先看到營收cyresearchcmoney投資網誌",
+          "event_cluster_key": "event-104178e124eafbc2678d",
+          "published_time_bucket": "2026-10-18T05:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜台股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-18T10:18:40.748272+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 15
@@ -4432,218 +4629,21 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 30
-        },
-        {
-          "story_id": "news-2bdbe66850f78856a370",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "TWA00 加權指數- 台積電財測上修，半導體供應鏈喜憂並存- 股市爆料同學會 - CMoney",
-          "raw_title": "TWA00 加權指數- 台積電財測上修，半導體供應鏈喜憂並存- 股市爆料同學會 - CMoney",
-          "normalized_fact": "TWA00 加權指數- 台積電財測上修，半導體供應鏈喜憂並存- 股市爆料同學會 CMoney。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "TWA00 加權指數- 台積電財測上修，半導體供應鏈喜憂並存- 股市爆料同學會 CMoney",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE9FNHVDVng5Y0dfUzh5SVFMR3FLZS0zWnpCTXZNclVCdUZGRXlCbGx0dlE3MGhtTGltS3paVXIxdXpRVkxoTFZvUzUweGxETzdXNFc2S1FwcUc",
-          "url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE9FNHVDVng5Y0dfUzh5SVFMR3FLZS0zWnpCTXZNclVCdUZGRXlCbGx0dlE3MGhtTGltS3paVXIxdXpRVkxoTFZvUzUweGxETzdXNFc2S1FwcUc",
-          "published_at": "2026-10-17T02:32:17+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-17",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "TAIEX",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [
-            "guidance",
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "台積電",
-              "財測"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "台積電",
-              "財測"
-            ],
-            "matched_subject": "台積電",
-            "matched_action": "財測",
-            "matched_market_object": "台積電",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM"
-          ],
-          "freshness": "published",
-          "dedupe_key": "twa00加權指數台積電財測上修半導體供應鏈喜憂並存股市爆料同學會cmoney",
-          "event_cluster_key": "event-e4ff325d2b11457a79f9",
-          "published_time_bucket": "2026-10-17T02:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "台積電",
-            "財測"
-          ],
-          "matched_subject": "台積電",
-          "matched_action": "財測",
-          "matched_market_object": "台積電",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 1,
-          "inventory_saved_at": "2026-10-17T06:13:30.374267+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 25
-        },
-        {
-          "story_id": "news-4d8453dc1fce9ffd83d2",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "AI半導體供應鏈加速赴美！斥資40億美元落腳德州，台積電證實評估中-財經焦點情報站 - CMoney投資網誌",
-          "raw_title": "AI半導體供應鏈加速赴美！斥資40億美元落腳德州，台積電證實評估中-財經焦點情報站 - CMoney投資網誌",
-          "normalized_fact": "AI半導體供應鏈加速赴美，斥資40億美元落腳德州，台積電證實評估中-財經焦點情報站 CMoney投資網誌。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "AI半導體供應鏈加速赴美！斥資40億美元落腳德州，台積電證實評估中-財經焦點情報站 CMoney投資網誌",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxQVDNfQnZiUGQ0d2lHTXZJSXAwaVNsMmxmRlhIX2ZwZzJhbnU2b3ZodzhEMjFMajlLdU9aR090bHI4ejRyNDlNWUhMa040U1ZUakRmMlpjWWhhZjFrTTFfQlY0YkZaYm51LWRJZHlWcUREVmQyRVhaVFRvdzZZc1hHTEtR",
-          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxQVDNfQnZiUGQ0d2lHTXZJSXAwaVNsMmxmRlhIX2ZwZzJhbnU2b3ZodzhEMjFMajlLdU9aR090bHI4ejRyNDlNWUhMa040U1ZUakRmMlpjWWhhZjFrTTFfQlY0YkZaYm51LWRJZHlWcUREVmQyRVhaVFRvdzZZc1hHTEtR",
-          "published_at": "2026-10-16T23:46:19+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-17",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM"
-          ],
-          "freshness": "published",
-          "dedupe_key": "ai半導體供應鏈加速赴美斥資40億美元落腳德州台積電證實評估中財經焦點情報站cmoney投資網誌",
-          "event_cluster_key": "event-25eda8d557106acfa19e",
-          "published_time_bucket": "2026-10-16T23:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 1,
-          "inventory_saved_at": "2026-10-17T05:48:10.121756+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 25
         }
       ],
       "source_diversity": {
         "schema_version": "1.0",
-        "status": "single_source",
-        "cross_checked": false,
+        "status": "multi_source",
+        "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 1,
-        "provider_count": 1,
+        "independent_source_count": 2,
+        "provider_count": 2,
         "provider_ids": [
+          "anue",
           "google_news"
         ],
         "source_domains": [
+          "news.cnyes.com",
           "news.google.com"
         ],
         "supporting_source_count": 1,
@@ -4653,19 +4653,18 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 20,
-          "TSM": 20,
+          "2330": 24,
+          "TSM": 24,
           "NVDA": 3
         },
         "sector_interest": {},
         "topic_interest": {
-          "原油": 4,
-          "荷姆茲": 2,
           "伊朗": 3,
+          "原油": 2,
           "石油": 1
         },
         "market_interest": {
-          "taiwan": 108
+          "taiwan": 111
         },
         "context": {
           "tracked_tickers": [
@@ -4724,26 +4723,23 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 20,
-            "TSM": 20,
+            "2330": 24,
+            "TSM": 24,
             "NVDA": 3
           },
           "research_candidate": {},
           "tracked_sector": {},
           "active_event": {
-            "原油": 4,
-            "荷姆茲": 2,
             "伊朗": 3,
+            "原油": 2,
             "石油": 1
           },
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 32,
+      "excluded_count": 31,
       "exclusion_reasons": {
-        "incomplete_normalized_fact": 2,
-        "insufficient_market_relevance": 22,
-        "listicle_or_selection": 2,
+        "insufficient_market_relevance": 24,
         "market_scope_mismatch": 6,
         "outside_calendar_window": 16
       },
@@ -4755,42 +4751,42 @@
         "successful_provider_count": 5,
         "failed_provider_count": 0,
         "disabled_provider_count": 0,
-        "fetched": 41,
-        "normalized": 41,
-        "eligible": 9,
-        "excluded": 32,
-        "date_eligible_current": 25,
+        "fetched": 42,
+        "normalized": 42,
+        "eligible": 11,
+        "excluded": 31,
+        "date_eligible_current": 26,
         "date_excluded_current": 16,
         "date_exclusion_reasons_current": {
           "outside_calendar_window": 16
         },
-        "date_eligible_inventory": 67,
+        "date_eligible_inventory": 69,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-18T12:38:19.962412+00:00",
-        "deduped": 8,
+        "reference_time": "2026-10-18T12:43:18.058000+00:00",
+        "deduped": 9,
         "publicly_ranked": 5,
-        "current_eligible": 9,
-        "inventory_considered": 67,
-        "inventory_eligible": 51,
+        "current_eligible": 11,
+        "inventory_considered": 69,
+        "inventory_eligible": 54,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 32,
-        "fetched_story_count": 41,
-        "normalized_story_count": 41,
-        "eligible_story_count": 9,
-        "deduped_story_count": 8,
+        "filtered_story_count": 31,
+        "fetched_story_count": 42,
+        "normalized_story_count": 42,
+        "eligible_story_count": 11,
+        "deduped_story_count": 9,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 67,
-        "eligible": 51,
+        "considered": 69,
+        "eligible": 54,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -4802,8 +4798,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 41,
-          "checked_at": "2026-10-18T12:38:19.962442+00:00"
+          "item_count": 42,
+          "checked_at": "2026-10-18T12:43:18.058036+00:00"
         },
         {
           "provider": "twse",
@@ -4814,10 +4810,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-10-18T12:38:19.962442+00:00",
+          "checked_at": "2026-10-18T12:43:18.058036+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+          "last_success_at": "2026-10-18T12:43:18.058036+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4842,10 +4838,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-10-18T12:38:19.962442+00:00",
+          "checked_at": "2026-10-18T12:43:18.058036+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+          "last_success_at": "2026-10-18T12:43:18.058036+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4866,32 +4862,31 @@
           "key": "news_taiwan_anue",
           "legacy_key": "official_news_taiwan_anue",
           "label": "anue market news",
-          "status": "no_event",
+          "status": "healthy",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 0,
-          "checked_at": "2026-10-18T12:38:19.962442+00:00",
+          "item_count": 1,
+          "checked_at": "2026-10-18T12:43:18.058036+00:00",
           "raw_item_count": 5,
-          "filtered_item_count": 0,
-          "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-10-18T12:43:18.058036+00:00",
           "last_failure_at": null,
-          "stories_ingested": 1,
-          "stories_deduped": 0,
-          "ranked_count": 0,
+          "stories_ingested": 2,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
-            "active_event": 1,
-            "market": 1
+            "market": 2,
+            "tracked_ticker": 2
           },
           "funnel": {
-            "fetched_count": 1,
-            "normalized_count": 1,
-            "market_compatible_count": 1,
-            "eligible_count": 0,
+            "fetched_count": 2,
+            "normalized_count": 2,
+            "market_compatible_count": 2,
+            "eligible_count": 1,
             "excluded_count": 1,
-            "deduped_count": 0,
-            "ranked_count": 0
-          },
-          "data_gap": "filtered_no_market_match"
+            "deduped_count": 1,
+            "ranked_count": 1
+          }
         },
         {
           "provider": "yahoo_finance",
@@ -4902,10 +4897,10 @@
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
           "item_count": 0,
-          "checked_at": "2026-10-18T12:38:19.962442+00:00",
+          "checked_at": "2026-10-18T12:43:18.058036+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+          "last_success_at": "2026-10-18T12:43:18.058036+00:00",
           "last_failure_at": null,
           "stories_ingested": 7,
           "stories_deduped": 0,
@@ -4932,15 +4927,15 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
-          "item_count": 5,
-          "checked_at": "2026-10-18T12:38:19.962442+00:00",
+          "item_count": 4,
+          "checked_at": "2026-10-18T12:43:18.058036+00:00",
           "raw_item_count": 30,
-          "filtered_item_count": 5,
-          "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+          "filtered_item_count": 4,
+          "last_success_at": "2026-10-18T12:43:18.058036+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
           "stories_deduped": 8,
-          "ranked_count": 5,
+          "ranked_count": 4,
           "relevance_distribution": {
             "market": 30,
             "tracked_ticker": 8
@@ -4949,53 +4944,53 @@
             "fetched_count": 30,
             "normalized_count": 30,
             "market_compatible_count": 30,
-            "eligible_count": 9,
-            "excluded_count": 21,
+            "eligible_count": 10,
+            "excluded_count": 20,
             "deduped_count": 8,
-            "ranked_count": 5
+            "ranked_count": 4
           }
         }
       ],
       "observability": {
-        "stories_ingested": 41,
-        "stories_deduped": 8,
+        "stories_ingested": 42,
+        "stories_deduped": 9,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 2,
-          "market": 41,
-          "tracked_ticker": 8
+          "active_event": 1,
+          "market": 42,
+          "tracked_ticker": 10
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+            "last_success_at": "2026-10-18T12:43:18.058036+00:00",
             "last_failure_at": null,
-            "stories_ingested": 1,
-            "stories_deduped": 0,
-            "ranked_count": 0,
+            "stories_ingested": 2,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
-              "active_event": 1,
-              "market": 1
+              "market": 2,
+              "tracked_ticker": 2
             },
             "funnel": {
-              "fetched_count": 1,
-              "normalized_count": 1,
-              "market_compatible_count": 1,
-              "eligible_count": 0,
+              "fetched_count": 2,
+              "normalized_count": 2,
+              "market_compatible_count": 2,
+              "eligible_count": 1,
               "excluded_count": 1,
-              "deduped_count": 0,
-              "ranked_count": 0
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           },
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+            "last_success_at": "2026-10-18T12:43:18.058036+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
             "stories_deduped": 8,
-            "ranked_count": 5,
+            "ranked_count": 4,
             "relevance_distribution": {
               "market": 30,
               "tracked_ticker": 8
@@ -5004,16 +4999,16 @@
               "fetched_count": 30,
               "normalized_count": 30,
               "market_compatible_count": 30,
-              "eligible_count": 9,
-              "excluded_count": 21,
+              "eligible_count": 10,
+              "excluded_count": 20,
               "deduped_count": 8,
-              "ranked_count": 5
+              "ranked_count": 4
             }
           },
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+            "last_success_at": "2026-10-18T12:43:18.058036+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5032,7 +5027,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+            "last_success_at": "2026-10-18T12:43:18.058036+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5073,7 +5068,7 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+            "last_success_at": "2026-10-18T12:43:18.058036+00:00",
             "last_failure_at": null,
             "stories_ingested": 7,
             "stories_deduped": 0,
@@ -9436,7 +9431,7 @@
           "gold": 2
         },
         "market_interest": {
-          "us": 142
+          "us": 143
         },
         "context": {
           "tracked_tickers": [
@@ -9518,11 +9513,11 @@
       "excluded_count": 50,
       "exclusion_reasons": {
         "generic_official_filing": 20,
-        "incomplete_normalized_fact": 20,
+        "incomplete_normalized_fact": 22,
         "insufficient_market_relevance": 18,
         "listicle_or_selection": 2,
         "market_scope_mismatch": 8,
-        "outside_calendar_window": 14,
+        "outside_calendar_window": 13,
         "outside_trading_session_window": 2
       },
       "status": "ready",
@@ -9537,20 +9532,20 @@
         "normalized": 56,
         "eligible": 6,
         "excluded": 50,
-        "date_eligible_current": 40,
-        "date_excluded_current": 16,
+        "date_eligible_current": 41,
+        "date_excluded_current": 15,
         "date_exclusion_reasons_current": {
-          "outside_calendar_window": 14,
+          "outside_calendar_window": 13,
           "outside_trading_session_window": 2
         },
-        "date_eligible_inventory": 86,
+        "date_eligible_inventory": 87,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-18T12:38:19.962412+00:00",
+        "reference_time": "2026-10-18T12:43:18.058000+00:00",
         "deduped": 5,
         "publicly_ranked": 5,
         "current_eligible": 6,
-        "inventory_considered": 86,
+        "inventory_considered": 87,
         "inventory_eligible": 52,
         "inventory_selected": 0,
         "final_public_count": 5,
@@ -9568,7 +9563,7 @@
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 86,
+        "considered": 87,
         "eligible": 52,
         "selected": 0,
         "target_count": 5,
@@ -9582,7 +9577,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 56,
-          "checked_at": "2026-10-18T12:38:19.962442+00:00"
+          "checked_at": "2026-10-18T12:43:18.058036+00:00"
         },
         {
           "provider": "sec",
@@ -9593,10 +9588,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-10-18T12:38:19.962442+00:00",
+          "checked_at": "2026-10-18T12:43:18.058036+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+          "last_success_at": "2026-10-18T12:43:18.058036+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9624,12 +9619,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-10-18T12:38:19.962442+00:00",
+          "checked_at": "2026-10-18T12:43:18.058036+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-10-18T12:38:19.962442+00:00",
+          "last_failure_at": "2026-10-18T12:43:18.058036+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9652,10 +9647,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-10-18T12:38:19.962442+00:00",
+          "checked_at": "2026-10-18T12:43:18.058036+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+          "last_success_at": "2026-10-18T12:43:18.058036+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9680,10 +9675,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 0,
-          "checked_at": "2026-10-18T12:38:19.962442+00:00",
+          "checked_at": "2026-10-18T12:43:18.058036+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+          "last_success_at": "2026-10-18T12:43:18.058036+00:00",
           "last_failure_at": null,
           "stories_ingested": 1,
           "stories_deduped": 0,
@@ -9712,10 +9707,10 @@
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
           "item_count": 1,
-          "checked_at": "2026-10-18T12:38:19.962442+00:00",
+          "checked_at": "2026-10-18T12:43:18.058036+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 1,
-          "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+          "last_success_at": "2026-10-18T12:43:18.058036+00:00",
           "last_failure_at": null,
           "stories_ingested": 1,
           "stories_deduped": 1,
@@ -9742,10 +9737,10 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
           "item_count": 4,
-          "checked_at": "2026-10-18T12:38:19.962442+00:00",
+          "checked_at": "2026-10-18T12:43:18.058036+00:00",
           "raw_item_count": 40,
           "filtered_item_count": 4,
-          "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+          "last_success_at": "2026-10-18T12:43:18.058036+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
           "stories_deduped": 4,
@@ -9779,7 +9774,7 @@
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+            "last_success_at": "2026-10-18T12:43:18.058036+00:00",
             "last_failure_at": null,
             "stories_ingested": 1,
             "stories_deduped": 0,
@@ -9802,7 +9797,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-10-18T12:38:19.962442+00:00",
+            "last_failure_at": "2026-10-18T12:43:18.058036+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9820,7 +9815,7 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+            "last_success_at": "2026-10-18T12:43:18.058036+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
             "stories_deduped": 4,
@@ -9843,7 +9838,7 @@
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+            "last_success_at": "2026-10-18T12:43:18.058036+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9862,7 +9857,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+            "last_success_at": "2026-10-18T12:43:18.058036+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -9905,7 +9900,7 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-18T12:38:19.962442+00:00",
+            "last_success_at": "2026-10-18T12:43:18.058036+00:00",
             "last_failure_at": null,
             "stories_ingested": 1,
             "stories_deduped": 1,
