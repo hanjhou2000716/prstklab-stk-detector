@@ -49873,7 +49873,7 @@
       "location_fingerprint": "",
       "action_fingerprint": "",
       "first_discovered_at": "2026-10-20T04:34:40.879722+00:00",
-      "last_reminded_at": null,
+      "last_reminded_at": "2026-10-20T04:35:59.401546+00:00",
       "escalated": false,
       "risk_level": "持續觀察",
       "risk_rank": 0,
@@ -49884,7 +49884,7 @@
       "compound_item_id": null,
       "compound_event_cluster_key": null,
       "last_decision": {
-        "recorded_at": "2026-10-20T04:34:41.026081+00:00",
+        "recorded_at": "2026-10-20T04:35:55.963794+00:00",
         "allowed": true,
         "status": "eligible",
         "reason": "new_theme",
@@ -49911,9 +49911,59 @@
           "material_state_changed": true,
           "last_notified_at": null,
           "taiwan_priority": 3
+        },
+        {
+          "recorded_at": "2026-10-20T04:35:55.963794+00:00",
+          "allowed": true,
+          "status": "eligible",
+          "reason": "new_theme",
+          "reasons": [],
+          "notification_theme_key": "usgs-678b0fe3c2",
+          "event_key": "bdf13aaf21f9ad823d4fedf78f23b02f",
+          "risk": "R1",
+          "theme_window": 7200,
+          "material_state_changed": true,
+          "last_notified_at": null,
+          "taiwan_priority": 3
         }
       ],
-      "updated_at": "2026-10-20T04:34:41.026081+00:00"
+      "updated_at": "2026-10-20T04:35:59.401546+00:00",
+      "delivery_history": [
+        {
+          "event_key": "bdf13aaf21f9ad823d4fedf78f23b02f",
+          "notification_id": "bdf13aaf21f9ad823d4fedf78f23b02f",
+          "sent_at": "2026-10-20T04:35:59.401546+00:00",
+          "importance": "high-risk",
+          "alert_type": "disaster",
+          "lifecycle_state": "confirmed",
+          "reason": "official_event_monitor",
+          "notification_theme_key": "usgs-678b0fe3c2",
+          "risk": "R1",
+          "taiwan_priority": 3,
+          "material_state_changed": true,
+          "release_id": "release-a4a158e800e31dd9",
+          "snapshot_id": "26369d2252da3157",
+          "delivery_status": "delivered",
+          "event_cluster_key": "evt-93f22bf3bc3258cc8a25a2fd",
+          "prstk_risk": {
+            "prstk_risk_level": "R1",
+            "source": "event_alerts"
+          },
+          "notification_key": "bdf13aaf21f9ad823d4fedf78f23b02f",
+          "release_ready_at": "2026-10-20T04:35:56.525006+00:00",
+          "telegram_attempted_at": "2026-10-20T04:35:56.626004+00:00",
+          "delivery_result": "delivered",
+          "delay_reason": "none",
+          "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000u3jl",
+          "source_domain": "earthquake.usgs.gov",
+          "alert_lane": "event",
+          "market_scope": "global",
+          "event_policy_reason": "event_materiality_available",
+          "trace_id": "official-354e1a443f438cf4"
+        }
+      ],
+      "last_theme_notification_at": "2026-10-20T04:35:59.401546+00:00",
+      "last_notified_at": "2026-10-20T04:35:59.401546+00:00"
     }
   },
   "delivery_claims": {
@@ -56380,6 +56430,35 @@
       "updated_at": "2026-10-20T01:00:03.085099+00:00",
       "failed_recipient_hashes": [],
       "delivered_at": "2026-10-20T01:00:03.085099+00:00"
+    },
+    "bdf13aaf21f9ad823d4fedf78f23b02f": {
+      "notification_key": "bdf13aaf21f9ad823d4fedf78f23b02f",
+      "slot_key": "",
+      "status": "delivered",
+      "recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d",
+        "59cf5c3e48bf"
+      ],
+      "delivered_recipient_hashes": [
+        "59cf5c3e48bf",
+        "5b1d66aae79d",
+        "7a30574fc065",
+        "d36bbcc2cd2d"
+      ],
+      "attempted_recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d",
+        "59cf5c3e48bf"
+      ],
+      "claimed_at": "2026-10-20T04:35:56.530620+00:00",
+      "lease_until": null,
+      "run_id_hash": "157368bb8573",
+      "updated_at": "2026-10-20T04:35:59.224258+00:00",
+      "failed_recipient_hashes": [],
+      "delivered_at": "2026-10-20T04:35:59.224258+00:00"
     }
   }
 }
