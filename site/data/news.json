@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "c86df0edb515b1fd",
-  "snapshot_id": "news-4daa14c1bf87eef3",
+  "market_snapshot_id": "64842cc57a7936df",
+  "snapshot_id": "news-92aaa127a020cbd7",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -533,6 +533,106 @@
           "ranking_score": 125
         },
         {
+          "story_id": "news-711307422ad19cd66883",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6630669",
+          "url": "https://news.cnyes.com/news/id/6630669",
+          "published_at": "2026-10-14T22:02:35+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 4,
+          "published_local_date": "2026-10-15",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "SOX",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
+          "event_cluster_key": "event-40d27feb65b9f7fa705b",
+          "published_time_bucket": "2026-10-14T22:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜持股關聯",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 140
+        },
+        {
           "story_id": "news-7ac2c2ef767879da9d99",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -727,106 +827,6 @@
             {
               "provider": "google_news",
               "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE90SGFCRzFfMV9TRmNtWmF5cXV4c0xBRjY1NTN3TzhhMkxLbUZ5My1IMVoxQWRVMkc5MU5OYWx5SzNJYjhHMnhuTUlpVVVxMVVZajBScUNEcHdIYW9SaW5B"
-            }
-          ]
-        },
-        {
-          "story_id": "news-211430a2ab4821b9a896",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "〈星展經濟展望〉看好台灣AI供應鏈護城河 估全年GDP年增率達11.6% - 鉅亨網",
-          "raw_title": "〈星展經濟展望〉看好台灣AI供應鏈護城河 估全年GDP年增率達11.6% - 鉅亨網",
-          "normalized_fact": "〈星展經濟展望〉看好台灣AI供應鏈護城河 估全年GDP年增率達11.6% 鉅亨網。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "〈星展經濟展望〉看好台灣AI供應鏈護城河 估全年GDP年增率達11.6% 鉅亨網",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE9xV0N2UDBGanplMkpMQWllbjlfWVlwandzS0hoenU0MGNCOWh2Wk5GN1FBWThNX1Y5b3NjYWJqNUxvRF9pTFI4eVZCV3JWSUU",
-          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE9xV0N2UDBGanplMkpMQWllbjlfWVlwandzS0hoenU0MGNCOWh2Wk5GN1FBWThNX1Y5b3NjYWJqNUxvRF9pTFI4eVZCV3JWSUU",
-          "published_at": "2026-10-20T07:32:20+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-20",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "guidance"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "macro",
-            "reason": "macro_subject_action",
-            "matched_terms": [
-              "gdp",
-              "年增"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "gdp",
-              "年增"
-            ],
-            "matched_subject": "gdp",
-            "matched_action": "年增",
-            "matched_market_object": "gdp",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "星展經濟展望看好台灣ai供應鏈護城河估全年gdp年增率達116鉅亨網",
-          "event_cluster_key": "event-d7ce48e4e9b6c9012ed1",
-          "published_time_bucket": "2026-10-20T07:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "gdp",
-            "年增"
-          ],
-          "matched_subject": "gdp",
-          "matched_action": "年增",
-          "matched_market_object": "gdp",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115,
-          "supporting_sources": [
-            {
-              "provider": "google_news",
-              "url": "https://news.google.com/rss/articles/CBMi_gJBVV95cUxOQ2JLTm9hMWNZNmZob0tBdEVuZ2lidk54M0p4YWViZHhSLURwN0owTExPVkF5NzkwYlBKVkJwLUJBZzhBeDRSam9BaWRYSFZtNExUU19qLXZvdkV4UnBXX0oyd3hOekRaZHN3bmFIU1NWcExLUm1VbDJBSk90YzZ1UHR4NF9KOHFMcDBjU3U5d2lCb2ZZYkpiemdrTGtuUEYwSDFZUDY0VXR2TTVxMEVSemdzZlptOFpRLVVGOHZKMG4xWE9xQjRFZ3pGNzhfcERwQ1VXS3Z0UHhmUzlORjIyRTJzeURqTUNtSWVPSVdKSjRtM045bFM2U3BnUVV0ZUlBVXYzeUtQREV4OEZobjROQ3NCN2w3NUZTN0RjT2Z0dW9KeVNBVHlMWUdWbEJ4eFRJbFJINkdpclJUakk1Vkp6S0g1VldodHBfbEE5STNNQkdLT20tdjJkTzRJSjQwT0thNmJIal9qeVlETHhWX2oyRjlkZERQUUFCYVI1aml3"
             }
           ]
         },
@@ -1022,6 +1022,106 @@
           "ranking_score": 125
         },
         {
+          "story_id": "news-711307422ad19cd66883",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6630669",
+          "url": "https://news.cnyes.com/news/id/6630669",
+          "published_at": "2026-10-14T22:02:35+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 4,
+          "published_local_date": "2026-10-15",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "SOX",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
+          "event_cluster_key": "event-40d27feb65b9f7fa705b",
+          "published_time_bucket": "2026-10-14T22:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜持股關聯",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 140
+        },
+        {
           "story_id": "news-7ac2c2ef767879da9d99",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -1216,106 +1316,6 @@
             {
               "provider": "google_news",
               "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE90SGFCRzFfMV9TRmNtWmF5cXV4c0xBRjY1NTN3TzhhMkxLbUZ5My1IMVoxQWRVMkc5MU5OYWx5SzNJYjhHMnhuTUlpVVVxMVVZajBScUNEcHdIYW9SaW5B"
-            }
-          ]
-        },
-        {
-          "story_id": "news-211430a2ab4821b9a896",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "〈星展經濟展望〉看好台灣AI供應鏈護城河 估全年GDP年增率達11.6% - 鉅亨網",
-          "raw_title": "〈星展經濟展望〉看好台灣AI供應鏈護城河 估全年GDP年增率達11.6% - 鉅亨網",
-          "normalized_fact": "〈星展經濟展望〉看好台灣AI供應鏈護城河 估全年GDP年增率達11.6% 鉅亨網。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "〈星展經濟展望〉看好台灣AI供應鏈護城河 估全年GDP年增率達11.6% 鉅亨網",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE9xV0N2UDBGanplMkpMQWllbjlfWVlwandzS0hoenU0MGNCOWh2Wk5GN1FBWThNX1Y5b3NjYWJqNUxvRF9pTFI4eVZCV3JWSUU",
-          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE9xV0N2UDBGanplMkpMQWllbjlfWVlwandzS0hoenU0MGNCOWh2Wk5GN1FBWThNX1Y5b3NjYWJqNUxvRF9pTFI4eVZCV3JWSUU",
-          "published_at": "2026-10-20T07:32:20+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-20",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "guidance"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "macro",
-            "reason": "macro_subject_action",
-            "matched_terms": [
-              "gdp",
-              "年增"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "gdp",
-              "年增"
-            ],
-            "matched_subject": "gdp",
-            "matched_action": "年增",
-            "matched_market_object": "gdp",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "星展經濟展望看好台灣ai供應鏈護城河估全年gdp年增率達116鉅亨網",
-          "event_cluster_key": "event-d7ce48e4e9b6c9012ed1",
-          "published_time_bucket": "2026-10-20T07:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "gdp",
-            "年增"
-          ],
-          "matched_subject": "gdp",
-          "matched_action": "年增",
-          "matched_market_object": "gdp",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115,
-          "supporting_sources": [
-            {
-              "provider": "google_news",
-              "url": "https://news.google.com/rss/articles/CBMi_gJBVV95cUxOQ2JLTm9hMWNZNmZob0tBdEVuZ2lidk54M0p4YWViZHhSLURwN0owTExPVkF5NzkwYlBKVkJwLUJBZzhBeDRSam9BaWRYSFZtNExUU19qLXZvdkV4UnBXX0oyd3hOekRaZHN3bmFIU1NWcExLUm1VbDJBSk90YzZ1UHR4NF9KOHFMcDBjU3U5d2lCb2ZZYkpiemdrTGtuUEYwSDFZUDY0VXR2TTVxMEVSemdzZlptOFpRLVVGOHZKMG4xWE9xQjRFZ3pGNzhfcERwQ1VXS3Z0UHhmUzlORjIyRTJzeURqTUNtSWVPSVdKSjRtM045bFM2U3BnUVV0ZUlBVXYzeUtQREV4OEZobjROQ3NCN2w3NUZTN0RjT2Z0dW9KeVNBVHlMWUdWbEJ4eFRJbFJINkdpclJUakk1Vkp6S0g1VldodHBfbEE5STNNQkdLT20tdjJkTzRJSjQwT0thNmJIal9qeVlETHhWX2oyRjlkZERQUUFCYVI1aml3"
             }
           ]
         },
@@ -1598,13 +1598,197 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 115,
-          "supporting_sources": [
-            {
-              "provider": "google_news",
-              "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE1FdllLaFNVZmpaMXgzNUhWcGVnSlpTeUEyNkZNQVJacUFjUmp6TGFPRnZkeERfUllIdzV1YkhxU05qTUtSMnFWZHZYUjZXYUcxbHfSAVBBVV95cUxPTXJ3Y0NIVUNCaU1sZWhMMVRuOG9MaFlyOHFmVHlINVc3cEtMbDBZVGhVN3JUREtvV0V1Sk51a1pWV2IyaFp3MlFJQ2twNlo3OQ"
-            }
-          ]
+          "ranking_score": 115
+        },
+        {
+          "story_id": "news-bda2a7af2ad91e544e56",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "高盛再上調AI伺服器展望 點名鴻海、緯穎等供應鏈受惠 - 鉅亨網",
+          "raw_title": "高盛再上調AI伺服器展望 點名鴻海、緯穎等供應鏈受惠 - 鉅亨網",
+          "normalized_fact": "高盛再上調AI伺服器展望 點名鴻海、緯穎等供應鏈受惠 鉅亨網。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "高盛再上調AI伺服器展望 點名鴻海、緯穎等供應鏈受惠 鉅亨網",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE9oUnR0YzR1QzZQb0NXZ3B2LVptVTd4M0Uyd2djMi0zN3poR2xyWFd1N3VkcEJLVjVsTlJyR0pUSWhOLXBqaW9zQUI1S2huWUE",
+          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE9oUnR0YzR1QzZQb0NXZ3B2LVptVTd4M0Uyd2djMi0zN3poR2xyWFd1N3VkcEJLVjVsTlJyR0pUSWhOLXBqaW9zQUI1S2huWUE",
+          "published_at": "2026-10-20T06:06:46+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-20",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai",
+            "guidance"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "展望"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "展望"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "展望",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "高盛再上調ai伺服器展望點名鴻海緯穎等供應鏈受惠鉅亨網",
+          "event_cluster_key": "event-83ad096c9e3f0998a1b8",
+          "published_time_bucket": "2026-10-20T06:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "展望"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "展望",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜台股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
+          "story_id": "news-5e9ec8389d0b4b9c5c30",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "一座晶圓廠要250億美元！台積電擴產紅利 法人點名8檔供應鏈 - 經濟日報",
+          "raw_title": "一座晶圓廠要250億美元！台積電擴產紅利 法人點名8檔供應鏈 - 經濟日報",
+          "normalized_fact": "一座晶圓廠要250億美元，台積電擴產紅利 法人點名8檔供應鏈 經濟日報。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "一座晶圓廠要250億美元！台積電擴產紅利 法人點名8檔供應鏈 經濟日報",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE5vN0FWcDBoeEQxd00yRWFOTmhWRlpaaVFqUWpfamI0V2NCMEpGMzdVWUdYT1hFc0xqSkdlZHZxYzNFR1JPOVJqZEFLV1c1VU81bTV5cnduV1FGd9IBX0FVX3lxTE5WWVVzMU9sNTFtVU1ZbXBPVVVrYk1Kci1JbDB1TG9CZEh2dzh3WUNid0hvWkV3UUNOa3FRY0NHWVpENGFxTnpFeUdfYzB5VGo2R3pYREJHMUt4VHBPR204",
+          "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE5vN0FWcDBoeEQxd00yRWFOTmhWRlpaaVFqUWpfamI0V2NCMEpGMzdVWUdYT1hFc0xqSkdlZHZxYzNFR1JPOVJqZEFLV1c1VU81bTV5cnduV1FGd9IBX0FVX3lxTE5WWVVzMU9sNTFtVU1ZbXBPVVVrYk1Kci1JbDB1TG9CZEh2dzh3WUNid0hvWkV3UUNOa3FRY0NHWVpENGFxTnpFeUdfYzB5VGo2R3pYREJHMUt4VHBPR204",
+          "published_at": "2026-10-18T09:00:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 3,
+          "published_local_date": "2026-10-18",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "台積電",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "台積電",
+              "供應"
+            ],
+            "matched_subject": "台積電",
+            "matched_action": "供應",
+            "matched_market_object": "台積電",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM"
+          ],
+          "freshness": "published",
+          "dedupe_key": "一座晶圓廠要250億美元台積電擴產紅利法人點名8檔供應鏈經濟日報",
+          "event_cluster_key": "event-f603259bc863d30259f7",
+          "published_time_bucket": "2026-10-18T09:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "台積電",
+            "供應"
+          ],
+          "matched_subject": "台積電",
+          "matched_action": "供應",
+          "matched_market_object": "台積電",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜台股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 125
         },
         {
           "story_id": "news-818fdc9aec7685e498c7",
@@ -4449,235 +4633,46 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 25
-        },
-        {
-          "story_id": "news-932041f471b1794d4bef",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "最新中國金融新政穩市場！AI供應鏈估值現分歧，台積電恐回跌15%？-財經焦點情報站 - CMoney投資網誌",
-          "raw_title": "最新中國金融新政穩市場！AI供應鏈估值現分歧，台積電恐回跌15%？-財經焦點情報站 - CMoney投資網誌",
-          "normalized_fact": "最新中國金融新政穩市場，AI供應鏈估值現分歧，台積電恐回跌15%？-財經焦點情報站 CMoney投資網誌。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "最新中國金融新政穩市場！AI供應鏈估值現分歧，台積電恐回跌15%？-財經焦點情報站 CMoney投資網誌",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPOGcwMWVwYV9BWUpVM3FCNzJQX1ZHN0c3dFVZUUY5U3FQNjR5cmRBYlNnbGZHeENqbkltc0NlNlhHS1hkQ2EzUjNoUGp6MU5tczNVYnFEUl9jU2FFTDQzTUt6X05VVmlHTlRNRE95cDBQUjFRc3pldmF5YzU1dFBsRzZ3",
-          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPOGcwMWVwYV9BWUpVM3FCNzJQX1ZHN0c3dFVZUUY5U3FQNjR5cmRBYlNnbGZHeENqbkltc0NlNlhHS1hkQ2EzUjNoUGp6MU5tczNVYnFEUl9jU2FFTDQzTUt6X05VVmlHTlRNRE95cDBQUjFRc3pldmF5YzU1dFBsRzZ3",
-          "published_at": "2026-10-20T01:09:25+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-20",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM"
-          ],
-          "freshness": "published",
-          "dedupe_key": "最新中國金融新政穩市場ai供應鏈估值現分歧台積電恐回跌15財經焦點情報站cmoney投資網誌",
-          "event_cluster_key": "event-23ab1a98aef9983439e1",
-          "published_time_bucket": "2026-10-20T01:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 1,
-          "inventory_saved_at": "2026-10-20T01:18:50.360638+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 25
-        },
-        {
-          "story_id": "news-0dea2abe2df357a10c62",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "政府傾注大量資源到半導體 專家：核電供應鏈成傳產生機 - UDN",
-          "raw_title": "政府傾注大量資源到半導體 專家：核電供應鏈成傳產生機 - UDN",
-          "normalized_fact": "政府傾注大量資源到半導體 專家：核電供應鏈成傳產生機 UDN。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "政府傾注大量資源到半導體 專家：核電供應鏈成傳產生機 UDN",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE5TdjJrRUZERUlEUjhfWDVvSU1zbnF6VGN6ZkZ6RExLb3hiZnAtb01NT1pnaS1iVGRwSmFPV0lWLTRYOEs3ZVVBOTFWWldVNG5s0gFWQVVfeXFMUE5raVpGVWozWWgyZE1Ddk9sYm0zOHozek1UanhyN1lueW13UDRxMkNYWDIzWldnM05PRTNycGNIclpOTThKWlh6QVBLaTdKdmczeTdfRGc",
-          "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE5TdjJrRUZERUlEUjhfWDVvSU1zbnF6VGN6ZkZ6RExLb3hiZnAtb01NT1pnaS1iVGRwSmFPV0lWLTRYOEs3ZVVBOTFWWldVNG5s0gFWQVVfeXFMUE5raVpGVWozWWgyZE1Ddk9sYm0zOHozek1UanhyN1lueW13UDRxMkNYWDIzWldnM05PRTNycGNIclpOTThKWlh6QVBLaTdKdmczeTdfRGc",
-          "published_at": "2026-10-20T03:59:39+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-20",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "半導體",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "半導體",
-              "供應"
-            ],
-            "matched_subject": "半導體",
-            "matched_action": "供應",
-            "matched_market_object": "半導體",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "政府傾注大量資源到半導體專家核電供應鏈成傳產生機udn",
-          "event_cluster_key": "event-7008d32698e72180674b",
-          "published_time_bucket": "2026-10-20T03:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "半導體",
-            "供應"
-          ],
-          "matched_subject": "半導體",
-          "matched_action": "供應",
-          "matched_market_object": "半導體",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 1,
-          "inventory_saved_at": "2026-10-20T04:33:43.166210+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 15
         }
       ],
       "source_diversity": {
         "schema_version": "1.0",
-        "status": "single_source",
-        "cross_checked": false,
+        "status": "multi_source",
+        "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 1,
-        "provider_count": 1,
+        "independent_source_count": 2,
+        "provider_count": 2,
         "provider_ids": [
+          "anue",
           "google_news"
         ],
         "source_domains": [
+          "news.cnyes.com",
           "news.google.com"
         ],
-        "supporting_source_count": 2,
+        "supporting_source_count": 1,
         "inventory_only": false,
         "current_story_count": 5,
         "inventory_story_count": 0
       },
       "interest_graph": {
         "ticker_interest": {
-          "NVDA": 6,
-          "2330": 13,
-          "TSM": 13,
+          "2330": 19,
+          "TSM": 19,
           "3443": 1,
           "2059": 1,
-          "8358": 1
+          "8358": 1,
+          "NVDA": 2
         },
         "sector_interest": {},
         "topic_interest": {
-          "伊朗": 4,
-          "原油": 3,
-          "石油": 4,
-          "荷姆茲": 5
+          "石油": 2,
+          "荷姆茲": 3,
+          "伊朗": 2,
+          "原油": 1
         },
         "market_interest": {
-          "taiwan": 108
+          "taiwan": 109
         },
         "context": {
           "tracked_tickers": [
@@ -4754,9 +4749,9 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "NVDA": 6,
-            "2330": 13,
-            "TSM": 13
+            "2330": 19,
+            "TSM": 19,
+            "NVDA": 2
           },
           "research_candidate": {
             "3443": 1,
@@ -4765,20 +4760,17 @@
           },
           "tracked_sector": {},
           "active_event": {
-            "伊朗": 4,
-            "原油": 3,
-            "石油": 4,
-            "荷姆茲": 5
+            "石油": 2,
+            "荷姆茲": 3,
+            "伊朗": 2,
+            "原油": 1
           },
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 33,
+      "excluded_count": 32,
       "exclusion_reasons": {
-        "incomplete_normalized_fact": 2,
-        "insufficient_market_relevance": 18,
-        "market_scope_mismatch": 10,
-        "missing_published_at": 1,
+        "insufficient_market_relevance": 30,
         "outside_calendar_window": 16,
         "outside_trading_session_window": 1
       },
@@ -4790,44 +4782,43 @@
         "successful_provider_count": 5,
         "failed_provider_count": 0,
         "disabled_provider_count": 0,
-        "fetched": 43,
-        "normalized": 43,
+        "fetched": 42,
+        "normalized": 42,
         "eligible": 10,
-        "excluded": 33,
+        "excluded": 32,
         "date_eligible_current": 25,
-        "date_excluded_current": 18,
+        "date_excluded_current": 17,
         "date_exclusion_reasons_current": {
-          "missing_published_at": 1,
           "outside_calendar_window": 16,
           "outside_trading_session_window": 1
         },
-        "date_eligible_inventory": 65,
+        "date_eligible_inventory": 67,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-20T08:58:02.497276+00:00",
-        "deduped": 7,
+        "reference_time": "2026-10-20T09:08:03.742602+00:00",
+        "deduped": 9,
         "publicly_ranked": 5,
         "current_eligible": 10,
-        "inventory_considered": 65,
-        "inventory_eligible": 50,
+        "inventory_considered": 67,
+        "inventory_eligible": 52,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 33,
-        "fetched_story_count": 43,
-        "normalized_story_count": 43,
+        "filtered_story_count": 32,
+        "fetched_story_count": 42,
+        "normalized_story_count": 42,
         "eligible_story_count": 10,
-        "deduped_story_count": 7,
+        "deduped_story_count": 9,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 65,
-        "eligible": 50,
+        "considered": 67,
+        "eligible": 52,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -4839,8 +4830,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 43,
-          "checked_at": "2026-10-20T08:58:02.497310+00:00"
+          "item_count": 42,
+          "checked_at": "2026-10-20T09:08:03.742645+00:00"
         },
         {
           "provider": "twse",
@@ -4851,10 +4842,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-10-20T08:58:02.497310+00:00",
+          "checked_at": "2026-10-20T09:08:03.742645+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+          "last_success_at": "2026-10-20T09:08:03.742645+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4879,10 +4870,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-10-20T08:58:02.497310+00:00",
+          "checked_at": "2026-10-20T09:08:03.742645+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+          "last_success_at": "2026-10-20T09:08:03.742645+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4903,32 +4894,31 @@
           "key": "news_taiwan_anue",
           "legacy_key": "official_news_taiwan_anue",
           "label": "anue market news",
-          "status": "no_event",
+          "status": "healthy",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 0,
-          "checked_at": "2026-10-20T08:58:02.497310+00:00",
+          "item_count": 1,
+          "checked_at": "2026-10-20T09:08:03.742645+00:00",
           "raw_item_count": 5,
-          "filtered_item_count": 0,
-          "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-10-20T09:08:03.742645+00:00",
           "last_failure_at": null,
-          "stories_ingested": 3,
-          "stories_deduped": 0,
-          "ranked_count": 0,
+          "stories_ingested": 2,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
-            "active_event": 1,
-            "market": 3
+            "market": 2,
+            "tracked_ticker": 2
           },
           "funnel": {
-            "fetched_count": 3,
-            "normalized_count": 3,
-            "market_compatible_count": 3,
-            "eligible_count": 0,
-            "excluded_count": 3,
-            "deduped_count": 0,
-            "ranked_count": 0
-          },
-          "data_gap": "filtered_no_market_match"
+            "fetched_count": 2,
+            "normalized_count": 2,
+            "market_compatible_count": 2,
+            "eligible_count": 1,
+            "excluded_count": 1,
+            "deduped_count": 1,
+            "ranked_count": 1
+          }
         },
         {
           "provider": "yahoo_finance",
@@ -4939,24 +4929,23 @@
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
           "item_count": 0,
-          "checked_at": "2026-10-20T08:58:02.497310+00:00",
+          "checked_at": "2026-10-20T09:08:03.742645+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+          "last_success_at": "2026-10-20T09:08:03.742645+00:00",
           "last_failure_at": null,
-          "stories_ingested": 5,
+          "stories_ingested": 10,
           "stories_deduped": 0,
           "ranked_count": 0,
           "relevance_distribution": {
-            "market": 5,
-            "tracked_ticker": 1
+            "market": 10
           },
           "funnel": {
             "fetched_count": 10,
-            "normalized_count": 5,
-            "market_compatible_count": 5,
+            "normalized_count": 10,
+            "market_compatible_count": 10,
             "eligible_count": 0,
-            "excluded_count": 5,
+            "excluded_count": 10,
             "deduped_count": 0,
             "ranked_count": 0
           },
@@ -4970,91 +4959,90 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
-          "item_count": 5,
-          "checked_at": "2026-10-20T08:58:02.497310+00:00",
+          "item_count": 4,
+          "checked_at": "2026-10-20T09:08:03.742645+00:00",
           "raw_item_count": 30,
-          "filtered_item_count": 5,
-          "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+          "filtered_item_count": 4,
+          "last_success_at": "2026-10-20T09:08:03.742645+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
-          "stories_deduped": 7,
-          "ranked_count": 5,
+          "stories_deduped": 8,
+          "ranked_count": 4,
           "relevance_distribution": {
             "market": 30,
             "research_candidate": 2,
-            "tracked_ticker": 5
+            "tracked_ticker": 6
           },
           "funnel": {
             "fetched_count": 30,
             "normalized_count": 30,
             "market_compatible_count": 30,
-            "eligible_count": 10,
-            "excluded_count": 20,
-            "deduped_count": 7,
-            "ranked_count": 5
+            "eligible_count": 9,
+            "excluded_count": 21,
+            "deduped_count": 8,
+            "ranked_count": 4
           }
         }
       ],
       "observability": {
-        "stories_ingested": 43,
-        "stories_deduped": 7,
+        "stories_ingested": 42,
+        "stories_deduped": 9,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 2,
-          "market": 43,
+          "market": 42,
           "research_candidate": 2,
-          "tracked_ticker": 7
+          "tracked_ticker": 8
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+            "last_success_at": "2026-10-20T09:08:03.742645+00:00",
             "last_failure_at": null,
-            "stories_ingested": 3,
-            "stories_deduped": 0,
-            "ranked_count": 0,
+            "stories_ingested": 2,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
-              "active_event": 1,
-              "market": 3
+              "market": 2,
+              "tracked_ticker": 2
             },
             "funnel": {
-              "fetched_count": 3,
-              "normalized_count": 3,
-              "market_compatible_count": 3,
-              "eligible_count": 0,
-              "excluded_count": 3,
-              "deduped_count": 0,
-              "ranked_count": 0
+              "fetched_count": 2,
+              "normalized_count": 2,
+              "market_compatible_count": 2,
+              "eligible_count": 1,
+              "excluded_count": 1,
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           },
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+            "last_success_at": "2026-10-20T09:08:03.742645+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
-            "stories_deduped": 7,
-            "ranked_count": 5,
+            "stories_deduped": 8,
+            "ranked_count": 4,
             "relevance_distribution": {
               "market": 30,
               "research_candidate": 2,
-              "tracked_ticker": 5
+              "tracked_ticker": 6
             },
             "funnel": {
               "fetched_count": 30,
               "normalized_count": 30,
               "market_compatible_count": 30,
-              "eligible_count": 10,
-              "excluded_count": 20,
-              "deduped_count": 7,
-              "ranked_count": 5
+              "eligible_count": 9,
+              "excluded_count": 21,
+              "deduped_count": 8,
+              "ranked_count": 4
             }
           },
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+            "last_success_at": "2026-10-20T09:08:03.742645+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5073,7 +5061,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+            "last_success_at": "2026-10-20T09:08:03.742645+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5090,46 +5078,22 @@
             }
           },
           {
-            "provider": "unknown",
-            "status": "healthy",
-            "last_success_at": null,
-            "last_failure_at": null,
-            "stories_ingested": 5,
-            "stories_deduped": 0,
-            "ranked_count": 0,
-            "relevance_distribution": {
-              "active_event": 1,
-              "market": 5,
-              "tracked_ticker": 1
-            },
-            "funnel": {
-              "fetched_count": 5,
-              "normalized_count": 5,
-              "market_compatible_count": 0,
-              "eligible_count": 0,
-              "excluded_count": 5,
-              "deduped_count": 0,
-              "ranked_count": 0
-            }
-          },
-          {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+            "last_success_at": "2026-10-20T09:08:03.742645+00:00",
             "last_failure_at": null,
-            "stories_ingested": 5,
+            "stories_ingested": 10,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 5,
-              "tracked_ticker": 1
+              "market": 10
             },
             "funnel": {
               "fetched_count": 10,
-              "normalized_count": 5,
-              "market_compatible_count": 5,
+              "normalized_count": 10,
+              "market_compatible_count": 10,
               "eligible_count": 0,
-              "excluded_count": 5,
+              "excluded_count": 10,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -5443,192 +5407,6 @@
           "ranking_score": 140
         },
         {
-          "story_id": "news-3c50bfadafe8b71d8c2c",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "伊朗點名荷姆茲「7條海底電纜」警告敵人認清現實",
-          "raw_title": "伊朗點名荷姆茲「7條海底電纜」警告敵人認清現實",
-          "normalized_fact": "IRGC發言人點名荷姆茲海峽下方7條主要海底電纜，稱全球網路與商業資料仰賴這些設施。 TeleGeography指電纜主要服務波斯灣國家，若受破壞恐干擾區域通訊，但歐亞資料傳輸影響有限。 伊朗未明言攻擊計畫，卻在航運受阻之際升高通訊基礎設施風險，威脅延伸至數位領域。",
-          "market_topic": "energy_geopolitics",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "IRGC發言人點名荷姆茲海峽下方7條主要海底電纜，稱全球網路與商業資料仰賴這些設施。 TeleGeography指電纜主要服務波斯灣國家，若受破壞恐干擾區域通訊，但歐亞資料傳輸影響有限。 伊朗未明言攻擊計畫，卻在航運受阻之際升高通訊基礎設施風險，威脅延伸至數位領域。",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6633800",
-          "url": "https://news.cnyes.com/news/id/6633800",
-          "published_at": "2026-10-19T22:40:03+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-19",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "conflict",
-            "reason": "conflict_subject_action",
-            "matched_terms": [
-              "伊朗",
-              "攻擊"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "伊朗",
-              "攻擊"
-            ],
-            "matched_subject": "伊朗",
-            "matched_action": "攻擊",
-            "matched_market_object": "伊朗",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:global",
-            "active_event:伊朗",
-            "active_event:荷姆茲",
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "irgc發言人點名荷姆茲海峽下方7條主要海底電纜稱全球網路與商業資料仰賴這些設施telegeography指電纜主要服務波斯灣國家若受破壞恐干擾區域通訊但歐亞資料傳輸影響有限伊朗未明言攻擊計畫卻在航運受阻之際升高通訊基礎設施風險威脅延伸至數位領域",
-          "event_cluster_key": "event-2437f5cfecbc3786e08c",
-          "published_time_bucket": "2026-10-19T22:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "伊朗",
-            "攻擊"
-          ],
-          "matched_subject": "伊朗",
-          "matched_action": "攻擊",
-          "matched_market_object": "伊朗",
-          "decision_value_class": "geopolitics_policy",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 140
-        },
-        {
-          "story_id": "news-3371e5695af2f58c43cb",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Gold falls as dollar, Treasury yields rise; silver holds modest gains - Kitco PM Report - Kitco",
-          "raw_title": "Gold falls as dollar, Treasury yields rise; silver holds modest gains - Kitco PM Report - Kitco",
-          "normalized_fact": "Gold falls as dollar, Treasury yields rise; silver holds modest gains - Kitco PM Report Kitco。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Gold falls as dollar, Treasury yields rise; silver holds modest gains - Kitco PM Report Kitco",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxQbGJUTVpVc09hbndpQTA5MmFxbVJ3QkpCa0lobmkzOG42QTFHRUctdEFTRGYtNHhqZ2czQWhXRGtHd3VGQk9MN1BrQXhlWmRrT1EzUlFZcnBQYlJjaGpEbUxFUHBXYloxMWRGY09KclVNbHlxbjBuVGJvMkJ1c0RzdVNuWWhEN2xNeEtrNU9faXFTX2ZWVlppRzdWR3k0VlFlc3BvVDZmRkYxcFg4UHpMSFNXVVlOMFJoNTc4",
-          "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxQbGJUTVpVc09hbndpQTA5MmFxbVJ3QkpCa0lobmkzOG42QTFHRUctdEFTRGYtNHhqZ2czQWhXRGtHd3VGQk9MN1BrQXhlWmRrT1EzUlFZcnBQYlJjaGpEbUxFUHBXYloxMWRGY09KclVNbHlxbjBuVGJvMkJ1c0RzdVNuWWhEN2xNeEtrNU9faXFTX2ZWVlppRzdWR3k0VlFlc3BvVDZmRkYxcFg4UHpMSFNXVVlOMFJoNTc4",
-          "published_at": "2026-10-19T18:06:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-19",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "currency",
-            "reason": "currency_subject_action",
-            "matched_terms": [
-              "dollar",
-              "falls"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "dollar",
-              "falls"
-            ],
-            "matched_subject": "dollar",
-            "matched_action": "falls",
-            "matched_market_object": "dollar",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "active_event:gold"
-          ],
-          "freshness": "published",
-          "dedupe_key": "goldfallsasdollartreasuryyieldsrisesilverholdsmodestgainskitcopmreportkitco",
-          "event_cluster_key": "event-a4a51d084e2ba0fed665",
-          "published_time_bucket": "2026-10-19T18:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "dollar",
-            "falls"
-          ],
-          "matched_subject": "dollar",
-          "matched_action": "falls",
-          "matched_market_object": "dollar",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 120
-        },
-        {
           "story_id": "news-d689a1a4d8a98cd629d3",
           "provider": "anue",
           "provider_name": "Anue",
@@ -5724,282 +5502,6 @@
           "ranking_score": 130
         },
         {
-          "story_id": "news-0d5e9a9a0e81e8737efe",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Inflation data sparks debate over Federal Reserve rate decisions - Fox Business",
-          "raw_title": "Inflation data sparks debate over Federal Reserve rate decisions - Fox Business",
-          "normalized_fact": "Inflation data sparks debate over Federal Reserve rate decisions Fox Business。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Inflation data sparks debate over Federal Reserve rate decisions Fox Business",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiW0FVX3lxTE9QZTZvWjd2ZFBidG9ueHBiNF9wWWpQX1hmWldndTVobU54ZmxMNzFEU3JnVzRoQ2NjaldNcVowLS1WLVJlWU9ONnlmY1k0MFJOdTc4VmFZUWNRX28",
-          "url": "https://news.google.com/rss/articles/CBMiW0FVX3lxTE9QZTZvWjd2ZFBidG9ueHBiNF9wWWpQX1hmWldndTVobU54ZmxMNzFEU3JnVzRoQ2NjaldNcVowLS1WLVJlWU9ONnlmY1k0MFJOdTc4VmFZUWNRX28",
-          "published_at": "2026-10-16T21:36:19+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-10-16",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "federal reserve",
-              "rate"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "federal reserve",
-              "rate"
-            ],
-            "matched_subject": "federal reserve",
-            "matched_action": "rate",
-            "matched_market_object": "federal reserve",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "inflationdatasparksdebateoverfederalreserveratedecisionsfoxbusiness",
-          "event_cluster_key": "event-25b1e4ca4e25d86925c3",
-          "published_time_bucket": "2026-10-16T21:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "federal reserve",
-            "rate"
-          ],
-          "matched_subject": "federal reserve",
-          "matched_action": "rate",
-          "matched_market_object": "federal reserve",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        }
-      ],
-      "editorial_candidates": [
-        {
-          "story_id": "news-288460fb807f5fea920d",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "FinFET Technology - Global Strategic Business Report Just Released: AI and Data Centers Push FinFET Chip Market Toward $97 Billion",
-          "raw_title": "FinFET Technology - Global Strategic Business Report Just Released: AI and Data Centers Push FinFET Chip Market Toward $97 Billion",
-          "normalized_fact": "The global FinFET technology market is projected to grow from $38.5 billion in 2024 to $97.1 billion by 2030, a new Research and Markets report finds, with CPUs reaching $36.6 billion and China growing fastest; TSMC, Samsung, Intel and NVIDIA are among the companies profiled.Dublin, Oct. 20, 2026 (GLOBE NEWSWIRE) -- \"FinFET Technology - Global Strategic Business Report\" has been added to ResearchAndMarkets.com's offering. The global FinFET technology market, valued at US$38.5 billion in 2024, is。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "The global FinFET technology market is projected to grow from $38.5 billion in 2024 to $97.1 billion by 2030, a new Research and Markets report finds, with CPUs reaching $36.6 billion and China growing fastest; TSMC, Samsung, Intel and NVIDIA are among the companies profiled.Dublin, Oct. 20, 2026 (GLOBE NEWSWIRE) -- \"FinFET Technology - Global Strategic Business Report\" has been added to ResearchAndMarkets.com's offering. The global FinFET technology market, valued at US$38.5 billion in 2024, is",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/technology/articles/finfet-technology-global-strategic-business-083500367.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/technology/articles/finfet-technology-global-strategic-business-083500367.html?.tsrc=rss",
-          "published_at": "2026-10-20T08:35:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-20",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "tracked_ticker:NVDA",
-            "tracked_ticker:TSM",
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "theglobalfinfettechnologymarketisprojectedtogrowfrom385billionin2024to971billionby2030anewresearchandmarketsreportfindswithcpusreaching366billionandchinagrowingfastesttsmcsamsungintelandnvidiaareamongthecompaniesprofileddublinoct202026globenewswirefinfettechnologyglobalstrategicbusinessreporthasbeenaddedtoresearchandmarketscomsofferingtheglobalfinfettechnologymarketvaluedatus385billionin2024is",
-          "event_cluster_key": "event-f93e813ce83b8358686d",
-          "published_time_bucket": "2026-10-20T08:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "company_event",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 140
-        },
-        {
-          "story_id": "news-3c50bfadafe8b71d8c2c",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "伊朗點名荷姆茲「7條海底電纜」警告敵人認清現實",
-          "raw_title": "伊朗點名荷姆茲「7條海底電纜」警告敵人認清現實",
-          "normalized_fact": "IRGC發言人點名荷姆茲海峽下方7條主要海底電纜，稱全球網路與商業資料仰賴這些設施。 TeleGeography指電纜主要服務波斯灣國家，若受破壞恐干擾區域通訊，但歐亞資料傳輸影響有限。 伊朗未明言攻擊計畫，卻在航運受阻之際升高通訊基礎設施風險，威脅延伸至數位領域。",
-          "market_topic": "energy_geopolitics",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "IRGC發言人點名荷姆茲海峽下方7條主要海底電纜，稱全球網路與商業資料仰賴這些設施。 TeleGeography指電纜主要服務波斯灣國家，若受破壞恐干擾區域通訊，但歐亞資料傳輸影響有限。 伊朗未明言攻擊計畫，卻在航運受阻之際升高通訊基礎設施風險，威脅延伸至數位領域。",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6633800",
-          "url": "https://news.cnyes.com/news/id/6633800",
-          "published_at": "2026-10-19T22:40:03+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-19",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "conflict",
-            "reason": "conflict_subject_action",
-            "matched_terms": [
-              "伊朗",
-              "攻擊"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "伊朗",
-              "攻擊"
-            ],
-            "matched_subject": "伊朗",
-            "matched_action": "攻擊",
-            "matched_market_object": "伊朗",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:global",
-            "active_event:伊朗",
-            "active_event:荷姆茲",
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "irgc發言人點名荷姆茲海峽下方7條主要海底電纜稱全球網路與商業資料仰賴這些設施telegeography指電纜主要服務波斯灣國家若受破壞恐干擾區域通訊但歐亞資料傳輸影響有限伊朗未明言攻擊計畫卻在航運受阻之際升高通訊基礎設施風險威脅延伸至數位領域",
-          "event_cluster_key": "event-2437f5cfecbc3786e08c",
-          "published_time_bucket": "2026-10-19T22:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "伊朗",
-            "攻擊"
-          ],
-          "matched_subject": "伊朗",
-          "matched_action": "攻擊",
-          "matched_market_object": "伊朗",
-          "decision_value_class": "geopolitics_policy",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 140
-        },
-        {
           "story_id": "news-3371e5695af2f58c43cb",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -6090,101 +5592,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 120
-        },
-        {
-          "story_id": "news-d689a1a4d8a98cd629d3",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "AI需求與股價走勢背離？費半重演金融海嘯連跌紀錄 8日累跌15.7%後迎反彈 觸底了？",
-          "raw_title": "AI需求與股價走勢背離？費半重演金融海嘯連跌紀錄 8日累跌15.7%後迎反彈 觸底了？",
-          "normalized_fact": "費半指數10/7至16連跌8日、累跌15.7%，創2008年10月以來最長連跌，10/19盤前SOXX反彈2.8% 賣壓主因是CXMT宣布4F²記憶體進展恐增供給，及博通執行長稱AI擴張受資金限制引發疑慮 Cantor與JPM看法偏多，認為需求與訂單仍強、英特爾風險報酬改善，RSI 21.5顯示超賣。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "費半指數10/7至16連跌8日、累跌15.7%，創2008年10月以來最長連跌，10/19盤前SOXX反彈2.8% 賣壓主因是CXMT宣布4F²記憶體進展恐增供給，及博通執行長稱AI擴張受資金限制引發疑慮 Cantor與JPM看法偏多，認為需求與訂單仍強、英特爾風險報酬改善，RSI 21.5顯示超賣",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6633830",
-          "url": "https://news.cnyes.com/news/id/6633830",
-          "published_at": "2026-10-19T23:20:03+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-19",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "SOX"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "限制"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "限制"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "限制",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "費半指數107至16連跌8日累跌157創2008年10月以來最長連跌1019盤前soxx反彈28賣壓主因是cxmt宣布4f²記憶體進展恐增供給及博通執行長稱ai擴張受資金限制引發疑慮cantor與jpm看法偏多認為需求與訂單仍強英特爾風險報酬改善rsi215顯示超賣",
-          "event_cluster_key": "event-7a969399c802b720a100",
-          "published_time_bucket": "2026-10-19T23:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "限制"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "限制",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
         },
         {
           "story_id": "news-0d5e9a9a0e81e8737efe",
@@ -6362,6 +5769,553 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
+        }
+      ],
+      "editorial_candidates": [
+        {
+          "story_id": "news-288460fb807f5fea920d",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "FinFET Technology - Global Strategic Business Report Just Released: AI and Data Centers Push FinFET Chip Market Toward $97 Billion",
+          "raw_title": "FinFET Technology - Global Strategic Business Report Just Released: AI and Data Centers Push FinFET Chip Market Toward $97 Billion",
+          "normalized_fact": "The global FinFET technology market is projected to grow from $38.5 billion in 2024 to $97.1 billion by 2030, a new Research and Markets report finds, with CPUs reaching $36.6 billion and China growing fastest; TSMC, Samsung, Intel and NVIDIA are among the companies profiled.Dublin, Oct. 20, 2026 (GLOBE NEWSWIRE) -- \"FinFET Technology - Global Strategic Business Report\" has been added to ResearchAndMarkets.com's offering. The global FinFET technology market, valued at US$38.5 billion in 2024, is。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "The global FinFET technology market is projected to grow from $38.5 billion in 2024 to $97.1 billion by 2030, a new Research and Markets report finds, with CPUs reaching $36.6 billion and China growing fastest; TSMC, Samsung, Intel and NVIDIA are among the companies profiled.Dublin, Oct. 20, 2026 (GLOBE NEWSWIRE) -- \"FinFET Technology - Global Strategic Business Report\" has been added to ResearchAndMarkets.com's offering. The global FinFET technology market, valued at US$38.5 billion in 2024, is",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/technology/articles/finfet-technology-global-strategic-business-083500367.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/technology/articles/finfet-technology-global-strategic-business-083500367.html?.tsrc=rss",
+          "published_at": "2026-10-20T08:35:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-20",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai",
+            "semiconductor"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "tracked_ticker:NVDA",
+            "tracked_ticker:TSM",
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "theglobalfinfettechnologymarketisprojectedtogrowfrom385billionin2024to971billionby2030anewresearchandmarketsreportfindswithcpusreaching366billionandchinagrowingfastesttsmcsamsungintelandnvidiaareamongthecompaniesprofileddublinoct202026globenewswirefinfettechnologyglobalstrategicbusinessreporthasbeenaddedtoresearchandmarketscomsofferingtheglobalfinfettechnologymarketvaluedatus385billionin2024is",
+          "event_cluster_key": "event-f93e813ce83b8358686d",
+          "published_time_bucket": "2026-10-20T08:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "company_event",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 140
+        },
+        {
+          "story_id": "news-d689a1a4d8a98cd629d3",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "AI需求與股價走勢背離？費半重演金融海嘯連跌紀錄 8日累跌15.7%後迎反彈 觸底了？",
+          "raw_title": "AI需求與股價走勢背離？費半重演金融海嘯連跌紀錄 8日累跌15.7%後迎反彈 觸底了？",
+          "normalized_fact": "費半指數10/7至16連跌8日、累跌15.7%，創2008年10月以來最長連跌，10/19盤前SOXX反彈2.8% 賣壓主因是CXMT宣布4F²記憶體進展恐增供給，及博通執行長稱AI擴張受資金限制引發疑慮 Cantor與JPM看法偏多，認為需求與訂單仍強、英特爾風險報酬改善，RSI 21.5顯示超賣。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "費半指數10/7至16連跌8日、累跌15.7%，創2008年10月以來最長連跌，10/19盤前SOXX反彈2.8% 賣壓主因是CXMT宣布4F²記憶體進展恐增供給，及博通執行長稱AI擴張受資金限制引發疑慮 Cantor與JPM看法偏多，認為需求與訂單仍強、英特爾風險報酬改善，RSI 21.5顯示超賣",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6633830",
+          "url": "https://news.cnyes.com/news/id/6633830",
+          "published_at": "2026-10-19T23:20:03+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-19",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "SOX"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "限制"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "限制"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "限制",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "費半指數107至16連跌8日累跌157創2008年10月以來最長連跌1019盤前soxx反彈28賣壓主因是cxmt宣布4f²記憶體進展恐增供給及博通執行長稱ai擴張受資金限制引發疑慮cantor與jpm看法偏多認為需求與訂單仍強英特爾風險報酬改善rsi215顯示超賣",
+          "event_cluster_key": "event-7a969399c802b720a100",
+          "published_time_bucket": "2026-10-19T23:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "限制"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "限制",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "story_id": "news-3371e5695af2f58c43cb",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Gold falls as dollar, Treasury yields rise; silver holds modest gains - Kitco PM Report - Kitco",
+          "raw_title": "Gold falls as dollar, Treasury yields rise; silver holds modest gains - Kitco PM Report - Kitco",
+          "normalized_fact": "Gold falls as dollar, Treasury yields rise; silver holds modest gains - Kitco PM Report Kitco。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Gold falls as dollar, Treasury yields rise; silver holds modest gains - Kitco PM Report Kitco",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxQbGJUTVpVc09hbndpQTA5MmFxbVJ3QkpCa0lobmkzOG42QTFHRUctdEFTRGYtNHhqZ2czQWhXRGtHd3VGQk9MN1BrQXhlWmRrT1EzUlFZcnBQYlJjaGpEbUxFUHBXYloxMWRGY09KclVNbHlxbjBuVGJvMkJ1c0RzdVNuWWhEN2xNeEtrNU9faXFTX2ZWVlppRzdWR3k0VlFlc3BvVDZmRkYxcFg4UHpMSFNXVVlOMFJoNTc4",
+          "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxQbGJUTVpVc09hbndpQTA5MmFxbVJ3QkpCa0lobmkzOG42QTFHRUctdEFTRGYtNHhqZ2czQWhXRGtHd3VGQk9MN1BrQXhlWmRrT1EzUlFZcnBQYlJjaGpEbUxFUHBXYloxMWRGY09KclVNbHlxbjBuVGJvMkJ1c0RzdVNuWWhEN2xNeEtrNU9faXFTX2ZWVlppRzdWR3k0VlFlc3BvVDZmRkYxcFg4UHpMSFNXVVlOMFJoNTc4",
+          "published_at": "2026-10-19T18:06:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-19",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "currency",
+            "reason": "currency_subject_action",
+            "matched_terms": [
+              "dollar",
+              "falls"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "dollar",
+              "falls"
+            ],
+            "matched_subject": "dollar",
+            "matched_action": "falls",
+            "matched_market_object": "dollar",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "active_event:gold"
+          ],
+          "freshness": "published",
+          "dedupe_key": "goldfallsasdollartreasuryyieldsrisesilverholdsmodestgainskitcopmreportkitco",
+          "event_cluster_key": "event-a4a51d084e2ba0fed665",
+          "published_time_bucket": "2026-10-19T18:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "dollar",
+            "falls"
+          ],
+          "matched_subject": "dollar",
+          "matched_action": "falls",
+          "matched_market_object": "dollar",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 120
+        },
+        {
+          "story_id": "news-0d5e9a9a0e81e8737efe",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Inflation data sparks debate over Federal Reserve rate decisions - Fox Business",
+          "raw_title": "Inflation data sparks debate over Federal Reserve rate decisions - Fox Business",
+          "normalized_fact": "Inflation data sparks debate over Federal Reserve rate decisions Fox Business。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Inflation data sparks debate over Federal Reserve rate decisions Fox Business",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiW0FVX3lxTE9QZTZvWjd2ZFBidG9ueHBiNF9wWWpQX1hmWldndTVobU54ZmxMNzFEU3JnVzRoQ2NjaldNcVowLS1WLVJlWU9ONnlmY1k0MFJOdTc4VmFZUWNRX28",
+          "url": "https://news.google.com/rss/articles/CBMiW0FVX3lxTE9QZTZvWjd2ZFBidG9ueHBiNF9wWWpQX1hmWldndTVobU54ZmxMNzFEU3JnVzRoQ2NjaldNcVowLS1WLVJlWU9ONnlmY1k0MFJOdTc4VmFZUWNRX28",
+          "published_at": "2026-10-16T21:36:19+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 3,
+          "published_local_date": "2026-10-16",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "federal reserve",
+              "rate"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "federal reserve",
+              "rate"
+            ],
+            "matched_subject": "federal reserve",
+            "matched_action": "rate",
+            "matched_market_object": "federal reserve",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "inflationdatasparksdebateoverfederalreserveratedecisionsfoxbusiness",
+          "event_cluster_key": "event-25b1e4ca4e25d86925c3",
+          "published_time_bucket": "2026-10-16T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "federal reserve",
+            "rate"
+          ],
+          "matched_subject": "federal reserve",
+          "matched_action": "rate",
+          "matched_market_object": "federal reserve",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
+          "story_id": "news-2b25dba7b4be0bff04f2",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "These surprising stocks could be some of the biggest drivers of S&P 500 earnings growth - MarketWatch",
+          "raw_title": "These surprising stocks could be some of the biggest drivers of S&P 500 earnings growth - MarketWatch",
+          "normalized_fact": "These surprising stocks could be some of the biggest drivers of S&P 500 earnings growth MarketWatch。",
+          "market_topic": "global_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "These surprising stocks could be some of the biggest drivers of S&P 500 earnings growth MarketWatch",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiygFBVV95cUxQXzFmLVBiTG5yNGZabEo2NWJkaTVzdnhQQ0tELUpBTVhJazN6NURHTjBscTdiOHJiUkE1NDZ0dDFrOXkwM3AwWVhORVl6bVFLQmFLRkdMTHZxUmxkT0Z6eklHZzByWXEtNUF6UTJCYzltQ29RUk50Q0stRHBQM18xVTF5VUJ2VU9HNG4zWXBwV3VMYlhDN0dNdnljU3RGM3ZXV3NXRDZCV0EwWXE4VVNWcVpqV0xTTndxNXZiMGRIcWh1WlgzLUkzY1BB",
+          "url": "https://news.google.com/rss/articles/CBMiygFBVV95cUxQXzFmLVBiTG5yNGZabEo2NWJkaTVzdnhQQ0tELUpBTVhJazN6NURHTjBscTdiOHJiUkE1NDZ0dDFrOXkwM3AwWVhORVl6bVFLQmFLRkdMTHZxUmxkT0Z6eklHZzByWXEtNUF6UTJCYzltQ29RUk50Q0stRHBQM18xVTF5VUJ2VU9HNG4zWXBwV3VMYlhDN0dNdnljU3RGM3ZXV3NXRDZCV0EwWXE4VVNWcVpqV0xTTndxNXZiMGRIcWh1WlgzLUkzY1BB",
+          "published_at": "2026-10-18T14:00:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 3,
+          "published_local_date": "2026-10-18",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "earnings"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "thesesurprisingstockscouldbesomeofthebiggestdriversofsp500earningsgrowthmarketwatch",
+          "event_cluster_key": "event-2c899ef685a0f8d93a48",
+          "published_time_bucket": "2026-10-18T14:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
+          "story_id": "news-3c50bfadafe8b71d8c2c",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "伊朗點名荷姆茲「7條海底電纜」警告敵人認清現實",
+          "raw_title": "伊朗點名荷姆茲「7條海底電纜」警告敵人認清現實",
+          "normalized_fact": "IRGC發言人點名荷姆茲海峽下方7條主要海底電纜，稱全球網路與商業資料仰賴這些設施。 TeleGeography指電纜主要服務波斯灣國家，若受破壞恐干擾區域通訊，但歐亞資料傳輸影響有限。 伊朗未明言攻擊計畫，卻在航運受阻之際升高通訊基礎設施風險，威脅延伸至數位領域。",
+          "market_topic": "energy_geopolitics",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "IRGC發言人點名荷姆茲海峽下方7條主要海底電纜，稱全球網路與商業資料仰賴這些設施。 TeleGeography指電纜主要服務波斯灣國家，若受破壞恐干擾區域通訊，但歐亞資料傳輸影響有限。 伊朗未明言攻擊計畫，卻在航運受阻之際升高通訊基礎設施風險，威脅延伸至數位領域。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6633800",
+          "url": "https://news.cnyes.com/news/id/6633800",
+          "published_at": "2026-10-19T22:40:03+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-19",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "conflict",
+            "reason": "conflict_subject_action",
+            "matched_terms": [
+              "伊朗",
+              "攻擊"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "伊朗",
+              "攻擊"
+            ],
+            "matched_subject": "伊朗",
+            "matched_action": "攻擊",
+            "matched_market_object": "伊朗",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:global",
+            "active_event:伊朗",
+            "active_event:荷姆茲",
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "irgc發言人點名荷姆茲海峽下方7條主要海底電纜稱全球網路與商業資料仰賴這些設施telegeography指電纜主要服務波斯灣國家若受破壞恐干擾區域通訊但歐亞資料傳輸影響有限伊朗未明言攻擊計畫卻在航運受阻之際升高通訊基礎設施風險威脅延伸至數位領域",
+          "event_cluster_key": "event-2437f5cfecbc3786e08c",
+          "published_time_bucket": "2026-10-19T22:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "伊朗",
+            "攻擊"
+          ],
+          "matched_subject": "伊朗",
+          "matched_action": "攻擊",
+          "matched_market_object": "伊朗",
+          "decision_value_class": "geopolitics_policy",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 2,
+          "inventory_saved_at": "2026-10-20T01:04:37.700769+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 37
         },
         {
           "story_id": "news-799fbdf48cec55b16531",
@@ -9482,24 +9436,25 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "NVDA": 17,
-          "TSM": 5,
-          "ON": 35
+          "ON": 37,
+          "NVDA": 19,
+          "TSM": 5
         },
         "sector_interest": {},
         "topic_interest": {
-          "伊朗": 5,
-          "荷姆茲": 2,
-          "oil": 19,
-          "gold": 6,
+          "伊朗": 3,
+          "oil": 15,
+          "gold": 4,
           "sanctions": 3,
-          "iran": 3,
+          "iran": 4,
           "war": 2,
+          "israel": 1,
           "hormuz": 2,
+          "荷姆茲": 1,
           "wti": 1
         },
         "market_interest": {
-          "us": 152
+          "us": 150
         },
         "context": {
           "tracked_tickers": [
@@ -9576,35 +9531,36 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "NVDA": 17,
+            "NVDA": 19,
             "TSM": 5
           },
           "research_candidate": {
-            "ON": 35
+            "ON": 37
           },
           "tracked_sector": {},
           "active_event": {
-            "伊朗": 5,
-            "荷姆茲": 2,
-            "oil": 19,
-            "gold": 6,
+            "伊朗": 3,
+            "oil": 15,
+            "gold": 4,
             "sanctions": 3,
-            "iran": 3,
+            "iran": 4,
             "war": 2,
+            "israel": 1,
             "hormuz": 2,
+            "荷姆茲": 1,
             "wti": 1
           },
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 55,
+      "excluded_count": 56,
       "exclusion_reasons": {
         "generic_official_filing": 20,
         "incomplete_normalized_fact": 34,
-        "insufficient_market_relevance": 16,
-        "listicle_or_selection": 2,
-        "market_scope_mismatch": 10,
-        "outside_calendar_window": 11,
+        "insufficient_market_relevance": 12,
+        "market_scope_mismatch": 12,
+        "missing_published_at": 1,
+        "outside_calendar_window": 13,
         "outside_trading_session_window": 3
       },
       "status": "ready",
@@ -9617,40 +9573,41 @@
         "disabled_provider_count": 1,
         "fetched": 61,
         "normalized": 61,
-        "eligible": 6,
-        "excluded": 55,
-        "date_eligible_current": 47,
-        "date_excluded_current": 14,
+        "eligible": 5,
+        "excluded": 56,
+        "date_eligible_current": 44,
+        "date_excluded_current": 17,
         "date_exclusion_reasons_current": {
-          "outside_calendar_window": 11,
+          "missing_published_at": 1,
+          "outside_calendar_window": 13,
           "outside_trading_session_window": 3
         },
-        "date_eligible_inventory": 91,
+        "date_eligible_inventory": 89,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-20T08:58:02.497276+00:00",
-        "deduped": 6,
+        "reference_time": "2026-10-20T09:08:03.742602+00:00",
+        "deduped": 5,
         "publicly_ranked": 5,
-        "current_eligible": 6,
-        "inventory_considered": 91,
+        "current_eligible": 5,
+        "inventory_considered": 89,
         "inventory_eligible": 50,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 55,
+        "filtered_story_count": 56,
         "fetched_story_count": 61,
         "normalized_story_count": 61,
-        "eligible_story_count": 6,
-        "deduped_story_count": 6,
+        "eligible_story_count": 5,
+        "deduped_story_count": 5,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 91,
+        "considered": 89,
         "eligible": 50,
         "selected": 0,
         "target_count": 5,
@@ -9664,7 +9621,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 61,
-          "checked_at": "2026-10-20T08:58:02.497310+00:00"
+          "checked_at": "2026-10-20T09:08:03.742645+00:00"
         },
         {
           "provider": "sec",
@@ -9675,10 +9632,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-10-20T08:58:02.497310+00:00",
+          "checked_at": "2026-10-20T09:08:03.742645+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+          "last_success_at": "2026-10-20T09:08:03.742645+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9706,12 +9663,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-10-20T08:58:02.497310+00:00",
+          "checked_at": "2026-10-20T09:08:03.742645+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-10-20T08:58:02.497310+00:00",
+          "last_failure_at": "2026-10-20T09:08:03.742645+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9734,10 +9691,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-10-20T08:58:02.497310+00:00",
+          "checked_at": "2026-10-20T09:08:03.742645+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+          "last_success_at": "2026-10-20T09:08:03.742645+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9761,27 +9718,27 @@
           "status": "healthy",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 2,
-          "checked_at": "2026-10-20T08:58:02.497310+00:00",
+          "item_count": 1,
+          "checked_at": "2026-10-20T09:08:03.742645+00:00",
           "raw_item_count": 5,
-          "filtered_item_count": 2,
-          "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-10-20T09:08:03.742645+00:00",
           "last_failure_at": null,
-          "stories_ingested": 4,
-          "stories_deduped": 2,
-          "ranked_count": 2,
+          "stories_ingested": 3,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
-            "active_event": 2,
-            "market": 4
+            "active_event": 1,
+            "market": 3
           },
           "funnel": {
-            "fetched_count": 4,
-            "normalized_count": 4,
-            "market_compatible_count": 4,
-            "eligible_count": 2,
+            "fetched_count": 3,
+            "normalized_count": 3,
+            "market_compatible_count": 3,
+            "eligible_count": 1,
             "excluded_count": 2,
-            "deduped_count": 2,
-            "ranked_count": 2
+            "deduped_count": 1,
+            "ranked_count": 1
           }
         },
         {
@@ -9793,10 +9750,10 @@
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
           "item_count": 1,
-          "checked_at": "2026-10-20T08:58:02.497310+00:00",
+          "checked_at": "2026-10-20T09:08:03.742645+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 1,
-          "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+          "last_success_at": "2026-10-20T09:08:03.742645+00:00",
           "last_failure_at": null,
           "stories_ingested": 2,
           "stories_deduped": 1,
@@ -9807,7 +9764,7 @@
             "tracked_ticker": 1
           },
           "funnel": {
-            "fetched_count": 7,
+            "fetched_count": 8,
             "normalized_count": 2,
             "market_compatible_count": 2,
             "eligible_count": 1,
@@ -9824,17 +9781,17 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
-          "item_count": 2,
-          "checked_at": "2026-10-20T08:58:02.497310+00:00",
+          "item_count": 3,
+          "checked_at": "2026-10-20T09:08:03.742645+00:00",
           "raw_item_count": 40,
-          "filtered_item_count": 2,
-          "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+          "filtered_item_count": 3,
+          "last_success_at": "2026-10-20T09:08:03.742645+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
           "stories_deduped": 3,
-          "ranked_count": 2,
+          "ranked_count": 3,
           "relevance_distribution": {
-            "active_event": 12,
+            "active_event": 11,
             "market": 40,
             "research_candidate": 10,
             "tracked_ticker": 1
@@ -9846,48 +9803,48 @@
             "eligible_count": 3,
             "excluded_count": 37,
             "deduped_count": 3,
-            "ranked_count": 2
+            "ranked_count": 3
           }
         }
       ],
       "observability": {
         "stories_ingested": 61,
-        "stories_deduped": 6,
+        "stories_deduped": 5,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 14,
+          "active_event": 12,
           "market": 61,
-          "research_candidate": 12,
-          "tracked_ticker": 3
+          "research_candidate": 13,
+          "tracked_ticker": 4
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+            "last_success_at": "2026-10-20T09:08:03.742645+00:00",
             "last_failure_at": null,
-            "stories_ingested": 4,
-            "stories_deduped": 2,
-            "ranked_count": 2,
+            "stories_ingested": 3,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
-              "active_event": 2,
-              "market": 4
+              "active_event": 1,
+              "market": 3
             },
             "funnel": {
-              "fetched_count": 4,
-              "normalized_count": 4,
-              "market_compatible_count": 4,
-              "eligible_count": 2,
+              "fetched_count": 3,
+              "normalized_count": 3,
+              "market_compatible_count": 3,
+              "eligible_count": 1,
               "excluded_count": 2,
-              "deduped_count": 2,
-              "ranked_count": 2
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           },
           {
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-10-20T08:58:02.497310+00:00",
+            "last_failure_at": "2026-10-20T09:08:03.742645+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9905,13 +9862,13 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+            "last_success_at": "2026-10-20T09:08:03.742645+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
             "stories_deduped": 3,
-            "ranked_count": 2,
+            "ranked_count": 3,
             "relevance_distribution": {
-              "active_event": 12,
+              "active_event": 11,
               "market": 40,
               "research_candidate": 10,
               "tracked_ticker": 1
@@ -9923,13 +9880,13 @@
               "eligible_count": 3,
               "excluded_count": 37,
               "deduped_count": 3,
-              "ranked_count": 2
+              "ranked_count": 3
             }
           },
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+            "last_success_at": "2026-10-20T09:08:03.742645+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9948,7 +9905,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+            "last_success_at": "2026-10-20T09:08:03.742645+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -9971,20 +9928,20 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 5,
+            "stories_ingested": 6,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 5,
-              "research_candidate": 1,
-              "tracked_ticker": 1
+              "market": 6,
+              "research_candidate": 2,
+              "tracked_ticker": 2
             },
             "funnel": {
-              "fetched_count": 5,
-              "normalized_count": 5,
+              "fetched_count": 6,
+              "normalized_count": 6,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 5,
+              "excluded_count": 6,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -9992,7 +9949,7 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-20T08:58:02.497310+00:00",
+            "last_success_at": "2026-10-20T09:08:03.742645+00:00",
             "last_failure_at": null,
             "stories_ingested": 2,
             "stories_deduped": 1,
@@ -10003,7 +9960,7 @@
               "tracked_ticker": 1
             },
             "funnel": {
-              "fetched_count": 7,
+              "fetched_count": 8,
               "normalized_count": 2,
               "market_compatible_count": 2,
               "eligible_count": 1,
