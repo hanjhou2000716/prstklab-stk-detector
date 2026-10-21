@@ -1,10 +1,10 @@
 {
   "schema_version": "1.1",
-  "release_id": "release-0786df0f14347fbb",
-  "created_at": "2026-10-21T16:03:03.410247+00:00",
-  "snapshot_id": "71f83422379d369b",
-  "market_snapshot_id": "71f83422379d369b",
-  "generated_at": "2026-10-21T23:57:46.210765+08:00",
+  "release_id": "release-a7997d228214a376",
+  "created_at": "2026-10-21T16:10:04.515670+00:00",
+  "snapshot_id": "18beeae57a179766",
+  "market_snapshot_id": "18beeae57a179766",
+  "generated_at": "2026-10-22T00:09:37.619320+08:00",
   "data_status": "混合資料",
   "snapshot_schema_version": "3.0",
   "markets": {
@@ -12,12 +12,12 @@
       "label": "台股",
       "timezone": "Asia/Taipei",
       "calendar": "XTAI",
-      "date": "2026-10-21",
+      "date": "2026-10-22",
       "is_trading_day": true,
-      "session": "收盤後",
+      "session": "開盤前",
       "calendar_status": "confirmed_open",
-      "market_open": "2026-10-21T09:00:00+08:00",
-      "market_close": "2026-10-21T13:30:00+08:00"
+      "market_open": "2026-10-22T09:00:00+08:00",
+      "market_close": "2026-10-22T13:30:00+08:00"
     },
     "us": {
       "label": "美股",
@@ -34,12 +34,12 @@
       "label": "台股",
       "timezone": "Asia/Taipei",
       "calendar": "XTAI",
-      "date": "2026-10-21",
+      "date": "2026-10-22",
       "is_trading_day": true,
-      "session": "收盤後",
+      "session": "開盤前",
       "calendar_status": "confirmed_open",
-      "market_open": "2026-10-21T09:00:00+08:00",
-      "market_close": "2026-10-21T13:30:00+08:00",
+      "market_open": "2026-10-22T09:00:00+08:00",
+      "market_close": "2026-10-22T13:30:00+08:00",
       "market_component": "TWSE cash session",
       "calendar_provider": "pandas_market_calendars",
       "calendar_basis": "pandas_market_calendars:XTAI"
@@ -66,12 +66,12 @@
       "calendar_verified_on": "2026-09-25",
       "calendar_version": "TAIFEX-2026",
       "calendar_source_document": "台期交字第1140003036號函，附件：115年期貨集中交易市場開（休）市日期表",
-      "date": "2026-10-21",
+      "date": "2026-10-22",
       "is_trading_day": true,
       "calendar_status": "confirmed_open",
-      "session": "收盤後",
-      "market_open": "2026-10-21T08:45:00+08:00",
-      "market_close": "2026-10-21T13:45:00+08:00"
+      "session": "開盤前",
+      "market_open": "2026-10-22T08:45:00+08:00",
+      "market_close": "2026-10-22T13:45:00+08:00"
     }
   },
   "indices": [
@@ -99,27 +99,28 @@
       "routine_eligible": true,
       "alert_eligible": false,
       "backup_used": false,
+      "fallback_reason": "primary_source_unavailable_or_stale",
       "instrument_id": "twse:taiex",
       "source_attempts": [
         {
           "source": "twse_fmtqik",
           "target_date": "2026-10-21",
           "observed_date": "2026-10-20",
-          "checked_at": "2026-10-21T23:57:32.358513+08:00",
+          "checked_at": "2026-10-22T00:09:21.817067+08:00",
           "outcome": "reported_older_session"
         },
         {
           "source": "twse_mi_index_json",
           "target_date": "2026-10-21",
           "outcome": "verified",
-          "checked_at": "2026-10-21T23:57:32.358566+08:00",
+          "checked_at": "2026-10-22T00:09:21.817143+08:00",
           "observed_date": "2026-10-21",
           "response_sha256": "5e8f1b7f74934e65f27d96464c2b3cecabed44963910d7d00bbfe1c3ce7179ed"
         }
       ],
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "5aaa875009e30cd4"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "20f2a1e45f1d6eec"
     },
     {
       "symbol": "^GSPC",
@@ -127,13 +128,13 @@
       "name": "標普 500",
       "market": "us",
       "currency": "點",
-      "price": 7751.94,
+      "price": 7750.27,
       "previous_close": 7712.57,
-      "change": 39.37,
-      "change_percent": 0.51,
-      "change_15m_percent": 0.0,
+      "change": 37.7,
+      "change_percent": 0.49,
+      "change_15m_percent": -0.02,
       "quote_date": "2026-10-21",
-      "quote_time": "2026-10-21T11:55:00-04:00",
+      "quote_time": "2026-10-21T12:05:00-04:00",
       "quote_basis": "盤中 5 分鐘",
       "quote_source": "Yahoo Finance public 5-minute quote",
       "source_url": "https://finance.yahoo.com/quote/^GSPC",
@@ -145,8 +146,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "53c538013aca59ea"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "b3abe1f99a4a6dd8"
     },
     {
       "symbol": "^IXIC",
@@ -154,13 +155,13 @@
       "name": "那斯達克綜合指數",
       "market": "us",
       "currency": "點",
-      "price": 26718.15,
+      "price": 26703.32,
       "previous_close": 26424.82,
-      "change": 293.33,
-      "change_percent": 1.11,
-      "change_15m_percent": -0.01,
+      "change": 278.5,
+      "change_percent": 1.05,
+      "change_15m_percent": -0.06,
       "quote_date": "2026-10-21",
-      "quote_time": "2026-10-21T11:55:00-04:00",
+      "quote_time": "2026-10-21T12:05:00-04:00",
       "quote_basis": "盤中 5 分鐘",
       "quote_source": "Yahoo Finance public 5-minute quote",
       "source_url": "https://finance.yahoo.com/quote/^IXIC",
@@ -173,8 +174,8 @@
       "alert_eligible": false,
       "instrument_id": "us:nasdaq",
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "7c4c10c5b36273eb"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "7be703cde9c00246"
     },
     {
       "symbol": "^DJI",
@@ -182,13 +183,13 @@
       "name": "道瓊工業指數",
       "market": "us",
       "currency": "點",
-      "price": 52630.19,
+      "price": 52627.01,
       "previous_close": 52495.88,
-      "change": 134.31,
-      "change_percent": 0.26,
-      "change_15m_percent": -0.02,
+      "change": 131.13,
+      "change_percent": 0.25,
+      "change_15m_percent": -0.01,
       "quote_date": "2026-10-21",
-      "quote_time": "2026-10-21T11:55:00-04:00",
+      "quote_time": "2026-10-21T12:05:00-04:00",
       "quote_basis": "盤中 5 分鐘",
       "quote_source": "Yahoo Finance public 5-minute quote",
       "source_url": "https://finance.yahoo.com/quote/^DJI",
@@ -201,8 +202,8 @@
       "alert_eligible": false,
       "instrument_id": "us:djia",
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "c81b88bad3be5546"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "db3cadc9fdbe11d6"
     },
     {
       "symbol": "^SOX",
@@ -210,13 +211,13 @@
       "name": "費城半導體指數",
       "market": "us",
       "currency": "點",
-      "price": 11517.3,
+      "price": 11495.84,
       "previous_close": 11283.81,
-      "change": 233.49,
-      "change_percent": 2.07,
-      "change_15m_percent": 0.14,
+      "change": 212.03,
+      "change_percent": 1.88,
+      "change_15m_percent": -0.16,
       "quote_date": "2026-10-21",
-      "quote_time": "2026-10-21T11:55:00-04:00",
+      "quote_time": "2026-10-21T12:05:00-04:00",
       "quote_basis": "盤中 5 分鐘",
       "quote_source": "Yahoo Finance public 5-minute quote",
       "source_url": "https://finance.yahoo.com/quote/^SOX",
@@ -229,8 +230,8 @@
       "alert_eligible": false,
       "instrument_id": "us:sox",
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "60f1985b2777b5c2"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "86c9e482becf9dad"
     },
     {
       "symbol": "ES=F",
@@ -238,13 +239,13 @@
       "name": "S&P 500 E-mini 指數期貨",
       "market": "us",
       "currency": "點",
-      "price": 7795.25,
+      "price": 7795.0,
       "previous_close": 7755.25,
-      "change": 40.0,
-      "change_percent": 0.52,
-      "change_15m_percent": 0.09,
+      "change": 39.75,
+      "change_percent": 0.51,
+      "change_15m_percent": 0.03,
       "quote_date": "2026-10-21",
-      "quote_time": "2026-10-21T11:45:00-04:00",
+      "quote_time": "2026-10-21T11:55:00-04:00",
       "quote_basis": "盤中延遲報價",
       "quote_source": "Yahoo Finance public 5-minute quote",
       "source_url": "https://finance.yahoo.com/quote/ES=F",
@@ -257,8 +258,8 @@
       "alert_eligible": false,
       "contract_basis": "continuous_contract",
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "1b0acf4263f4a949"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "38afe614e468f4f8"
     },
     {
       "symbol": "NQ=F",
@@ -266,13 +267,13 @@
       "name": "Nasdaq-100 指數期貨",
       "market": "us",
       "currency": "點",
-      "price": 30046.25,
+      "price": 30045.5,
       "previous_close": 29675.25,
-      "change": 371.0,
+      "change": 370.25,
       "change_percent": 1.25,
-      "change_15m_percent": 0.17,
+      "change_15m_percent": 0.04,
       "quote_date": "2026-10-21",
-      "quote_time": "2026-10-21T11:45:00-04:00",
+      "quote_time": "2026-10-21T11:55:00-04:00",
       "quote_basis": "盤中延遲報價",
       "quote_source": "Yahoo Finance public 5-minute quote",
       "source_url": "https://finance.yahoo.com/quote/NQ=F",
@@ -285,8 +286,8 @@
       "alert_eligible": false,
       "contract_basis": "continuous_contract",
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "988df413c469331a"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "404c1a10272d6ead"
     },
     {
       "symbol": "YM=F",
@@ -294,13 +295,13 @@
       "name": "道瓊 E-mini 指數期貨",
       "market": "us",
       "currency": "點",
-      "price": 52867.0,
+      "price": 52855.0,
       "previous_close": 52719.0,
-      "change": 148.0,
-      "change_percent": 0.28,
-      "change_15m_percent": 0.07,
+      "change": 136.0,
+      "change_percent": 0.26,
+      "change_15m_percent": -0.01,
       "quote_date": "2026-10-21",
-      "quote_time": "2026-10-21T11:45:00-04:00",
+      "quote_time": "2026-10-21T11:55:00-04:00",
       "quote_basis": "盤中延遲報價",
       "quote_source": "Yahoo Finance public 5-minute quote",
       "source_url": "https://finance.yahoo.com/quote/YM=F",
@@ -313,8 +314,8 @@
       "alert_eligible": false,
       "contract_basis": "continuous_contract",
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "f73d969dbd95808b"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "d79c9be6b03c0f34"
     },
     {
       "symbol": "^N225",
@@ -341,8 +342,8 @@
       "backup_used": true,
       "fallback_reason": "primary_source_unavailable_or_stale",
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "1c51d46f2f41ac97"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "f40f3f92a36be7b7"
     },
     {
       "symbol": "^KS11",
@@ -369,8 +370,8 @@
       "backup_used": true,
       "fallback_reason": "primary_source_unavailable_or_stale",
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "3df8296c8ca13ad5"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "ca1d02879e429b5d"
     },
     {
       "symbol": "BZ=F",
@@ -378,10 +379,10 @@
       "name": "Brent 原油",
       "market": "global",
       "currency": "USD",
-      "price": 108.83,
+      "price": 108.45,
       "previous_close": 108.79,
-      "change": 0.04,
-      "change_percent": 0.04,
+      "change": -0.34,
+      "change_percent": -0.31,
       "quote_date": "2026-10-21",
       "quote_time": null,
       "quote_basis": "日線收盤",
@@ -394,8 +395,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "79f77887a08f4ed1"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "79ebbde499fb42f0"
     },
     {
       "symbol": "CL=F",
@@ -403,10 +404,10 @@
       "name": "WTI 原油",
       "market": "global",
       "currency": "USD",
-      "price": 97.25,
+      "price": 96.85,
       "previous_close": 101.79,
-      "change": -4.54,
-      "change_percent": -4.46,
+      "change": -4.94,
+      "change_percent": -4.85,
       "quote_date": "2026-10-21",
       "quote_time": null,
       "quote_basis": "日線收盤",
@@ -419,8 +420,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "385547590c4f75e1"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "d1e0e2cd18c6b8ac"
     },
     {
       "symbol": "GC=F",
@@ -428,10 +429,10 @@
       "name": "黃金期貨",
       "market": "global",
       "currency": "USD",
-      "price": 4150.0,
+      "price": 4150.6,
       "previous_close": 4142.6,
-      "change": 7.4,
-      "change_percent": 0.18,
+      "change": 8.0,
+      "change_percent": 0.19,
       "quote_date": "2026-10-21",
       "quote_time": null,
       "quote_basis": "日線收盤",
@@ -444,8 +445,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "f70a90af55392375"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "39fd9b83222a10a8"
     },
     {
       "symbol": "BTC-USD",
@@ -453,12 +454,12 @@
       "name": "比特幣",
       "market": "global",
       "currency": "USD",
-      "price": 84547.38,
+      "price": 84622.45,
       "previous_close": 82941.0,
-      "change": 1606.38,
-      "change_percent": 1.94,
+      "change": 1681.45,
+      "change_percent": 2.03,
       "quote_date": "2026-10-21",
-      "quote_time": "2026-10-21T15:57:09.742000+00:00",
+      "quote_time": "2026-10-21T16:09:11.973000+00:00",
       "quote_basis": "盤中",
       "quote_source": "Binance.US public spot quote",
       "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=BTCUSDT",
@@ -470,8 +471,8 @@
       "alert_eligible": false,
       "instrument_id": "global:btc",
       "cross_checked": true,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "cd2beabd6669b3a2"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "064abcd05a104b2c"
     },
     {
       "symbol": "ETH-USD",
@@ -479,12 +480,12 @@
       "name": "以太坊",
       "market": "global",
       "currency": "USD",
-      "price": 2513.08,
+      "price": 2513.79,
       "previous_close": 2446.73,
-      "change": 66.35,
-      "change_percent": 2.71,
+      "change": 67.06,
+      "change_percent": 2.74,
       "quote_date": "2026-10-21",
-      "quote_time": "2026-10-21T15:57:17.915000+00:00",
+      "quote_time": "2026-10-21T16:09:11.837000+00:00",
       "quote_basis": "盤中",
       "quote_source": "Binance.US public spot quote",
       "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=ETHUSDT",
@@ -496,8 +497,8 @@
       "alert_eligible": false,
       "instrument_id": "global:eth",
       "cross_checked": true,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "b73087982f980de0"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "59fceace4d767e4f"
     },
     {
       "symbol": "^TWOII",
@@ -523,8 +524,8 @@
       "alert_eligible": false,
       "instrument_id": "tpex:index",
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "1c64d4105ccf2f73"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "a17ac22714e29608"
     },
     {
       "ticker": "TXF",
@@ -544,12 +545,12 @@
       "source_tier": "official",
       "freshness": "recent_close",
       "data_status": "最近收盤",
-      "quote_delayed": false,
+      "quote_delayed": true,
       "stale_used": false,
       "alert_eligible": false,
       "backup_used": false,
       "official_fallback_used": true,
-      "fallback_reason": null,
+      "fallback_reason": "current_session_closed_or_not_yet_published",
       "instrument_id": "market:txf:taifex:202611:regular",
       "contract_month": "202611",
       "contract_basis": "named_month_contract",
@@ -558,31 +559,31 @@
         {
           "source": "taifex_openapi",
           "outcome": "verified",
-          "checked_at": "2026-10-21T23:55:43.363972+08:00",
-          "target_date": "2026-10-21",
+          "checked_at": "2026-10-22T00:07:23.676570+08:00",
+          "target_date": "2026-10-22",
           "observed_date": "2026-10-20",
           "response_sha256": "7195b5d325b66cec1520aa2ab2d54482a5887315263972dd6886451cdeac1209"
         },
         {
           "source": "taifex_daily_table",
           "outcome": "verified",
-          "checked_at": "2026-10-21T23:55:43.363972+08:00",
-          "target_date": "2026-10-21",
+          "checked_at": "2026-10-22T00:07:23.676570+08:00",
+          "target_date": "2026-10-22",
           "observed_date": "2026-10-21",
           "response_sha256": "5b343a230148c4315581c07e87babbbed2ab8052b6f75f6958744fb20a0f5345"
         },
         {
           "source": "taifex_selection",
           "outcome": "selected:taifex_daily_table",
-          "checked_at": "2026-10-21T23:55:43.363972+08:00",
-          "target_date": "2026-10-21",
+          "checked_at": "2026-10-22T00:07:23.676570+08:00",
+          "target_date": "2026-10-22",
           "observed_date": "2026-10-21",
           "response_sha256": ""
         }
       ],
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "f534c546bafa1138"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "ce52bef41fa45502"
     }
   ],
   "quotes": [
@@ -598,24 +599,27 @@
       "change_percent": 0.94,
       "quote_date": "2026-10-21",
       "quote_time": null,
-      "quote_basis": "日線收盤",
-      "quote_source": "Yahoo Finance public daily quote",
-      "source_url": "https://finance.yahoo.com/quote/006208.TW",
-      "source_label": "Yahoo",
-      "source_tier": "public-market",
+      "quote_basis": "Supabase 最後有效資料",
+      "quote_source": "TWSE public quote",
+      "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL",
+      "source_label": "TWSE",
+      "source_tier": "official",
       "freshness": "recent_close",
-      "data_status": "最近收盤",
-      "stale_used": false,
+      "data_status": "備援資料",
+      "quote_delayed": true,
+      "stale_used": true,
       "alert_eligible": false,
+      "backup_used": true,
+      "fallback_reason": "primary_source_unavailable_or_stale",
       "instrument_id": "twse:006208",
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "7a851d9fc6adbbcc"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "131ba2b89c68ef14"
     },
     {
       "symbol": "00685L.TW",
       "ticker": "00685L",
-      "name": "群益臺灣加權正二",
+      "name": "群益臺灣加權正2",
       "market": "taiwan",
       "currency": "TWD",
       "price": 12.13,
@@ -624,19 +628,22 @@
       "change_percent": 2.45,
       "quote_date": "2026-10-21",
       "quote_time": null,
-      "quote_basis": "日線收盤",
-      "quote_source": "Yahoo Finance public daily quote",
-      "source_url": "https://finance.yahoo.com/quote/00685L.TW",
-      "source_label": "Yahoo",
-      "source_tier": "public-market",
+      "quote_basis": "Supabase 最後有效資料",
+      "quote_source": "TWSE public quote",
+      "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL",
+      "source_label": "TWSE",
+      "source_tier": "official",
       "freshness": "recent_close",
-      "data_status": "最近收盤",
-      "stale_used": false,
+      "data_status": "備援資料",
+      "quote_delayed": true,
+      "stale_used": true,
       "alert_eligible": false,
+      "backup_used": true,
+      "fallback_reason": "primary_source_unavailable_or_stale",
       "instrument_id": "twse:00685l",
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "c9919f96131609d9"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "0b98686fdf298682"
     },
     {
       "symbol": "2330.TW",
@@ -650,19 +657,22 @@
       "change_percent": 0.62,
       "quote_date": "2026-10-21",
       "quote_time": null,
-      "quote_basis": "日線收盤",
-      "quote_source": "Yahoo Finance public daily quote",
-      "source_url": "https://finance.yahoo.com/quote/2330.TW",
-      "source_label": "Yahoo",
-      "source_tier": "public-market",
+      "quote_basis": "Supabase 最後有效資料",
+      "quote_source": "TWSE public quote",
+      "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL",
+      "source_label": "TWSE",
+      "source_tier": "official",
       "freshness": "recent_close",
-      "data_status": "最近收盤",
-      "stale_used": false,
+      "data_status": "備援資料",
+      "quote_delayed": true,
+      "stale_used": true,
       "alert_eligible": false,
+      "backup_used": true,
+      "fallback_reason": "primary_source_unavailable_or_stale",
       "instrument_id": "twse:2330",
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "8a67e61d6195331d"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "2bf9027aa863348c"
     },
     {
       "symbol": "QQQM",
@@ -670,13 +680,13 @@
       "name": "Invesco NASDAQ 100 ETF",
       "market": "us",
       "currency": "USD",
-      "price": 299.01,
+      "price": 298.83,
       "previous_close": 295.59,
-      "change": 3.42,
-      "change_percent": 1.16,
-      "change_15m_percent": 0.06,
+      "change": 3.24,
+      "change_percent": 1.1,
+      "change_15m_percent": -0.06,
       "quote_date": "2026-10-21",
-      "quote_time": "2026-10-21T11:55:00-04:00",
+      "quote_time": "2026-10-21T12:05:00-04:00",
       "quote_basis": "盤中 5 分鐘",
       "quote_source": "Yahoo Finance public 5-minute quote",
       "source_url": "https://finance.yahoo.com/quote/QQQM",
@@ -688,8 +698,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "ba596318da19e562"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "8a1a6be6e0ec0855"
     },
     {
       "symbol": "QLD",
@@ -697,13 +707,13 @@
       "name": "ProShares Ultra QQQ",
       "market": "us",
       "currency": "USD",
-      "price": 91.69,
+      "price": 91.6,
       "previous_close": 89.54,
-      "change": 2.15,
-      "change_percent": 2.4,
-      "change_15m_percent": 0.06,
+      "change": 2.06,
+      "change_percent": 2.3,
+      "change_15m_percent": -0.12,
       "quote_date": "2026-10-21",
-      "quote_time": "2026-10-21T11:55:00-04:00",
+      "quote_time": "2026-10-21T12:05:00-04:00",
       "quote_basis": "盤中 5 分鐘",
       "quote_source": "Yahoo Finance public 5-minute quote",
       "source_url": "https://finance.yahoo.com/quote/QLD",
@@ -715,8 +725,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "44038c1646aafb2b"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "7683e0786ee8300f"
     },
     {
       "symbol": "TSM",
@@ -724,13 +734,13 @@
       "name": "台積電 ADR",
       "market": "us",
       "currency": "USD",
-      "price": 428.27,
+      "price": 428.08,
       "previous_close": 425.08,
-      "change": 3.19,
-      "change_percent": 0.75,
-      "change_15m_percent": 0.15,
+      "change": 3.0,
+      "change_percent": 0.71,
+      "change_15m_percent": -0.01,
       "quote_date": "2026-10-21",
-      "quote_time": "2026-10-21T11:55:00-04:00",
+      "quote_time": "2026-10-21T12:05:00-04:00",
       "quote_basis": "盤中 5 分鐘",
       "quote_source": "Yahoo Finance public 5-minute quote",
       "source_url": "https://finance.yahoo.com/quote/TSM",
@@ -743,8 +753,8 @@
       "alert_eligible": false,
       "instrument_id": "us:tsm",
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "9fc0e0aebd11f7ae"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "4a0556a41d5e43a6"
     },
     {
       "symbol": "NVDA",
@@ -752,13 +762,13 @@
       "name": "NVIDIA",
       "market": "us",
       "currency": "USD",
-      "price": 220.4,
+      "price": 220.43,
       "previous_close": 216.47,
-      "change": 3.93,
-      "change_percent": 1.82,
-      "change_15m_percent": -0.04,
+      "change": 3.96,
+      "change_percent": 1.83,
+      "change_15m_percent": 0.05,
       "quote_date": "2026-10-21",
-      "quote_time": "2026-10-21T11:55:00-04:00",
+      "quote_time": "2026-10-21T12:05:00-04:00",
       "quote_basis": "盤中 5 分鐘",
       "quote_source": "Yahoo Finance public 5-minute quote",
       "source_url": "https://finance.yahoo.com/quote/NVDA",
@@ -771,8 +781,8 @@
       "alert_eligible": false,
       "instrument_id": "us:nvda",
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "9051ada719e57d0c"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "7f299aae1797e33a"
     }
   ],
   "macro_quotes": [
@@ -782,10 +792,10 @@
       "name": "美元指數",
       "market": "global",
       "currency": "點",
-      "price": 101.8,
+      "price": 101.79,
       "previous_close": 101.73,
-      "change": 0.07,
-      "change_percent": 0.07,
+      "change": 0.06,
+      "change_percent": 0.06,
       "quote_date": "2026-10-21",
       "quote_time": null,
       "quote_basis": "日線收盤",
@@ -798,8 +808,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "e025f956a15b3f77"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "c9c4062d9d80a706"
     },
     {
       "symbol": "^TNX",
@@ -823,8 +833,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "290a27c5ce2eee79"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "07575bf40701a3d0"
     },
     {
       "symbol": "TWD=X",
@@ -848,8 +858,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "71f83422379d369b",
-      "observation_id": "87e8580d375ce574"
+      "snapshot_id": "18beeae57a179766",
+      "observation_id": "4ce4c124a988bc60"
     }
   ],
   "risk": {
@@ -858,11 +868,11 @@
       "label": "台股",
       "summary": "情緒：極度恐慌",
       "sentiment": {
-        "score": 18.5,
+        "score": 19.5,
         "label": "極度恐慌",
         "source_label": "TAIEX Macro FGI",
-        "date": "2026-10-21",
-        "index_level": 46887.77
+        "date": "2026-10-20",
+        "index_level": 46292.93
       },
       "vix": {
         "value": 28.4,
@@ -870,7 +880,7 @@
         "change_percent": -7.76,
         "stage": "恐慌",
         "source_label": "TAIFEX",
-        "fetched_at": "2026-10-21T15:56:54.528698+00:00",
+        "fetched_at": "2026-10-21T16:08:42.155675+00:00",
         "freshness_state": "intraday"
       }
     },
@@ -878,18 +888,18 @@
       "label": "美股",
       "summary": "情緒：中立／偏恐慌",
       "sentiment": {
-        "score": 31.0,
+        "score": 31.1,
         "label": "中立／偏恐慌",
         "source_label": "CNN Fear & Greed",
-        "updated_at": "2026-10-21T15:54:48+00:00"
+        "updated_at": "2026-10-21T16:03:46+00:00"
       },
       "vix": {
-        "value": 16.57,
+        "value": 16.72,
         "date": "2026-10-21",
-        "change_percent": -4.27,
+        "change_percent": -3.41,
         "stage": "中立",
         "source_label": "Yahoo Finance",
-        "fetched_at": "2026-10-21T15:56:22.027738+00:00",
+        "fetched_at": "2026-10-21T16:08:04.165349+00:00",
         "freshness_state": "daily_close"
       }
     }
@@ -920,8 +930,8 @@
         "classification_reason": "keyword_no_match",
         "released_at": "2026-10-21T14:51:54+00:00",
         "published_at": "2026-10-21T14:51:54+00:00",
-        "snapshot_id": "71f83422379d369b",
-        "observation_id": "97520544e09ada4a",
+        "snapshot_id": "18beeae57a179766",
+        "observation_id": "44e389c42f38a47c",
         "market_direction": null,
         "market_move": null,
         "why_important": "重大災害可能改變區域供應、航運、能源或避險需求；實際影響須由官方資訊與公開市場資料共同確認。",
@@ -937,7 +947,7 @@
           "source_url": "https://www.gdacs.org/report.aspx?eventtype=TC&eventid=1001341",
           "source_domain": "gdacs.org",
           "event_time": "2026-10-21T14:51:54+00:00",
-          "checked_at": "2026-10-21T15:55:58.473182+00:00",
+          "checked_at": "2026-10-21T16:07:46.029874+00:00",
           "verified_domains": [
             "gdacs.org"
           ],
@@ -949,8 +959,8 @@
           "crosscheck_sources": [
             "https://www.gdacs.org/report.aspx?eventtype=TC&eventid=1001341"
           ],
-          "snapshot_id": "71f83422379d369b",
-          "observation_id": "97520544e09ada4a"
+          "snapshot_id": "18beeae57a179766",
+          "observation_id": "44e389c42f38a47c"
         },
         "evidence_state": "single_source",
         "evidence_reason": "等待市場同步",
@@ -974,8 +984,8 @@
         "classification": "conflict",
         "classification_reason": "conflict_subject_action",
         "published_at": "2026-10-21T14:46:19+00:00",
-        "snapshot_id": "71f83422379d369b",
-        "observation_id": "1008b77dd645c9ef",
+        "snapshot_id": "18beeae57a179766",
+        "observation_id": "4634c8b4e8a34d3a",
         "market_direction": null,
         "market_move": null,
         "why_important": "重大災害可能改變區域供應、航運、能源或避險需求；實際影響須由官方資訊與公開市場資料共同確認。",
@@ -991,7 +1001,7 @@
           "source_url": "https://tw.stock.yahoo.com/news/%E9%A6%96%E6%89%B9%E9%8A%B7%E7%BE%8E%E4%BF%84%E7%BE%85%E6%96%AF%E6%9F%B4%E6%B2%B9-10-22%E5%95%9F%E9%81%8B-%E9%82%84%E6%9C%83%E6%9C%89%E6%9B%B4%E5%A4%9A%E6%89%B9%E6%AC%A1%E9%81%8B%E5%87%BA-144619962.html",
           "source_domain": "tw.stock.yahoo.com",
           "event_time": "2026-10-21T14:46:19+00:00",
-          "checked_at": "2026-10-21T15:57:45.852843+00:00",
+          "checked_at": "2026-10-21T16:09:36.877400+00:00",
           "verified_domains": [
             "tw.stock.yahoo.com"
           ],
@@ -1007,8 +1017,62 @@
           "crosscheck_sources": [
             "https://tw.stock.yahoo.com/news/%E9%A6%96%E6%89%B9%E9%8A%B7%E7%BE%8E%E4%BF%84%E7%BE%85%E6%96%AF%E6%9F%B4%E6%B2%B9-10-22%E5%95%9F%E9%81%8B-%E9%82%84%E6%9C%83%E6%9C%89%E6%9B%B4%E5%A4%9A%E6%89%B9%E6%AC%A1%E9%81%8B%E5%87%BA-144619962.html"
           ],
-          "snapshot_id": "71f83422379d369b",
-          "observation_id": "1008b77dd645c9ef"
+          "snapshot_id": "18beeae57a179766",
+          "observation_id": "4634c8b4e8a34d3a"
+        },
+        "evidence_state": "single_source",
+        "evidence_reason": "等待第二來源",
+        "crosscheck_status": "pending_second_source"
+      },
+      {
+        "event_cluster_key": "evt-348a47021444c5bbe02572e0",
+        "title": "整理包／台積電供應鏈全解析！護國神山法說會受惠股...先進製程 CoWoS、CoPoS 十大產業鏈一次看 - 經濟日報",
+        "brief_title": "半導體財報｜重要事件｜觀察",
+        "short_label": "半導體財報",
+        "event": "整理包／台積電供應鏈全解析！護國神山法說會受惠股...先進製程 CoWoS、CoPoS 十大產業鏈一次看 經濟日報",
+        "summary": "整理包／台積電供應鏈全解析！護國神山法說會受惠股...先進製程 CoWoS、CoPoS 十大產業鏈一次看 經濟日報",
+        "traditional_chinese_summary": "整理包／台積電供應鏈全解析！護國神山法說會受惠股...先進製程 CoWoS、CoPoS 十大產業鏈一次看 經濟日報",
+        "source": "Google News｜台股線索",
+        "source_url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTE9ZLVp5RjlPenFrcTRSSnFmem04R1h0SVZPSzhaVjdZVkJ1UG5WMWl5Tm5Gc2J6Wjlia0g0R3NQa2JkekdsUnRudWNwQWtHcGRpaDNleE5iNEJNc3o4",
+        "source_domain": "news.google.com",
+        "source_tier": "discovery",
+        "event_type": "semiconductor",
+        "importance": "normal",
+        "risk_level": "持續觀察",
+        "classification": "semiconductor",
+        "classification_reason": "semiconductor_subject_action",
+        "published_at": "2026-10-19T09:00:00+00:00",
+        "snapshot_id": "18beeae57a179766",
+        "observation_id": "4bfa89068200fd05",
+        "market_direction": null,
+        "market_move": null,
+        "why_important": "財報與展望可能改變 AI／半導體需求預期，但單一公司消息不代表整體產業。",
+        "impact_confirmation": {
+          "confirmed": false,
+          "method": "尚無相關市場同步確認",
+          "markets": [],
+          "evidence": []
+        },
+        "source_trace": {
+          "verification": "公開來源待後續核對",
+          "source_label": "Google News｜台股線索",
+          "source_url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTE9ZLVp5RjlPenFrcTRSSnFmem04R1h0SVZPSzhaVjdZVkJ1UG5WMWl5Tm5Gc2J6Wjlia0g0R3NQa2JkekdsUnRudWNwQWtHcGRpaDNleE5iNEJNc3o4",
+          "source_domain": "news.google.com",
+          "event_time": "2026-10-19T09:00:00+00:00",
+          "checked_at": "2026-10-21T16:09:36.885981+00:00",
+          "verified_domains": [
+            "news.google.com"
+          ],
+          "crosscheck_status": "pending_second_source",
+          "event_cluster_key": "evt-348a47021444c5bbe02572e0",
+          "crosscheck_domains": [
+            "news.google.com"
+          ],
+          "crosscheck_sources": [
+            "https://news.google.com/rss/articles/CBMiXEFVX3lxTE9ZLVp5RjlPenFrcTRSSnFmem04R1h0SVZPSzhaVjdZVkJ1UG5WMWl5Tm5Gc2J6Wjlia0g0R3NQa2JkekdsUnRudWNwQWtHcGRpaDNleE5iNEJNc3o4"
+          ],
+          "snapshot_id": "18beeae57a179766",
+          "observation_id": "4bfa89068200fd05"
         },
         "evidence_state": "single_source",
         "evidence_reason": "等待第二來源",
@@ -1032,8 +1096,8 @@
         "classification": "semiconductor",
         "classification_reason": "semiconductor_subject_action",
         "published_at": "2026-10-21T01:56:42+00:00",
-        "snapshot_id": "71f83422379d369b",
-        "observation_id": "c48fccb023a52415",
+        "snapshot_id": "18beeae57a179766",
+        "observation_id": "00510bd4be552501",
         "market_direction": null,
         "market_move": null,
         "why_important": "",
@@ -1049,7 +1113,7 @@
           "source_url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE1xTFQyaHpIUlJrbzMwTWFkSnhkZkNEaS1NdWJWWElmRHowVVQ2c0JrejA3YklhUnhsZzdVZW8zQWREdUhteHN1UGhLaTctaThCQWfSAVJBVV95cUxNcUxUMmh6SFJSa28zME1hZEp4ZGZDRGktTXViVlhJZkR6MFVUNnNCa3owN2JJYVJ4bGc3VWVvM0FkRHVIbXhzdVBoS2k3LWk4QkFn",
           "source_domain": "news.google.com",
           "event_time": "2026-10-21T01:56:42+00:00",
-          "checked_at": "2026-10-21T15:57:45.857474+00:00",
+          "checked_at": "2026-10-21T16:09:36.901017+00:00",
           "verified_domains": [
             "news.google.com"
           ],
@@ -1061,62 +1125,8 @@
           "crosscheck_sources": [
             "https://news.google.com/rss/articles/CBMiUkFVX3lxTE1xTFQyaHpIUlJrbzMwTWFkSnhkZkNEaS1NdWJWWElmRHowVVQ2c0JrejA3YklhUnhsZzdVZW8zQWREdUhteHN1UGhLaTctaThCQWfSAVJBVV95cUxNcUxUMmh6SFJSa28zME1hZEp4ZGZDRGktTXViVlhJZkR6MFVUNnNCa3owN2JJYVJ4bGc3VWVvM0FkRHVIbXhzdVBoS2k3LWk4QkFn"
           ],
-          "snapshot_id": "71f83422379d369b",
-          "observation_id": "c48fccb023a52415"
-        },
-        "evidence_state": "single_source",
-        "evidence_reason": "等待第二來源",
-        "crosscheck_status": "pending_second_source"
-      },
-      {
-        "event_cluster_key": "evt-46350ea4ff4117309af0001d",
-        "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-        "brief_title": "Fed／貨幣政策｜重要事件｜觀察",
-        "short_label": "Fed／貨幣政策",
-        "event": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
-        "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
-        "traditional_chinese_summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
-        "source": "鉅亨網｜持股關聯",
-        "source_url": "https://news.cnyes.com/news/id/6630669",
-        "source_domain": "news.cnyes.com",
-        "source_tier": "discovery",
-        "event_type": "central-bank",
-        "importance": "normal",
-        "risk_level": "持續觀察",
-        "classification": "fed",
-        "classification_reason": "fed_subject_action",
-        "published_at": "2026-10-14T22:02:35+00:00",
-        "snapshot_id": "71f83422379d369b",
-        "observation_id": "1db01e767590f783",
-        "market_direction": null,
-        "market_move": null,
-        "why_important": "利率預期可能影響美元、美債殖利率與成長股評價，因此需核對後續價格反應。",
-        "impact_confirmation": {
-          "confirmed": false,
-          "method": "尚無相關市場同步確認",
-          "markets": [],
-          "evidence": []
-        },
-        "source_trace": {
-          "verification": "公開來源待後續核對",
-          "source_label": "鉅亨網｜持股關聯",
-          "source_url": "https://news.cnyes.com/news/id/6630669",
-          "source_domain": "news.cnyes.com",
-          "event_time": "2026-10-14T22:02:35+00:00",
-          "checked_at": "2026-10-21T15:57:45.863223+00:00",
-          "verified_domains": [
-            "news.cnyes.com"
-          ],
-          "crosscheck_status": "pending_second_source",
-          "event_cluster_key": "evt-46350ea4ff4117309af0001d",
-          "crosscheck_domains": [
-            "news.cnyes.com"
-          ],
-          "crosscheck_sources": [
-            "https://news.cnyes.com/news/id/6630669"
-          ],
-          "snapshot_id": "71f83422379d369b",
-          "observation_id": "1db01e767590f783"
+          "snapshot_id": "18beeae57a179766",
+          "observation_id": "00510bd4be552501"
         },
         "evidence_state": "single_source",
         "evidence_reason": "等待第二來源",
@@ -1127,9 +1137,9 @@
   "briefing": {
     "slot": "us_premarket",
     "title": "美股盤前儀表板",
-    "overview": "總結｜美股偏多。行情重點｜標普500+0.51%、那斯達克綜合+1.11%、道瓊+0.26%。風險｜留意利率、美元與能源變化是否改變目前市場傳導。",
-    "assessment_summary": "總結｜美股偏多。行情重點｜標普500+0.51%、那斯達克綜合+1.11%、道瓊+0.26%。風險｜留意利率、美元與能源變化是否改變目前市場傳導。",
-    "public_short_message": "📊 美股盤前｜盤前觀測標普500+0.51%；美股情緒31.0／中立／偏恐慌；盤前觀測那斯達克綜合+1.11%",
+    "overview": "總結｜美股偏多。行情重點｜標普500+0.49%、那斯達克綜合+1.05%、道瓊+0.25%。風險｜留意利率、美元與能源變化是否改變目前市場傳導。",
+    "assessment_summary": "總結｜美股偏多。行情重點｜標普500+0.49%、那斯達克綜合+1.05%、道瓊+0.25%。風險｜留意利率、美元與能源變化是否改變目前市場傳導。",
+    "public_short_message": "📊 美股盤前｜盤前觀測標普500+0.49%；美股情緒31.1／中立／偏恐慌；盤前觀測那斯達克綜合+1.05%",
     "digest_status": "ready",
     "notification_eligible": true,
     "notification_reason": "candidate_ready",
@@ -1148,7 +1158,7 @@
       "conflict_flags": [],
       "summary_sections": {
         "summary": "美股偏多",
-        "market_highlights": "標普500+0.51%、那斯達克綜合+1.11%、道瓊+0.26%",
+        "market_highlights": "標普500+0.49%、那斯達克綜合+1.05%、道瓊+0.25%",
         "risk": "留意利率、美元與能源變化是否改變目前市場傳導。"
       },
       "joint_market_signal": {
@@ -1164,11 +1174,11 @@
         },
         "us": {
           "label": "偏多",
-          "score": 1.0,
+          "score": 0.75,
           "directions": [
             1,
             1,
-            1,
+            0,
             1
           ],
           "valid_factors": 4
@@ -1184,52 +1194,52 @@
             {
               "ticker": "NASDAQ",
               "name": "那斯達克綜合指數",
-              "price": 26718.15,
-              "change_percent": 1.11,
+              "price": 26703.32,
+              "change_percent": 1.05,
               "currency": "點",
               "freshness": "live",
               "data_status": "盤中",
               "quote_date": "2026-10-21",
-              "quote_time": "2026-10-21T11:55:00-04:00",
+              "quote_time": "2026-10-21T12:05:00-04:00",
               "source_label": "Yahoo",
               "source_url": "https://finance.yahoo.com/quote/^IXIC"
             },
             {
               "ticker": "SOX",
               "name": "費城半導體指數",
-              "price": 11517.3,
-              "change_percent": 2.07,
+              "price": 11495.84,
+              "change_percent": 1.88,
               "currency": "點",
               "freshness": "live",
               "data_status": "盤中",
               "quote_date": "2026-10-21",
-              "quote_time": "2026-10-21T11:55:00-04:00",
+              "quote_time": "2026-10-21T12:05:00-04:00",
               "source_label": "Yahoo",
               "source_url": "https://finance.yahoo.com/quote/^SOX"
             },
             {
               "ticker": "DJIA",
               "name": "道瓊工業指數",
-              "price": 52630.19,
-              "change_percent": 0.26,
+              "price": 52627.01,
+              "change_percent": 0.25,
               "currency": "點",
               "freshness": "live",
               "data_status": "盤中",
               "quote_date": "2026-10-21",
-              "quote_time": "2026-10-21T11:55:00-04:00",
+              "quote_time": "2026-10-21T12:05:00-04:00",
               "source_label": "Yahoo",
               "source_url": "https://finance.yahoo.com/quote/^DJI"
             },
             {
               "ticker": "S&P 500",
               "name": "標普 500",
-              "price": 7751.94,
-              "change_percent": 0.51,
+              "price": 7750.27,
+              "change_percent": 0.49,
               "currency": "點",
               "freshness": "live",
               "data_status": "盤中",
               "quote_date": "2026-10-21",
-              "quote_time": "2026-10-21T11:55:00-04:00",
+              "quote_time": "2026-10-21T12:05:00-04:00",
               "source_label": "Yahoo",
               "source_url": "https://finance.yahoo.com/quote/^GSPC"
             }
@@ -1238,7 +1248,7 @@
         "excluded_factors": [],
         "confidence": "low"
       },
-      "evidence_as_of": "2026-10-21T15:57:46.210765+00:00",
+      "evidence_as_of": "2026-10-21T16:09:37.619320+00:00",
       "factor_count": 7,
       "evidence_dimensions": [
         "us_equity",
@@ -1255,7 +1265,7 @@
           1
         ]
       },
-      "score": 2.75,
+      "score": 2.125,
       "factor_source": "quote_factors",
       "weekend_market": false,
       "directional_quote_count": 4,
@@ -1264,10 +1274,10 @@
       "quote_gaps": []
     },
     "displayed_event_keys": [
-      "798bcf34da98a971ca65",
+      "3805a2a65a66a88d9d56",
       "event-ce44f2d20e45e391a7b6",
       "9fb1858832190dc7f9d5",
-      "dd5adae852ad38758cfd"
+      "event-e6b4118705e2258be7ab"
     ],
     "observations": [
       {
@@ -1276,7 +1286,7 @@
         "importance": "標普500、那斯達克綜合與道瓊各自代表不同的美股現貨指數。",
         "market_impact": "現貨收盤只作已完成交易日參考，不以期貨替代。",
         "watch": "下一個美股交易時段的現貨行情。",
-        "data_as_of": "2026-10-21T23:57:46.210765+08:00",
+        "data_as_of": "2026-10-22T00:09:37.619320+08:00",
         "source_note": "https://finance.yahoo.com/quote/^GSPC；https://finance.yahoo.com/quote/^IXIC；https://finance.yahoo.com/quote/^DJI"
       },
       {
@@ -1285,13 +1295,13 @@
         "importance": "ES、NQ、YM 是各自標的指數的期貨；NQ 對應 Nasdaq-100，不是那斯達克綜合。",
         "market_impact": "期貨只呈現有明確盤前時段與時間戳的行情；費半只作最近收盤的半導體背景。",
         "watch": "美股開盤後以現貨資料確認市場表現。",
-        "data_as_of": "2026-10-21T23:57:46.210765+08:00",
+        "data_as_of": "2026-10-22T00:09:37.619320+08:00",
         "source_note": "https://finance.yahoo.com/quote/^SOX"
       }
     ],
     "primary_theme": {
       "title": "市場價格",
-      "what_happened": "標普5007,751.94+0.51%、那斯達克綜合26,718.15+1.11%、道瓊52,630.19+0.26%。",
+      "what_happened": "標普5007,750.27+0.49%、那斯達克綜合26,703.32+1.05%、道瓊52,627.01+0.25%。",
       "why_important": "價格資料提供目前市場狀態，仍需搭配事件與資料時間判讀。",
       "market_implication": "各市場若同向可作為價格確認；若分歧，暫不推論跨市場因果。",
       "stock_observation": "持續核對費半、那斯達克、道瓊與台股主要指數是否延續。",
@@ -1299,19 +1309,19 @@
         {
           "source": "Yahoo",
           "ticker": "S&P 500",
-          "quote_time": "2026-10-21T11:55:00-04:00",
+          "quote_time": "2026-10-21T12:05:00-04:00",
           "freshness": "live"
         },
         {
           "source": "Yahoo",
           "ticker": "NASDAQ",
-          "quote_time": "2026-10-21T11:55:00-04:00",
+          "quote_time": "2026-10-21T12:05:00-04:00",
           "freshness": "live"
         },
         {
           "source": "Yahoo",
           "ticker": "DJIA",
-          "quote_time": "2026-10-21T11:55:00-04:00",
+          "quote_time": "2026-10-21T12:05:00-04:00",
           "freshness": "live"
         }
       ],
@@ -1319,19 +1329,19 @@
         {
           "source": "Yahoo",
           "ticker": "S&P 500",
-          "quote_time": "2026-10-21T11:55:00-04:00",
+          "quote_time": "2026-10-21T12:05:00-04:00",
           "freshness": "live"
         },
         {
           "source": "Yahoo",
           "ticker": "NASDAQ",
-          "quote_time": "2026-10-21T11:55:00-04:00",
+          "quote_time": "2026-10-21T12:05:00-04:00",
           "freshness": "live"
         },
         {
           "source": "Yahoo",
           "ticker": "DJIA",
-          "quote_time": "2026-10-21T11:55:00-04:00",
+          "quote_time": "2026-10-21T12:05:00-04:00",
           "freshness": "live"
         }
       ]
@@ -1339,7 +1349,7 @@
   },
   "external_alert": {},
   "source_health": {
-    "checked_at": "2026-10-21T23:57:46.210765+08:00",
+    "checked_at": "2026-10-22T00:09:37.619320+08:00",
     "status": "critical",
     "summary": "3 個來源有資料缺口",
     "missing_source_count": 3,
@@ -1371,58 +1381,58 @@
     "alerts": [
       {
         "notification_id": "4a1af20472126008fe61ec7a248b3d3b",
-        "release_id": "release-0786df0f14347fbb",
-        "snapshot_id": "71f83422379d369b",
-        "observation_id": "97520544e09ada4a",
+        "release_id": "release-a7997d228214a376",
+        "snapshot_id": "18beeae57a179766",
+        "observation_id": "44e389c42f38a47c",
         "canonical_content_hash": "97104487786087461fbd381cacc2957162412f3d45bb4cadd66ad44d8de7e24b",
         "canonical_hash_version": 2,
-        "path": "alerts/4a1af20472126008fe61ec7a248b3d3b-release-0786df0f14347fbb.json",
-        "sha256": "22ae8e60836da32ec3f5247356418857474898915c1367992033798d94a30585",
-        "created_at": "2026-10-21T16:03:03.410247+00:00"
+        "path": "alerts/4a1af20472126008fe61ec7a248b3d3b-release-a7997d228214a376.json",
+        "sha256": "c3129afbe7f0af11a8cad788ffa4a38b90db77fc97afa67dc4da1ffe4c0f46ea",
+        "created_at": "2026-10-21T16:10:04.515670+00:00"
       },
       {
         "notification_id": "131a321794f0d3eb1a47dc1af521e822",
-        "release_id": "release-0786df0f14347fbb",
-        "snapshot_id": "71f83422379d369b",
-        "observation_id": "1008b77dd645c9ef",
+        "release_id": "release-a7997d228214a376",
+        "snapshot_id": "18beeae57a179766",
+        "observation_id": "4634c8b4e8a34d3a",
         "canonical_content_hash": "86f7b4dc4ce90f23a020a0c649d61266f3e9acbc94bddbabb47987a98f58c936",
         "canonical_hash_version": 2,
-        "path": "alerts/131a321794f0d3eb1a47dc1af521e822-release-0786df0f14347fbb.json",
-        "sha256": "38068ba71d259e0ddc502c6cdc854708d7994afe2bdcf1481acc857d55710d31",
-        "created_at": "2026-10-21T16:03:03.410247+00:00"
+        "path": "alerts/131a321794f0d3eb1a47dc1af521e822-release-a7997d228214a376.json",
+        "sha256": "2cf2c08032a1041c3d5909c89cfd8d238ac5bbd16b338c6d4fb04db8d0dada01",
+        "created_at": "2026-10-21T16:10:04.515670+00:00"
+      },
+      {
+        "notification_id": "1f65be25c44178f40b9ed1cfdc1a6ddb",
+        "release_id": "release-a7997d228214a376",
+        "snapshot_id": "18beeae57a179766",
+        "observation_id": "4bfa89068200fd05",
+        "canonical_content_hash": "0bcc8099f8a8a02e624fa0ddba9a1252504b62e36ea2313dd62d8e1ed055d028",
+        "canonical_hash_version": 2,
+        "path": "alerts/1f65be25c44178f40b9ed1cfdc1a6ddb-release-a7997d228214a376.json",
+        "sha256": "f77b33fd5fcc0a75de4e32af8c83a7ff56ea0188f94488499c4c51da4ae6ab2d",
+        "created_at": "2026-10-21T16:10:04.515670+00:00"
       },
       {
         "notification_id": "e847b1f53dee481c090ecc20c5a17fe8",
-        "release_id": "release-0786df0f14347fbb",
-        "snapshot_id": "71f83422379d369b",
-        "observation_id": "c48fccb023a52415",
+        "release_id": "release-a7997d228214a376",
+        "snapshot_id": "18beeae57a179766",
+        "observation_id": "00510bd4be552501",
         "canonical_content_hash": "29abe0a185c5a33e56e517830f1dcfe7d78a48510432d13756f7d497f639773f",
         "canonical_hash_version": 2,
-        "path": "alerts/e847b1f53dee481c090ecc20c5a17fe8-release-0786df0f14347fbb.json",
-        "sha256": "ca0c431e0734797dec5074760f4ad3b4c56ef24e471c20f8576d78bbc06fb4a9",
-        "created_at": "2026-10-21T16:03:03.410247+00:00"
+        "path": "alerts/e847b1f53dee481c090ecc20c5a17fe8-release-a7997d228214a376.json",
+        "sha256": "f3b561ea48babd1a6c2d45afae1616107a4c23beb24b8988c9a2e420af5b32f8",
+        "created_at": "2026-10-21T16:10:04.515670+00:00"
       },
       {
-        "notification_id": "80dfd1f1e716db8b60b0dc648ca12f03",
-        "release_id": "release-0786df0f14347fbb",
-        "snapshot_id": "71f83422379d369b",
-        "observation_id": "1db01e767590f783",
-        "canonical_content_hash": "f085b3000a892f42a60561cef8ab01b831455576d5915f8f5f11f41c95d60f0e",
-        "canonical_hash_version": 2,
-        "path": "alerts/80dfd1f1e716db8b60b0dc648ca12f03-release-0786df0f14347fbb.json",
-        "sha256": "0159ae21a59be733a4ea303a0dd37630d39bb44b154f79d5a97b1a049e4a07af",
-        "created_at": "2026-10-21T16:03:03.410247+00:00"
-      },
-      {
-        "notification_id": "briefing-us_premarket-a7398f9d05fb2f7f18c7",
-        "release_id": "release-0786df0f14347fbb",
-        "snapshot_id": "71f83422379d369b",
+        "notification_id": "briefing-us_premarket-e0f7fd6c59906a8b16eb",
+        "release_id": "release-a7997d228214a376",
+        "snapshot_id": "18beeae57a179766",
         "observation_id": null,
-        "canonical_content_hash": "a7398f9d05fb2f7f18c7d0a47ab25d21ef0b4dfdd3cb321efa131f5cf9e4621f",
+        "canonical_content_hash": "e0f7fd6c59906a8b16eb7b1f85f9b16d5eceaa3f8d9a83f8431635d5a89c7405",
         "canonical_hash_version": 2,
-        "path": "alerts/briefing-us_premarket-a7398f9d05fb2f7f18c7-release-0786df0f14347fbb.json",
-        "sha256": "c219a6da9c1199394a56d846d2370912277aaf7145f57c37799a6c645791f6ac",
-        "created_at": "2026-10-21T16:03:03.410247+00:00"
+        "path": "alerts/briefing-us_premarket-e0f7fd6c59906a8b16eb-release-a7997d228214a376.json",
+        "sha256": "08cdce315b28a0e1025c9b2c1dd032d483a3f70aea59914ef78b39b580ad4084",
+        "created_at": "2026-10-21T16:10:04.515670+00:00"
       }
     ]
   },
@@ -1433,11 +1443,11 @@
       "event-ledger.json": "data/event-ledger.json",
       "source-health.json": "data/source-health.json",
       "news.json": "data/news.json",
-      "alerts/4a1af20472126008fe61ec7a248b3d3b-release-0786df0f14347fbb.json": "data/alerts/4a1af20472126008fe61ec7a248b3d3b-release-0786df0f14347fbb.json",
-      "alerts/131a321794f0d3eb1a47dc1af521e822-release-0786df0f14347fbb.json": "data/alerts/131a321794f0d3eb1a47dc1af521e822-release-0786df0f14347fbb.json",
-      "alerts/e847b1f53dee481c090ecc20c5a17fe8-release-0786df0f14347fbb.json": "data/alerts/e847b1f53dee481c090ecc20c5a17fe8-release-0786df0f14347fbb.json",
-      "alerts/80dfd1f1e716db8b60b0dc648ca12f03-release-0786df0f14347fbb.json": "data/alerts/80dfd1f1e716db8b60b0dc648ca12f03-release-0786df0f14347fbb.json",
-      "alerts/briefing-us_premarket-a7398f9d05fb2f7f18c7-release-0786df0f14347fbb.json": "data/alerts/briefing-us_premarket-a7398f9d05fb2f7f18c7-release-0786df0f14347fbb.json",
+      "alerts/4a1af20472126008fe61ec7a248b3d3b-release-a7997d228214a376.json": "data/alerts/4a1af20472126008fe61ec7a248b3d3b-release-a7997d228214a376.json",
+      "alerts/131a321794f0d3eb1a47dc1af521e822-release-a7997d228214a376.json": "data/alerts/131a321794f0d3eb1a47dc1af521e822-release-a7997d228214a376.json",
+      "alerts/1f65be25c44178f40b9ed1cfdc1a6ddb-release-a7997d228214a376.json": "data/alerts/1f65be25c44178f40b9ed1cfdc1a6ddb-release-a7997d228214a376.json",
+      "alerts/e847b1f53dee481c090ecc20c5a17fe8-release-a7997d228214a376.json": "data/alerts/e847b1f53dee481c090ecc20c5a17fe8-release-a7997d228214a376.json",
+      "alerts/briefing-us_premarket-e0f7fd6c59906a8b16eb-release-a7997d228214a376.json": "data/alerts/briefing-us_premarket-e0f7fd6c59906a8b16eb-release-a7997d228214a376.json",
       "alert-index.json": "data/alert-index.json",
       "alerts/index/node-00.json": "data/alerts/index/node-00.json",
       "alerts/index/node-01.json": "data/alerts/index/node-01.json",
@@ -1715,17 +1725,17 @@
       "alert-lookup-root.json": "data/alert-lookup-root.json"
     },
     "hashes": {
-      "market.json": "79aee9a35437b84c796a534875d67b5cfe2baa9e1659db0f84ef507359b71d36",
+      "market.json": "8b1d66f95272005816bc570c9d564854d3a419513cb511e3fbd1f5c54fa8202a",
       "research-report.json": "1705747cc9f33e983d057e444df25ba62d32b7dae3c4edb4cf9ca6e6bedef198",
       "event-ledger.json": "e56db7cb95f8a52ae7274ba0eb157f013cad0e94005d4538aa4fe46658f6d8d4",
-      "source-health.json": "a75ae5bd16d41179a98c847ac30f16ddf6d5f9ae52339c79dcf9187bbbc5d809",
-      "news.json": "5f8cdb371c1691adc7372d989cad3e3bc4764e5a6e5b4f9c430cd1d63798e244",
-      "alerts/4a1af20472126008fe61ec7a248b3d3b-release-0786df0f14347fbb.json": "22ae8e60836da32ec3f5247356418857474898915c1367992033798d94a30585",
-      "alerts/131a321794f0d3eb1a47dc1af521e822-release-0786df0f14347fbb.json": "38068ba71d259e0ddc502c6cdc854708d7994afe2bdcf1481acc857d55710d31",
-      "alerts/e847b1f53dee481c090ecc20c5a17fe8-release-0786df0f14347fbb.json": "ca0c431e0734797dec5074760f4ad3b4c56ef24e471c20f8576d78bbc06fb4a9",
-      "alerts/80dfd1f1e716db8b60b0dc648ca12f03-release-0786df0f14347fbb.json": "0159ae21a59be733a4ea303a0dd37630d39bb44b154f79d5a97b1a049e4a07af",
-      "alerts/briefing-us_premarket-a7398f9d05fb2f7f18c7-release-0786df0f14347fbb.json": "c219a6da9c1199394a56d846d2370912277aaf7145f57c37799a6c645791f6ac",
-      "alert-index.json": "3900108c583960c991b46b22e4abb23b7e1bbaab85c089852d70bae1a7984d14",
+      "source-health.json": "8edae480ee486de7198ddb567774fe0e2242b7c928229aa7619045c0bfb291d4",
+      "news.json": "b5dd429f1f896ebe9109153631f569da37ab809c6d5e14f4699199ddfcc4ebb6",
+      "alerts/4a1af20472126008fe61ec7a248b3d3b-release-a7997d228214a376.json": "c3129afbe7f0af11a8cad788ffa4a38b90db77fc97afa67dc4da1ffe4c0f46ea",
+      "alerts/131a321794f0d3eb1a47dc1af521e822-release-a7997d228214a376.json": "2cf2c08032a1041c3d5909c89cfd8d238ac5bbd16b338c6d4fb04db8d0dada01",
+      "alerts/1f65be25c44178f40b9ed1cfdc1a6ddb-release-a7997d228214a376.json": "f77b33fd5fcc0a75de4e32af8c83a7ff56ea0188f94488499c4c51da4ae6ab2d",
+      "alerts/e847b1f53dee481c090ecc20c5a17fe8-release-a7997d228214a376.json": "f3b561ea48babd1a6c2d45afae1616107a4c23beb24b8988c9a2e420af5b32f8",
+      "alerts/briefing-us_premarket-e0f7fd6c59906a8b16eb-release-a7997d228214a376.json": "08cdce315b28a0e1025c9b2c1dd032d483a3f70aea59914ef78b39b580ad4084",
+      "alert-index.json": "f4bc29c3a63f269363a0bd7d1b5b553056291072295ae287c312874219968bfb",
       "alerts/index/node-00.json": "d3a1bfe36a5bd148ce13788671dd85d2ee0460e6883bb057a74ac7af0dd2efb3",
       "alerts/index/node-01.json": "9584e5842f84de1692e20125c235145509d101f64dbea2cd293ad5ca58c5febc",
       "alerts/index/node-02.json": "9442874109fe7a136a16f49c08f47ccfc4186c3d29935094baa640ce9e6122d5",
@@ -1739,10 +1749,10 @@
       "alerts/index/node-0a.json": "efb77203e71836cf1e104bd046d13d60203460af00777407622e4c0adfe57d48",
       "alerts/index/node-0b.json": "c5f84d3aab8f2620f63b6263a6edc1d42d864128e0de44e488eeac46d8fa25bc",
       "alerts/index/node-0c.json": "821905ae69a09073b20c6760c79ff0dc3b2a1c3532253292d7aa06580829d7fe",
-      "alerts/index/node-0d.json": "3c6b80bcc310ea96afb43db43105b1901d13db9bcb6c86fedbcae36b9dd670cd",
+      "alerts/index/node-0d.json": "09b4433d9a91e30454a136afbb79e0fb39765157729d7a709c6ecdc7f8e02ee2",
       "alerts/index/node-0e.json": "1bfc13a91aefd125c298e24c3eae61faa0c271c23e2255fc0960f2952e3e018e",
       "alerts/index/node-0f.json": "0bf532d3e52603db32fb2a3258428bbf209738e69b04a60887970763a4f62cd5",
-      "alerts/index/node-0.json": "751331b1480e46daf61733471ff05ed43c7da640de357f25abaf4d8086d2d97c",
+      "alerts/index/node-0.json": "acbc4544f2c63673582f9e07e5e7cc843fb7c767c156d6e1f08ecc6108887ae1",
       "alerts/index/node-10.json": "7317772fb49f4e13d4b8a9b3fd3afad3e9f1a9eddb3f8c72a36d791cbc291f38",
       "alerts/index/node-11.json": "80d98fd4f1a562c5ebac2aa75c1abe868c4a04846ee73a56b4057dcf868ad4d9",
       "alerts/index/node-12.json": "b5773b84f26c3db64f5301899ab7869f9a5149a5bcae4930d99a53867921b764",
@@ -1763,7 +1773,7 @@
       "alerts/index/node-20.json": "023c768759817ea24a9572ab3c909d53bac066834cdf2b8dbd95536f5039d6fd",
       "alerts/index/node-21.json": "2e9aba89e09143268c69ddbd7c63ddfd6e5e63856c8aa991afffbe7e45f71f0d",
       "alerts/index/node-22.json": "9054ab2d8f24029c817501e2583c34f6609a59b199f79949d52e49ee0f3cf3b1",
-      "alerts/index/node-23.json": "7463b1f3c0568cd2c56a4c801e8d9b9399559c4bff0029b93f429c65e37f593a",
+      "alerts/index/node-23.json": "9231a38f2260f8d1e9e9a11442de33a9b986bcbae62cfeeed849a1e4b9eb92a4",
       "alerts/index/node-24.json": "0163f54c2e66f9d281073976239efac5b828552097c4e23dee09b62e695bffec",
       "alerts/index/node-25.json": "48a48ccc2c31f29f1093bbc0d95ccbc01347811e7085c3ce3f55fdbfaa36a3f8",
       "alerts/index/node-26.json": "30e06fcbde25c99d29a8ea3d94e769996dc72dca5f0c6df647a27f456bd40e7c",
@@ -1776,7 +1786,7 @@
       "alerts/index/node-2d.json": "db993d2d1c4457cb0f269014f50af30388b13009ee45e71978fd1a4c91930e04",
       "alerts/index/node-2e.json": "ff1e9161c872c30c6ba23311d90f1a7abd849a01fa904f33c0eb1fd5cf5fd5a6",
       "alerts/index/node-2f.json": "4d71faba6677b6790449e201f8029a43ef1245402c34143b5c37ef66437bebce",
-      "alerts/index/node-2.json": "58e9a9e73e17b7f314a2b7edc170c4d4d898e3509b01c1a33b3210d3f7cbb8ad",
+      "alerts/index/node-2.json": "b27a5befa33dbd24587241881cff9531680497f36286e80a4fa999b43278ec97",
       "alerts/index/node-30.json": "614109c3ac1aa8fcaf3f7323c1c8160ba4c4e179b26c0b3069405021bc7b6e18",
       "alerts/index/node-31.json": "193107adbf4748c800319ad594ea3760562e5f580bee98be6d5af81e3f1d82d9",
       "alerts/index/node-32.json": "ae0e82c8cf26b63247f6b0c2bb2118c18f8450e6b4e2d14f4625f1e851740e26",
@@ -1853,7 +1863,7 @@
       "alerts/index/node-75.json": "39830ba67a1852fd58990f18e9bb4f56b3eb9b10da06e1cd5c747409f34f1a83",
       "alerts/index/node-76.json": "101ff0c8e05a867aa1a4ed3759f616e20232ea774c53b87fb976d79a167699c4",
       "alerts/index/node-77.json": "01a9dbb61c5ebc9b057b3fdc55eef6468a3fc78c63842428d8e65d802b99e78c",
-      "alerts/index/node-78.json": "a98dd0fdcbd6a034b1bc4a720885f0f0680c04bdba06300e09ca8690dcadbea3",
+      "alerts/index/node-78.json": "d366db475686a75426547597903d434d1407fa27a177ace95b1b6fc0f66e0aa1",
       "alerts/index/node-79.json": "8221513106ceff24c684fd9faa75ddda93964bca6f36df485641dd109804ab07",
       "alerts/index/node-7a.json": "13412e113ddc2b6937bd2b824716ba500c97a6f65e69a101d4f094a47e0a193b",
       "alerts/index/node-7b.json": "ecf6bf067abcbbb67a67d37aa60c82647e9f6d38dfa3964cca5990753c99cece",
@@ -1861,7 +1871,7 @@
       "alerts/index/node-7d.json": "4b0f226f2004e464cb6f4065e4abb04a7060f48a07804101d3ce98ebc038b21b",
       "alerts/index/node-7e.json": "86acfaedeb530286fc50e0e53c2d993dcb4f5723a8b8a5853e167a3d4e6c32ba",
       "alerts/index/node-7f.json": "74dd27b4707683fc2ed1de3467a68fee67823326290686c505fb01154a53319d",
-      "alerts/index/node-7.json": "5a32ae91a7466cd7e81d6a99e8ca01d9c9a8b0d15ad5ae44c3752d8a9fbe0f81",
+      "alerts/index/node-7.json": "bb758e78b0cc21bfb0aca28a11c1d92d9ed0887bc847d39a91b25f1929326dad",
       "alerts/index/node-80.json": "115a605a68b2933dcab38b3bcf6809bd2f0cc817c896c67b998daa0b675347d9",
       "alerts/index/node-81.json": "9d7eebc684ebf4c9fea0d5a3d39d2b32184764a9d84d72f671ebd8e1b8330e6a",
       "alerts/index/node-82.json": "b2b44c212f0ed3eeeda997fcb57fa384d8a9d2ede80c74e38d9cc8a78772f47e",
@@ -1927,9 +1937,9 @@
       "alerts/index/node-bb.json": "91f47ed11f140ef507b54af261e3a5a5d60aa7810941f87a0ad0b559aaf00d38",
       "alerts/index/node-bc.json": "9b22cbc4ce77d015ac13e4907d384f0f83f1dad18945c6d1b37174a54b8fc050",
       "alerts/index/node-bd.json": "e3f4fe170f3b0d54a5688c252f5a079278cb1a26583652593dd7618d65f54707",
-      "alerts/index/node-be.json": "61495a92875ac21395c465b01516f481dc33d60056cca1dbe9083128bf86ec1a",
+      "alerts/index/node-be.json": "dad5db04ddcc56b7e92f124f9c9f97bb25d1f674559ca3ab6c8815ed949e419d",
       "alerts/index/node-bf.json": "5e0475b506fd40cce1f499e11e3dd6bdde71d1b7a01b024b14c91b1d869f223b",
-      "alerts/index/node-b.json": "ee5ccc67bc3f23e0cc3099c5e2dfc0b7aa495992b360fd1b44fea4aad46c3d5d",
+      "alerts/index/node-b.json": "a23ae787d359f53ee9cd8131239eb8bf27f227615bbb00568a7fea8c8b4c9bef",
       "alerts/index/node-c0.json": "5d00169902143024595c4c46a6bfcc7afb95a043f14dff8ec6ea8f58beafd196",
       "alerts/index/node-c1.json": "f433f4ebb34b807d008c0672e92eda78852e3f9f74df6f6cb45aa108f97f38ff",
       "alerts/index/node-c2.json": "92ae35817b418d10188d974bfff0a649da1cb59da276f4df649a48997e05f89c",
@@ -1937,7 +1947,7 @@
       "alerts/index/node-c4.json": "9c7660ffd97a38eda67f416ff653fc8ac67edb2c020ee61b8d08f38dc5e470ee",
       "alerts/index/node-c5.json": "756e8fe54c5c4bdc492c1b603813fed500368487e88357f308938e09b1f734a8",
       "alerts/index/node-c6.json": "37a3f6c49c7d91223e9b40f82806ccc7bd25e776f31c7c0c7fbb05f5736d6963",
-      "alerts/index/node-c7.json": "4a756d860729a49a94718455ceb7d26f75e1d325770b004a75c83e158d8046d5",
+      "alerts/index/node-c7.json": "9c55bd96fe90dd4702fc80d5e41b1535f45cccb92d4e9f38c1677e827a8ac732",
       "alerts/index/node-c8.json": "1eb9898be9a5160ac69e658d72be1b42c0b6708f2b70c278b99815659c994254",
       "alerts/index/node-c9.json": "0eb29f9aec6bbcd8e53c3874fcdd924467efc79863ce829eba6155d3baf8025d",
       "alerts/index/node-ca.json": "ba71758a7b9a5af22e2d07ceeefbf1ddab6dd446a09ff6359052f4788db465c3",
@@ -1946,7 +1956,7 @@
       "alerts/index/node-cd.json": "955bded4ceae33a78aa88009f6f27f28995a6d133e3638de8cfc02445a7ac2a0",
       "alerts/index/node-ce.json": "5d2a7164ca9bca88fa53bc53244763e572698c00aef193db1b1a1c71eca4095e",
       "alerts/index/node-cf.json": "2bd91fb639f8870191b8c565ccf5f98925f004a1b677db5709838ba85341df13",
-      "alerts/index/node-c.json": "e9e341b4366f258bf251a54bf23d298b935565c3d85bef6adffe1581db529c61",
+      "alerts/index/node-c.json": "d6e20264072f81127486a8969fcc27094a011bc9ca4e9e78e13f51c54eeedfd0",
       "alerts/index/node-d0.json": "e0ed830d4ec0613d3e6a94f1ca93ce954ea853f0518f4198208d398ee13def9f",
       "alerts/index/node-d1.json": "4730796d27831ea4fc99b3e46caf33a7958cbd1b59618d67fbc51355c5b17aab",
       "alerts/index/node-d2.json": "03928a73dc41cf6977cf908bebd86574c76a465668728160af2bba34f991e5e0",
@@ -1998,8 +2008,8 @@
       "alerts/index/node-fe.json": "63b133ac989e5188c435932fe76c6b7229cdaaab8efd28e61480e020eb55f05e",
       "alerts/index/node-ff.json": "7a3581c2297224b2e3eb2c93307219f2d4841a7a7bc39768a726ac6054335a52",
       "alerts/index/node-f.json": "d544cf5c88cbf8c78ac55fbffa4a81ece2856c094b0101b67ab6fc7c218555d2",
-      "alerts/index/node-root.json": "5d81af63d947c0b6ac2e2144d5388f4463dbca02ed996bfdf91b4142e257712f",
-      "alert-lookup-root.json": "3b4c71dda2832e9ef9cf050fae44c7eb7def581020457806cf25865b99ffbcb8"
+      "alerts/index/node-root.json": "4206ce2619949c837db06089d9996cd3b849e68eda4df64871f439e80d18cd82",
+      "alert-lookup-root.json": "0c08d160b1b06d7c4797721fc24345fe674486e2056d6d625ca5af6912b198b1"
     }
   }
 }
