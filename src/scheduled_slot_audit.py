@@ -7,6 +7,7 @@ import io
 import json
 import os
 import re
+import sys
 import time as time_module
 import zipfile
 from collections.abc import Mapping
@@ -18,6 +19,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
 
+from src.atomic_file import replace_with_retry
 from src.schedule_contract import NEW_YORK, TAIPEI, fixed_scheduled_for, scheduled_anchor_key
 from src.scheduled_recipient_manifest import RecipientManifest, parse_recipient_manifest, recipient_set_version
 from src.workflow_execution_diagnostics import classify_workflow_execution
@@ -497,6 +499,10 @@ def _diagnose_scheduled_run(
             "run_conclusion": str(run.get("conclusion") or run.get("status") or "unknown")[:40],
             "terminal_status": status,
             "terminal_reason": reason,
+            "release_evidence": (
+                terminal.get("release_evidence")
+                if isinstance(terminal.get("release_evidence"), dict) else {}
+            ),
             "execution_diagnostic": execution,
             "annotation_evidence_status": annotation_evidence_status,
             "expected": terminal.get("expected") is True,
@@ -894,6 +900,46 @@ def _audit_exit_code(result: Mapping[str, Any]) -> int:
     return 0 if result.get("status") in completed else 1
 
 
+def _write_audit_result(path: Path, result: dict[str, Any], *, args: argparse.Namespace, now: datetime) -> None:
+    attempt_raw = os.getenv("GITHUB_RUN_ATTEMPT", "")
+    try:
+        attempt = int(attempt_raw) if attempt_raw else None
+    except ValueError:
+        attempt = None
+    slot = str(result.get("slot") or args.slot or "")
+    slot_date = str(result.get("market_date") or args.slot_date or "")
+    anchor = str(result.get("anchor") or "")
+    original_slot_at = str(result.get("scheduled_slot_at") or args.scheduled_for_at or "")
+    payload = {
+        "schema_version": "scheduled-slot-audit-result-v1",
+        "run_id": os.getenv("GITHUB_RUN_ID", "")[:32],
+        "attempt": attempt,
+        "workflow_sha": os.getenv("GITHUB_SHA", "")[:40],
+        "original_slot": {
+            "slot": slot[:40],
+            "date": slot_date[:20],
+            "anchor": anchor[:120],
+            "scheduled_slot_at": original_slot_at[:80],
+        },
+        "audit_due_at": str(result.get("audit_due_at") or "")[:80],
+        "audited_at": now.astimezone(UTC).isoformat(),
+        "ledger_sha": str(args.ledger_commit_sha or "")[:40],
+        "recipient_set_version": str(result.get("recipient_set_version") or "unknown")[:64],
+        "execution_status": str(result.get("executionStatus") or "COMPLETED")[:40],
+        "report_receipt_status": str(result.get("status") or "unknown")[:40],
+        "incident_handoff_status": "pending",
+        "diagnostic_complete": result.get("status") in {
+            "delivered", "missing_receipt", "incomplete_receipt", "expected_skip", "not_applicable", "not_due",
+        },
+        "first_failure_reason": str(result.get("reason") or "")[:240],
+        "result": result,
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.tmp")
+    temporary.write_text(json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+    replace_with_retry(temporary, path)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Read-only audit for scheduled notification receipts")
     parser.add_argument("--ledger", type=Path)
@@ -913,6 +959,7 @@ def main() -> int:
     parser.add_argument("--repository", default=os.getenv("GITHUB_REPOSITORY", ""))
     parser.add_argument("--github-token", default=os.getenv("GITHUB_TOKEN", ""))
     parser.add_argument("--now", help="UTC timestamp override for deterministic tests")
+    parser.add_argument("--result-output", type=Path, default=None)
     args = parser.parse_args()
     now = datetime.fromisoformat(args.now.replace("Z", "+00:00")) if args.now else datetime.now(UTC)
     if args.wait_until_due:
@@ -984,6 +1031,16 @@ def main() -> int:
         github_token=args.github_token,
     )
     result = _finalize_audit_result(result)
+    result_path = args.result_output or (
+        Path(os.environ["SCHEDULED_SLOT_AUDIT_RESULT_PATH"])
+        if os.getenv("SCHEDULED_SLOT_AUDIT_RESULT_PATH") else None
+    )
+    if result_path is not None:
+        try:
+            _write_audit_result(result_path, result, args=args, now=now)
+        except OSError as exc:
+            print(f"scheduled_slot_audit_result_write_failed={type(exc).__name__}", file=sys.stderr)
+            return 1
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
     summary_path = os.getenv("GITHUB_STEP_SUMMARY", "")
     if summary_path:

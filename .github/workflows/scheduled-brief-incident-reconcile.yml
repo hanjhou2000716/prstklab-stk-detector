@@ -1,0 +1,118 @@
+name: Scheduled brief incident reconciliation
+
+on:
+  workflow_run:
+    workflows:
+      - Scheduled market brief
+      - Scheduled brief slot receipt audit
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+concurrency:
+  group: scheduled-brief-incident-reconcile-${{ github.event.workflow_run.id }}-${{ github.event.workflow_run.run_attempt }}
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: >-
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout trusted incident consumer
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11"
+      - name: Download scheduled report terminal evidence
+        if: github.event.workflow_run.name == 'Scheduled market brief'
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: scheduled-terminal-${{ github.event.workflow_run.id }}-attempt-${{ github.event.workflow_run.run_attempt }}
+          path: ${{ runner.temp }}/incident-evidence
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - name: Download independent receipt audit evidence
+        if: github.event.workflow_run.name == 'Scheduled brief slot receipt audit'
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: scheduled-slot-audit-${{ github.event.workflow_run.id }}-attempt-${{ github.event.workflow_run.run_attempt }}
+          path: ${{ runner.temp }}/incident-evidence
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - name: Reconcile the verified report or audit result into one incident
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_API_URL: ${{ github.api_url }}
+          INCIDENT_EVIDENCE_DIR: ${{ runner.temp }}/incident-evidence
+          TRIGGER_REPOSITORY: ${{ github.event.repository.full_name }}
+          TRIGGER_HEAD_REPOSITORY: ${{ github.event.workflow_run.head_repository.full_name }}
+          TRIGGER_WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          TRIGGER_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          TRIGGER_RUN_ID: ${{ github.event.workflow_run.id }}
+          TRIGGER_RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+          TRIGGER_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          INCIDENT_HANDOFF_RESULT_PATH: ${{ runner.temp }}/scheduled-brief-incident-handoff-${{ github.run_id }}-${{ github.run_attempt }}.json
+        run: >-
+          python -m scripts.scheduled_brief_incidents
+          --result-output "$INCIDENT_HANDOFF_RESULT_PATH"
+      - name: Preserve incident handoff result on every exit path
+        if: always()
+        env:
+          INCIDENT_HANDOFF_RESULT_PATH: ${{ runner.temp }}/scheduled-brief-incident-handoff-${{ github.run_id }}-${{ github.run_attempt }}.json
+          CONSUMER_RUN_ID: ${{ github.run_id }}
+          CONSUMER_ATTEMPT: ${{ github.run_attempt }}
+          CONSUMER_SHA: ${{ github.sha }}
+          SOURCE_WORKFLOW: ${{ github.event.workflow_run.name }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+          SOURCE_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          path = Path(os.environ["INCIDENT_HANDOFF_RESULT_PATH"])
+          if not path.exists():
+              path.write_text(json.dumps({
+                  "schema_version": "scheduled-brief-incident-handoff-v1",
+                  "consumer_run_id": os.environ["CONSUMER_RUN_ID"],
+                  "consumer_attempt": int(os.environ["CONSUMER_ATTEMPT"]),
+                  "consumer_sha": os.environ["CONSUMER_SHA"],
+                  "source_workflow": os.environ["SOURCE_WORKFLOW"],
+                  "source_run_id": os.environ["SOURCE_RUN_ID"],
+                  "source_attempt": int(os.environ["SOURCE_ATTEMPT"]),
+                  "source_sha": os.environ["SOURCE_SHA"],
+                  "diagnostic_complete": False,
+                  "incident_active": False,
+                  "incident_handoff_status": "failed",
+                  "failure_reason": "incident_handoff_result_not_produced",
+                  "opened_issue_numbers": [],
+                  "reminded_issue_numbers": [],
+                  "recovered_issue_numbers": [],
+                  "evidence_kind": "unknown",
+                  "evidence_status": "unknown",
+              }, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+          PY
+      - name: Upload immutable incident handoff result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: scheduled-brief-incident-handoff-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/scheduled-brief-incident-handoff-${{ github.run_id }}-${{ github.run_attempt }}.json
+          if-no-files-found: error
+          retention-days: 14
