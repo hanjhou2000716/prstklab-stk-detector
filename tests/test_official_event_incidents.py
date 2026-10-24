@@ -209,6 +209,8 @@ def test_incomplete_scan_never_closes_existing_incident(monkeypatch, tmp_path):
 
 
 def test_central_event_incident_keeps_cadence_due_until_alert_terminal(tmp_path, monkeypatch):
+    monkeypatch.delenv("GITHUB_RUN_ID", raising=False)
+    monkeypatch.delenv("GITHUB_RUN_ATTEMPT", raising=False)
     now = datetime(2026, 10, 24, 4, 0, tzinfo=UTC)
     trace = _trace("summary_pending", detected=now - timedelta(minutes=11))
     path = tmp_path / "trace.json"

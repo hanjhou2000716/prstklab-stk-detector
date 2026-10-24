@@ -228,7 +228,7 @@ def _legacy_contracts() -> dict[str, dict[str, Any]]:
 def build() -> dict[str, Any]:
     current: dict[str, Any] = {}
     for path in sorted(WRITER_QUEUE_GATES):
-        source = (ROOT / path).read_bytes()
+        source = (ROOT / path).read_bytes().replace(b"\r\n", b"\n")
         current[path] = _contract(path, source)
     legacy = _legacy_contracts()
     return {

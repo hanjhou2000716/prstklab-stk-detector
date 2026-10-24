@@ -116,7 +116,8 @@ def _workflow_content_hash(path: str) -> str:
     workspace = Path(os.environ.get("GITHUB_WORKSPACE", "."))
     source = workspace / path
     try:
-        return hashlib.sha256(source.read_bytes()).hexdigest()
+        workflow_bytes = source.read_bytes().replace(b"\r\n", b"\n")
+        return hashlib.sha256(workflow_bytes).hexdigest()
     except OSError as exc:
         raise WriterQueueError("writer_publication_admission_workflow_unreadable") from exc
 

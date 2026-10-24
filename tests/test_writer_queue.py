@@ -1150,7 +1150,7 @@ def test_publication_admission_artifact_is_verified_against_run_attempt_and_job(
 def test_verified_workflow_contract_matches_exact_sha_source_bytes(monkeypatch):
     path = ".github/workflows/official-event-monitor.yml"
     revision = "d" * 40
-    source = (writer_queue.Path(__file__).parents[1] / path).read_bytes()
+    source = (writer_queue.Path(__file__).parents[1] / path).read_bytes().replace(b"\r\n", b"\n")
     git_blob_sha = hashlib.sha1(
         b"blob " + str(len(source)).encode("ascii") + b"\0" + source,
     ).hexdigest()
@@ -1181,6 +1181,17 @@ def test_verified_workflow_contract_matches_exact_sha_source_bytes(monkeypatch):
     ]
     assert contract["workflow_content_sha256"] == hashlib.sha256(source).hexdigest()
     assert contract["gate_step"] == writer_queue.WRITER_QUEUE_GATES[path]["step_name"]
+
+
+def test_workflow_content_hash_is_stable_across_checkout_line_endings(tmp_path, monkeypatch):
+    path = ".github/workflows/official-event-monitor.yml"
+    source = b"name: test workflow\njobs:\n  check:\n    runs-on: ubuntu-latest\n"
+    target = tmp_path / path
+    target.parent.mkdir(parents=True)
+    target.write_bytes(source.replace(b"\n", b"\r\n"))
+    monkeypatch.setenv("GITHUB_WORKSPACE", str(tmp_path))
+
+    assert writer_queue._workflow_content_hash(path) == hashlib.sha256(source).hexdigest()
 
 
 def test_verified_workflow_contract_rejects_unknown_source(monkeypatch):
@@ -1358,6 +1369,6 @@ def test_create_publication_admission_binds_exact_checked_out_workflow(monkeypat
     assert record["job_id"] == 990
     assert record["attempt"] == 3
     assert record["workflow_content_sha256"] == hashlib.sha256(
-        (Path(__file__).resolve().parents[1] / path).read_bytes()
+        (Path(__file__).resolve().parents[1] / path).read_bytes().replace(b"\r\n", b"\n")
     ).hexdigest()
     assert json.loads(output.read_text(encoding="utf-8")) == record

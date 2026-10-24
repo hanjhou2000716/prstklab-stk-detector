@@ -20,6 +20,8 @@ def _event(*, run_id: str, attempt: int, sha: str, workflow: str) -> dict[str, s
 
 
 def test_report_failure_and_audit_root_cause_merge_into_same_issue(tmp_path, monkeypatch):
+    monkeypatch.delenv("GITHUB_RUN_ID", raising=False)
+    monkeypatch.delenv("GITHUB_RUN_ATTEMPT", raising=False)
     report_dir = tmp_path / "report"
     audit_dir = tmp_path / "audit"
     report_dir.mkdir()
