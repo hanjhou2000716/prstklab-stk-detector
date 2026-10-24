@@ -31,6 +31,14 @@ def _marker(body: object) -> str:
     return ""
 
 
+def _field(body: object, label: str) -> str:
+    prefix = f"{label}:"
+    for line in str(body or "").splitlines():
+        if line.startswith(prefix):
+            return line[len(prefix):].strip()
+    return ""
+
+
 def _timestamp(body: object, label: str) -> datetime | None:
     prefix = f"{label}:"
     for line in str(body or "").splitlines():
@@ -39,18 +47,37 @@ def _timestamp(body: object, label: str) -> datetime | None:
     return None
 
 
+def _pending_alert_consumer() -> str:
+    run_id = str(os.environ.get("GITHUB_RUN_ID") or "").strip()
+    attempt = str(os.environ.get("GITHUB_RUN_ATTEMPT") or "").strip()
+    return f"{run_id}/{attempt}" if run_id and attempt else "local"
+
+
+def _mark_alert_pending(body: str, consumer: str) -> str:
+    lines = [line for line in body.splitlines() if not line.startswith("Alert pending consumer:")]
+    lines.append(f"Alert pending consumer: {consumer}")
+    return "\n".join(lines)
+
+
 def _issue_event_refs(body: object) -> tuple[list[str], bool]:
     lines = str(body or "").splitlines()
     refs_line = next((line for line in lines if line.startswith("Event refs:")), "")
-    refs = [item.strip()[:64] for item in refs_line.partition(":")[2].split(",") if item.strip()]
+    placeholders = {"not available", "unknown", "none", "n/a", "na"}
+    refs = [
+        item.strip()[:64]
+        for item in refs_line.partition(":")[2].split(",")
+        if item.strip() and item.strip().casefold() not in placeholders
+    ]
     expected_count = next((line.partition(":")[2].strip() for line in lines if line.startswith("Affected event count:")), "")
     try:
         count = int(expected_count)
     except (TypeError, ValueError):
         count = -1
     complete_line = next((line for line in lines if line.startswith("Event refs complete:")), "")
-    complete = complete_line.partition(":")[2].strip().casefold() == "true" if complete_line else (
-        count >= 0 and len(refs) >= count
+    declared_complete = complete_line.partition(":")[2].strip().casefold() == "true" if complete_line else None
+    complete = bool(refs) and (
+        (declared_complete is True and (count < 0 or len(refs) >= count))
+        or (declared_complete is None and count > 0 and len(refs) >= count)
     )
     return list(dict.fromkeys(refs)), complete
 
@@ -163,7 +190,12 @@ def _body(
     next_reminder_at: datetime | None = None,
 ) -> str:
     first = preserve_first or _parse_time(incident.get("first_failure_at")) or now
-    all_refs = list(dict.fromkeys(str(ref)[:64] for ref in incident.get("event_refs", []) if str(ref)))
+    placeholders = {"not available", "unknown", "none", "n/a", "na"}
+    all_refs = list(dict.fromkeys(
+        str(ref)[:64]
+        for ref in incident.get("event_refs", [])
+        if str(ref).strip() and str(ref).strip().casefold() not in placeholders
+    ))
     refs = ", ".join(all_refs[:100]) or "not available"
     next_reminder = next_reminder_at or (now + REMINDER_INTERVAL)
     return "\n".join((
@@ -173,7 +205,7 @@ def _body(
         f"Summary contract: {incident['contract_version']}",
         f"Affected event count: {len(all_refs)}",
         f"Event refs: {refs}",
-        f"Event refs complete: {'true' if len(all_refs) <= 100 else 'false'}",
+        f"Event refs complete: {'true' if all_refs and len(all_refs) <= 100 else 'false'}",
         f"First failure: {first.isoformat()}",
         f"Latest progress: {incident['latest_progress_at'] or 'unknown'}",
         f"Latest run: {incident['workflow_run_id']} ({incident['workflow_sha']})",
@@ -184,7 +216,7 @@ def _body(
 
 def reconcile_incidents(
     *, api_url: str, repository: str, token: str, trace_path: str | Path,
-    now: datetime | None = None,
+    now: datetime | None = None, defer_notification_cadence: bool = False,
 ) -> dict[str, Any]:
     current = (now or datetime.now(UTC)).astimezone(UTC)
     trace = _read_trace(trace_path)
@@ -208,10 +240,14 @@ def reconcile_incidents(
     opened: list[int] = []
     reminded: list[int] = []
     recovered: list[int] = []
+    cadence_confirmations: list[dict[str, str | int]] = []
     for key, incident in active.items():
         matches = indexed.get(key, [])
         if not matches:
-            body = _body(key, incident, current)
+            next_reminder = current if defer_notification_cadence else current + REMINDER_INTERVAL
+            body = _body(key, incident, current, next_reminder_at=next_reminder)
+            if defer_notification_cadence:
+                body = _mark_alert_pending(body, _pending_alert_consumer())
             created = _request_json(
                 api_url, repository, token, "POST", "issues",
                 {"title": f"{EVENT_ISSUE_TITLE_PREFIX} / {incident['component']}", "body": body},
@@ -220,6 +256,12 @@ def reconcile_incidents(
             if not isinstance(created, dict) or not isinstance(created.get("number"), int):
                 raise LivenessAuditError("official_event_incident_create_invalid")
             opened.append(created["number"])
+            if defer_notification_cadence:
+                cadence_confirmations.append({
+                    "issue_number": created["number"],
+                    "marker": f"{EVENT_INCIDENT_MARKER}{key}",
+                    "next_reminder_at": (current + REMINDER_INTERVAL).isoformat(),
+                })
             continue
         issue = matches[0]
         number = issue.get("number")
@@ -228,20 +270,30 @@ def reconcile_incidents(
         first = _timestamp(issue.get("body"), "First failure")
         next_due = _timestamp(issue.get("body"), "Next reminder at")
         due = next_due is None or current >= next_due
+        pending_current = (
+            defer_notification_cadence
+            and _field(issue.get("body"), "Alert pending consumer") == _pending_alert_consumer()
+        )
         prior_refs, prior_refs_complete = _issue_event_refs(issue.get("body"))
         merged_incident = dict(incident)
         merged_incident["event_refs"] = list(dict.fromkeys([*prior_refs, *incident["event_refs"]]))
         body = _body(
             key, merged_incident, current, preserve_first=first,
-            next_reminder_at=current + REMINDER_INTERVAL if due else next_due,
+            next_reminder_at=(
+                (next_due or current) if due and defer_notification_cadence
+                else current + REMINDER_INTERVAL if due
+                else next_due
+            ),
         )
+        if defer_notification_cadence and due:
+            body = _mark_alert_pending(body, _pending_alert_consumer())
         if not prior_refs_complete:
             body = body.replace("Event refs complete: true", "Event refs complete: false")
         _request_json(
             api_url, repository, token, "PATCH", f"issues/{number}", {"body": body},
             deadline_monotonic=deadline,
         )
-        if due:
+        if due and not pending_current:
             _request_json(
                 api_url, repository, token, "POST", f"issues/{number}/comments",
                 {"body": (
@@ -250,6 +302,12 @@ def reconcile_incidents(
                 )}, deadline_monotonic=deadline,
             )
             reminded.append(number)
+            if defer_notification_cadence:
+                cadence_confirmations.append({
+                    "issue_number": number,
+                    "marker": f"{EVENT_INCIDENT_MARKER}{key}",
+                    "next_reminder_at": (current + REMINDER_INTERVAL).isoformat(),
+                })
     if scan_complete:
         resolved_refs = _resolved_event_refs(trace)
         for key, rows in indexed.items():
@@ -284,6 +342,7 @@ def reconcile_incidents(
         "opened_issue_numbers": opened,
         "reminded_issue_numbers": reminded,
         "recovered_issue_numbers": recovered,
+        "notification_cadence_confirmations": cadence_confirmations,
     }
 
 

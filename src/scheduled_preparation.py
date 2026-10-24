@@ -107,7 +107,7 @@ def _run_command(
     # streams explicitly so result handling never depends on subprocess defaults.
     return run(
         command, timeout=max(1, timeout_seconds), env=env, check=False,
-        text=True, capture_output=True,
+        text=True, encoding="utf-8", errors="replace", capture_output=True,
     )
 
 

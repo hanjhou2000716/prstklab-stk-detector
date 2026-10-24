@@ -30,7 +30,7 @@ def test_official_event_workflow_is_dispatchable_and_idempotent():
     assert "Save official event diagnostic" in workflow
     assert "official-event-diagnostic-${{ github.run_id }}" in workflow
     assert "retention-days: 14" in workflow
-    assert "Fail expected official notification without delivered receipt" in workflow
+    assert "Hand off unresolved official notification to incident reconciliation" in workflow
     assert "steps.status.outputs.should_send == 'true'" in workflow
     assert "DEPLOYMENT_ERROR_CODE" in workflow
     assert "expected_delivery_or_persistent_recipient_receipt_missing" in terminal
@@ -50,7 +50,7 @@ def test_official_workflow_uses_shared_terminal_classifier_and_durable_receipts(
         "- name: Upload official event diagnostic", 1
     )[0]
     guard = workflow.split(
-        "- name: Fail expected official notification without delivered receipt", 1
+        "- name: Hand off unresolved official notification to incident reconciliation", 1
     )[1]
 
     assert "id: terminal_diagnostic" in diagnostic
@@ -63,7 +63,21 @@ def test_official_workflow_uses_shared_terminal_classifier_and_durable_receipts(
     assert "idempotency_cache_without_durable_recipient_receipt" in terminal
     assert "expected_delivery_or_persistent_recipient_receipt_missing" in terminal
     assert "steps.terminal_diagnostic.outputs.terminal_failure == 'true'" in guard
+    assert "::warning::Official notification remains unresolved" in guard
+    assert "exit 1" not in guard.split("- ", 1)[0]
     assert "$NOTIFICATION_REASON" not in guard
+
+
+def test_research_source_result_is_attempt_bound_and_uploaded_before_reconciliation():
+    root = Path(__file__).resolve().parents[1]
+    workflow = (root / ".github" / "workflows" / "unified-research-report.yml").read_text(encoding="utf-8")
+    reconciler = (root / "scripts" / "incident_reconciliation.py").read_text(encoding="utf-8")
+    assert '"schema_version": "unified-research-terminal-v1"' in workflow
+    assert '"business_status": business_status' in workflow
+    assert "unified-research-terminal-${{ github.run_id }}-attempt-${{ github.run_attempt }}" in workflow
+    assert "if-no-files-found: error" in workflow.split("- name: Upload run-bound research incident result", 1)[1]
+    assert '"Unified Taiwan-US research report": (' in reconciler
+    assert '"business_status") == "degraded"' in reconciler
 
 
 def test_gmail_history_dispatches_realtime_monitor_after_new_reviewed_rows():
@@ -79,9 +93,13 @@ def test_gmail_history_dispatches_realtime_monitor_after_new_reviewed_rows():
     assert "client_payload[priority_event_refs]" in workflow
     assert "dispatch_id=\"gmail-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}\"" in workflow
     assert "Audit official monitor liveness" not in workflow
-    audit_workflow = (root / ".github" / "workflows" / "official-monitor-liveness-audit.yml").read_text(encoding="utf-8")
-    assert "Audit monitor startup independently from Gmail sync" in audit_workflow
-    assert 'cron: "*/5 * * * *"' in audit_workflow
+    incident_workflow = (root / ".github" / "workflows" / "incident-reconciliation.yml").read_text(encoding="utf-8")
+    incident_script = (root / "scripts" / "incident_reconciliation.py").read_text(encoding="utf-8")
+    assert "Central incident reconciliation" in incident_workflow
+    assert 'cron: "*/5 * * * *"' in incident_workflow
+    assert "Official macro and price monitor" in incident_workflow
+    assert "result = audit_liveness(" in incident_script
+    assert "defer_notification_cadence=True" in incident_script
     assert "priority_recovery_scan_status" in workflow
     dispatcher = (root / "scripts" / "official_monitor_dispatch.py").read_text(encoding="utf-8")
     assert "scripts/official_monitor_dispatch.py" in workflow

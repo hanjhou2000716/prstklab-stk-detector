@@ -183,6 +183,18 @@ def _field(body: object, label: str) -> str:
     return ""
 
 
+def _pending_alert_consumer() -> str:
+    run_id = str(os.environ.get("GITHUB_RUN_ID") or "").strip()
+    attempt = str(os.environ.get("GITHUB_RUN_ATTEMPT") or "").strip()
+    return f"{run_id}/{attempt}" if run_id and attempt else "local"
+
+
+def _mark_alert_pending(body: str, consumer: str) -> str:
+    lines = [line for line in body.splitlines() if not line.startswith("Alert pending consumer:")]
+    lines.append(f"Alert pending consumer: {consumer}")
+    return "\n".join(lines)
+
+
 def _issue_body(
     key: str, *, component: str, reason: str, contract: str, slots: list[str],
     first_failure: str, run_id: str, attempt: int, sha: str, evidence_status: str,
@@ -246,6 +258,7 @@ def _write_handoff_result(path: Path, payload: dict[str, Any]) -> None:
 def reconcile(
     *, event: dict[str, Any], evidence_directory: Path, repository: str,
     api_url: str, token: str, now: datetime | None = None,
+    defer_notification_cadence: bool = False,
 ) -> dict[str, Any]:
     identity_error = _identity_error(event, repository)
     if identity_error:
@@ -269,6 +282,7 @@ def reconcile(
     opened: list[int] = []
     reminded: list[int] = []
     recovered: list[int] = []
+    cadence_confirmations: list[dict[str, str | int]] = []
     run_id = str(event["run_id"])
     attempt = int(event["attempt"])
     sha = str(event["head_sha"]).lower()
@@ -295,8 +309,11 @@ def reconcile(
                 key, component=component, reason=reason, contract=contract,
                 slots=[slot_label], first_failure=first, run_id=run_id,
                 attempt=attempt, sha=sha, evidence_status=evidence_status,
-                now=current, next_reminder=current + REMINDER_INTERVAL,
+                now=current,
+                next_reminder=current if defer_notification_cadence else current + REMINDER_INTERVAL,
             )
+            if defer_notification_cadence:
+                body = _mark_alert_pending(body, _pending_alert_consumer())
             created = _request_json(
                 api_url, repository, token, "POST", "issues",
                 {"title": f"{ISSUE_TITLE_PREFIX} / {component}", "body": body},
@@ -305,6 +322,12 @@ def reconcile(
             if not isinstance(created, dict) or not isinstance(created.get("number"), int):
                 raise LivenessAuditError("scheduled_brief_incident_create_invalid")
             opened.append(created["number"])
+            if defer_notification_cadence:
+                cadence_confirmations.append({
+                    "issue_number": created["number"],
+                    "marker": f"{ISSUE_MARKER}{key}",
+                    "next_reminder_at": (current + REMINDER_INTERVAL).isoformat(),
+                })
         else:
             issue = rows[0]
             number = issue.get("number")
@@ -315,9 +338,16 @@ def reconcile(
             old_slots = [item.strip() for item in _field(body_before, "Affected slots").split(",") if item.strip()]
             slots = list(dict.fromkeys([*old_slots, slot_label]))
             next_due = _parse_time(_field(body_before, "Next reminder at"))
+            pending_current = (
+                defer_notification_cadence
+                and _field(body_before, "Alert pending consumer") == _pending_alert_consumer()
+            )
             if next_due is None or current >= next_due:
                 due = True
-                next_reminder = current + REMINDER_INTERVAL
+                if defer_notification_cadence:
+                    next_reminder = next_due or current
+                else:
+                    next_reminder = current + REMINDER_INTERVAL
             else:
                 due = False
                 next_reminder = next_due
@@ -327,14 +357,22 @@ def reconcile(
                 attempt=attempt, sha=sha, evidence_status=evidence_status,
                 now=current, next_reminder=next_reminder,
             )
+            if defer_notification_cadence and due:
+                body = _mark_alert_pending(body, _pending_alert_consumer())
             _request_json(api_url, repository, token, "PATCH", f"issues/{number}", {"body": body}, deadline_monotonic=deadline)
-            if due:
+            if due and not pending_current:
                 _request_json(
                     api_url, repository, token, "POST", f"issues/{number}/comments",
                     {"body": f"Still degraded: {reason}; {len(slots)} affected scheduled slot(s). Latest run {run_id}, attempt {attempt}."},
                     deadline_monotonic=deadline,
                 )
                 reminded.append(number)
+                if defer_notification_cadence:
+                    cadence_confirmations.append({
+                        "issue_number": number,
+                        "marker": f"{ISSUE_MARKER}{key}",
+                        "next_reminder_at": (current + REMINDER_INTERVAL).isoformat(),
+                    })
 
     # A later successful, complete independent audit is recovery evidence for
     # this slot family. Close the incident as a service recovery, never as a
@@ -371,6 +409,7 @@ def reconcile(
         "opened_issue_numbers": opened,
         "reminded_issue_numbers": reminded,
         "recovered_issue_numbers": recovered,
+        "notification_cadence_confirmations": cadence_confirmations,
         "evidence_kind": evidence.get("kind", "unknown"),
         "evidence_status": str((evidence.get("audit") or {}).get("report_receipt_status") or (evidence.get("terminal") or {}).get("status") or evidence.get("reason") or "unknown"),
     }

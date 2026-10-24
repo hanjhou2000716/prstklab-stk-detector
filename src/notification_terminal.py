@@ -155,7 +155,6 @@ def _result(
     expired = _flag(values, "SCHEDULE_EXPIRY_STATUS")
     queue_failed = (
         _text(values, "WRITER_QUEUE_STATUS", _text(values, "QUEUE_STATUS")) == "failed"
-        and _text(values, "WRITER_QUEUE_OUTCOME", "failure") == "failure"
     ) or _text(values, "WRITER_QUEUE_ERROR_CODE") == "writer_queue_timeout"
     sender_not_run_after_queue_failure = queue_failed and not (
         _flag(values, "SEND_SENT")
@@ -267,10 +266,7 @@ def evaluate_official_terminal(values: Mapping[str, str]) -> dict[str, Any]:
 
     queue_failed = (
         _text(values, "WRITER_QUEUE_ERROR_CODE") == "writer_queue_timeout"
-        or (
-            _text(values, "QUEUE_STATUS") == "failed"
-            and _text(values, "WRITER_QUEUE_OUTCOME") == "failure"
-        )
+        or _text(values, "QUEUE_STATUS") == "failed"
     )
     if requested and queue_failed:
         send_was_possible = (
@@ -500,10 +496,7 @@ def evaluate_scheduled_terminal(values: Mapping[str, str]) -> dict[str, Any]:
 
     queue_failed = (
         _text(values, "WRITER_QUEUE_ERROR_CODE") == "writer_queue_timeout"
-        or (
-            _text(values, "WRITER_QUEUE_STATUS") == "failed"
-            and _text(values, "WRITER_QUEUE_OUTCOME") == "failure"
-        )
+        or _text(values, "WRITER_QUEUE_STATUS") == "failed"
     )
     if queue_failed:
         send_was_possible = (

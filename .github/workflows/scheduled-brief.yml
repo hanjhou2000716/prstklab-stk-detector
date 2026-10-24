@@ -1455,7 +1455,7 @@ jobs:
         with:
           name: scheduled-terminal-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: /tmp/prstk-notification-terminal-${{ github.run_id }}.json
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14
 
 # - name: 設定 GitHub Pages

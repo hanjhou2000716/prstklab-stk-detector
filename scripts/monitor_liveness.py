@@ -14,6 +14,8 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlencode, urlsplit
 from urllib.request import Request, urlopen
 
+from src.github_issue_api import IssuePaginationError, read_open_issues
+
 REPOSITORY_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 INCIDENT_MARKER = "official-monitor-incident="
 ISSUE_TITLE_PREFIX = "Official event monitor stalled"
@@ -250,6 +252,14 @@ def _issue_timestamp(body: object, label: str) -> datetime | None:
     return None
 
 
+def _issue_field(body: object, label: str) -> str:
+    prefix = f"{label}:"
+    for line in str(body or "").splitlines():
+        if line.startswith(prefix):
+            return line[len(prefix):].strip()
+    return ""
+
+
 def _updated_incident_body(
     issue: dict[str, Any], *, observed_at: datetime, next_reminder_at: datetime | None,
     recovered_at: datetime | None = None,
@@ -268,45 +278,40 @@ def _updated_incident_body(
     return "\n".join(lines)[:12000]
 
 
+def _pending_alert_consumer() -> str:
+    run_id = str(os.environ.get("GITHUB_RUN_ID") or "").strip()
+    attempt = str(os.environ.get("GITHUB_RUN_ATTEMPT") or "").strip()
+    return f"{run_id}/{attempt}" if run_id and attempt else "local"
+
+
+def _mark_alert_pending(body: str, consumer: str) -> str:
+    lines = [line for line in body.splitlines() if not line.startswith("Alert pending consumer:")]
+    lines.append(f"Alert pending consumer: {consumer}")
+    return "\n".join(lines)[:12000]
+
+
 def _open_incidents(api_url: str, repository: str, token: str, *, deadline_monotonic: float) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    path = f"/repos/{repository}/issues"
-    request_path = f"issues?{urlencode({'state': 'open', 'per_page': PAGE_SIZE, 'sort': 'created', 'direction': 'desc', 'page': 1})}"
-    for page in range(1, MAX_PAGES + 1):
-        headers: dict[str, str] = {}
-        payload = _request_json(
-            api_url, repository, token, "GET", request_path,
-            response_headers=headers, deadline_monotonic=deadline_monotonic,
+    try:
+        rows = read_open_issues(
+            api_url=api_url,
+            repository=repository,
+            token=token,
+            fetch_json=_request_json,
+            deadline_monotonic=deadline_monotonic,
+            repository_id=_positive_repo_id(os.environ.get("GITHUB_REPOSITORY_ID")),
         )
-        if not isinstance(payload, list):
-            raise LivenessAuditError("monitor_liveness_issues_response_invalid")
-        if any(not isinstance(row, dict) for row in payload):
-            raise LivenessAuditError("monitor_liveness_issue_row_invalid")
-        rows.extend(payload)
-        next_url = _next_link(
-            headers.get("link", ""), api_url=api_url, expected_path=path,
-            expected_page=page + 1,
-            expected_query={
-                "state": ["open"], "sort": ["created"], "direction": ["desc"],
-            },
-        )
-        if next_url is None:
-            if len(payload) == PAGE_SIZE and len(payload) == PAGE_SIZE * page:
-                # GitHub may omit Link on the final page. A full page without
-                # a Link is ambiguous, so do not claim the incident scan was complete.
-                raise LivenessAuditError("monitor_liveness_issues_pagination_incomplete")
-            break
-        if page == MAX_PAGES:
-            raise LivenessAuditError("monitor_liveness_issues_pagination_limit")
-        request_path = next_url
-    else:
-        raise LivenessAuditError("monitor_liveness_issues_pagination_limit")
+    except IssuePaginationError as exc:
+        raise LivenessAuditError(
+            f"monitor_liveness_{str(exc).replace('issues_', 'issues_')}"
+        ) from exc
     result = []
     for row in rows:
         if row.get("pull_request"):
             continue
         if str(row.get("title") or "").startswith((
             ISSUE_TITLE_PREFIX, AUDIT_ISSUE_TITLE_PREFIX, EVENT_ISSUE_TITLE_PREFIX,
+            "Scheduled market brief delivery degraded",
+            "Unified research report degraded",
         )):
             if not isinstance(row.get("number"), int):
                 raise LivenessAuditError("monitor_liveness_issue_identity_invalid")
@@ -314,8 +319,17 @@ def _open_incidents(api_url: str, repository: str, token: str, *, deadline_monot
     return result
 
 
+def _positive_repo_id(value: object) -> int | None:
+    try:
+        parsed = int(str(value or ""))
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed > 0 else None
+
+
 def audit_liveness(
     *, api_url: str, repository: str, token: str, now: datetime | None = None,
+    defer_notification_cadence: bool = False,
 ) -> dict[str, Any]:
     if not REPOSITORY_RE.fullmatch(repository) or not token:
         raise LivenessAuditError("monitor_liveness_configuration_invalid")
@@ -397,6 +411,7 @@ def audit_liveness(
             "status": "healthy", "incident_opened": False,
             "incident_active": False, "incident_recovered": bool(closed), "closed_issue_numbers": closed,
             "audit_incident_recovered": recovered_audit_incidents,
+            "notification_cadence_confirmations": [],
             "latest_started_at": latest_started_at.isoformat() if latest_started_at else "",
             "inspected_run_count": len(inspected),
         }
@@ -405,10 +420,12 @@ def audit_liveness(
     # One stable key represents a continuous no-start outage, even as GitHub
     # creates or replaces individual queued runs every few minutes.
     incident_key = INCIDENT_KEY
+    pending_consumer = _pending_alert_consumer()
     matching = [issue for issue in stall_incidents if _issue_marker(issue.get("body")) == incident_key]
     if len(matching) > 1:
         raise LivenessAuditError("monitor_liveness_duplicate_incidents")
     incident_opened = not matching
+    cadence_confirmations: list[dict[str, str | int]] = []
     if incident_opened:
         body = "\n".join((
             f"{INCIDENT_MARKER}{incident_key}",
@@ -416,9 +433,11 @@ def audit_liveness(
             f"Stalled run: {int(oldest_run['id'])}",
             f"Run created at: {oldest_created.isoformat()}",
             f"Observed at: {current.isoformat()}",
-            f"Next reminder at: {(current + REMINDER_INTERVAL).isoformat()}",
+            f"Next reminder at: {(current if defer_notification_cadence else current + REMINDER_INTERVAL).isoformat()}",
             "This issue is automatically closed after a monitor step starts again.",
         ))
+        if defer_notification_cadence:
+            body = _mark_alert_pending(body, pending_consumer)
         created_issue = _request_json(
             api_url, repository, token, "POST", "issues",
             {"title": f"{ISSUE_TITLE_PREFIX} / main", "body": body},
@@ -428,14 +447,31 @@ def audit_liveness(
             raise LivenessAuditError("monitor_liveness_issue_create_invalid")
         matching = [created_issue]
         reminder_sent = False
+        if defer_notification_cadence:
+            cadence_confirmations.append({
+                "issue_number": created_issue["number"],
+                "marker": f"{INCIDENT_MARKER}{incident_key}",
+                "next_reminder_at": (current + REMINDER_INTERVAL).isoformat(),
+            })
     else:
         issue = matching[0]
         next_reminder_at = _issue_timestamp(issue.get("body"), "Next reminder at")
         reminder_sent = next_reminder_at is None or current >= next_reminder_at
-        if reminder_sent:
-            updated_body = _updated_incident_body(
-                issue, observed_at=current, next_reminder_at=current + REMINDER_INTERVAL,
+        pending_current = (
+            defer_notification_cadence
+            and _issue_field(issue.get("body"), "Alert pending consumer") == pending_consumer
+        )
+        if reminder_sent and not pending_current:
+            scheduled_next = (
+                (next_reminder_at or current)
+                if defer_notification_cadence
+                else current + REMINDER_INTERVAL
             )
+            updated_body = _updated_incident_body(
+                issue, observed_at=current, next_reminder_at=scheduled_next,
+            )
+            if defer_notification_cadence:
+                updated_body = _mark_alert_pending(updated_body, pending_consumer)
             _request_json(
                 api_url, repository, token, "PATCH", f"issues/{int(issue['number'])}",
                 {"body": updated_body}, deadline_monotonic=deadline_monotonic,
@@ -449,6 +485,12 @@ def audit_liveness(
                 )},
                 deadline_monotonic=deadline_monotonic,
             )
+            if defer_notification_cadence:
+                cadence_confirmations.append({
+                    "issue_number": int(issue["number"]),
+                    "marker": f"{INCIDENT_MARKER}{incident_key}",
+                    "next_reminder_at": (current + REMINDER_INTERVAL).isoformat(),
+                })
     return {
         "status": "stalled", "incident_opened": incident_opened,
         "incident_active": True, "incident_key": incident_key, "reminder_sent": reminder_sent,
@@ -456,8 +498,109 @@ def audit_liveness(
         "stalled_run_id": int(oldest_run["id"]),
         "stalled_run_created_at": oldest_created.isoformat(),
         "audit_incident_recovered": recovered_audit_incidents,
+        "notification_cadence_confirmations": cadence_confirmations,
         "latest_started_at": latest_started_at.isoformat() if latest_started_at else "",
         "inspected_run_count": len(inspected),
+    }
+
+
+def reconcile_audit_failure_incident(
+    *, api_url: str, repository: str, token: str, reason: str,
+    now: datetime | None = None, defer_notification_cadence: bool = False,
+) -> dict[str, Any]:
+    if not REPOSITORY_RE.fullmatch(repository) or not token:
+        raise LivenessAuditError("monitor_liveness_configuration_invalid")
+    current = (now or datetime.now(UTC)).astimezone(UTC)
+    deadline = time.monotonic() + MAX_AUDIT_SECONDS
+    incidents = _open_incidents(
+        api_url, repository, token, deadline_monotonic=deadline,
+    )
+    incident_key = f"official-monitor-audit:{reason[:100]}"
+    matching = [
+        issue for issue in incidents
+        if str(issue.get("title") or "").startswith(AUDIT_ISSUE_TITLE_PREFIX)
+        and _issue_marker(issue.get("body")) == incident_key
+    ]
+    if len(matching) > 1:
+        raise LivenessAuditError("monitor_liveness_duplicate_audit_incidents")
+    cadence_confirmations: list[dict[str, str | int]] = []
+    if not matching:
+        issue_body = "\n".join((
+            f"{AUDIT_INCIDENT_MARKER}{incident_key}",
+            "The monitor liveness audit could not complete a trustworthy read.",
+            f"Failure class: {reason[:160]}",
+            f"Observed at: {current.isoformat()}",
+            f"Next reminder at: {(current if defer_notification_cadence else current + REMINDER_INTERVAL).isoformat()}",
+            "This incident is closed automatically after a complete audit succeeds.",
+        ))
+        pending_consumer = _pending_alert_consumer()
+        if defer_notification_cadence:
+            issue_body = _mark_alert_pending(issue_body, pending_consumer)
+        issue = _request_json(
+            api_url, repository, token, "POST", "issues",
+            {"title": f"{AUDIT_ISSUE_TITLE_PREFIX} / main", "body": issue_body},
+            deadline_monotonic=deadline,
+        )
+        if not isinstance(issue, dict) or not isinstance(issue.get("number"), int):
+            raise LivenessAuditError("monitor_liveness_audit_issue_create_invalid")
+        if defer_notification_cadence:
+            cadence_confirmations.append({
+                "issue_number": issue["number"],
+                "marker": f"{AUDIT_INCIDENT_MARKER}{incident_key}",
+                "next_reminder_at": (current + REMINDER_INTERVAL).isoformat(),
+            })
+        return {
+            "status": "degraded", "diagnostic_complete": False,
+            "incident_active": True, "incident_opened": True,
+            "incident_key": incident_key, "issue_number": issue["number"],
+            "reason": reason[:160], "observed_at": current.isoformat(),
+            "reminder_sent": False,
+            "notification_cadence_confirmations": cadence_confirmations,
+        }
+
+    issue = matching[0]
+    number = issue.get("number")
+    if not isinstance(number, int):
+        raise LivenessAuditError("monitor_liveness_audit_issue_identity_invalid")
+    due = _issue_timestamp(issue.get("body"), "Next reminder at")
+    reminder_sent = due is None or current >= due
+    pending_consumer = _pending_alert_consumer()
+    pending_current = (
+        defer_notification_cadence
+        and _issue_field(issue.get("body"), "Alert pending consumer") == pending_consumer
+    )
+    if reminder_sent and not pending_current:
+        next_reminder = (
+            (due or current) if defer_notification_cadence
+            else current + REMINDER_INTERVAL
+        )
+        body = _updated_incident_body(
+            issue, observed_at=current, next_reminder_at=next_reminder,
+        )
+        if defer_notification_cadence:
+            body = _mark_alert_pending(body, pending_consumer)
+        _request_json(
+            api_url, repository, token, "PATCH", f"issues/{number}",
+            {"body": body}, deadline_monotonic=deadline,
+        )
+        _request_json(
+            api_url, repository, token, "POST", f"issues/{number}/comments",
+            {"body": f"The liveness audit remains incomplete ({reason[:120]}). Checked at {current.isoformat()}; next reminder in 30 minutes."},
+            deadline_monotonic=deadline,
+        )
+        if defer_notification_cadence:
+            cadence_confirmations.append({
+                "issue_number": number,
+                "marker": f"{AUDIT_INCIDENT_MARKER}{incident_key}",
+                "next_reminder_at": (current + REMINDER_INTERVAL).isoformat(),
+            })
+    return {
+        "status": "degraded", "diagnostic_complete": False,
+        "incident_active": True, "incident_opened": False,
+        "incident_key": incident_key, "issue_number": number,
+        "reason": reason[:160], "observed_at": current.isoformat(),
+        "reminder_sent": reminder_sent,
+        "notification_cadence_confirmations": cadence_confirmations,
     }
 
 
@@ -506,73 +649,12 @@ def main() -> int:
         return True
 
     def record_audit_failure(reason: str) -> dict[str, Any]:
-        current = datetime.now(UTC)
-        deadline = time.monotonic() + MAX_AUDIT_SECONDS
-        incidents = _open_incidents(
-            os.environ.get("GITHUB_API_URL", "https://api.github.com"),
-            os.environ.get("GITHUB_REPOSITORY", ""),
-            os.environ.get("GITHUB_TOKEN", ""),
-            deadline_monotonic=deadline,
+        return reconcile_audit_failure_incident(
+            api_url=os.environ.get("GITHUB_API_URL", "https://api.github.com"),
+            repository=os.environ.get("GITHUB_REPOSITORY", ""),
+            token=os.environ.get("GITHUB_TOKEN", ""),
+            reason=reason,
         )
-        incident_key = f"official-monitor-audit:{reason[:100]}"
-        matching = [
-            issue for issue in incidents
-            if str(issue.get("title") or "").startswith(AUDIT_ISSUE_TITLE_PREFIX)
-            and _issue_marker(issue.get("body")) == incident_key
-        ]
-        if len(matching) > 1:
-            raise LivenessAuditError("monitor_liveness_duplicate_audit_incidents")
-        if not matching:
-            body = "\n".join((
-                f"{AUDIT_INCIDENT_MARKER}{incident_key}",
-                "The monitor liveness audit could not complete a trustworthy read.",
-                f"Failure class: {reason[:160]}",
-                f"Observed at: {current.isoformat()}",
-                f"Next reminder at: {(current + REMINDER_INTERVAL).isoformat()}",
-                "This incident is closed automatically after a complete audit succeeds.",
-            ))
-            issue = _request_json(
-                os.environ.get("GITHUB_API_URL", "https://api.github.com"),
-                os.environ.get("GITHUB_REPOSITORY", ""), os.environ.get("GITHUB_TOKEN", ""),
-                "POST", "issues", {"title": f"{AUDIT_ISSUE_TITLE_PREFIX} / main", "body": body},
-                deadline_monotonic=deadline,
-            )
-            if not isinstance(issue, dict) or not isinstance(issue.get("number"), int):
-                raise LivenessAuditError("monitor_liveness_audit_issue_create_invalid")
-            return {
-                "status": "degraded", "diagnostic_complete": False,
-                "incident_active": True, "incident_opened": True,
-                "incident_key": incident_key, "issue_number": issue["number"],
-                "reason": reason[:160], "observed_at": current.isoformat(),
-                "reminder_sent": False,
-            }
-        issue = matching[0]
-        due = _issue_timestamp(issue.get("body"), "Next reminder at")
-        reminder_sent = due is None or current >= due
-        if reminder_sent:
-            body = _updated_incident_body(
-                issue, observed_at=current, next_reminder_at=current + REMINDER_INTERVAL,
-            )
-            _request_json(
-                os.environ.get("GITHUB_API_URL", "https://api.github.com"),
-                os.environ.get("GITHUB_REPOSITORY", ""), os.environ.get("GITHUB_TOKEN", ""),
-                "PATCH", f"issues/{int(issue['number'])}", {"body": body},
-                deadline_monotonic=deadline,
-            )
-            _request_json(
-                os.environ.get("GITHUB_API_URL", "https://api.github.com"),
-                os.environ.get("GITHUB_REPOSITORY", ""), os.environ.get("GITHUB_TOKEN", ""),
-                "POST", f"issues/{int(issue['number'])}/comments",
-                {"body": f"The liveness audit remains incomplete ({reason[:120]}). Checked at {current.isoformat()}; next reminder in 30 minutes."},
-                deadline_monotonic=deadline,
-            )
-        return {
-            "status": "degraded", "diagnostic_complete": False,
-            "incident_active": True, "incident_opened": False,
-            "incident_key": incident_key, "issue_number": int(issue["number"]),
-            "reason": reason[:160], "observed_at": current.isoformat(),
-            "reminder_sent": reminder_sent,
-        }
 
     try:
         result = audit_liveness(

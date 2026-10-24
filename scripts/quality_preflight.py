@@ -80,6 +80,10 @@ def static_commands() -> list[tuple[str, list[str]]]:
     actionlint = shutil.which("actionlint") or "actionlint"
     return [
         (
+            "Versioned fixed-SHA writer workflow contracts",
+            [sys.executable, str(ROOT / "scripts" / "generate_writer_workflow_contract.py"), "--check"],
+        ),
+        (
             "Pinned actionlint/ShellCheck versions and SC2129 regression",
             [sys.executable, str(ROOT / "scripts" / "check_quality_tools.py")],
         ),

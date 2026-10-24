@@ -192,7 +192,7 @@ def test_official_delivery_requires_every_persistent_stage() -> None:
 def test_official_queue_failure_preserves_root_cause_before_scan_failure_fallback() -> None:
     result = evaluate_official_terminal(official(
         QUEUE_STATUS="failed",
-        WRITER_QUEUE_OUTCOME="failure",
+        WRITER_QUEUE_OUTCOME="success",
         WRITER_QUEUE_ERROR_CODE="writer_queue_timeout",
         WRITER_QUEUE_BLOCKER_RUN_IDS="1234",
         SCAN_STATUS="not_run",
@@ -388,7 +388,7 @@ def test_scheduled_queue_timeout_keeps_root_cause_and_unrun_stages() -> None:
         DELIVERY_OBLIGATION="undetermined",
         WINDOW_DELIVERY_INTENT="notify_candidate",
         WRITER_QUEUE_STATUS="failed",
-        WRITER_QUEUE_OUTCOME="failure",
+        WRITER_QUEUE_OUTCOME="success",
         WRITER_QUEUE_ERROR_CODE="writer_queue_timeout",
         WRITER_QUEUE_BLOCKER_RUN_IDS="37349718666",
         WRITER_QUEUE_ERROR_CANDIDATE_RUN_ID="37518565189",

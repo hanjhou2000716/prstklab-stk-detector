@@ -102,18 +102,28 @@ def test_report_failure_and_audit_root_cause_merge_into_same_issue(tmp_path, mon
         event=_event(run_id="100", attempt=1, sha="a" * 40, workflow="Scheduled market brief"),
         evidence_directory=report_dir, repository=repository,
         api_url="https://api.github.com", token="token", now=now,
+        defer_notification_cadence=True,
     )
     second = incidents.reconcile(
         event=_event(run_id="200", attempt=2, sha="b" * 40, workflow="Scheduled brief slot receipt audit"),
         evidence_directory=audit_dir, repository=repository,
         api_url="https://api.github.com", token="token", now=now,
+        defer_notification_cadence=True,
     )
 
     assert first["opened_issue_numbers"] == [17]
     assert second["opened_issue_numbers"] == []
+    assert first["notification_cadence_confirmations"] == [{
+        "issue_number": 17,
+        "marker": f"{incidents.ISSUE_MARKER}{incidents._incident_key('scheduled_market_brief', reason, 'notification-terminal-v2')}",
+        "next_reminder_at": "2026-10-21T08:30:00+00:00",
+    }]
+    assert second["reminded_issue_numbers"] == []
     assert len([call for call in requests if call[0] == "POST" and call[1] == "issues"]) == 1
     body = str(issue_rows[0]["body"])
     assert f"Root cause: {reason}" in body
+    assert "Next reminder at: 2026-10-21T08:00:00+00:00" in body
+    assert "Alert pending consumer: local" in body
     assert "post_close:2026-10-21" in body
     assert "Latest run: 200 attempt 2" in body
 
