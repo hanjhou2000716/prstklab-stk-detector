@@ -1,0 +1,121 @@
+name: Central incident reconciliation
+
+on:
+  workflow_run:
+    workflows:
+      - Scheduled market brief
+      - Scheduled brief slot receipt audit
+      - Official macro and price monitor
+      - Unified Taiwan-US research report
+    types: [completed]
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+concurrency:
+  group: prstk-incident-reconciliation
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      notification_due: ${{ steps.reconcile.outputs.notification_due || 'false' }}
+    steps:
+      - name: Checkout trusted incident consumer
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.repository.default_branch || 'main' }}
+          fetch-depth: 1
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11"
+      - name: Reconcile all supported source results
+        id: reconcile
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_API_URL: ${{ github.api_url }}
+          INCIDENT_EVIDENCE_DIR: ${{ runner.temp }}/incident-evidence
+          INCIDENT_RECONCILIATION_RESULT_PATH: ${{ runner.temp }}/incident-reconciliation-state.json
+        run: python -m scripts.incident_reconciliation
+      - name: Preserve an explicit failure result if reconciliation stopped early
+        id: preserve_result
+        if: always()
+        env:
+          INCIDENT_RECONCILIATION_RESULT_PATH: ${{ runner.temp }}/incident-reconciliation-state.json
+          CONSUMER_RUN_ID: ${{ github.run_id }}
+          CONSUMER_ATTEMPT: ${{ github.run_attempt }}
+          CONSUMER_SHA: ${{ github.sha }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from datetime import UTC, datetime
+          from pathlib import Path
+          path = Path(os.environ["INCIDENT_RECONCILIATION_RESULT_PATH"])
+          if not path.exists():
+              path.write_text(json.dumps({
+                  "schema_version": "incident-reconciliation-v1",
+                  "consumer_run_id": os.environ["CONSUMER_RUN_ID"],
+                  "consumer_attempt": int(os.environ["CONSUMER_ATTEMPT"]),
+                  "consumer_sha": os.environ["CONSUMER_SHA"],
+                  "business_status": "unknown",
+                  "diagnostic_complete": False,
+                  "incident_handoff_status": "failed",
+                  "notification_due": False,
+                  "failure_reason": "incident_reconciliation_result_not_produced",
+                  "observed_at": datetime.now(UTC).isoformat(),
+              }, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+          PY
+      - name: Preserve the alert decision before native notification
+        id: upload_decision
+        if: always() && steps.preserve_result.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: incident-reconciliation-decision-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/incident-reconciliation-state.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Send one native alert for new, escalated, or due incidents
+        if: >-
+          always() && steps.upload_decision.outcome == 'success' &&
+          steps.reconcile.outputs.notification_due == 'true'
+        id: native_alert
+        run: |
+          echo "alert_emitted=true" >> "$GITHUB_OUTPUT"
+          echo "::error::Incident remains degraded; issue evidence was reconciled. The centralized notification interval is 30 minutes."
+          exit 1
+      - name: Finalize reminder cadence after the expected alert terminal
+        if: >-
+          always() && steps.upload_decision.outcome == 'success' &&
+          steps.native_alert.outputs.alert_emitted == 'true' &&
+          steps.native_alert.outcome == 'failure'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_API_URL: ${{ github.api_url }}
+          INCIDENT_RECONCILIATION_RESULT_PATH: ${{ runner.temp }}/incident-reconciliation-state.json
+          INCIDENT_ALERT_EMITTED: ${{ steps.native_alert.outputs.alert_emitted }}
+          INCIDENT_ALERT_STEP_OUTCOME: ${{ steps.native_alert.outcome }}
+        run: python -m scripts.incident_reconciliation --finalize-alert-cadence
+      - name: Upload immutable reconciliation state
+        id: upload_result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: incident-reconciliation-state-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/incident-reconciliation-state.json
+          if-no-files-found: error
+          retention-days: 90

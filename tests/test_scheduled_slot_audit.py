@@ -665,6 +665,50 @@ def test_audit_workflow_receives_versioned_allowlist_without_sender_credentials(
     ledger_at = workflow.index("Checkout published receipt ledger after audit deadline")
     assert timing_at < install_at < ledger_at
     assert "python -m pip install -r requirements-production.txt" in workflow
+    assert "scheduled-slot-audit-result-v1" in workflow
+    assert "Upload immutable scheduled slot audit result" in workflow
+
+
+def test_scheduled_audit_result_artifact_binds_original_slot_ledger_and_run(tmp_path, monkeypatch):
+    import argparse
+
+    monkeypatch.setenv("GITHUB_RUN_ID", "54321")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "3")
+    monkeypatch.setenv("GITHUB_SHA", "b" * 40)
+    args = argparse.Namespace(
+        slot="post_close",
+        slot_date="2026-10-21",
+        scheduled_for_at="2026-10-21T13:20:00+08:00",
+        ledger_commit_sha="c" * 40,
+    )
+    result = {
+        "status": "missing_receipt",
+        "reason": "scheduled_anchor_claim_missing",
+        "slot": "post_close",
+        "market_date": "2026-10-21",
+        "anchor": "taiwan:2026-10-21:post_close",
+        "scheduled_slot_at": "2026-10-21T13:20:00+08:00",
+        "audit_due_at": "2026-10-21T14:05:00+08:00",
+        "recipient_set_version": "recipients-v2",
+    }
+    output = tmp_path / "audit-result.json"
+
+    audit._write_audit_result(
+        output,
+        audit._finalize_audit_result(result),
+        args=args,
+        now=datetime.fromisoformat("2026-10-21T06:10:00Z"),
+    )
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["schema_version"] == "scheduled-slot-audit-result-v1"
+    assert payload["run_id"] == "54321"
+    assert payload["attempt"] == 3
+    assert payload["workflow_sha"] == "b" * 40
+    assert payload["original_slot"]["anchor"] == "taiwan:2026-10-21:post_close"
+    assert payload["ledger_sha"] == "c" * 40
+    assert payload["report_receipt_status"] == "missing_receipt"
+    assert payload["diagnostic_complete"] is True
 
 
 def test_recipient_set_version_binds_hashes_and_effective_time():

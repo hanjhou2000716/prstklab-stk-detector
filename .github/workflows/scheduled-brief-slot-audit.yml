@@ -86,6 +86,7 @@ jobs:
           AUDIT_SCHEDULED_FOR_AT: ${{ github.event.client_payload.scheduled_for_at || '' }}
           AUDIT_DISPATCH_UNIX: ${{ github.event.client_payload.dispatch_unix || '' }}
           AUDIT_REQUESTED_AT: ${{ github.event.client_payload.dispatch_unix || steps.run_context.outputs.created_at || '' }}
+          SCHEDULED_SLOT_AUDIT_RESULT_PATH: ${{ runner.temp }}/scheduled-slot-audit-${{ github.run_id }}-${{ github.run_attempt }}.json
         run: >-
           python -m src.scheduled_slot_audit
           --ledger receipt-ledger/site/data/event-ledger.json
@@ -100,3 +101,45 @@ jobs:
           --scheduled-for-at "$AUDIT_SCHEDULED_FOR_AT"
           --requested-at "$AUDIT_REQUESTED_AT"
           --dispatch-unix "$AUDIT_DISPATCH_UNIX"
+          --result-output "$SCHEDULED_SLOT_AUDIT_RESULT_PATH"
+      - name: Preserve audit result artifact on every exit path
+        if: always()
+        env:
+          SCHEDULED_SLOT_AUDIT_RESULT_PATH: ${{ runner.temp }}/scheduled-slot-audit-${{ github.run_id }}-${{ github.run_attempt }}.json
+          AUDIT_RUN_ID: ${{ github.run_id }}
+          AUDIT_RUN_ATTEMPT: ${{ github.run_attempt }}
+          AUDIT_WORKFLOW_SHA: ${{ github.sha }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          path = Path(os.environ["SCHEDULED_SLOT_AUDIT_RESULT_PATH"])
+          if not path.exists():
+              payload = {
+                  "schema_version": "scheduled-slot-audit-result-v1",
+                  "run_id": os.environ["AUDIT_RUN_ID"],
+                  "attempt": int(os.environ["AUDIT_RUN_ATTEMPT"]),
+                  "workflow_sha": os.environ["AUDIT_WORKFLOW_SHA"],
+                  "original_slot": {"slot": "", "date": "", "anchor": "", "scheduled_slot_at": ""},
+                  "audit_due_at": "",
+                  "audited_at": "",
+                  "ledger_sha": "",
+                  "recipient_set_version": "unknown",
+                  "execution_status": "INCOMPLETE",
+                  "report_receipt_status": "unknown",
+                  "incident_handoff_status": "pending",
+                  "diagnostic_complete": False,
+                  "first_failure_reason": "audit_result_not_produced",
+                  "result": {"status": "blocked", "reason": "audit_result_not_produced"},
+              }
+              path.write_text(json.dumps(payload, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+          PY
+      - name: Upload immutable scheduled slot audit result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: scheduled-slot-audit-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/scheduled-slot-audit-${{ github.run_id }}-${{ github.run_attempt }}.json
+          if-no-files-found: error
+          retention-days: 14

@@ -20,12 +20,23 @@ from src.writer_queue import (
 )
 
 _read_publication_admission = writer_queue._read_publication_admission
+_verified_workflow_contract = writer_queue._verified_workflow_contract
 
 
 @pytest.fixture(autouse=True)
 def no_remote_admission_artifact_by_default(monkeypatch):
     """Keep queue state-machine tests offline; admission is covered explicitly below."""
     monkeypatch.setattr(writer_queue, "_read_publication_admission", lambda **_kwargs: None)
+    contracts = writer_queue._known_workflow_contracts()["writer_workflows"]
+
+    def verified_contract(run, **_kwargs):
+        path = str(run.get("path") or "")
+        return {
+            **contracts[path],
+            "source_commit_sha": str(run.get("head_sha") or ""),
+        }
+
+    monkeypatch.setattr(writer_queue, "_verified_workflow_contract", verified_contract)
 
 
 def _run(
@@ -937,6 +948,55 @@ def test_production_revision_fence_blocks_missing_revision():
     }
 
 
+def test_only_bounded_queue_observation_failures_are_incident_degradations():
+    assert writer_queue.queue_error_is_degraded(WriterQueueTimeout((), 90, 1))
+    assert writer_queue.queue_error_is_degraded(
+        writer_queue.RetryableQueueSnapshotError("writer_publication_gate_step_not_visible")
+    )
+    assert not writer_queue.queue_error_is_degraded(
+        WriterQueueError("writer_publication_gate_workflow_identity_mismatch")
+    )
+
+
+@pytest.mark.parametrize(
+    ("error", "expected_code", "expected_exit", "expected_business"),
+    [
+        (
+            writer_queue.RetryableQueueSnapshotError("writer_publication_gate_step_not_visible"),
+            "writer_publication_gate_step_not_visible", 0, "degraded",
+        ),
+        (
+            WriterQueueError("writer_publication_gate_workflow_identity_mismatch"),
+            "writer_publication_gate_workflow_identity_mismatch", 1, "blocked",
+        ),
+    ],
+)
+def test_writer_queue_cli_hands_off_bounded_observation_failures_but_fails_contract_errors(
+    monkeypatch, capsys, tmp_path, error, expected_code, expected_exit, expected_business,
+):
+    sha = "a" * 40
+    monkeypatch.setenv("GITHUB_RUN_ID", "77")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "1")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+    monkeypatch.setenv("GITHUB_TOKEN", "token")
+    monkeypatch.setenv("GITHUB_SHA", sha)
+    monkeypatch.setenv("GITHUB_OUTPUT", str(tmp_path / "github-output"))
+    monkeypatch.setattr(sys, "argv", ["writer_queue", "--run-id", "77"])
+    monkeypatch.setattr(
+        writer_queue, "wait_for_slot",
+        lambda **_kwargs: (_ for _ in ()).throw(error),
+    )
+    monkeypatch.setattr(writer_queue, "_fetch_main_revision", lambda **_kwargs: sha)
+
+    assert main() == expected_exit
+    output = (tmp_path / "github-output").read_text(encoding="utf-8")
+    assert f"queue_error_code={expected_code}" in output
+    assert f"business_status={expected_business}" in output
+    assert "should_continue=false" in output
+    message = capsys.readouterr().out
+    assert ("::warning::" if expected_exit == 0 else "::error::") in message
+
+
 def test_writer_queue_cli_stops_before_publication_when_main_moves(monkeypatch, capsys, tmp_path):
     monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
     monkeypatch.setenv("GITHUB_TOKEN", "token")
@@ -1076,11 +1136,217 @@ def test_publication_admission_artifact_is_verified_against_run_attempt_and_job(
         run=run, gate=gate, job_id=4200,
         api_url="https://api.github.com", repository="owner/repo", token="token",
         deadline_monotonic=writer_queue.time.monotonic() + 10,
+        trusted_contract={
+            "workflow_content_sha256": workflow_hash,
+            "source_commit_sha": "a" * 40,
+        },
     )
     assert evidence is not None
     assert evidence["artifact_id"] == 55
     assert evidence["created_at"] == "2026-10-16T02:00:00+00:00"
     assert evidence["contract_fingerprint"] == record["contract_fingerprint"]
+
+
+def test_verified_workflow_contract_matches_exact_sha_source_bytes(monkeypatch):
+    path = ".github/workflows/official-event-monitor.yml"
+    revision = "d" * 40
+    source = (writer_queue.Path(__file__).parents[1] / path).read_bytes().replace(b"\r\n", b"\n")
+    git_blob_sha = hashlib.sha1(
+        b"blob " + str(len(source)).encode("ascii") + b"\0" + source,
+    ).hexdigest()
+    requests = []
+
+    def fake_request(url, **_kwargs):
+        requests.append(url)
+        return ({
+            "path": path,
+            "type": "file",
+            "encoding": "base64",
+            "size": len(source),
+            "sha": git_blob_sha,
+            "content": __import__("base64").b64encode(source).decode("ascii"),
+        }, None)
+
+    monkeypatch.setattr(writer_queue, "_request_json", fake_request)
+    writer_queue._WORKFLOW_CONTENT_HASH_CACHE.pop((revision, path), None)
+    contract = _verified_workflow_contract({
+        "path": path,
+        "head_sha": revision,
+        "workflow_id": writer_queue.WRITER_WORKFLOW_IDENTITIES[path],
+    }, api_url="https://api.github.com", repository="owner/repo", token="token",
+       deadline_monotonic=writer_queue.time.monotonic() + 10)
+
+    assert requests == [
+        f"https://api.github.com/repos/owner/repo/contents/{path}?ref={revision}"
+    ]
+    assert contract["workflow_content_sha256"] == hashlib.sha256(source).hexdigest()
+    assert contract["gate_step"] == writer_queue.WRITER_QUEUE_GATES[path]["step_name"]
+
+
+def test_workflow_content_hash_is_stable_across_checkout_line_endings(tmp_path, monkeypatch):
+    path = ".github/workflows/official-event-monitor.yml"
+    source = b"name: test workflow\njobs:\n  check:\n    runs-on: ubuntu-latest\n"
+    target = tmp_path / path
+    target.parent.mkdir(parents=True)
+    target.write_bytes(source.replace(b"\n", b"\r\n"))
+    monkeypatch.setenv("GITHUB_WORKSPACE", str(tmp_path))
+
+    assert writer_queue._workflow_content_hash(path) == hashlib.sha256(source).hexdigest()
+
+
+def test_verified_workflow_contract_rejects_unknown_source(monkeypatch):
+    path = ".github/workflows/official-event-monitor.yml"
+    revision = "e" * 40
+    source = b"name: changed without an approved writer gate\n"
+    git_blob_sha = hashlib.sha1(
+        b"blob " + str(len(source)).encode("ascii") + b"\0" + source,
+    ).hexdigest()
+    monkeypatch.setattr(writer_queue, "_request_json", lambda *_a, **_k: ({
+        "path": path,
+        "type": "file",
+        "encoding": "base64",
+        "size": len(source),
+        "sha": git_blob_sha,
+        "content": __import__("base64").b64encode(source).decode("ascii"),
+    }, None))
+    writer_queue._WORKFLOW_CONTENT_HASH_CACHE.pop((revision, path), None)
+
+    with pytest.raises(WriterQueueError, match="workflow_contract_sha_unknown"):
+        _verified_workflow_contract({
+            "path": path,
+            "head_sha": revision,
+            "workflow_id": writer_queue.WRITER_WORKFLOW_IDENTITIES[path],
+        }, api_url="https://api.github.com", repository="owner/repo", token="token",
+           deadline_monotonic=writer_queue.time.monotonic() + 10)
+
+
+def test_skipped_gate_with_started_at_is_not_admitted(monkeypatch):
+    path = ".github/workflows/official-event-monitor.yml"
+    gate = writer_queue.WRITER_QUEUE_GATES[path]
+    run = {
+        "id": 39698088993, "run_attempt": 1, "workflow_id": gate["workflow_id"],
+        "path": path, "head_sha": "c" * 40, "status": "in_progress",
+    }
+    monkeypatch.setattr(writer_queue, "_fetch_attempt_jobs", lambda **_kwargs: [{
+        "id": 1200001, "name": gate["job_name"], "status": "completed",
+        "conclusion": "success", "runner_id": 21,
+        "steps": [{
+            "name": gate["step_name"], "status": "completed", "conclusion": "skipped",
+            "started_at": "2026-10-22T00:14:46Z", "completed_at": "2026-10-22T00:14:46Z",
+        }],
+    }])
+
+    deferred = writer_queue._annotate_publication_gate(
+        run, api_url="https://api.github.com", repository="owner/repo", token="token",
+        deadline_monotonic=writer_queue.time.monotonic() + 10,
+    )
+
+    assert deferred is not None
+    assert deferred["reason"] == "publication_gate_skipped"
+    assert run["queue_gate_state"] == "deferred"
+    assert run["queue_gate_step_conclusion"] == "skipped"
+
+
+def test_blocker_diagnostics_include_contract_and_terminal_observations():
+    details = writer_queue._blocker_details([{
+        "id": 123, "run_attempt": 2, "workflow_id": 320209983,
+        "path": ".github/workflows/official-event-monitor.yml", "head_sha": "a" * 40,
+        "queue_gate_workflow_sha": "a" * 40,
+        "queue_gate_contract_fingerprint": "b" * 64,
+        "queue_gate_contract_source": "a" * 40,
+        "queue_gate_workflow_content_sha256": "c" * 64,
+        "queue_gate_jobs_snapshot_complete": True,
+        "queue_gate_protected_jobs_complete": True,
+        "queue_gate_protected_job_states": [{"job": "monitor-send-deploy", "status": "completed", "conclusion": "success"}],
+        "status": "in_progress", "queue_gate_job_status": "completed",
+        "queue_gate_job_conclusion": "success", "queue_gate_step_conclusion": "skipped",
+        "queue_gate_release_reason": "all_protected_jobs_terminal_after_complete_attempt_read",
+        "queue_gate_state": "admitted", "queue_gate_reason": "",
+        "queue_gate_runner_assigned": True, "queue_gate_observed_steps": 3,
+        "queue_gate_started_at": "2026-10-24T04:00:00Z",
+    }])[0]
+
+    assert details["workflow_contract_source"] == "a" * 40
+    assert details["workflow_content_sha256"] == "c" * 64
+    assert details["protected_jobs_complete"] is True
+    assert details["gate_conclusion"] == "skipped"
+    assert details["release_reason"] == "all_protected_jobs_terminal_after_complete_attempt_read"
+
+
+def test_admission_artifact_conflicts_with_skipped_gate(monkeypatch):
+    path = ".github/workflows/official-event-monitor.yml"
+    gate = writer_queue.WRITER_QUEUE_GATES[path]
+    run = {
+        "id": 39698088993, "run_attempt": 1, "workflow_id": gate["workflow_id"],
+        "path": path, "head_sha": "c" * 40, "status": "in_progress",
+    }
+    monkeypatch.setattr(writer_queue, "_fetch_attempt_jobs", lambda **_kwargs: [{
+        "id": 1200001, "name": gate["job_name"], "status": "completed",
+        "conclusion": "success", "runner_id": 21,
+        "steps": [{
+            "name": gate["step_name"], "status": "completed", "conclusion": "skipped",
+            "started_at": "2026-10-22T00:14:46Z",
+        }],
+    }])
+    monkeypatch.setattr(writer_queue, "_read_publication_admission", lambda **_kwargs: {
+        "artifact_id": 7, "created_at": "2026-10-22T00:14:00+00:00",
+        "contract_fingerprint": "a" * 64,
+    })
+
+    with pytest.raises(WriterQueueError, match="admission_skipped_gate_conflict"):
+        writer_queue._annotate_publication_gate(
+            run, api_url="https://api.github.com", repository="owner/repo", token="token",
+            deadline_monotonic=writer_queue.time.monotonic() + 10,
+        )
+
+
+def test_missing_writer_job_after_completed_declared_predecessor_is_deferred(monkeypatch):
+    path = ".github/workflows/official-event-monitor.yml"
+    gate = writer_queue.WRITER_QUEUE_GATES[path]
+    run = {
+        "id": 40071138384, "run_attempt": 1, "workflow_id": gate["workflow_id"],
+        "path": path, "head_sha": "c" * 40, "status": "queued",
+    }
+    monkeypatch.setattr(writer_queue, "_fetch_attempt_jobs", lambda **_kwargs: [{
+        "id": 1200002, "name": "monitor-admission", "status": "completed",
+        "conclusion": "success", "steps": [{"name": "Persist monitor admission", "status": "completed"}],
+    }])
+    monkeypatch.setattr(writer_queue, "_publication_admission_artifact_exists", lambda **_kwargs: False)
+
+    deferred = writer_queue._annotate_publication_gate(
+        run, api_url="https://api.github.com", repository="owner/repo", token="token",
+        deadline_monotonic=writer_queue.time.monotonic() + 10,
+    )
+
+    assert deferred is not None
+    assert deferred["reason"] == "protected_job_handoff_not_visible"
+    assert run["queue_gate_state"] == "deferred"
+
+
+def test_writer_job_terminal_releases_even_when_workflow_run_is_active(monkeypatch):
+    path = ".github/workflows/official-event-monitor.yml"
+    gate = writer_queue.WRITER_QUEUE_GATES[path]
+    run = {
+        "id": 39698088993, "run_attempt": 1, "workflow_id": gate["workflow_id"],
+        "path": path, "head_sha": "c" * 40, "status": "in_progress",
+    }
+    monkeypatch.setattr(
+        writer_queue, "_fetch_attempt_jobs",
+        lambda **_kwargs: [{
+            "id": 1200001, "name": gate["job_name"], "status": "completed",
+            "conclusion": "success", "steps": [],
+        }],
+    )
+    attempt_payload = json.dumps({
+        "id": run["id"], "run_attempt": 1, "workflow_id": gate["workflow_id"],
+        "path": path, "status": "in_progress",
+    }).encode()
+    monkeypatch.setattr(writer_queue, "urlopen", lambda *_args, **_kwargs: io.BytesIO(attempt_payload))
+
+    assert writer_queue._fetch_run_attempt(
+        run, api_url="https://api.github.com", repository="owner/repo", token="token",
+        deadline_monotonic=writer_queue.time.monotonic() + 10,
+    ) is False
 
 
 def test_create_publication_admission_binds_exact_checked_out_workflow(monkeypatch, tmp_path):
@@ -1103,6 +1369,6 @@ def test_create_publication_admission_binds_exact_checked_out_workflow(monkeypat
     assert record["job_id"] == 990
     assert record["attempt"] == 3
     assert record["workflow_content_sha256"] == hashlib.sha256(
-        (Path(__file__).resolve().parents[1] / path).read_bytes()
+        (Path(__file__).resolve().parents[1] / path).read_bytes().replace(b"\r\n", b"\n")
     ).hexdigest()
     assert json.loads(output.read_text(encoding="utf-8")) == record

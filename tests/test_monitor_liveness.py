@@ -335,3 +335,43 @@ def test_repeated_liveness_audit_error_respects_thirty_minute_reminder(monkeypat
     assert len(calls) == 1
     assert calls[0][0] == "GET"
     assert calls[0][1].startswith("issues?")
+
+
+def test_central_audit_failure_keeps_reminder_due_until_alert_terminal(monkeypatch):
+    now = datetime(2026, 10, 24, 4, 0, tzinfo=UTC)
+    monkeypatch.setenv("GITHUB_RUN_ID", "700")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "2")
+    issue_rows = []
+    calls = []
+    monkeypatch.setattr(monitor_liveness, "_open_incidents", lambda *_a, **_k: list(issue_rows))
+
+    def request(_api, _repo, _token, method, path, payload=None, **_kwargs):
+        calls.append((method, path, payload))
+        if method == "POST" and path == "issues":
+            issue = {"number": 92, "state": "open", "title": payload["title"], "body": payload["body"]}
+            issue_rows.append(issue)
+            return issue
+        if method == "PATCH" and path == "issues/92":
+            issue_rows[0]["body"] = payload["body"]
+            return issue_rows[0]
+        raise AssertionError((method, path, payload))
+
+    monkeypatch.setattr(monitor_liveness, "_request_json", request)
+    first = monitor_liveness.reconcile_audit_failure_incident(
+        api_url="https://api.github.com", repository="owner/repo", token="token",
+        reason="monitor_liveness_response_too_large", now=now,
+        defer_notification_cadence=True,
+    )
+    assert first["incident_opened"] is True
+    assert first["notification_cadence_confirmations"][0]["issue_number"] == 92
+    assert f"Next reminder at: {now.isoformat()}" in issue_rows[0]["body"]
+    assert "Alert pending consumer: 700/2" in issue_rows[0]["body"]
+
+    calls.clear()
+    same_consumer = monitor_liveness.reconcile_audit_failure_incident(
+        api_url="https://api.github.com", repository="owner/repo", token="token",
+        reason="monitor_liveness_response_too_large", now=now,
+        defer_notification_cadence=True,
+    )
+    assert same_consumer["notification_cadence_confirmations"] == []
+    assert calls == []

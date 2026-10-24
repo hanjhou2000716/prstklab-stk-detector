@@ -10,11 +10,15 @@ from src.release_gate import (
     _http_status,
     _is_retryable_http_error,
     _load_release_artifacts,
+    _public_target_errors,
     _request_timeout,
+    _response_body,
     _safe_diagnostic_outputs,
+    _trusted_previous_hash,
     _utc_timestamp,
     _validate_bootstrap_artifact,
     _validate_public_alert_target,
+    _write_gate_result,
     verify_release_for_delivery,
 )
 from src.release_manifest import build_release_manifest, sha256_file, write_release_manifest
@@ -623,6 +627,194 @@ def test_release_gate_cache_busts_public_manifest_requests(tmp_path, monkeypatch
     assert seen["headers"]["Cache-Control"] == "no-cache, no-store"
 
 
+def test_release_gate_retries_only_when_artifact_bytes_match_pinned_previous_manifest(tmp_path, monkeypatch):
+    import copy
+    from urllib.parse import parse_qs, urlsplit
+
+    path, previous = _ready_release(tmp_path)
+    data = path.parent
+    previous_market = (data / "market.json").read_bytes()
+    market = json.loads(previous_market)
+    market["risk_summary"] = "new pinned market snapshot"
+    (data / "market.json").write_text(json.dumps(market), encoding="utf-8")
+    current = build_release_manifest(root=tmp_path, require_production_research=True)
+    write_release_manifest(current, path)
+    assert current["release_id"] != previous["release_id"]
+
+    urls: list[str] = []
+
+    def get(url, **_kwargs):
+        urls.append(url)
+        parts = urlsplit(url)
+        name = parts.path.rsplit("/", 1)[-1]
+        params = parse_qs(parts.query)
+        if name == "release-manifest.json":
+            return _public_response(json.dumps(current).encode(), current)
+        if name == "market.json" and params.get("attempt") == ["1"]:
+            return _public_response(previous_market)
+        return _public_artifact_response(current, data, url)
+
+    monkeypatch.setattr("src.release_gate.requests.get", get)
+    result = verify_release_for_delivery(
+        manifest_path=path,
+        expected_snapshot_id=current["market_snapshot_id"],
+        expected_release_id=current["release_id"],
+        public_url="https://example.test/",
+        public_attempts=2,
+        public_delay=0,
+        previous_manifest=copy.deepcopy(previous),
+    )
+
+    assert result.allowed is True
+    assert len(result.attempts) == 2
+    assert any("trusted previous release" in row.get("error", "") for row in result.attempts[:1])
+    dependency_urls = [url for url in urls if not urlsplit(url).path.endswith("release-manifest.json")]
+    assert dependency_urls
+    for url in dependency_urls:
+        query = parse_qs(urlsplit(url).query)
+        assert query.get("release_id") == [current["release_id"]]
+        assert query.get("expected_sha256")
+        assert query.get("attempt")
+
+
+def test_release_gate_result_artifact_is_bound_and_contains_no_signed_url(tmp_path, monkeypatch):
+    from src.release_gate import ReleaseGateResult
+
+    monkeypatch.setenv("GITHUB_RUN_ID", "123456")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "2")
+    monkeypatch.setenv("GITHUB_SHA", "a" * 40)
+    result = ReleaseGateResult(
+        allowed=False,
+        errors=("public artifact mismatch https://example.test/a?signature=secret",),
+        expected_release_id="release-a",
+        actual_release_id="release-b",
+        attempts=({
+            "attempt": 1,
+            "manifest_url": "https://example.test/a?signature=secret",
+            "error": "mismatch https://example.test/a?signature=secret",
+            "error_category": "public_content_mismatch",
+            "http_status": 200,
+        },),
+    )
+
+    output = tmp_path / "gate.json"
+    _write_gate_result(output, result, phase="pre_delivery")
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    serialized = output.read_text(encoding="utf-8")
+    assert payload["schema_version"] == "release-gate-result-v1"
+    assert payload["run_id"] == "123456"
+    assert payload["attempt"] == 2
+    assert payload["expected_release_id"] == "release-a"
+    assert "signature=secret" not in serialized
+    assert "manifest_url" not in serialized
+
+
+def test_release_gate_result_artifact_handles_invalid_attempt_and_mixed_attempt_rows(tmp_path, monkeypatch):
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "not-an-integer")
+    result = ReleaseGateResult(
+        allowed=False,
+        errors=("failed https://example.test/path?token=private",),
+        attempts=("invalid-row", {"attempt": 2, "error": "rejected"}),
+    )
+    targets = [{"notification_id": f"notice-{index}", "sha256": "f" * 64} for index in range(12)]
+    targets.append("invalid-target")
+    output = tmp_path / "gate.json"
+
+    _write_gate_result(output, result, phase="post_delivery", targets=targets)
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["attempt"] is None
+    assert payload["first_failure_reason"] == "failed [url-redacted]"
+    assert len(payload["attempts"]) == 1
+    assert len(payload["alert_targets"]) == 10
+    assert "token=private" not in output.read_text(encoding="utf-8")
+
+
+def test_release_gate_streaming_response_body_is_bounded_and_deadline_aware(monkeypatch):
+    class StreamingResponse:
+        def __init__(self, chunks):
+            self.chunks = chunks
+            self.requested_chunk_size = None
+
+        def iter_content(self, chunk_size):
+            self.requested_chunk_size = chunk_size
+            yield from self.chunks
+
+    response = StreamingResponse([b"first", b"", b"second"])
+    assert _response_body(response, deadline=None) == b"firstsecond"
+    assert response.requested_chunk_size == 64 * 1024
+
+    monkeypatch.setattr("src.release_gate.PUBLIC_ARTIFACT_MAX_BYTES", 3)
+    with pytest.raises(ValueError, match="size limit"):
+        _response_body(StreamingResponse([b"four"]), deadline=None)
+
+    monkeypatch.setattr("src.release_gate.PUBLIC_ARTIFACT_MAX_BYTES", 100)
+    ticks = iter([0.0, 2.0])
+    monkeypatch.setattr("src.release_gate.time.monotonic", lambda: next(ticks))
+    with pytest.raises(requests.Timeout, match="while reading body"):
+        _response_body(StreamingResponse([b"x"]), deadline=1.0)
+
+    class ContentResponse:
+        content = b"body"
+
+    monkeypatch.setattr("src.release_gate.time.monotonic", lambda: 2.0)
+    with pytest.raises(requests.Timeout, match="while reading body"):
+        _response_body(ContentResponse(), deadline=1.0)
+    with pytest.raises(TypeError, match="does not expose a body"):
+        _response_body(object(), deadline=None)
+
+
+@pytest.mark.parametrize(
+    "previous",
+    [
+        None,
+        [],
+        {"status": "invalid", "release_id": "old", "artifact_hashes": {}, "artifact_paths": {}},
+        {"status": "ready", "release_id": "", "artifact_hashes": {}, "artifact_paths": {}},
+        {"status": "ready", "release_id": "old", "artifact_hashes": [], "artifact_paths": {}},
+        {"status": "ready", "release_id": "old", "artifact_hashes": {}, "artifact_paths": []},
+        {"status": "ready", "release_id": "old", "artifact_hashes": {"market.json": "g" * 64}, "artifact_paths": {"market.json": "data/market.json"}},
+        {"status": "ready", "release_id": "old", "artifact_hashes": {"market.json": "a" * 63}, "artifact_paths": {"market.json": "data/market.json"}},
+        {"status": "ready", "release_id": "old", "artifact_hashes": {"market.json": "a" * 64}, "artifact_paths": {"market.json": "../market.json"}},
+        {"status": "ready", "release_id": "old", "artifact_hashes": {"market.json": "a" * 64}, "artifact_paths": {"market.json": "/market.json"}},
+        {"status": "ready", "release_id": "old", "artifact_hashes": {"market.json": "a" * 64}, "artifact_paths": {"market.json": r"data\market.json"}},
+    ],
+)
+def test_trusted_previous_hash_rejects_incomplete_or_unsafe_evidence(previous):
+    assert _trusted_previous_hash(previous, "market.json") == ""
+
+
+def test_trusted_previous_hash_accepts_only_complete_published_evidence():
+    digest = "a" * 64
+    assert _trusted_previous_hash({
+        "status": "ready_with_quarantine",
+        "release_id": "release-old",
+        "artifact_hashes": {"market.json": digest},
+        "artifact_paths": {"market.json": "data/market.json"},
+    }, "market.json") == digest
+
+
+def test_public_target_errors_reports_invalid_rows_and_deduplicates_target_errors(monkeypatch):
+    calls = []
+
+    def validate(_loaded, _manifest, **kwargs):
+        calls.append(kwargs)
+        return ["bad identity", "bad identity"]
+
+    monkeypatch.setattr("src.release_gate._validate_public_alert_target", validate)
+    errors = _public_target_errors(
+        {}, {}, targets=[None, {}, {"notification_id": "n" * 100}],
+        public_url="https://example.test", timeout=1, deadline=10, attempt=2,
+    )
+
+    assert errors == [
+        "alert " + "n" * 80 + ": bad identity",
+        "click target alert contract is invalid",
+        "click target alert identity is missing",
+    ]
+    assert calls[0]["attempt"] == 2
+
+
 def test_release_gate_blocks_public_artifact_hash_mismatch(tmp_path, monkeypatch):
     path, manifest = _ready_release(tmp_path)
     data = tmp_path / "site" / "data"
@@ -769,6 +961,79 @@ def test_release_gate_fails_fast_when_local_release_identity_changes(tmp_path, m
     assert result.expected_release_id == "release-from-preflight"
     assert result.actual_release_id == ""
     assert calls == []
+
+
+@pytest.mark.parametrize(
+    ("previous", "message"),
+    [
+        ({"status": "invalid", "release_id": "release-old"}, "not publishable"),
+        ({"status": "ready", "release_id": "release-current"}, "identity is invalid"),
+        ({"status": "ready", "release_id": "release-old", "artifact_hashes": {}, "artifact_paths": {}}, "incomplete: market.json"),
+    ],
+)
+def test_release_gate_rejects_untrusted_previous_manifest_before_public_requests(tmp_path, monkeypatch, previous, message):
+    path, manifest = _ready_release(tmp_path)
+    calls = []
+    monkeypatch.setattr("src.release_gate.requests.get", lambda *args, **kwargs: calls.append(args))
+    if previous.get("release_id") == "release-current":
+        previous["release_id"] = manifest["release_id"]
+
+    result = verify_release_for_delivery(
+        manifest_path=path,
+        expected_release_id=manifest["release_id"],
+        expected_snapshot_id=manifest["market_snapshot_id"],
+        previous_manifest=previous,
+        public_url="https://example.test/",
+    )
+
+    assert result.allowed is False
+    assert any(message in error for error in result.errors)
+    assert calls == []
+
+
+def test_release_gate_cli_writes_result_contract_and_fails_if_result_cannot_be_saved(tmp_path, monkeypatch, capsys):
+    from src import release_gate
+
+    monkeypatch.setattr(
+        release_gate,
+        "verify_release_for_delivery",
+        lambda **_kwargs: ReleaseGateResult(allowed=True, release_id="release-current", snapshot_id="snapshot-current"),
+    )
+    monkeypatch.setenv("GITHUB_RUN_ID", "8765")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "3")
+    monkeypatch.setenv("GITHUB_SHA", "b" * 40)
+    result_path = tmp_path / "results" / "gate.json"
+    monkeypatch.setattr("sys.argv", ["release_gate", "--result-output", str(result_path)])
+
+    assert release_gate.main() == 0
+    saved = json.loads(result_path.read_text(encoding="utf-8"))
+    assert saved["schema_version"] == "release-gate-result-v1"
+    assert saved["phase"] == "pre_delivery"
+    assert saved["run_id"] == "8765"
+    assert saved["attempt"] == 3
+
+    blocked_parent = tmp_path / "not-a-directory"
+    blocked_parent.write_text("occupied", encoding="utf-8")
+    monkeypatch.setattr(
+        "sys.argv",
+        ["release_gate", "--result-output", str(blocked_parent / "gate.json")],
+    )
+    assert release_gate.main() == 1
+    assert "release_gate_result_write_failed=FileExistsError" in capsys.readouterr().err
+
+
+def test_post_delivery_gate_requires_immutable_notification_identity(tmp_path):
+    path, manifest = _ready_release(tmp_path)
+
+    result = verify_release_for_delivery(
+        manifest_path=path,
+        expected_release_id=manifest["release_id"],
+        expected_snapshot_id=manifest["market_snapshot_id"],
+        post_delivery=True,
+    )
+
+    assert result.allowed is False
+    assert "post-delivery reconciliation requires an immutable alert target" in result.errors
 
 
 def test_release_gate_marks_a_valid_newer_public_release_as_superseded(tmp_path, monkeypatch):
@@ -1262,23 +1527,30 @@ def test_public_alert_target_gate_covers_missing_tampered_and_matching_alerts(mo
     assert _validate_public_alert_target(
         loaded, manifest, public_url="https://example.test/prstklab-stk-detector/", notification_id="a",
     ) == []
-    assert requested_urls == ["https://example.test/prstklab-stk-detector/data/alerts/a.json"]
+    assert len(requested_urls) == 1
+    assert requested_urls[0].split("?", 1)[0] == "https://example.test/prstklab-stk-detector/data/alerts/a.json"
+    assert "release_id=release-current" in requested_urls[0]
+    assert "expected_sha256=" in requested_urls[0]
 
     row["path"] = "data/alerts/a.json"
     requested_urls.clear()
     assert _validate_public_alert_target(
         loaded, manifest, public_url="https://example.test/prstklab-stk-detector/", notification_id="a",
     ) == []
-    assert requested_urls == ["https://example.test/prstklab-stk-detector/data/alerts/a.json"]
+    assert len(requested_urls) == 1
+    assert requested_urls[0].split("?", 1)[0] == "https://example.test/prstklab-stk-detector/data/alerts/a.json"
     assert _validate_public_alert_target(
         loaded, manifest, public_url="https://example.test", notification_id="a",
         snapshot_id="market-other", observation_id="observation-other",
     ) == ["click target alert observation mismatch", "click target alert snapshot mismatch"]
 
     monkeypatch.setattr("src.release_gate.requests.get", lambda *_args, **_kwargs: Response(b"{}"))
-    assert _validate_public_alert_target(loaded, manifest, public_url="https://example.test", notification_id="a") == [
-        "click target alert hash mismatch"
-    ]
+    mismatch = _validate_public_alert_target(
+        loaded, manifest, public_url="https://example.test", notification_id="a"
+    )
+    assert len(mismatch) == 1
+    assert mismatch[0].startswith("click target alert hash mismatch expected=")
+    assert "indexed=" in mismatch[0] and "actual=" in mismatch[0]
     monkeypatch.setattr("src.release_gate.requests.get", lambda *_args, **_kwargs: Response(b"not-json"))
     row["sha256"] = hashlib.sha256(b"not-json").hexdigest()
     assert _validate_public_alert_target(loaded, manifest, public_url="https://example.test", notification_id="a") == [

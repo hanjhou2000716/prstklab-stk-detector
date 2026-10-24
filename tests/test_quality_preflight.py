@@ -13,6 +13,9 @@ def test_static_preflight_collects_every_gate_failure() -> None:
             self.returncode = returncode
 
     def runner(command, **_kwargs):
+        if any("generate_writer_workflow_contract.py" in str(part) for part in command):
+            invoked.append("writer-contract")
+            return Result(1)
         if any("check_quality_tools.py" in str(part) for part in command):
             invoked.append("tool-versions")
             return Result(1)
@@ -32,7 +35,7 @@ def test_static_preflight_collects_every_gate_failure() -> None:
     )
 
     assert code == 1
-    assert invoked == ["tool-versions", "workflow-lint", "ruff", "mypy"]
+    assert invoked == ["writer-contract", "tool-versions", "workflow-lint", "ruff", "mypy"]
 
 
 def test_full_preflight_aggregates_static_failures_then_skips_expensive_gates(tmp_path, monkeypatch) -> None:

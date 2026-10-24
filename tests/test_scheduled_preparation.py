@@ -66,11 +66,13 @@ def _run_same_slot_preparation(tmp_path: Path, *, source_updated: bool):
         }), encoding="utf-8")
         return SourceProcess()
 
-    def run(command, *, timeout, env, check, text, capture_output):
+    def run(command, *, timeout, env, check, text, encoding, errors, capture_output):
         nonlocal prepare_count
         commands.append(list(command))
         if command[0] == "git" and command[1] == "rev-parse":
             assert capture_output is True
+            assert encoding == "utf-8"
+            assert errors == "replace"
             return subprocess.CompletedProcess(command, 0, stdout="a" * 40 + "\n")
         if "src.scheduled_delivery" in command:
             prepare_count += 1
@@ -125,13 +127,19 @@ def test_source_update_rebuild_uses_the_same_verified_close_observations(tmp_pat
 
 
 def test_real_git_rev_parse_captures_and_validates_commit_output(tmp_path):
-    subprocess.run(["git", "init", str(tmp_path)], check=True, capture_output=True, text=True)
+    subprocess.run(
+        ["git", "init", str(tmp_path)], check=True, capture_output=True,
+        text=True, encoding="utf-8", errors="replace",
+    )
     subprocess.run(["git", "-C", str(tmp_path), "config", "user.name", "Fixture"], check=True)
     subprocess.run(["git", "-C", str(tmp_path), "config", "user.email", "fixture@example.invalid"], check=True)
     fixture = tmp_path / "fixture.txt"
     fixture.write_text("root commit", encoding="utf-8")
     subprocess.run(["git", "-C", str(tmp_path), "add", "fixture.txt"], check=True)
-    subprocess.run(["git", "-C", str(tmp_path), "commit", "-m", "fixture"], check=True, capture_output=True, text=True)
+    subprocess.run(
+        ["git", "-C", str(tmp_path), "commit", "-m", "fixture"], check=True,
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+    )
 
     result = _run_command(
         ["git", "-C", str(tmp_path), "rev-parse", "HEAD"],

@@ -145,6 +145,14 @@ def test_scheduled_release_quarantine_is_publishable_and_diagnostic_is_always_up
     assert "fj_alert_contract_invalid" in workflow
 
 
+def test_scheduled_business_queue_failure_has_required_artifact_for_central_alerting():
+    workflow = (
+        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"
+    ).read_text(encoding="utf-8")
+    upload = workflow.split("- name: Upload scheduled terminal record", 1)[1]
+    assert "if-no-files-found: error" in upload.split("# - name:", 1)[0]
+
+
 def test_delivery_claim_persistence_reconciles_the_public_release():
     workflow = (
         Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"
@@ -287,3 +295,43 @@ def test_premarket_receipt_watchdog_is_read_only_and_dst_aware():
     assert "complete recipient receipt" in audit or "fully_delivered" in audit
     assert "read_only" in audit
     assert "dispatch" not in audit.lower() or "no dispatch" in audit.lower()
+
+
+def test_scheduled_release_evidence_is_bound_into_terminal_and_uploaded():
+    root = Path(__file__).resolve().parents[1]
+    workflow = (root / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
+    terminal = (root / "src" / "notification_terminal.py").read_text(encoding="utf-8")
+    assert "RELEASE_BUILD_RESULT_PATH" in workflow and "release-build-result-v1" in workflow
+    assert "PRE_DELIVERY_GATE_RESULT_PATH" in workflow
+    assert "POST_DELIVERY_GATE_RESULT_PATH" in workflow
+    assert '"release_evidence"' in terminal
+    assert "scheduled-release-gate-pre-${{ github.run_id }}-attempt-${{ github.run_attempt }}" in workflow
+    assert "scheduled-release-gate-post-${{ github.run_id }}-attempt-${{ github.run_attempt }}" in workflow
+
+
+def test_scheduled_incident_handoff_produces_an_attempt_bound_artifact():
+    root = Path(__file__).resolve().parents[1]
+    workflow = (root / ".github" / "workflows" / "incident-reconciliation.yml").read_text(encoding="utf-8")
+    script = (root / "scripts" / "scheduled_brief_incidents.py").read_text(encoding="utf-8")
+    coordinator = (root / "scripts" / "incident_reconciliation.py").read_text(encoding="utf-8")
+    assert "Scheduled market brief" in workflow
+    assert "Scheduled brief slot receipt audit" in workflow
+    assert "scheduled-terminal-{run_id}-attempt-{attempt}" in coordinator
+    assert "scheduled-slot-audit-{run_id}-attempt-{attempt}" in coordinator
+    assert "reconcile_scheduled_brief" in coordinator
+    assert "scheduled-brief-incident-handoff-v1" in script
+
+
+def test_central_alert_cadence_requires_saved_decision_and_expected_alert_terminal():
+    root = Path(__file__).resolve().parents[1]
+    workflow = (root / ".github" / "workflows" / "incident-reconciliation.yml").read_text(encoding="utf-8")
+    decision = workflow.index("id: upload_decision")
+    alert = workflow.index("id: native_alert")
+    finalize = workflow.index("Finalize reminder cadence after the expected alert terminal")
+    final_state = workflow.index("id: upload_result")
+    assert decision < alert < finalize < final_state
+    assert "steps.upload_decision.outcome == 'success'" in workflow
+    assert "steps.native_alert.outputs.alert_emitted == 'true'" in workflow
+    assert "steps.native_alert.outcome == 'failure'" in workflow
+    assert "--finalize-alert-cadence" in workflow
+    assert 'echo "alert_emitted=true" >> "$GITHUB_OUTPUT"' in workflow

@@ -10,6 +10,8 @@ fail-closed: an unavailable Actions API never permits a concurrent publish.
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import hashlib
 import io
 import json
@@ -22,7 +24,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, quote, urlsplit
 from urllib.request import Request, urlopen
 
 from src.scheduled_slot_audit import _open_artifact_url
@@ -81,6 +83,12 @@ WRITER_QUEUE_GATES = {
         "step_name": "Wait for the production writer queue",
     },
 }
+WRITER_PRE_GATE_JOBS = {
+    ".github/workflows/scheduled-brief.yml": ("occurrence",),
+    ".github/workflows/official-event-monitor.yml": ("monitor-admission",),
+}
+_WORKFLOW_CONTRACTS_PATH = Path(__file__).with_name("writer_workflow_contracts.json")
+_WORKFLOW_CONTENT_HASH_CACHE: dict[tuple[str, str], dict[str, object]] = {}
 
 
 def publication_gate_contract_fingerprint(
@@ -108,9 +116,106 @@ def _workflow_content_hash(path: str) -> str:
     workspace = Path(os.environ.get("GITHUB_WORKSPACE", "."))
     source = workspace / path
     try:
-        return hashlib.sha256(source.read_bytes()).hexdigest()
+        workflow_bytes = source.read_bytes().replace(b"\r\n", b"\n")
+        return hashlib.sha256(workflow_bytes).hexdigest()
     except OSError as exc:
         raise WriterQueueError("writer_publication_admission_workflow_unreadable") from exc
+
+
+def _known_workflow_contracts() -> dict[str, object]:
+    try:
+        value = json.loads(_WORKFLOW_CONTRACTS_PATH.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise WriterQueueError("writer_workflow_contract_unavailable") from exc
+    if not isinstance(value, Mapping) or value.get("schema_version") != "writer-workflow-contracts-v1":
+        raise WriterQueueError("writer_workflow_contract_schema_invalid")
+    current = value.get("writer_workflows")
+    legacy = value.get("verified_legacy_commits")
+    if not isinstance(current, Mapping) or not isinstance(legacy, Mapping):
+        raise WriterQueueError("writer_workflow_contract_shape_invalid")
+    return dict(value)
+
+
+def _contract_for_content_hash(path: str, content_hash: str) -> dict[str, object]:
+    data = _known_workflow_contracts()
+    matches: list[Mapping[str, object]] = []
+    active = data.get("writer_workflows")
+    if isinstance(active, Mapping):
+        contract = active.get(path)
+        if isinstance(contract, Mapping) and contract.get("workflow_content_sha256") == content_hash:
+            matches.append(contract)
+    legacy = data.get("verified_legacy_commits")
+    if isinstance(legacy, Mapping):
+        for revision, workflow_map in legacy.items():
+            if not isinstance(revision, str) or not isinstance(workflow_map, Mapping):
+                continue
+            contract = workflow_map.get(path)
+            if isinstance(contract, Mapping) and contract.get("workflow_content_sha256") == content_hash:
+                matches.append(contract)
+    canonical = {
+        json.dumps(item, sort_keys=True, separators=(",", ":"))
+        for item in matches
+    }
+    if not matches:
+        raise WriterQueueError("writer_workflow_contract_sha_unknown")
+    if len(canonical) != 1:
+        raise WriterQueueError("writer_workflow_contract_ambiguous")
+    return dict(matches[0])
+
+
+def _verified_workflow_contract(
+    run: Mapping[str, object], *, api_url: str, repository: str, token: str,
+    deadline_monotonic: float | None,
+) -> dict[str, object]:
+    """Resolve the workflow contract from immutable source bytes at run.head_sha."""
+    path = str(run.get("path") or "")
+    revision = str(run.get("head_sha") or "").strip().lower()
+    workflow_id = _positive_int(run.get("workflow_id"))
+    if path not in WRITER_QUEUE_GATES or workflow_id != WRITER_WORKFLOW_IDENTITIES.get(path):
+        raise WriterQueueError("writer_workflow_contract_identity_invalid")
+    if not re.fullmatch(r"[0-9a-f]{40}", revision):
+        raise WriterQueueError("writer_workflow_contract_revision_invalid")
+    key = (revision, path)
+    cached = _WORKFLOW_CONTENT_HASH_CACHE.get(key)
+    if cached is not None:
+        return dict(cached)
+    endpoint = (
+        f"{api_url.rstrip('/')}/repos/{repository}/contents/"
+        f"{quote(path, safe='/')}?ref={revision}"
+    )
+    payload, _link = _request_json(
+        endpoint, token=token, deadline_monotonic=deadline_monotonic,
+    )
+    if not isinstance(payload, Mapping):
+        raise RetryableQueueSnapshotError("writer_workflow_contract_response_invalid")
+    size = _positive_int(payload.get("size"))
+    if (
+        str(payload.get("path") or "") != path
+        or str(payload.get("type") or "") != "file"
+        or str(payload.get("encoding") or "") != "base64"
+        or size is None or size > 512_000
+    ):
+        raise WriterQueueError("writer_workflow_contract_source_invalid")
+    try:
+        source = base64.b64decode(str(payload.get("content") or ""), validate=True)
+    except (ValueError, binascii.Error) as exc:
+        raise WriterQueueError("writer_workflow_contract_source_encoding_invalid") from exc
+    if len(source) != size:
+        raise WriterQueueError("writer_workflow_contract_source_size_mismatch")
+    git_blob_sha = hashlib.sha1(b"blob " + str(size).encode("ascii") + b"\0" + source).hexdigest()
+    if not re.fullmatch(r"[0-9a-f]{40}", str(payload.get("sha") or "")) or git_blob_sha != str(payload.get("sha")):
+        raise WriterQueueError("writer_workflow_contract_blob_sha_mismatch")
+    content_hash = hashlib.sha256(source).hexdigest()
+    contract = _contract_for_content_hash(path, content_hash)
+    if (
+        _positive_int(contract.get("workflow_id")) != workflow_id
+        or str(contract.get("workflow_path") or "") != path
+    ):
+        raise WriterQueueError("writer_workflow_contract_definition_mismatch")
+    contract["workflow_content_sha256"] = content_hash
+    contract["source_commit_sha"] = revision
+    _WORKFLOW_CONTENT_HASH_CACHE[key] = dict(contract)
+    return contract
 
 
 def create_publication_admission() -> dict[str, object]:
@@ -130,6 +235,14 @@ def create_publication_admission() -> dict[str, object]:
     api_url = os.environ.get("GITHUB_API_URL", "https://api.github.com").strip()
     if run_id <= 0 or attempt <= 0 or not re.fullmatch(r"[0-9a-f]{40}", run_sha) or not repository or not token:
         raise WriterQueueError("writer_publication_admission_identity_invalid")
+    content_hash = _workflow_content_hash(path)
+    contract = _contract_for_content_hash(path, content_hash)
+    if (
+        _positive_int(contract.get("workflow_id")) != _positive_int(gate.get("workflow_id"))
+        or str(contract.get("gate_job") or "") != str(gate.get("job_name") or "")
+        or str(contract.get("gate_step") or "") != str(gate.get("step_name") or "")
+    ):
+        raise WriterQueueError("writer_publication_admission_contract_mismatch")
     jobs = _fetch_attempt_jobs(
         run_id=run_id, attempt=attempt, api_url=api_url,
         repository=repository, token=token,
@@ -141,7 +254,6 @@ def create_publication_admission() -> dict[str, object]:
     workflow_id = _positive_int(gate.get("workflow_id"))
     if workflow_id is None:
         raise WriterQueueError("writer_publication_admission_workflow_unregistered")
-    content_hash = _workflow_content_hash(path)
     record: dict[str, object] = {
         "schema_version": "writer-publication-admission-v1",
         "run_id": run_id,
@@ -307,6 +419,16 @@ class WriterQueueTimeout(WriterQueueError):
 
 class RetryableQueueSnapshotError(WriterQueueError):
     """A complete queue snapshot could not be read consistently; restart at page one."""
+
+
+def queue_error_is_degraded(exc: WriterQueueError) -> bool:
+    """Return true only for bounded queue waits/reads that safely block publication.
+
+    These results have ``should_continue=false`` and are fully recorded for the
+    incident reconciler. Contract, identity, and authorization failures remain
+    hard workflow failures.
+    """
+    return isinstance(exc, (WriterQueueTimeout, RetryableQueueSnapshotError))
 
 
 class QueueRuns(list[dict[str, object]]):
@@ -577,6 +699,7 @@ def _read_publication_admission(
     repository: str,
     token: str,
     deadline_monotonic: float | None,
+    trusted_contract: Mapping[str, object] | None = None,
 ) -> dict[str, object] | None:
     """Read and verify the exact attempt's admission artifact, if one exists."""
     run_id = _run_id(run)
@@ -585,6 +708,13 @@ def _read_publication_admission(
     workflow_sha = str(run.get("head_sha") or "").lower()
     if run_id is None or not workflow_sha:
         raise WriterQueueError("writer_publication_admission_run_identity_invalid")
+    contract = dict(trusted_contract) if trusted_contract is not None else _verified_workflow_contract(
+        run, api_url=api_url, repository=repository, token=token,
+        deadline_monotonic=deadline_monotonic,
+    )
+    trusted_hash = str(contract.get("workflow_content_sha256") or "")
+    if not re.fullmatch(r"[0-9a-f]{64}", trusted_hash):
+        raise WriterQueueError("writer_workflow_contract_hash_invalid")
     expected_name = f"writer-publication-admission-{run_id}-{attempt}"
     endpoint = (
         f"{api_url.rstrip('/')}/repos/{repository}/actions/runs/{run_id}/artifacts"
@@ -645,7 +775,7 @@ def _read_publication_admission(
     if not isinstance(record, Mapping):
         raise WriterQueueError("writer_publication_admission_record_invalid")
     content_hash = str(record.get("workflow_content_sha256") or "")
-    expected_fingerprint = publication_gate_contract_fingerprint(path, gate, content_hash)
+    expected_fingerprint = publication_gate_contract_fingerprint(path, gate, trusted_hash)
     if (
         record.get("schema_version") != "writer-publication-admission-v1"
         or _positive_int(record.get("run_id")) != run_id
@@ -656,6 +786,7 @@ def _read_publication_admission(
         or str(record.get("workflow_path") or "") != path
         or str(record.get("workflow_sha") or "").lower() != workflow_sha
         or not re.fullmatch(r"[0-9a-f]{64}", content_hash)
+        or content_hash != trusted_hash
         or str(record.get("contract_fingerprint") or "") != expected_fingerprint
     ):
         raise WriterQueueError("writer_publication_admission_record_identity_invalid")
@@ -666,7 +797,47 @@ def _read_publication_admission(
         "job_id": job_id,
         "contract_fingerprint": expected_fingerprint,
         "workflow_content_sha256": content_hash,
+        "contract_source": str(contract.get("source_commit_sha") or "fixed_sha_workflow_api"),
     }
+
+
+def _publication_admission_artifact_exists(
+    *, run: Mapping[str, object], api_url: str, repository: str, token: str,
+    deadline_monotonic: float | None,
+) -> bool:
+    """Check admission identity even during the API's multi-job visibility gap."""
+    run_id = _run_id(run)
+    attempt = _positive_int(run.get("run_attempt")) or 1
+    sha = str(run.get("head_sha") or "").lower()
+    if run_id is None or not re.fullmatch(r"[0-9a-f]{40}", sha):
+        raise WriterQueueError("writer_publication_admission_run_identity_invalid")
+    endpoint = (
+        f"{api_url.rstrip('/')}/repos/{repository}/actions/runs/{run_id}/artifacts"
+        "?per_page=100&page=1"
+    )
+    payload, _link = _request_json(
+        endpoint, token=token, deadline_monotonic=deadline_monotonic,
+    )
+    rows = payload.get("artifacts") if isinstance(payload, Mapping) else None
+    total = payload.get("total_count") if isinstance(payload, Mapping) else None
+    if not isinstance(rows, list) or not isinstance(total, int) or total != len(rows) or total > 100:
+        raise RetryableQueueSnapshotError("writer_publication_admission_artifact_list_incomplete")
+    name = f"writer-publication-admission-{run_id}-{attempt}"
+    matches = [item for item in rows if isinstance(item, Mapping) and item.get("name") == name]
+    if len(matches) > 1:
+        raise WriterQueueError("writer_publication_admission_artifact_ambiguous")
+    if not matches:
+        return False
+    artifact = matches[0]
+    workflow_run = artifact.get("workflow_run")
+    if (
+        artifact.get("expired") is True
+        or not isinstance(workflow_run, Mapping)
+        or _positive_int(workflow_run.get("id")) != run_id
+        or str(workflow_run.get("head_sha") or "").lower() != sha
+    ):
+        raise WriterQueueError("writer_publication_admission_artifact_identity_invalid")
+    return True
 
 
 def _annotate_publication_gate(
@@ -684,9 +855,21 @@ def _annotate_publication_gate(
         return None
     if _positive_int(run.get("workflow_id")) != gate["workflow_id"]:
         raise WriterQueueError("writer_publication_gate_workflow_identity_mismatch")
-    contract_fingerprint = publication_gate_contract_fingerprint(path, gate)
+    workflow_contract = _verified_workflow_contract(
+        run, api_url=api_url, repository=repository, token=token,
+        deadline_monotonic=deadline_monotonic,
+    )
+    contract_gate_job = str(workflow_contract.get("gate_job") or "")
+    contract_gate_step = str(workflow_contract.get("gate_step") or "")
+    if not contract_gate_job or not contract_gate_step:
+        raise WriterQueueError("writer_workflow_contract_gate_missing")
+    gate = {**gate, "job_name": contract_gate_job, "step_name": contract_gate_step}
+    workflow_content_hash = str(workflow_contract.get("workflow_content_sha256") or "")
+    contract_fingerprint = publication_gate_contract_fingerprint(path, gate, workflow_content_hash)
     run["queue_gate_contract_fingerprint"] = contract_fingerprint
     run["queue_gate_workflow_sha"] = str(run.get("head_sha") or "")
+    run["queue_gate_workflow_content_sha256"] = workflow_content_hash
+    run["queue_gate_contract_source"] = str(workflow_contract.get("source_commit_sha") or "verified_workflow_bytes")
     run_id = _run_id(run)
     try:
         attempt = int(str(run.get("run_attempt") or "1"))
@@ -702,6 +885,27 @@ def _annotate_publication_gate(
         token=token,
         deadline_monotonic=deadline_monotonic,
     )
+    protected_names_raw = workflow_contract.get("protected_jobs")
+    protected_names = tuple(
+        name for name in protected_names_raw if isinstance(name, str)
+    ) if isinstance(protected_names_raw, list) else ()
+    protected_rows = [item for item in jobs if str(item.get("name") or "") in protected_names]
+    run.update({
+        "queue_gate_jobs_snapshot_complete": True,
+        "queue_gate_protected_jobs_complete": (
+            bool(protected_names)
+            and len(protected_rows) == len(protected_names)
+            and len({str(item.get("name") or "") for item in protected_rows}) == len(protected_names)
+        ),
+        "queue_gate_protected_job_states": [
+            {
+                "job": str(item.get("name") or ""),
+                "status": str(item.get("status") or "unknown"),
+                "conclusion": str(item.get("conclusion") or ""),
+            }
+            for item in sorted(protected_rows, key=lambda value: str(value.get("name") or ""))
+        ],
+    })
     gate_jobs = [job for job in jobs if str(job.get("name") or "") == gate["job_name"]]
     if len(gate_jobs) > 1:
         raise WriterQueueError("writer_publication_gate_job_ambiguous")
@@ -724,7 +928,38 @@ def _annotate_publication_gate(
                 "runner_assigned": False,
                 "observed_steps": 0,
             }
-        if status in {"in_progress", "waiting"}:
+        if run_active:
+            has_admission = _publication_admission_artifact_exists(
+                run=run, api_url=api_url, repository=repository, token=token,
+                deadline_monotonic=deadline_monotonic,
+            )
+            if has_admission:
+                raise RetryableQueueSnapshotError("writer_publication_gate_job_missing_after_admission")
+            predecessor_names = WRITER_PRE_GATE_JOBS.get(path, ())
+            by_name = {str(item.get("name") or ""): item for item in jobs}
+            if predecessor_names and set(by_name) == set(predecessor_names) and all(
+                str(by_name[name].get("status") or "").casefold() == "completed"
+                and str(by_name[name].get("conclusion") or "").casefold() in {"success", "skipped"}
+                for name in predecessor_names
+            ):
+                observed_steps = 0
+                for item in jobs:
+                    item_steps = item.get("steps")
+                    if isinstance(item_steps, list):
+                        observed_steps += len(item_steps)
+                run.update({
+                    "queue_gate_state": "deferred",
+                    "queue_gate_reason": "protected_job_handoff_not_visible",
+                    "queue_gate_job_terminal": "pre_gate_complete",
+                })
+                return {
+                    "run_id": run_id, "attempt": attempt,
+                    "reason": "protected_job_handoff_not_visible",
+                    "workflow_sha": str(run.get("head_sha") or ""),
+                    "contract_fingerprint": contract_fingerprint,
+                    "observed_status": status, "runner_assigned": False,
+                    "observed_steps": observed_steps,
+                }
             raise RetryableQueueSnapshotError("writer_publication_gate_job_not_visible")
         raise WriterQueueError("writer_publication_gate_job_missing")
     job = gate_jobs[0]
@@ -738,10 +973,28 @@ def _annotate_publication_gate(
     if job_id is None:
         raise WriterQueueError("writer_publication_gate_job_contract_invalid")
     run["queue_gate_job_id"] = job_id
+    run.update({
+        "queue_gate_job_conclusion": str(job.get("conclusion") or ""),
+        "queue_gate_protected_job_states": [
+            {
+                "job": str(item.get("name") or ""),
+                "status": str(item.get("status") or "unknown"),
+                "conclusion": str(item.get("conclusion") or ""),
+            }
+            for item in sorted(protected_rows, key=lambda value: str(value.get("name") or ""))
+        ],
+        "queue_gate_protected_jobs_complete": (
+            bool(protected_names)
+            and len(protected_rows) == len(protected_names)
+            and len({str(item.get("name") or "") for item in protected_rows}) == len(protected_names)
+        ),
+        "queue_gate_jobs_snapshot_complete": True,
+    })
     admission = _read_publication_admission(
         run=run, gate=gate, job_id=job_id,
         api_url=api_url, repository=repository, token=token,
         deadline_monotonic=deadline_monotonic,
+        trusted_contract=workflow_contract,
     )
     if admission:
         run.update({
@@ -758,6 +1011,15 @@ def _annotate_publication_gate(
         "queue_gate_observed_steps": len(steps) if isinstance(steps, list) else "unknown",
     })
     if not isinstance(steps, list):
+        if job_status == "completed":
+            if admission:
+                raise WriterQueueError("writer_publication_admission_job_terminal_conflict")
+            run.update({
+                "queue_gate_state": "deferred",
+                "queue_gate_reason": "protected_job_terminal",
+                "queue_gate_job_terminal": str(job.get("conclusion") or "unknown"),
+            })
+            return {"run_id": run_id, "attempt": attempt, "reason": "protected_job_terminal"}
         if admission:
             return None
         if run_active or job_status in ACTIVE_STATUSES:
@@ -827,14 +1089,40 @@ def _annotate_publication_gate(
             raise RetryableQueueSnapshotError("writer_publication_gate_step_not_visible")
         raise WriterQueueError("writer_publication_gate_step_missing")
     step = gate_steps[0]
+    step_status = str(step.get("status") or "").casefold()
+    step_conclusion = str(step.get("conclusion") or "").casefold()
+    run["queue_gate_step_conclusion"] = step_conclusion
+    if step_status == "completed" and step_conclusion == "skipped":
+        if admission:
+            raise WriterQueueError("writer_publication_admission_skipped_gate_conflict")
+        gate_index = steps.index(step)
+        later_steps_started = any(
+            _timestamp(item, "started_at") is not None
+            for item in steps[gate_index + 1:]
+            if isinstance(item, Mapping)
+        )
+        if later_steps_started:
+            raise WriterQueueError("writer_publication_skipped_gate_followed_by_execution")
+        run.update({
+            "queue_gate_state": "deferred",
+            "queue_gate_reason": "publication_gate_skipped",
+            "queue_gate_step_status": "completed",
+            "queue_gate_step_conclusion": "skipped",
+        })
+        return {"run_id": run_id, "attempt": attempt, "reason": "publication_gate_skipped"}
+    if job_status == "completed":
+        if admission and not steps_started:
+            raise WriterQueueError("writer_publication_admission_completed_without_gate_execution")
+        run.update({
+            "queue_gate_state": "deferred",
+            "queue_gate_reason": "protected_job_terminal",
+            "queue_gate_job_terminal": str(job.get("conclusion") or "unknown"),
+        })
+        return {"run_id": run_id, "attempt": attempt, "reason": "protected_job_terminal"}
     gate_step_started = _timestamp(step, "started_at")
     if gate_step_started is None:
         if admission:
             return None
-        step_status = str(step.get("status") or "").casefold()
-        if step_status == "completed" and str(step.get("conclusion") or "").casefold() == "skipped":
-            run.update({"queue_gate_state": "deferred", "queue_gate_reason": "publication_gate_skipped"})
-            return {"run_id": run_id, "attempt": attempt, "reason": "publication_gate_skipped"}
         gate_index = steps.index(step)
         later_steps_started = any(
             _timestamp(item, "started_at") is not None
@@ -998,7 +1286,10 @@ def _fetch_runs_once(
                 f"job_status={str(run.get('queue_gate_job_status') or '')};"
                 f"runner_assigned={str(bool(run.get('queue_gate_runner_assigned'))).lower()};"
                 f"observed_steps={str(run.get('queue_gate_observed_steps') or '')};"
-                    f"contract_fingerprint={str(run.get('queue_gate_contract_fingerprint') or '')}"
+                f"gate_conclusion={str(run.get('queue_gate_step_conclusion') or '')};"
+                f"contract_source={str(run.get('queue_gate_contract_source') or '')};"
+                f"workflow_content_sha256={str(run.get('queue_gate_workflow_content_sha256') or '')};"
+                f"contract_fingerprint={str(run.get('queue_gate_contract_fingerprint') or '')}"
             )
             raise type(exc)(f"{str(exc).split(':', 1)[0]}:{identity}") from exc
         if reason is not None:
@@ -1099,10 +1390,98 @@ def _fetch_run_attempt(
         raise WriterQueueError("writer_queue_blocker_identity_mismatch")
     status = str(payload.get("status") or "").casefold()
     if status in ACTIVE_STATUSES:
-        # Once an attempt was observed inside the gate, it remains a blocker
-        # until GitHub confirms that exact attempt is terminal. API snapshots
-        # may temporarily regress to queued or omit the job/step.
-        return True
+        # The run can remain in_progress after its protected writer job ends
+        # while unrelated diagnostics settle. Release from the exact attempt's
+        # complete jobs response, never from the top-level run timestamp.
+        path = str(payload.get("path") or run.get("path") or "")
+        gate = WRITER_QUEUE_GATES.get(path)
+        if gate is None or _positive_int(payload.get("workflow_id")) != gate["workflow_id"]:
+            raise WriterQueueError("writer_queue_blocker_workflow_contract_unknown")
+        contract = _verified_workflow_contract(
+            payload, api_url=api_url, repository=repository, token=token,
+            deadline_monotonic=deadline_monotonic,
+        )
+        protected_names_raw = contract.get("protected_jobs")
+        protected_names = tuple(
+            name for name in protected_names_raw if isinstance(name, str)
+        ) if isinstance(protected_names_raw, list) else ()
+        if not protected_names:
+            raise WriterQueueError("writer_queue_blocker_protected_job_contract_missing")
+        gate = {
+            **gate,
+            "job_name": str(contract.get("gate_job") or ""),
+            "step_name": str(contract.get("gate_step") or ""),
+            "protected_jobs": protected_names,
+        }
+        jobs = _fetch_attempt_jobs(
+            run_id=run_id, attempt=attempt, api_url=api_url,
+            repository=repository, token=token,
+            deadline_monotonic=deadline_monotonic,
+        )
+        protected = [job for job in jobs if str(job.get("name") or "") in protected_names]
+        by_name = {str(job.get("name") or ""): job for job in protected}
+        if len(by_name) != len(protected) or set(by_name) != set(protected_names):
+            return True
+        if any(str(job.get("status") or "").casefold() != "completed" for job in protected):
+            return True
+        admission = run.get("queue_gate_admission")
+        had_admission = isinstance(admission, Mapping) or (
+            str(run.get("queue_gate_evidence") or "") == "writer_publication_admission_artifact"
+        )
+        for job in protected:
+            steps = job.get("steps")
+            if not isinstance(steps, list):
+                if had_admission:
+                    raise WriterQueueError("writer_queue_blocker_terminal_steps_unavailable")
+                continue
+            matches = [
+                step for step in steps
+                if isinstance(step, Mapping) and str(step.get("name") or "") == gate["step_name"]
+            ]
+            if len(matches) != 1:
+                if had_admission:
+                    raise WriterQueueError("writer_queue_blocker_gate_step_identity_conflict")
+                continue
+            step = matches[0]
+            if (
+                str(step.get("status") or "").casefold() == "completed"
+                and str(step.get("conclusion") or "").casefold() == "skipped"
+            ):
+                if had_admission:
+                    raise WriterQueueError("writer_publication_admission_skipped_gate_conflict")
+                index = steps.index(step)
+                if any(
+                    _timestamp(item, "started_at") is not None
+                    for item in steps[index + 1:]
+                    if isinstance(item, Mapping)
+                ):
+                    raise WriterQueueError("writer_publication_skipped_gate_followed_by_execution")
+        if isinstance(run, dict):
+            gate_jobs = [job for job in protected if str(job.get("name") or "") == gate["job_name"]]
+            gate_steps: list[Mapping[str, object]] = []
+            for gate_job in gate_jobs:
+                gate_job_steps = gate_job.get("steps")
+                if isinstance(gate_job_steps, list):
+                    gate_steps.extend(
+                        step for step in gate_job_steps
+                        if isinstance(step, Mapping) and str(step.get("name") or "") == gate["step_name"]
+                    )
+            run.update({
+                "queue_gate_release_reason": "all_protected_jobs_terminal_after_complete_attempt_read",
+                "queue_gate_jobs_snapshot_complete": True,
+                "queue_gate_protected_jobs_complete": True,
+                "queue_gate_protected_job_states": [
+                    {
+                        "job": str(job.get("name") or ""),
+                        "status": str(job.get("status") or "unknown"),
+                        "conclusion": str(job.get("conclusion") or ""),
+                    }
+                    for job in sorted(protected, key=lambda value: str(value.get("name") or ""))
+                ],
+                "queue_gate_job_conclusion": str(gate_jobs[0].get("conclusion") or "") if len(gate_jobs) == 1 else "",
+                "queue_gate_step_conclusion": str(gate_steps[0].get("conclusion") or "") if len(gate_steps) == 1 else "",
+            })
+        return False
     if status != "completed":
         raise WriterQueueError("writer_queue_blocker_terminal_state_unknown")
     return False
@@ -1205,12 +1584,20 @@ def _blocker_details(runs: Iterable[Mapping[str, object]]) -> tuple[dict[str, ob
             "workflow_path": str(row.get("path") or ""),
             "workflow_sha": str(row.get("queue_gate_workflow_sha") or row.get("head_sha") or ""),
             "contract_fingerprint": str(row.get("queue_gate_contract_fingerprint") or ""),
+            "workflow_contract_source": str(row.get("queue_gate_contract_source") or "unknown"),
+            "workflow_content_sha256": str(row.get("queue_gate_workflow_content_sha256") or ""),
+            "jobs_snapshot_complete": bool(row.get("queue_gate_jobs_snapshot_complete")),
+            "protected_jobs_complete": bool(row.get("queue_gate_protected_jobs_complete")),
+            "protected_job_states": row.get("queue_gate_protected_job_states", []),
             "observed_status": str(row.get("status") or "unknown"),
             "job_status": str(row.get("queue_gate_job_status") or "unknown"),
+            "job_conclusion": str(row.get("queue_gate_job_conclusion") or ""),
             "runner_assigned": bool(row.get("queue_gate_runner_assigned")),
             "observed_steps": row.get("queue_gate_observed_steps", "unknown"),
             "gate_state": str(row.get("queue_gate_state") or "unknown"),
             "gate_reason": str(row.get("queue_gate_reason") or ""),
+            "gate_conclusion": str(row.get("queue_gate_step_conclusion") or ""),
+            "release_reason": str(row.get("queue_gate_release_reason") or ""),
             "publication_gate_started_at": str(row.get("queue_gate_started_at") or ""),
         })
     return tuple(details)
@@ -1540,6 +1927,15 @@ def main() -> int:
                 publication_gate_contract_fingerprint(workflow_path, workflow_gate, workflow_content_hash)
                 if workflow_gate else ""
             ),
+            "queue_workflow_contract_source": run_sha if workflow_gate else "",
+            "queue_workflow_content_sha256": workflow_content_hash,
+            "queue_snapshot_complete": "false",
+            "queue_gate_conclusion": "",
+            "queue_gate_job_conclusion": "",
+            "queue_gate_protected_job_states": "[]",
+            "queue_gate_jobs_snapshot_complete": "false",
+            "queue_gate_protected_jobs_complete": "false",
+            "queue_gate_release_reason": "",
         }
         outputs.update(values)
         with open(destination, "a", encoding="utf-8") as handle:
@@ -1701,6 +2097,7 @@ def main() -> int:
             "queue_deadline_at": queue_deadline_at,
             "remaining_seconds": result.remaining_seconds if result is not None else queue_timeout_seconds,
             "complete_snapshots": result.complete_snapshots if result is not None else 0,
+            "queue_snapshot_complete": "true" if result is not None and result.complete_snapshots >= 2 else "false",
             "recovery_rounds": result.recovery_rounds if result is not None else 0,
             "admission_at": result.admission_at if result is not None else datetime.now(UTC).isoformat(),
             "blocker_details": "[]",
@@ -1732,11 +2129,13 @@ def main() -> int:
 
         write_outputs({
             "queue_status": "failed",
+            "business_status": "degraded" if queue_error_is_degraded(exc) else "blocked",
             "should_continue": "false",
             "reason": error_text.replace("\n", " "),
             "queue_error_code": error_code,
             "recovery_rounds": timeout_error.recovery_rounds if timeout_error is not None else (recovery_match.group(1) if recovery_match else ""),
             "complete_snapshots": timeout_error.complete_snapshots if timeout_error is not None else "",
+            "queue_snapshot_complete": "true" if timeout_error is not None and timeout_error.complete_snapshots > 0 else "false",
             "queue_budget_seconds": queue_timeout_seconds,
             "queue_deadline_at": queue_deadline_at,
             "remaining_seconds": max(0, queue_timeout_seconds - waited_seconds),
@@ -1762,6 +2161,9 @@ def main() -> int:
             "run_sha": run_sha,
             "main_sha": "",
         })
+        if queue_error_is_degraded(exc):
+            print(f"::warning::{exc}; publication and delivery were safely blocked for central incident reconciliation")
+            return 0
         print(f"::error::{exc}")
         return 1
     return 0

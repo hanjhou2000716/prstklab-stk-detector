@@ -8,11 +8,14 @@ the manifest first and only then load the hash-addressed artifacts.
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import math
 import os
 import re
+import sys
+import tempfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -24,6 +27,7 @@ from src.atomic_file import replace_with_retry
 from src.bootstrap_release import BOOTSTRAP_MAX_BYTES, BOOTSTRAP_NAME, build_bootstrap_snapshot
 from src.creator_artifact import validate_creator_artifact
 from src.creator_release import validate_creator_release
+from src.event_ledger import event_source_url, normalize_source_url
 from src.external_observability_contract import (
     CREATOR_OBSERVABILITY_FIELDS,
     EXTERNAL_OBSERVABILITY_FIELDS,
@@ -56,6 +60,10 @@ MAX_ALERT_INDEX_ROWS = 1000
 ALERT_RETENTION_DAYS = 30
 ALERT_LOOKUP_NODE_MAX_BYTES = 64 * 1024
 CANONICAL_HASH_VERSION = 2
+PUBLIC_ALERT_IDENTITY_VERSION = "public-alert-identity-v1"
+PUBLIC_ALERT_NEWS_SOURCES = frozenset({
+    "google_news", "cnyes", "reuters", "yahoo_news", "yahoo_finance", "market_news",
+})
 
 SOURCE_HEALTH_ARTIFACT = "source-health.json"
 PUBLISHABLE_RELEASE_STATUSES = frozenset({"ready", "ready_with_quarantine"})
@@ -65,9 +73,127 @@ def _canonical_json(value: Any) -> bytes:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
+def _public_alert_identity(event: dict[str, Any]) -> tuple[str, str, str]:
+    """Return a release-facing identity for ordinary sourced news only.
+
+    Delivery claims remain keyed by the existing event ledger.  The public
+    archive needs a finer identity because its immutable rows cannot safely
+    collapse two articles merely because they mention the same company in a
+    short time bucket.
+    """
+    source = str(event.get("source_key") or event.get("source") or "").strip().casefold()
+    kind = str(event.get("kind") or "").strip().casefold()
+    if (
+        is_financialjuice_row(event)
+        or source not in PUBLIC_ALERT_NEWS_SOURCES
+        or kind in {"market_signal", "official_event", "scheduled_briefing", "financialjuice"}
+        or source == "financialjuice"
+        or event.get("required_for_release") is True
+        or event.get("required_for_notification") is True
+        or event.get("notification_eligible") is True
+    ):
+        return "", "", ""
+    try:
+        if float(event.get("vendor_importance") or event.get("importance") or 0) >= 9:
+            return "", "", ""
+    except (TypeError, ValueError):
+        pass
+    canonical_url = normalize_source_url(event_source_url(event))
+    published = _parse_artifact_time(event.get("published_at") or event.get("released_at"))
+    if not source or not canonical_url or published is None:
+        return "", "", ""
+    published_at = published.isoformat()
+    content = {
+        "title": " ".join(str(event.get("title") or event.get("brief_title") or "").split()).casefold(),
+        "event": " ".join(str(event.get("event") or event.get("summary") or "").split()).casefold(),
+        "brief_summary": " ".join(str(event.get("brief_summary") or "").split()).casefold(),
+    }
+    content_fingerprint = hashlib.sha256(_canonical_json(content)).hexdigest()
+    material = {
+        "version": PUBLIC_ALERT_IDENTITY_VERSION,
+        "source": source,
+        "canonical_url": canonical_url,
+        "published_at": published_at,
+        "content_fingerprint": content_fingerprint,
+    }
+    identity_digest = hashlib.sha256(_canonical_json(material)).hexdigest()
+    return f"news-v1-{identity_digest}", PUBLIC_ALERT_IDENTITY_VERSION, identity_digest
+
+
 def _alert_filename(value: str) -> str:
     safe = re.sub(r"[^A-Za-z0-9_.-]+", "-", value).strip(".-")[:96]
     return safe or hashlib.sha256(value.encode("utf-8")).hexdigest()[:24]
+
+
+def _alert_artifact_filename(notification_id: str, release_id: str) -> str:
+    identity = f"{notification_id}\n{release_id}".encode()
+    identity_digest = hashlib.sha256(identity).hexdigest()
+    return f"{identity_digest}.json"
+
+
+def _optional_background_news(event: dict[str, Any], market: dict[str, Any]) -> bool:
+    source = str(event.get("source_key") or event.get("source") or "").strip().casefold()
+    kind = str(event.get("kind") or "").strip().casefold()
+    if (
+        is_financialjuice_row(event)
+        or source not in PUBLIC_ALERT_NEWS_SOURCES
+        or source == "financialjuice"
+        or kind in {"market_signal", "official_event", "scheduled_briefing", "financialjuice"}
+        or event.get("required_for_release") is True
+        or event.get("required_for_notification") is True
+        or event.get("notification_eligible") is True
+    ):
+        return False
+    try:
+        if float(event.get("vendor_importance") or event.get("importance") or 0) >= 9:
+            return False
+    except (TypeError, ValueError):
+        return False
+
+    briefing = market.get("briefing")
+    if not isinstance(briefing, dict):
+        briefing = {}
+    required_evidence = {
+        key: market.get(key)
+        for key in ("report_summary", "session_news_summary", "summary_facts", "evidence", "quotes", "observations")
+        if key in market
+    }
+    required_evidence["briefing"] = briefing
+    haystack: list[str] = []
+
+    def collect(value: Any) -> None:
+        if isinstance(value, dict):
+            for child in value.values():
+                collect(child)
+        elif isinstance(value, list):
+            for child in value:
+                collect(child)
+        elif isinstance(value, str):
+            haystack.append(" ".join(value.split()).casefold())
+
+    collect(required_evidence)
+    url = normalize_source_url(event_source_url(event)).casefold()
+    title = " ".join(str(event.get("title") or "").split()).casefold()
+    fact = " ".join(str(event.get("event") or event.get("summary") or "").split()).casefold()
+    if url and any(url in value for value in haystack):
+        return False
+    if len(title) >= 18 and any(title in value for value in haystack):
+        return False
+    if len(fact) >= 28 and any(fact in value for value in haystack):
+        return False
+    return True
+
+
+def _identity_conflict(existing: dict[str, Any], proposed: dict[str, Any]) -> dict[str, Any]:
+    left = {key: value for key, value in existing.items() if key != "created_at"}
+    right = {key: value for key, value in proposed.items() if key != "created_at"}
+    differing = sorted(key for key in set(left) | set(right) if left.get(key) != right.get(key))
+    return {
+        "reason": "immutable_alert_artifact_identity_conflict",
+        "left_fingerprint": hashlib.sha256(_canonical_json(left)).hexdigest(),
+        "right_fingerprint": hashlib.sha256(_canonical_json(right)).hexdigest(),
+        "differing_fields": differing[:40],
+    }
 
 
 def canonical_alert_content_hash(
@@ -101,7 +227,9 @@ def _alert_projection(
     """Create the immutable public detail for one notification identity."""
     # Use the same identity as the delivery/event ledger. A cluster key groups
     # related stories and is not unique enough for immutable alert filenames.
-    notification_id = notification_key_for_event(event)
+    notification_id, public_identity_version, public_identity_fingerprint = _public_alert_identity(event)
+    if not notification_id:
+        notification_id = notification_key_for_event(event)
     if not notification_id:
         notification_id = f"notification-{hashlib.sha256(_canonical_json(event)).hexdigest()[:24]}"
     evidence = event.get("market_evidence")
@@ -163,6 +291,8 @@ def _alert_projection(
         "source": event.get("source") or "公開來源",
         "source_key": event.get("source_key"),
         "notification_id": notification_id,
+        "public_identity_version": public_identity_version or "legacy-delivery-identity",
+        "public_identity_fingerprint": public_identity_fingerprint,
         "alert_id": str(
             event.get("alert_id")
             if event.get("alert_id") and event.get("alert_id") != event.get("event_cluster_key")
@@ -389,13 +519,13 @@ def _publish_alert_artifacts(
     quarantined_fingerprints = financialjuice_quarantine_fingerprints(market)
     raw_briefing = market.get("briefing")
     briefing: dict[str, Any] = raw_briefing if isinstance(raw_briefing, dict) else {}
-    view_snapshot = build_bootstrap_snapshot(
-        market,
+    view_snapshot = copy.deepcopy(build_bootstrap_snapshot(
+        copy.deepcopy(market),
         release_id=release_id,
         created_at=created_at,
         alert_index_coverage="current_release",
-    )
-    notification_view_context = {
+    ))
+    notification_view_context = copy.deepcopy({
         "schema_version": "1.0",
         "release_id": release_id,
         "snapshot_id": str(market.get("snapshot_id") or ""),
@@ -407,7 +537,7 @@ def _publish_alert_artifacts(
         "macro_quotes": view_snapshot.get("macro_quotes") or [],
         "risk": view_snapshot.get("risk") or {},
         "briefing": view_snapshot.get("briefing") or {},
-    }
+    })
     historical_briefing = notification_view_context["briefing"]
     if isinstance(historical_briefing, dict):
         for field in (
@@ -471,61 +601,141 @@ def _publish_alert_artifacts(
             }
     event_block = market.get("events") if isinstance(market, dict) else None
     events = event_block.get("items", []) if isinstance(event_block, dict) else []
+    proposals: dict[tuple[str, str], list[tuple[dict[str, Any], bool]]] = {}
+    duplicate_projection_count = 0
+
+    def add_projection(artifact: dict[str, Any], *, optional: bool) -> None:
+        key = (str(artifact["notification_id"]), release_id)
+        proposal_rows = proposals.setdefault(key, [])
+        proposed_content = {name: value for name, value in artifact.items() if name != "created_at"}
+        if any(
+            {name: value for name, value in prior.items() if name != "created_at"} == proposed_content
+            for prior, _ in proposal_rows
+        ):
+            nonlocal duplicate_projection_count
+            duplicate_projection_count += 1
+            return
+        proposal_rows.append((artifact, optional))
+
     for event in events:
         if not isinstance(event, dict):
             continue
         artifact = _alert_projection(
-            event, release_id=release_id,
+            copy.deepcopy(event), release_id=release_id,
             market_snapshot_id=str(market.get("snapshot_id") or ""),
             created_at=created_at,
-            session_news_summary=session_news_summary,
+            session_news_summary=copy.deepcopy(session_news_summary),
         )
-        artifact["notification_view_context"] = notification_view_context
-        notification_id = str(artifact["notification_id"])
-        filename = f"{_alert_filename(notification_id)}-{_alert_filename(release_id)}.json"
-        path = alert_dir / filename
-        artifact = _write_immutable_alert_artifact(path, artifact)
-        relative = f"{ALERT_ARTIFACT_PREFIX}/{filename}"
-        rows[(notification_id, release_id)] = {
-            "notification_id": notification_id,
-            "release_id": release_id,
-            "snapshot_id": artifact.get("snapshot_id"),
-            "observation_id": artifact.get("observation_id"),
-            "canonical_content_hash": artifact.get("canonical_content_hash"),
-            "canonical_hash_version": artifact.get("canonical_hash_version"),
-            "path": relative,
-            "sha256": sha256_file(path),
-            "created_at": artifact.get("created_at") or created_at,
-        }
-        resolved[relative] = path
-        hashes[relative] = sha256_file(path)
+        artifact["notification_view_context"] = copy.deepcopy(notification_view_context)
+        add_projection(artifact, optional=_optional_background_news(event, market))
     session_briefing = market.get("briefing") if isinstance(market, dict) else None
     if isinstance(session_briefing, dict) and session_briefing.get("notification_eligible") is True:
         artifact = _briefing_projection(
-            session_briefing,
+            copy.deepcopy(session_briefing),
             release_id=release_id,
             market_snapshot_id=str(market.get("snapshot_id") or ""),
             created_at=created_at,
         )
-        artifact["notification_view_context"] = notification_view_context
-        briefing_id = str(artifact["notification_id"])
-        filename = f"{_alert_filename(briefing_id)}-{_alert_filename(release_id)}.json"
+        artifact["notification_view_context"] = copy.deepcopy(notification_view_context)
+        add_projection(artifact, optional=False)
+
+    quarantined_conflicts: list[dict[str, Any]] = []
+    fatal_conflicts: list[dict[str, Any]] = []
+    staged: list[tuple[tuple[str, str], Path, str, dict[str, Any]]] = []
+    for identity, candidates in sorted(proposals.items()):
+        unique_candidates: list[tuple[dict[str, Any], bool]] = []
+        for candidate, optional in candidates:
+            content = {name: value for name, value in candidate.items() if name != "created_at"}
+            if not any(
+                {name: value for name, value in prior.items() if name != "created_at"} == content
+                for prior, _ in unique_candidates
+            ):
+                unique_candidates.append((candidate, optional))
+        if len(unique_candidates) > 1:
+            left, _ = unique_candidates[0]
+            right, _ = unique_candidates[1]
+            diagnostic = {
+                "notification_id": identity[0],
+                "release_id": identity[1],
+                **_identity_conflict(left, right),
+            }
+            if all(optional for _, optional in unique_candidates):
+                rows.pop(identity, None)
+                quarantined_conflicts.append({**diagnostic, "reason": "optional_background_identity_conflict"})
+            else:
+                fatal_conflicts.append(diagnostic)
+            continue
+
+        artifact, optional = unique_candidates[0]
+        filename = _alert_artifact_filename(identity[0], identity[1])
         path = alert_dir / filename
-        artifact = _write_immutable_alert_artifact(path, artifact)
+        if path.exists():
+            try:
+                existing = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+                fatal_conflicts.append({
+                    "notification_id": identity[0], "release_id": identity[1],
+                    "reason": f"immutable_alert_artifact_unreadable_{type(exc).__name__}",
+                })
+                continue
+            if not isinstance(existing, dict):
+                fatal_conflicts.append({
+                    "notification_id": identity[0], "release_id": identity[1],
+                    "reason": "immutable_alert_artifact_not_object",
+                })
+                continue
+            existing_content = {name: value for name, value in existing.items() if name != "created_at"}
+            proposed_content = {name: value for name, value in artifact.items() if name != "created_at"}
+            if existing_content != proposed_content:
+                diagnostic = {
+                    "notification_id": identity[0], "release_id": identity[1],
+                    **_identity_conflict(existing, artifact),
+                }
+                if optional:
+                    rows.pop(identity, None)
+                    quarantined_conflicts.append({**diagnostic, "reason": "optional_background_identity_conflict"})
+                else:
+                    fatal_conflicts.append(diagnostic)
+                continue
+            artifact = existing
         relative = f"{ALERT_ARTIFACT_PREFIX}/{filename}"
-        rows[(briefing_id, release_id)] = {
-            "notification_id": briefing_id,
-            "release_id": release_id,
-            "snapshot_id": artifact.get("snapshot_id"),
-            "observation_id": artifact.get("observation_id"),
-            "canonical_content_hash": artifact.get("canonical_content_hash"),
-            "canonical_hash_version": artifact.get("canonical_hash_version"),
-            "path": relative,
-            "sha256": sha256_file(path),
-            "created_at": artifact.get("created_at") or created_at,
+        staged.append((identity, path, relative, artifact))
+
+    if fatal_conflicts:
+        return {
+            "schema_version": "1.0",
+            "status": "invalid",
+            "fatal_alert_conflicts": fatal_conflicts,
+            "quarantined_alerts": quarantined_conflicts,
+            "quarantined_alert_count": len(quarantined_conflicts),
+            "quarantined_alert_reasons": sorted({item.get("reason", "identity_conflict") for item in quarantined_conflicts}),
+            "duplicate_projection_count": duplicate_projection_count,
         }
-        resolved[relative] = path
-        hashes[relative] = sha256_file(path)
+
+    with tempfile.TemporaryDirectory(prefix=".alert-projections-", dir=alert_dir.parent) as temporary_root:
+        temporary_directory = Path(temporary_root)
+        staged_files: list[tuple[tuple[str, str], Path, str, Path, dict[str, Any]]] = []
+        for index_number, (identity, path, relative, artifact) in enumerate(staged):
+            temporary_path = temporary_directory / f"{index_number}.json"
+            temporary_path.write_bytes(json.dumps(artifact, ensure_ascii=False, indent=2).encode("utf-8") + b"\n")
+            staged_files.append((identity, path, relative, temporary_path, artifact))
+        for identity, path, relative, temporary_path, artifact in staged_files:
+            if not path.exists():
+                os.replace(temporary_path, path)
+            digest = sha256_file(path)
+            rows[identity] = {
+                "notification_id": identity[0],
+                "release_id": identity[1],
+                "snapshot_id": artifact.get("snapshot_id"),
+                "observation_id": artifact.get("observation_id"),
+                "canonical_content_hash": artifact.get("canonical_content_hash"),
+                "canonical_hash_version": artifact.get("canonical_hash_version"),
+                "path": relative,
+                "sha256": digest,
+                "created_at": artifact.get("created_at") or created_at,
+            }
+            resolved[relative] = path
+            hashes[relative] = digest
     raw_release_time = str(market.get("generated_at") or created_at)
     try:
         release_time = datetime.fromisoformat(raw_release_time.replace("Z", "+00:00"))
@@ -614,7 +824,15 @@ def _publish_alert_artifacts(
     _write_normalized_artifact(lookup_root_path, root_descriptor)
     resolved[ALERT_LOOKUP_NAME] = lookup_root_path
     hashes[ALERT_LOOKUP_NAME] = sha256_file(lookup_root_path)
-    return root_descriptor
+    return {
+        **root_descriptor,
+        "status": "ready_with_quarantine" if quarantined_conflicts else "ready",
+        "quarantined_alerts": quarantined_conflicts,
+        "quarantined_alert_count": len(quarantined_conflicts),
+        "quarantined_alert_reasons": sorted({item.get("reason", "identity_conflict") for item in quarantined_conflicts}),
+        "fatal_alert_conflicts": [],
+        "duplicate_projection_count": duplicate_projection_count,
+    }
 
 
 def _creator_identity_hash(
@@ -1267,11 +1485,32 @@ def build_release_manifest(
     # a circular hash (the artifact itself carries its release_id), while the
     # resulting paths/hashes are still covered by the manifest gate.
     alert_lookup_descriptor: dict[str, Any] | None = None
+    alert_projection_diagnostics: dict[str, Any] = {
+        "schema_version": "release-alert-projection-v1",
+        "status": financialjuice_boundary["alert_projection_status"],
+        "quarantined_alerts": [],
+        "fatal_alert_conflicts": [],
+        "duplicate_projection_count": 0,
+    }
     if not financialjuice_boundary["fatal_alert_contract_errors"]:
         alert_lookup_descriptor = _publish_alert_artifacts(
             root=root, market=market, release_id=release_id, created_at=created_at,
             resolved=resolved, hashes=hashes,
         )
+        alert_projection_diagnostics.update({
+            key: value
+            for key, value in alert_lookup_descriptor.items()
+            if key in {
+                "status", "quarantined_alerts", "quarantined_alert_count",
+                "quarantined_alert_reasons", "fatal_alert_conflicts", "duplicate_projection_count",
+            }
+        })
+        fatal_conflicts = alert_projection_diagnostics.get("fatal_alert_conflicts")
+        if isinstance(fatal_conflicts, list):
+            errors.extend(
+                "alert_projection_identity_conflict:" + str(item.get("notification_id") or "unknown")
+                for item in fatal_conflicts if isinstance(item, dict)
+            )
     if creator_artifact is None and creator_records is not None:
         # Records are expected to be sanitized at ingress. The pipeline still
         # rechecks privacy/source rules before writing a public artifact.
@@ -1404,6 +1643,27 @@ def build_release_manifest(
         name: (path.relative_to(root / "site").as_posix() if path.is_relative_to(root / "site") else path.as_posix())
         for name, path in resolved.items()
     }
+    alert_quarantines = alert_projection_diagnostics.get("quarantined_alerts")
+    alert_quarantines = alert_quarantines if isinstance(alert_quarantines, list) else []
+    alert_projection_fatal = alert_projection_diagnostics.get("fatal_alert_conflicts")
+    alert_projection_fatal = alert_projection_fatal if isinstance(alert_projection_fatal, list) else []
+    alert_projection_status = (
+        "blocked" if alert_projection_fatal
+        else "ready_with_quarantine"
+        if financialjuice_boundary["quarantined_alert_count"] or alert_quarantines
+        else "ready"
+    )
+    alert_quarantine_reasons = sorted({
+        *financialjuice_boundary["quarantined_alert_reasons"],
+        *(str(item.get("reason") or "identity_conflict") for item in alert_quarantines if isinstance(item, dict)),
+    })
+    alert_fatal_errors = sorted({
+        *financialjuice_boundary["fatal_alert_contract_errors"],
+        *(
+            "alert_projection_identity_conflict:" + str(item.get("notification_id") or "unknown")
+            for item in alert_projection_fatal if isinstance(item, dict)
+        ),
+    })
     manifest: dict[str, Any] = {
         "release_id": release_id,
         "created_at": created_at,
@@ -1447,10 +1707,11 @@ def build_release_manifest(
         "creator_public_validation_errors": sorted(set(creator_public_errors)),
         "creator_snapshot_id": (creator_public_artifact or {}).get("snapshot_id") if isinstance(creator_public_artifact, dict) else None,
         "creator_public_artifact_hash": creator_public_hash,
-        "alert_projection_status": financialjuice_boundary["alert_projection_status"],
-        "quarantined_alert_count": financialjuice_boundary["quarantined_alert_count"],
-        "quarantined_alert_reasons": financialjuice_boundary["quarantined_alert_reasons"],
-        "fatal_alert_contract_errors": financialjuice_boundary["fatal_alert_contract_errors"],
+        "alert_projection_status": alert_projection_status,
+        "alert_projection_diagnostics": alert_projection_diagnostics,
+        "quarantined_alert_count": financialjuice_boundary["quarantined_alert_count"] + len(alert_quarantines),
+        "quarantined_alert_reasons": alert_quarantine_reasons,
+        "fatal_alert_contract_errors": alert_fatal_errors,
         "news_snapshot_id": news_snapshot_id,
         "news_status": news_status,
         "external_observation_count": external_metadata["count"] if external_metadata is not None else None,
@@ -1531,7 +1792,7 @@ def build_release_manifest(
     if not errors:
         manifest["status"] = (
             "ready_with_quarantine"
-            if financialjuice_boundary["quarantined_alert_count"]
+            if financialjuice_boundary["quarantined_alert_count"] or alert_quarantines
             else "ready"
         )
     return manifest
@@ -1552,6 +1813,74 @@ def write_release_manifest(manifest: dict[str, Any], output: Path | str) -> None
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_name(f".{destination.name}.tmp")
     temporary.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    replace_with_retry(temporary, destination)
+
+
+def release_build_result(
+    manifest: dict[str, Any] | None, *, started_at: str, failure: BaseException | None = None,
+) -> dict[str, Any]:
+    """Build the run-bound machine record consumed by workflows and audits."""
+    errors = manifest.get("validation_errors", []) if isinstance(manifest, dict) else []
+    errors = [str(item)[:200] for item in errors] if isinstance(errors, list) else []
+    diagnostics = manifest.get("alert_projection_diagnostics", {}) if isinstance(manifest, dict) else {}
+    diagnostics = diagnostics if isinstance(diagnostics, dict) else {}
+    fatal_conflicts = diagnostics.get("fatal_alert_conflicts", [])
+    quarantined = diagnostics.get("quarantined_alerts", [])
+    status = (
+        "ready"
+        if failure is None and isinstance(manifest, dict) and manifest.get("status") in PUBLISHABLE_RELEASE_STATUSES
+        else "failed"
+    )
+    if failure is not None:
+        reason = f"release_manifest_exception_{type(failure).__name__}"
+        stage = "release_manifest"
+    elif fatal_conflicts:
+        first_conflict = fatal_conflicts[0] if isinstance(fatal_conflicts, list) and fatal_conflicts else {}
+        reason = str(first_conflict.get("reason") or "alert_projection_identity_conflict")
+        stage = "alert_projection"
+    elif status != "ready":
+        reason = errors[0] if errors else "release_manifest_not_publishable"
+        stage = "manifest_validation"
+    else:
+        reason = ""
+        stage = "complete"
+    attempt_raw = os.getenv("GITHUB_RUN_ATTEMPT", "")
+    try:
+        attempt: int | None = int(attempt_raw) if attempt_raw else None
+    except ValueError:
+        attempt = None
+    return {
+        "schema_version": "release-build-result-v1",
+        "status": status,
+        "run_id": os.getenv("GITHUB_RUN_ID", "")[:32],
+        "attempt": attempt,
+        "workflow_sha": os.getenv("GITHUB_SHA", "")[:40],
+        "candidate_release_id": str((manifest or {}).get("release_id") or "")[:100],
+        "base_sha": os.getenv("RELEASE_BASE_SHA", os.getenv("DATA_RELEASE_BASE_SHA", ""))[:40],
+        "started_at": started_at,
+        "finished_at": datetime.now(UTC).isoformat(),
+        "failure_stage": stage,
+        "first_failure_reason": reason[:240],
+        "required_items": {
+            name: "ready" if isinstance(manifest, dict) and name in manifest.get("artifact_hashes", {}) else "not_ready"
+            for name in ("market.json", "research-report.json", "event-ledger.json")
+        },
+        "auxiliary_items": {
+            "background_alerts": "quarantined" if quarantined else "ready",
+            "alert_projection_status": str((manifest or {}).get("alert_projection_status") or "unknown"),
+            "quarantined_count": len(quarantined) if isinstance(quarantined, list) else 0,
+            "quarantined_alerts": quarantined if isinstance(quarantined, list) else [],
+        },
+        "fatal_alert_conflicts": fatal_conflicts if isinstance(fatal_conflicts, list) else [],
+        "validation_errors": errors[:100],
+    }
+
+
+def write_release_build_result(path: Path | str, result: dict[str, Any]) -> None:
+    destination = Path(path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_name(f".{destination.name}.tmp")
+    temporary.write_text(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
     replace_with_retry(temporary, destination)
 
 
@@ -1664,6 +1993,7 @@ def main() -> int:
         "--verify-only", action="store_true",
         help="verify an existing manifest and its referenced artifacts without rebuilding",
     )
+    parser.add_argument("--result-output", type=Path, default=None, help="atomic release-build-result-v1 destination")
     args = parser.parse_args()
     if args.verify_only:
         errors = verify_local_release_bundle(root=args.root, manifest_path=args.output)
@@ -1671,10 +2001,10 @@ def main() -> int:
             print(f"release_bundle_error={error}")
         if not errors:
             manifest_path = args.output if args.output.is_absolute() else args.root / args.output
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            print(f"release_bundle_status={manifest.get('status', 'unknown')}")
-            print(f"release_id={manifest.get('release_id', '')}")
-            print(f"market_snapshot_id={manifest.get('market_snapshot_id', '')}")
+            verified_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            print(f"release_bundle_status={verified_manifest.get('status', 'unknown')}")
+            print(f"release_id={verified_manifest.get('release_id', '')}")
+            print(f"market_snapshot_id={verified_manifest.get('market_snapshot_id', '')}")
         return 1 if errors else 0
     creator_records: list[dict[str, Any]] | None = None
     if args.creator_records is not None:
@@ -1691,20 +2021,45 @@ def main() -> int:
         if not isinstance(payload, list) or not all(isinstance(item, dict) for item in payload):
             parser.error("creator records must be a JSON array of objects")
         creator_records = payload
-    manifest = build_release_manifest(
-        root=args.root,
-        output=args.output,
-        policy_version=args.policy_version,
-        require_production_research=args.require_production_research,
-        allow_stale_research=args.allow_stale_research,
-        research_fallback_reason=args.research_fallback_reason,
-        max_research_age_hours=args.max_research_age_hours,
-        creator_records=creator_records,
-        creator_morning_batch=args.creator_morning_batch,
+    result_path = args.result_output or (
+        Path(os.environ["RELEASE_BUILD_RESULT_PATH"])
+        if os.getenv("RELEASE_BUILD_RESULT_PATH") else None
     )
-    write_release_manifest(manifest, args.output)
-    print(json.dumps({"status": manifest["status"], "release_id": manifest["release_id"], "validation_errors": manifest["validation_errors"]}, ensure_ascii=False))
-    return 0 if manifest["status"] in {"ready", "ready_with_quarantine"} else 1
+    started_at = datetime.now(UTC).isoformat()
+    manifest: dict[str, Any] | None = None
+    failure: BaseException | None = None
+    try:
+        manifest = build_release_manifest(
+            root=args.root,
+            output=args.output,
+            policy_version=args.policy_version,
+            require_production_research=args.require_production_research,
+            allow_stale_research=args.allow_stale_research,
+            research_fallback_reason=args.research_fallback_reason,
+            max_research_age_hours=args.max_research_age_hours,
+            creator_records=creator_records,
+            creator_morning_batch=args.creator_morning_batch,
+        )
+        write_release_manifest(manifest, args.output)
+    except Exception as exc:
+        failure = exc
+    result = release_build_result(manifest, started_at=started_at, failure=failure)
+    if result_path is not None:
+        try:
+            write_release_build_result(result_path, result)
+        except OSError as exc:
+            print(f"release_build_result_write_failed={type(exc).__name__}", file=sys.stderr)
+            return 1
+    if failure is not None:
+        print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+        return 1
+    assert manifest is not None
+    print(json.dumps({
+        "status": manifest["status"], "release_id": manifest["release_id"],
+        "validation_errors": manifest["validation_errors"],
+        "build_result_status": result["status"], "build_result_reason": result["first_failure_reason"],
+    }, ensure_ascii=False))
+    return 0 if result["status"] == "ready" else 1
 
 
 if __name__ == "__main__":

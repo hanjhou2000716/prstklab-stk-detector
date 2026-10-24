@@ -342,9 +342,35 @@ jobs:
         with:
           path: .scheduled-brief-lock
           key: scheduled-brief-${{ steps.window.outputs.key }}
+      - name: Pin trusted previous public manifest
+        id: previous_release
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true'
+        env:
+          PRODUCTION_SHA: ${{ steps.prepare.outputs.data_release_sha }}
+        run: |
+          previous_path="/tmp/prstk-previous-release-${GITHUB_RUN_ID}.json"
+          if git cat-file -e "${PRODUCTION_SHA}:site/data/release-manifest.json" 2>/dev/null; then
+            git show "${PRODUCTION_SHA}:site/data/release-manifest.json" > "$previous_path"
+            python - "$previous_path" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          manifest = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          if manifest.get("status") not in {"ready", "ready_with_quarantine"} or not manifest.get("release_id"):
+              raise SystemExit("pinned previous manifest is not publishable")
+          PY
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "path=$previous_path" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "path=" >> "$GITHUB_OUTPUT"
+          fi
       - name: Build release manifest
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true'
         id: release_manifest
+        env:
+          RELEASE_BASE_SHA: ${{ steps.prepare.outputs.data_release_sha }}
+          RELEASE_BUILD_RESULT_PATH: /tmp/prstk-release-build-${{ github.run_id }}-${{ github.run_attempt }}.json
         run: |
           arguments=(
             --allow-stale-research
@@ -376,7 +402,31 @@ jobs:
           set +e
           python -m src.release_manifest "${arguments[@]}"
           manifest_status=$?
+          python - "$MANIFEST_PATH" "$RELEASE_BUILD_RESULT_PATH" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" >> "$GITHUB_OUTPUT" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          manifest_path, result_path, run_id, attempt, sha = sys.argv[1:]
+          result = json.loads(Path(result_path).read_text(encoding="utf-8"))
+          manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+          valid = (
+              result.get("schema_version") == "release-build-result-v1"
+              and result.get("status") == "ready"
+              and result.get("run_id") == run_id
+              and result.get("attempt") == int(attempt)
+              and result.get("workflow_sha") == sha
+              and result.get("candidate_release_id") == manifest.get("release_id")
+              and manifest.get("status") in {"ready", "ready_with_quarantine"}
+          )
+          print(f"build_result_status={result.get('status', 'missing')}")
+          print(f"build_result_reason={result.get('first_failure_reason', '')}")
+          if not valid:
+              print("::error::Release build result identity or readiness contract mismatch")
+              raise SystemExit(1)
+          PY
+          result_contract_status=$?
           set -e
+          if [ "$result_contract_status" -ne 0 ]; then manifest_status=1; fi
           if [ -f "$MANIFEST_PATH" ]; then
             python - "$MANIFEST_PATH" >> "$GITHUB_OUTPUT" <<'PY'
           import json
@@ -393,6 +443,82 @@ jobs:
           PY
           fi
           exit "$manifest_status"
+      - name: Preserve release build result on every exit path
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.release_manifest.outcome != 'skipped'
+        env:
+          RELEASE_BUILD_RESULT_PATH: /tmp/prstk-release-build-${{ github.run_id }}-${{ github.run_attempt }}.json
+          RELEASE_RUN_ID: ${{ github.run_id }}
+          RELEASE_RUN_ATTEMPT: ${{ github.run_attempt }}
+          RELEASE_WORKFLOW_SHA: ${{ github.sha }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          path = Path(os.environ["RELEASE_BUILD_RESULT_PATH"])
+          if not path.exists():
+              payload = {
+                  "schema_version": "release-build-result-v1",
+                  "status": "failed",
+                  "run_id": os.environ["RELEASE_RUN_ID"],
+                  "attempt": int(os.environ["RELEASE_RUN_ATTEMPT"]),
+                  "workflow_sha": os.environ["RELEASE_WORKFLOW_SHA"],
+                  "candidate_release_id": "",
+                  "base_sha": "",
+                  "failure_stage": "result_contract",
+                  "first_failure_reason": "release_build_result_not_produced",
+              }
+              path.write_text(json.dumps(payload, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+          PY
+      - name: Upload release build result
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.release_manifest.outcome != 'skipped'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: scheduled-release-build-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: /tmp/prstk-release-build-${{ github.run_id }}-${{ github.run_attempt }}.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Freeze original immutable alert binding
+        if: steps.release_manifest.outcome == 'success' && steps.prepare.outputs.notification_id != ''
+        env:
+          ALERT_TARGETS_PATH: /tmp/prstk-alert-targets-${{ github.run_id }}.json
+          RELEASE_MANIFEST_PATH: ${{ env.MANIFEST_PATH }}
+          ORIGINAL_NOTIFICATION_ID: ${{ steps.prepare.outputs.notification_id }}
+          ORIGINAL_RELEASE_ID: ${{ steps.release_manifest.outputs.release_id }}
+          ORIGINAL_SNAPSHOT_ID: ${{ steps.prepare.outputs.snapshot_id }}
+          ORIGINAL_OBSERVATION_ID: ${{ steps.prepare.outputs.observation_id }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          manifest = json.loads(Path(os.environ["RELEASE_MANIFEST_PATH"]).read_text(encoding="utf-8"))
+          index_path = Path("site/data/alert-index.json")
+          index = json.loads(index_path.read_text(encoding="utf-8"))
+          rows = [
+              row for row in index.get("alerts", [])
+              if isinstance(row, dict)
+              and row.get("notification_id") == os.environ["ORIGINAL_NOTIFICATION_ID"]
+              and row.get("release_id") == os.environ["ORIGINAL_RELEASE_ID"]
+          ]
+          if len(rows) != 1 or not rows[0].get("sha256"):
+              raise SystemExit("original immutable alert binding is missing or ambiguous")
+          row = rows[0]
+          if row.get("snapshot_id") != os.environ["ORIGINAL_SNAPSHOT_ID"]:
+              raise SystemExit("original immutable alert snapshot differs from prepared snapshot")
+          if os.environ["ORIGINAL_OBSERVATION_ID"] and row.get("observation_id") != os.environ["ORIGINAL_OBSERVATION_ID"]:
+              raise SystemExit("original immutable alert observation identity mismatch")
+          if manifest.get("release_id") != os.environ["ORIGINAL_RELEASE_ID"]:
+              raise SystemExit("original immutable alert release identity mismatch")
+          target = {
+              "notification_id": row["notification_id"],
+              "release_id": row["release_id"],
+              "snapshot_id": row.get("snapshot_id") or "",
+              "observation_id": row.get("observation_id") or "",
+              "sha256": row["sha256"],
+          }
+          Path(os.environ["ALERT_TARGETS_PATH"]).write_text(json.dumps([target], sort_keys=True) + "\n", encoding="utf-8")
+          PY
       - name: Capture private release preflight diagnostics
         if: always() && steps.late_expiry.outputs.expired != 'true'
         env:
@@ -449,6 +575,25 @@ jobs:
             --source-revision "$GITHUB_SHA" \
             --release-id "$RELEASE_ID" \
             >> "$GITHUB_OUTPUT"
+      - name: Freeze pre-delivery release manifest
+        if: steps.publish_snapshot.outcome == 'success'
+        id: freeze_delivery_manifest
+        env:
+          RELEASE_MANIFEST_PATH: ${{ env.MANIFEST_PATH }}
+        run: |
+          frozen_path="/tmp/prstk-pre-delivery-manifest-${GITHUB_RUN_ID}.json"
+          cp "$RELEASE_MANIFEST_PATH" "$frozen_path"
+          python - "$RELEASE_MANIFEST_PATH" "$frozen_path" >> "$GITHUB_OUTPUT" <<'PY'
+          import hashlib
+          import sys
+          from pathlib import Path
+          live = Path(sys.argv[1]).read_bytes()
+          frozen = Path(sys.argv[2]).read_bytes()
+          if hashlib.sha256(live).digest() != hashlib.sha256(frozen).digest():
+              raise SystemExit("pre-delivery manifest freeze verification failed")
+          print(f"path={sys.argv[2]}")
+          print("frozen=true")
+          PY
       - name: Build and validate cache-busted static assets
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true'
         run: |
@@ -540,8 +685,43 @@ jobs:
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.deployment_identity.outputs.verified == 'true'
         id: release_gate
         run: |
-          arguments=(--manifest "$MANIFEST_PATH" --expected-release-id "${{ steps.release_manifest.outputs.release_id }}" --expected-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" --public-url "${{ steps.deployment.outputs.page_url }}" --deployment-id "${{ steps.deployment_identity.outputs.deployment_id }}" --expected-notification-id "${{ steps.prepare.outputs.notification_id }}" --expected-alert-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" --expected-alert-observation-id "${{ steps.prepare.outputs.observation_id }}" --public-timeout-seconds 180 --public-delay 2 --public-max-delay 20)
+          arguments=(--manifest "$MANIFEST_PATH" --expected-release-id "${{ steps.release_manifest.outputs.release_id }}" --expected-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" --public-url "${{ steps.deployment.outputs.page_url }}" --deployment-id "${{ steps.deployment_identity.outputs.deployment_id }}" --phase pre_delivery --result-output "/tmp/prstk-release-gate-pre-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json" --public-timeout-seconds 180 --public-delay 2 --public-max-delay 20)
+          if [ -f "/tmp/prstk-alert-targets-${GITHUB_RUN_ID}.json" ]; then
+            arguments+=(--expected-alert-targets-file "/tmp/prstk-alert-targets-${GITHUB_RUN_ID}.json")
+          fi
+          if [ "${{ steps.previous_release.outputs.available }}" = "true" ]; then
+            arguments+=(--previous-manifest "${{ steps.previous_release.outputs.path }}")
+          fi
           python -m src.release_gate "${arguments[@]}" >> "$GITHUB_OUTPUT"
+      - name: Preserve pre-delivery gate evidence
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.release_gate.outcome != 'skipped'
+        env:
+          GATE_RESULT_PATH: /tmp/prstk-release-gate-pre-${{ github.run_id }}-${{ github.run_attempt }}.json
+          GATE_RUN_ID: ${{ github.run_id }}
+          GATE_RUN_ATTEMPT: ${{ github.run_attempt }}
+          GATE_WORKFLOW_SHA: ${{ github.sha }}
+        run: |
+          if [ ! -f "$GATE_RESULT_PATH" ]; then
+            python - "$GATE_RESULT_PATH" "$GATE_RUN_ID" "$GATE_RUN_ATTEMPT" "$GATE_WORKFLOW_SHA" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          Path(sys.argv[1]).write_text(json.dumps({
+              "schema_version": "release-gate-result-v1", "phase": "pre_delivery",
+              "status": "blocked", "allowed": False, "run_id": sys.argv[2],
+              "attempt": int(sys.argv[3]), "workflow_sha": sys.argv[4],
+              "first_failure_reason": "release_gate_result_not_produced", "attempts": [],
+          }, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+          PY
+          fi
+      - name: Upload pre-delivery gate evidence
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.release_gate.outcome != 'skipped'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: scheduled-release-gate-pre-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: /tmp/prstk-release-gate-pre-${{ github.run_id }}-${{ github.run_attempt }}.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Record release gate diagnostics
         if: always() && steps.late_expiry.outputs.expired != 'true'
         env:
@@ -717,6 +897,9 @@ jobs:
           RELEASE_GATE_DEPLOYMENT_ID: ${{ steps.release_gate.outputs.deployment_id || steps.deployment_identity.outputs.deployment_id || '' }}
           RELEASE_MANIFEST_OUTCOME: ${{ steps.release_manifest.outcome || 'not_run' }}
           RELEASE_MANIFEST_STATUS: ${{ steps.release_manifest.outputs.manifest_status || '' }}
+          RELEASE_BUILD_RESULT_PATH: /tmp/prstk-release-build-${{ github.run_id }}-${{ github.run_attempt }}.json
+          PRE_DELIVERY_GATE_RESULT_PATH: /tmp/prstk-release-gate-pre-${{ github.run_id }}-${{ github.run_attempt }}.json
+          POST_DELIVERY_GATE_RESULT_PATH: /tmp/prstk-release-gate-post-${{ github.run_id }}-${{ github.run_attempt }}.json
           ALERT_PROJECTION_STATUS: ${{ steps.release_manifest.outputs.alert_projection_status || '' }}
           QUARANTINED_ALERT_COUNT: ${{ steps.release_manifest.outputs.quarantined_alert_count || '0' }}
           QUARANTINED_ALERT_REASONS: ${{ steps.release_manifest.outputs.quarantined_alert_reasons || '' }}
@@ -1056,10 +1239,43 @@ jobs:
           --expected-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}"
           --public-url "${{ steps.reconciled_deployment.outputs.page_url }}"
           --deployment-id "${{ steps.reconciled_deployment_identity.outputs.deployment_id }}"
+          --expected-alert-targets-file "/tmp/prstk-alert-targets-${GITHUB_RUN_ID}.json"
+          --previous-manifest "/tmp/prstk-pre-delivery-manifest-${GITHUB_RUN_ID}.json"
+          --phase post_delivery
+          --result-output "/tmp/prstk-release-gate-post-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
           --public-timeout-seconds 180
           --public-delay 2
           --public-max-delay 20
           >> "$GITHUB_OUTPUT"
+      - name: Preserve post-delivery gate evidence
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.reconciled_release_gate.outcome != 'skipped'
+        env:
+          GATE_RESULT_PATH: /tmp/prstk-release-gate-post-${{ github.run_id }}-${{ github.run_attempt }}.json
+          GATE_RUN_ID: ${{ github.run_id }}
+          GATE_RUN_ATTEMPT: ${{ github.run_attempt }}
+          GATE_WORKFLOW_SHA: ${{ github.sha }}
+        run: |
+          if [ ! -f "$GATE_RESULT_PATH" ]; then
+            python - "$GATE_RESULT_PATH" "$GATE_RUN_ID" "$GATE_RUN_ATTEMPT" "$GATE_WORKFLOW_SHA" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          Path(sys.argv[1]).write_text(json.dumps({
+              "schema_version": "release-gate-result-v1", "phase": "post_delivery",
+              "status": "blocked", "allowed": False, "run_id": sys.argv[2],
+              "attempt": int(sys.argv[3]), "workflow_sha": sys.argv[4],
+              "first_failure_reason": "post_delivery_gate_result_not_produced", "attempts": [],
+          }, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+          PY
+          fi
+      - name: Upload post-delivery gate evidence
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.reconciled_release_gate.outcome != 'skipped'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: scheduled-release-gate-post-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: /tmp/prstk-release-gate-post-${{ github.run_id }}-${{ github.run_attempt }}.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Send release-gated Creator notifications
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.reconciled_release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true' && steps.prepare.outputs.notification_expected == 'true'
         id: creator_dispatch
@@ -1187,6 +1403,7 @@ jobs:
           FAILED_COUNT: ${{ steps.send_brief.outputs.failed_count || '0' }}
           PREPARED_CURRENT: ${{ steps.prepared_release.outputs.current || 'false' }}
           GATE_ALLOWED: ${{ steps.release_gate.outputs.allowed || 'false' }}
+          RELEASE_GATE_OUTCOME: ${{ steps.release_gate.outcome || 'skipped' }}
           PAGES_DEPLOYMENT_AVAILABLE: ${{ steps.deployment.outputs.available || 'false' }}
           PAGES_DEPLOYMENT_ERROR_CODE: ${{ steps.deployment.outputs.error_code || '' }}
           RECEIPT_CALLBACK_OUTCOME: ${{ steps.persist_scheduled_receipt.outcome || 'skipped' }}
@@ -1198,6 +1415,7 @@ jobs:
           RECEIPT_RECIPIENT_SET_VERSION: ${{ steps.durable_receipt.outputs.recipient_set_version || '' }}
           RECONCILED_DEPLOYMENT_VERIFIED: ${{ steps.reconciled_deployment_identity.outputs.verified || 'false' }}
           RECONCILED_GATE_ALLOWED: ${{ steps.reconciled_release_gate.outputs.allowed || 'false' }}
+          RECONCILED_GATE_OUTCOME: ${{ steps.reconciled_release_gate.outcome || 'skipped' }}
           HANDOFF_STATUS: ${{ steps.writer_queue.outputs.handoff_status || 'not_attempted' }}
           HANDOFF_RUN_ID: ${{ steps.writer_queue.outputs.handoff_run_id || '' }}
           WRITER_QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'not_required' }}
@@ -1237,7 +1455,7 @@ jobs:
         with:
           name: scheduled-terminal-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: /tmp/prstk-notification-terminal-${{ github.run_id }}.json
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14
 
 # - name: 設定 GitHub Pages

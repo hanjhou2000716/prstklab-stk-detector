@@ -529,3 +529,91 @@ jobs:
             echo "- notification_status: ${notification_status}"
             echo "- notification_reason: ${notification_reason}"
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve run-bound research incident result
+        id: research_terminal
+        if: always()
+        env:
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+          GITHUB_SHA: ${{ github.sha }}
+          JOB_STATUS: ${{ job.status }}
+          SCAN_MODE: ${{ env.SCAN_MODE }}
+          RESEARCH_DUE: ${{ env.RESEARCH_DUE }}
+          QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'not_required' }}
+          QUEUE_ERROR_CODE: ${{ steps.writer_queue.outputs.queue_error_code || '' }}
+          RESEARCH_GATE_OUTCOME: ${{ steps.research_gate.outcome || 'skipped' }}
+          RESEARCH_GATE_PUBLISH: ${{ steps.research_gate.outputs.publish || 'false' }}
+          RESEARCH_GATE_FALLBACK: ${{ steps.research_gate.outputs.fallback || 'false' }}
+          RESEARCH_GATE_REASON: ${{ steps.research_gate.outputs.reason || '' }}
+          PREPARED_RELEASE_OUTCOME: ${{ steps.prepared_release.outcome || 'skipped' }}
+          DEPLOYMENT_OUTCOME: ${{ steps.deployment.outcome || 'skipped' }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          mode = os.environ.get("SCAN_MODE", "unknown")
+          queue_status = os.environ.get("QUEUE_STATUS", "unknown")
+          due = os.environ.get("RESEARCH_DUE") == "true"
+          gate_outcome = os.environ.get("RESEARCH_GATE_OUTCOME", "unknown")
+          gate_publish = os.environ.get("RESEARCH_GATE_PUBLISH") == "true"
+          gate_fallback = os.environ.get("RESEARCH_GATE_FALLBACK") == "true"
+          degraded = (
+              os.environ.get("JOB_STATUS") == "failure"
+              or queue_status == "failed"
+              or os.environ.get("PREPARED_RELEASE_OUTCOME") == "failure"
+              or os.environ.get("DEPLOYMENT_OUTCOME") == "failure"
+              or gate_outcome == "failure"
+              or (due and (not gate_publish or gate_fallback))
+          )
+          if mode != "production":
+              business_status = "not_applicable"
+              reason = "non_production_scan"
+          else:
+              business_status = "degraded" if degraded else "healthy"
+              reason = os.environ.get("QUEUE_ERROR_CODE", "")
+              if not reason and queue_status == "failed":
+                  reason = "writer_queue_failed"
+              if not reason and gate_outcome == "failure":
+                  reason = "research_gate_failed"
+              if not reason and due and (not gate_publish or gate_fallback):
+                  reason = "production_research_not_current"
+              if not reason and os.environ.get("PREPARED_RELEASE_OUTCOME") == "failure":
+                  reason = "prepared_release_revalidation_failed"
+              if not reason and os.environ.get("DEPLOYMENT_OUTCOME") == "failure":
+                  reason = "pages_deployment_failed"
+              if not reason and os.environ.get("JOB_STATUS") == "failure":
+                  reason = "workflow_job_failed"
+          record = {
+              "schema_version": "unified-research-terminal-v1",
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "sha": os.environ["GITHUB_SHA"],
+              "production_run": mode == "production",
+              "business_status": business_status,
+              "reason": reason[:200],
+              "stages": {
+                  "writer_queue": queue_status,
+                  "writer_queue_error_code": os.environ.get("QUEUE_ERROR_CODE", ""),
+                  "research_gate": gate_outcome,
+                  "research_publish": gate_publish,
+                  "research_fallback": gate_fallback,
+                  "prepared_release": os.environ.get("PREPARED_RELEASE_OUTCOME", "unknown"),
+                  "deployment": os.environ.get("DEPLOYMENT_OUTCOME", "unknown"),
+              },
+          }
+          Path("unified-research-terminal.json").write_text(
+              json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(record, sort_keys=True))
+          PY
+      - name: Upload run-bound research incident result
+        if: always() && steps.research_terminal.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: unified-research-terminal-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: unified-research-terminal.json
+          if-no-files-found: error
+          retention-days: 90

@@ -1,3 +1,4 @@
+import hashlib
 import json
 
 import pytest
@@ -5,20 +6,143 @@ import pytest
 from src.alert_orchestrator import notification_key_for_event
 from src.news_intelligence import build_news_intelligence
 from src.release_manifest import (
+    _alert_artifact_filename,
+    _alert_filename,
     _alert_projection,
     _briefing_projection,
     _gap_count,
+    _identity_conflict,
     _normalize_market,
     _normalize_research,
+    _optional_background_news,
+    _public_alert_identity,
     _read_object,
     _write_immutable_alert_artifact,
     build_release_manifest,
     content_snapshot_id,
+    release_build_result,
     sha256_file,
     verify_local_release_bundle,
     verify_release_files,
+    write_release_build_result,
     write_release_manifest,
 )
+
+
+def test_public_alert_identity_is_versioned_and_rejects_required_or_unverifiable_rows():
+    event = {
+        "source_key": "Google_News",
+        "title": "台積電發布新廠工程進度",
+        "event": "台積電新廠工程進度更新",
+        "source_url": "https://news.example.com/story?id=7&utm_source=feed",
+        "published_at": "2026-10-21T04:00:00Z",
+    }
+    identity, version, fingerprint = _public_alert_identity(event)
+    assert identity.startswith("news-v1-")
+    assert version == "public-alert-identity-v1"
+    assert len(fingerprint) == 64
+
+    for flag in ("required_for_release", "required_for_notification", "notification_eligible"):
+        assert _public_alert_identity({**event, flag: True}) == ("", "", "")
+    assert _public_alert_identity({**event, "kind": "official_event"}) == ("", "", "")
+    assert _public_alert_identity({**event, "importance": 9}) == ("", "", "")
+    assert _public_alert_identity({**event, "source_key": "financialjuice"}) == ("", "", "")
+    assert _public_alert_identity({**event, "source_key": "unknown_source"}) == ("", "", "")
+    assert _public_alert_identity({**event, "source_url": "", "published_at": "bad-date"}) == ("", "", "")
+    # A malformed optional importance value is not treated as high priority.
+    assert _public_alert_identity({**event, "importance": "unknown"})[0].startswith("news-v1-")
+
+
+def test_optional_background_news_checks_required_evidence_and_source_contract():
+    event = {
+        "source_key": "cnyes",
+        "title": "Taiwan semiconductor announces a new factory expansion plan",
+        "event": "Taiwan semiconductor confirms the factory expansion investment details",
+        "source_url": "https://news.example.com/story/7",
+        "importance": 4,
+    }
+    assert _optional_background_news(event, {}) is True
+    assert _optional_background_news({**event, "source_key": "unknown"}, {}) is False
+    assert _optional_background_news({**event, "importance": 9}, {}) is False
+    assert _optional_background_news({**event, "importance": "unknown"}, {}) is False
+    assert _optional_background_news({**event, "required_for_release": True}, {}) is False
+    assert _optional_background_news(event, {"briefing": []}) is True
+    assert _optional_background_news(event, {"evidence": [event["source_url"]]}) is False
+    assert _optional_background_news(event, {"briefing": {"detail": event["title"]}}) is False
+    assert _optional_background_news(event, {"summary_facts": [{"fact": event["event"]}]}) is False
+
+
+def test_public_alert_artifact_paths_and_conflict_fingerprints_are_collision_resistant():
+    first = _alert_artifact_filename("notification-a", "release-a")
+    second = _alert_artifact_filename("notification-b", "release-a")
+    assert first != second
+    assert len(first) == 69
+    assert _alert_filename("!!!") == hashlib.sha256(b"!!!").hexdigest()[:24]
+    conflict = _identity_conflict({"title": "old", "created_at": "a"}, {"title": "new", "created_at": "b"})
+    assert conflict["reason"] == "immutable_alert_artifact_identity_conflict"
+    assert conflict["differing_fields"] == ["title"]
+    assert conflict["left_fingerprint"] != conflict["right_fingerprint"]
+
+
+def test_release_build_result_preserves_first_failure_and_quarantine_evidence(monkeypatch, tmp_path):
+    monkeypatch.setenv("GITHUB_RUN_ID", "run-42")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "invalid")
+    monkeypatch.setenv("GITHUB_SHA", "c" * 40)
+    monkeypatch.setenv("RELEASE_BASE_SHA", "d" * 40)
+    ready = release_build_result({
+        "status": "ready_with_quarantine",
+        "release_id": "release-current",
+        "artifact_hashes": {"market.json": "a" * 64},
+        "alert_projection_status": "ready_with_quarantine",
+        "alert_projection_diagnostics": {"quarantined_alerts": [{"reason": "optional_conflict"}]},
+    }, started_at="2026-10-21T00:00:00Z")
+    assert ready["status"] == "ready"
+    assert ready["attempt"] is None
+    assert ready["base_sha"] == "d" * 40
+    assert ready["required_items"]["market.json"] == "ready"
+    assert ready["required_items"]["research-report.json"] == "not_ready"
+    assert ready["auxiliary_items"]["background_alerts"] == "quarantined"
+
+    fatal = release_build_result({
+        "status": "invalid",
+        "validation_errors": ["first validation error"],
+        "alert_projection_diagnostics": {"fatal_alert_conflicts": [{"reason": "identity_conflict"}]},
+    }, started_at="start")
+    assert fatal["failure_stage"] == "alert_projection"
+    assert fatal["first_failure_reason"] == "identity_conflict"
+    invalid = release_build_result({"status": "invalid", "validation_errors": []}, started_at="start")
+    assert invalid["first_failure_reason"] == "release_manifest_not_publishable"
+    failed = release_build_result(None, started_at="start", failure=RuntimeError("secret details are not copied"))
+    assert failed["failure_stage"] == "release_manifest"
+    assert failed["first_failure_reason"] == "release_manifest_exception_RuntimeError"
+
+    destination = tmp_path / "results" / "release-build.json"
+    write_release_build_result(destination, ready)
+    assert json.loads(destination.read_text(encoding="utf-8")) == ready
+
+
+def test_release_manifest_cli_persists_success_and_failure_result_contracts(tmp_path, monkeypatch):
+    from src import release_manifest
+
+    result_path = tmp_path / "result.json"
+    output_path = tmp_path / "site" / "data" / "release-manifest.json"
+    monkeypatch.setattr("sys.argv", [
+        "release_manifest", "--root", str(tmp_path), "--output", str(output_path),
+        "--result-output", str(result_path),
+    ])
+    monkeypatch.setattr(release_manifest, "build_release_manifest", lambda **_kwargs: {
+        "status": "ready", "release_id": "release-cli", "validation_errors": [],
+        "artifact_hashes": {"market.json": "a" * 64},
+    })
+    monkeypatch.setattr(release_manifest, "write_release_manifest", lambda *_args: None)
+    assert release_manifest.main() == 0
+    assert json.loads(result_path.read_text(encoding="utf-8"))["candidate_release_id"] == "release-cli"
+
+    monkeypatch.setattr(release_manifest, "build_release_manifest", lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("private details")))
+    assert release_manifest.main() == 1
+    failed = json.loads(result_path.read_text(encoding="utf-8"))
+    assert failed["first_failure_reason"] == "release_manifest_exception_RuntimeError"
+    assert "private details" not in result_path.read_text(encoding="utf-8")
 
 
 def _artifacts(tmp_path):
@@ -161,11 +285,64 @@ def test_distinct_news_sharing_a_theme_cluster_get_distinct_public_notification_
     assert manifest["status"] == "ready"
     index = json.loads((tmp_path / "site" / "data" / "alert-index.json").read_text(encoding="utf-8"))
     rows = [row for row in index["alerts"] if row["release_id"] == manifest["release_id"]]
-    assert {row["notification_id"] for row in rows} == {
-        notification_key_for_event(story) for story in stories
-    }
+    assert len({row["notification_id"] for row in rows}) == 2
+    assert all(row["notification_id"].startswith("news-v1-") for row in rows)
+    assert all(
+        row["notification_id"] != notification_key_for_event(story)
+        for row, story in zip(rows, stories, strict=True)
+    )
     assert len({row["path"] for row in rows}) == 2
     assert verify_release_files(manifest, root=tmp_path / "site") == []
+
+
+def test_optional_background_identity_conflict_is_quarantined_without_blocking_report(tmp_path):
+    _artifacts(tmp_path)
+    market_path = tmp_path / "site" / "data" / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    shared = {
+        "title": "台積電公布新廠工程進度",
+        "event": "台積電新廠工程進度更新",
+        "source_key": "google_news",
+        "published_at": "2026-10-21T04:00:00Z",
+        "source_url": "https://news.example.com/story?id=42",
+    }
+    market["events"] = {"items": [
+        {**shared, "market_evidence": [{"ticker": "2330", "price": 1000}]},
+        {**shared, "market_evidence": [{"ticker": "2330", "price": 1001}]},
+    ]}
+    market_path.write_text(json.dumps(market, ensure_ascii=False), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+
+    assert manifest["status"] == "ready_with_quarantine"
+    assert manifest["quarantined_alert_count"] == 1
+    assert manifest["alert_projection_diagnostics"]["quarantined_alerts"][0]["reason"] == "optional_background_identity_conflict"
+    index = json.loads((tmp_path / "site" / "data" / "alert-index.json").read_text(encoding="utf-8"))
+    assert not any(row["notification_id"].startswith("news-v1-") for row in index["alerts"])
+
+
+def test_required_background_identity_conflict_fails_closed(tmp_path):
+    _artifacts(tmp_path)
+    market_path = tmp_path / "site" / "data" / "market.json"
+    market = json.loads(market_path.read_text(encoding="utf-8"))
+    shared = {
+        "title": "台積電公布新廠工程進度",
+        "event": "台積電新廠工程進度更新",
+        "source_key": "google_news",
+        "published_at": "2026-10-21T04:00:00Z",
+        "source_url": "https://news.example.com/story?id=42",
+        "required_for_release": True,
+    }
+    market["events"] = {"items": [
+        {**shared, "market_evidence": [{"ticker": "2330", "price": 1000}]},
+        {**shared, "market_evidence": [{"ticker": "2330", "price": 1001}]},
+    ]}
+    market_path.write_text(json.dumps(market, ensure_ascii=False), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+
+    assert manifest["status"] == "invalid"
+    assert any("alert_projection_identity_conflict" in error for error in manifest["validation_errors"])
 
 
 def test_manifest_publishes_release_specific_immutable_alert_details(tmp_path):

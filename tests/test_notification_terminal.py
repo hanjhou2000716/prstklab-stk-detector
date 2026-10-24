@@ -192,7 +192,7 @@ def test_official_delivery_requires_every_persistent_stage() -> None:
 def test_official_queue_failure_preserves_root_cause_before_scan_failure_fallback() -> None:
     result = evaluate_official_terminal(official(
         QUEUE_STATUS="failed",
-        WRITER_QUEUE_OUTCOME="failure",
+        WRITER_QUEUE_OUTCOME="success",
         WRITER_QUEUE_ERROR_CODE="writer_queue_timeout",
         WRITER_QUEUE_BLOCKER_RUN_IDS="1234",
         SCAN_STATUS="not_run",
@@ -388,7 +388,7 @@ def test_scheduled_queue_timeout_keeps_root_cause_and_unrun_stages() -> None:
         DELIVERY_OBLIGATION="undetermined",
         WINDOW_DELIVERY_INTENT="notify_candidate",
         WRITER_QUEUE_STATUS="failed",
-        WRITER_QUEUE_OUTCOME="failure",
+        WRITER_QUEUE_OUTCOME="success",
         WRITER_QUEUE_ERROR_CODE="writer_queue_timeout",
         WRITER_QUEUE_BLOCKER_RUN_IDS="37349718666",
         WRITER_QUEUE_ERROR_CANDIDATE_RUN_ID="37518565189",
@@ -566,6 +566,46 @@ def test_terminal_cli_persists_attempt_bound_json_artifact(tmp_path, monkeypatch
     assert result["run_id"] == "12345"
     assert result["run_attempt"] == 2
     assert result["workflow_sha"] == "a" * 40
+
+
+def test_terminal_includes_only_run_bound_release_and_gate_evidence(tmp_path) -> None:
+    build_path = tmp_path / "build.json"
+    pre_path = tmp_path / "pre.json"
+    post_path = tmp_path / "post.json"
+    identity = {"run_id": "42", "attempt": 2, "workflow_sha": "b" * 40}
+    build_path.write_text(json.dumps({
+        **identity, "schema_version": "release-build-result-v1", "status": "ready",
+        "candidate_release_id": "release-x", "base_sha": "c" * 40,
+        "failure_stage": "complete", "first_failure_reason": "",
+        "auxiliary_items": {"quarantined_count": 1},
+    }), encoding="utf-8")
+    pre_path.write_text(json.dumps({
+        **identity, "schema_version": "release-gate-result-v1", "phase": "pre_delivery",
+        "status": "allowed", "allowed": True, "expected_release_id": "release-x",
+        "actual_release_id": "release-x", "expected_snapshot_id": "market-x",
+        "actual_snapshot_id": "market-x", "attempts": [{"attempt": 1}],
+    }), encoding="utf-8")
+    post_path.write_text(json.dumps({
+        **identity, "schema_version": "release-gate-result-v1", "phase": "post_delivery",
+        "status": "blocked", "allowed": False, "expected_release_id": "release-y",
+        "actual_release_id": "release-x", "attempts": [{"attempt": 1}, {"attempt": 2}],
+    }), encoding="utf-8")
+    values = scheduled(
+        GITHUB_RUN_ID="42", GITHUB_RUN_ATTEMPT="2", GITHUB_SHA="b" * 40,
+        RELEASE_BUILD_RESULT_PATH=str(build_path), RELEASE_MANIFEST_OUTCOME="success",
+        PRE_DELIVERY_GATE_RESULT_PATH=str(pre_path), RELEASE_GATE_OUTCOME="success",
+        POST_DELIVERY_GATE_RESULT_PATH=str(post_path), RECONCILED_GATE_OUTCOME="failure",
+    )
+
+    result = evaluate_scheduled_terminal(values)
+
+    assert result["release_evidence"]["build"]["evidence_status"] == "verified"
+    assert result["release_evidence"]["build"]["quarantined_count"] == 1
+    assert result["release_evidence"]["pre_delivery_gate"]["allowed"] is True
+    assert result["release_evidence"]["post_delivery_gate"]["allowed"] is False
+    values["GITHUB_RUN_ATTEMPT"] = "1"
+    mismatch = evaluate_scheduled_terminal(values)
+    assert mismatch["release_evidence"]["post_delivery_gate"]["evidence_status"] == "identity_mismatch"
 
 
 def test_expired_summary_includes_the_original_anchor_and_deadline(tmp_path) -> None:

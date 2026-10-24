@@ -206,3 +206,46 @@ def test_incomplete_scan_never_closes_existing_incident(monkeypatch, tmp_path):
     assert result["diagnostic_complete"] is False
     assert result["recovered_issue_numbers"] == []
     assert calls == []
+
+
+def test_central_event_incident_keeps_cadence_due_until_alert_terminal(tmp_path, monkeypatch):
+    monkeypatch.delenv("GITHUB_RUN_ID", raising=False)
+    monkeypatch.delenv("GITHUB_RUN_ATTEMPT", raising=False)
+    now = datetime(2026, 10, 24, 4, 0, tzinfo=UTC)
+    trace = _trace("summary_pending", detected=now - timedelta(minutes=11))
+    path = tmp_path / "trace.json"
+    path.write_text(json.dumps(trace), encoding="utf-8")
+    calls = []
+    monkeypatch.setattr(incidents, "_open_incidents", lambda *_args, **_kwargs: [])
+
+    def request(_api, _repo, _token, method, endpoint, payload=None, **_kwargs):
+        calls.append((method, endpoint, payload))
+        if method == "POST" and endpoint == "issues":
+            return {"number": 91}
+        raise AssertionError((method, endpoint, payload))
+
+    monkeypatch.setattr(incidents, "_request_json", request)
+    result = incidents.reconcile_incidents(
+        api_url="https://api.github.com", repository="owner/repo", token="token",
+        trace_path=path, now=now, defer_notification_cadence=True,
+    )
+
+    assert result["opened_issue_numbers"] == [91]
+    assert result["notification_cadence_confirmations"][0]["issue_number"] == 91
+    assert result["notification_cadence_confirmations"][0]["next_reminder_at"] == "2026-10-24T04:30:00+00:00"
+    assert "Next reminder at: 2026-10-24T04:00:00+00:00" in calls[0][2]["body"]
+    assert "Alert pending consumer: local" in calls[0][2]["body"]
+
+
+def test_placeholder_event_refs_never_count_as_recovery_evidence():
+    refs, complete = incidents._issue_event_refs(
+        "Affected event count: 1\nEvent refs: not available\nEvent refs complete: true"
+    )
+    assert refs == []
+    assert complete is False
+
+    refs, complete = incidents._issue_event_refs(
+        "Affected event count: 0\nEvent refs: unknown\nEvent refs complete: true"
+    )
+    assert refs == []
+    assert complete is False

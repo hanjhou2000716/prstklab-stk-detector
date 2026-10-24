@@ -85,6 +85,63 @@ def _reconciliation_evidence(values: Mapping[str, str]) -> dict[str, Any]:
     }
 
 
+def _release_result_evidence(
+    values: Mapping[str, str], *, path_key: str, outcome_key: str,
+    schema_version: str, phase: str = "",
+) -> dict[str, Any]:
+    path = _text(values, path_key)
+    outcome = _text(values, outcome_key, "not_run")
+    if outcome in {"", "skipped", "not_run"}:
+        return {"status": "not_run", "evidence_status": "not_run"}
+    if not path:
+        return {"status": "unknown", "evidence_status": "not_produced"}
+    try:
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        return {"status": "unknown", "evidence_status": f"unreadable_{type(exc).__name__}"}
+    if not isinstance(payload, dict):
+        return {"status": "unknown", "evidence_status": "invalid_object"}
+    expected_attempt = _count(values, "GITHUB_RUN_ATTEMPT") or 1
+    payload_attempt = _count({"ATTEMPT": str(payload.get("attempt") or "")}, "ATTEMPT")
+    identity_matches = (
+        payload.get("schema_version") == schema_version
+        and str(payload.get("run_id") or "") == _text(values, "GITHUB_RUN_ID")
+        and payload_attempt == expected_attempt
+        and str(payload.get("workflow_sha") or "").lower() == _text(values, "GITHUB_SHA").lower()
+        and (not phase or payload.get("phase") == phase)
+    )
+    if not identity_matches:
+        return {"status": "unknown", "evidence_status": "identity_mismatch"}
+    evidence: dict[str, Any] = {
+        "status": str(payload.get("status") or "unknown")[:40],
+        "evidence_status": "verified",
+        "first_failure_reason": str(payload.get("first_failure_reason") or "")[:240],
+    }
+    if schema_version == "release-build-result-v1":
+        auxiliary = payload.get("auxiliary_items")
+        auxiliary = auxiliary if isinstance(auxiliary, dict) else {}
+        evidence.update({
+            "candidate_release_id": str(payload.get("candidate_release_id") or "")[:100],
+            "base_sha": str(payload.get("base_sha") or "")[:40],
+            "failure_stage": str(payload.get("failure_stage") or "")[:64],
+            "quarantined_count": _count({"COUNT": str(auxiliary.get("quarantined_count", ""))}, "COUNT"),
+        })
+    else:
+        attempts = payload.get("attempts")
+        evidence.update({
+            "phase": str(payload.get("phase") or "")[:32],
+            "allowed": payload.get("allowed") is True,
+            "expected_release_id": str(payload.get("expected_release_id") or "")[:100],
+            "actual_release_id": str(payload.get("actual_release_id") or "")[:100],
+            "expected_snapshot_id": str(payload.get("expected_snapshot_id") or "")[:100],
+            "actual_snapshot_id": str(payload.get("actual_snapshot_id") or "")[:100],
+            "http_status": payload.get("http_status") if isinstance(payload.get("http_status"), int) else None,
+            "attempt_count": len(attempts) if isinstance(attempts, list) else 0,
+            "error_category": str(payload.get("error_category") or "unknown")[:64],
+        })
+    return evidence
+
+
 def _result(
     values: Mapping[str, str],
     workflow: str,
@@ -98,7 +155,6 @@ def _result(
     expired = _flag(values, "SCHEDULE_EXPIRY_STATUS")
     queue_failed = (
         _text(values, "WRITER_QUEUE_STATUS", _text(values, "QUEUE_STATUS")) == "failed"
-        and _text(values, "WRITER_QUEUE_OUTCOME", "failure") == "failure"
     ) or _text(values, "WRITER_QUEUE_ERROR_CODE") == "writer_queue_timeout"
     sender_not_run_after_queue_failure = queue_failed and not (
         _flag(values, "SEND_SENT")
@@ -129,6 +185,22 @@ def _result(
         "no_resend": no_resend,
         "durable_receipt_verified": _flag(values, "DURABLE_RECEIPT_VERIFIED"),
         "reconciliation": _reconciliation_evidence(values),
+        "release_evidence": {
+            "build": _release_result_evidence(
+                values, path_key="RELEASE_BUILD_RESULT_PATH", outcome_key="RELEASE_MANIFEST_OUTCOME",
+                schema_version="release-build-result-v1",
+            ),
+            "pre_delivery_gate": _release_result_evidence(
+                values, path_key="PRE_DELIVERY_GATE_RESULT_PATH",
+                outcome_key="RELEASE_GATE_OUTCOME", schema_version="release-gate-result-v1",
+                phase="pre_delivery",
+            ),
+            "post_delivery_gate": _release_result_evidence(
+                values, path_key="POST_DELIVERY_GATE_RESULT_PATH",
+                outcome_key="RECONCILED_GATE_OUTCOME", schema_version="release-gate-result-v1",
+                phase="post_delivery",
+            ),
+        },
         "sender_status": _text(values, "SEND_STATUS", "not_attempted") or "not_attempted",
         "writer_queue_error_code": _text(values, "WRITER_QUEUE_ERROR_CODE"),
         "writer_queue_diagnostic_schema_version": _text(values, "WRITER_QUEUE_DIAGNOSTIC_SCHEMA_VERSION"),
@@ -194,10 +266,7 @@ def evaluate_official_terminal(values: Mapping[str, str]) -> dict[str, Any]:
 
     queue_failed = (
         _text(values, "WRITER_QUEUE_ERROR_CODE") == "writer_queue_timeout"
-        or (
-            _text(values, "QUEUE_STATUS") == "failed"
-            and _text(values, "WRITER_QUEUE_OUTCOME") == "failure"
-        )
+        or _text(values, "QUEUE_STATUS") == "failed"
     )
     if requested and queue_failed:
         send_was_possible = (
@@ -427,10 +496,7 @@ def evaluate_scheduled_terminal(values: Mapping[str, str]) -> dict[str, Any]:
 
     queue_failed = (
         _text(values, "WRITER_QUEUE_ERROR_CODE") == "writer_queue_timeout"
-        or (
-            _text(values, "WRITER_QUEUE_STATUS") == "failed"
-            and _text(values, "WRITER_QUEUE_OUTCOME") == "failure"
-        )
+        or _text(values, "WRITER_QUEUE_STATUS") == "failed"
     )
     if queue_failed:
         send_was_possible = (
@@ -704,6 +770,10 @@ def append_summary(path: str, terminal: Mapping[str, Any]) -> None:
         f"- delivered / failed recipients: {terminal.get('delivered_count', 'unknown')} / {terminal.get('failed_count', 'unknown')}\n",
         f"- no_resend: {str(bool(terminal.get('no_resend'))).lower()}\n",
         f"- durable_receipt_verified: {str(bool(terminal.get('durable_receipt_verified'))).lower()}\n",
+        f"- release build / pre-delivery gate / post-delivery gate evidence: "
+        f"{terminal.get('release_evidence', {}).get('build', {}).get('status', 'unknown')} / "
+        f"{terminal.get('release_evidence', {}).get('pre_delivery_gate', {}).get('status', 'unknown')} / "
+        f"{terminal.get('release_evidence', {}).get('post_delivery_gate', {}).get('status', 'unknown')}\n",
     ]
     with Path(path).open("a", encoding="utf-8") as summary:
         summary.writelines(lines)
