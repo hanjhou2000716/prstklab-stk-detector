@@ -1272,20 +1272,45 @@ def test_verified_workflow_contract_rejects_unknown_source(monkeypatch):
            deadline_monotonic=writer_queue.time.monotonic() + 10)
 
 
-def test_skipped_gate_with_started_at_is_not_admitted(monkeypatch):
+def _legacy_skipped_gate_contract():
+    path = ".github/workflows/official-event-monitor.yml"
+    return writer_queue._known_workflow_contracts()["verified_legacy_commits"][
+        "cc40ba0401362f6214b540c70b5e1aa3100d5773"
+    ][path]
+
+
+def _legacy_skipped_gate_steps(contract, *, executed_protected_step=False):
+    steps = [{
+        "name": contract["gate_step"], "status": "completed", "conclusion": "skipped",
+        "started_at": "2026-10-22T00:14:46Z", "completed_at": "2026-10-22T00:14:46Z",
+    }]
+    for index, protected in enumerate(contract["protected_steps"]):
+        conclusion = "success" if executed_protected_step and index == 0 else "skipped"
+        steps.append({
+            "name": protected["name"], "status": "completed", "conclusion": conclusion,
+            # GitHub may return timestamps on skipped steps as well.
+            "started_at": "2026-10-22T00:14:47Z", "completed_at": "2026-10-22T00:14:48Z",
+        })
+    steps.append({
+        "name": "Save official event diagnostic", "status": "completed", "conclusion": "success",
+        "started_at": "2026-10-22T00:14:49Z", "completed_at": "2026-10-22T00:14:50Z",
+    })
+    return steps
+
+
+def test_skipped_gate_with_completed_diagnostics_is_not_admitted(monkeypatch):
     path = ".github/workflows/official-event-monitor.yml"
     gate = writer_queue.WRITER_QUEUE_GATES[path]
+    contract = _legacy_skipped_gate_contract()
+    monkeypatch.setattr(writer_queue, "_verified_workflow_contract", lambda *_args, **_kwargs: contract)
     run = {
         "id": 39698088993, "run_attempt": 1, "workflow_id": gate["workflow_id"],
-        "path": path, "head_sha": "c" * 40, "status": "in_progress",
+        "path": path, "head_sha": "cc40ba0401362f6214b540c70b5e1aa3100d5773", "status": "in_progress",
     }
     monkeypatch.setattr(writer_queue, "_fetch_attempt_jobs", lambda **_kwargs: [{
         "id": 1200001, "name": gate["job_name"], "status": "completed",
         "conclusion": "success", "runner_id": 21,
-        "steps": [{
-            "name": gate["step_name"], "status": "completed", "conclusion": "skipped",
-            "started_at": "2026-10-22T00:14:46Z", "completed_at": "2026-10-22T00:14:46Z",
-        }],
+        "steps": _legacy_skipped_gate_steps(contract),
     }])
 
     deferred = writer_queue._annotate_publication_gate(
@@ -1297,6 +1322,28 @@ def test_skipped_gate_with_started_at_is_not_admitted(monkeypatch):
     assert deferred["reason"] == "publication_gate_skipped"
     assert run["queue_gate_state"] == "deferred"
     assert run["queue_gate_step_conclusion"] == "skipped"
+
+
+def test_skipped_gate_with_started_protected_publication_still_blocks(monkeypatch):
+    path = ".github/workflows/official-event-monitor.yml"
+    gate = writer_queue.WRITER_QUEUE_GATES[path]
+    contract = _legacy_skipped_gate_contract()
+    monkeypatch.setattr(writer_queue, "_verified_workflow_contract", lambda *_args, **_kwargs: contract)
+    run = {
+        "id": 39698088993, "run_attempt": 1, "workflow_id": gate["workflow_id"],
+        "path": path, "head_sha": "cc40ba0401362f6214b540c70b5e1aa3100d5773", "status": "in_progress",
+    }
+    monkeypatch.setattr(writer_queue, "_fetch_attempt_jobs", lambda **_kwargs: [{
+        "id": 1200001, "name": gate["job_name"], "status": "completed",
+        "conclusion": "success", "runner_id": 21,
+        "steps": _legacy_skipped_gate_steps(contract, executed_protected_step=True),
+    }])
+
+    with pytest.raises(WriterQueueError, match="skipped_gate_followed_by_execution"):
+        writer_queue._annotate_publication_gate(
+            run, api_url="https://api.github.com", repository="owner/repo", token="token",
+            deadline_monotonic=writer_queue.time.monotonic() + 10,
+        )
 
 
 def test_blocker_diagnostics_include_contract_and_terminal_observations():
@@ -1378,20 +1425,22 @@ def test_missing_writer_job_after_completed_declared_predecessor_is_deferred(mon
 def test_writer_job_terminal_releases_even_when_workflow_run_is_active(monkeypatch):
     path = ".github/workflows/official-event-monitor.yml"
     gate = writer_queue.WRITER_QUEUE_GATES[path]
+    contract = _legacy_skipped_gate_contract()
+    monkeypatch.setattr(writer_queue, "_verified_workflow_contract", lambda *_args, **_kwargs: contract)
     run = {
         "id": 39698088993, "run_attempt": 1, "workflow_id": gate["workflow_id"],
-        "path": path, "head_sha": "c" * 40, "status": "in_progress",
+        "path": path, "head_sha": "cc40ba0401362f6214b540c70b5e1aa3100d5773", "status": "in_progress",
     }
     monkeypatch.setattr(
         writer_queue, "_fetch_attempt_jobs",
         lambda **_kwargs: [{
             "id": 1200001, "name": gate["job_name"], "status": "completed",
-            "conclusion": "success", "steps": [],
+            "conclusion": "success", "steps": _legacy_skipped_gate_steps(contract),
         }],
     )
     attempt_payload = json.dumps({
         "id": run["id"], "run_attempt": 1, "workflow_id": gate["workflow_id"],
-        "path": path, "status": "in_progress",
+        "path": path, "head_sha": run["head_sha"], "status": "in_progress",
     }).encode()
     monkeypatch.setattr(writer_queue, "urlopen", lambda *_args, **_kwargs: io.BytesIO(attempt_payload))
 
@@ -1399,6 +1448,32 @@ def test_writer_job_terminal_releases_even_when_workflow_run_is_active(monkeypat
         run, api_url="https://api.github.com", repository="owner/repo", token="token",
         deadline_monotonic=writer_queue.time.monotonic() + 10,
     ) is False
+
+
+def test_active_run_is_not_released_if_protected_publication_ran_after_skipped_gate(monkeypatch):
+    path = ".github/workflows/official-event-monitor.yml"
+    gate = writer_queue.WRITER_QUEUE_GATES[path]
+    contract = _legacy_skipped_gate_contract()
+    monkeypatch.setattr(writer_queue, "_verified_workflow_contract", lambda *_args, **_kwargs: contract)
+    run = {
+        "id": 39698088993, "run_attempt": 1, "workflow_id": gate["workflow_id"],
+        "path": path, "head_sha": "cc40ba0401362f6214b540c70b5e1aa3100d5773", "status": "in_progress",
+    }
+    monkeypatch.setattr(writer_queue, "_fetch_attempt_jobs", lambda **_kwargs: [{
+        "id": 1200001, "name": gate["job_name"], "status": "completed",
+        "conclusion": "success", "steps": _legacy_skipped_gate_steps(contract, executed_protected_step=True),
+    }])
+    attempt_payload = json.dumps({
+        "id": run["id"], "run_attempt": 1, "workflow_id": gate["workflow_id"],
+        "path": path, "head_sha": run["head_sha"], "status": "in_progress",
+    }).encode()
+    monkeypatch.setattr(writer_queue, "urlopen", lambda *_args, **_kwargs: io.BytesIO(attempt_payload))
+
+    with pytest.raises(WriterQueueError, match="skipped_gate_followed_by_execution"):
+        writer_queue._fetch_run_attempt(
+            run, api_url="https://api.github.com", repository="owner/repo", token="token",
+            deadline_monotonic=writer_queue.time.monotonic() + 10,
+        )
 
 
 def test_create_publication_admission_binds_exact_checked_out_workflow(monkeypatch, tmp_path):
