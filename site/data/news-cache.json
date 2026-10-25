@@ -2,57 +2,157 @@
   "schema": 2,
   "markets": {
     "taiwan": {
-      "fetched_at": "2026-10-25T02:33:32.077031+00:00",
+      "fetched_at": "2026-10-25T02:38:23.995601+00:00",
       "stories": [
         {
-          "title": "006208擬分割一拆八！12/18開受益人會議 入手一張只要3萬元",
-          "url": "https://news.cnyes.com/news/id/6637230",
+          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "url": "https://news.cnyes.com/news/id/6630669",
           "provider": "anue",
           "source": "鉅亨網｜持股關聯",
           "relevance": "holding",
-          "summary": "",
-          "published_at": "2026-10-25T00:00:06+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6637230",
+          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "published_at": "2026-10-14T22:02:35+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6630669",
           "market_classification": {
-            "market_scope": "taiwan",
+            "market_scope": "cross_market",
             "taiwan_matches": [
-              "006208"
+              "台積電"
             ],
-            "us_matches": [],
+            "us_matches": [
+              "美股",
+              "美國",
+              "費半",
+              "fed",
+              "cpi"
+            ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": null
+              "matched_term_count": 6,
+              "source_market_hint": "cross_market"
             }
           },
-          "market_scope": "taiwan",
+          "market_scope": "cross_market",
           "taiwan_matches": [
-            "006208"
+            "台積電"
           ],
-          "us_matches": [],
+          "us_matches": [
+            "美股",
+            "美國",
+            "費半",
+            "fed",
+            "cpi"
+          ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": null
-          }
+            "matched_term_count": 6,
+            "source_market_hint": "cross_market"
+          },
+          "story_id": "news-711307422ad19cd66883",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
+          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": null,
+          "published_local_date": "",
+          "market": "cross_market",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "SOX",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
+          "event_cluster_key": "event-40d27feb65b9f7fa705b",
+          "published_time_bucket": "2026-10-14T22:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
-          "title": "旅遊業衝刺線上旅展買氣 這些航點和機票都有優惠",
-          "url": "https://news.cnyes.com/news/id/6637146",
+          "title": "〈台積電法說〉Q3純益7630.64億元季增8% EPS29.43元續創單季新高",
+          "url": "https://news.cnyes.com/news/id/6631116",
           "provider": "anue",
-          "source": "鉅亨網｜市場焦點",
-          "relevance": "market",
-          "summary": "ITF台灣國際旅展11月6日登場前，雄獅、長榮航、華航先推線上旅展。\n雄獅指冬季旅遊訂單人數年增3成，會員回流逾6成；日本6天以上團增4成，歐洲訂單增6成。\n長榮航祭82折起航線、12月1日開航桃園-德里；華航主打76折起，10月25日起紐澳航線全面增班。",
-          "published_at": "2026-10-25T00:30:05+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6637146",
+          "source": "鉅亨網｜持股關聯",
+          "relevance": "holding",
+          "summary": "",
+          "published_at": "2026-10-15T06:01:21+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6631116",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
-              "台灣"
+              "台積電"
             ],
             "us_matches": [],
             "global_matches": [],
@@ -65,7 +165,7 @@
           },
           "market_scope": "taiwan",
           "taiwan_matches": [
-            "台灣"
+            "台積電"
           ],
           "us_matches": [],
           "global_matches": [],
@@ -523,44 +623,6 @@
           }
         },
         {
-          "title": "台股反彈逾7千點，成交量、外資買盤沒跟上...大盤挑戰前高48218點，得看這數字 - 今周刊",
-          "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxNWkxiN2I1Y1MwWWU1eEJCWXFFMklhZzB2Zy1OZmhWZC04MXBFTW5mNktGY1VRWk5YM1E2d3dyOWFyaHRYSW5oSUZ1blE0ekJ3bGxoSG8zMGw2OGxsZEJqNHBGUl9QcXpwWkhRdkZfOThuY1NTR0I4akdjdThKYV9VNQ?oc=5",
-          "summary": "台股反彈逾7千點，成交量、外資買盤沒跟上...大盤挑戰前高48218點，得看這數字 今周刊",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-09-02T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
           "title": "台股48K背後藏警訊？台積電一檔扛317點陳唯泰盯「上漲廣度」揭盤面異象- 上市櫃 - 旺得富理財網",
           "url": "https://news.google.com/rss/articles/CBMiakFVX3lxTE9qdzVTbU1wbklRWjZnUGtxdHdPUTBKSExVSjdkRXJoS3ptUE9BOGUtcTZVWC1MZWNvbC1kYXhtUUpJZDJ0Z1l1S1lRdy1HaVlieThSZjB2eEpZUDZ6aE50RmlQRzFyRTZyeUE?oc=5",
           "summary": "台股48K背後藏警訊？台積電一檔扛317點陳唯泰盯「上漲廣度」揭盤面異象- 上市櫃 旺得富理財網",
@@ -673,6 +735,46 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "台股收盤／下跌322點失守月線、46K 台積電跌30元 - TVBS新聞網",
+          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTFBCYVB3ZHE2UDVLNmNhU0RNN2JEb1N6Z3hwdVhDR0ZVZEJXQzAteTNhb2l1YWkyb2JRVDJwUEtYVVlIbTZFSGF2a2NlQnc4RDA?oc=5",
+          "summary": "台股收盤／下跌322點失守月線、46K 台積電跌30元 TVBS新聞網",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-09-14T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股",
+              "台積電"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股",
+            "台積電"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
             "source_market_hint": "taiwan"
           }
         },
@@ -2029,6 +2131,44 @@
           "ranking_score": 115
         },
         {
+          "title": "和碩(4938)外資、投信、法人籌碼變化與自營買賣超總表 - 股市爆料同學會 - CMoney",
+          "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTE9aRU5fRURiWUVIWjdrTlBHM1BBNjBMcmFzeU1fQzROaGxTcDhiWnBUcEw0a2xORUNYcjdqYzY3aTZrVGQ5MzlYZTZHeF9VT1N2aEhSUS1HWnRhTy1xQ2t6RldkLVk?oc=5",
+          "summary": "和碩(4938)外資、投信、法人籌碼變化與自營買賣超總表 - 股市爆料同學會 CMoney",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-21T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
           "title": "三大法人買賣超 – 外資買超(2330)台積電、(2454)聯發科，投信買超(2454)聯發科、(2303)聯電，法人合計買超1138.65億元 - 永豐金證券",
           "url": "https://news.google.com/rss/articles/CBMi4ARBVV95cUxNc0VoZHJxRHkxQXZReExLQWRtVUhMLTlJTjhtUkF4ckxySkRkRDRwc1JrY01QU3hURVpHWVl5QS1FU0d3UjZkemFZTmQtRW9MRnVaTnA4cEY2NDlVMWRIVnBCR1dOY3hqa0FBWlJxYUY0T1hYal92VmVTYlNpa1dlS2gycFBYelIzMjhyaWtEODFzUUM4LVZRS2NMcF85dWd5enU5UVJsREQ5RTBJYUtEVnRZaVJxWWtJUnY0RTB5eFprcnppOHNmczlSLS1EcWwxejkyUER0Z24tUWg3dUFpSFJDakVpSkpwUlh1SWZRLTJGTXFPRlhWVlpIb1Y4LUhyU1IyT3RJLWZscG5oeEx3eXZwamxYMXdDQno4NnYzdTVDcUgyVVNmeUNSZ2ZaWWpNYTBpRC1GNTNOMk5WOFVkVVRfNElQU2ZwdHp3eXBCNEY1b08wdW5nZmZxMnZvWFZwR1dQQi0yV3hoWUx2c3poUGY1THdkdW52dG5uNGlTQThXbEV0WjNsUWpWQXM2alpXUE1zUU1wQTFGYWlJb1V2NkJGbjlJV3VqdTE1bEhaYk1ZMGRaOU1mRmVTbmNoUlZPVXZueGlsc2tycXlUblQwZnV5NWJhOS0wdEp0NU1nZF9zT0RUUXczalU5WUpoUTZEY2NITEpDTWtrQ05qMHhIT1MzV3hheTcxT29LTFg4ZGZrZkJTTWpGUmhkci13MXR1WmtWeEdRUnlUZ3gzdHhMRXNhWmxkODR3b1FSWkZHc1RCVnQ4MVJCdjhVMFh5b1VJcEl4NUZMRVcxQnFKOHc3aQ?oc=5",
           "summary": "三大法人買賣超 – 外資買超(2330)台積電、(2454)聯發科，投信買超(2454)聯發科、(2303)聯電，法人合計買超1138.65億元 永豐金證券",
@@ -2071,168 +2211,16 @@
           }
         },
         {
-          "title": "台股創高外資轉賣 大砍友達8.7萬張、投信提款聯電6萬張 - 鉅亨網",
-          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTFB5SWM2R1dVdnJ5UzMxUE96M2FoaE9VdThJOXFiUVl0MkUzYVdHckZVWmxzNnEzdUZUeFU5WW4yX1c1UEdyWWZIT3VCR0JkTzQ?oc=5",
-          "summary": "台股創高外資轉賣 大砍友達8.7萬張、投信提款聯電6萬張 鉅亨網",
+          "title": "台灣ETF市場為何外資打不進？本土投信跑贏貝萊德、摩根大通 - 鉅亨網",
+          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE1IcXYzSkJtQlJ3WlJfQVdfTkVqTWM0QUpfQnJITFFoMW1KUjJXNEdpMnJ2WEdMNTZ3ODBxT3FKSVlYS1FWWWl2Z3pyZXp3U0U?oc=5",
+          "summary": "台灣ETF市場為何外資打不進？本土投信跑贏貝萊德、摩根大通 鉅亨網",
           "source": "Google News｜台股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-10-06T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "三大法人買賣超》外資狂賣！調節「3025億元」創史上新高，投信逆勢買超283億、 加碼個股曝光 - 風傳媒",
-          "url": "https://news.google.com/rss/articles/CBMiTkFVX3lxTE94MEY4RmRFRnpwZUMwYlRMZXlJY3lTTV9mdkZDRjNEQ29fZjJ2SDQ5TXJkb05GQVVWREprOFlxa1lQVzh0ZnowRUVPRHBBQQ?oc=5",
-          "summary": "三大法人買賣超》外資狂賣！調節「3025億元」創史上新高，投信逆勢買超283億、 加碼個股曝光 風傳媒",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-15T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "投信、外資都在買 台股卻收黑？ 網嘆：沒人要玩了 - Yahoo股市",
-          "url": "https://news.google.com/rss/articles/CBMixAJBVV95cUxQYkJHbGF3ZkFVTENaVlc4RHF0MmcwT0tKT1N2SWRORmJKeGNaRlJGaG44WG5fWkVBWllqZXp5eV9FSmJLZDdHLV9sbjFzLXN5cm5lYXFFbWNRb0VsaV9zZTZ2Rkk0OGNGODVYTFdLRlR4d3poOWpDUVRQVkFIajQ1RTZUUndicW9NLW9zdGJJVHV4MEpGRlQxSFpYX1hUa1Z0QUdCTDZIeHNtS1RTZGNQUG5VQ2UtTlVUTkxCZ3FQVHJndkRpTENNbUFQeWYtUzBSQ3JfQ2x5cnFhaEFkOVNhTDY0THVMblZMY2ZBcW5LcFFiNlRPVU83Rmt1aE84amZqeTZsMEszSlZyTUNNQkdwbGlmb0RUSDNGaTFNVHh2VGc5MGNBdnRLanoxWGl0dlFmXzZ5bGE3d1JaZUtvM1otbGtqMkg?oc=5",
-          "summary": "投信、外資都在買 台股卻收黑？ 網嘆：沒人要玩了 Yahoo股市",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-08-06T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "外資大賣後先回補誰？投信同步加碼富喬、凱基金、台泥等15檔出列- 日報 - 工商時報",
-          "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTFBxQ0RNSElsNHNLOXRYVERub2xmNDhpcy1QcGhCM1hzcXVxb280b0I3TjYxNWo2bGdmampWRDZ1TWpfc2ZYMTQzMDJMMENwbnFDa2hJNDFWX1BkSXZiN2x3?oc=5",
-          "summary": "外資大賣後先回補誰？投信同步加碼富喬、凱基金、台泥等15檔出列- 日報 工商時報",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-16T19:00:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "南亞科大逃殺 外資+投信+自營商近5日爆賣超6萬張 記憶體賺很多卻危機重重 - 台灣好新聞",
-          "url": "https://news.google.com/rss/articles/CBMi0gNBVV95cUxPb1VUUS1aMnBQMVA0SjZsVl9fQzFOemdOZ2hvZTNnaFBmSlEyS1FFVGdMQ2s2djRsb2JuVTA3MWR5dWs5ZjJNX0hqNDdYNHpaS1hXdWpqQWl6VUpTMFN6aU4yRkpjYm5JNTc1Q0gwOG5xa21DWlBVR1ZpakFLYXZXQ3ZBS0RBblJtUDlucnlaMjVFR2QxQWtRQnhHb3pfTWk0NEVDUEtZWUdxa0NHbU1na2lUMXItM2szcURiaksyaDY1WlpGWUFEZzdHeU5rQ1pySlhGbm5qMmpWYTNUeE5UV25GMkF2N2RJcjRDTTc3REpGVWNVYUlHcVVXY2tyc25JWXh3VVU1eDcxcTVYd3BPaGhXVzdNQUVfdTBYUWhSemZ6X0xiVnU2VVU0MlRXSXRmV0dDdTh5QVZCYVktX2UyLXp5YWVBaFdKLTg4SVdzVnZnaFhqR0xJaEFGWXU3eTNmOXNFQVVCenNrNWcyWGlFbWk3dXhyYU9TMm5ZTWdhdE5JQ3NJQlNxQ1JxazRHSzg4S1VWU3hocXNZT3NiczBudjd0dzQzcXFGcnZXVnhTTGJVZjQ3MUdHQmhaUzdhb1BiVi1hajJqOE9IOUd2RlRpenBn?oc=5",
-          "summary": "南亞科大逃殺 外資+投信+自營商近5日爆賣超6萬張 記憶體賺很多卻危機重重 台灣好新聞",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-14T10:04:18+00:00",
+          "published_at": "2026-06-05T07:00:00+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -2263,16 +2251,16 @@
           }
         },
         {
-          "title": "千億鎂富爸爸撐腰！柏瑞投信改名「大都會」 旗下46檔基金改名 - 三立新聞",
-          "url": "https://news.google.com/rss/articles/CBMiS0FVX3lxTE9EZE96NmpZZDJHZzlfREFkM3prTXc1RDFhdC0waHBmbThydk1Yc3I2c0YtWEJFaHh6bUVqcXNjUGpuVlJsdlBkSkV0SQ?oc=5",
-          "summary": "千億鎂富爸爸撐腰！柏瑞投信改名「大都會」 旗下46檔基金改名 三立新聞",
+          "title": "外資狂賣台股還能漲？群益投信揭「它」接棒：錢沒有離開市場 - Yahoo股市",
+          "url": "https://news.google.com/rss/articles/CBMiqwNBVV95cUxPSmJlVG04SjZZdnBPTWFDOERxQlVNNU9EaGRuNThZMWxTMjVwM1ZKMmlDblZBenQzM2JNcFl5TTVrTDB1SDhGaVcwLXhRNllMaFhESjNrczhjNTUweVdpR3RRaGV2LWZtT1k4WmxlRGgyNGRvTHNtOU56dXE3M1VxWW9nanBNY1ByLXdnRFZTRW9UV0ZwZUtTUXR2ZUhiNXA4Y1ZBUTBmWXNGZmQ0NjVkVjBmbU5nVEhHT0I4NzF6MGRYc0YzX2lKdzVJSVlscm1nLWtKVmpDR18xVXFDc1hoVFVNRWZuTDlvMjNwQWFWdnlJS3lzTEwzRFNfel9qa0FmM2NSbUpmNG5EbG4weUNKamltVGRpNlhZUktBRU5FcUlSOEN2UHhhc2gweDA4TEVJYVE5NlpEUmlVY19DMmNUUFM5TlZoVDBWeTRQTENGYzNsb3RTSDZOM2VMTFA1TEtIUU1nWHhNM0ZuQ3FFYXBBWXU3aUhtY3YteFlXM0tkQXB3ckItbWw4WkxzT29CMkVzSFhBc2cxdENHdnh5b1BjdTh0ZDF5a1ZSS1NZ?oc=5",
+          "summary": "外資狂賣台股還能漲？群益投信揭「它」接棒：錢沒有離開市場 Yahoo股市",
           "source": "Google News｜台股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-10-05T07:00:00+00:00",
+          "published_at": "2026-07-06T07:00:00+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -2345,56 +2333,168 @@
           }
         },
         {
-          "title": "台灣ETF市場為何外資打不進？本土投信跑贏貝萊德、摩根大通 - 鉅亨網",
-          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE1IcXYzSkJtQlJ3WlJfQVdfTkVqTWM0QUpfQnJITFFoMW1KUjJXNEdpMnJ2WEdMNTZ3ODBxT3FKSVlYS1FWWWl2Z3pyZXp3U0U?oc=5",
-          "summary": "台灣ETF市場為何外資打不進？本土投信跑贏貝萊德、摩根大通 鉅亨網",
+          "title": "「外資大逃殺」壓低台股 投信：對股市影響多為短期 - 自由財經",
+          "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTFBhYmtOTUx0eG9VV2RYT25VWmExdENDZ00wVlY5dHR1S3JBUE9XS3lNTHo1T2p0Vk5SVXNpRGdXS2taVngxMW0tdld2S2pJQ1hzUC1mRmpJaW5adnRZd2Vn?oc=5",
+          "summary": "「外資大逃殺」壓低台股 投信：對股市影響多為短期 自由財經",
           "source": "Google News｜台股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-06-05T07:00:00+00:00",
+          "published_at": "2026-03-14T07:00:00+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
-              "台股",
-              "台灣"
+              "台股"
             ],
             "us_matches": [],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 2,
+              "matched_term_count": 1,
               "source_market_hint": "taiwan"
             }
           },
           "market_scope": "taiwan",
           "taiwan_matches": [
-            "台股",
-            "台灣"
+            "台股"
           ],
           "us_matches": [],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 2,
+            "matched_term_count": 1,
             "source_market_hint": "taiwan"
           }
         },
         {
-          "title": "【Follow法人】外資掃貨友達4.9萬張居冠！狙殺力積電6.8萬張 終結連4買 - Yahoo股市",
-          "url": "https://news.google.com/rss/articles/CBMiowNBVV95cUxQemo0Q2NReEZqNEJuc3BhWGYyVHYtelhpLV9SNUliZy1PSzZtdXhJWU1ZTUZ2TjZrNmtjRXlITnJqUExMSFZZdDJhaDNQTWVMUnhYZUZVR1NLWHBNTFVYTEhCSFA1RU9lYjMyV0pJaHFmWjEySGdfNmx2R2NMeDZfME1QNFc1elJVMTZjTkhHVnlmSGxuQThMVEJOWW5LV0pDMlJGTlAxNFZZNFJYZndwSXcwR0lIaS1LWG5QOTFxbVdLVHc2TFZXSzk1MXJtcTl4Z0xLYUFwNWYyR3FLbnlSS3kxVkVleWNOZkptTHRZWXdGNVZhaUVNbTFjT0FsS3prWGJGMnJDejYzbUE0OXF6OVZMWWMtamZIUlhHM3VocGFMc1ZhbWpmcGQta01wbTZFQnMyMzNwOTZranR0YV9UbGE0UUZrdjJIRXRtY0wtVHJBN2pqWEJUZ0hrc3lTcHAxdGlyaDNkNzRRZUp6SzA1OVBYdU9nQ3RVRkhtVjFmQkVyN3gwSW5Lc2lWT1VkeU1zcS1kNVBhcGZfeXFnZE5pOHVzNA?oc=5",
-          "summary": "【Follow法人】外資掃貨友達4.9萬張居冠！狙殺力積電6.8萬張 終結連4買 Yahoo股市",
+          "title": "三大法人買賣超 – 外資買超(2368)金像電、(2412)中華電，投信買超(1815)富喬、(8996)高力，法人合計賣超1123.73億元 - 永豐金證券",
+          "url": "https://news.google.com/rss/articles/CBMi1ARBVV95cUxQRGhfNVQwMDFUSWJ2aE1rU2pNU0tLeXRKblBzY0dZVW9VVnFzWFVOUzNDMkhLeEQ4Ni1GTHo5eFR2bUlUZUExeVBVVGY1V0xyVDF6M2xQUkhjRkJFSnNxVHlSVk52U044Yk1fX1hXS2xVall3UzhNWVRtWFBjT0tES1I0QU1oSFJGY2NNbHFRNkdtSXRDZnBMbU14aWxYSWUwME5MNUtaRFpqMnZFWWdZV3AwSFFjZS1ONTQyWV9vMHZmVk5sTGFoQzhXbW1SQ2hlNU9mT2tROG42MzhTSUs0Zl9NR2pWeVlxaXhOUWVwbzNKV0o2aC02dDJ3a3FUWjZGNzAzN2VkbVFhNW1vWm5BcEtXclp1SHZLX2pVdWZWUktqVFhlT0VFWHljN3NCS0IwOXRnczNuaGxkYmRpZ2xDYXl0OTRzVmVRTTRRNW5xdG5uUWpJVVkxU0JOTktvRG9rWTBfWTdGWjRraERwMkNBbWw3SVRTSk9fSUd3eW9nZjNESWE3RlN1cUFHZ0llbTJ2Q1lNTWUtTTdCdHIxT2x6Q0ZyeGJLQnBpUWp2UUJDajFJN0RabUJNek5WWkdIekF3TVNHNHc0cENzWGFWRmRGT2RUSE56YktuUmRxZnFDNnJPT0xDZ3NpTzlZRVhITUs2TW1TZ1FtNDBMVjE2V2ZUV3R5bDhtZWNtTFNxOFU2SWdtQ0R6Q3NMU2g0R2lnUENnUV9GeFVxMXdOTGItTjJuRVY4bDdJbnJsOHJSbkV4MkN4VlppUVMwaFNFak13QV92WWpzNw?oc=5",
+          "summary": "三大法人買賣超 – 外資買超(2368)金像電、(2412)中華電，投信買超(1815)富喬、(8996)高力，法人合計賣超1123.73億元 永豐金證券",
           "source": "Google News｜台股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-08-17T07:00:00+00:00",
+          "published_at": "2026-09-14T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "三大法人是什麼？　「 外資、投信、自營商」一次懂　 - ETtoday財經雲",
+          "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE9ya292SWlVZDl3SnZuSFdENnBrZnJnSURxQ0FEanBKcVJqTlo4b19zM295dlFXWDMzVzNhOE5IUmpkZDlkeU8wTXQ4VTdIWmpKX0HSAVBBVV95cUxQeFVjZm9SQWY2SnprcHlCTldvaFYtRFg1VGhpT1c5b2xXSWhHc1lfOXdSZzBUQ2hBam9qT1BwbTlpS1NhTWVnVGM1a3NFWGJSRA?oc=5",
+          "summary": "三大法人是什麼？ 「 外資、投信、自營商」一次懂 ETtoday財經雲",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2024-03-08T08:00:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "三大法人買賣超 – 外資買超(3037)欣興、(3653)健策，投信買超(2059)川湖、(3081)聯亞，法人合計賣超239.3億元 - 永豐金證券",
+          "url": "https://news.google.com/rss/articles/CBMiugRBVV95cUxQSnNYMjB5TkZwbXBlUjk1S3AyRmRXc1RDOXBpQ2FRZGNHS2hNc3Jhd1BoWDZJOEtiajlEN2FWdHFCWGxpQTlROEZIU3o4anFRWWN2Z19tYzN0X2FzTjFIb3gyZ242MHpFOFRYOU1PWV94d2VZNVRwbTdZQ2wxU085WXB2SFZqZVYwVnU2OW50Vk9MZG40TU43a2pDd1lRYkxOQXRmdmlRd1hVajRMSVk3TGdTcmJpblExRTFYNTRFRUJnbXNQTXNCM2lmelVUTjZZemxQS0ZVVHFTV296eHNteTBlWEpNdDg5Q2Rqd0tva2JwYkdFNHp0bjU5c2dXT0l2bGFUc1Z5akVXYnA5NGRjY3F3eEd0MHJEcXFWMnJBUF9oNVZBbUxSNWtqb0oxbjc0Y3RGWnFKdHlwSG43QU5ONmctaGltOUJhbC1odlFWNkozRWMtVnF3WE1zaVVkMERGaVJpUldjQUxFQnhNcEJ0Z2JXcnYwTFIwUXFYRTJidDVWS3RadGJuWUxVX0RwZXZ6YUZxSkQ1MU1yVnB4alk5QWFaWldrSE5OUVpRSHg3SjVQazJvVmwzbFp6eXJCY1NOaVlnVTdyYksyRkNGS1d0alZwWVppQ3VlM2luRFhhTTl1WktxVEhxUjFRM25haXdvUVl1V3JtQURkdF9WZUx3Y2tQMExKemxwazE4QkZhLWVydEVhR2FtVHRESTBtb19Ha3ctbF93TEpYSUNueHMxR1lXclVQUUZodHc?oc=5",
+          "summary": "三大法人買賣超 – 外資買超(3037)欣興、(3653)健策，投信買超(2059)川湖、(3081)聯亞，法人合計賣超239.3億元 永豐金證券",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-08-18T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "貝萊德、富達、瀚亞3家外資投信 規劃在臺新增區域中心 - 自由財經",
+          "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE55NUZ1ZDR6Mm5uOW9uaUxoTDN6STBOOXd2TTFWbXU4a2M3aEcwT1pOQVE2TTB4SnctT0RXSUcwZzV2dngxNHhnLXhQT0lwUURoRkQ2MjhGWVptRC1BMDlJ0gFkQVVfeXFMTXZHWEl0aFBlOG5Oa3FSTkl4Sk8tS0lXY0YzWVRQSXJxLU1ZM1QweUZmaGRjdGRzN010MDFDVDhIWEIydWdtZlhsdXdqaHJIQ3g1ZVM2T2YzQ0o2aGxoTkNXU3hDMg?oc=5",
+          "summary": "貝萊德、富達、瀚亞3家外資投信 規劃在臺新增區域中心 自由財經",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2025-05-29T07:00:00+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -7133,10 +7233,10 @@
           "ranking_score": 130
         }
       ],
-      "inventory_saved_at": "2026-10-25T02:33:32.077031+00:00"
+      "inventory_saved_at": "2026-10-25T02:38:23.995601+00:00"
     },
     "us": {
-      "fetched_at": "2026-10-25T02:33:32.077031+00:00",
+      "fetched_at": "2026-10-25T02:38:23.995601+00:00",
       "stories": [
         {
           "title": "8-K - Greenwave Technology Solutions, Inc. (0001589149) (Filer)",
@@ -7516,178 +7616,6 @@
             "title_summary_scanned": true,
             "matched_term_count": 1,
             "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-          "url": "https://news.cnyes.com/news/id/6630669",
-          "provider": "anue",
-          "source": "鉅亨網｜市場焦點",
-          "relevance": "market",
-          "summary": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
-          "published_at": "2026-10-14T22:02:35+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6630669",
-          "market_classification": {
-            "market_scope": "cross_market",
-            "taiwan_matches": [
-              "台積電"
-            ],
-            "us_matches": [
-              "美股",
-              "美國",
-              "費半",
-              "fed",
-              "cpi"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 6,
-              "source_market_hint": "cross_market"
-            }
-          },
-          "market_scope": "cross_market",
-          "taiwan_matches": [
-            "台積電"
-          ],
-          "us_matches": [
-            "美股",
-            "美國",
-            "費半",
-            "fed",
-            "cpi"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 6,
-            "source_market_hint": "cross_market"
-          },
-          "story_id": "news-711307422ad19cd66883",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "raw_title": "〈美股盤後〉美CPI升溫、AI融資疑慮夾擊 費半重摔超4% 台積電ADR跌逾3%",
-          "normalized_fact": "美國9月CPI年增3.7%、核心CPI年增2.6%，高於預期，市場重估Fed升息路徑，美元升至2025年5月以來高點。 通膨與高油價加劇賣壓，美股三大指數收黑；那指跌1.88%，費半重挫4.30%。 AI融資疑慮擴大，CoreWeave債券殖利率逼近15%、股價急跌逾15%。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "description": "",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": null,
-          "published_local_date": "",
-          "market": "cross_market",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "SOX",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "利率"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "利率"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "利率",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美國9月cpi年增37核心cpi年增26高於預期市場重估fed升息路徑美元升至2025年5月以來高點通膨與高油價加劇賣壓美股三大指數收黑那指跌188費半重挫430ai融資疑慮擴大coreweave債券殖利率逼近15股價急跌逾15",
-          "event_cluster_key": "event-40d27feb65b9f7fa705b",
-          "published_time_bucket": "2026-10-14T22:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "利率"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "利率",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
-          "title": "台達電鄭平：三因素限制電力設施建置 供電缺口成AI發展關鍵挑戰",
-          "url": "https://news.cnyes.com/news/id/6630917",
-          "provider": "anue",
-          "source": "鉅亨網｜市場焦點",
-          "relevance": "market",
-          "summary": "台達電董事長鄭平表示，AI資料中心擴張推升全球用電，電力供應難追上AI成長，將成重要挑戰。\n美國四大CSP資本支出估達2022年4.7倍，2028年資料中心新增用電44GW，電網僅增25GW。\n台達電布局微電網、SOFC與SST；SOFC效率85%且明年量產，SST可轉800V直流電。",
-          "published_at": "2026-10-15T04:25:09+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6630917",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美國"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": null
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美國"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": null
           }
         },
         {
@@ -8200,44 +8128,6 @@
           "ranking_score": 115
         },
         {
-          "title": "Weekly market commentary - BlackRock",
-          "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxQLWJDTjBBalYwVHVpc0VxV1BwRE1xeUt1RWlLQ1VJdnJQRXNnb3p6MnFNbjRBV0s0TnlldW4wSVIycFRQeVNISWJ3VV9wMWdjX1ZndE1Tc24tNzc0anNYWjl0SVBsRDhSa0dVTWlyVVYxX0w5b2JhTFB0Tm9Vb2FwYVZubTU1SVJlcy0zMEpXOEM4ZlhiSU1QazdVQVlldw?oc=5",
-          "summary": "Weekly market commentary BlackRock",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-10-19T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
           "title": "Micron and Nvidia Are the 2 Biggest Drivers of S&P 500 Earnings Growth. Are Their Stocks Buys? - Yahoo Finance",
           "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxQb0pmV2oyeWtCbzFETTlYbkNQdVBzWXh0N3A2N2FuYzNjQ2xSVzB6ZlJBbzRpUnM0VjhhaGdfeTZ1UFgxLUNWblIxSjJGVDBuNmx0UTVtMWZFbnFjaklOY1lPYVgzZWI0Y295RXRwY2hUazB0cGdKLUhCQ29pMUZPQjNadWFEajNad3Jucl9yN3loZDRXb3NsNjJNcEk",
           "summary": "Micron and Nvidia Are the 2 Biggest Drivers of S&P 500 Earnings Growth. Are Their Stocks Buys? Yahoo Finance",
@@ -8364,6 +8254,44 @@
           "ranking_score": 115
         },
         {
+          "title": "Weekly market commentary - BlackRock",
+          "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxQLWJDTjBBalYwVHVpc0VxV1BwRE1xeUt1RWlLQ1VJdnJQRXNnb3p6MnFNbjRBV0s0TnlldW4wSVIycFRQeVNISWJ3VV9wMWdjX1ZndE1Tc24tNzc0anNYWjl0SVBsRDhSa0dVTWlyVVYxX0w5b2JhTFB0Tm9Vb2FwYVZubTU1SVJlcy0zMEpXOEM4ZlhiSU1QazdVQVlldw?oc=5",
+          "summary": "Weekly market commentary BlackRock",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-19T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "us"
+          }
+        },
+        {
           "title": "How are the S&P 500, Nasdaq and Dow performing so far? Stock market returns 2026 compared with 2025 - Chase Bank",
           "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxNSzRxWmhhbnRlMkRrZXVOYzBtQXFWSkpjUUIxbW4yN29ycW1YczZEbTQ5RXRZXzVrSTJIb2N2NVo4YTJTbk5XTlBlTWo4Z3hoWS1KZEhFUG11UDF3ZzMyTVJFT2Q0SV91NWJZeG5lY1ZudjEyY3U0RVh1TXBIQWR3UW5IZUZMWE5CemhMUzJHLW4tbEhpczVJM2g0RmtFN2VscTRfT0xscDExWFRj?oc=5",
           "summary": "How are the S&P 500, Nasdaq and Dow performing so far? Stock market returns 2026 compared with 2025 Chase Bank",
@@ -8398,6 +8326,50 @@
             "s&p 500"
           ],
           "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 3,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "S&P 500 market concentration reaches 'dangerous' levels, Gary Kaltbaum warns - Fox Business",
+          "url": "https://news.google.com/rss/articles/CBMiW0FVX3lxTFB4czRZdHlFV3pnR1VuTXAxUkx4bWhyMTdEZGllYjNON1V0MlE4a0ZYVElaNWg4ZTJ4aW5xSTlueGs5LWZ2bFdpRjVjMkp3Tm10Z3JicHJPUGkxcXM?oc=5",
+          "summary": "S&P 500 market concentration reaches 'dangerous' levels, Gary Kaltbaum warns Fox Business",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-22T15:10:40+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股",
+              "s&p 500"
+            ],
+            "global_matches": [
+              "war"
+            ],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 3,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股",
+            "s&p 500"
+          ],
+          "global_matches": [
+            "war"
+          ],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
@@ -8530,50 +8502,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        },
-        {
-          "title": "S&P 500 market concentration reaches 'dangerous' levels, Gary Kaltbaum warns - Fox Business",
-          "url": "https://news.google.com/rss/articles/CBMiW0FVX3lxTFB4czRZdHlFV3pnR1VuTXAxUkx4bWhyMTdEZGllYjNON1V0MlE4a0ZYVElaNWg4ZTJ4aW5xSTlueGs5LWZ2bFdpRjVjMkp3Tm10Z3JicHJPUGkxcXM?oc=5",
-          "summary": "S&P 500 market concentration reaches 'dangerous' levels, Gary Kaltbaum warns Fox Business",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-10-22T15:10:40+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股",
-              "s&p 500"
-            ],
-            "global_matches": [
-              "war"
-            ],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 3,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股",
-            "s&p 500"
-          ],
-          "global_matches": [
-            "war"
-          ],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 3,
-            "source_market_hint": "us"
-          }
         },
         {
           "title": "These surprising stocks could be some of the biggest drivers of S&P 500 earnings growth - MarketWatch",
@@ -9084,46 +9012,6 @@
           "ranking_score": 115
         },
         {
-          "title": "The Fed Faces Its Most Confusing Economy Yet - Bloomberg.com",
-          "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxOTWtTcnB5VzZ4eWIwQV9sRU5BWmxDNXU3a1MyYm9MNEdvSXM4cjA0THVHMWVfT29lTnp2RDdXSG5JOERnci1iNjZCRWp2MkhYV1N4LXB3b0pILVVGc1c1d3RJWUNDSzFnS0dDRURUNTNCX3VmTWQ0djBYXy0wV0IwQ0xIVFByRGtJSUtSSDdPWkNBckhtTm1GbXktcmx6X3ZZY1dYbzlCTHZFcW9iMVM1dGlLWmpva3lzWUhTUHJqNC1fallTRzJZ?oc=5",
-          "summary": "The Fed Faces Its Most Confusing Economy Yet Bloomberg.com",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-10-23T07:00:11+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股",
-              "fed"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股",
-            "fed"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "us"
-          }
-        },
-        {
           "title": "What the Fed’s Balance Sheet Could Mean for the Debt - Bipartisan Policy Center",
           "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxNOUU2cHpmUHR0MENYcUVSbUF6THFBOE52b3l4T1RUakI2RkkwQ1I4bEdiZndtVnRHd1FfVEh3SnczeG1UcmJiSG1hMjIzLV9QMUpzZWNpOHRtaTYyTnNVMFMzTl8zVEhwRXd2c2dlS0ZiX3Y5VElESnpJNE5neDVHbGtuVXBfbXlkd3VaSXc3dldJaVZHY1E",
           "summary": "What the Fed’s Balance Sheet Could Mean for the Debt Bipartisan Policy Center",
@@ -9355,6 +9243,46 @@
           "ranking_score": 115
         },
         {
+          "title": "The Fed Faces Its Most Confusing Economy Yet - Bloomberg.com",
+          "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxOTWtTcnB5VzZ4eWIwQV9sRU5BWmxDNXU3a1MyYm9MNEdvSXM4cjA0THVHMWVfT29lTnp2RDdXSG5JOERnci1iNjZCRWp2MkhYV1N4LXB3b0pILVVGc1c1d3RJWUNDSzFnS0dDRURUNTNCX3VmTWQ0djBYXy0wV0IwQ0xIVFByRGtJSUtSSDdPWkNBckhtTm1GbXktcmx6X3ZZY1dYbzlCTHZFcW9iMVM1dGlLWmpva3lzWUhTUHJqNC1fallTRzJZ?oc=5",
+          "summary": "The Fed Faces Its Most Confusing Economy Yet Bloomberg.com",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-23T07:00:11+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股",
+              "fed"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股",
+            "fed"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "us"
+          }
+        },
+        {
           "title": "The Federal Reserve's Latest October Inflation Forecast Has Arrived, and It's Terrible News for Wall Street - Yahoo Finance",
           "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxOa2s3NEZYYmJtU2hVQ3RiQVZNaGRsSDVyS2NDSmN3anhMQk1CaWRaZmUydGlFZllIamQzVWRWdkRPbkFVM3RZWEl2d01xUGJEQVRUMmVIUHFNOGRLYWdHcWx4cHFMQ052ZVh4cmFZUG1HalcxcDU5Z1Ffa0haVUNabXZpbjcydm03VlExb04wNDVBdWRmWU5iRzVPOHFSSldNcUJhX3hCRk5NZw",
           "summary": "The Federal Reserve's Latest October Inflation Forecast Has Arrived, and It's Terrible News for Wall Street Yahoo Finance",
@@ -9519,16 +9447,16 @@
           }
         },
         {
-          "title": "Treasury yields have surged: Here’s where investors can find opportunity - Chase Bank",
-          "url": "https://news.google.com/rss/articles/CBMi0wFBVV95cUxNOG5wY1JYSkRRamJraWJ6MjhSTzVjeEttQUxOTGl6WXRzV1pzOV9aYVBFeXI3cWtTZjhjWTc3YjQwdHo1SkVTandXdVFlc21kWGcxWS1EVVZESFVmRTYwY09IdUV0bGFRRGl0SUc4bEdhdUJ0S0dmendnbFpFV2Nxc19YMzMyTVpoenBZR1IzaGZ4a19MOWtoNHZmeGtMdER5MnlqM0NMNUhFQTEtTVR4eS1NcFBuU3h0cVlkNmN0bVZZcjdlamw1LW1FSXYtNDZVMGpj?oc=5",
-          "summary": "Treasury yields have surged: Here’s where investors can find opportunity Chase Bank",
+          "title": "Treasury Yields Snapshot: October 23, 2026 - Advisor Perspectives",
+          "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxObEpEcXJUUm1JM0kydjNaUGVrS28zSG5qc3NmU2RZRS1Xd0FDbHE2dm5PMXFNWXNGYVRSQXlaeHc0VHRXN3pQVW5KeFdqbWpQZmlKd0lxM3hJR1ZNRkM0S2VDRnpVRUZONms0dmh3U1ZBVVpyMGdpUGdpemk3b0YyZ1piVklSNDBNeFc3ZlNTOG03aHpsV08tV2Rac1ladzlLcWhaVw?oc=5",
+          "summary": "Treasury Yields Snapshot: October 23, 2026 Advisor Perspectives",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-10-21T19:15:13+00:00",
+          "published_at": "2026-10-23T07:00:00+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
@@ -9557,16 +9485,16 @@
           }
         },
         {
-          "title": "Why U.S. Borrowing Costs Keep Climbing Despite Treasury’s Efforts - Council on Foreign Relations",
-          "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxPNS1RajNzSWN1YnRqbW1WTWNSaUJJczRvV3JDMFFZNElEOW5RT2l4c1NhcEZwSmtSd3RYajlVV3dFUFNaZzlsaC1uUlBWNXIwdF9zUGZqZXVyN3B3NVZ4RGh1b2JMWXhvSkpES2F2dldheGc2S2xCaXFCMjRZTldKWUduZ2lqUDlzcXgwNk1mbXlDbHdFekJ3?oc=5",
-          "summary": "Why U.S. Borrowing Costs Keep Climbing Despite Treasury’s Efforts Council on Foreign Relations",
+          "title": "Treasury yields, tech stocks, and consumer sentiment all took a slide this week - Marketplace.org",
+          "url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxQLTlNRFpFeEdjYVJjdGtGTFBPN3dNaWU0N01RdVZHVk5PWC1YeFBTRGdDNHhoblBXU2tUamhyY0ZEXzg2dzNRXzROTVo1YS1fWE9TTEpKMHNuSHAtODZxaWhOVDVyNjZBaDRxaWZlUUd4aDFBTjNZeEVadXR2WXI0cTVreXFpdFU3clVJY3FORWw2MVVudU01SHBFVjVXbXVGRmU5RnFRMFpQZkx0MlFmejNNa3lpYjVSelkxRGw0NA?oc=5",
+          "summary": "Treasury yields, tech stocks, and consumer sentiment all took a slide this week Marketplace.org",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-10-12T07:00:00+00:00",
+          "published_at": "2026-10-23T22:40:00+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
@@ -10241,6 +10169,48 @@
           }
         },
         {
+          "title": "Global Oil Inventories Depleted, Next Price Spike Could Roil Economies, Markets - EnergyNow.com",
+          "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxQTzJ2Rmxmd19zVGUwVzJ3bzdEeHp4NTczY0tCM0MxYzlnNUU5UTRIZk45cndabTA0TnNoblRoc1FsWE12bTYtWGVHSWhkdEpBcnNYeDExZC1XWFN5SWhjS20ySEh4M1pHeFJ0RTFaSW9DT0JXYlMzNzdHS1dsWFUxWVZISjNMT045RkZoZmZDOFRHT3pFNHVDTVc0TlJEZVo5cVdMajNZSERCSmJH?oc=5",
+          "summary": "Global Oil Inventories Depleted, Next Price Spike Could Roil Economies, Markets EnergyNow.com",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-23T23:43:03+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [
+              "oil"
+            ],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [
+            "oil"
+          ],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "us"
+          }
+        },
+        {
           "title": "U.S. weighs easing tanker sanctions to curb oil costs, impact remains doubtful - CHOSUNBIZ - Chosunbiz",
           "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxNajVHbVYtU3JRQjU1RUJ3ZVN4M1pkcmhWWFpTaXZsY0pqTndaclZYTUFhR0dhT0xNU0k1MWdaQ2hyeUlFbmg0RWhRT0l2N2w0U0tQeUx5ZURBNFc2TzBPalUza3hxODF4aVZvdjFYQUZac3VaSDFzNVdUQ3VLNG5Rc1d30gGWAUFVX3lxTE8weF9IWTliREROYTlLa3lCWFVOUzNSbFVOd091eXNNaXJpRmZkN0kzRXBuUVphaWZzRGdRUDJuZ0lncnh1a25OY2cyckFQVGxmcXBLQ0NsX09MS3JMRk9FQnE5N3pLWlZLOEJMcEFYNW9YR1pOZEp0Y2UwbC1WWHAtLU5hV3FNS3RmVjJrN09nRnNQQ0hadw?oc=5",
           "summary": "U.S. weighs easing tanker sanctions to curb oil costs, impact remains doubtful - CHOSUNBIZ Chosunbiz",
@@ -10537,48 +10507,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        },
-        {
-          "title": "Analysis of Market Impact from IEA’s Release of Crude Oil and Diesel Reserves - Sunsirs",
-          "url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTE1nbGJnUi1qTnk1Z3lGa2JCclJvbGJES3NxOUVKdWJ3Z05wUmlKaE9ibTFNdXQ3dkNCaFpHbzZSbzdJSFVvQkJhaWhFQnMwOVEwYlVUVFJVRXJHRkFwZEE?oc=5",
-          "summary": "Analysis of Market Impact from IEA’s Release of Crude Oil and Diesel Reserves Sunsirs",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-10-16T03:31:41+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股"
-            ],
-            "global_matches": [
-              "oil"
-            ],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股"
-          ],
-          "global_matches": [
-            "oil"
-          ],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "us"
-          }
         }
       ],
       "eligible_inventory": [
@@ -15090,7 +15018,7 @@
           "ranking_score": 115
         }
       ],
-      "inventory_saved_at": "2026-10-25T02:33:32.077031+00:00"
+      "inventory_saved_at": "2026-10-25T02:38:23.995601+00:00"
     }
   }
 }
