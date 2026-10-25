@@ -515,3 +515,23 @@ def test_failed_alert_finalization_cannot_emit_repeated_mail_before_thirty_minut
     )
     assert due["reminder_sent"] is True
     assert due["notification_cadence_confirmations"][0]["next_reminder_at"] == (now + timedelta(minutes=60)).isoformat()
+
+
+def test_open_incidents_includes_central_reconciliation_degraded_issue(monkeypatch):
+    issue = {
+        "number": 1077,
+        "state": "open",
+        "title": "Central incident reconciliation degraded / main",
+        "body": "central-incident-health=c97f7498d72d4cd0e1a434bf3e43c8b5",
+    }
+    monkeypatch.setenv("GITHUB_REPOSITORY_ID", "1309835643")
+    monkeypatch.setattr(monitor_liveness, "read_open_issues", lambda **_kwargs: [issue])
+
+    rows = monitor_liveness._open_incidents(
+        "https://api.github.com",
+        "owner/repo",
+        "token",
+        deadline_monotonic=monitor_liveness.time.monotonic() + 10,
+    )
+
+    assert rows == [issue]
