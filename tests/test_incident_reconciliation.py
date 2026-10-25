@@ -4,12 +4,22 @@ import io
 import json
 import zipfile
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlsplit
 
 import pytest
 
 import scripts.incident_reconciliation as incidents
 from scripts.monitor_liveness import GitHubAPIHttpError, LivenessAuditError
+
+
+def test_central_reconciliation_wakes_on_gmail_sync_completion():
+    workflow = Path(__file__).parents[1] / ".github" / "workflows" / "incident-reconciliation.yml"
+    text = workflow.read_text(encoding="utf-8")
+    workflow_run = text.split("  workflow_run:", 1)[1].split("  schedule:", 1)[0]
+
+    assert "Gmail history sync (Supabase)" in workflow_run
+    assert "types: [completed]" in workflow_run
 
 
 def test_source_run_identity_is_bound_to_main_and_same_repository():
