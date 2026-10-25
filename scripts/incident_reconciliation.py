@@ -1415,7 +1415,16 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
         ]
         if path in failed_paths or remaining_for_path:
             checkpoint = processed_last.get(path, old_cursor)
+            pending_evidence = {
+                key: next_cursor[key]
+                for key in ("pending_runs", "pending_run_diagnostics")
+                if key in next_cursor
+            }
             next_cursor.update(checkpoint)
+            # Roll back scan progress on incomplete source evidence, but keep
+            # fresh attempt-bound observations so the next reconciliation can
+            # confirm a stable terminal-jobs snapshot instead of restarting it.
+            next_cursor.update(pending_evidence)
             next_cursor["scan_complete"] = False if path in failed_paths else next_cursor.get("scan_complete", False)
             cursor_updates[path] = next_cursor
         elif next_cursor.get("scan_complete") is True and next_cursor.get("mode") == "backfill":

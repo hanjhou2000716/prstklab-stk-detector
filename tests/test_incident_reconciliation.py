@@ -656,6 +656,127 @@ def test_reconcile_releases_only_stable_terminal_pending_run_and_recovers_next_c
     assert third["diagnostic_complete"] is True
 
 
+def test_reconcile_preserves_terminal_job_observation_when_source_failure_rolls_back_cursor(monkeypatch, tmp_path):
+    target_path = ".github/workflows/official-event-monitor.yml"
+    workflow_ids = {
+        target_path: 320209983,
+        ".github/workflows/scheduled-brief.yml": 10,
+        ".github/workflows/scheduled-brief-slot-audit.yml": 11,
+        ".github/workflows/unified-research-report.yml": 12,
+    }
+    now = datetime.now(UTC).replace(microsecond=0)
+    pending_id = 39698088993
+    pending_sha = "cc40ba0401362f6214b540c70b5e1aa3100d5773"
+    pending_created = now - timedelta(minutes=20)
+    run = {
+        "id": pending_id,
+        "workflow_id": workflow_ids[target_path],
+        "run_attempt": 1,
+        "created_at": pending_created.isoformat().replace("+00:00", "Z"),
+        "updated_at": (now - timedelta(minutes=10)).isoformat().replace("+00:00", "Z"),
+        "status": "in_progress",
+        "head_branch": "main",
+        "head_sha": pending_sha,
+        "head_repository": {"full_name": "owner/repo"},
+    }
+    jobs = [
+        {
+            "id": 119560307175,
+            "name": "monitor-admission",
+            "run_id": pending_id,
+            "run_attempt": 1,
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": (now - timedelta(minutes=11)).isoformat().replace("+00:00", "Z"),
+            "completed_at": (now - timedelta(minutes=10)).isoformat().replace("+00:00", "Z"),
+        },
+        {
+            "id": 119560351562,
+            "name": "monitor-send-deploy",
+            "run_id": pending_id,
+            "run_attempt": 1,
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": (now - timedelta(minutes=10)).isoformat().replace("+00:00", "Z"),
+            "completed_at": (now - timedelta(minutes=9)).isoformat().replace("+00:00", "Z"),
+        },
+    ]
+    unrelated_run = {
+        "id": 40249999999,
+        "workflow_id": workflow_ids[target_path],
+        "run_attempt": 1,
+        "created_at": (now - timedelta(minutes=2)).isoformat().replace("+00:00", "Z"),
+        "head_branch": "main",
+        "head_sha": "a" * 40,
+        "head_repository": {"full_name": "owner/repo"},
+        "status": "completed",
+        "conclusion": "failure",
+    }
+    cursor_state = {
+        target_path: {
+            "mode": "live",
+            "created_at": (now - timedelta(minutes=25)).isoformat(),
+            "run_id": 0,
+            "pending_runs": [{
+                "run_id": pending_id,
+                "workflow_id": workflow_ids[target_path],
+                "created_at": pending_created.isoformat(),
+                "attempt": 1,
+                "head_sha": pending_sha,
+            }],
+        },
+    }
+    monkeypatch.setattr(
+        incidents,
+        "_load_cursor_state",
+        lambda **_kwargs: json.loads(json.dumps(cursor_state)),
+    )
+    monkeypatch.setattr(incidents, "_source_workflow_id", lambda *, path, **_kwargs: workflow_ids[path])
+
+    def fake_request(_api, _repo, _token, _method, request_path, *, response_headers=None, deadline_monotonic=None):
+        if request_path == "https://api.github.com/repos/owner/repo":
+            return {"id": 1309835643}
+        if request_path == f"actions/runs/{pending_id}":
+            return dict(run)
+        if request_path == f"actions/runs/{pending_id}/attempts/1/jobs?per_page=100&page=1":
+            return {"total_count": len(jobs), "jobs": list(jobs)}
+        if request_path.startswith(f"actions/workflows/{workflow_ids[target_path]}/runs?"):
+            return {"total_count": 1, "workflow_runs": [dict(unrelated_run)]}
+        if request_path.startswith("actions/workflows/") and "/runs?" in request_path:
+            return {"total_count": 0, "workflow_runs": []}
+        raise AssertionError(f"Unexpected GitHub API path: {request_path}")
+
+    monkeypatch.setattr(incidents, "_request_json", fake_request)
+
+    def missing_artifact(**_kwargs):
+        raise LivenessAuditError("incident_artifact_missing")
+
+    monkeypatch.setattr(incidents, "_download_artifact_json", missing_artifact)
+    event_path = tmp_path / "event.json"
+    event_path.write_text("{}", encoding="utf-8")
+    monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_path))
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_run")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+    monkeypatch.setenv("GITHUB_API_URL", "https://api.github.com")
+    monkeypatch.setenv("GITHUB_TOKEN", "test-token")
+    monkeypatch.setenv("GITHUB_RUN_ID", "999999")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "1")
+    monkeypatch.setenv("GITHUB_SHA", "d" * 40)
+    monkeypatch.setenv("GITHUB_OUTPUT", "")
+
+    result = incidents.reconcile(
+        result_path=tmp_path / "result.json",
+        evidence_directory=tmp_path / "evidence",
+    )
+
+    cursor = result["source_cursors"][target_path]
+    pending = next(item for item in cursor["pending_runs"] if item["run_id"] == pending_id)
+    assert pending["terminal_jobs_observation"]["fingerprint"] == cursor["pending_run_diagnostics"][0]["fingerprint"]
+    assert pending["terminal_jobs_observation"]["observed_at"]
+    assert cursor["pending_run_diagnostics"][0]["status"] == "awaiting_confirmation"
+    assert result["failure_reason"] == "source_pending_terminal_state_unverified"
+
+
 def test_official_monitor_backfill_accepts_github_numeric_repo_link(monkeypatch):
     workflow_id = 320209983
     path = ".github/workflows/official-event-monitor.yml"
