@@ -1,10 +1,10 @@
 {
   "schema_version": "1.1",
-  "release_id": "release-fcace1643c360ad5",
-  "created_at": "2026-10-25T02:44:54.275007+00:00",
-  "snapshot_id": "a8ee72976ac815cd",
-  "market_snapshot_id": "a8ee72976ac815cd",
-  "generated_at": "2026-10-25T10:44:26.701441+08:00",
+  "release_id": "release-fd359058c950d5cc",
+  "created_at": "2026-10-25T22:09:14.178321+00:00",
+  "snapshot_id": "6ead4b5890aff1d8",
+  "market_snapshot_id": "6ead4b5890aff1d8",
+  "generated_at": "2026-10-26T06:09:10.713635+08:00",
   "data_status": "部分缺漏",
   "snapshot_schema_version": "3.0",
   "markets": {
@@ -12,7 +12,7 @@
       "label": "台股",
       "timezone": "Asia/Taipei",
       "calendar": "XTAI",
-      "date": "2026-10-25",
+      "date": "2026-10-26",
       "is_trading_day": false,
       "session": "休市",
       "calendar_status": "confirmed_closed",
@@ -22,7 +22,7 @@
       "label": "美股",
       "timezone": "America/New_York",
       "calendar": "NYSE",
-      "date": "2026-10-24",
+      "date": "2026-10-25",
       "is_trading_day": false,
       "session": "休市",
       "calendar_status": "confirmed_closed",
@@ -32,7 +32,7 @@
       "label": "台股",
       "timezone": "Asia/Taipei",
       "calendar": "XTAI",
-      "date": "2026-10-25",
+      "date": "2026-10-26",
       "is_trading_day": false,
       "session": "休市",
       "calendar_status": "confirmed_closed",
@@ -63,11 +63,11 @@
       "calendar_verified_on": "2026-09-25",
       "calendar_version": "TAIFEX-2026",
       "calendar_source_document": "台期交字第1140003036號函，附件：115年期貨集中交易市場開（休）市日期表",
-      "date": "2026-10-25",
+      "date": "2026-10-26",
       "is_trading_day": false,
       "calendar_status": "confirmed_closed",
       "session": "休市",
-      "closure_reason": "臺灣光復暨金門古寧頭大捷紀念日休市",
+      "closure_reason": "臺灣光復暨金門古寧頭大捷紀念日補假休市",
       "next_trading_date": "2026-10-27"
     }
   },
@@ -84,68 +84,22 @@
       "change_percent": -1.81,
       "quote_date": "2026-10-22",
       "quote_time": "2026-10-22T05:30:00+00:00",
-      "quote_basis": "TWSE_TAIEX_DAILY_CLOSE",
-      "quote_source": "TWSE verified official saved close",
-      "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK",
-      "source_label": "TWSE",
-      "source_tier": "official",
-      "freshness": "recent_close",
-      "display_state": "historical_reference",
+      "quote_basis": "Supabase 最後有效資料",
+      "quote_source": "Yahoo public quote",
+      "source_url": "https://finance.yahoo.com/quote/^TWII",
+      "source_label": "Yahoo",
+      "source_tier": "public-market",
+      "freshness": "stale",
       "data_status": "備援資料",
       "quote_delayed": true,
-      "stale_used": false,
-      "routine_eligible": true,
+      "stale_used": true,
       "alert_eligible": false,
       "backup_used": true,
-      "official_fallback_used": true,
-      "fallback_reason": "verified_official_market_backup",
+      "fallback_reason": "primary_source_unavailable_or_stale",
       "instrument_id": "twse:taiex",
-      "source_attempts": [
-        {
-          "source": "twse_fmtqik",
-          "target_date": "2026-10-23",
-          "observed_date": "2026-10-22",
-          "checked_at": "2026-10-25T10:44:10.802096+08:00",
-          "outcome": "reported_older_session"
-        },
-        {
-          "source": "twse_mi_index_json",
-          "target_date": "2026-10-23",
-          "outcome": "not_published_or_date_mismatch",
-          "checked_at": "2026-10-25T10:44:10.802192+08:00",
-          "observed_date": "",
-          "response_sha256": "8f652afd4941d2a9fbe9530aa8517d1264e3cafec52be6baad85ee94f1a702ed"
-        },
-        {
-          "source": "twse_mi_index_html",
-          "target_date": "2026-10-23",
-          "outcome": "not_published_or_date_mismatch",
-          "checked_at": "2026-10-25T10:44:10.802192+08:00",
-          "observed_date": "",
-          "response_sha256": "c22865adf5f70bb23d64feb037ea8dca3c0e4f22ea31e2c02ce9381454763858"
-        },
-        {
-          "source": "twse_taiex_history_current_month",
-          "target_date": "2026-10-23",
-          "checked_at": "2026-10-25T10:44:10.802192+08:00",
-          "observed_date": "2026-10-22",
-          "outcome": "received",
-          "response_sha256": "6800c13392d34ae27a0dc9327b88d28f92f2112e369bf266a819116122f27ee1"
-        },
-        {
-          "source": "twse_taiex_history",
-          "target_date": "2026-10-23",
-          "checked_at": "2026-10-25T10:44:10.802192+08:00",
-          "outcome": "date_or_values_unavailable"
-        },
-        {
-          "source": "twse_saved_official_backup",
-          "outcome": "verified"
-        }
-      ],
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "1706333c6471a832"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "77e7301e8c5036e8"
     },
     {
       "symbol": "^GSPC",
@@ -169,8 +123,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "045d29dba43e8969"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "9d9da1b0934e3a36"
     },
     {
       "symbol": "^IXIC",
@@ -195,8 +149,8 @@
       "alert_eligible": false,
       "instrument_id": "us:nasdaq",
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "3f282916eea70793"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "5f8f0bcff5714887"
     },
     {
       "symbol": "^DJI",
@@ -221,8 +175,8 @@
       "alert_eligible": false,
       "instrument_id": "us:djia",
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "6e580d9b5d54e957"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "5bdd8c832f642dc1"
     },
     {
       "symbol": "^SOX",
@@ -247,8 +201,8 @@
       "alert_eligible": false,
       "instrument_id": "us:sox",
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "ec50d584741f1f3b"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "663f493222560c65"
     },
     {
       "symbol": "ES=F",
@@ -273,8 +227,8 @@
       "alert_eligible": false,
       "contract_basis": "continuous_contract",
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "e9a72ee0535c5b29"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "c4154d3ca4ac7024"
     },
     {
       "symbol": "NQ=F",
@@ -299,8 +253,8 @@
       "alert_eligible": false,
       "contract_basis": "continuous_contract",
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "829243198d4629f9"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "6e025f432a5716b8"
     },
     {
       "symbol": "YM=F",
@@ -325,8 +279,8 @@
       "alert_eligible": false,
       "contract_basis": "continuous_contract",
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "806680669337f2ca"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "21856fb3d29881d5"
     },
     {
       "symbol": "^N225",
@@ -350,8 +304,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "3e319ccd2c0b06cf"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "09b2a8ecb4ec1e09"
     },
     {
       "symbol": "^KS11",
@@ -375,8 +329,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "3f717ab4d5361987"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "75dfde27de86ca3b"
     },
     {
       "symbol": "BZ=F",
@@ -384,10 +338,10 @@
       "name": "Brent 原油",
       "market": "global",
       "currency": "USD",
-      "price": 116.72,
+      "price": 111.7,
       "previous_close": 113.17,
-      "change": 3.55,
-      "change_percent": 3.14,
+      "change": -1.47,
+      "change_percent": -1.3,
       "quote_date": "2026-10-23",
       "quote_time": null,
       "quote_basis": "日線收盤",
@@ -400,8 +354,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "f99da056248285ab"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "d8a2aa58be487d88"
     },
     {
       "symbol": "CL=F",
@@ -425,8 +379,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "0b820f1e4fbe5638"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "27ad711ac46fbac8"
     },
     {
       "symbol": "GC=F",
@@ -450,8 +404,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "22fc2c4b210f8e31"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "d2af7977d89ab988"
     },
     {
       "symbol": "BTC-USD",
@@ -459,12 +413,12 @@
       "name": "比特幣",
       "market": "global",
       "currency": "USD",
-      "price": 80986.5,
-      "previous_close": 81074.19,
-      "change": -87.69,
-      "change_percent": -0.11,
+      "price": 80728.87,
+      "previous_close": 80790.84,
+      "change": -61.97,
+      "change_percent": -0.08,
       "quote_date": "2026-10-25",
-      "quote_time": "2026-10-25T02:43:55.210000+00:00",
+      "quote_time": "2026-10-25T22:04:01.929000+00:00",
       "quote_basis": "盤中",
       "quote_source": "Binance.US public spot quote",
       "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=BTCUSDT",
@@ -476,8 +430,8 @@
       "alert_eligible": false,
       "instrument_id": "global:btc",
       "cross_checked": true,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "f07ad43f601227c1"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "4f41855e78354684"
     },
     {
       "symbol": "ETH-USD",
@@ -485,12 +439,12 @@
       "name": "以太坊",
       "market": "global",
       "currency": "USD",
-      "price": 2367.89,
-      "previous_close": 2384.08,
-      "change": -16.19,
-      "change_percent": -0.68,
+      "price": 2352.38,
+      "previous_close": 2355.95,
+      "change": -3.57,
+      "change_percent": -0.15,
       "quote_date": "2026-10-25",
-      "quote_time": "2026-10-25T02:43:58.005000+00:00",
+      "quote_time": "2026-10-25T22:04:02.957000+00:00",
       "quote_basis": "盤中",
       "quote_source": "Binance.US public spot quote",
       "source_url": "https://api.binance.us/api/v3/ticker/24hr?symbol=ETHUSDT",
@@ -502,8 +456,8 @@
       "alert_eligible": false,
       "instrument_id": "global:eth",
       "cross_checked": true,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "7a00724ddda75cc2"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "c0c8772a31b4971f"
     },
     {
       "symbol": "^TWOII",
@@ -531,8 +485,8 @@
       "fallback_reason": "primary_source_unavailable_or_stale",
       "instrument_id": "tpex:index",
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "97fdb777b3a9cae1"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "2b26e1a41ca256f3"
     },
     {
       "ticker": "TXF",
@@ -566,24 +520,24 @@
         {
           "source": "taifex_openapi",
           "outcome": "verified",
-          "checked_at": "2026-10-25T10:42:20.857819+08:00",
-          "target_date": "2026-10-25",
+          "checked_at": "2026-10-26T06:02:47.370795+08:00",
+          "target_date": "2026-10-26",
           "observed_date": "2026-10-22",
           "response_sha256": "2111c225d2ff3daf6e0918940bcc1b20a75f2906f183c5f4cc9f2f51c20d6139"
         },
         {
           "source": "taifex_daily_table",
           "outcome": "verified",
-          "checked_at": "2026-10-25T10:42:20.857819+08:00",
-          "target_date": "2026-10-25",
+          "checked_at": "2026-10-26T06:02:47.370795+08:00",
+          "target_date": "2026-10-26",
           "observed_date": "2026-10-22",
           "response_sha256": "e235d18d52b86d9571bbf453ecc9650e39cef3b9a9ba7d0727c405495209bb30"
         },
         {
           "source": "taifex_selection",
           "outcome": "selected:taifex_openapi",
-          "checked_at": "2026-10-25T10:42:20.857819+08:00",
-          "target_date": "2026-10-25",
+          "checked_at": "2026-10-26T06:02:47.370795+08:00",
+          "target_date": "2026-10-26",
           "observed_date": "2026-10-22",
           "response_sha256": ""
         },
@@ -593,8 +547,8 @@
         }
       ],
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "948ab58987b153ab"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "c4b9281866f2d326"
     }
   ],
   "quotes": [
@@ -621,8 +575,8 @@
       "alert_eligible": false,
       "instrument_id": "twse:006208",
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "89cf068bc0590f27"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "a6efce1b882f5b2a"
     },
     {
       "symbol": "00685L.TW",
@@ -647,8 +601,8 @@
       "alert_eligible": false,
       "instrument_id": "twse:00685l",
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "a903e4d896a17bcd"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "ea6c6540027a6391"
     },
     {
       "symbol": "2330.TW",
@@ -673,8 +627,8 @@
       "alert_eligible": false,
       "instrument_id": "twse:2330",
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "cfb9f24124e2c421"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "c19807befd5183cc"
     },
     {
       "symbol": "QQQM",
@@ -698,8 +652,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "c21c7a607b817de7"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "b351f8c2152e61ff"
     },
     {
       "symbol": "QLD",
@@ -723,8 +677,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "1c5dccd63d9c78f8"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "d4caaa941f5e1f63"
     },
     {
       "symbol": "TSM",
@@ -749,8 +703,8 @@
       "alert_eligible": false,
       "instrument_id": "us:tsm",
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "d8ae41642b966591"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "4bbfbabdbc53e179"
     },
     {
       "symbol": "NVDA",
@@ -775,8 +729,8 @@
       "alert_eligible": false,
       "instrument_id": "us:nvda",
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "d9b1385f735e4cdd"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "2af932123750f3ed"
     }
   ],
   "macro_quotes": [
@@ -802,8 +756,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "d77c6ccf02c414f4"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "0afd1d90a8ac37be"
     },
     {
       "symbol": "^TNX",
@@ -827,8 +781,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "6eae28e5d6aeb580"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "f72b0be82221bf9b"
     },
     {
       "symbol": "TWD=X",
@@ -836,11 +790,11 @@
       "name": "美元兌台幣",
       "market": "global",
       "currency": "TWD",
-      "price": 32.57,
-      "previous_close": 32.37,
-      "change": 0.2,
-      "change_percent": 0.62,
-      "quote_date": "2026-10-23",
+      "price": 32.55,
+      "previous_close": 32.6,
+      "change": -0.05,
+      "change_percent": -0.15,
+      "quote_date": "2026-10-25",
       "quote_time": null,
       "quote_basis": "日線收盤",
       "quote_source": "Yahoo Finance public daily quote",
@@ -852,8 +806,8 @@
       "stale_used": false,
       "alert_eligible": false,
       "cross_checked": false,
-      "snapshot_id": "a8ee72976ac815cd",
-      "observation_id": "b545430956ebc882"
+      "snapshot_id": "6ead4b5890aff1d8",
+      "observation_id": "14a1acd006d625b5"
     }
   ],
   "risk": {
@@ -874,7 +828,7 @@
         "change_percent": 6.73,
         "stage": "極度恐慌",
         "source_label": "TAIFEX",
-        "fetched_at": "2026-10-25T02:43:28.695507+00:00",
+        "fetched_at": "2026-10-25T22:03:42.554286+00:00",
         "freshness_state": "intraday"
       }
     },
@@ -893,7 +847,7 @@
         "change_percent": 2.21,
         "stage": "恐慌",
         "source_label": "Yahoo Finance",
-        "fetched_at": "2026-10-25T02:42:59.724042+00:00",
+        "fetched_at": "2026-10-25T22:03:23.277079+00:00",
         "freshness_state": "daily_close"
       }
     }
@@ -904,31 +858,28 @@
     "message": "已核對的重要市場事件與價格訊號；請查看完整脈絡。",
     "items": [
       {
-        "event_cluster_key": "evt-2f210fcecc0055f270c4b647",
-        "title": "USGS M6.5 地震：Bonin Islands, Japan region",
-        "brief_title": "黑天鵝／地緣｜重要事件｜警戒",
-        "short_label": "黑天鵝／地緣",
-        "event": "USGS M6.5 地震：Bonin Islands, Japan region",
-        "brief_summary": "USGS M6.5 地震：Bonin Islands, Japan region",
-        "summary": "USGS M6.5 地震：Bonin Islands, Japan region",
-        "traditional_chinese_summary": "USGS M6.5 地震：Bonin Islands, Japan region",
-        "source": "USGS｜官方即時地震資料",
-        "source_key": "usgs",
-        "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000u4r9",
-        "source_domain": "earthquake.usgs.gov",
-        "source_tier": "official",
-        "event_type": "disaster",
-        "importance": "high-risk",
+        "event_cluster_key": "evt-c37de84fd931840302f39096",
+        "title": "氦氣被列入關鍵材料！美晶片廠遭供應商限量 專家：AI擴產計畫卡在「隱形瓶頸」",
+        "brief_title": "能源／原油｜重要事件｜觀察",
+        "short_label": "能源／原油",
+        "event": "美國能源部將氦氣列為關鍵材料，第20種戰略物資，將開啟聯邦融資並強化供應鏈監測。 氦氣主要供應國為美國、卡達、俄羅斯；美國去年產量8,100萬立方公尺、佔全球43%，但工廠已近產能極限。 半導體業消耗",
+        "summary": "美國能源部將氦氣列為關鍵材料，第20種戰略物資，將開啟聯邦融資並強化供應鏈監測。 氦氣主要供應國為美國、卡達、俄羅斯；美國去年產量8,100萬立方公尺、佔全球43%，但工廠已近產能極限。 半導體業消耗",
+        "traditional_chinese_summary": "美國能源部將氦氣列為關鍵材料，第20種戰略物資，將開啟聯邦融資並強化供應鏈監測。 氦氣主要供應國為美國、卡達、俄羅斯；美國去年產量8,100萬立方公尺、佔全球43%，但工廠已近產能極限。 半導體業消耗",
+        "source": "Yahoo Taiwan Finance",
+        "source_url": "https://tw.stock.yahoo.com/news/%E6%B0%A6%E6%B0%A3%E8%A2%AB%E5%88%97%E5%85%A5%E9%97%9C%E9%8D%B5%E6%9D%90%E6%96%99-%E7%BE%8E%E6%99%B6%E7%89%87%E5%BB%A0%E9%81%AD%E4%BE%9B%E6%87%89%E5%95%86%E9%99%90%E9%87%8F-%E5%B0%88%E5%AE%B6-ai%E6%93%B4%E7%94%A2%E8%A8%88%E7%95%AB%E5%8D%A1%E5%9C%A8-%E9%9A%B1%E5%BD%A2%E7%93%B6%E9%A0%B8-200006136.html",
+        "source_domain": "tw.stock.yahoo.com",
+        "source_tier": "discovery",
+        "event_type": "macro",
+        "importance": "normal",
         "risk_level": "持續觀察",
-        "classification": null,
-        "classification_reason": "keyword_no_match",
-        "released_at": "2026-10-25T02:09:23.818000+00:00",
-        "published_at": "2026-10-25T02:09:23.818000+00:00",
-        "snapshot_id": "a8ee72976ac815cd",
-        "observation_id": "bbb9ad615d082ec4",
+        "classification": "energy",
+        "classification_reason": "energy_subject_action",
+        "published_at": "2026-10-25T20:00:06+00:00",
+        "snapshot_id": "6ead4b5890aff1d8",
+        "observation_id": "49bd9421eba49c9c",
         "market_direction": null,
         "market_move": null,
-        "why_important": "重大災害可能改變區域供應、航運、能源或避險需求；實際影響須由官方資訊與公開市場資料共同確認。",
+        "why_important": "",
         "impact_confirmation": {
           "confirmed": false,
           "method": "尚無相關市場同步確認",
@@ -936,40 +887,44 @@
           "evidence": []
         },
         "source_trace": {
-          "verification": "一手官方來源",
-          "source_label": "USGS｜官方即時地震資料",
-          "source_url": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000u4r9",
-          "source_domain": "earthquake.usgs.gov",
-          "event_time": "2026-10-25T02:09:23.818000+00:00",
-          "checked_at": "2026-10-25T02:42:40.602704+00:00",
+          "verification": "公開來源待後續核對",
+          "source_label": "Yahoo Taiwan Finance",
+          "source_url": "https://tw.stock.yahoo.com/news/%E6%B0%A6%E6%B0%A3%E8%A2%AB%E5%88%97%E5%85%A5%E9%97%9C%E9%8D%B5%E6%9D%90%E6%96%99-%E7%BE%8E%E6%99%B6%E7%89%87%E5%BB%A0%E9%81%AD%E4%BE%9B%E6%87%89%E5%95%86%E9%99%90%E9%87%8F-%E5%B0%88%E5%AE%B6-ai%E6%93%B4%E7%94%A2%E8%A8%88%E7%95%AB%E5%8D%A1%E5%9C%A8-%E9%9A%B1%E5%BD%A2%E7%93%B6%E9%A0%B8-200006136.html",
+          "source_domain": "tw.stock.yahoo.com",
+          "event_time": "2026-10-25T20:00:06+00:00",
+          "checked_at": "2026-10-25T22:09:10.018487+00:00",
           "verified_domains": [
-            "earthquake.usgs.gov"
+            "tw.stock.yahoo.com"
           ],
-          "crosscheck_status": "unverified",
-          "event_cluster_key": "evt-2f210fcecc0055f270c4b647",
+          "verification_plan": [
+            "ECB 官方 RSS",
+            "Reuters／GDELT"
+          ],
+          "crosscheck_status": "pending_second_source",
+          "event_cluster_key": "evt-c37de84fd931840302f39096",
           "crosscheck_domains": [
-            "earthquake.usgs.gov"
+            "tw.stock.yahoo.com"
           ],
           "crosscheck_sources": [
-            "https://earthquake.usgs.gov/earthquakes/eventpage/us6000u4r9"
+            "https://tw.stock.yahoo.com/news/%E6%B0%A6%E6%B0%A3%E8%A2%AB%E5%88%97%E5%85%A5%E9%97%9C%E9%8D%B5%E6%9D%90%E6%96%99-%E7%BE%8E%E6%99%B6%E7%89%87%E5%BB%A0%E9%81%AD%E4%BE%9B%E6%87%89%E5%95%86%E9%99%90%E9%87%8F-%E5%B0%88%E5%AE%B6-ai%E6%93%B4%E7%94%A2%E8%A8%88%E7%95%AB%E5%8D%A1%E5%9C%A8-%E9%9A%B1%E5%BD%A2%E7%93%B6%E9%A0%B8-200006136.html"
           ],
-          "snapshot_id": "a8ee72976ac815cd",
-          "observation_id": "bbb9ad615d082ec4"
+          "snapshot_id": "6ead4b5890aff1d8",
+          "observation_id": "49bd9421eba49c9c"
         },
         "evidence_state": "single_source",
-        "evidence_reason": "等待市場同步",
-        "crosscheck_status": "unverified"
+        "evidence_reason": "等待第二來源",
+        "crosscheck_status": "pending_second_source"
       },
       {
-        "event_cluster_key": "evt-7dad7e93ddb7698345011f3e",
-        "title": "【關鍵11月】美期中選舉紅州聚焦AI數據中心 牽動台股和供應鏈 - Yahoo新聞",
+        "event_cluster_key": "evt-cf8d58dbe5345d63d98348b9",
+        "title": "AI伺服器供應鏈評價修正！台股跌破季線，台達電重挫39%浮現合理價位？-財經焦點情報站 - CMoney投資網誌",
         "brief_title": "半導體／科技｜重要事件｜觀察",
         "short_label": "半導體／科技",
-        "event": "【關鍵11月】美期中選舉紅州聚焦AI數據中心 牽動台股和供應鏈 Yahoo新聞",
-        "summary": "【關鍵11月】美期中選舉紅州聚焦AI數據中心 牽動台股和供應鏈 Yahoo新聞",
-        "traditional_chinese_summary": "【關鍵11月】美期中選舉紅州聚焦AI數據中心 牽動台股和供應鏈 Yahoo新聞",
+        "event": "AI伺服器供應鏈評價修正！台股跌破季線，台達電重挫39%浮現合理價位？-財經焦點情報站 CMoney投資網誌",
+        "summary": "AI伺服器供應鏈評價修正！台股跌破季線，台達電重挫39%浮現合理價位？-財經焦點情報站 CMoney投資網誌",
+        "traditional_chinese_summary": "AI伺服器供應鏈評價修正！台股跌破季線，台達電重挫39%浮現合理價位？-財經焦點情報站 CMoney投資網誌",
         "source": "Google News｜台股線索",
-        "source_url": "https://news.google.com/rss/articles/CBMi-wJBVV95cUxNQUdQUVNNbFJZZjY2WExvVWlhSnZGRG91bG4tY0xsTUpKWlNuZXhpbnh0UjhUYXR3VUtza3FFY3pzc3c2b2VWNVVMR1FhQjR5QkNxc2NNQXJxY2V5ODd6bmFmZnhXVVBsQktqaU5SZi1oUzdsS184eldHeWcxaURORFZhS2U4RFEwNFBHdDI3M3ZnSElvRmo0aG1DSkNMNTl0QmRua1d2WkN0Y0VTX0VwYnk4aHRHUTQtY3ktYVlhRTM1dUxNSkpucXF0RC1LNUJBLV8wamlJakhXWWJsaWRyNUs5M0NNMThmdW44OUtJUW5nbWY1WHZRcWx0OThVUWhvbkdHMGVjYTBjb25hdW1SeDVuRk53RGJ6MFhZdjlkZ2U1ZXdnNUpIdFhsOWt4MXlWMUU1MEdJN0ozaTY5b1dKZHc0UXJLcWJvUkROUGswcGJjTVhpQkp5R3NJcHVjbUtVcHR4ZnNmSGkzVXA1b2tpVUpaMGZVQ2g3TmZR",
+        "source_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxQNkZDNjAzelVlOTlpMjlIamxvWlo1dEx2ZF8zdml3XzVWNUoycy1xdWZRQ0Q0N2JFYU0tZlJEU3RUa05oUmdWWDY4ZkZBVTBVME5MRVNpNV9LVHJQaGhOaE1rSEZaUXFpYklIeHpvYVRwZjRQeTdseWJnd1F1dmhNT0ZR",
         "source_domain": "news.google.com",
         "source_tier": "discovery",
         "event_type": "semiconductor",
@@ -977,9 +932,9 @@
         "risk_level": "持續觀察",
         "classification": "semiconductor",
         "classification_reason": "semiconductor_subject_action",
-        "published_at": "2026-10-24T16:30:00+00:00",
-        "snapshot_id": "a8ee72976ac815cd",
-        "observation_id": "83b16d97018d8711",
+        "published_at": "2026-10-25T17:09:31+00:00",
+        "snapshot_id": "6ead4b5890aff1d8",
+        "observation_id": "57b7282ef5a4bfad",
         "market_direction": null,
         "market_move": null,
         "why_important": "",
@@ -992,38 +947,38 @@
         "source_trace": {
           "verification": "公開來源待後續核對",
           "source_label": "Google News｜台股線索",
-          "source_url": "https://news.google.com/rss/articles/CBMi-wJBVV95cUxNQUdQUVNNbFJZZjY2WExvVWlhSnZGRG91bG4tY0xsTUpKWlNuZXhpbnh0UjhUYXR3VUtza3FFY3pzc3c2b2VWNVVMR1FhQjR5QkNxc2NNQXJxY2V5ODd6bmFmZnhXVVBsQktqaU5SZi1oUzdsS184eldHeWcxaURORFZhS2U4RFEwNFBHdDI3M3ZnSElvRmo0aG1DSkNMNTl0QmRua1d2WkN0Y0VTX0VwYnk4aHRHUTQtY3ktYVlhRTM1dUxNSkpucXF0RC1LNUJBLV8wamlJakhXWWJsaWRyNUs5M0NNMThmdW44OUtJUW5nbWY1WHZRcWx0OThVUWhvbkdHMGVjYTBjb25hdW1SeDVuRk53RGJ6MFhZdjlkZ2U1ZXdnNUpIdFhsOWt4MXlWMUU1MEdJN0ozaTY5b1dKZHc0UXJLcWJvUkROUGswcGJjTVhpQkp5R3NJcHVjbUtVcHR4ZnNmSGkzVXA1b2tpVUpaMGZVQ2g3TmZR",
+          "source_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxQNkZDNjAzelVlOTlpMjlIamxvWlo1dEx2ZF8zdml3XzVWNUoycy1xdWZRQ0Q0N2JFYU0tZlJEU3RUa05oUmdWWDY4ZkZBVTBVME5MRVNpNV9LVHJQaGhOaE1rSEZaUXFpYklIeHpvYVRwZjRQeTdseWJnd1F1dmhNT0ZR",
           "source_domain": "news.google.com",
-          "event_time": "2026-10-24T16:30:00+00:00",
-          "checked_at": "2026-10-25T02:44:25.942251+00:00",
+          "event_time": "2026-10-25T17:09:31+00:00",
+          "checked_at": "2026-10-25T22:09:10.031190+00:00",
           "verified_domains": [
             "news.google.com"
           ],
           "crosscheck_status": "pending_second_source",
-          "event_cluster_key": "evt-7dad7e93ddb7698345011f3e",
+          "event_cluster_key": "evt-cf8d58dbe5345d63d98348b9",
           "crosscheck_domains": [
             "news.google.com"
           ],
           "crosscheck_sources": [
-            "https://news.google.com/rss/articles/CBMi-wJBVV95cUxNQUdQUVNNbFJZZjY2WExvVWlhSnZGRG91bG4tY0xsTUpKWlNuZXhpbnh0UjhUYXR3VUtza3FFY3pzc3c2b2VWNVVMR1FhQjR5QkNxc2NNQXJxY2V5ODd6bmFmZnhXVVBsQktqaU5SZi1oUzdsS184eldHeWcxaURORFZhS2U4RFEwNFBHdDI3M3ZnSElvRmo0aG1DSkNMNTl0QmRua1d2WkN0Y0VTX0VwYnk4aHRHUTQtY3ktYVlhRTM1dUxNSkpucXF0RC1LNUJBLV8wamlJakhXWWJsaWRyNUs5M0NNMThmdW44OUtJUW5nbWY1WHZRcWx0OThVUWhvbkdHMGVjYTBjb25hdW1SeDVuRk53RGJ6MFhZdjlkZ2U1ZXdnNUpIdFhsOWt4MXlWMUU1MEdJN0ozaTY5b1dKZHc0UXJLcWJvUkROUGswcGJjTVhpQkp5R3NJcHVjbUtVcHR4ZnNmSGkzVXA1b2tpVUpaMGZVQ2g3TmZR"
+            "https://news.google.com/rss/articles/CBMiggFBVV95cUxQNkZDNjAzelVlOTlpMjlIamxvWlo1dEx2ZF8zdml3XzVWNUoycy1xdWZRQ0Q0N2JFYU0tZlJEU3RUa05oUmdWWDY4ZkZBVTBVME5MRVNpNV9LVHJQaGhOaE1rSEZaUXFpYklIeHpvYVRwZjRQeTdseWJnd1F1dmhNT0ZR"
           ],
-          "snapshot_id": "a8ee72976ac815cd",
-          "observation_id": "83b16d97018d8711"
+          "snapshot_id": "6ead4b5890aff1d8",
+          "observation_id": "57b7282ef5a4bfad"
         },
         "evidence_state": "single_source",
         "evidence_reason": "等待第二來源",
         "crosscheck_status": "pending_second_source"
       },
       {
-        "event_cluster_key": "evt-41698a61e217ab490952cd99",
-        "title": "半導體AI供應鏈迎籌碼戰！外資狂砍台股逾3千億，歷史數據揭露後續走勢-財經焦點情報站 - CMoney投資網誌",
+        "event_cluster_key": "evt-cf8d58dbe5345d63d98348b9",
+        "title": "就市論勢／AI供應鏈 不看淡 - UDN",
         "brief_title": "半導體／科技｜重要事件｜觀察",
         "short_label": "半導體／科技",
-        "event": "半導體AI供應鏈迎籌碼戰！外資狂砍台股逾3千億，歷史數據揭露後續走勢-財經焦點情報站 CMoney投資網誌",
-        "summary": "半導體AI供應鏈迎籌碼戰！外資狂砍台股逾3千億，歷史數據揭露後續走勢-財經焦點情報站 CMoney投資網誌",
-        "traditional_chinese_summary": "半導體AI供應鏈迎籌碼戰！外資狂砍台股逾3千億，歷史數據揭露後續走勢-財經焦點情報站 CMoney投資網誌",
+        "event": "就市論勢／AI供應鏈 不看淡 UDN",
+        "summary": "就市論勢／AI供應鏈 不看淡 UDN",
+        "traditional_chinese_summary": "就市論勢／AI供應鏈 不看淡 UDN",
         "source": "Google News｜台股線索",
-        "source_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxOU1pyaEE1LWNjbmd3NzhpRUs4LVk2Rmx6em5GNjJJMTNHdFc5b05La2c0aWhzZGhnaXVldTVMY1NOUmp4ZGZ0dUtaRGhuYTVFY3NPMU1MMm5MRTQ2ZEpDV2hMNmF1c3F0MlU1MnhSVUU3MmluSHA5ZkRfdDYtU1FseEhB",
+        "source_url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE1IQ2xoZVV1MkgwRV9wV2g3RlpKbnRmd2tDNTRLTDM5N2R1RTd1b29LNzJpLURraUJqbVExVmRJNUE4VnFlQVBuWXA2ZHEzYTFB0gFWQVVfeXFMT3pySU43NDNUZGpBdTJCZ3JpZ3lBNV84UmF1MEdFb09odUREWGc1UUxFR1VkNERFdDJUY3BaY19TUi16LTB3ejUwOGFlWDM1aXhTdURNSUE",
         "source_domain": "news.google.com",
         "source_tier": "discovery",
         "event_type": "semiconductor",
@@ -1031,9 +986,9 @@
         "risk_level": "持續觀察",
         "classification": "semiconductor",
         "classification_reason": "semiconductor_subject_action",
-        "published_at": "2026-10-25T00:39:26+00:00",
-        "snapshot_id": "a8ee72976ac815cd",
-        "observation_id": "07f612e17934caef",
+        "published_at": "2026-10-25T16:40:32+00:00",
+        "snapshot_id": "6ead4b5890aff1d8",
+        "observation_id": "d5479dd01599be8d",
         "market_direction": null,
         "market_move": null,
         "why_important": "",
@@ -1046,51 +1001,51 @@
         "source_trace": {
           "verification": "公開來源待後續核對",
           "source_label": "Google News｜台股線索",
-          "source_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxOU1pyaEE1LWNjbmd3NzhpRUs4LVk2Rmx6em5GNjJJMTNHdFc5b05La2c0aWhzZGhnaXVldTVMY1NOUmp4ZGZ0dUtaRGhuYTVFY3NPMU1MMm5MRTQ2ZEpDV2hMNmF1c3F0MlU1MnhSVUU3MmluSHA5ZkRfdDYtU1FseEhB",
+          "source_url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE1IQ2xoZVV1MkgwRV9wV2g3RlpKbnRmd2tDNTRLTDM5N2R1RTd1b29LNzJpLURraUJqbVExVmRJNUE4VnFlQVBuWXA2ZHEzYTFB0gFWQVVfeXFMT3pySU43NDNUZGpBdTJCZ3JpZ3lBNV84UmF1MEdFb09odUREWGc1UUxFR1VkNERFdDJUY3BaY19TUi16LTB3ejUwOGFlWDM1aXhTdURNSUE",
           "source_domain": "news.google.com",
-          "event_time": "2026-10-25T00:39:26+00:00",
-          "checked_at": "2026-10-25T02:44:25.952025+00:00",
+          "event_time": "2026-10-25T16:40:32+00:00",
+          "checked_at": "2026-10-25T22:09:10.048390+00:00",
           "verified_domains": [
             "news.google.com"
           ],
           "crosscheck_status": "pending_second_source",
-          "event_cluster_key": "evt-41698a61e217ab490952cd99",
+          "event_cluster_key": "evt-cf8d58dbe5345d63d98348b9",
           "crosscheck_domains": [
             "news.google.com"
           ],
           "crosscheck_sources": [
-            "https://news.google.com/rss/articles/CBMiggFBVV95cUxOU1pyaEE1LWNjbmd3NzhpRUs4LVk2Rmx6em5GNjJJMTNHdFc5b05La2c0aWhzZGhnaXVldTVMY1NOUmp4ZGZ0dUtaRGhuYTVFY3NPMU1MMm5MRTQ2ZEpDV2hMNmF1c3F0MlU1MnhSVUU3MmluSHA5ZkRfdDYtU1FseEhB"
+            "https://news.google.com/rss/articles/CBMiUEFVX3lxTE1IQ2xoZVV1MkgwRV9wV2g3RlpKbnRmd2tDNTRLTDM5N2R1RTd1b29LNzJpLURraUJqbVExVmRJNUE4VnFlQVBuWXA2ZHEzYTFB0gFWQVVfeXFMT3pySU43NDNUZGpBdTJCZ3JpZ3lBNV84UmF1MEdFb09odUREWGc1UUxFR1VkNERFdDJUY3BaY19TUi16LTB3ejUwOGFlWDM1aXhTdURNSUE"
           ],
-          "snapshot_id": "a8ee72976ac815cd",
-          "observation_id": "07f612e17934caef"
+          "snapshot_id": "6ead4b5890aff1d8",
+          "observation_id": "d5479dd01599be8d"
         },
         "evidence_state": "single_source",
         "evidence_reason": "等待第二來源",
         "crosscheck_status": "pending_second_source"
       },
       {
-        "event_cluster_key": "evt-a0c7913542afae6f8dd07685",
-        "title": "整理包／台積電供應鏈全解析！護國神山法說會受惠股...先進製程 CoWoS、CoPoS 十大產業鏈一次看 - 經濟日報",
-        "brief_title": "半導體財報｜重要事件｜觀察",
-        "short_label": "半導體財報",
-        "event": "整理包／台積電供應鏈全解析！護國神山法說會受惠股...先進製程 CoWoS、CoPoS 十大產業鏈一次看 經濟日報",
-        "summary": "整理包／台積電供應鏈全解析！護國神山法說會受惠股...先進製程 CoWoS、CoPoS 十大產業鏈一次看 經濟日報",
-        "traditional_chinese_summary": "整理包／台積電供應鏈全解析！護國神山法說會受惠股...先進製程 CoWoS、CoPoS 十大產業鏈一次看 經濟日報",
-        "source": "Google News｜台股線索",
-        "source_url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTE9ZLVp5RjlPenFrcTRSSnFmem04R1h0SVZPSzhaVjdZVkJ1UG5WMWl5Tm5Gc2J6Wjlia0g0R3NQa2JkekdsUnRudWNwQWtHcGRpaDNleE5iNEJNc3o4",
-        "source_domain": "news.google.com",
+        "event_cluster_key": "evt-02f356cbb3d316eec92a75ef",
+        "title": "Nvidia (NVDA) Has Lost Its China AI Accelerator Market",
+        "brief_title": "半導體／科技｜重要事件｜觀察",
+        "short_label": "半導體／科技",
+        "event": "Nvidia (NasdaqGS:NVDA) has effectively lost its China AI accelerator market after U.S. export controls restricted advanced GPU shipments. Specialist financiers are structuring large facilities backed by Nvidia GPU inventory, treating high-end chips as core collateral for AI infrastructure projects. Enterprise customers are rolling out liquid-cooled, rack-scale agentic AI factories, including deployments built around Supermicro server platforms. The collapse of Nvidia's China AI accelerator...",
+        "summary": "Nvidia (NasdaqGS:NVDA) has effectively lost its China AI accelerator market after U.S. export controls restricted advanced GPU shipments. Specialist financiers are structuring large facilities backed by Nvidia GPU inventory, treating high-end chips as core collateral for AI infrastructure projects. Enterprise customers are rolling out liquid-cooled, rack-scale agentic AI factories, including deployments built around Supermicro server platforms. The collapse of Nvidia's China AI accelerator...",
+        "traditional_chinese_summary": "Nvidia (NasdaqGS:NVDA) has effectively lost its China AI accelerator market after U.S. export controls restricted advanced GPU shipments. Specialist financiers are structuring large facilities backed by Nvidia GPU inventory, treating high-end chips as core collateral for AI infrastructure projects. Enterprise customers are rolling out liquid-cooled, rack-scale agentic AI factories, including deployments built around Supermicro server platforms. The collapse of Nvidia's China AI accelerator...",
+        "source": "Yahoo Finance",
+        "source_url": "https://finance.yahoo.com/technology/ai/articles/nvidia-nvda-lost-china-ai-190626796.html?.tsrc=rss",
+        "source_domain": "finance.yahoo.com",
         "source_tier": "discovery",
         "event_type": "semiconductor",
         "importance": "normal",
         "risk_level": "持續觀察",
         "classification": "semiconductor",
         "classification_reason": "semiconductor_subject_action",
-        "published_at": "2026-10-23T09:00:00+00:00",
-        "snapshot_id": "a8ee72976ac815cd",
-        "observation_id": "3116be1f6ded6b15",
+        "published_at": "2026-10-25T19:06:26+00:00",
+        "snapshot_id": "6ead4b5890aff1d8",
+        "observation_id": "fa2e6f00150c39d5",
         "market_direction": null,
         "market_move": null,
-        "why_important": "財報與展望可能改變 AI／半導體需求預期，但單一公司消息不代表整體產業。",
+        "why_important": "",
         "impact_confirmation": {
           "confirmed": false,
           "method": "尚無相關市場同步確認",
@@ -1099,24 +1054,24 @@
         },
         "source_trace": {
           "verification": "公開來源待後續核對",
-          "source_label": "Google News｜台股線索",
-          "source_url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTE9ZLVp5RjlPenFrcTRSSnFmem04R1h0SVZPSzhaVjdZVkJ1UG5WMWl5Tm5Gc2J6Wjlia0g0R3NQa2JkekdsUnRudWNwQWtHcGRpaDNleE5iNEJNc3o4",
-          "source_domain": "news.google.com",
-          "event_time": "2026-10-23T09:00:00+00:00",
-          "checked_at": "2026-10-25T02:44:25.963286+00:00",
+          "source_label": "Yahoo Finance",
+          "source_url": "https://finance.yahoo.com/technology/ai/articles/nvidia-nvda-lost-china-ai-190626796.html?.tsrc=rss",
+          "source_domain": "finance.yahoo.com",
+          "event_time": "2026-10-25T19:06:26+00:00",
+          "checked_at": "2026-10-25T22:09:10.062651+00:00",
           "verified_domains": [
-            "news.google.com"
+            "finance.yahoo.com"
           ],
           "crosscheck_status": "pending_second_source",
-          "event_cluster_key": "evt-a0c7913542afae6f8dd07685",
+          "event_cluster_key": "evt-02f356cbb3d316eec92a75ef",
           "crosscheck_domains": [
-            "news.google.com"
+            "finance.yahoo.com"
           ],
           "crosscheck_sources": [
-            "https://news.google.com/rss/articles/CBMiXEFVX3lxTE9ZLVp5RjlPenFrcTRSSnFmem04R1h0SVZPSzhaVjdZVkJ1UG5WMWl5Tm5Gc2J6Wjlia0g0R3NQa2JkekdsUnRudWNwQWtHcGRpaDNleE5iNEJNc3o4"
+            "https://finance.yahoo.com/technology/ai/articles/nvidia-nvda-lost-china-ai-190626796.html?.tsrc=rss"
           ],
-          "snapshot_id": "a8ee72976ac815cd",
-          "observation_id": "3116be1f6ded6b15"
+          "snapshot_id": "6ead4b5890aff1d8",
+          "observation_id": "fa2e6f00150c39d5"
         },
         "evidence_state": "single_source",
         "evidence_reason": "等待第二來源",
@@ -1125,44 +1080,49 @@
     ]
   },
   "briefing": {
-    "slot": "intraday",
-    "title": "台股盤中儀表板",
-    "overview": "總結｜台股休市，以下為最近可核對資料。行情重點｜最近收盤加權指數-1.81%、最近收盤台指期-1.58%、最近收盤櫃買-3.47%。風險｜留意利率、美元與能源變化是否改變目前市場傳導。",
-    "assessment_summary": "總結｜台股休市，以下為最近可核對資料。行情重點｜最近收盤加權指數-1.81%、最近收盤台指期-1.58%、最近收盤櫃買-3.47%。風險｜留意利率、美元與能源變化是否改變目前市場傳導。",
-    "public_short_message": "📊 台股盤中｜台股休市，以下為最近可核對資料；最近收盤加權指數-1.81%。",
+    "slot": "morning",
+    "title": "投資晨報儀表板",
+    "overview": "總結｜台股休市，以下為最近可核對資料。行情重點｜台股現貨與台指期日盤休市；加權行情資料日 10/22；最近收盤標普500-0.52%、最近收盤那斯達克綜合-0.21%、最近收盤道瓊-1.23%。風險｜核心證據方向有衝突，等待下一次收盤或官方資料核對。",
+    "assessment_summary": "總結｜台股休市，以下為最近可核對資料。行情重點｜台股現貨與台指期日盤休市；加權行情資料日 10/22；最近收盤標普500-0.52%、最近收盤那斯達克綜合-0.21%、最近收盤道瓊-1.23%。風險｜核心證據方向有衝突，等待下一次收盤或官方資料核對。",
+    "public_short_message": "📊 晨報｜台股現貨與台指期日盤休市；加權行情資料日 10/22； 晨報",
     "digest_status": "ready",
     "notification_eligible": true,
     "notification_reason": "candidate_ready",
+    "snapshot_id": "6ead4b5890aff1d8",
+    "observation_id": "",
+    "trace_id": "brief-6ead4b5890aff1d8-morning",
     "reminder": "僅供公開資訊整理與教育性觀察，不構成投資建議。",
     "market_assessment": {
-      "stance": "bearish",
-      "stance_label": "偏空",
-      "confidence": "high",
-      "market_scope": "台股",
-      "dominant_driver": "台股核心指數偏弱",
+      "stance": "divergent",
+      "stance_label": "分歧",
+      "confidence": "medium",
+      "market_scope": "台美市場",
+      "dominant_driver": "美股大盤偏弱",
       "dominant_driver_key": null,
       "supporting_theme_keys": [
-        "evt-41698a61e217ab490952cd99",
-        "event-6efdff1c4af50c4ac330"
+        "evt-c37de84fd931840302f39096",
+        "evt-02f356cbb3d316eec92a75ef"
       ],
-      "conflict_flags": [],
+      "conflict_flags": [
+        "directional_quote_conflict",
+        "group:commodities"
+      ],
       "summary_sections": {
         "summary": "台股休市，以下為最近可核對資料",
-        "market_highlights": "最近收盤加權指數-1.81%、最近收盤台指期-1.58%、最近收盤櫃買-3.47%",
-        "risk": "留意利率、美元與能源變化是否改變目前市場傳導。"
+        "market_highlights": "台股現貨與台指期日盤休市；加權行情資料日 10/22；最近收盤標普500-0.52%、最近收盤那斯達克綜合-0.21%、最近收盤道瓊-1.23%",
+        "risk": "核心證據方向有衝突，等待下一次收盤或官方資料核對。",
+        "market_session": "台股現貨與台指期日盤休市；加權行情資料日 10/22"
       },
       "joint_market_signal": {
         "version": "joint-market-signal-v1",
-        "status": "complete",
-        "label": "中性偏謹慎",
-        "base_label": "中性偏謹慎",
+        "status": "insufficient_evidence",
+        "label": "資料不足，台美狀態待確認",
+        "base_label": "資料不足，台美狀態待確認",
         "taiwan": {
-          "label": "偏弱",
-          "score": -1.0,
-          "directions": [
-            -1
-          ],
-          "valid_factors": 1
+          "label": "資料不足",
+          "score": null,
+          "directions": [],
+          "valid_factors": 0
         },
         "us": {
           "label": "分歧",
@@ -1175,8 +1135,8 @@
           ],
           "valid_factors": 4
         },
-        "price_score": -0.625,
-        "valid_factor_count": 5,
+        "price_score": null,
+        "valid_factor_count": 4,
         "minimum_factor_count": 3,
         "risk_adjustments": [
           "taiwan情緒：極度恐慌",
@@ -1186,21 +1146,7 @@
         ],
         "divergent": false,
         "evidence": {
-          "taiwan": [
-            {
-              "ticker": "TAIEX",
-              "name": "臺灣加權指數",
-              "price": 46041.43,
-              "change_percent": -1.81,
-              "currency": "點",
-              "freshness": "recent_close",
-              "data_status": "備援資料",
-              "quote_date": "2026-10-22",
-              "quote_time": "2026-10-22T05:30:00+00:00",
-              "source_label": "TWSE官方備援",
-              "source_url": "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK"
-            }
-          ],
+          "taiwan": [],
           "us": [
             {
               "ticker": "NASDAQ",
@@ -1254,13 +1200,17 @@
         },
         "excluded_factors": [
           {
+            "ticker": "TAIEX",
+            "reason": "quote_unusable"
+          },
+          {
             "ticker": "TXF",
             "reason": "quote_unusable"
           }
         ],
-        "confidence": "medium"
+        "confidence": "low"
       },
-      "evidence_as_of": "2026-10-25T02:44:26.701441+00:00",
+      "evidence_as_of": "2026-10-25T22:09:10.713635+00:00",
       "factor_count": 14,
       "evidence_dimensions": [
         "commodity",
@@ -1290,19 +1240,20 @@
           1
         ]
       },
-      "score": -2.062,
+      "score": -2.05,
       "factor_source": "quote_factors+market_regime",
-      "weekend_market": true,
-      "directional_quote_count": 9,
-      "market_scope_key": "taiwan",
-      "scheduled_report": false,
-      "quote_gaps": []
+      "weekend_market": false,
+      "directional_quote_count": 11,
+      "market_scope_key": "global",
+      "scheduled_report": true,
+      "quote_gaps": [],
+      "market_session_state": "台股現貨與台指期日盤休市；加權行情資料日 10/22"
     },
     "displayed_event_keys": [
-      "bb4ce9a08e9de7f8b824",
-      "evt-41698a61e217ab490952cd99",
-      "evt-7dad7e93ddb7698345011f3e",
-      "event-6efdff1c4af50c4ac330"
+      "047bab60ce65e30140af",
+      "evt-c37de84fd931840302f39096",
+      "evt-02f356cbb3d316eec92a75ef",
+      "evt-cf8d58dbe5345d63d98348b9"
     ],
     "observations": [
       {
@@ -1310,14 +1261,14 @@
         "event": "台指資料暫時無法取得；櫃買指數資料暫時無法取得。台股風險：極度恐慌 23.8；VIX 30.31（+6.73%）。",
         "importance": "加權指數代表大型權值股，櫃買指數較反映中小型股；同步代表盤面廣度較一致，分歧則要保留產業結構差異。",
         "market_impact": "加權指數與櫃買指數同為下跌，可作為同向價格確認。",
-        "watch": "技術觀察：加權指數近20日區間資料不足，暫不判定支撐／壓力位置。 櫃買指數近20日區間資料不足，暫不判定支撐／壓力位置。 後續核對台指期是否與現貨收斂、成交量是否放大。",
-        "source_note": "資料來源：TWSE官方備援 | 2026-10-22 05:30；Supabase備援 | 2026-10-22"
+        "watch": "技術觀察：加權指數近20日區間 46,041.43–49,822.55；近60日 39,933.30–49,822.55，目前接近20日支撐區（區間位置 0%），資料截至 2026-10-22。 櫃買指數近20日區間資料不足，暫不判定支撐／壓力位置。 後續核對台指期是否與現貨收斂、成交量是否放大。",
+        "source_note": "資料來源：Supabase備援 | 2026-10-22 05:30；Supabase備援 | 2026-10-22"
       },
       {
         "title": "台積電／半導體",
         "event": "台積電 2,385.00 TWD（+0.00%）；費半 10,779.46 點（+0.44%）；Nasdaq 25,955.34 點（-0.21%）。",
         "importance": "台積電、費半與 Nasdaq 同向時，較支持半導體／成長股風險偏好的共同變化；若只有單一市場變動，不足以推論產業趨勢。",
-        "market_impact": "費半與台積電未呈現一致方向，暫不視為同步訊號。 市場傳導：尚未出現足夠的相關公開價格確認；本輪連動觀察為 NASDAQ、SOX。",
+        "market_impact": "費半與台積電未呈現一致方向，暫不視為同步訊號。 各市場若同向可作為價格確認；若分歧，暫不推論跨市場因果。",
         "watch": "技術觀察：台積電近20日區間 2,385.00–2,585.00；近60日 2,200.00–2,585.00，目前接近20日支撐區（區間位置 0%），資料截至 2026-10-23。 費半近20日區間 10,731.98–13,217.82；近60日 10,731.98–13,217.82，目前接近20日支撐區（區間位置 2%），資料截至 2026-10-23。 後續核對台積電、AI 供應鏈財報展望與費半是否延續。",
         "source_note": "資料來源：Yahoo | 2026-10-23"
       },
@@ -1331,23 +1282,23 @@
       },
       {
         "title": "利率／匯率／黃金能源",
-        "event": "美元指數 101.81 點（+0.20%）；美國10年債殖利率 4.99 %（+0.81%）；美元兌台幣 32.57 TWD（+0.62%）；黃金 4,007.90 USD（-1.29%）；油價 103.27 USD（+3.82%）。",
+        "event": "美元指數 101.81 點（+0.20%）；美國10年債殖利率 4.99 %（+0.81%）；美元兌台幣 32.55 TWD（-0.15%）；黃金 4,007.90 USD（-1.29%）；油價 103.27 USD（+3.82%）。",
         "importance": "利率、美元、黃金與能源共同反映通膨及避險需求；只有同時觀察方向與資料時間，才能分辨利率重估或單一商品波動。",
         "market_impact": "美元指數上漲、黃金下跌，呈現分歧，暫不推論跨市場因果。",
         "watch": "技術觀察：核對美元與黃金是否同向、油價是否突破近20日區間，並觀察科技指數與台股權值是否同步或分歧。",
-        "source_note": "資料來源：Yahoo | 2026-10-23"
+        "source_note": "資料來源：Yahoo | 2026-10-23；Yahoo | 2026-10-25"
       },
       {
         "title": "加密市場",
-        "event": "BTC 80,986.50 USD（-0.11%）；ETH 2,367.89 USD（-0.68%）。",
+        "event": "BTC 80,728.87 USD（-0.08%）；ETH 2,352.38 USD（-0.15%）。",
         "importance": "BTC／ETH 是高波動風險偏好的補充觀察；需搭配 Nasdaq、美元與流動性資料，不把單一幣價變動當成股市方向。",
         "market_impact": "BTC與ETH同為下跌，可作為同向價格確認。",
-        "watch": "技術觀察：BTC近20日區間 80,876.96–85,786.59；近60日 75,612.51–86,602.91，目前接近20日支撐區（區間位置 0%），資料截至 2026-10-25。 ETH近20日區間 2,365.28–2,711.03；近60日 2,365.28–2,776.47，目前接近20日支撐區（區間位置 0%），資料截至 2026-10-25。 後續核對兩者是否同步、波動是否放大，以及科技股是否同向。",
-        "source_note": "資料來源：Binance | 2026-10-25 02:43"
+        "watch": "技術觀察：BTC近20日區間 80,488.38–85,557.56；近60日 75,612.51–86,602.91，目前接近20日支撐區（區間位置 0%），資料截至 2026-10-25。 ETH近20日區間 2,343.98–2,697.52；近60日 2,343.98–2,776.47，目前接近20日支撐區（區間位置 0%），資料截至 2026-10-25。 後續核對兩者是否同步、波動是否放大，以及科技股是否同向。",
+        "source_note": "資料來源：Binance | 2026-10-25 22:04"
       },
       {
         "title": "風險提醒",
-        "event": "本次焦點：行情主導。加權指數46,041.43-1.81%、最近收盤台指期46,272.00-1.58%、標普5007,623.68-0.52%。 美股風險：恐慌 21.0；VIX 19.45（+2.21%）。",
+        "event": "本次焦點：行情主導。最近收盤加權指數46,041.43-1.81%、最近收盤台指期46,272.00-1.58%、標普5007,623.68-0.52%。 美股風險：恐慌 21.0；VIX 19.45（+2.21%）。",
         "importance": "價格資料提供目前市場狀態，仍需搭配事件與資料時間判讀。",
         "market_impact": "各市場若同向可作為價格確認；若分歧，暫不推論跨市場因果。",
         "watch": "持續核對費半、那斯達克、道瓊與台股主要指數是否延續。"
@@ -1355,16 +1306,16 @@
     ],
     "primary_theme": {
       "title": "市場價格",
-      "what_happened": "加權指數46,041.43-1.81%、最近收盤台指期46,272.00-1.58%、標普5007,623.68-0.52%。",
+      "what_happened": "最近收盤加權指數46,041.43-1.81%、最近收盤台指期46,272.00-1.58%、標普5007,623.68-0.52%。",
       "why_important": "價格資料提供目前市場狀態，仍需搭配事件與資料時間判讀。",
       "market_implication": "各市場若同向可作為價格確認；若分歧，暫不推論跨市場因果。",
       "stock_observation": "持續核對費半、那斯達克、道瓊與台股主要指數是否延續。",
       "source_evidence": [
         {
-          "source": "TWSE官方備援",
+          "source": "Supabase備援",
           "ticker": "TAIEX",
           "quote_time": "2026-10-22T05:30:00+00:00",
-          "freshness": "recent_close"
+          "freshness": "stale"
         },
         {
           "source": "TAIFEX日盤",
@@ -1381,10 +1332,10 @@
       ],
       "evidence": [
         {
-          "source": "TWSE官方備援",
+          "source": "Supabase備援",
           "ticker": "TAIEX",
           "quote_time": "2026-10-22T05:30:00+00:00",
-          "freshness": "recent_close"
+          "freshness": "stale"
         },
         {
           "source": "TAIFEX日盤",
@@ -1403,10 +1354,10 @@
   },
   "external_alert": {},
   "source_health": {
-    "checked_at": "2026-10-25T10:44:26.701441+08:00",
+    "checked_at": "2026-10-26T06:09:10.713635+08:00",
     "status": "critical",
     "summary": "4 個來源有資料缺口",
-    "missing_source_count": 4,
+    "missing_source_count": 5,
     "runtime_failure_count": 4,
     "investor_status": "核心資料不足",
     "event_scan": {
@@ -1416,10 +1367,10 @@
       "detail": "本輪掃描已發現符合門檻的市場事件。"
     },
     "observability": {
-      "observations": 8,
+      "observations": 9,
       "success_rate": 50.0,
       "failure_count": 4,
-      "configuration_missing_count": 0,
+      "configuration_missing_count": 1,
       "no_event_count": 0,
       "stale_count": 0,
       "degraded_count": 4,
@@ -1434,59 +1385,59 @@
     "coverage": "current_release",
     "alerts": [
       {
-        "notification_id": "3df07285f20d9b3f46dde4e84b6d67dc",
-        "release_id": "release-fcace1643c360ad5",
-        "snapshot_id": "a8ee72976ac815cd",
-        "observation_id": "83b16d97018d8711",
-        "canonical_content_hash": "e31c97abd75270e827ea805f41ebc849b1220dede47d2413422ab97210fbd872",
+        "notification_id": "1116c05856cb48a01242cc0df36b3127",
+        "release_id": "release-fd359058c950d5cc",
+        "snapshot_id": "6ead4b5890aff1d8",
+        "observation_id": "49bd9421eba49c9c",
+        "canonical_content_hash": "65cebe16d06c1c28a840d63856fe31da7ec13e26752125b190b57fe554c1cb16",
         "canonical_hash_version": 2,
-        "path": "alerts/fbc2d6a74e8a30fe27bce43b17903ee38b6acb3ea1928f361f55a0db85dfcffa.json",
-        "sha256": "6750d338f3ee91eec900e91e709cadedd1eddbbfeee99fea95e3199a05b7f28d",
-        "created_at": "2026-10-25T02:44:54.275007+00:00"
+        "path": "alerts/8f4af3b50be83cef57751d4da9df7e0a6ea49f53d3620ac5bcaa4882bfd50564.json",
+        "sha256": "c0b57e1d29c49e8b9f544c4d9479016034b64197eda0ca41253b974460ee07ba",
+        "created_at": "2026-10-25T22:09:14.178321+00:00"
       },
       {
-        "notification_id": "briefing-intraday-861e8277a304d301dbe5",
-        "release_id": "release-fcace1643c360ad5",
-        "snapshot_id": "a8ee72976ac815cd",
-        "observation_id": null,
-        "canonical_content_hash": "861e8277a304d301dbe5808019628b76fbfc9f82deab1e0e5a7931a6703c3197",
+        "notification_id": "4fb24d1e5680d5e5277fa8515758b044",
+        "release_id": "release-fd359058c950d5cc",
+        "snapshot_id": "6ead4b5890aff1d8",
+        "observation_id": "57b7282ef5a4bfad",
+        "canonical_content_hash": "2f9596d27ce13af5a138c07ee3407290c716a45262a21d740ca0839b3626c718",
         "canonical_hash_version": 2,
-        "path": "alerts/fbdba19fe46cfd4a9f622ce88dfe2af356efd0da8988afdc7b0005e7cc6b8239.json",
-        "sha256": "5430b0b9398dab3683efb4a2b89ab3993480e14d0b73ef3ba99c3fc891130acf",
-        "created_at": "2026-10-25T02:44:54.275007+00:00"
+        "path": "alerts/6cf0a023176bf89135d5127bb36c9ce053678d7e155f49f43ba183aa8cb893ba.json",
+        "sha256": "8b4b5b48c398c46f5d4a0b5286219ff1d0be69bc74487511b2b9dfd492dfc522",
+        "created_at": "2026-10-25T22:09:14.178321+00:00"
       },
       {
-        "notification_id": "c609a79dee757a3def3f928e867956cf",
-        "release_id": "release-fcace1643c360ad5",
-        "snapshot_id": "a8ee72976ac815cd",
-        "observation_id": "07f612e17934caef",
-        "canonical_content_hash": "c91ae82735c407f85af2b3a2a939e1d60f30f8bff64c3734cfdba11bd5545e91",
+        "notification_id": "briefing-morning-7c0cbeb63a1b73c2b6d7",
+        "release_id": "release-fd359058c950d5cc",
+        "snapshot_id": "6ead4b5890aff1d8",
+        "observation_id": "",
+        "canonical_content_hash": "7c0cbeb63a1b73c2b6d734cb2000c9d6831cbfb02e9db8410cf4542c73cfcac8",
         "canonical_hash_version": 2,
-        "path": "alerts/19757d609ec8df469798ef535281a3c05d3cbad7e20bf8efc62b627405e4e9b4.json",
-        "sha256": "5631892b5e7720663e5ccdc5383d3c3c7cf0cfafa2702c375ae724319dd6ded3",
-        "created_at": "2026-10-25T02:44:54.275007+00:00"
+        "path": "alerts/8dcac72c1ba8bb85c45612ecb2c4516b222438c476ef4ef928e87932a3014b25.json",
+        "sha256": "7038d13693ef6e503a7f6d56f13a0fe7e188be11092fe9c9e96da4788837c1bd",
+        "created_at": "2026-10-25T22:09:14.178321+00:00"
       },
       {
-        "notification_id": "ca444c026f536b4eb948b61250fe5c1d",
-        "release_id": "release-fcace1643c360ad5",
-        "snapshot_id": "a8ee72976ac815cd",
-        "observation_id": "3116be1f6ded6b15",
-        "canonical_content_hash": "0bcc8099f8a8a02e624fa0ddba9a1252504b62e36ea2313dd62d8e1ed055d028",
+        "notification_id": "e1285f5c5572bd6e2f05cee7d74c41ab",
+        "release_id": "release-fd359058c950d5cc",
+        "snapshot_id": "6ead4b5890aff1d8",
+        "observation_id": "d5479dd01599be8d",
+        "canonical_content_hash": "7743eb6136b16d0b543636fa2f47408adc51c34f0d11937fa579484041041877",
         "canonical_hash_version": 2,
-        "path": "alerts/226820494ff9a07c9907e43a18a97f30245d55b1c7e46795ec00c510889cf7e5.json",
-        "sha256": "098b4ac77f2d4428f736bdb7663cc4e1c38a7c00819f2d923725eaeaa3ac0cc4",
-        "created_at": "2026-10-25T02:44:54.275007+00:00"
+        "path": "alerts/1e2a7db71a7e5b7a336223cb6c26d666da81a861e575c0ebbba005c5cc836d50.json",
+        "sha256": "b6d126e21865e982bee36464aefc117c6eb168a45a503f46590c211896d84162",
+        "created_at": "2026-10-25T22:09:14.178321+00:00"
       },
       {
-        "notification_id": "cdfdf05b0cfbc64fed15ebdab1e77d81",
-        "release_id": "release-fcace1643c360ad5",
-        "snapshot_id": "a8ee72976ac815cd",
-        "observation_id": "bbb9ad615d082ec4",
-        "canonical_content_hash": "a728f69608bbb59401cf0d37d562961b4dcf975a3798bb647bf9ea06da5ce712",
+        "notification_id": "f415e868d90d713a044b6251ae299a95",
+        "release_id": "release-fd359058c950d5cc",
+        "snapshot_id": "6ead4b5890aff1d8",
+        "observation_id": "fa2e6f00150c39d5",
+        "canonical_content_hash": "f876ba54185c7e8478e3284f45c8bc44e20e36f10912d420e3e63b32ca526ebe",
         "canonical_hash_version": 2,
-        "path": "alerts/4acdef1681fc73cd12cabe88e252be540a6ae2dc7556dedb0e9fab00c82d3387.json",
-        "sha256": "8652c1230aeeca9088c9c994fa436635220f93824e8089bbcc1d89f0eedcc82f",
-        "created_at": "2026-10-25T02:44:54.275007+00:00"
+        "path": "alerts/b9a975df444a5ff4275cd580caa008616b8cea080a6a9b35ba61c23f57cd56dc.json",
+        "sha256": "4f87cb1fd2700118b40a998a97c853d84c928f3d8dc8ccc7c345dd069e8ad070",
+        "created_at": "2026-10-25T22:09:14.178321+00:00"
       }
     ]
   },
@@ -1497,11 +1448,11 @@
       "event-ledger.json": "data/event-ledger.json",
       "source-health.json": "data/source-health.json",
       "news.json": "data/news.json",
-      "alerts/fbc2d6a74e8a30fe27bce43b17903ee38b6acb3ea1928f361f55a0db85dfcffa.json": "data/alerts/fbc2d6a74e8a30fe27bce43b17903ee38b6acb3ea1928f361f55a0db85dfcffa.json",
-      "alerts/fbdba19fe46cfd4a9f622ce88dfe2af356efd0da8988afdc7b0005e7cc6b8239.json": "data/alerts/fbdba19fe46cfd4a9f622ce88dfe2af356efd0da8988afdc7b0005e7cc6b8239.json",
-      "alerts/19757d609ec8df469798ef535281a3c05d3cbad7e20bf8efc62b627405e4e9b4.json": "data/alerts/19757d609ec8df469798ef535281a3c05d3cbad7e20bf8efc62b627405e4e9b4.json",
-      "alerts/226820494ff9a07c9907e43a18a97f30245d55b1c7e46795ec00c510889cf7e5.json": "data/alerts/226820494ff9a07c9907e43a18a97f30245d55b1c7e46795ec00c510889cf7e5.json",
-      "alerts/4acdef1681fc73cd12cabe88e252be540a6ae2dc7556dedb0e9fab00c82d3387.json": "data/alerts/4acdef1681fc73cd12cabe88e252be540a6ae2dc7556dedb0e9fab00c82d3387.json",
+      "alerts/8f4af3b50be83cef57751d4da9df7e0a6ea49f53d3620ac5bcaa4882bfd50564.json": "data/alerts/8f4af3b50be83cef57751d4da9df7e0a6ea49f53d3620ac5bcaa4882bfd50564.json",
+      "alerts/6cf0a023176bf89135d5127bb36c9ce053678d7e155f49f43ba183aa8cb893ba.json": "data/alerts/6cf0a023176bf89135d5127bb36c9ce053678d7e155f49f43ba183aa8cb893ba.json",
+      "alerts/8dcac72c1ba8bb85c45612ecb2c4516b222438c476ef4ef928e87932a3014b25.json": "data/alerts/8dcac72c1ba8bb85c45612ecb2c4516b222438c476ef4ef928e87932a3014b25.json",
+      "alerts/1e2a7db71a7e5b7a336223cb6c26d666da81a861e575c0ebbba005c5cc836d50.json": "data/alerts/1e2a7db71a7e5b7a336223cb6c26d666da81a861e575c0ebbba005c5cc836d50.json",
+      "alerts/b9a975df444a5ff4275cd580caa008616b8cea080a6a9b35ba61c23f57cd56dc.json": "data/alerts/b9a975df444a5ff4275cd580caa008616b8cea080a6a9b35ba61c23f57cd56dc.json",
       "alert-index.json": "data/alert-index.json",
       "alerts/index/node-00.json": "data/alerts/index/node-00.json",
       "alerts/index/node-01.json": "data/alerts/index/node-01.json",
@@ -1779,38 +1730,38 @@
       "alert-lookup-root.json": "data/alert-lookup-root.json"
     },
     "hashes": {
-      "market.json": "9353986281396292862a879c620ce6c9c292c6a4e77692544036496830b0ef80",
+      "market.json": "caa8002194ac84529c9153a9916c221fb0c551b48b8ff6274539e0b26780d4d5",
       "research-report.json": "1705747cc9f33e983d057e444df25ba62d32b7dae3c4edb4cf9ca6e6bedef198",
       "event-ledger.json": "45bf3e2b6e6550958f8df31ccc858479c660354f57f888689be838b92b3cfdfa",
-      "source-health.json": "39ad366c96cd78561b137113530aac07de851c60c618e82fe13863231b75d13e",
-      "news.json": "67beb38045f940efef4df3d9a4afc0cd525ae1b1e5a9628634307b6ab69ca76b",
-      "alerts/fbc2d6a74e8a30fe27bce43b17903ee38b6acb3ea1928f361f55a0db85dfcffa.json": "6750d338f3ee91eec900e91e709cadedd1eddbbfeee99fea95e3199a05b7f28d",
-      "alerts/fbdba19fe46cfd4a9f622ce88dfe2af356efd0da8988afdc7b0005e7cc6b8239.json": "5430b0b9398dab3683efb4a2b89ab3993480e14d0b73ef3ba99c3fc891130acf",
-      "alerts/19757d609ec8df469798ef535281a3c05d3cbad7e20bf8efc62b627405e4e9b4.json": "5631892b5e7720663e5ccdc5383d3c3c7cf0cfafa2702c375ae724319dd6ded3",
-      "alerts/226820494ff9a07c9907e43a18a97f30245d55b1c7e46795ec00c510889cf7e5.json": "098b4ac77f2d4428f736bdb7663cc4e1c38a7c00819f2d923725eaeaa3ac0cc4",
-      "alerts/4acdef1681fc73cd12cabe88e252be540a6ae2dc7556dedb0e9fab00c82d3387.json": "8652c1230aeeca9088c9c994fa436635220f93824e8089bbcc1d89f0eedcc82f",
-      "alert-index.json": "323f7fa6572645da832cd5656e94b94719d2ada48933b9fc568cc1ade0c9fe74",
+      "source-health.json": "c37998f5f66502594824e8fd4a5f0612603a5074d3916ba6a559668dcd7ca66c",
+      "news.json": "f7117d8cf02309fd748fb279d6e435ba6681a3fe60f7adf64b800636afadae8c",
+      "alerts/8f4af3b50be83cef57751d4da9df7e0a6ea49f53d3620ac5bcaa4882bfd50564.json": "c0b57e1d29c49e8b9f544c4d9479016034b64197eda0ca41253b974460ee07ba",
+      "alerts/6cf0a023176bf89135d5127bb36c9ce053678d7e155f49f43ba183aa8cb893ba.json": "8b4b5b48c398c46f5d4a0b5286219ff1d0be69bc74487511b2b9dfd492dfc522",
+      "alerts/8dcac72c1ba8bb85c45612ecb2c4516b222438c476ef4ef928e87932a3014b25.json": "7038d13693ef6e503a7f6d56f13a0fe7e188be11092fe9c9e96da4788837c1bd",
+      "alerts/1e2a7db71a7e5b7a336223cb6c26d666da81a861e575c0ebbba005c5cc836d50.json": "b6d126e21865e982bee36464aefc117c6eb168a45a503f46590c211896d84162",
+      "alerts/b9a975df444a5ff4275cd580caa008616b8cea080a6a9b35ba61c23f57cd56dc.json": "4f87cb1fd2700118b40a998a97c853d84c928f3d8dc8ccc7c345dd069e8ad070",
+      "alert-index.json": "4f663f6499e34691cbf139cc0846c33f3bc72eaa0a97f1b37756a4725b266fc0",
       "alerts/index/node-00.json": "1febb83ac99d9292fe66eb8e736bffc81222c6c83d44ec6aa4974c200d431b49",
       "alerts/index/node-01.json": "52bcd59de845b2476b5639d0b95e20ddd69210a731aad96fccfb0af04c767100",
       "alerts/index/node-02.json": "22c31c92abc7b74068ff723d03bd0ba106a9456037f37af00daabfe3399f8a94",
       "alerts/index/node-03.json": "481dd4b6fc89086702945368ef602896a97b9243d3ffd24ead2b65cf262ca7f4",
-      "alerts/index/node-04.json": "89e856e2f921c7d5180b6d9347eddf4c63b9f8cc6a5fd856cada94a93e3c9e13",
+      "alerts/index/node-04.json": "e630c30df47166ed065dcabc2d7cf0cc9aaa443e774bbdf92645d6a668481593",
       "alerts/index/node-05.json": "26d01d06f0231e2487e1f34453310e683549cb0da9d43a72d7c864cca42a5d5a",
       "alerts/index/node-06.json": "65a6c765e1db2bc1a1f5b2228b704d13d02a2017a0c39328189d679f36d66ec1",
       "alerts/index/node-07.json": "8650d9b912db6471d28cb018cf01f7c75f8cfcb1a4f2ca78ed00f7cc8a8c405f",
-      "alerts/index/node-08.json": "947dbea1cd2ba8474b9ce3dd636563a424a28cf76abccbb67fd74f6a25340ccd",
+      "alerts/index/node-08.json": "d71b75bc2d9fba2da64a73c5806d202fbd66321a8be812413ad85e9b461ddb6b",
       "alerts/index/node-09.json": "5793e1925616ebe893171d4e60fe13fe4992461efecb52ee03cfaefd0876e30f",
       "alerts/index/node-0a.json": "d8e08b255f390231d5b6fda62db66ef36e94843c54bf17da61181678613b87ca",
-      "alerts/index/node-0b.json": "330bd2dfb177f169597f7499f480b7c84d88dcbcbc8fb3608258a66c096f65ef",
+      "alerts/index/node-0b.json": "9231c8c6457b3d8ab75328f0fc5053e13c7625677a04c2455f5f5523e2366228",
       "alerts/index/node-0c.json": "fb3b93e9ea8ad4a2e0f8275831082fc602b19222151d93dfff7e9221a553576a",
-      "alerts/index/node-0d.json": "477f941226e8867b031cac47222c15b26bdefcee4cbdbaf3627dae8c15febe6d",
-      "alerts/index/node-0e.json": "20da4b5972f53008e8ac8c7843896e56d0a7533b7c2867089901c1123a2bd06c",
+      "alerts/index/node-0d.json": "b90b86b5a77eeba5b06a8772b663ce0c786d0a3f88a859328ab2b1dce0cc7e6a",
+      "alerts/index/node-0e.json": "29d17d953de35a54f0534db7023afe5e7c087a4d0b3d80b8c7854d58117f0c79",
       "alerts/index/node-0f.json": "25d15f9b7ee1003e1190bb1dd7337c37fab54078b3a1dc3dbff0fc6d1faaf0e0",
-      "alerts/index/node-0.json": "1d11222d7d745ea1e31a5b05a754ff8a4f4fb73fa7e94077373f50219d5bc854",
+      "alerts/index/node-0.json": "7596bcfcef860c6185e9803e4fb3cbdfefa8687f8178d6e1c95a420b6d808e4e",
       "alerts/index/node-10.json": "eb90305ac02a0ec1753c9c600b6ab3e5e57a152ed4c199999d9547566f2a8442",
       "alerts/index/node-11.json": "1e11bdef24f00683bb3c35579b85e30764ad204c55d7f77ea106471482503efa",
-      "alerts/index/node-12.json": "415b097f4aa6ca87d41f1a4a42027ce467f719f423f4ffe1febddd2a7cdc8551",
-      "alerts/index/node-13.json": "bc2826c3b39d2bfdf6a46120d8f60471c8470eeea49f560b879176e8e0e54c39",
+      "alerts/index/node-12.json": "2f79c6fab843852cc9a4dcbcdbfe61d46e07d485a648d96ba2eed1b52212c864",
+      "alerts/index/node-13.json": "1711a0378b9ccf476b8382129b1982d9156bb1d390cf27f76c0a04f63f7195c0",
       "alerts/index/node-14.json": "cb8abb985abbee7aebf42fd91175f486931146952465fd02565a796a27fe1bfa",
       "alerts/index/node-15.json": "39877024e474fbb8f003c0d29dcb2b0192efb902473884cee189073d7b378958",
       "alerts/index/node-16.json": "7ed1f63eeafd6a6a8435d0c2c77c404184edcea5680f156766676cc4095768fc",
@@ -1818,20 +1769,20 @@
       "alerts/index/node-18.json": "d84a215ed87f7cb663d30e3c54511164a0c2a36360619cdeafe7351afebee938",
       "alerts/index/node-19.json": "cebaf4988fe1e18fdab63fd2506d6538702527b2ad3cc5372c54a51c55a464b9",
       "alerts/index/node-1a.json": "724fa8a56fbed26031c4cf649d43a2d2f06ca17ab24da91131dcaf8333f35f59",
-      "alerts/index/node-1b.json": "6f38a147e1c7f457b688877917de1e4ccef608a8a783fde55b2128dfca8cc8a7",
+      "alerts/index/node-1b.json": "4ab0e4f9370e4a187d723d2c716c94b1cb81f56e4d3aec2902416bc6ee8bdb53",
       "alerts/index/node-1c.json": "9d9435d22a2d4430a8f4af44fb27a1cb1c375805e4c448ba2ec288ce0cd03f3f",
       "alerts/index/node-1d.json": "46725ba12bb636903008fe55aaabb47e62c45f5d5f554a2908f68cfea4547a39",
-      "alerts/index/node-1e.json": "e0f74183ddc23da7998f6ca31ae5b29eb1ce8539315cf8110d6a4032f3f5f287",
+      "alerts/index/node-1e.json": "c431d47a741e80b9f7dfd9e0fa6f27cd397ad84edde5f0ffdf6daf42a6da0b12",
       "alerts/index/node-1f.json": "20d2320f4f9993e9f6c25306aeb8d3373fec9873e15ae5640dd2aa28b661b181",
-      "alerts/index/node-1.json": "0a6d214ef019270963cfc3607ed2195d73a221bce918520352fd8181ad6541aa",
+      "alerts/index/node-1.json": "f3ab77ce05b97432f5ec5eb49f0b01bca5e21a9e1c64456c7308721a5134d168",
       "alerts/index/node-20.json": "641381f9397e851ef60b7d39961fd5a795df85ec2a78b339d95bbc411ccb0381",
       "alerts/index/node-21.json": "7a56f04de86f8b143993b7f95a8cc93659140b77de5fdf16f96faa5682043e8e",
-      "alerts/index/node-22.json": "cb6bb84debce6774018da7eed609bb882b544b10d0a3b9dee2848ee09a88682b",
+      "alerts/index/node-22.json": "472ea78743565f14c762d85d7bcabe3edd2b12a1d24be6fb4e48889cd8444fbd",
       "alerts/index/node-23.json": "44e510ecb61f73dc8cb662b5a10149440d4914317da280e210c5aaa7395ed07a",
       "alerts/index/node-24.json": "25b750dfd62cdccd8ceafc1a2a7fcf03e44be36a81270cf6cc433877cc88cd6f",
       "alerts/index/node-25.json": "48a48ccc2c31f29f1093bbc0d95ccbc01347811e7085c3ce3f55fdbfaa36a3f8",
-      "alerts/index/node-26.json": "5c35f1bccfb55f21339cfebe87410257d380b734af8829d3dee0bc9ab1f8e8ff",
-      "alerts/index/node-27.json": "8643ddc55ac0ccca64ee40d41893848c001d4ebdc934b3a3e63917001a96e5b8",
+      "alerts/index/node-26.json": "b23a879bd708508c66266e57aaf780780b07be3ac203c85dee0204a96ef39d39",
+      "alerts/index/node-27.json": "97460aef70807ca68eb1d8a0eb82d96a599ac38b2db814f2445d8706693e6afd",
       "alerts/index/node-28.json": "cb2f0935c5752701c39b5e60e8735d566352cabb0e6b68de58bcd29ff0f7a125",
       "alerts/index/node-29.json": "0d05d489ed1b3a84df6b222307edbd58a3ef3e6d913e491a4a33d6ce144933cd",
       "alerts/index/node-2a.json": "977594e28426ec8b5f42ed3afc3bf4709a4e2d30aa75e0daa0fa590390c43eaa",
@@ -1840,49 +1791,49 @@
       "alerts/index/node-2d.json": "2b1bd73aea81c54a616f37ed82061a9749d2a3c6a76fd1dcbdd95e8b240f4d23",
       "alerts/index/node-2e.json": "80423ea61545f89ee16c80b2d63f977302babb30b24d3a919a96a721e35f959c",
       "alerts/index/node-2f.json": "4d8b5f4bcb7998cc92040df4b173bd61e5ff328d5f2268fde383c4b665628cb4",
-      "alerts/index/node-2.json": "f19e71a8b3065d6a689624f86ae20bd688efef2afe89cd130dcac732aeb46d4b",
-      "alerts/index/node-30.json": "c55b2f31e72407c11d4b35d535a200ec2db8dfbea6da8f5356b7c7b14b956330",
+      "alerts/index/node-2.json": "426e4fb9ca4d04357c836c536e3ccbd188d138dc6dbfd4084e509171a69a72be",
+      "alerts/index/node-30.json": "dc3634145205b2b247a836efcf4bfa076fe119fa4d5d12aadab0b190de2ddd1f",
       "alerts/index/node-31.json": "2e42adbd6da30151b0042510702a99be1601e0948dd2d7d08ee6f953d803019a",
-      "alerts/index/node-32.json": "ca1e7de69abf390b7cf4256230a3b142a7df784892b503babd526eb13d147a2a",
+      "alerts/index/node-32.json": "b59c0e357dbef7b662198c7167eb7bb00f7f2c35b731a27da46fd721ea253cb0",
       "alerts/index/node-33.json": "1b2fe61a57449b67167f42a4f8ee58a8919691916d7a04b050df88ddbb0f58f6",
       "alerts/index/node-34.json": "90e656f6a6f8db88a8e179ed80de17f0c057e83f8a1f4fb7d5378f8041864d5f",
-      "alerts/index/node-35.json": "93f44324f0596a8387352d6ea902bbfd3073a707d45ca98e7014229f23e3fa25",
+      "alerts/index/node-35.json": "2b591c1d1cd3307c7984c3ac035aa10dc628308bf496263fdad84a26659d7cc1",
       "alerts/index/node-36.json": "25b48736973c4ff3efff013c77b31cc6be59a2f6d4835968e523e5f43b697c7b",
       "alerts/index/node-37.json": "c3b388f3334deaf3b48653c645655dad739062c1a126612350b8eeb5c2f7e5db",
       "alerts/index/node-38.json": "e530cb4807a1c7fac35d479de94944780a031bd5aed3df7960f0cf38b6df8c68",
       "alerts/index/node-39.json": "23e09bd9d8de0dcca2e9455b223b991d43200c5fb155169049c34f5b400cfc53",
-      "alerts/index/node-3a.json": "0a2a930069662981e94f41814fb326888c99457a410a300c7c8c422b28bb5cfe",
-      "alerts/index/node-3b.json": "c8438c0a7c1d5be5b75c1a1cac5bd3bacb7bf7721fdbade695622e85394976fb",
+      "alerts/index/node-3a.json": "86e3ecea8fbf2771b7f6f9e23d026d8e7c5e5fa7412bb0d47fde5093dec3eef4",
+      "alerts/index/node-3b.json": "17f54d6f57fbcb3bed7df3a08ebf920a87780b61aaa718281c0c328247ee2e09",
       "alerts/index/node-3c.json": "0d8001cefec5f43f0f87105219df762cb73e2b6ebed016ed7ef8d43d60e0067c",
       "alerts/index/node-3d.json": "02c15e1aa37c676f208bc94c894ed77e5d8b00454ff0ffea36693f6553281a72",
       "alerts/index/node-3e.json": "489efe9d4851a212d592c67dd0626cc40e867bfd3b71e9045af18425ee5d37b0",
       "alerts/index/node-3f.json": "3d4bae66aa4f040734ba101dd89c7656f100c9f06a72389a4599d1e0b3e7b2b4",
-      "alerts/index/node-3.json": "fe9eb3cc17274b04aecf390febf01d7ea36c017a304c007e409b74dd10326567",
-      "alerts/index/node-40.json": "01824bc1883d77212b5656986b63352ea95aad704aba87af250d05723204880e",
+      "alerts/index/node-3.json": "deec586b51bace4f824511f9068b7fd9dabc5cf425c1ee90f8c9a6b8f80a2239",
+      "alerts/index/node-40.json": "184367bbfce59b81f672eb1cbd80f6ebf83464d1d23df3995e8f60aa650a45aa",
       "alerts/index/node-41.json": "e3e083cd5ec358716c7ec993bede08f1f363c5c05d074a329670791f0ba1c42d",
-      "alerts/index/node-42.json": "fe5868ff68d403c225d5bcb9dbdffb81d72bc7952c50f44b3f9d8b8e5fddf1dd",
+      "alerts/index/node-42.json": "7421eb57c2914994b95e538781e73d903dc08c9237ea71f6672d30819cefcc25",
       "alerts/index/node-43.json": "2d8bfbe4230d8fb816e73c7df8433a9a5bff2171804e79e48cdff8156abc52bf",
-      "alerts/index/node-44.json": "393165e7f91b3894e76937bd2c8f80db0db25ab0ecfa9eacaf00043d20d58700",
+      "alerts/index/node-44.json": "afe35712935831fd56effe8394ee33c5813cd784f339c65d82999c042ff719e0",
       "alerts/index/node-45.json": "659b1a8adc5c65f363592467c299736002499305fcd5c0b3e98289e66c37e1ea",
-      "alerts/index/node-46.json": "20dfcebaec9c51abb8cc6190551157443c36e04f824a59c4746e987313f3a36a",
-      "alerts/index/node-47.json": "df538584f8bde4ad8990d686f5deb61f2c1166aa95b771809a5a416116be315b",
-      "alerts/index/node-48.json": "60757075590674f2c7532a70d26a0885361489cbf7dc37c977cf3ca6fdeab4d6",
+      "alerts/index/node-46.json": "80d03151a4c2023ec2d9768349daa48051acfa926fcaf6d6399cf7b22bd5f9ca",
+      "alerts/index/node-47.json": "dcffe0a9e50dd3ce860317999c8b05d61ea71e384e8975dd207a560989faa899",
+      "alerts/index/node-48.json": "e8e6bdcd5324e1db1cdb08c389f2712f1b2463ba62e8366ff7051729c9dc5c49",
       "alerts/index/node-49.json": "49c21571bfff35ddca40504c4b75ca33a536dc86023b1c17c0e0ed36db2c9dff",
       "alerts/index/node-4a.json": "2a0b17cc976dde6501f39d47ba52ce2dc0f6c74d1acf412d2dac72f0a637470d",
       "alerts/index/node-4b.json": "6ab634e183d8d71ed11d6a356c158a02dbd4dd9f51b79616079fb994efa28f51",
       "alerts/index/node-4c.json": "6fae4ceeaf86404d0bf8165719319a97dba63645e401bcc31ed56ce18dc826fc",
       "alerts/index/node-4d.json": "b19e71a34ac8e187cbf0244edf1057a7013692eacb6b3af87b919655f00f83fa",
-      "alerts/index/node-4e.json": "78de2bdfeb3d077659e867b1caca408ab412c203df6937366f6a6eec823f5eef",
+      "alerts/index/node-4e.json": "b9f526d29ed0a3787dec90426c2c63d298bbd3894e78dae9cd1d9f5253b06059",
       "alerts/index/node-4f.json": "e44912b779a7ad5b174620ff018e4809cd13338d1ee4a60e7e49d95bee632569",
-      "alerts/index/node-4.json": "1e12e739976a6ab5ac9d0513c76f704d68fa07db5bc284229d0538261ee22a2e",
-      "alerts/index/node-50.json": "70a8d901a8146226e5d43573ef7b11ae00bff72eca28a6913bda2327dd2b9ae9",
+      "alerts/index/node-4.json": "000a6956d9142d0f9efb2f7af2bb4b1f75f7a511b42bae1f0bf4503db020a242",
+      "alerts/index/node-50.json": "6692613e5eb96bfab31ff69fa7e15a265485db0ad4b22bb96fb9776c1e9a342e",
       "alerts/index/node-51.json": "3c7ae72b051a805920474ff33dba69e8ee4d9c39736cafb505a00ff4d9138f46",
-      "alerts/index/node-52.json": "c03628ecd8fd278c7a7b12a83b4ddcb0d80c0951bd2c4d6ca392c521f34884d5",
-      "alerts/index/node-53.json": "8f9000f5766dc496c2f14d9a2d3e2527525dadab0ef89dbdf6e2fb589a1dbdf7",
+      "alerts/index/node-52.json": "978a18b70928f12b9c1cc57d3c3058d53d6c59c2b9b85726ef54d2fd9724ebe9",
+      "alerts/index/node-53.json": "3b38a73551a06a61d4e181c89ea72d65861e4693f76cb82b9960e59a686c7d1a",
       "alerts/index/node-54.json": "6dc8f23adbf59f3ff7cdc307a1e6a0db359bad4360b3c0e26b1a7c010ea31f0e",
-      "alerts/index/node-55.json": "0f625cedf3ea5296ea033b652a29e811d05adfed7ce070a47a4923bc0dbedee1",
+      "alerts/index/node-55.json": "c72876c373cf4a523171d5766b904c14c42f0803a1a48196d0ae423287eae8b9",
       "alerts/index/node-56.json": "361427297c41cb30cfe2124e1431988754ff10b84cd200d70e654b40b26ad042",
-      "alerts/index/node-57.json": "45f70e41c3a509ba77f013f70375b25143981aae3482f9cdbdeede1e5d6d56fe",
+      "alerts/index/node-57.json": "c0d194b7bb8b2eb5eaf440ad0b049499989ef4c287a219ffa6a5d0ae15ab87b0",
       "alerts/index/node-58.json": "5dee37630299758340e6267455306769bd40d5640dc10376ab25b8f3d1917ba0",
       "alerts/index/node-59.json": "9dc79383b67a5f51f6e3791dd5b30d10a0afb61b6ec559596222ec055482abd9",
       "alerts/index/node-5a.json": "68d0bb2f2051f15a8c989dd6e39d87de8a48bc1d9bf132b566864b0af1b867b3",
@@ -1891,75 +1842,75 @@
       "alerts/index/node-5d.json": "41ab326df13e7ad5283bf6fa776a6e539fc7581e0d1c569e4b613e24c161522b",
       "alerts/index/node-5e.json": "b8755c719765b717f1b72b65534dcbb28d0ef58dbbe269ce3cb8d84c1b591a5a",
       "alerts/index/node-5f.json": "b4381f823adf28201e04232a19009b1d1e26e483e479248c04b734b69ec4f585",
-      "alerts/index/node-5.json": "5d44b408eed6b4197ff387033486e866d8ca0be4ed9ac8f398796c6e0f66970a",
-      "alerts/index/node-60.json": "5098025eb39c5d53c1fe938b69656eac96739fa6b79591175b5b56c5f57a44b4",
-      "alerts/index/node-61.json": "846455e9917c102aae6bb7f9bb8778fe8595ab03126990468bd6101ad0aeed7d",
-      "alerts/index/node-62.json": "bdeff1b87511997605b504a5994d7ffe280fcf65474a1195cd2b89a2667356e7",
+      "alerts/index/node-5.json": "98c6486a339ebb9ddf5d46b600c5ca42bcee96051116725d8aa87b977ead44dc",
+      "alerts/index/node-60.json": "295f9c2d9c37eb85a3a05258adb49fab00c2c6e417930c1668c1fb0778d6d584",
+      "alerts/index/node-61.json": "0a3548ced6956d50b22cae1e95110253f3ec4dcf1d8a35d45af1e60a577c8182",
+      "alerts/index/node-62.json": "84068074c4368f65beb93129bee0fefed549b8153088f75be6bb042aff469d47",
       "alerts/index/node-63.json": "35da98ed3a2381068ab2904aabe19446ad951e131586a9bcfe90c8d97066c7f9",
-      "alerts/index/node-64.json": "c872b2414910d1ffd35679282f4f22f6b5b8d74ac5f2d5ae186e6177e01fdd1d",
-      "alerts/index/node-65.json": "3697396331877b7c59a790f5def3c6152ce8e145a6570f642ba595634ac20460",
-      "alerts/index/node-66.json": "57d029e53ebf26f740690be0d70f1690b1a3201615b572068d995bf2df6db4f3",
+      "alerts/index/node-64.json": "73c03e510c7fd8162188272eaf7bba371a6b2b54c7bfc36041b503f3277a68ff",
+      "alerts/index/node-65.json": "4a51808cb0127ef2fb38a41e14da7f5f9fd3e2f965b7271ba964878a46940e34",
+      "alerts/index/node-66.json": "7669eb3ac9373d35150e2c1ef8a3921de70c0787f38e0ecc5e132224bcb9e9f6",
       "alerts/index/node-67.json": "e1cc5b1fbc415eb040937146e4f53eb0d159add2537ee55598ba4569789ca64c",
       "alerts/index/node-68.json": "c18886beb95810a87a083174750eef6ee41adaba4970df243dad937e90385582",
-      "alerts/index/node-69.json": "1456edbc7163d811f901f2101c028badf5939ab59ba245734d4e26dd7430aab8",
-      "alerts/index/node-6a.json": "01625fd8cfa65e4305eb92bb2ac315fbb565bb2b6ff38ec2bcb710fe6dc4a532",
+      "alerts/index/node-69.json": "4e6d9d1d9022f38c00ac26a303dab67c6d932d930cdea696ee168e19f0b71aaf",
+      "alerts/index/node-6a.json": "bf7ad653c8fc3d8ccb2b0bc7fdb5907101ff2d05a0ed28c756cd0748c0217e71",
       "alerts/index/node-6b.json": "f007ecb796f2fe37390a40c569fcc9eac84d073526b661023abe931cee926069",
-      "alerts/index/node-6c.json": "e09229ff6e2c32bbb8ca43af20e962901bbf0bcf447c1f01b5079767f19766d6",
-      "alerts/index/node-6d.json": "1676b3f1bc0ce36d02375895163cbcd8e995081799f90bf780201ada93c648ec",
+      "alerts/index/node-6c.json": "5b063c200c2d7115b0134f1751df0999d8e600fdbc79bdcad70f27ba736f81e1",
+      "alerts/index/node-6d.json": "254153933a59551ee0823fdddf55bc740334a73b51612391c89b424b3f9abf5b",
       "alerts/index/node-6e.json": "0b1f5d06a91cd7294d5518a9dbdc1106c6bcb5ed66aa89065d2d4bc63948f060",
       "alerts/index/node-6f.json": "565f8e31cbaf4b425c9e1d911a66ec3fa4a5c5f971933ac20055c515ee03f77b",
-      "alerts/index/node-6.json": "72332db5bf833fb6f3e7560e2336e38ed3150791acc9f39f1afe9f8491448673",
-      "alerts/index/node-70.json": "ba0f103536e26404cf5063e82dc646d224483e8fd60f945302ece243859acfc8",
-      "alerts/index/node-71.json": "0a9423fde25f883476472d80fc403c43921e5e89dd692fe2168a3f32812c6b87",
+      "alerts/index/node-6.json": "bca686e64acad4c88ae0e2f0fd28ca00b5c1639a0a7b3b03d9960b2d6e5f0be0",
+      "alerts/index/node-70.json": "3ea8131f1a36f26596bd8413974132e42cb75437236bd2d7460d35d7ab0a322c",
+      "alerts/index/node-71.json": "a7948d76f4db1c1efc23b7808e6dd1a3e40e807b4342728acf6468c9f4d0210c",
       "alerts/index/node-72.json": "1b46e83fb7d7c4380c31d62ce2c2434a9b538f0313eb758bf2ea5ab80f3d09d7",
-      "alerts/index/node-73.json": "873dc7d441fe2a4d78b569ff5521c573d3d5fc22ff08de1428a2cb244a7d6976",
+      "alerts/index/node-73.json": "ffeddd27d3409aaa89018165368a4675f8d8f8055b06e86d04fb980adc8e4e4f",
       "alerts/index/node-74.json": "f10d146f55ca34a29c9f75c9a963069c0e1d39418e288ec948d303c7890da16c",
-      "alerts/index/node-75.json": "fea308fdc16c7f0c997f5d67d6121176d2d33985077e5d77c2fb61acb2d6af11",
+      "alerts/index/node-75.json": "b5d2c516a194952a7a7e7ad9e6341b2844049efd90bb92267541acb0ae673c11",
       "alerts/index/node-76.json": "101ff0c8e05a867aa1a4ed3759f616e20232ea774c53b87fb976d79a167699c4",
       "alerts/index/node-77.json": "e3a97f4ee9fca64c323dbb31b23b30abbddd71623baf1eb014e79bf66cfbc875",
       "alerts/index/node-78.json": "2e84e4625b05610dd12cfb6a8d73eef034fe98154db5b60743eb7edda055ff9c",
       "alerts/index/node-79.json": "a489022885f4b40096e029804873ff5383bc09ea9bea03728f86d43f6ab0f35d",
       "alerts/index/node-7a.json": "92f23368d49cf76dec2ac09e2bdda276207fa776e9ad824b9583df48fa83f090",
-      "alerts/index/node-7b.json": "5f1e971e979b3ab82c5ded622e9cbd4c9cd3ad2cafdf1cff0771e129e2e0ff94",
+      "alerts/index/node-7b.json": "2308b3ed87d568fc71dceeba02654e76655fd5fd04cea009a34bb26f42a5a006",
       "alerts/index/node-7c.json": "5b7c204ad47fbe36d5d32a04cfbc45e52d93302e4f9456dfd11ae0da80a26577",
-      "alerts/index/node-7d.json": "1f66436dd09cc84a540aa4b06d2305b0ae8457e216c9d690aec6a2d0829f29ac",
+      "alerts/index/node-7d.json": "ca7a3a79ff2a1b5d3bba15d5a0c5cf0517da5fd76d88f44bc45668f2d316d7cf",
       "alerts/index/node-7e.json": "25e5599f3754ac74dd306fe527e8d2c2c99a61178712fcff4c00a8f75b544077",
-      "alerts/index/node-7f.json": "c8f3b7f02d16eaeba6eda1ae3f034b68ebfb26ef648752c7943842031547ad7b",
-      "alerts/index/node-7.json": "9d5a7ce3a28c51a771310d40becdea694016ed186f1509fb872011f0fffbd134",
+      "alerts/index/node-7f.json": "733445f211b68baa547aaebdff8f93bed0b47da5bad2615073103edc32b20131",
+      "alerts/index/node-7.json": "94b4c7cb2f02c7fd77570375151d2a44099bca45d927dc2cb00f7ccbf1b901e3",
       "alerts/index/node-80.json": "ddbc124216df5caa6e74f1a6f1cd6d0049e80e86657657dee7522244e1265d03",
       "alerts/index/node-81.json": "81958e997c1345149f823c170b7064460485086d87de73b612a62d8361f85aec",
-      "alerts/index/node-82.json": "2dee4400ffdb8ca390ec31db5366629b8eec65a7e1c6e6925d9ca55523a26252",
+      "alerts/index/node-82.json": "bb735e98f593771c91184a1cd3354362979be43738e6eb922e209e9129aefcd3",
       "alerts/index/node-83.json": "6d808724b5190808265563c08a9334eb405f01701b16da5075b3c50c4ce56cf7",
-      "alerts/index/node-84.json": "06d7aaacf24bbabc43d153ba0bcee733daa1daa8ea01fb763183ac8c9559541f",
-      "alerts/index/node-85.json": "1969659704d1e9db022e11241a4d7375d6b6e2ad44110103df15ef264a1a295f",
-      "alerts/index/node-86.json": "1f4a72997f5d36d9064b055479f0c654a81dcf409772639e108b7b7d48c1abdb",
-      "alerts/index/node-87.json": "7d18e9cca348d4c7761c32bb1e406a174ba12b0e3b951471c5aa1aefe1723c63",
-      "alerts/index/node-88.json": "71ed71039e11d0f3184a7867d6f58e14d5d0959a25ab3774091a7bcb3e452222",
+      "alerts/index/node-84.json": "db020488048e336d4725f372ed63e9ed7bc246c786918fac7e9db390a3094d12",
+      "alerts/index/node-85.json": "84b93b7fb3c1482621493b0c7c8689aa0eed2122d0e29821d31b06c60d8016e7",
+      "alerts/index/node-86.json": "63c8712bfa65ab274cf90ea615bb8753ae19ae9e7361da7bc0c598b2b77814ab",
+      "alerts/index/node-87.json": "ebf5a737ae21b999314a99e4b23e71df3170e648c06bfdc8fe0a5cba5ecce393",
+      "alerts/index/node-88.json": "cf8ae114a7e1d85066b7218225cf98ab7f1872793d0be2e66c4e3e0601277481",
       "alerts/index/node-89.json": "e7caa1c3d0afe83d9529b309ec1967b7369f0afdfda5cf65730ac2e04e0cbad8",
       "alerts/index/node-8a.json": "e01185b3c41d8d35f71ee5cb2b40f40c7ad478943d5f0e0e34b3c9d71d891d2b",
       "alerts/index/node-8b.json": "daa0a504e4c225b833978b84ed41f8e32198b26d68df5b910e256284d5768622",
       "alerts/index/node-8c.json": "f654c0b475978be7606260b52c7f9a5f3a93b7ff222ff8c0a147c2f1cd66613e",
-      "alerts/index/node-8d.json": "aeb36ef5afcb175a35f533e42c61a63584e4e82d3ecbd07c9a7a931b6ed6d77d",
+      "alerts/index/node-8d.json": "73452160eaaa155b323585255449ffbbd121bb145383355a1e1392d07d3a1172",
       "alerts/index/node-8e.json": "b5d395301c31bc340e69a8868e39bd4b2750f0fa68e5753d4ee1e8afa07344d2",
-      "alerts/index/node-8f.json": "ba647dbd20844b4e57117c56869a1a2ac82b4e85c95979cd152058ebd3ba1e70",
-      "alerts/index/node-8.json": "1ce8863eec24034e5f391bdc81b46c70ca1ee36d1a518812b13761cf157bf327",
+      "alerts/index/node-8f.json": "efda73c69cb147186f62b5becf50bddd9a149ddae12e319255d402957a805bc0",
+      "alerts/index/node-8.json": "e6ae3819ece5b6795b1076a643abd9f2a383b46328c8149d90768dbe9801b569",
       "alerts/index/node-90.json": "6cbdd1836a700249d8bd324436a40fb0357a1f381df4c49dd959fbfb5eccf93b",
       "alerts/index/node-91.json": "1efda9ae9cff0426a9b3f49c83de624c25759f7784833d6a11033248af8472ba",
       "alerts/index/node-92.json": "322b0b240b642f1c82e9ee557b2c81cb2bb37ebc2b119ed63a8c7a753bda3991",
       "alerts/index/node-93.json": "57b8a93dda2cf7b22cff56c87e8a3072494d8350b676b5ddaaec323b0e444c83",
-      "alerts/index/node-94.json": "63b77049ad7f488b6d4034649865360843a13c09643bd69fb2e1d435441f4078",
+      "alerts/index/node-94.json": "53f3fbc5593cf0176595cad335c20cf6105462a30710cd0512acef4e4ab40990",
       "alerts/index/node-95.json": "de3b19169671269e6530e77bc90fdb018e22cc433ab7e56b75fbab26a30ff8a8",
       "alerts/index/node-96.json": "491070400a19c8e677767a36622a59d524228ebc9b72fb0a2741917cbf0dfdf4",
-      "alerts/index/node-97.json": "b8f61c52df7815484e6ae8b80cf2050d1acaa401cea91ca9669c3bb96c0ed8a3",
-      "alerts/index/node-98.json": "f07c9d3bf1d1c1b5bd2447f7b626cfdb194a88d4f3980775b4fc6d580b325c65",
-      "alerts/index/node-99.json": "0403097b6511279c1f76c4eb2e381b4817addac2e487f24063f08a1140bc33ce",
+      "alerts/index/node-97.json": "eb30323ded0023e20179f1ec4f5b02fff3c472568b3e26dcdc9e9e17cd870a05",
+      "alerts/index/node-98.json": "963c31ee026995c140543aa7f98bcd88a0db8269388e72a7c3d70637c76fc33f",
+      "alerts/index/node-99.json": "95b126aa47d9ead6a4b0f4d5e3804d525e7e66dbd7e0756ad3454b9ea82cacf4",
       "alerts/index/node-9a.json": "4df85a63e235ad20fdc76f61bf88adeae6e951ab5762cf2b33d05bd9a92d94f6",
-      "alerts/index/node-9b.json": "0d2fa0829157c149cacd69a872a5d711fb6ff0eb14dab5d3734e6f80b517779a",
+      "alerts/index/node-9b.json": "2d296c36a728010b215c3c617f0d29287040cf245d6cc6d33fc988b415f45023",
       "alerts/index/node-9c.json": "65ab5ad9bafb31d9d1fa5f652ac1cf9c3073261c44e5ddc447fa124193c8e4e1",
-      "alerts/index/node-9d.json": "a38e737457aa897765b9031158a7764036806e58789cce38ef31a3fd9cc99c35",
+      "alerts/index/node-9d.json": "20f9303e78b7311d92e8e2b64f13c944a815dd54dee43eb843ad4bc9452ba361",
       "alerts/index/node-9e.json": "ce2b8e65eab2aa4a97cffc0eeb128f4e899211e76773abb14709b7bc36f1b033",
       "alerts/index/node-9f.json": "e90731ac86990eb2ebf8424d20d05e1c598e4005dfb80d9f226f2f1f478ab1f2",
-      "alerts/index/node-9.json": "c6f516f607de48df884ebb0d0915489a8b50c5051690785a57ed782c1956dfcb",
+      "alerts/index/node-9.json": "58d2ee5b577e1bc214d218cba0d1273a9ce1af0199e4b7a6a5d4e2fcdd78fba9",
       "alerts/index/node-a0.json": "75e632929403a653a4a3a24d0cfea26c00bcd2c30c729139c5a347e43275d7d6",
       "alerts/index/node-a1.json": "e27f711c6c7345f045108c3a6d2ed4c68bbf51276acd74de59e020764f1a7b97",
       "alerts/index/node-a2.json": "49bc084a4eb2b7081ad058ae95b9fa734d611e6cbf090e36fd6621dea53a624f",
@@ -1970,13 +1921,13 @@
       "alerts/index/node-a7.json": "ffb4d2ee009ee53e99851643f4366493c5f6b23d6682e41dc100665a9e8bf397",
       "alerts/index/node-a8.json": "e44164a65d3d67c6299aceb8fb44333b1a4f0d32a19fefb64cd8dde1a9663bf0",
       "alerts/index/node-a9.json": "acef118f90dc9ba1480b66e3180e99d5bf1aa7c7546848a020399f27f4ab9449",
-      "alerts/index/node-aa.json": "f8f1d62f85d7e725253fab6e80c5d65108d19f8d9a32085a3d538f3fdd1593b5",
-      "alerts/index/node-ab.json": "a2e58953ec19aa9f88fe0f1ecc3c8815e7ccf2846fbf60652a1609a6b26e1db3",
+      "alerts/index/node-aa.json": "ea022dcfa6ce46dc0ae11a2915ea40289bffe694d20378d96f82e9a681e293a5",
+      "alerts/index/node-ab.json": "14d73bd1dfe22d4c154408492bdfb2e03af3a281d1001694e39ca79fe827a427",
       "alerts/index/node-ac.json": "a95c473427a58a52aa7ad0847fe07b0d2ce96ec721df56bfc9dd6e5a82662e69",
       "alerts/index/node-ad.json": "14143e12787b7d966a6b29f121db71066aefaee88c1a4de436aabed36b028f8c",
-      "alerts/index/node-ae.json": "8ac1948b7b3ae20585577e554a0887417e6d810e9d3eea9b2bde3dbe7f6de123",
+      "alerts/index/node-ae.json": "e495fbe36c4022cec31e6b9cd4a05d3b2cc8622bb7143271754e9a6f39755d05",
       "alerts/index/node-af.json": "d419e62082e458e6f74dd3ec2223669a7e5e8d83d324b05d89a456f1f018d060",
-      "alerts/index/node-a.json": "b112be14fc0687336d36b26d053e5bf03f7e757d5bcd7ff93a326a133d790268",
+      "alerts/index/node-a.json": "1146a9f5b1d2b5715c5510dd3a41235459c077af4a00de9433bd93925b2d61fc",
       "alerts/index/node-b0.json": "b6360f2949071a187a04b4fe7175c575fa229f629e4d14f5e253a08be2e8d315",
       "alerts/index/node-b1.json": "25aab272b5da954435310f4ae183cdc26fba256ec0d0a5d1cdd25ed26abdbf54",
       "alerts/index/node-b2.json": "498a37159e5211d3fce52c9a9b555f9d425a29de11eb640469b3f9f671723415",
@@ -1986,48 +1937,48 @@
       "alerts/index/node-b6.json": "f16a9c5cb17c2b9d33a11e116241b67cf237db7233c20034c7f82602748b760c",
       "alerts/index/node-b7.json": "d6ceb442e7b66c370e5bc485988d9ac272bedd7c3551bb994ee5abc5f906aca4",
       "alerts/index/node-b8.json": "6dfe259d5d7e7dcdb97a8768f68eed75b9bc1cba69b20ff121fe7fb84f6c7bf4",
-      "alerts/index/node-b9.json": "1afd690edc6d05b9a1f243838b4b8d801d022d56a079eca0ada43e29a0403e83",
-      "alerts/index/node-ba.json": "c825536808b6d0713886262c2885ac52c437c6cd210e07bbb34f2ec4cd155cef",
+      "alerts/index/node-b9.json": "99baf06fdd3beabf4e715ac8eb3886133e0a2fc898af551e950cab833177907f",
+      "alerts/index/node-ba.json": "88e2e5878af33cd566481ea9c0bf5a9a670c5a5b3dbab13fbaefe851b9216d70",
       "alerts/index/node-bb.json": "091556aabf087f339089221f6b132843045623d2222c5ed327a53c27b408c263",
       "alerts/index/node-bc.json": "f7d3c0144fa77efab5a406535917bdb42a7c09794dace3ec3ee9c5a6f87148e4",
-      "alerts/index/node-bd.json": "ef79a3e44c19c754f52b0de2ac2d6fcd4ae611c4f10514b89018d52c368e28ee",
+      "alerts/index/node-bd.json": "bfb995b80dd37c886fdeca3c82f72f820be0395977f70b9d51c7126eea8e78ec",
       "alerts/index/node-be.json": "4c8f464d5447a6815136a0ee1a21a070a96a13b25e489ede656cee8f54b7e3f3",
       "alerts/index/node-bf.json": "fbb2b195148a2bf2390ba847f24dacac1b5187b144dcc8c72acab1275fc27532",
-      "alerts/index/node-b.json": "2b022361ae853a9aead5223c901a4db618f83ea654ef874c51ad2e8501056ffb",
+      "alerts/index/node-b.json": "9f237fbf9b489683c559f15956da2ec90307b97e3d4a4a9feeec6e67d9a807dd",
       "alerts/index/node-c0.json": "c457972cd5799622de3aa8447c69686c5f0c29dbceaf92165bcebb90847265e3",
       "alerts/index/node-c1.json": "29f55c8f34e2dc1d21fb261a2df397dcff0f3e39a70d9ddcf6e6ac130daec85b",
-      "alerts/index/node-c2.json": "db2b217cb9c8a1bb4501938d85dac50826f334334e0a3341540ae96ead5b2d3f",
+      "alerts/index/node-c2.json": "871f697db9401f5eb5d3f9f560750b259732630f82681504783014c9e334fea7",
       "alerts/index/node-c3.json": "03307aea1750d76e179088743e14cf1bd52d0362e6e4c378a87066d88c762232",
       "alerts/index/node-c4.json": "423b86087d530bdc6cbf062aeffc4bc9b317a5766e235bf18af22dc360e5bff4",
       "alerts/index/node-c5.json": "fffd8304f47a7433f40afdc98c9a4170c1175c0b4292aff2f1e01e29978b43d5",
-      "alerts/index/node-c6.json": "d2a74700441554b89b110d27894712b45ff8d3f9eece0be3a73d90a686f09cae",
+      "alerts/index/node-c6.json": "174ef5028fc46024077d351075accd28f3e6317fc97a093daaa7b3b4cd713ae1",
       "alerts/index/node-c7.json": "432f96d5caa560d8c6ce61288e68fa1c101d1c928833b0c10d9577b2ba8f4106",
-      "alerts/index/node-c8.json": "965b56a6b0a35ac64f75444f07887b7d0822389619960a638fbf603c2354af27",
+      "alerts/index/node-c8.json": "7eb0aba976a58c8a8fdb786946576cf1e7a80c7b66d98802597b4b532f5b2083",
       "alerts/index/node-c9.json": "b13bd943ca25b6d34a87c0bb68b2525ac96ea76c407c3956e090da3ae4821471",
       "alerts/index/node-ca.json": "e93b800b71709c57cdc07f0f8664a0965482b656a9f618863715385aeaa65386",
-      "alerts/index/node-cb.json": "8337834fc7d9507c811fc7e290a2551cd36a19b7e8e1a10e60b7fece543ea6c1",
+      "alerts/index/node-cb.json": "95888d2115099d9b949072c3deef9fcc24552772fbde82a9ec6108a7d88eedb3",
       "alerts/index/node-cc.json": "99e1515ac4f285d41d164ada2c26a59c10cadacf040325773148764d644e159d",
       "alerts/index/node-cd.json": "add02de8bc1630bcfe1af044fac8be28ae16fd16d210a20ec9614549c3288ed6",
-      "alerts/index/node-ce.json": "cfdc8b5b5d7d397a916db59acec117830cb493ea244afe2d1a44f14e3bee255f",
+      "alerts/index/node-ce.json": "27ddcb8f6841df0c119fa4c319d0fcbb3afa58c80e27c508bb55c1b48e2b0cfb",
       "alerts/index/node-cf.json": "7eedb7d2ec885fdf977f6b9ec52eeb92a658517df73f351f78e65d874895c0d3",
-      "alerts/index/node-c.json": "867711c2b03842c9f6bbe97fb86f429f541c54e6b910cea6186a03025c30286e",
-      "alerts/index/node-d0.json": "167cbdba499923f1d0fc364bdb6e69e789b12055e50251553d6b1f9a26f73224",
-      "alerts/index/node-d1.json": "722333c6e0d43b5423a6f0a6586d5493ea7f156a7735d1a16df740ffb997735a",
+      "alerts/index/node-c.json": "c982da3e7bbbde4cf31aae9fa22778505c8a2835ffb9571c837ce6e4ca6df0b4",
+      "alerts/index/node-d0.json": "0c7ff5239cbf1114d33e2e7b8a737de56f5ba8c20ca468b88d630d39c65b1c94",
+      "alerts/index/node-d1.json": "dc75ccf8b679704049cd7885a366ce844afaa58241a1b43426187ab9e43a94b6",
       "alerts/index/node-d2.json": "03a08306d6352b731cbac66f3aedf76624ba9af1b68f24d34ecd27788b1fc223",
-      "alerts/index/node-d3.json": "127b1af5c8ee1cc2a0dda2ef7daba3a3b2489e52175e076e4b53c481fdf35266",
-      "alerts/index/node-d4.json": "75761df2eccb1b6ef0e16f9431980e5c4561d489f8fbb904e3ef891ece28e3df",
-      "alerts/index/node-d5.json": "dcb6326ac2f032e05d45e48b50ca81bebc5e79584b7fefd891b31a09d3430648",
+      "alerts/index/node-d3.json": "b4d10b17fbf38862e10c325f47e71d1b34c66eeaef17de547ab690429658ee9d",
+      "alerts/index/node-d4.json": "c116522f85243a7e11a847f466a588c27b56fd9f81d5fb7cd4eac44b25ecc813",
+      "alerts/index/node-d5.json": "b06a37ead291d80dce7159ad698ca706a68986f6513626e2716f277797e5d6c3",
       "alerts/index/node-d6.json": "0d05c0f8eb725b974cacdae6d96d5828a1a4f3e152d17b5780a2bd006abf0eb5",
       "alerts/index/node-d7.json": "d5ec29724e7d576c364498b3eb4ee3f341bf20f819a28f6c96bee211e51f8da1",
       "alerts/index/node-d8.json": "5c41c111deaa2ada656d9b17a97b1721cc9521c37d742f003e24d887323c8448",
       "alerts/index/node-d9.json": "02a548d70544d78ec15d4a60e20f75489d187b600f6137de0194cb12679e012e",
-      "alerts/index/node-da.json": "5537c67f19d5d9b336b32cd16673ef4b397822fb87b86156fa61d0b50a990dde",
+      "alerts/index/node-da.json": "122bc6ebd05d607e561f803cfd5b6283aec21e30ecc3823db4ecb5d18fbff1a1",
       "alerts/index/node-db.json": "2c5f61d48eae4f78b30dd592eb5342b262abdeeba18a2b744d1143c6fd8198ba",
       "alerts/index/node-dc.json": "1e2fc2f047df7f5f15e904a03a287331717d5effbc53d8e50d3d7347c410a137",
-      "alerts/index/node-dd.json": "67bb19a28f719b600c44b8c47a752b4ff9f85a4afcc01bf4d62caf4385227b16",
+      "alerts/index/node-dd.json": "7c4b10c9863936362d8132f0d064aad1e0952df421c12ff82b99afd14dec6d3f",
       "alerts/index/node-de.json": "958f33139758963924388fcab2f8b3f4673d6a10cc3446359d0b01ea55d6562b",
       "alerts/index/node-df.json": "34e8da1e97b50f1cc3ce3cc02e79c88b58d3c8082f6b85ea400cf930f2decd3f",
-      "alerts/index/node-d.json": "8ccbe781b175af89a2d0058eef84e8ea09a5beba064ccaee9a39278f856caa18",
+      "alerts/index/node-d.json": "12e8ea710c3c76e68e2974dce7425656ba344e5dce716d93b655ce10872ffd32",
       "alerts/index/node-e0.json": "fc551bc827fc201ba6a682033df2469e5dd6b9f1f06f6425b438d70ad3246c0d",
       "alerts/index/node-e1.json": "37997ee39bc501640c6083ae3787a2219868f8945fdd6d14a4122c412a262797",
       "alerts/index/node-e2.json": "0110a3eeb882f8ee4cdb4c37608357815e50b8e407035830c105ff37ab6bea41",
@@ -2036,34 +1987,34 @@
       "alerts/index/node-e5.json": "57110b6897f543cb61431bf12c6678025462f870ee4cc91656359329a159a6f8",
       "alerts/index/node-e6.json": "0293ef1442cc328913cee2a6e21573182fd5157969841135bcaacd1e095fb609",
       "alerts/index/node-e7.json": "eac6aca7476934d0845fbf0fb7453c6700e95f1aff5c44e4b0be6adbfee26485",
-      "alerts/index/node-e8.json": "85cb53564d4c82d83fba7970c83ecfa2f0a975184f6aa039aaf525ff825583c7",
+      "alerts/index/node-e8.json": "604dcde949139a53a77fb925e682cd39d01c79b894fffda9252775a2ff6329de",
       "alerts/index/node-e9.json": "3d96fb5fa15d0ac5590e7f54590112ec616a13e5d306220d94d0f2f03377decd",
-      "alerts/index/node-ea.json": "e6faf6b462c56a29c8e620e21cbe4a367c9d383c4032dc80ac06057852436d9c",
+      "alerts/index/node-ea.json": "f7f055681030061e4b2055caab41752d80a8830919cd15f8647722b845c2f187",
       "alerts/index/node-eb.json": "caf2ef190bdf16820c07a5ef37662ad0f2b1287f488d27ce263af311494a7030",
-      "alerts/index/node-ec.json": "4cc29d33c5d91e7d5b3970d809f1de7768c1c4285cb29ced66fd08a471bb1211",
+      "alerts/index/node-ec.json": "b39818ed1d2a0ad8ebbc0d08fa0937c5168c1321abb665d997925486ccc848f4",
       "alerts/index/node-ed.json": "76f5bc907c0b1273b2f7f4e21bbf0d5b06263909d6544556cd4fe6288683296a",
       "alerts/index/node-ee.json": "9430cf628a5cb4ec3d46bfbc707700e43d3d0d13f5374d65ee2482cc326bb1a4",
-      "alerts/index/node-ef.json": "f3489ceb4af1a19dc7a5c50f1ed4939a9841980d64a13f09d5fd6b8115473f43",
-      "alerts/index/node-e.json": "df18d9302ad36349e060aad50c40c5c8852db56d176f9ffae7b6753c88793e38",
+      "alerts/index/node-ef.json": "1ae9c36d1c4516fecb1b6a7e941aeac12328315ab8f0067151d6b8eecd1e4b1e",
+      "alerts/index/node-e.json": "7c507bbc728750dcf87e097ff11856cb8097336736b175c53523906cb34d48a9",
       "alerts/index/node-f0.json": "6b1804452715605a594619f93286c5efc6505bc60197fbbc15174e0c902ab503",
-      "alerts/index/node-f1.json": "0884bed74664aca42f673eeb4ebb5a787540e8276d85f397d0c60e3f3d3962a2",
+      "alerts/index/node-f1.json": "c2b27a997116eb8aa6771232bbaa4e312c8e33387d2c5cfa8cbceac3a32d70cc",
       "alerts/index/node-f2.json": "ccc141c24f26619712b41da850c0c1787239dfc73911f0b63215aab0dac5b716",
       "alerts/index/node-f3.json": "33f9995cd02783d12310d3bcd22588e1e050dc5009f6f610c422d397ced15c8b",
-      "alerts/index/node-f4.json": "cd2bbfdb3f54c037aae0cc384971f356cf60ddf1b4abce59ba0b1928b7b222be",
+      "alerts/index/node-f4.json": "3bda18194edfcf3768621aa0c2de961e764f6d10fbd87aabf4f1658fc5c20d47",
       "alerts/index/node-f5.json": "c084a6ede0e507b187b56507941df5a878bbf804f08719c87bd1783f4ce8277e",
-      "alerts/index/node-f6.json": "852ceb2e8ce03b0143b2927f51c0642956a15960e868dd2ace6dd8084cfb4fb1",
-      "alerts/index/node-f7.json": "ccb9313404b794a38669486418ee98d8d6b38b9df5fe9863dc224f34c5179d87",
+      "alerts/index/node-f6.json": "7c84b72daaf2f0738b090f45881ba3ae6913bbdefb5ff896d6710b75879e8d9f",
+      "alerts/index/node-f7.json": "b2bdd6c80223a593b8e36c671be4b22dc0ebd68754884a44a538411ee562626f",
       "alerts/index/node-f8.json": "6e9de66a0e588a53d14da9b141c1a07bb98ea70f6b10af92d9e145b2b6dcf456",
       "alerts/index/node-f9.json": "379abe43f7c751ee0834728d800752faf38f040406a5a56d48719507133025da",
       "alerts/index/node-fa.json": "3934466f6eae82b01cddeae7f49b2553c44e29cff933e6921adee19d086c168f",
       "alerts/index/node-fb.json": "aa490bca7eff4f3dabf25781e99fd72af25179a12072bec516a8bcdd833f9392",
-      "alerts/index/node-fc.json": "4f9fa2bc38f69fa37723fe9bf5ef95ff0e54c9a15a69e6709b4fdb218776ddc9",
+      "alerts/index/node-fc.json": "bd1e740ffb240b58d721333d596e645097423a07a61cdeb9dad2dbe50b02642f",
       "alerts/index/node-fd.json": "1ea4a94a2e2b92cf0556e0061abf4b610bf6555fea70d9f601edbead7baf34cf",
       "alerts/index/node-fe.json": "24dac5594e86e6dcfc8f3554500250a2a628ac479ec10fa67a99a408c6f9abbf",
       "alerts/index/node-ff.json": "c225dec98a59f2e85f51a53a92033a78e69ed403af2d5b475897c6241c9ed9f8",
-      "alerts/index/node-f.json": "03c8aa9e80ec62a5db63df3c3fbb1bcc7f3fc4d3e8a2d9a67543fd9ea48a1569",
-      "alerts/index/node-root.json": "8a92dad34ee603c1a0b511f48d4e7f0aba48f763c0055d39a1a6842b681466dd",
-      "alert-lookup-root.json": "fb8f6f1ca36cbb55ea14e066b587d6c999d0d5f031f2732e82674a532b4dc17f"
+      "alerts/index/node-f.json": "adb063b2474c5de42c16480058287320fffbd8ed650cef45ecbce04dcfc2693a",
+      "alerts/index/node-root.json": "a8302327780a2da54c6fb50856710af28307fe7cdf8ea012e52ae37d9bb73df1",
+      "alert-lookup-root.json": "9c01cf1897ea492fdc36b8c2604b6d67d15ec6d8e1579b25b23bd4e4bd28d4ca"
     }
   }
 }
