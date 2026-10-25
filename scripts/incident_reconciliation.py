@@ -23,6 +23,7 @@ from scripts.monitor_liveness import (
     EVENT_INCIDENT_MARKER,
     INCIDENT_MARKER,
     MAX_AUDIT_SECONDS,
+    GitHubAPIHttpError,
     LivenessAuditError,
     _next_link,
     _open_incidents,
@@ -1149,27 +1150,56 @@ def main() -> int:
     try:
         result = reconcile(result_path=path, evidence_directory=directory)
     except (LivenessAuditError, OSError) as exc:
+        run_id = os.environ.get("GITHUB_RUN_ID", "")
+        attempt = _safe_int(os.environ.get("GITHUB_RUN_ATTEMPT", ""))
+        sha = os.environ.get("GITHUB_SHA", "").lower()
+        handoff = (
+            isinstance(exc, GitHubAPIHttpError)
+            and exc.handoff_to_health
+            and _safe_int(run_id) is not None
+            and attempt is not None
+            and re.fullmatch(r"[0-9a-f]{40}", sha) is not None
+        )
         result = {
             "schema_version": "incident-reconciliation-v1",
-            "consumer_run_id": os.environ.get("GITHUB_RUN_ID", "")[:32],
-            "consumer_attempt": _safe_int(os.environ.get("GITHUB_RUN_ATTEMPT", "")),
-            "consumer_sha": os.environ.get("GITHUB_SHA", "")[:40],
-            "business_status": "unknown",
+            "consumer_run_id": run_id[:32],
+            "consumer_attempt": attempt,
+            "consumer_sha": sha[:40],
+            "business_status": "degraded" if handoff else "unknown",
             "diagnostic_complete": False,
-            "incident_handoff_status": "failed",
+            "coverage_status": "incomplete",
+            "incident_handoff_status": "incomplete" if handoff else "failed",
             "notification_due": False,
             "failure_reason": str(exc)[:200],
+            "failure_evidence": exc.diagnostic() if isinstance(exc, GitHubAPIHttpError) else {},
             "observed_at": datetime.now(UTC).isoformat(),
         }
         try:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            temporary = path.with_suffix(path.suffix + ".tmp")
-            temporary.write_text(json.dumps(result, sort_keys=True, indent=2) + "\n", encoding="utf-8")
-            os.replace(temporary, path)
-        except OSError:
-            pass
+            _write_json_atomic(path, result)
+            if handoff:
+                output_path = os.environ.get("GITHUB_OUTPUT", "")
+                if output_path:
+                    with open(output_path, "a", encoding="utf-8") as output:
+                        output.write("notification_due=false\n")
+                        output.write("business_status=degraded\n")
+                summary = os.environ.get("GITHUB_STEP_SUMMARY", "")
+                if summary:
+                    with open(summary, "a", encoding="utf-8") as output:
+                        output.write("\n## Central incident reconciliation\n")
+                        output.write("- business_status: degraded\n")
+                        output.write("- diagnostic_complete: false\n")
+                        output.write("- coverage_status: incomplete\n")
+                        output.write("- incident_handoff_status: incomplete\n")
+                        output.write(f"- failure_reason: {str(exc)[:160]}\n")
+                        output.write("- alert owner: independent central health workflow\n")
+        except OSError as write_error:
+            print(f"incident_reconciliation_result_persistence_failed:{type(write_error).__name__}", file=sys.stderr)
+            return 1
         print(f"incident_reconciliation_failed:{str(exc)[:200]}", file=sys.stderr)
-        return 1
+        # A bounded read-side 404 becomes a durable degraded result for the
+        # independent health workflow. Its issue cadence owns notifications;
+        # all other errors keep the native failure email.
+        return 0 if handoff else 1
     print(json.dumps(result, sort_keys=True, separators=(",", ":")))
     summary = os.environ.get("GITHUB_STEP_SUMMARY", "")
     if summary:
