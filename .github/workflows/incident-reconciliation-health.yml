@@ -44,6 +44,9 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_API_URL: ${{ github.api_url }}
+          TRIGGERED_CENTRAL_RUN_ID: ${{ github.event.workflow_run.id || '' }}
+          TRIGGERED_CENTRAL_RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt || '' }}
+          TRIGGERED_CENTRAL_RUN_SHA: ${{ github.event.workflow_run.head_sha || '' }}
           INCIDENT_RECONCILIATION_RESULT_PATH: ${{ runner.temp }}/incident-reconciliation-state.json
         run: python -m scripts.incident_reconciliation_health
       - name: Preserve an explicit result if inspection stopped early
