@@ -18,6 +18,7 @@ from scripts.monitor_liveness import (
     _parse_time,
     _request_json,
 )
+from src.incident_cadence import can_emit_pending_alert, mark_pending_alert, preserve_pending_alert
 
 ISSUE_TITLE_PREFIX = "Scheduled market brief delivery degraded"
 ISSUE_MARKER = "scheduled-brief-incident="
@@ -189,12 +190,6 @@ def _pending_alert_consumer() -> str:
     return f"{run_id}/{attempt}" if run_id and attempt else "local"
 
 
-def _mark_alert_pending(body: str, consumer: str) -> str:
-    lines = [line for line in body.splitlines() if not line.startswith("Alert pending consumer:")]
-    lines.append(f"Alert pending consumer: {consumer}")
-    return "\n".join(lines)
-
-
 def _issue_body(
     key: str, *, component: str, reason: str, contract: str, slots: list[str],
     first_failure: str, run_id: str, attempt: int, sha: str, evidence_status: str,
@@ -258,14 +253,14 @@ def _write_handoff_result(path: Path, payload: dict[str, Any]) -> None:
 def reconcile(
     *, event: dict[str, Any], evidence_directory: Path, repository: str,
     api_url: str, token: str, now: datetime | None = None,
-    defer_notification_cadence: bool = False,
+    defer_notification_cadence: bool = False, deadline_monotonic: float | None = None,
 ) -> dict[str, Any]:
     identity_error = _identity_error(event, repository)
     if identity_error:
         raise LivenessAuditError(identity_error)
     evidence = _validated_evidence(event, evidence_directory)
     current = (now or datetime.now(UTC)).astimezone(UTC)
-    deadline = __import__("time").monotonic() + MAX_AUDIT_SECONDS
+    deadline = deadline_monotonic or __import__("time").monotonic() + MAX_AUDIT_SECONDS
     issues = [
         item for item in _open_incidents(api_url, repository, token, deadline_monotonic=deadline)
         if str(item.get("title") or "").startswith(ISSUE_TITLE_PREFIX)
@@ -313,7 +308,7 @@ def reconcile(
                 next_reminder=current if defer_notification_cadence else current + REMINDER_INTERVAL,
             )
             if defer_notification_cadence:
-                body = _mark_alert_pending(body, _pending_alert_consumer())
+                body = mark_pending_alert(body, _pending_alert_consumer(), current)
             created = _request_json(
                 api_url, repository, token, "POST", "issues",
                 {"title": f"{ISSUE_TITLE_PREFIX} / {component}", "body": body},
@@ -351,16 +346,23 @@ def reconcile(
             else:
                 due = False
                 next_reminder = next_due
+            notify_due = due and (
+                not defer_notification_cadence
+                or can_emit_pending_alert(body_before, _pending_alert_consumer(), current)
+            )
             body = _issue_body(
                 key, component=component, reason=reason, contract=contract,
                 slots=slots, first_failure=first_existing, run_id=run_id,
                 attempt=attempt, sha=sha, evidence_status=evidence_status,
                 now=current, next_reminder=next_reminder,
             )
-            if defer_notification_cadence and due:
-                body = _mark_alert_pending(body, _pending_alert_consumer())
+            if defer_notification_cadence:
+                if notify_due:
+                    body = mark_pending_alert(body, _pending_alert_consumer(), current)
+                else:
+                    body = preserve_pending_alert(body, body_before)
             _request_json(api_url, repository, token, "PATCH", f"issues/{number}", {"body": body}, deadline_monotonic=deadline)
-            if due and not pending_current:
+            if notify_due and not pending_current:
                 _request_json(
                     api_url, repository, token, "POST", f"issues/{number}/comments",
                     {"body": f"Still degraded: {reason}; {len(slots)} affected scheduled slot(s). Latest run {run_id}, attempt {attempt}."},

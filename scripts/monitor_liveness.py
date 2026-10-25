@@ -15,6 +15,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 from urllib.request import Request, urlopen
 
 from src.github_issue_api import IssuePaginationError, read_open_issues
+from src.incident_cadence import can_emit_pending_alert, mark_pending_alert
 
 REPOSITORY_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 INCIDENT_MARKER = "official-monitor-incident="
@@ -284,10 +285,8 @@ def _pending_alert_consumer() -> str:
     return f"{run_id}/{attempt}" if run_id and attempt else "local"
 
 
-def _mark_alert_pending(body: str, consumer: str) -> str:
-    lines = [line for line in body.splitlines() if not line.startswith("Alert pending consumer:")]
-    lines.append(f"Alert pending consumer: {consumer}")
-    return "\n".join(lines)[:12000]
+def _mark_alert_pending(body: str, consumer: str, now: datetime) -> str:
+    return mark_pending_alert(body, consumer, now)
 
 
 def _open_incidents(api_url: str, repository: str, token: str, *, deadline_monotonic: float) -> list[dict[str, Any]]:
@@ -329,12 +328,12 @@ def _positive_repo_id(value: object) -> int | None:
 
 def audit_liveness(
     *, api_url: str, repository: str, token: str, now: datetime | None = None,
-    defer_notification_cadence: bool = False,
+    defer_notification_cadence: bool = False, deadline_monotonic: float | None = None,
 ) -> dict[str, Any]:
     if not REPOSITORY_RE.fullmatch(repository) or not token:
         raise LivenessAuditError("monitor_liveness_configuration_invalid")
     current = (now or datetime.now(UTC)).astimezone(UTC)
-    deadline_monotonic = time.monotonic() + MAX_AUDIT_SECONDS
+    deadline_monotonic = deadline_monotonic or time.monotonic() + MAX_AUDIT_SECONDS
     runs = _get_runs(
         api_url, repository, token,
         deadline_monotonic=deadline_monotonic, now=current,
@@ -437,7 +436,7 @@ def audit_liveness(
             "This issue is automatically closed after a monitor step starts again.",
         ))
         if defer_notification_cadence:
-            body = _mark_alert_pending(body, pending_consumer)
+            body = _mark_alert_pending(body, pending_consumer, current)
         created_issue = _request_json(
             api_url, repository, token, "POST", "issues",
             {"title": f"{ISSUE_TITLE_PREFIX} / main", "body": body},
@@ -461,7 +460,11 @@ def audit_liveness(
             defer_notification_cadence
             and _issue_field(issue.get("body"), "Alert pending consumer") == pending_consumer
         )
-        if reminder_sent and not pending_current:
+        notify_due = reminder_sent and (
+            not defer_notification_cadence
+            or can_emit_pending_alert(issue.get("body"), pending_consumer, current)
+        )
+        if notify_due and not pending_current:
             scheduled_next = (
                 (next_reminder_at or current)
                 if defer_notification_cadence
@@ -471,7 +474,7 @@ def audit_liveness(
                 issue, observed_at=current, next_reminder_at=scheduled_next,
             )
             if defer_notification_cadence:
-                updated_body = _mark_alert_pending(updated_body, pending_consumer)
+                updated_body = _mark_alert_pending(updated_body, pending_consumer, current)
             _request_json(
                 api_url, repository, token, "PATCH", f"issues/{int(issue['number'])}",
                 {"body": updated_body}, deadline_monotonic=deadline_monotonic,
@@ -491,6 +494,8 @@ def audit_liveness(
                     "marker": f"{INCIDENT_MARKER}{incident_key}",
                     "next_reminder_at": (current + REMINDER_INTERVAL).isoformat(),
                 })
+        elif defer_notification_cadence:
+            reminder_sent = False
     return {
         "status": "stalled", "incident_opened": incident_opened,
         "incident_active": True, "incident_key": incident_key, "reminder_sent": reminder_sent,
@@ -507,11 +512,12 @@ def audit_liveness(
 def reconcile_audit_failure_incident(
     *, api_url: str, repository: str, token: str, reason: str,
     now: datetime | None = None, defer_notification_cadence: bool = False,
+    deadline_monotonic: float | None = None,
 ) -> dict[str, Any]:
     if not REPOSITORY_RE.fullmatch(repository) or not token:
         raise LivenessAuditError("monitor_liveness_configuration_invalid")
     current = (now or datetime.now(UTC)).astimezone(UTC)
-    deadline = time.monotonic() + MAX_AUDIT_SECONDS
+    deadline = deadline_monotonic or time.monotonic() + MAX_AUDIT_SECONDS
     incidents = _open_incidents(
         api_url, repository, token, deadline_monotonic=deadline,
     )
@@ -535,7 +541,7 @@ def reconcile_audit_failure_incident(
         ))
         pending_consumer = _pending_alert_consumer()
         if defer_notification_cadence:
-            issue_body = _mark_alert_pending(issue_body, pending_consumer)
+            issue_body = _mark_alert_pending(issue_body, pending_consumer, current)
         issue = _request_json(
             api_url, repository, token, "POST", "issues",
             {"title": f"{AUDIT_ISSUE_TITLE_PREFIX} / main", "body": issue_body},
@@ -569,7 +575,11 @@ def reconcile_audit_failure_incident(
         defer_notification_cadence
         and _issue_field(issue.get("body"), "Alert pending consumer") == pending_consumer
     )
-    if reminder_sent and not pending_current:
+    notify_due = reminder_sent and (
+        not defer_notification_cadence
+        or can_emit_pending_alert(issue.get("body"), pending_consumer, current)
+    )
+    if notify_due and not pending_current:
         next_reminder = (
             (due or current) if defer_notification_cadence
             else current + REMINDER_INTERVAL
@@ -578,7 +588,7 @@ def reconcile_audit_failure_incident(
             issue, observed_at=current, next_reminder_at=next_reminder,
         )
         if defer_notification_cadence:
-            body = _mark_alert_pending(body, pending_consumer)
+            body = _mark_alert_pending(body, pending_consumer, current)
         _request_json(
             api_url, repository, token, "PATCH", f"issues/{number}",
             {"body": body}, deadline_monotonic=deadline,
@@ -594,6 +604,8 @@ def reconcile_audit_failure_incident(
                 "marker": f"{AUDIT_INCIDENT_MARKER}{incident_key}",
                 "next_reminder_at": (current + REMINDER_INTERVAL).isoformat(),
             })
+    elif defer_notification_cadence:
+        reminder_sent = False
     return {
         "status": "degraded", "diagnostic_complete": False,
         "incident_active": True, "incident_opened": False,

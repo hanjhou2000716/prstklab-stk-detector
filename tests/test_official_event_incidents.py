@@ -117,6 +117,37 @@ def test_empty_successful_scan_cannot_close_event_incident(monkeypatch, tmp_path
     assert calls == []
 
 
+def test_expired_event_is_not_recovery_evidence(monkeypatch, tmp_path):
+    now = datetime(2026, 10, 16, 4, 0, tzinfo=UTC)
+    trace = _trace("expired", detected=now - timedelta(minutes=45), reason="source_ttl_expired")
+    assert "opaque-ref" not in incidents._resolved_event_refs(trace)
+
+    trace_path = tmp_path / "trace.json"
+    trace_path.write_text(json.dumps(trace), encoding="utf-8")
+    key = incidents._incident_group("source_ttl_expired", "public-summary-v4")[1]
+    issue = {
+        "number": 25,
+        "title": f"{incidents.EVENT_ISSUE_TITLE_PREFIX} / official_event_delivery",
+        "body": (
+            f"{incidents.EVENT_INCIDENT_MARKER}{key}\n"
+            f"First failure: {now.isoformat()}\nNext reminder at: {(now + timedelta(minutes=30)).isoformat()}\n"
+            "Affected event count: 1\nEvent refs: opaque-ref\nEvent refs complete: true"
+        ),
+    }
+    monkeypatch.setattr(incidents, "_open_incidents", lambda *_args, **_kwargs: [issue])
+    calls = []
+    monkeypatch.setattr(incidents, "_request_json", lambda *args, **kwargs: calls.append(args) or {})
+    result = incidents.reconcile_incidents(
+        api_url="https://api.github.com", repository="owner/repo", token="token",
+        trace_path=trace_path, now=now,
+    )
+    assert result["recovered_issue_numbers"] == []
+    assert not any(
+        len(call) > 5 and call[3] == "PATCH" and call[4] == "issues/25" and call[5].get("state") == "closed"
+        for call in calls
+    )
+
+
 def test_expected_event_suppression_remains_an_incident(monkeypatch, tmp_path):
     now = datetime(2026, 10, 16, 4, 0, tzinfo=UTC)
     trace = _trace("suppressed", detected=now, reason="unrecognized_sender_suppression")
