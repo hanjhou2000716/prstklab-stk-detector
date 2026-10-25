@@ -96,6 +96,167 @@ def test_health_watcher_opens_one_incident_for_incomplete_central_evidence(monke
     assert any(method == "POST" and path == "issues" for method, path, _ in calls)
 
 
+def test_health_watcher_preserves_source_http_failure_without_cursor_state(monkeypatch):
+    now = datetime(2026, 10, 25, 2, 0, tzinfo=UTC)
+    run = _run(502, now.isoformat())
+    issues, calls = _arrange(monkeypatch, [run], complete=False)
+    result_artifact = _result(run, complete=False)
+    result_artifact.pop("source_cursors")
+    result_artifact["failure_reason"] = "monitor_liveness_api_http_404"
+    result_artifact["failure_evidence"] = {
+        "method": "GET", "endpoint_class": "actions/runs/{run_id}", "http_status": 404,
+        "request_id": "ABC:123", "retry_count": 3,
+    }
+    monkeypatch.setattr(health, "_download_artifact_json", lambda **_kwargs: json.dumps(result_artifact).encode())
+
+    result = health.reconcile_health(
+        repository="owner/repo", api_url="https://api.github.com", token="token",
+        consumer_run_id="901", consumer_attempt=1, consumer_sha="f" * 40, now=now,
+    )
+
+    expected_root = "central_reconciliation_api_http_404"
+    assert result["health_status"] == "degraded"
+    assert result["failure_reason"] == expected_root
+    assert len(issues) == 1
+    assert f"Root cause: {expected_root}" in issues[0]["body"]
+    assert any(method == "POST" and path == "issues" for method, path, _ in calls)
+
+
+def test_health_watcher_consolidates_duplicate_matching_incidents(monkeypatch):
+    now = datetime(2026, 10, 25, 2, 0, tzinfo=UTC)
+    root = "central_reconciliation_coverage_incomplete"
+    marker = health._marker(root)
+    issues = [
+        {
+            "number": number,
+            "title": f"{health.ISSUE_TITLE_PREFIX} / {root}",
+            "state": "open",
+            "body": (
+                f"{marker}\nComponent: central_incident_reconciliation\n"
+                f"Root cause: {root}\nContract: {health.CONTRACT}\n"
+                f"First failure: {now.isoformat()}\n"
+                f"Next reminder at: {(now + timedelta(minutes=30)).isoformat()}"
+            ),
+        }
+        for number in (1068, 1073)
+    ]
+    issues, calls = _arrange(monkeypatch, [_run(501, now.isoformat())], complete=False, issues=issues)
+
+    result = health.reconcile_health(
+        repository="owner/repo", api_url="https://api.github.com", token="token",
+        consumer_run_id="900", consumer_attempt=1, consumer_sha="f" * 40, now=now,
+    )
+
+    assert result["consolidated_issue_numbers"] == [1073]
+    assert issues[0]["state"] == "open"
+    assert issues[1]["state"] == "closed"
+    assert any(
+        method == "PATCH" and path == "issues/1073"
+        and payload == {"state": "closed", "state_reason": "duplicate"}
+        for method, path, payload in calls
+    )
+    assert any(method == "POST" and path == "issues/1073/comments" for method, path, _ in calls)
+
+
+def test_health_watcher_resolves_workflow_run_event_when_listing_lags(monkeypatch):
+    now = datetime(2026, 10, 25, 10, 1, tzinfo=UTC)
+    event_run = _run(40183001117, "2026-10-25T10:00:46+00:00", "2f588ed42fd51e3c078745ed7e5952b94d10c0d8")
+    calls = []
+    issues = []
+
+    def request(_api, _repository, _token, method, path, payload=None, **_kwargs):
+        calls.append((method, path, payload))
+        if path.endswith("incident-reconciliation.yml"):
+            return {"id": 777, "path": health.CENTRAL_WORKFLOW_PATH, "state": "active"}
+        if path.startswith("actions/workflows/777/runs?"):
+            return {"workflow_runs": []}
+        if path == f"actions/runs/{event_run['id']}":
+            return event_run
+        if method == "POST" and path == "issues":
+            issue = {"number": 901, "title": payload["title"], "body": payload["body"], "state": "open"}
+            issues.append(issue)
+            return issue
+        raise AssertionError((method, path, payload))
+
+    monkeypatch.setattr(health, "_request_json", request)
+    monkeypatch.setattr(health, "_download_artifact_json", lambda *, run, **_kwargs: json.dumps(_result(run, complete=False)).encode())
+    monkeypatch.setattr(health, "_open_incidents", lambda *_args, **_kwargs: list(issues))
+
+    result = health.reconcile_health(
+        repository="owner/repo", api_url="https://api.github.com", token="token",
+        consumer_run_id="900", consumer_attempt=1, consumer_sha="f" * 40, now=now,
+        triggered_run_id=str(event_run["id"]), triggered_run_attempt="1",
+        triggered_run_sha=event_run["head_sha"],
+    )
+
+    assert result["health_status"] == "degraded"
+    assert result["failure_reason"] == "central_reconciliation_coverage_incomplete"
+    assert len(issues) == 1
+    assert "Latest run: 40183001117" in issues[0]["body"]
+    assert any(method == "GET" and path == f"actions/runs/{event_run['id']}" for method, path, _ in calls)
+    assert not any("run_missing" in str(payload) for _method, _path, payload in calls)
+
+
+def test_health_watcher_retries_transient_trigger_run_404(monkeypatch):
+    event_run = _run(40183001117, "2026-10-25T10:00:46+00:00", "2f588ed42fd51e3c078745ed7e5952b94d10c0d8")
+    calls = []
+
+    def request(_api, _repository, _token, method, path, payload=None, **_kwargs):
+        calls.append((method, path, payload))
+        if path.endswith("incident-reconciliation.yml"):
+            return {"id": 777, "path": health.CENTRAL_WORKFLOW_PATH, "state": "active"}
+        if path.startswith("actions/workflows/777/runs?"):
+            return {"workflow_runs": []}
+        if path == f"actions/runs/{event_run['id']}":
+            if sum(item[1] == path for item in calls) < 3:
+                raise LivenessAuditError("monitor_liveness_api_http_404")
+            return event_run
+        if method == "POST" and path == "issues":
+            return {"number": 901, "title": payload["title"], "body": payload["body"], "state": "open"}
+        raise AssertionError((method, path, payload))
+
+    monkeypatch.setattr(health, "_request_json", request)
+    monkeypatch.setattr(health.time, "sleep", lambda _delay: None)
+    monkeypatch.setattr(health, "_download_artifact_json", lambda *, run, **_kwargs: json.dumps(_result(run, complete=False)).encode())
+    monkeypatch.setattr(health, "_open_incidents", lambda *_args, **_kwargs: [])
+
+    result = health.reconcile_health(
+        repository="owner/repo", api_url="https://api.github.com", token="token",
+        consumer_run_id="900", consumer_attempt=1, consumer_sha="f" * 40,
+        triggered_run_id=str(event_run["id"]), triggered_run_attempt="1",
+        triggered_run_sha=event_run["head_sha"],
+    )
+
+    assert result["failure_reason"] == "central_reconciliation_coverage_incomplete"
+    assert sum(path == f"actions/runs/{event_run['id']}" for _method, path, _payload in calls) == 3
+
+
+def test_health_watcher_rejects_mismatched_triggered_run_identity(monkeypatch):
+    event_run = _run(40183001117, "2026-10-25T10:00:46+00:00", "2f588ed42fd51e3c078745ed7e5952b94d10c0d8")
+
+    def request(_api, _repository, _token, method, path, payload=None, **_kwargs):
+        if path.endswith("incident-reconciliation.yml"):
+            return {"id": 777, "path": health.CENTRAL_WORKFLOW_PATH, "state": "active"}
+        if path.startswith("actions/workflows/777/runs?"):
+            return {"workflow_runs": []}
+        if path == f"actions/runs/{event_run['id']}":
+            return {**event_run, "head_sha": "e" * 40}
+        raise AssertionError((method, path, payload))
+
+    monkeypatch.setattr(health, "_request_json", request)
+
+    try:
+        health._read_runs(
+            repository="owner/repo", api_url="https://api.github.com", token="token",
+            deadline=10**9, triggered_run_id=str(event_run["id"]),
+            triggered_run_attempt="1", triggered_run_sha=event_run["head_sha"],
+        )
+    except LivenessAuditError as exc:
+        assert str(exc) == "central_health_trigger_run_identity_mismatch"
+    else:
+        raise AssertionError("mismatched workflow_run event identity was accepted")
+
+
 def test_health_watcher_does_not_close_on_one_good_run_and_recovers_after_two(monkeypatch):
     now = datetime(2026, 10, 25, 2, 0, tzinfo=UTC)
     marker = health._marker("central_reconciliation_coverage_incomplete")
@@ -265,6 +426,9 @@ def test_health_workflow_is_independent_and_alerts_only_from_health_decision():
     assert "steps.inspect.outputs.notification_due == 'true'" in workflow
     assert "finalize-alert-cadence" in workflow
     assert "workflow_dispatch" in workflow
+    assert "TRIGGERED_CENTRAL_RUN_ID" in workflow
+    assert "TRIGGERED_CENTRAL_RUN_ATTEMPT" in workflow
+    assert "TRIGGERED_CENTRAL_RUN_SHA" in workflow
 
 
 def test_health_marker_is_accepted_by_shared_cadence_contract():
