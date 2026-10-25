@@ -21,6 +21,7 @@ from src.event_ledger import (
     EventLedger,
     canonical_event_key,
     is_secondary_commentary,
+    preflight_event_provenance,
     taiwan_investor_priority,
 )
 from src.external_observation_input import (
@@ -474,6 +475,9 @@ def _observe_event(event: dict[str, Any] | None, *, reminded: bool = False) -> d
     """Persist discovery/reminder facts alongside the public market snapshot."""
     if not event:
         return {"changed": False}
+    provenance = preflight_event_provenance(event)
+    if not provenance.get("ok"):
+        raise ValueError(str(provenance.get("reason") or "ledger_event_provenance_invalid"))
     ledger = EventLedger()
     if reminded:
         key = ledger.mark_reminded(event)
@@ -584,6 +588,9 @@ def _batch_candidate_preflight(event: dict[str, Any]) -> tuple[str, str, bool]:
     """Independently apply the sender's idempotency and policy gates per row."""
     priority = is_financialjuice_priority_event(event)
     expected = priority or bool(event.get("notification_expected", event.get("should_remind", True)))
+    provenance = preflight_event_provenance(event)
+    if not provenance.get("ok"):
+        return "unknown", str(provenance.get("reason") or "ledger_event_provenance_invalid"), expected
     try:
         ledger = EventLedger()
         claims = getattr(ledger, "delivery_claims", {})
@@ -683,13 +690,22 @@ def write_status_output(
                 candidate.get("notification_expected", candidate.get("should_remind", True))
             )
             candidate_obligation = candidate_expected
+            candidate_stage = "content_preflight"
             if candidate_incomplete:
                 content_blocked = True
                 content_status = "incomplete"
                 candidate_reason = "content_incomplete_quarantined"
+            elif not (candidate_provenance := preflight_event_provenance(candidate)).get("ok"):
+                content_status = "complete"
+                candidate_stage = "provenance_preflight"
+                candidate_unknown_suppression = True
+                candidate_reason = str(
+                    candidate_provenance.get("reason") or "ledger_event_provenance_invalid"
+                )
             else:
                 content_blocked = False
                 content_status = "complete"
+                candidate_stage = "notification_preflight"
                 candidate_record = _observe_event(candidate)
                 candidate_should_send = bool(
                     candidate_priority or candidate_record.get("should_remind", True)
@@ -815,7 +831,7 @@ def write_status_output(
                 "summary_fingerprint": hashlib.sha256(
                     candidate_caption.encode("utf-8")
                 ).hexdigest() if candidate_caption else "",
-                "stage": "content_preflight" if candidate_incomplete else "notification_preflight",
+                "stage": candidate_stage,
                 "expected": candidate_expected,
                 "content_status": "incomplete" if candidate_incomplete else "complete",
                 "status": (
@@ -1522,6 +1538,21 @@ def send_current_event(
             write_send_output(False, "missing_quote_provenance", event=event, notification_status="suppressed")
             print("Market signal has no snapshot/observation provenance; skipped safely.")
             return False
+    provenance = preflight_event_provenance(event)
+    if not provenance.get("ok"):
+        reason = str(provenance.get("reason") or "ledger_event_provenance_invalid")
+        write_send_output(
+            False,
+            reason,
+            event=event,
+            notification_status="blocked",
+            notification_expected=bool(
+                is_financialjuice_priority_event(event)
+                or event.get("notification_expected", event.get("should_remind", True))
+            ),
+        )
+        print(f"Official event provenance preflight blocked delivery: {reason}")
+        return False
     ledger = EventLedger()
     gate = verify_release_for_delivery(
         expected_snapshot_id=str(snapshot.get("snapshot_id") or ""),

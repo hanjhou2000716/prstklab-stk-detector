@@ -24,8 +24,8 @@
       "properties": {
         "canonical_key": {"type": "string", "minLength": 8},
         "event_type": {"type": "string", "minLength": 1},
-        "source_url": {"type": "string", "format": "uri"},
-        "source_domain": {"type": "string", "minLength": 1},
+        "source_url": {"type": "string"},
+        "source_domain": {"type": "string"},
         "person_fingerprint": {"type": "string"},
         "location_fingerprint": {"type": "string"},
         "action_fingerprint": {"type": "string"},
@@ -35,15 +35,43 @@
         "escalated": {"type": "boolean"},
         "risk_level": {"type": "string"},
         "risk_rank": {"type": "integer", "minimum": 0},
-        "verified_sources": {
-          "type": "array",
-          "items": {"type": "string", "format": "uri"}
+        "verified_sources": {"type": "array", "items": {"type": "string"}},
+        "provenance_status": {"type": "string", "enum": ["verified", "recovered", "quarantined"]},
+        "provenance_error": {
+          "type": "string",
+          "enum": [
+            "legacy_provenance_invalid", "legacy_provenance_missing",
+            "ledger_event_identity_invalid", "ledger_source_url_invalid",
+            "ledger_verified_source_invalid"
+          ]
         },
         "last_title": {"type": "string"},
         "source_tier": {"type": "string"},
         "snapshot_id": {"type": "string", "minLength": 8},
         "observation_id": {"type": "string", "minLength": 8}
       },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"provenance_status": {"const": "quarantined"}},
+            "required": ["provenance_status"]
+          },
+          "then": {
+            "properties": {
+              "source_url": {"const": ""},
+              "source_domain": {"const": ""},
+              "verified_sources": {"maxItems": 0}
+            }
+          },
+          "else": {
+            "properties": {
+              "source_url": {"format": "uri", "minLength": 1},
+              "source_domain": {"minLength": 1},
+              "verified_sources": {"items": {"format": "uri"}}
+            }
+          }
+        }
+      ],
       "additionalProperties": true
     }
   },

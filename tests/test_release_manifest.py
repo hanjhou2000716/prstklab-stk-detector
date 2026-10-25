@@ -4,6 +4,7 @@ import json
 import pytest
 
 from src.alert_orchestrator import notification_key_for_event
+from src.artifact_contract import validate_events
 from src.news_intelligence import build_news_intelligence
 from src.release_manifest import (
     _alert_artifact_filename,
@@ -12,6 +13,7 @@ from src.release_manifest import (
     _briefing_projection,
     _gap_count,
     _identity_conflict,
+    _normalize_artifacts,
     _normalize_market,
     _normalize_research,
     _optional_background_news,
@@ -27,6 +29,37 @@ from src.release_manifest import (
     write_release_build_result,
     write_release_manifest,
 )
+
+
+def test_release_normalization_quarantines_legacy_event_source_without_dropping_claims():
+    key = "a" * 32
+    loaded = {
+        "event-ledger.json": {
+            "schema_version": 1,
+            "retention_days": 30,
+            "events": {
+                key: {
+                    "canonical_key": key,
+                    "event_type": "official",
+                    "source_url": "not a URL",
+                    "source_domain": "provider label",
+                    "verified_sources": ["not a URL"],
+                    "first_discovered_at": "2026-10-20T10:00:00+00:00",
+                    "updated_at": "2026-10-20T10:00:00+00:00",
+                }
+            },
+            "delivery_claims": {"notification-1": {"status": "delivered"}},
+        }
+    }
+
+    notes = _normalize_artifacts(loaded)
+    event = loaded["event-ledger.json"]["events"][key]
+    assert event["provenance_status"] == "quarantined"
+    assert event["source_url"] == ""
+    assert loaded["event-ledger.json"]["delivery_claims"] == {
+        "notification-1": {"status": "delivered"}
+    }
+    assert "event-ledger: quarantined_provenance_records=1" in notes
 
 
 def test_public_alert_identity_is_versioned_and_rejects_required_or_unverifiable_rows():
@@ -190,6 +223,47 @@ def test_manifest_is_ready_and_hashes_are_verifiable(tmp_path):
     assert manifest["status"] == "ready"
     assert manifest["artifact_paths"]["market.json"] == "data/market.json"
     assert verify_release_files(manifest, root=tmp_path / "site") == []
+
+
+def test_release_cli_path_quarantines_bad_legacy_ledger_provenance_and_keeps_claims(tmp_path):
+    _artifacts(tmp_path)
+    event_key = "b" * 32
+    claim = {
+        "notification_key": "notification-preserved",
+        "status": "delivered",
+        "recipient_hashes": ["recipient-a"],
+        "delivered_recipient_hashes": ["recipient-a"],
+    }
+    ledger_path = tmp_path / "site" / "data" / "event-ledger.json"
+    ledger_path.write_text(json.dumps({
+        "schema_version": 1,
+        "retention_days": 30,
+        "events": {
+            event_key: {
+                "canonical_key": event_key,
+                "event_type": "official",
+                "source_url": "FinancialJuice",
+                "source_domain": "FinancialJuice",
+                "verified_sources": ["FinancialJuice", "http://unsafe.example/item"],
+                "first_discovered_at": "2026-10-20T10:00:00+00:00",
+                "last_reminded_at": "2026-10-20T10:05:00+00:00",
+                "updated_at": "2026-10-20T10:05:00+00:00",
+                "last_title": "Legacy event",
+                "delivery_history": [{"trace_id": "receipt-1", "sent_at": "2026-10-20T10:05:00+00:00"}],
+            }
+        },
+        "delivery_claims": {"notification-preserved": claim},
+    }), encoding="utf-8")
+
+    manifest = build_release_manifest(root=tmp_path)
+    sanitized = json.loads(ledger_path.read_text(encoding="utf-8"))
+    assert manifest["status"] == "ready"
+    assert validate_events(sanitized) == []
+    assert sanitized["events"][event_key]["provenance_status"] == "quarantined"
+    assert sanitized["events"][event_key]["delivery_history"][0]["trace_id"] == "receipt-1"
+    assert sanitized["delivery_claims"]["notification-preserved"] == claim
+    assert "FinancialJuice" not in json.dumps(sanitized)
+    assert "unsafe.example" not in json.dumps(sanitized)
 
 
 def test_local_release_bundle_requires_identity_and_all_local_hashes(tmp_path):

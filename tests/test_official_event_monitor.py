@@ -5,6 +5,8 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from src import official_event_monitor as monitor
+from src.artifact_contract import validate_events
+from src.event_ledger import EventLedger
 from src.official_event_monitor import (
     build_official_event_brief,
     event_key,
@@ -554,6 +556,112 @@ def test_incomplete_official_candidate_is_quarantined_before_sender_decision(mon
     assert "hard_failure=false" in text
 
 
+def test_invalid_source_candidate_is_quarantined_without_poisoning_valid_candidate(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    ledger_path = tmp_path / "event-ledger.json"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    monkeypatch.setenv("EVENT_LEDGER_PATH", str(ledger_path))
+    invalid = {
+        "source_key": "official",
+        "title": "Invalid insecure source candidate",
+        "source_url": "http://invalid.example/event",
+        "risk_level": "R2",
+    }
+    valid = {
+        "source_key": "official",
+        "title": "Valid independent source candidate",
+        "source_url": "https://valid.example/event",
+        "risk_level": "R2",
+    }
+    snapshot = {"snapshot_id": "snapshot-provenance-test", "events": {"items": [invalid, valid]}}
+    ordered = [invalid, valid]
+    monkeypatch.setattr(monitor, "build_official_event_brief", lambda event: f"Verified: {event['title']}")
+    monkeypatch.setattr(monitor, "content_is_incomplete", lambda *_args: False)
+    monkeypatch.setattr(
+        monitor,
+        "select_official_event",
+        lambda _snapshot, now=None, *, baseline_official=False, excluded_event_keys=None: next(
+            (row for row in ordered if monitor.event_key(row) not in (excluded_event_keys or set())),
+            None,
+        ),
+    )
+    monkeypatch.setattr(
+        monitor,
+        "_candidate_delivery_policy",
+        lambda *_args, **_kwargs: ({"allowed": True, "reason": "test"}, {"allowed": True, "reason": "test"}),
+    )
+
+    monitor.write_status_output(invalid, snapshot)
+
+    text = output.read_text(encoding="utf-8")
+    assert "should_send=true" in text
+    assert '"stage":"provenance_preflight"' in text
+    assert '"reason":"ledger_source_url_invalid"' in text
+    assert '"status":"unknown"' in text
+    assert "candidate_incident_count=1" in text
+    assert "batch_count=1" in text
+    batch_output = text.split("batch_candidates=", 1)[1].splitlines()[0]
+    assert f'"key":"{monitor.event_key(valid)}"' in batch_output
+    assert f'"key":"{monitor.event_key(invalid)}"' not in batch_output
+
+    ledger = EventLedger(ledger_path)
+    assert len(ledger.records) == 1
+    record = next(iter(ledger.records.values()))
+    assert record["last_title"] == valid["title"]
+    assert record["source_url"] == valid["source_url"]
+    assert validate_events({"schema_version": 1, "retention_days": 30, "events": ledger.records}) == []
+
+
+def test_batch_candidate_provenance_failure_does_not_open_ledger(monkeypatch):
+    event = {
+        "source_key": "official",
+        "title": "Batch candidate with insecure provenance",
+        "source_url": "http://invalid.example/batch",
+        "notification_expected": True,
+    }
+    monkeypatch.setattr(
+        monitor,
+        "EventLedger",
+        lambda: (_ for _ in ()).throw(AssertionError("invalid provenance must be rejected before ledger access")),
+    )
+
+    assert monitor._batch_candidate_preflight(event) == (
+        "unknown",
+        "ledger_source_url_invalid",
+        True,
+    )
+
+
+def test_sender_provenance_failure_stops_before_release_gate_or_ledger(monkeypatch, tmp_path):
+    output = tmp_path / "github-output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    event = {
+        "source_key": "official",
+        "title": "Sender candidate with insecure provenance",
+        "source_url": "http://invalid.example/sender",
+        "notification_expected": True,
+    }
+    snapshot = {"snapshot_id": "snapshot-provenance-test", "events": {"items": [event]}}
+    monkeypatch.setattr(monitor, "prepare_snapshot", lambda: (snapshot, event))
+    monkeypatch.setattr(
+        monitor,
+        "EventLedger",
+        lambda: (_ for _ in ()).throw(AssertionError("invalid provenance must not open the ledger")),
+    )
+    monkeypatch.setattr(
+        monitor,
+        "verify_release_for_delivery",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("invalid provenance must stop before release verification")),
+    )
+
+    assert monitor.send_current_event() is False
+    text = output.read_text(encoding="utf-8")
+    assert "sent=false" in text
+    assert "reason=ledger_source_url_invalid" in text
+    assert "notification_expected=true" in text
+    assert "notification_status=blocked" in text
+
+
 def test_financialjuice_event_uses_immediate_text_lane_and_records_receipt(monkeypatch, tmp_path):
     output = tmp_path / "github-output.txt"
     monkeypatch.setenv("GITHUB_OUTPUT", str(output))
@@ -679,6 +787,7 @@ def test_official_text_lane_passes_alert_deep_link(monkeypatch, tmp_path):
         "notification_status": "eligible",
         "prstk_risk": {"prstk_risk_level": "R2"},
         "title": "Official update",
+        "source_url": "https://issuer.example/official-update",
     }
     snapshot = {"snapshot_id": "snap-1", "events": {"items": [event]}}
     monkeypatch.setattr(monitor, "prepare_snapshot", lambda: (snapshot, event))
@@ -763,6 +872,7 @@ def test_duplicate_top_candidate_does_not_starve_later_valid_candidate(monkeypat
         "source_key": "official", "source": "issuer", "notification_id": "official-next",
         "event_cluster_key": "official-cluster", "notification_status": "eligible",
         "prstk_risk_level": "R2", "title": "Later valid event",
+        "source_url": "https://issuer.example/later-valid-event",
     }
     snapshot = {"snapshot_id": "snap-1", "events": {"items": [fj, later]}}
     monkeypatch.setattr(monitor, "prepare_snapshot", lambda: (snapshot, fj))

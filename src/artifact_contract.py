@@ -833,19 +833,28 @@ def validate_events(document: dict[str, Any]) -> list[str]:
         path = f"events[{key!r}]"
         if str(event.get("canonical_key") or "") != str(key):
             errors.append(f"{path}: canonical_key must match ledger key")
+        provenance_status = str(event.get("provenance_status") or "")
+        if provenance_status and provenance_status not in {"verified", "recovered", "quarantined"}:
+            errors.append(f"{path}: provenance_status is unsupported")
         source_url = str(event.get("source_url") or "")
         parsed_url = urlparse(source_url)
-        if parsed_url.scheme != "https" or not parsed_url.hostname:
+        quarantined = provenance_status == "quarantined"
+        if quarantined:
+            if source_url or str(event.get("source_domain") or "") or event.get("verified_sources"):
+                errors.append(f"{path}: quarantined provenance must not retain unverified URLs")
+        elif parsed_url.scheme != "https" or not parsed_url.hostname:
             errors.append(f"{path}: source_url must be an absolute HTTPS URL")
         source_domain = str(event.get("source_domain") or "").lower().removeprefix("www.")
-        if parsed_url.hostname and source_domain and parsed_url.hostname.lower().removeprefix("www.") != source_domain:
+        if not quarantined and parsed_url.hostname and source_domain and parsed_url.hostname.lower().removeprefix("www.") != source_domain:
             errors.append(f"{path}: source_domain does not match source_url")
         first_seen = _parse_time(event.get("first_discovered_at"))
         updated = _parse_time(event.get("updated_at"))
         if first_seen and updated and updated < first_seen:
             errors.append(f"{path}: updated_at precedes first_discovered_at")
         verified = event.get("verified_sources")
-        if isinstance(verified, list):
+        if quarantined and verified != []:
+            errors.append(f"{path}: quarantined provenance requires an empty verified_sources list")
+        elif isinstance(verified, list):
             for index, url in enumerate(verified):
                 parsed = urlparse(str(url))
                 if parsed.scheme != "https" or not parsed.hostname:

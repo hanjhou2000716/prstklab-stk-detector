@@ -27,7 +27,11 @@ from src.atomic_file import replace_with_retry
 from src.bootstrap_release import BOOTSTRAP_MAX_BYTES, BOOTSTRAP_NAME, build_bootstrap_snapshot
 from src.creator_artifact import validate_creator_artifact
 from src.creator_release import validate_creator_release
-from src.event_ledger import event_source_url, normalize_source_url
+from src.event_ledger import (
+    event_source_url,
+    normalize_source_url,
+    sanitize_event_ledger_document,
+)
 from src.external_observability_contract import (
     CREATOR_OBSERVABILITY_FIELDS,
     EXTERNAL_OBSERVABILITY_FIELDS,
@@ -1250,6 +1254,11 @@ def _normalize_artifacts(loaded: dict[str, dict[str, Any]]) -> list[str]:
             research["snapshot_id"] = content_snapshot_id(research, "research")
             notes.append("research: snapshot_id=deterministic")
     events = loaded.get("event-ledger.json")
+    if events:
+        sanitized_events, provenance_notes = sanitize_event_ledger_document(events)
+        loaded["event-ledger.json"] = sanitized_events
+        notes.extend(provenance_notes)
+        events = sanitized_events
     if events and not str(events.get("snapshot_id") or "").strip():
         events["snapshot_id"] = content_snapshot_id(events, "event")
         notes.append("events: snapshot_id=deterministic")
