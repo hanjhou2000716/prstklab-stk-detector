@@ -7,6 +7,10 @@ on:
       - Scheduled brief slot receipt audit
       - Official macro and price monitor
       - Unified Taiwan-US research report
+      # Gmail sync starts the official monitor with GITHUB_TOKEN. Waking on
+      # sync completion lets the reconciler observe that child run even when
+      # its workflow_run event is suppressed by GitHub's token rules.
+      - Gmail history sync (Supabase)
     types: [completed]
   schedule:
     - cron: "*/5 * * * *"
