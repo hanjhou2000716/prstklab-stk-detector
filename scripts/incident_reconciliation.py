@@ -62,11 +62,31 @@ STATE_ARTIFACT_MEMBER = "incident-reconciliation-state.json"
 STATE_SCHEMA = "incident-reconciliation-cursor-v1"
 SOURCE_PAGE_SIZE = 10
 SOURCE_MAX_PAGES = 10
+SOURCE_JOB_PAGE_SIZE = 100
+SOURCE_JOB_MAX_PAGES = 10
 MAX_SOURCE_RUNS_PER_CYCLE = 10
 SOURCE_BACKFILL_WINDOW = timedelta(hours=6)
 MISSING_ARTIFACT_SETTLE_WINDOW = timedelta(minutes=30)
+STALE_PENDING_JOB_CHECK_AFTER = timedelta(minutes=10)
+TERMINAL_JOB_SNAPSHOT_CONFIRMATION = timedelta(seconds=2)
 STATE_ARTIFACT_LIMIT = 20 * 1024 * 1024
 INITIAL_BACKFILL_AT = datetime(2026, 10, 21, tzinfo=UTC)
+SOURCE_TERMINAL_JOB_CONTRACTS: dict[tuple[str, str], dict[str, Any]] = {
+    # Verified against this commit's immutable workflow file. GitHub left run
+    # 39698088993 in_progress after both contract jobs had completed, despite
+    # the immutable trace proving that no publication or sender ran.
+    (
+        ".github/workflows/official-event-monitor.yml",
+        "cc40ba0401362f6214b540c70b5e1aa3100d5773",
+    ): {
+        "contract": "official-event-monitor-cc40ba0-jobs-v1",
+        "jobs": frozenset({"monitor-admission", "monitor-send-deploy"}),
+    },
+}
+TERMINAL_JOB_CONCLUSIONS = frozenset({
+    "success", "failure", "neutral", "cancelled", "skipped", "timed_out",
+    "action_required", "stale", "startup_failure",
+})
 
 def _settled_missing_artifact_resolution(
     source_result: dict[str, Any], run: dict[str, Any], now: datetime,
@@ -546,13 +566,59 @@ def _workflow_runs_since(
             or (stored_sha and stored_sha != sha)
         ):
             raise LivenessAuditError("incident_source_pending_run_identity_changed")
+        terminal_evidence: dict[str, Any] | None = None
+        terminal_observation: dict[str, Any] | None = None
         if str(run.get("status") or "").casefold() == "completed":
             run["_incident_source_origin"] = "pending"
             collected[(pending_id, attempt)] = run
+        elif (
+            str(run.get("status") or "").casefold() == "in_progress"
+            and created_at <= now.astimezone(UTC) - STALE_PENDING_JOB_CHECK_AFTER
+        ):
+            contract = SOURCE_TERMINAL_JOB_CONTRACTS.get((path, sha))
+            if contract is not None:
+                snapshot = _read_source_job_snapshot(
+                    run=run, repository=repository, repository_id=repository_id,
+                    api_url=api_url, token=token, deadline=deadline,
+                    expected_jobs=contract["jobs"],
+                )
+                if snapshot["all_completed"]:
+                    previous = item.get("terminal_jobs_observation")
+                    previous_at = _parse_time(previous.get("observed_at")) if isinstance(previous, dict) else None
+                    same_snapshot = (
+                        isinstance(previous, dict)
+                        and previous.get("fingerprint") == snapshot["fingerprint"]
+                        and previous_at is not None
+                        and previous_at <= now.astimezone(UTC) - TERMINAL_JOB_SNAPSHOT_CONFIRMATION
+                    )
+                    terminal_observation = {
+                        "fingerprint": snapshot["fingerprint"],
+                        "observed_at": now.astimezone(UTC).isoformat(),
+                    }
+                    if same_snapshot and previous_at is not None:
+                        terminal_evidence = {
+                            "schema_version": "source-run-terminal-jobs-v1",
+                            "resolution": "stable_complete_jobs_snapshot",
+                            "workflow_contract": contract["contract"],
+                            "workflow_sha": sha,
+                            "run_id": pending_id,
+                            "attempt": attempt,
+                            "job_fingerprint": snapshot["fingerprint"],
+                            "job_ids": snapshot["job_ids"],
+                            "job_names": snapshot["job_names"],
+                            "first_observed_at": previous_at.isoformat(),
+                            "confirmed_at": now.astimezone(UTC).isoformat(),
+                            "workflow_run_status": str(run.get("status") or "").casefold(),
+                        }
+                        run["_incident_source_origin"] = "pending"
+                        run["_incident_source_terminal_evidence"] = terminal_evidence
+                        collected[(pending_id, attempt)] = run
         pending[pending_id] = {
             "run_id": pending_id, "workflow_id": workflow_id,
             "created_at": created_at.isoformat(), "attempt": attempt, "head_sha": sha,
         }
+        if terminal_observation is not None:
+            pending[pending_id]["terminal_jobs_observation"] = terminal_observation
         if len(pending) > 100:
             raise LivenessAuditError("incident_source_pending_runs_limit_exceeded")
     expected_total: int | None = None
@@ -600,10 +666,14 @@ def _workflow_runs_since(
             ):
                 continue
             if str(row.get("status") or "").casefold() != "completed":
-                pending[run_id] = {
+                pending_row = {
                     "run_id": run_id, "workflow_id": workflow_id,
                     "created_at": created_at.isoformat(), "attempt": attempt, "head_sha": sha,
                 }
+                existing_pending = pending.get(run_id)
+                if isinstance(existing_pending, dict) and isinstance(existing_pending.get("terminal_jobs_observation"), dict):
+                    pending_row["terminal_jobs_observation"] = existing_pending["terminal_jobs_observation"]
+                pending[run_id] = pending_row
                 continue
             previous = collected.get((run_id, attempt))
             if previous is not None:
@@ -668,6 +738,136 @@ def _workflow_runs_since(
         for item in pending.values()
     )
     return runs, next_cursor, (not scan_complete) or stale_pending
+
+
+def _read_source_job_snapshot(
+    *, run: dict[str, Any], repository: str, repository_id: int, api_url: str,
+    token: str, deadline: float, expected_jobs: frozenset[str],
+) -> dict[str, Any]:
+    """Read a complete, attempt-bound Jobs API snapshot for a known stale run."""
+    run_id = _safe_int(run.get("id"))
+    attempt = _safe_int(run.get("run_attempt"))
+    workflow_id = _safe_int(run.get("workflow_id"))
+    if not run_id or not attempt or not workflow_id or not expected_jobs:
+        raise LivenessAuditError("incident_source_pending_jobs_identity_invalid")
+
+    endpoint = f"/repos/{repository}/actions/runs/{run_id}/attempts/{attempt}/jobs"
+    numeric_endpoint = f"/repositories/{repository_id}/actions/runs/{run_id}/attempts/{attempt}/jobs"
+    request_path = f"actions/runs/{run_id}/attempts/{attempt}/jobs?" + urlencode({
+        "per_page": SOURCE_JOB_PAGE_SIZE, "page": 1,
+    })
+    rows_by_id: dict[int, dict[str, Any]] = {}
+    total_count: int | None = None
+    fetched = 0
+    page = 1
+    while page <= SOURCE_JOB_MAX_PAGES:
+        headers: dict[str, str] = {}
+        payload = _request_json(
+            api_url, repository, token, "GET", request_path,
+            response_headers=headers, deadline_monotonic=deadline,
+        )
+        rows = payload.get("jobs") if isinstance(payload, dict) else None
+        observed_total = payload.get("total_count") if isinstance(payload, dict) else None
+        if (
+            not isinstance(rows, list) or not isinstance(observed_total, int)
+            or observed_total < 0 or any(not isinstance(row, dict) for row in rows)
+        ):
+            raise LivenessAuditError("incident_source_pending_jobs_response_invalid")
+        if total_count is None:
+            total_count = observed_total
+        elif total_count != observed_total:
+            raise LivenessAuditError("incident_source_pending_jobs_total_changed")
+        fetched += len(rows)
+        for row in rows:
+            job_id = _safe_int(row.get("id"))
+            job_run_id = _safe_int(row.get("run_id"))
+            job_attempt = _safe_int(row.get("run_attempt"))
+            name = row.get("name")
+            status = str(row.get("status") or "").casefold()
+            conclusion = str(row.get("conclusion") or "").casefold()
+            if (
+                not job_id or job_run_id != run_id or job_attempt != attempt
+                or not isinstance(name, str) or not name.strip()
+                or status not in {"queued", "in_progress", "waiting", "requested", "pending", "completed"}
+                or (status == "completed" and conclusion not in TERMINAL_JOB_CONCLUSIONS)
+                or (status != "completed" and conclusion)
+            ):
+                raise LivenessAuditError("incident_source_pending_job_identity_invalid")
+            if job_id in rows_by_id:
+                raise LivenessAuditError("incident_source_pending_job_duplicated")
+            started_at = _parse_time(row.get("started_at"))
+            completed_at = _parse_time(row.get("completed_at"))
+            if status == "completed" and (
+                completed_at is None or (started_at is not None and completed_at < started_at)
+            ):
+                raise LivenessAuditError("incident_source_pending_job_time_invalid")
+            rows_by_id[job_id] = {
+                "id": job_id,
+                "name": name.strip(),
+                "run_id": job_run_id,
+                "run_attempt": job_attempt,
+                "status": status,
+                "conclusion": conclusion,
+                "started_at": started_at.isoformat() if started_at else "",
+                "completed_at": completed_at.isoformat() if completed_at else "",
+            }
+        next_url = _next_link(
+            headers.get("link", ""), api_url=api_url,
+            expected_path=(endpoint, numeric_endpoint), expected_page=page + 1,
+            per_page=SOURCE_JOB_PAGE_SIZE,
+        )
+        if next_url:
+            if page == SOURCE_JOB_MAX_PAGES:
+                raise LivenessAuditError("incident_source_pending_jobs_pagination_incomplete")
+            request_path = next_url
+            page += 1
+            continue
+        if len(rows) == SOURCE_JOB_PAGE_SIZE:
+            if page == SOURCE_JOB_MAX_PAGES:
+                raise LivenessAuditError("incident_source_pending_jobs_pagination_incomplete")
+            page += 1
+            request_path = f"actions/runs/{run_id}/attempts/{attempt}/jobs?" + urlencode({
+                "per_page": SOURCE_JOB_PAGE_SIZE, "page": page,
+            })
+            continue
+        if fetched < (total_count or 0):
+            raise LivenessAuditError("incident_source_pending_jobs_pagination_incomplete")
+        break
+    if fetched != (total_count or 0) or not rows_by_id:
+        raise LivenessAuditError("incident_source_pending_jobs_pagination_incomplete")
+    names = [row["name"] for row in rows_by_id.values()]
+    if len(names) != len(set(names)) or set(names) != set(expected_jobs):
+        raise LivenessAuditError("incident_source_pending_jobs_contract_mismatch")
+    ordered = sorted(rows_by_id.values(), key=lambda row: (row["name"], row["id"]))
+    fingerprint = hashlib.sha256(json.dumps(
+        ordered, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+    ).encode("utf-8")).hexdigest()
+    return {
+        "fingerprint": fingerprint,
+        "job_ids": [row["id"] for row in ordered],
+        "job_names": [row["name"] for row in ordered],
+        "all_completed": all(row["status"] == "completed" for row in ordered),
+    }
+
+
+def _record_processed_checkpoint(
+    *, processed_last: dict[str, dict[str, Any]], cursors: dict[str, Any],
+    path: str, created_at: datetime, run_id: int, advance_cursor: bool,
+    terminal_evidence: Any,
+) -> None:
+    if not advance_cursor and not isinstance(terminal_evidence, dict):
+        return
+    previous = processed_last.get(path)
+    if previous is None:
+        cursor = cursors.get(path)
+        previous = cursor if isinstance(cursor, dict) else {}
+    previous_at = _parse_time(previous.get("created_at"))
+    previous_id = _safe_int(previous.get("run_id")) or 0
+    if (
+        previous_at is None or created_at > previous_at
+        or (created_at == previous_at and run_id > previous_id)
+    ):
+        processed_last[path] = {"created_at": created_at.isoformat(), "run_id": run_id}
 
 
 def _download_artifact_json(
@@ -877,11 +1077,15 @@ def _reconcile_source_run(
                 repository=repository, api_url=api_url, token=token, now=now,
                 defer_notification_cadence=True, deadline_monotonic=deadline,
             )
-        return reconcile_official_events(
+        source_result = reconcile_official_events(
             api_url=api_url, repository=repository, token=token,
             trace_path=evidence_path, now=now, defer_notification_cadence=True,
             deadline_monotonic=deadline,
         )
+        terminal_evidence = run.get("_incident_source_terminal_evidence")
+        if isinstance(terminal_evidence, dict):
+            source_result["source_run_terminal_evidence"] = terminal_evidence
+        return source_result
 
 
 def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
@@ -1018,12 +1222,16 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
         settled_gap = _settled_missing_artifact_resolution(source_result, run, now)
         if settled_gap is not None:
             source_result.update(settled_gap)
-        results.append({
+        result_row = {
             "source_workflow": workflow_name,
             "source_run_id": run_id,
             "source_attempt": _safe_int(run.get("run_attempt")) or 1,
             **source_result,
-        })
+        }
+        terminal_evidence = run.get("_incident_source_terminal_evidence")
+        if isinstance(terminal_evidence, dict):
+            result_row["source_run_terminal_evidence"] = terminal_evidence
+        results.append(result_row)
         cursor_can_advance = (
             source_result.get("diagnostic_complete") is not False
             or source_result.get("cursor_resolution") == "advance_with_unknown"
@@ -1031,8 +1239,15 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
         if not cursor_can_advance:
             failed_paths.add(path)
         else:
-            if advance_cursor:
-                processed_last[path] = {"created_at": created.isoformat(), "run_id": run_id}
+            _record_processed_checkpoint(
+                processed_last=processed_last,
+                cursors=cursors,
+                path=path,
+                created_at=created,
+                run_id=run_id,
+                advance_cursor=advance_cursor,
+                terminal_evidence=run.get("_incident_source_terminal_evidence"),
+            )
             if any(
                 _safe_int(item.get("run_id")) == run_id
                 for item in discovered_cursors[path].get("pending_runs", [])

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import json
+import time
 import zipfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -85,6 +86,396 @@ def test_source_runs_cursor_advances_past_active_run_and_persists_it(monkeypatch
         "head_sha": "a" * 40,
     }]
     assert held is True
+
+
+def test_stale_official_monitor_with_stable_terminal_jobs_is_reconciled_without_changing_run_status(monkeypatch):
+    workflow_id = 320209983
+    run_id = 39698088993
+    sha = "cc40ba0401362f6214b540c70b5e1aa3100d5773"
+    created_at = "2026-10-22T00:10:37Z"
+    now = datetime(2026, 10, 25, 20, 0, tzinfo=UTC)
+    run = {
+        "id": run_id,
+        "workflow_id": workflow_id,
+        "run_attempt": 1,
+        "created_at": created_at,
+        "updated_at": "2026-10-22T00:14:51Z",
+        "status": "in_progress",
+        "head_branch": "main",
+        "head_sha": sha,
+        "head_repository": {"full_name": "owner/repo"},
+    }
+    jobs = [
+        {
+            "id": 119560307175,
+            "name": "monitor-admission",
+            "run_id": run_id,
+            "run_attempt": 1,
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-22T00:10:39Z",
+            "completed_at": "2026-10-22T00:10:44Z",
+        },
+        {
+            "id": 119560351562,
+            "name": "monitor-send-deploy",
+            "run_id": run_id,
+            "run_attempt": 1,
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-22T00:10:48Z",
+            "completed_at": "2026-10-22T00:14:51Z",
+        },
+    ]
+
+    def call(cursor, observed_at):
+        def fake_request(_api, _repo, _token, _method, request_path, *, response_headers=None, deadline_monotonic=None):
+            path = request_path.split("?", 1)[0]
+            if path == f"actions/runs/{run_id}":
+                return dict(run)
+            if path == f"actions/runs/{run_id}/attempts/1/jobs":
+                return {"total_count": len(jobs), "jobs": list(jobs)}
+            if request_path.startswith(f"actions/workflows/{workflow_id}/runs?"):
+                return {"total_count": 0, "workflow_runs": []}
+            raise AssertionError(f"Unexpected GitHub API path: {request_path}")
+
+        monkeypatch.setattr(incidents, "_request_json", fake_request)
+        return incidents._workflow_runs_since(
+            path=".github/workflows/official-event-monitor.yml",
+            workflow_id=workflow_id,
+            repository="owner/repo",
+            api_url="https://api.github.com",
+            token="test-token",
+            cursor=cursor,
+            now=observed_at,
+            deadline=incidents.time.monotonic() + 30,
+            repository_id=1309835643,
+        )
+
+    cursor = {
+        "mode": "live",
+        "created_at": "2026-10-22T00:00:00+00:00",
+        "run_id": 0,
+        "pending_runs": [{
+            "run_id": run_id,
+            "workflow_id": workflow_id,
+            "created_at": "2026-10-22T00:10:37+00:00",
+            "attempt": 1,
+            "head_sha": sha,
+        }],
+    }
+
+    first_rows, first_cursor, first_held = call(cursor, now)
+    assert first_rows == []
+    assert first_held is True
+    first_observation = first_cursor["pending_runs"][0]["terminal_jobs_observation"]
+    assert first_observation["observed_at"] == now.isoformat()
+
+    second_rows, second_cursor, second_held = call(first_cursor, now + timedelta(seconds=1))
+    assert second_rows == []
+    assert second_held is True
+
+    terminal_rows, terminal_cursor, terminal_held = call(second_cursor, now + timedelta(seconds=3))
+    assert len(terminal_rows) == 1
+    assert terminal_rows[0]["status"] == "in_progress"
+    assert terminal_held is True  # Processing the pending result removes the hold in reconcile().
+    evidence = terminal_rows[0]["_incident_source_terminal_evidence"]
+    assert evidence["schema_version"] == "source-run-terminal-jobs-v1"
+    assert evidence["resolution"] == "stable_complete_jobs_snapshot"
+    assert evidence["workflow_contract"] == "official-event-monitor-cc40ba0-jobs-v1"
+    assert evidence["job_names"] == ["monitor-admission", "monitor-send-deploy"]
+    assert evidence["confirmed_at"] == (now + timedelta(seconds=3)).isoformat()
+    assert terminal_cursor["pending_runs"][0]["terminal_jobs_observation"]["fingerprint"] == first_observation["fingerprint"]
+
+    trace = {
+        "events": [],
+        "recorded_at": "2026-10-22T00:14:47.055504+00:00",
+        "run_attempt": "1",
+        "schema_version": "official-event-trace-v1",
+        "stages": {
+            "batch_failed_event_count": "0", "batch_partial_event_count": "0",
+            "candidate_incident_count": "0", "candidate_incident_reason": "",
+            "durable_receipt": "false", "notification_expected": "false",
+            "notification_reason": "no_event", "prepare": "not_required",
+            "public_gate": "false", "queue": "not_required", "receipt_callback": "skipped",
+            "scan": "success", "sender": "skipped",
+        },
+        "workflow_run_id": str(run_id),
+        "workflow_sha": sha,
+    }
+    monkeypatch.setattr(incidents, "_download_artifact_json", lambda **_kwargs: json.dumps(trace).encode("utf-8"))
+    captured = {}
+
+    def reconcile_trace(*, trace_path, **_kwargs):
+        captured["trace"] = json.loads(Path(trace_path).read_text(encoding="utf-8"))
+        return {"status": "no_notification", "diagnostic_complete": True, "incident_active": False}
+
+    monkeypatch.setattr(incidents, "reconcile_official_events", reconcile_trace)
+    source_result = incidents._reconcile_source_run(
+        run=terminal_rows[0], workflow_name="Official event monitor",
+        repository="owner/repo", api_url="https://api.github.com",
+        token="test-token", now=now + timedelta(seconds=3),
+        deadline=incidents.time.monotonic() + 30,
+    )
+    assert captured["trace"]["stages"]["notification_reason"] == "no_event"
+    assert source_result["status"] == "no_notification"
+    assert source_result["diagnostic_complete"] is True
+    assert source_result["source_run_terminal_evidence"] == evidence
+
+
+def test_stale_terminal_job_resolution_fails_closed_on_contract_mismatch(monkeypatch):
+    run_id = 39698088993
+    sha = "cc40ba0401362f6214b540c70b5e1aa3100d5773"
+    run = {"id": run_id, "workflow_id": 320209983, "run_attempt": 1, "head_sha": sha}
+    jobs = [{
+        "id": 1, "name": "unexpected-job", "run_id": run_id, "run_attempt": 1,
+        "status": "completed", "conclusion": "success",
+        "started_at": "2026-10-22T00:10:39Z", "completed_at": "2026-10-22T00:10:44Z",
+    }]
+
+    def fake_request(_api, _repo, _token, _method, _request_path, *, response_headers=None, deadline_monotonic=None):
+        return {"total_count": len(jobs), "jobs": jobs}
+
+    monkeypatch.setattr(incidents, "_request_json", fake_request)
+    with pytest.raises(LivenessAuditError, match="incident_source_pending_jobs_contract_mismatch"):
+        incidents._read_source_job_snapshot(
+            run=run,
+            repository="owner/repo",
+            repository_id=1309835643,
+            api_url="https://api.github.com",
+            token="test-token",
+            deadline=incidents.time.monotonic() + 30,
+            expected_jobs=frozenset({"monitor-admission", "monitor-send-deploy"}),
+        )
+
+
+def test_stale_terminal_job_snapshot_waits_for_active_contract_job(monkeypatch):
+    run_id = 39698088993
+    jobs = [
+        {
+            "id": 1, "name": "monitor-admission", "run_id": run_id, "run_attempt": 1,
+            "status": "completed", "conclusion": "success",
+            "started_at": "2026-10-22T00:10:39Z", "completed_at": "2026-10-22T00:10:44Z",
+        },
+        {
+            "id": 2, "name": "monitor-send-deploy", "run_id": run_id, "run_attempt": 1,
+            "status": "waiting", "conclusion": "",
+            "started_at": "2026-10-22T00:10:48Z", "completed_at": "",
+        },
+    ]
+
+    def fake_request(_api, _repo, _token, _method, _request_path, *, response_headers=None, deadline_monotonic=None):
+        return {"total_count": len(jobs), "jobs": jobs}
+
+    monkeypatch.setattr(incidents, "_request_json", fake_request)
+    snapshot = incidents._read_source_job_snapshot(
+        run={
+            "id": run_id, "workflow_id": 320209983, "run_attempt": 1,
+            "head_sha": "cc40ba0401362f6214b540c70b5e1aa3100d5773",
+        },
+        repository="owner/repo",
+        repository_id=1309835643,
+        api_url="https://api.github.com",
+        token="test-token",
+        deadline=incidents.time.monotonic() + 30,
+        expected_jobs=frozenset({"monitor-admission", "monitor-send-deploy"}),
+    )
+    assert snapshot["all_completed"] is False
+
+
+def test_stale_terminal_job_snapshot_rejects_truncated_jobs_page(monkeypatch):
+    run_id = 39698088993
+    jobs = [{
+        "id": 1, "name": "monitor-admission", "run_id": run_id, "run_attempt": 1,
+        "status": "completed", "conclusion": "success",
+        "started_at": "2026-10-22T00:10:39Z", "completed_at": "2026-10-22T00:10:44Z",
+    }]
+
+    def fake_request(_api, _repo, _token, _method, _request_path, *, response_headers=None, deadline_monotonic=None):
+        return {"total_count": 2, "jobs": jobs}
+
+    monkeypatch.setattr(incidents, "_request_json", fake_request)
+    with pytest.raises(LivenessAuditError, match="incident_source_pending_jobs_pagination_incomplete"):
+        incidents._read_source_job_snapshot(
+            run={
+                "id": run_id, "workflow_id": 320209983, "run_attempt": 1,
+                "head_sha": "cc40ba0401362f6214b540c70b5e1aa3100d5773",
+            },
+            repository="owner/repo",
+            repository_id=1309835643,
+            api_url="https://api.github.com",
+            token="test-token",
+            deadline=incidents.time.monotonic() + 30,
+            expected_jobs=frozenset({"monitor-admission", "monitor-send-deploy"}),
+        )
+
+
+def test_stale_terminal_job_resolution_does_not_release_unknown_workflow_revision():
+    assert incidents.SOURCE_TERMINAL_JOB_CONTRACTS.get((
+        ".github/workflows/official-event-monitor.yml",
+        "a" * 40,
+    )) is None
+
+
+def test_processed_terminal_job_run_advances_cursor_only_forward():
+    path = ".github/workflows/official-event-monitor.yml"
+    terminal_evidence = {"schema_version": "source-run-terminal-jobs-v1"}
+    current = {path: {"created_at": "2026-10-25T20:00:00+00:00", "run_id": 100}}
+    processed: dict[str, dict] = {}
+
+    incidents._record_processed_checkpoint(
+        processed_last=processed, cursors=current, path=path,
+        created_at=datetime(2026, 10, 25, 20, 1, tzinfo=UTC), run_id=101,
+        advance_cursor=False, terminal_evidence=terminal_evidence,
+    )
+    assert processed[path] == {"created_at": "2026-10-25T20:01:00+00:00", "run_id": 101}
+
+    incidents._record_processed_checkpoint(
+        processed_last=processed, cursors=current, path=path,
+        created_at=datetime(2026, 10, 25, 19, 59, tzinfo=UTC), run_id=99,
+        advance_cursor=False, terminal_evidence=terminal_evidence,
+    )
+    assert processed[path] == {"created_at": "2026-10-25T20:01:00+00:00", "run_id": 101}
+
+
+def test_pending_run_without_terminal_evidence_cannot_advance_cursor():
+    path = ".github/workflows/official-event-monitor.yml"
+    processed: dict[str, dict] = {}
+    incidents._record_processed_checkpoint(
+        processed_last=processed,
+        cursors={},
+        path=path,
+        created_at=datetime(2026, 10, 25, 20, 1, tzinfo=UTC),
+        run_id=101,
+        advance_cursor=False,
+        terminal_evidence=None,
+    )
+    assert processed == {}
+
+
+def test_reconcile_releases_only_stable_terminal_pending_run_and_recovers_next_cycle(monkeypatch, tmp_path):
+    target_path = ".github/workflows/official-event-monitor.yml"
+    workflow_ids = {
+        target_path: 320209983,
+        ".github/workflows/scheduled-brief.yml": 10,
+        ".github/workflows/scheduled-brief-slot-audit.yml": 11,
+        ".github/workflows/unified-research-report.yml": 12,
+    }
+    run_id = 39698088993
+    run_sha = "cc40ba0401362f6214b540c70b5e1aa3100d5773"
+    run = {
+        "id": run_id,
+        "workflow_id": workflow_ids[target_path],
+        "run_attempt": 1,
+        "created_at": "2026-10-22T00:10:37Z",
+        "updated_at": "2026-10-22T00:14:51Z",
+        "status": "in_progress",
+        "head_branch": "main",
+        "head_sha": run_sha,
+        "head_repository": {"full_name": "owner/repo"},
+    }
+    jobs = [
+        {
+            "id": 119560307175,
+            "name": "monitor-admission",
+            "run_id": run_id,
+            "run_attempt": 1,
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-22T00:10:39Z",
+            "completed_at": "2026-10-22T00:10:44Z",
+        },
+        {
+            "id": 119560351562,
+            "name": "monitor-send-deploy",
+            "run_id": run_id,
+            "run_attempt": 1,
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-22T00:10:48Z",
+            "completed_at": "2026-10-22T00:14:51Z",
+        },
+    ]
+    cursor_state = {
+        target_path: {
+            "mode": "live",
+            "created_at": "2026-10-22T00:00:00+00:00",
+            "run_id": 0,
+            "pending_runs": [{
+                "run_id": run_id,
+                "workflow_id": workflow_ids[target_path],
+                "created_at": "2026-10-22T00:10:37+00:00",
+                "attempt": 1,
+                "head_sha": run_sha,
+            }],
+        },
+    }
+    monkeypatch.setattr(
+        incidents,
+        "_load_cursor_state",
+        lambda **_kwargs: json.loads(json.dumps(cursor_state)),
+    )
+    monkeypatch.setattr(
+        incidents,
+        "_source_workflow_id",
+        lambda *, path, **_kwargs: workflow_ids[path],
+    )
+
+    def fake_request(_api, _repo, _token, _method, request_path, *, response_headers=None, deadline_monotonic=None):
+        if request_path == "https://api.github.com/repos/owner/repo":
+            return {"id": 1309835643}
+        if request_path == f"actions/runs/{run_id}":
+            return dict(run)
+        if request_path == f"actions/runs/{run_id}/attempts/1/jobs?per_page=100&page=1":
+            return {"total_count": len(jobs), "jobs": list(jobs)}
+        if request_path.startswith("actions/workflows/") and "/runs?" in request_path:
+            return {"total_count": 0, "workflow_runs": []}
+        raise AssertionError(f"Unexpected GitHub API path: {request_path}")
+
+    monkeypatch.setattr(incidents, "_request_json", fake_request)
+    monkeypatch.setattr(incidents, "_download_artifact_json", lambda **_kwargs: b"{}")
+    monkeypatch.setattr(
+        incidents,
+        "reconcile_official_events",
+        lambda **_kwargs: {
+            "status": "no_notification",
+            "diagnostic_complete": True,
+            "incident_active": False,
+        },
+    )
+    event_path = tmp_path / "event.json"
+    event_path.write_text("{}", encoding="utf-8")
+    monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_path))
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_run")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+    monkeypatch.setenv("GITHUB_API_URL", "https://api.github.com")
+    monkeypatch.setenv("GITHUB_TOKEN", "test-token")
+    monkeypatch.setenv("GITHUB_RUN_ID", "999999")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "1")
+    monkeypatch.setenv("GITHUB_SHA", "d" * 40)
+    monkeypatch.setenv("GITHUB_OUTPUT", "")
+
+    result_path = tmp_path / "result.json"
+    evidence_directory = tmp_path / "evidence"
+
+    first = incidents.reconcile(result_path=result_path, evidence_directory=evidence_directory)
+    first_pending = first["source_cursors"][target_path]["pending_runs"]
+    assert len(first_pending) == 1
+    assert "terminal_jobs_observation" in first_pending[0]
+    cursor_state.update(first["source_cursors"])
+
+    time.sleep(2.1)
+    second = incidents.reconcile(result_path=result_path, evidence_directory=evidence_directory)
+    assert second["source_cursors"][target_path]["pending_runs"] == []
+    reconciled = next(row for row in second["results"] if row.get("source_run_id") == run_id)
+    assert reconciled["source_run_terminal_evidence"]["resolution"] == "stable_complete_jobs_snapshot"
+    assert second["coverage_status"] == "incomplete"  # The snapshot cycle remains conservatively held.
+    cursor_state.update(second["source_cursors"])
+
+    third = incidents.reconcile(result_path=result_path, evidence_directory=evidence_directory)
+    assert third["source_cursors"][target_path]["pending_runs"] == []
+    assert third["coverage_status"] == "complete"
+    assert third["diagnostic_complete"] is True
 
 
 def test_official_monitor_backfill_accepts_github_numeric_repo_link(monkeypatch):
