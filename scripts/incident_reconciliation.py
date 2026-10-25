@@ -1181,7 +1181,13 @@ def main() -> int:
             handle.write(f"- incident_handoff_status: {result['incident_handoff_status']}\n")
             handle.write(f"- unprocessed_source_runs: {len(result.get('unprocessed_source_runs', []))}\n")
             handle.write(f"- notification_due: {str(result['notification_due']).lower()}\n")
-    return 0 if result.get("incident_handoff_status") == "accepted" else 1
+    # A well-formed incomplete result is still durably handed to the independent
+    # health workflow.  Failing this step for bounded backlog would generate a
+    # native Actions failure email on every five-minute reconciliation cycle,
+    # bypassing the incident's 30-minute reminder cadence.  The health workflow
+    # validates the saved coverage fields and reports degraded status; actual
+    # reconciliation, persistence, or contract errors still return nonzero.
+    return 0 if result.get("incident_handoff_status") in {"accepted", "incomplete"} else 1
 
 
 if __name__ == "__main__":
