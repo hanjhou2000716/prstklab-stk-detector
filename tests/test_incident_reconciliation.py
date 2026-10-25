@@ -3,7 +3,7 @@ from __future__ import annotations
 import io
 import json
 import zipfile
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from urllib.parse import parse_qs, urlencode, urlsplit
 
 import pytest
@@ -637,3 +637,72 @@ def test_alert_cadence_rejects_duplicate_issue_and_consumer_mismatch(tmp_path, m
             alert_emitted=True, alert_step_outcome="failure", now=now,
         )
     assert calls == []
+
+
+@pytest.mark.parametrize(
+    ("completion_age", "expected"),
+    [
+        (timedelta(minutes=29, seconds=59), None),
+        (timedelta(minutes=30), "advance_with_unknown"),
+        (timedelta(minutes=31), "advance_with_unknown"),
+    ],
+)
+def test_missing_artifact_cursor_resolution_waits_for_settle_window(completion_age, expected):
+    now = datetime(2026, 10, 26, 0, 0, tzinfo=UTC)
+    completed_at = now - completion_age
+    result = incidents._settled_missing_artifact_resolution(
+        {
+            "status": "evidence_unavailable",
+            "diagnostic_complete": False,
+            "failure_reason": "incident_artifact_missing",
+        },
+        {
+            "status": "completed",
+            "created_at": (completed_at - timedelta(minutes=5)).isoformat(),
+            "updated_at": completed_at.isoformat(),
+        },
+        now,
+    )
+
+    if expected is None:
+        assert result is None
+    else:
+        assert result is not None
+        assert result["cursor_resolution"] == expected
+        assert result["evidence_gap"] == "artifact_missing_after_settle_window"
+        assert result["source_completed_at"] == completed_at.isoformat()
+
+
+def test_missing_artifact_without_trusted_completion_time_keeps_cursor_blocked():
+    now = datetime(2026, 10, 26, 0, 0, tzinfo=UTC)
+    result = incidents._settled_missing_artifact_resolution(
+        {"diagnostic_complete": False, "failure_reason": "incident_artifact_missing"},
+        {"status": "completed", "created_at": (now - timedelta(days=1)).isoformat()},
+        now,
+    )
+
+    assert result is None
+
+
+@pytest.mark.parametrize(
+    "failure_reason",
+    [
+        "incident_artifact_identity_invalid",
+        "incident_artifact_download_deadline_exceeded",
+        "source_runs_pagination_incomplete",
+    ],
+)
+def test_only_permanently_missing_artifact_can_advance_with_unknown(failure_reason):
+    now = datetime(2026, 10, 26, 0, 0, tzinfo=UTC)
+    completed_at = now - timedelta(hours=1)
+    result = incidents._settled_missing_artifact_resolution(
+        {"diagnostic_complete": False, "failure_reason": failure_reason},
+        {
+            "status": "completed",
+            "created_at": (completed_at - timedelta(minutes=5)).isoformat(),
+            "updated_at": completed_at.isoformat(),
+        },
+        now,
+    )
+
+    assert result is None
