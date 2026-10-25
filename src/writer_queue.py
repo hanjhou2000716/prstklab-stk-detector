@@ -845,6 +845,78 @@ def _publication_admission_artifact_exists(
     return True
 
 
+def _protected_publication_started(
+    jobs: Iterable[Mapping[str, object]],
+    contract: Mapping[str, object],
+) -> bool:
+    """Return whether any contract-listed protected step actually ran.
+
+    GitHub may attach ``started_at`` to skipped steps and later diagnostic
+    steps can execute after a skipped publication gate. Neither is evidence
+    that a writer entered protected work. Resolve every protected step from
+    the fixed workflow contract and fail closed on incomplete API evidence.
+    """
+    raw_jobs = contract.get("protected_jobs")
+    raw_steps = contract.get("protected_steps")
+    if (
+        not isinstance(raw_jobs, list)
+        or not raw_jobs
+        or any(not isinstance(name, str) or not name for name in raw_jobs)
+        or not isinstance(raw_steps, list)
+        or not raw_steps
+    ):
+        raise WriterQueueError("writer_workflow_contract_protected_steps_invalid")
+    by_name: dict[str, Mapping[str, object]] = {}
+    for job in jobs:
+        name = str(job.get("name") or "")
+        if not name:
+            raise RetryableQueueSnapshotError("writer_queue_protected_job_identity_missing")
+        if name in by_name:
+            raise WriterQueueError("writer_queue_protected_job_identity_ambiguous")
+        by_name[name] = job
+    protected_names = tuple(raw_jobs)
+    if not set(protected_names).issubset(by_name):
+        raise RetryableQueueSnapshotError("writer_queue_protected_job_snapshot_incomplete")
+    for job_name in protected_names:
+        job = by_name[job_name]
+        job_status = str(job.get("status") or "").casefold()
+        job_conclusion = str(job.get("conclusion") or "").casefold()
+        if job_status == "completed" and job_conclusion == "skipped":
+            continue
+        steps = job.get("steps")
+        if not isinstance(steps, list):
+            raise RetryableQueueSnapshotError("writer_queue_protected_steps_unavailable")
+        expected_steps = [
+            item for item in raw_steps
+            if isinstance(item, Mapping) and str(item.get("job") or "") == job_name
+        ]
+        if not expected_steps:
+            raise WriterQueueError("writer_workflow_contract_protected_job_steps_missing")
+        for expected in expected_steps:
+            step_name = str(expected.get("name") or "")
+            if not step_name:
+                raise WriterQueueError("writer_workflow_contract_protected_step_identity_invalid")
+            matches = [
+                step for step in steps
+                if isinstance(step, Mapping) and str(step.get("name") or "") == step_name
+            ]
+            if len(matches) != 1:
+                raise RetryableQueueSnapshotError("writer_queue_protected_step_snapshot_incomplete")
+            step = matches[0]
+            step_status = str(step.get("status") or "").casefold()
+            step_conclusion = str(step.get("conclusion") or "").casefold()
+            if step_status == "completed" and step_conclusion == "skipped":
+                continue
+            if step_status == "in_progress":
+                return True
+            if step_status == "completed" and step_conclusion in {
+                "success", "failure", "cancelled", "timed_out", "action_required", "neutral",
+            }:
+                return True
+            raise RetryableQueueSnapshotError("writer_queue_protected_step_state_unresolved")
+    return False
+
+
 def _annotate_publication_gate(
     run: dict[str, object],
     *,
@@ -1100,13 +1172,7 @@ def _annotate_publication_gate(
     if step_status == "completed" and step_conclusion == "skipped":
         if admission:
             raise WriterQueueError("writer_publication_admission_skipped_gate_conflict")
-        gate_index = steps.index(step)
-        later_steps_started = any(
-            _timestamp(item, "started_at") is not None
-            for item in steps[gate_index + 1:]
-            if isinstance(item, Mapping)
-        )
-        if later_steps_started:
+        if _protected_publication_started(jobs, workflow_contract):
             raise WriterQueueError("writer_publication_skipped_gate_followed_by_execution")
         run.update({
             "queue_gate_state": "deferred",
@@ -1433,41 +1499,39 @@ def _fetch_run_attempt(
         had_admission = isinstance(admission, Mapping) or (
             str(run.get("queue_gate_evidence") or "") == "writer_publication_admission_artifact"
         )
-        for job in protected:
-            steps = job.get("steps")
-            if not isinstance(steps, list):
-                if had_admission:
-                    raise WriterQueueError("writer_queue_blocker_terminal_steps_unavailable")
-                continue
-            matches = [
-                step for step in steps
-                if isinstance(step, Mapping) and str(step.get("name") or "") == gate["step_name"]
-            ]
-            if len(matches) != 1:
-                if had_admission:
-                    raise WriterQueueError("writer_queue_blocker_gate_step_identity_conflict")
-                continue
-            step = matches[0]
-            if (
-                str(step.get("status") or "").casefold() == "completed"
-                and str(step.get("conclusion") or "").casefold() == "skipped"
-            ):
-                if had_admission:
-                    raise WriterQueueError("writer_publication_admission_skipped_gate_conflict")
-                index = steps.index(step)
-                if any(
-                    _timestamp(item, "started_at") is not None
-                    for item in steps[index + 1:]
-                    if isinstance(item, Mapping)
-                ):
-                    raise WriterQueueError("writer_publication_skipped_gate_followed_by_execution")
+        gate_jobs = [job for job in protected if str(job.get("name") or "") == gate["job_name"]]
+        if len(gate_jobs) != 1:
+            if had_admission:
+                raise WriterQueueError("writer_queue_blocker_gate_job_identity_conflict")
+            raise RetryableQueueSnapshotError("writer_queue_blocker_gate_job_identity_unavailable")
+        gate_steps = gate_jobs[0].get("steps")
+        if not isinstance(gate_steps, list):
+            if had_admission:
+                raise WriterQueueError("writer_queue_blocker_terminal_steps_unavailable")
+            raise RetryableQueueSnapshotError("writer_queue_blocker_terminal_steps_unavailable")
+        matches = [
+            step for step in gate_steps
+            if isinstance(step, Mapping) and str(step.get("name") or "") == gate["step_name"]
+        ]
+        if len(matches) != 1:
+            if had_admission:
+                raise WriterQueueError("writer_queue_blocker_gate_step_identity_conflict")
+            raise RetryableQueueSnapshotError("writer_queue_blocker_gate_step_identity_unavailable")
+        gate_step = matches[0]
+        if (
+            str(gate_step.get("status") or "").casefold() == "completed"
+            and str(gate_step.get("conclusion") or "").casefold() == "skipped"
+        ):
+            if had_admission:
+                raise WriterQueueError("writer_publication_admission_skipped_gate_conflict")
+            if _protected_publication_started(protected, contract):
+                raise WriterQueueError("writer_publication_skipped_gate_followed_by_execution")
         if isinstance(run, dict):
-            gate_jobs = [job for job in protected if str(job.get("name") or "") == gate["job_name"]]
-            gate_steps: list[Mapping[str, object]] = []
+            gate_step_rows: list[Mapping[str, object]] = []
             for gate_job in gate_jobs:
                 gate_job_steps = gate_job.get("steps")
                 if isinstance(gate_job_steps, list):
-                    gate_steps.extend(
+                    gate_step_rows.extend(
                         step for step in gate_job_steps
                         if isinstance(step, Mapping) and str(step.get("name") or "") == gate["step_name"]
                     )
@@ -1484,7 +1548,7 @@ def _fetch_run_attempt(
                     for job in sorted(protected, key=lambda value: str(value.get("name") or ""))
                 ],
                 "queue_gate_job_conclusion": str(gate_jobs[0].get("conclusion") or "") if len(gate_jobs) == 1 else "",
-                "queue_gate_step_conclusion": str(gate_steps[0].get("conclusion") or "") if len(gate_steps) == 1 else "",
+                "queue_gate_step_conclusion": str(gate_step_rows[0].get("conclusion") or "") if len(gate_step_rows) == 1 else "",
             })
         return False
     if status != "completed":
