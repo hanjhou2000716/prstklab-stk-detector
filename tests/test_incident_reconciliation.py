@@ -142,6 +142,71 @@ def test_official_monitor_backfill_accepts_github_numeric_repo_link(monkeypatch)
     assert held is False
 
 
+def test_main_hands_off_durable_incomplete_backlog_without_repeating_failure_email(tmp_path, monkeypatch, capsys):
+    result_path = tmp_path / "incident-reconciliation.json"
+    output_path = tmp_path / "github-output.txt"
+    summary_path = tmp_path / "step-summary.md"
+    result = {
+        "schema_version": "incident-reconciliation-v1",
+        "consumer_run_id": "900",
+        "consumer_attempt": 1,
+        "consumer_sha": "a" * 40,
+        "business_status": "unknown",
+        "diagnostic_complete": False,
+        "coverage_status": "incomplete",
+        "incident_handoff_status": "incomplete",
+        "notification_due": False,
+        "unprocessed_source_runs": [{"workflow": "Official event monitor", "run_id": 123, "attempt": 1}],
+        "source_cursors": {},
+        "observed_at": "2026-10-25T09:00:00+00:00",
+    }
+
+    def fake_reconcile(*, result_path, evidence_directory):
+        result_path.write_text(json.dumps(result), encoding="utf-8")
+        with open(incidents.os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+            output.write("notification_due=false\n")
+            output.write("business_status=unknown\n")
+        return result
+
+    monkeypatch.setattr(incidents, "reconcile", fake_reconcile)
+    monkeypatch.setattr(incidents.sys, "argv", ["scripts.incident_reconciliation"])
+    monkeypatch.setenv("INCIDENT_RECONCILIATION_RESULT_PATH", str(result_path))
+    monkeypatch.setenv("INCIDENT_EVIDENCE_DIR", str(tmp_path / "evidence"))
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output_path))
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary_path))
+
+    assert incidents.main() == 0
+
+    saved = json.loads(result_path.read_text(encoding="utf-8"))
+    assert saved == result
+    assert saved["coverage_status"] == "incomplete"
+    assert saved["diagnostic_complete"] is False
+    assert saved["incident_handoff_status"] == "incomplete"
+    assert saved["unprocessed_source_runs"]
+    assert "business_status: unknown" in summary_path.read_text(encoding="utf-8")
+    assert "unprocessed_source_runs: 1" in summary_path.read_text(encoding="utf-8")
+    assert "business_status=unknown" in output_path.read_text(encoding="utf-8")
+    assert "unknown" in capsys.readouterr().out
+
+
+def test_main_keeps_reconciliation_failures_nonzero(tmp_path, monkeypatch):
+    result_path = tmp_path / "incident-reconciliation.json"
+
+    def fail_reconcile(*, result_path, evidence_directory):
+        raise LivenessAuditError("source_artifact_identity_invalid")
+
+    monkeypatch.setattr(incidents, "reconcile", fail_reconcile)
+    monkeypatch.setattr(incidents.sys, "argv", ["scripts.incident_reconciliation"])
+    monkeypatch.setenv("INCIDENT_RECONCILIATION_RESULT_PATH", str(result_path))
+    monkeypatch.setenv("INCIDENT_EVIDENCE_DIR", str(tmp_path / "evidence"))
+
+    assert incidents.main() == 1
+    saved = json.loads(result_path.read_text(encoding="utf-8"))
+    assert saved["incident_handoff_status"] == "failed"
+    assert saved["diagnostic_complete"] is False
+    assert saved["failure_reason"] == "source_artifact_identity_invalid"
+
+
 def test_download_artifact_verifies_run_sha_and_bounded_zip_member(monkeypatch):
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w") as archive:
