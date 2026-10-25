@@ -197,8 +197,13 @@ def _verified_workflow_contract(
     ):
         raise WriterQueueError("writer_workflow_contract_source_invalid")
     try:
-        source = base64.b64decode(str(payload.get("content") or ""), validate=True)
-    except (ValueError, binascii.Error) as exc:
+        # GitHub's Contents API may line-wrap base64 content for older
+        # workflow blobs. Ignore ASCII whitespace only, then keep strict
+        # alphabet/padding validation so malformed content still fails closed.
+        encoded_content = str(payload.get("content") or "").encode("ascii")
+        compact_content = encoded_content.translate(None, b" \t\r\n\v\f")
+        source = base64.b64decode(compact_content, validate=True)
+    except (ValueError, UnicodeEncodeError, binascii.Error) as exc:
         raise WriterQueueError("writer_workflow_contract_source_encoding_invalid") from exc
     if len(source) != size:
         raise WriterQueueError("writer_workflow_contract_source_size_mismatch")

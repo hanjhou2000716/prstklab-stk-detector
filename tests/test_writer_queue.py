@@ -1183,6 +1183,58 @@ def test_verified_workflow_contract_matches_exact_sha_source_bytes(monkeypatch):
     assert contract["gate_step"] == writer_queue.WRITER_QUEUE_GATES[path]["step_name"]
 
 
+def test_verified_workflow_contract_accepts_line_wrapped_github_base64(monkeypatch):
+    path = ".github/workflows/official-event-monitor.yml"
+    revision = "f" * 40
+    source = (writer_queue.Path(__file__).parents[1] / path).read_bytes().replace(b"\r\n", b"\n")
+    git_blob_sha = hashlib.sha1(
+        b"blob " + str(len(source)).encode("ascii") + b"\0" + source,
+    ).hexdigest()
+    encoded = writer_queue.base64.b64encode(source).decode("ascii")
+    wrapped = "\n".join(encoded[index:index + 60] for index in range(0, len(encoded), 60))
+    monkeypatch.setattr(writer_queue, "_request_json", lambda *_a, **_k: ({
+        "path": path,
+        "type": "file",
+        "encoding": "base64",
+        "size": len(source),
+        "sha": git_blob_sha,
+        "content": wrapped,
+    }, None))
+    writer_queue._WORKFLOW_CONTENT_HASH_CACHE.pop((revision, path), None)
+
+    contract = _verified_workflow_contract({
+        "path": path,
+        "head_sha": revision,
+        "workflow_id": writer_queue.WRITER_WORKFLOW_IDENTITIES[path],
+    }, api_url="https://api.github.com", repository="owner/repo", token="token",
+       deadline_monotonic=writer_queue.time.monotonic() + 10)
+
+    assert contract["workflow_content_sha256"] == hashlib.sha256(source).hexdigest()
+    assert contract["gate_step"] == writer_queue.WRITER_QUEUE_GATES[path]["step_name"]
+
+
+def test_verified_workflow_contract_rejects_non_base64_content(monkeypatch):
+    path = ".github/workflows/official-event-monitor.yml"
+    revision = "0" * 40
+    monkeypatch.setattr(writer_queue, "_request_json", lambda *_a, **_k: ({
+        "path": path,
+        "type": "file",
+        "encoding": "base64",
+        "size": 4,
+        "sha": "a" * 40,
+        "content": "!!!!",
+    }, None))
+    writer_queue._WORKFLOW_CONTENT_HASH_CACHE.pop((revision, path), None)
+
+    with pytest.raises(WriterQueueError, match="workflow_contract_source_encoding_invalid"):
+        _verified_workflow_contract({
+            "path": path,
+            "head_sha": revision,
+            "workflow_id": writer_queue.WRITER_WORKFLOW_IDENTITIES[path],
+        }, api_url="https://api.github.com", repository="owner/repo", token="token",
+           deadline_monotonic=writer_queue.time.monotonic() + 10)
+
+
 def test_workflow_content_hash_is_stable_across_checkout_line_endings(tmp_path, monkeypatch):
     path = ".github/workflows/official-event-monitor.yml"
     source = b"name: test workflow\njobs:\n  check:\n    runs-on: ubuntu-latest\n"
