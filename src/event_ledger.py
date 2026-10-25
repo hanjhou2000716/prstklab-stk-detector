@@ -94,6 +94,161 @@ def event_source_url(event: dict[str, Any] | None) -> str:
     return normalize_source_url(raw_text)
 
 
+def preflight_event_provenance(event: dict[str, Any] | None) -> dict[str, Any]:
+    """Validate all provenance that an event-ledger row would persist.
+
+    Keep this check side-effect free so producers can quarantine one malformed
+    row before it contaminates the shared ledger or a release artifact.
+    """
+    if not isinstance(event, dict):
+        return {"ok": False, "reason": "ledger_event_identity_invalid"}
+    try:
+        source_url = event_source_url(event)
+        source_key = str(event.get("source_key") or event.get("source") or "").strip().casefold()
+        if not source_url and source_key == "financialjuice":
+            # FJ is a reviewed discovery relay; some mail observations have no
+            # article permalink, so retain the established vendor homepage.
+            from src.financialjuice_contract import FINANCIALJUICE_SOURCE_URL
+
+            source_url = normalize_source_url(FINANCIALJUICE_SOURCE_URL)
+        parsed = urlsplit(source_url)
+    except (TypeError, ValueError):
+        return {"ok": False, "reason": "ledger_source_url_invalid"}
+    if parsed.scheme != "https" or not parsed.hostname:
+        return {"ok": False, "reason": "ledger_source_url_invalid"}
+
+    sources = event.get("verified_sources") or event.get("sources") or event.get("evidence") or []
+    if isinstance(sources, list):
+        for source in sources:
+            raw_source = source.get("url") if isinstance(source, dict) else source
+            if not str(raw_source or "").strip():
+                continue
+            raw_text = str(raw_source).strip()
+            if "://" not in raw_text and "." not in raw_text.split("/", 1)[0]:
+                return {"ok": False, "reason": "ledger_verified_source_invalid"}
+            try:
+                verified_url = normalize_source_url(raw_source)
+                verified = urlsplit(verified_url)
+            except (TypeError, ValueError):
+                return {"ok": False, "reason": "ledger_verified_source_invalid"}
+            if verified.scheme != "https" or not verified.hostname:
+                return {"ok": False, "reason": "ledger_verified_source_invalid"}
+
+    key = canonical_event_key(event)
+    if not key or key == "none":
+        return {"ok": False, "reason": "ledger_event_identity_invalid"}
+    return {
+        "ok": True,
+        "event_key": key,
+        "source_url": source_url,
+        "source_domain": parsed.hostname.lower().removeprefix("www."),
+    }
+
+
+def _absolute_https_url(value: Any) -> str:
+    """Return a trustworthy absolute HTTPS URL without inventing a host."""
+    raw = str(value or "").strip()
+    if not raw or any(character in raw for character in "\r\n\t"):
+        return ""
+    try:
+        parsed = urlsplit(raw)
+        # Accessing ``port`` also validates malformed port syntax.
+        _ = parsed.port
+    except ValueError:
+        return ""
+    if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
+        return ""
+    return raw
+
+
+def sanitize_event_record_provenance(record: dict[str, Any]) -> dict[str, Any]:
+    """Repair legacy provenance fields while preserving event and delivery history.
+
+    Invalid URL strings are never copied into a new release.  A safe verified
+    source can replace an invalid primary URL; otherwise only the provenance
+    fields are quarantined.  The canonical key, decisions, reminders and
+    delivery history remain untouched.
+    """
+    sanitized = dict(record)
+    original_primary = str(record.get("source_url") or "").strip()
+    original_domain = str(record.get("source_domain") or "").strip().lower().removeprefix("www.")
+    raw_sources = record.get("verified_sources")
+    valid_sources: list[str] = []
+    invalid_source_seen = False
+    if isinstance(raw_sources, list):
+        for item in raw_sources:
+            safe = _absolute_https_url(item)
+            if safe:
+                if safe not in valid_sources:
+                    valid_sources.append(safe)
+            elif str(item or "").strip():
+                invalid_source_seen = True
+    elif raw_sources not in (None, []):
+        invalid_source_seen = True
+
+    primary = _absolute_https_url(original_primary)
+    recovered = invalid_source_seen
+    if not primary and valid_sources:
+        primary = valid_sources[0]
+        recovered = True
+    if primary:
+        parsed = urlsplit(primary)
+        domain = (parsed.hostname or "").lower().removeprefix("www.")
+        if original_primary != primary or original_domain != domain:
+            recovered = True
+        if primary not in valid_sources:
+            valid_sources.insert(0, primary)
+        sanitized["source_url"] = primary
+        sanitized["source_domain"] = domain
+        sanitized["verified_sources"] = valid_sources
+        if recovered or record.get("provenance_status") == "quarantined":
+            sanitized["provenance_status"] = "recovered"
+            sanitized["provenance_error"] = "legacy_provenance_invalid"
+        elif record.get("provenance_status") == "recovered":
+            sanitized["provenance_status"] = "recovered"
+        else:
+            sanitized.pop("provenance_status", None)
+            sanitized.pop("provenance_error", None)
+        return sanitized
+
+    sanitized["source_url"] = ""
+    sanitized["source_domain"] = ""
+    sanitized["verified_sources"] = []
+    sanitized["provenance_status"] = "quarantined"
+    sanitized["provenance_error"] = (
+        "legacy_provenance_invalid" if original_primary or invalid_source_seen
+        else "legacy_provenance_missing"
+    )
+    return sanitized
+
+
+def sanitize_event_ledger_document(document: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
+    """Return a release-safe ledger document and aggregate non-sensitive notes."""
+    sanitized = dict(document)
+    events = document.get("events")
+    if not isinstance(events, dict):
+        return sanitized, []
+    clean_events: dict[str, Any] = {}
+    recovered = quarantined = 0
+    for key, value in events.items():
+        if not isinstance(value, dict):
+            clean_events[key] = value
+            continue
+        clean = sanitize_event_record_provenance(value)
+        clean_events[key] = clean
+        if clean != value:
+            status = clean.get("provenance_status")
+            recovered += status == "recovered"
+            quarantined += status == "quarantined"
+    sanitized["events"] = clean_events
+    notes = []
+    if recovered:
+        notes.append(f"event-ledger: repaired_provenance_records={recovered}")
+    if quarantined:
+        notes.append(f"event-ledger: quarantined_provenance_records={quarantined}")
+    return sanitized, notes
+
+
 def _tokens(value: Any) -> list[str]:
     if value is None:
         return []
@@ -372,7 +527,10 @@ class EventLedger:
                 raise TypeError("ledger envelope must be an object")
             rows = payload.get("events", payload) if isinstance(payload, dict) else {}
             if isinstance(rows, dict):
-                self.records = {str(key): dict(value) for key, value in rows.items() if isinstance(value, dict)}
+                self.records = {
+                    str(key): sanitize_event_record_provenance(dict(value))
+                    for key, value in rows.items() if isinstance(value, dict)
+                }
             claims = payload.get("delivery_claims", {}) if isinstance(payload, dict) else {}
             if isinstance(claims, dict):
                 self.delivery_claims = {
@@ -408,22 +566,34 @@ class EventLedger:
         return removed
 
     def observe(self, event: dict[str, Any], *, now: datetime | None = None) -> dict[str, Any]:
+        provenance = preflight_event_provenance(event)
         current = now or datetime.now(UTC)
         now_iso = current.isoformat()
         key = canonical_event_key(event)
         theme_key = notification_theme_key(event)
         state = _material_state(event)
         facts = fact_fingerprint(event)
-        source_url = event_source_url(event)
-        source_key = str(event.get("source_key") or event.get("source") or "").strip().casefold()
-        if not source_url and source_key == "financialjuice":
-            # FJ is a discovery relay and some reviewed mail has no article
-            # permalink.  Keep the vendor homepage as the already-established
-            # provenance fallback so a delivered event remains valid in the
-            # release-bound ledger without inventing an article URL.
-            from src.financialjuice_contract import FINANCIALJUICE_SOURCE_URL
+        source_url = str(provenance.get("source_url") or "")
+        if not source_url:
+            source_url = _absolute_https_url(event_source_url(event))
+        if not source_url:
+            source_key = str(event.get("source_key") or event.get("source") or "").strip().casefold()
+            if source_key == "financialjuice":
+                from src.financialjuice_contract import FINANCIALJUICE_SOURCE_URL
 
-            source_url = normalize_source_url(FINANCIALJUICE_SOURCE_URL)
+                source_url = _absolute_https_url(FINANCIALJUICE_SOURCE_URL)
+        if not source_url:
+            sources = event.get("verified_sources") or event.get("sources") or event.get("evidence") or []
+            if isinstance(sources, list):
+                for source in sources:
+                    raw_source = source.get("url") if isinstance(source, dict) else source
+                    raw_text = str(raw_source or "").strip()
+                    if not raw_text or ("://" not in raw_text and "." not in raw_text.split("/", 1)[0]):
+                        continue
+                    safe_source = _absolute_https_url(normalize_source_url(raw_source))
+                    if safe_source:
+                        source_url = safe_source
+                        break
         source_domain = (urlsplit(source_url).hostname or "").lower().removeprefix("www.") if source_url else ""
         record = self.records.get(key)
         changed = False
@@ -452,6 +622,16 @@ class EventLedger:
                 "decision_history": [],
                 "updated_at": now_iso,
             }
+            if not source_url:
+                record["provenance_status"] = "quarantined"
+                record["provenance_error"] = str(
+                    provenance.get("reason") or "ledger_source_url_missing"
+                )
+            elif not provenance.get("ok"):
+                record["provenance_status"] = "recovered"
+                record["provenance_error"] = str(
+                    provenance.get("reason") or "legacy_provenance_invalid"
+                )
             self.records[key] = record
             is_new = True
             changed = True
@@ -478,6 +658,8 @@ class EventLedger:
             if source_url and not record.get("source_url"):
                 record["source_url"] = source_url
                 record["source_domain"] = source_domain
+                record["provenance_status"] = "verified"
+                record.pop("provenance_error", None)
                 changed = True
             if record.get("notification_theme_key") != theme_key:
                 record["notification_theme_key"] = theme_key
@@ -492,7 +674,11 @@ class EventLedger:
                 changed = True
         sources = event.get("verified_sources") or event.get("sources") or event.get("evidence") or []
         for source in sources if isinstance(sources, list) else []:
-            url = normalize_source_url(source.get("url") if isinstance(source, dict) else source)
+            raw_source = source.get("url") if isinstance(source, dict) else source
+            raw_text = str(raw_source or "").strip()
+            if raw_text and "://" not in raw_text and "." not in raw_text.split("/", 1)[0]:
+                continue
+            url = _absolute_https_url(normalize_source_url(raw_source))
             if url and url not in record.setdefault("verified_sources", []):
                 record["verified_sources"].append(url)
                 changed = True
@@ -645,19 +831,7 @@ class EventLedger:
         smaller than ``observe``: it does not mutate the ledger, consume an
         idempotency claim, or create a delivery row.
         """
-        source_url = event_source_url(event)
-        parsed = urlsplit(source_url)
-        if parsed.scheme != "https" or not parsed.hostname:
-            return {"ok": False, "reason": "ledger_source_url_invalid"}
-        key = canonical_event_key(event)
-        if not key or key == "none":
-            return {"ok": False, "reason": "ledger_event_identity_invalid"}
-        return {
-            "ok": True,
-            "event_key": key,
-            "source_url": source_url,
-            "source_domain": parsed.hostname.lower().removeprefix("www."),
-        }
+        return preflight_event_provenance(event)
 
     def record_decision(
         self,
@@ -775,6 +949,8 @@ class EventLedger:
     @classmethod
     def _merge_record(cls, left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
         """Merge two writer views without dropping newer evidence or reminders."""
+        left = sanitize_event_record_provenance(left)
+        right = sanitize_event_record_provenance(right)
         left_time = cls._timestamp(left.get("updated_at") or left.get("last_reminded_at"))
         right_time = cls._timestamp(right.get("updated_at") or right.get("last_reminded_at"))
         newest, older = (right, left) if right_time >= left_time else (left, right)
@@ -819,7 +995,7 @@ class EventLedger:
             merged["delivery_history"] = sorted(
                 unique.values(), key=lambda item: cls._timestamp(item.get("sent_at"))
             )[-100:]
-        return merged
+        return sanitize_event_record_provenance(merged)
 
     @staticmethod
     def _read_payload(path: Path) -> dict[str, Any]:
@@ -855,7 +1031,10 @@ class EventLedger:
         payload = cls._read_payload(path)
         rows = payload.get("events", payload)
         if isinstance(rows, dict):
-            return {str(key): dict(value) for key, value in rows.items() if isinstance(value, dict)}
+            return {
+                str(key): sanitize_event_record_provenance(dict(value))
+                for key, value in rows.items() if isinstance(value, dict)
+            }
         return {}
 
     @classmethod

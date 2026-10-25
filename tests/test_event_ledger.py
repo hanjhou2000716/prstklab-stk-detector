@@ -1,7 +1,15 @@
+import json
 from datetime import UTC, datetime, timedelta
 
 from src.artifact_contract import validate_events
-from src.event_ledger import EventLedger, canonical_event_key, event_source_url, normalize_source_url
+from src.event_ledger import (
+    EventLedger,
+    canonical_event_key,
+    event_source_url,
+    normalize_source_url,
+    preflight_event_provenance,
+    sanitize_event_ledger_document,
+)
 from src.financialjuice_notification import financialjuice_notification_key
 
 
@@ -91,6 +99,137 @@ def test_market_event_uses_nested_quote_provenance_for_ledger_contract(tmp_path)
 
 def test_provider_label_is_not_promoted_to_a_fake_source_url():
     assert event_source_url({"source": "FinancialJuice", "source_url": "FinancialJuice"}) == ""
+
+
+def test_event_provenance_preflight_rejects_insecure_primary_and_secondary_sources():
+    insecure_primary = {
+        "source_key": "official",
+        "title": "HTTP source must not enter the ledger",
+        "source_url": "http://example.test/article",
+    }
+    insecure_secondary = {
+        "source_key": "official",
+        "title": "Secondary HTTP source must not enter the ledger",
+        "source_url": "https://example.test/article",
+        "verified_sources": ["https://example.test/article", "http://mirror.test/article"],
+    }
+    assert preflight_event_provenance(insecure_primary) == {
+        "ok": False,
+        "reason": "ledger_source_url_invalid",
+    }
+    assert preflight_event_provenance(insecure_secondary) == {
+        "ok": False,
+        "reason": "ledger_verified_source_invalid",
+    }
+
+
+def test_fj_provenance_preflight_keeps_established_vendor_homepage_fallback():
+    result = preflight_event_provenance({
+        "source_key": "financialjuice",
+        "notification_id": "fj-no-article-url",
+        "title": "Reviewed FJ event",
+    })
+    assert result["ok"] is True
+    assert result["source_url"] == "https://financialjuice.com/"
+
+
+def test_legacy_invalid_provenance_is_quarantined_without_losing_event_or_claim_history(tmp_path):
+    valid_event = {
+        "source_key": "official",
+        "notification_id": "legacy-event-1",
+        "title": "Persisted event",
+        "source_url": "https://trusted.example/item",
+    }
+    event_key = canonical_event_key(valid_event)
+    record = {
+        "canonical_key": event_key,
+        "event_type": "official",
+        "source_url": "FinancialJuice",
+        "source_domain": "FinancialJuice",
+        "verified_sources": ["FinancialJuice", "http://unsafe.example/item"],
+        "first_discovered_at": "2026-10-20T10:00:00+00:00",
+        "last_reminded_at": "2026-10-20T10:05:00+00:00",
+        "updated_at": "2026-10-20T10:05:00+00:00",
+        "last_title": "Persisted event",
+        "delivery_history": [{"trace_id": "receipt-1", "sent_at": "2026-10-20T10:05:00+00:00"}],
+    }
+    claim = {
+        "notification_key": "notification-1",
+        "status": "delivered",
+        "recipient_hashes": ["recipient-a"],
+        "delivered_recipient_hashes": ["recipient-a"],
+    }
+    path = tmp_path / "ledger.json"
+    path.write_text(json.dumps({
+        "schema_version": 1,
+        "retention_days": 30,
+        "events": {event_key: record},
+        "delivery_claims": {"notification-1": claim},
+    }), encoding="utf-8")
+
+    ledger = EventLedger(path)
+    cleaned = ledger.records[event_key]
+    assert cleaned["canonical_key"] == event_key
+    assert cleaned["last_title"] == "Persisted event"
+    assert cleaned["delivery_history"] == record["delivery_history"]
+    assert cleaned["source_url"] == ""
+    assert cleaned["source_domain"] == ""
+    assert cleaned["verified_sources"] == []
+    assert cleaned["provenance_status"] == "quarantined"
+    assert validate_events({"schema_version": 1, "retention_days": 30, "events": ledger.records}) == []
+
+    ledger.save()
+    reloaded = EventLedger(path)
+    assert reloaded.delivery_claims["notification-1"] == claim
+    assert reloaded.records[event_key]["delivery_history"] == record["delivery_history"]
+    serialized = path.read_text(encoding="utf-8")
+    assert "FinancialJuice" not in serialized
+    assert "unsafe.example" not in serialized
+
+    reloaded.observe(valid_event)
+    healed = reloaded.records[event_key]
+    assert healed["source_url"] == "https://trusted.example/item"
+    assert healed["provenance_status"] == "verified"
+    assert "provenance_error" not in healed
+    assert healed["delivery_history"] == record["delivery_history"]
+    assert reloaded.delivery_claims["notification-1"] == claim
+
+
+def test_legacy_invalid_primary_recovers_from_a_valid_verified_source():
+    original = {
+        "canonical_key": "f" * 32,
+        "source_url": "http://invalid.example/item",
+        "source_domain": "invalid.example",
+        "verified_sources": ["http://also-invalid.example/item", "https://verified.example/item"],
+    }
+    cleaned = sanitize_event_ledger_document({
+        "schema_version": 1,
+        "retention_days": 30,
+        "events": {original["canonical_key"]: original},
+        "delivery_claims": {"keep": {"status": "delivered"}},
+    })
+    document, notes = cleaned
+    recovered = document["events"][original["canonical_key"]]
+    assert recovered["source_url"] == "https://verified.example/item"
+    assert recovered["source_domain"] == "verified.example"
+    assert recovered["verified_sources"] == ["https://verified.example/item"]
+    assert recovered["provenance_status"] == "recovered"
+    assert "http://invalid.example/item" not in str(document)
+    assert document["delivery_claims"] == {"keep": {"status": "delivered"}}
+    assert notes == ["event-ledger: repaired_provenance_records=1"]
+
+
+def test_observe_quarantines_invalid_provenance_without_persisting_the_raw_url(tmp_path):
+    ledger = EventLedger(tmp_path / "ledger.json")
+    invalid = {"source_key": "official", "title": "No trusted source", "source_url": "FinancialJuice"}
+
+    observed = ledger.observe(invalid)
+    record = ledger.records[observed["canonical_key"]]
+    assert record["provenance_status"] == "quarantined"
+    assert record["source_url"] == ""
+    assert record["verified_sources"] == []
+    assert "FinancialJuice" not in str(record)
+    assert validate_events({"schema_version": 1, "retention_days": 30, "events": ledger.records}) == []
 
 
 def test_ledger_retains_reminder_fields_and_prunes_after_thirty_days(tmp_path):
