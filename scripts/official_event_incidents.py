@@ -19,6 +19,7 @@ from scripts.monitor_liveness import (
     _parse_time,
     _request_json,
 )
+from src.incident_cadence import can_emit_pending_alert, mark_pending_alert, preserve_pending_alert
 
 REMINDER_INTERVAL = timedelta(minutes=30)
 SUMMARY_ESCALATION = timedelta(minutes=10)
@@ -53,10 +54,8 @@ def _pending_alert_consumer() -> str:
     return f"{run_id}/{attempt}" if run_id and attempt else "local"
 
 
-def _mark_alert_pending(body: str, consumer: str) -> str:
-    lines = [line for line in body.splitlines() if not line.startswith("Alert pending consumer:")]
-    lines.append(f"Alert pending consumer: {consumer}")
-    return "\n".join(lines)
+def _mark_alert_pending(body: str, consumer: str, now: datetime) -> str:
+    return mark_pending_alert(body, consumer, now)
 
 
 def _issue_event_refs(body: object) -> tuple[list[str], bool]:
@@ -93,7 +92,7 @@ def _resolved_event_refs(trace: dict[str, Any]) -> set[str]:
         status = str(row.get("status") or "").casefold()
         reason = str(row.get("reason") or "").casefold()
         expected = bool(row.get("expected"))
-        if status in {"delivered", "already_delivered", "expired"}:
+        if status in {"delivered", "already_delivered"}:
             resolved.add(event_ref)
         elif not expected and status in {"suppressed", "policy_suppressed", "no_event"}:
             resolved.add(event_ref)
@@ -217,6 +216,7 @@ def _body(
 def reconcile_incidents(
     *, api_url: str, repository: str, token: str, trace_path: str | Path,
     now: datetime | None = None, defer_notification_cadence: bool = False,
+    deadline_monotonic: float | None = None,
 ) -> dict[str, Any]:
     current = (now or datetime.now(UTC)).astimezone(UTC)
     trace = _read_trace(trace_path)
@@ -224,7 +224,7 @@ def reconcile_incidents(
     # A failed or incomplete scan is not evidence that an earlier incident recovered.
     scan_complete = str(stages.get("scan") or "").casefold() in {"success", "completed"}
     active = _active_incidents(trace, current)
-    deadline = __import__("time").monotonic() + MAX_AUDIT_SECONDS
+    deadline = deadline_monotonic or __import__("time").monotonic() + MAX_AUDIT_SECONDS
     issues = _open_incidents(api_url, repository, token, deadline_monotonic=deadline)
     event_issues = [
         issue for issue in issues
@@ -247,7 +247,7 @@ def reconcile_incidents(
             next_reminder = current if defer_notification_cadence else current + REMINDER_INTERVAL
             body = _body(key, incident, current, next_reminder_at=next_reminder)
             if defer_notification_cadence:
-                body = _mark_alert_pending(body, _pending_alert_consumer())
+                body = _mark_alert_pending(body, _pending_alert_consumer(), current)
             created = _request_json(
                 api_url, repository, token, "POST", "issues",
                 {"title": f"{EVENT_ISSUE_TITLE_PREFIX} / {incident['component']}", "body": body},
@@ -274,6 +274,10 @@ def reconcile_incidents(
             defer_notification_cadence
             and _field(issue.get("body"), "Alert pending consumer") == _pending_alert_consumer()
         )
+        notify_due = due and (
+            not defer_notification_cadence
+            or can_emit_pending_alert(issue.get("body"), _pending_alert_consumer(), current)
+        )
         prior_refs, prior_refs_complete = _issue_event_refs(issue.get("body"))
         merged_incident = dict(incident)
         merged_incident["event_refs"] = list(dict.fromkeys([*prior_refs, *incident["event_refs"]]))
@@ -285,15 +289,18 @@ def reconcile_incidents(
                 else next_due
             ),
         )
-        if defer_notification_cadence and due:
-            body = _mark_alert_pending(body, _pending_alert_consumer())
+        if defer_notification_cadence:
+            if notify_due:
+                body = _mark_alert_pending(body, _pending_alert_consumer(), current)
+            else:
+                body = preserve_pending_alert(body, issue.get("body"))
         if not prior_refs_complete:
             body = body.replace("Event refs complete: true", "Event refs complete: false")
         _request_json(
             api_url, repository, token, "PATCH", f"issues/{number}", {"body": body},
             deadline_monotonic=deadline,
         )
-        if due and not pending_current:
+        if notify_due and not pending_current:
             _request_json(
                 api_url, repository, token, "POST", f"issues/{number}/comments",
                 {"body": (

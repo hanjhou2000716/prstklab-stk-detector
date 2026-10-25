@@ -52,12 +52,17 @@ def _next_url(
     query = parse_qs(parsed.query, keep_blank_values=True, strict_parsing=True)
     expected = {key: list(values) for key, values in expected_query.items()}
     expected["per_page"] = [str(PAGE_SIZE)]
-    expected["page"] = [str(expected_page)]
     if "after" in query:
         cursor = query["after"]
         if len(cursor) != 1 or not cursor[0] or len(cursor[0]) > 2048:
             raise IssuePaginationError("issues_pagination_cursor_invalid")
         expected["after"] = cursor
+        if "page" in query:
+            if query["page"] != [str(expected_page)]:
+                raise IssuePaginationError("issues_pagination_query_invalid")
+            expected["page"] = [str(expected_page)]
+    else:
+        expected["page"] = [str(expected_page)]
     if query != expected:
         raise IssuePaginationError("issues_pagination_query_invalid")
     return url

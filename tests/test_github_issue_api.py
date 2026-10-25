@@ -23,7 +23,7 @@ def test_reads_numeric_repository_link_and_opaque_cursor_after_verifying_id():
             assert response_headers is not None
             response_headers["link"] = (
                 "<https://api.github.com/repositories/1309835643/issues?"
-                "state=open&per_page=10&sort=created&direction=desc&page=2&after=opaque.cursor%2Fv1>; rel=\"next\""
+                "state=open&per_page=10&sort=created&direction=desc&after=opaque.cursor%2Fv1>; rel=\"next\""
             )
             return first
         parsed = urlsplit(url)

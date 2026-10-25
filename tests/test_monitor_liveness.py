@@ -375,3 +375,48 @@ def test_central_audit_failure_keeps_reminder_due_until_alert_terminal(monkeypat
     )
     assert same_consumer["notification_cadence_confirmations"] == []
     assert calls == []
+
+
+def test_failed_alert_finalization_cannot_emit_repeated_mail_before_thirty_minutes(monkeypatch):
+    now = datetime(2026, 10, 24, 4, 0, tzinfo=UTC)
+    issue_rows = []
+    monkeypatch.setattr(monitor_liveness, "_open_incidents", lambda *_a, **_k: list(issue_rows))
+
+    def request(_api, _repo, _token, method, path, payload=None, **_kwargs):
+        if method == "POST" and path == "issues":
+            issue = {"number": 93, "state": "open", "title": payload["title"], "body": payload["body"]}
+            issue_rows.append(issue)
+            return issue
+        if method == "PATCH" and path == "issues/93":
+            issue_rows[0]["body"] = payload["body"]
+            return issue_rows[0]
+        if method == "POST" and path.endswith("/comments"):
+            return {"id": 1}
+        raise AssertionError((method, path, payload))
+
+    monkeypatch.setattr(monitor_liveness, "_request_json", request)
+    monkeypatch.setenv("GITHUB_RUN_ID", "700")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "2")
+    monitor_liveness.reconcile_audit_failure_incident(
+        api_url="https://api.github.com", repository="owner/repo", token="token",
+        reason="monitor_liveness_response_too_large", now=now,
+        defer_notification_cadence=True,
+    )
+
+    monkeypatch.setenv("GITHUB_RUN_ID", "701")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "1")
+    early = monitor_liveness.reconcile_audit_failure_incident(
+        api_url="https://api.github.com", repository="owner/repo", token="token",
+        reason="monitor_liveness_response_too_large", now=now + timedelta(minutes=5),
+        defer_notification_cadence=True,
+    )
+    assert early["reminder_sent"] is False
+    assert early["notification_cadence_confirmations"] == []
+
+    due = monitor_liveness.reconcile_audit_failure_incident(
+        api_url="https://api.github.com", repository="owner/repo", token="token",
+        reason="monitor_liveness_response_too_large", now=now + timedelta(minutes=30),
+        defer_notification_cadence=True,
+    )
+    assert due["reminder_sent"] is True
+    assert due["notification_cadence_confirmations"][0]["next_reminder_at"] == (now + timedelta(minutes=60)).isoformat()

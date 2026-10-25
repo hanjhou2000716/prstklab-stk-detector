@@ -37,17 +37,21 @@ def test_source_run_identity_is_bound_to_main_and_same_repository():
         }, workflow_name="Unified Taiwan-US research report", repository="owner/repo")
 
 
-def test_source_runs_cursor_holds_at_oldest_active_run(monkeypatch):
+def test_source_runs_cursor_advances_past_active_run_and_persists_it(monkeypatch):
     workflow_id = 319283753
     path = ".github/workflows/unified-research-report.yml"
     now = datetime(2026, 10, 24, 4, 0, tzinfo=UTC)
     active = {
         "id": 10, "workflow_id": workflow_id, "created_at": "2026-10-24T03:50:00Z",
-        "head_branch": "main", "status": "in_progress",
+        "head_branch": "main", "head_sha": "a" * 40,
+        "head_repository": {"full_name": "owner/repo"},
+        "run_attempt": 1, "status": "in_progress",
     }
     completed = {
         "id": 11, "workflow_id": workflow_id, "created_at": "2026-10-24T03:55:00Z",
-        "head_branch": "main", "status": "completed", "conclusion": "failure",
+        "head_branch": "main", "head_sha": "b" * 40,
+        "head_repository": {"full_name": "owner/repo"},
+        "run_attempt": 1, "status": "completed", "conclusion": "failure",
     }
 
     def fake_request(_api, _repo, _token, _method, _url, *, response_headers=None, deadline_monotonic=None):
@@ -57,12 +61,18 @@ def test_source_runs_cursor_holds_at_oldest_active_run(monkeypatch):
     rows, cursor, held = incidents._workflow_runs_since(
         path=path, workflow_id=workflow_id, repository="owner/repo",
         api_url="https://api.github.com", token="token",
-        cursor={"created_at": "2026-10-24T03:45:00+00:00", "run_id": 0},
+        cursor={"mode": "live", "created_at": "2026-10-24T03:45:00+00:00", "run_id": 0, "pending_runs": []},
         now=now, deadline=incidents.time.monotonic() + 10, repository_id=123,
     )
 
     assert [row["id"] for row in rows] == [11]
-    assert cursor == {"created_at": "2026-10-24T03:50:00+00:00", "run_id": 0}
+    assert cursor["created_at"] == "2026-10-24T03:55:00+00:00"
+    assert cursor["run_id"] == 11
+    assert cursor["pending_runs"] == [{
+        "run_id": 10, "workflow_id": workflow_id,
+        "created_at": "2026-10-24T03:50:00+00:00", "attempt": 1,
+        "head_sha": "a" * 40,
+    }]
     assert held is True
 
 
@@ -226,7 +236,9 @@ def test_source_run_reader_rejects_truncated_short_page(monkeypatch):
             "total_count": 2,
             "workflow_runs": [{
                 "id": 10, "workflow_id": workflow_id, "created_at": "2026-10-24T03:55:00Z",
-                "head_branch": "main", "status": "completed", "conclusion": "failure",
+                "head_branch": "main", "head_sha": "a" * 40,
+                "head_repository": {"full_name": "owner/repo"}, "run_attempt": 1,
+                "status": "completed", "conclusion": "failure",
             }],
         }
 
@@ -235,7 +247,7 @@ def test_source_run_reader_rejects_truncated_short_page(monkeypatch):
         incidents._workflow_runs_since(
             path=".github/workflows/unified-research-report.yml", workflow_id=workflow_id,
             repository="owner/repo", api_url="https://api.github.com", token="token",
-            cursor={"created_at": "2026-10-24T03:45:00+00:00", "run_id": 0},
+            cursor={"mode": "live", "created_at": "2026-10-24T03:45:00+00:00", "run_id": 0, "pending_runs": []},
             now=now, deadline=incidents.time.monotonic() + 10, repository_id=123,
         )
 
@@ -267,6 +279,41 @@ def test_cursor_artifact_must_bind_to_exact_consumer_run_and_revision(monkeypatc
     ) == {}
 
 
+def test_repository_metadata_uses_canonical_api_url_without_duplicate_repos_prefix(monkeypatch):
+    captured = []
+
+    class Response:
+        headers = {}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+        def read(self, _limit):
+            return b'{"id":1309835643}'
+
+    def fake_urlopen(request, timeout):
+        captured.append((request.full_url, timeout))
+        return Response()
+
+    monkeypatch.setattr("scripts.monitor_liveness.urlopen", fake_urlopen)
+    payload = incidents._request_json(
+        "https://api.github.com", "owner/repo", "token", "GET",
+        "https://api.github.com/repos/owner/repo",
+    )
+
+    assert payload["id"] == 1309835643
+    assert captured[0][0] == "https://api.github.com/repos/owner/repo"
+    assert "/repos/owner/repo/repos/" not in captured[0][0]
+
+
+def test_legacy_official_event_incident_marker_is_accepted_for_cadence():
+    assert incidents._cadence_marker_valid(f"{incidents.EVENT_INCIDENT_MARKER}{'a' * 24}")
+    assert not incidents._cadence_marker_valid(f"{incidents.EVENT_INCIDENT_MARKER}{'a' * 32}")
+
+
 def _cadence_result(path, *, run_id="700", attempt=2, sha="a" * 40, issue_number=901, closed=False):
     now = datetime(2026, 10, 24, 4, 0, tzinfo=UTC)
     marker = f"{incidents.SCHEDULED_INCIDENT_MARKER}{'b' * 32}"
@@ -287,7 +334,10 @@ def _cadence_result(path, *, run_id="700", attempt=2, sha="a" * 40, issue_number
     issue = {
         "number": issue_number,
         "state": "closed" if closed else "open",
-        "body": f"{marker}\nNext reminder at: {now.isoformat()}",
+        "body": (
+            f"{marker}\nNext reminder at: {now.isoformat()}\n"
+            f"Alert pending consumer: {run_id}/{attempt}\nAlert pending since: {now.isoformat()}"
+        ),
     }
     return now, marker, issue
 
@@ -317,6 +367,8 @@ def test_alert_cadence_advances_only_after_confirmed_native_alert(tmp_path, monk
     assert result["cadence_finalization"]["updated_issue_numbers"] == [901]
     assert "Next reminder at: 2026-10-24T04:30:00+00:00" in issue["body"]
     assert issue["body"].splitlines().count(marker) == 1
+    assert "Alert pending consumer:" not in issue["body"]
+    assert "Alert pending since:" not in issue["body"]
     assert [call[:2] for call in calls] == [("GET", "issues/901"), ("PATCH", "issues/901")]
 
 
@@ -357,6 +409,37 @@ def test_alert_cadence_marks_recovered_issue_as_superseded(tmp_path, monkeypatch
     assert result["cadence_finalization"]["updated_issue_numbers"] == []
     assert result["cadence_finalization"]["superseded_by_recovery_issue_numbers"] == [901]
     assert calls == [("GET", "issues/901")]
+
+
+def test_alert_cadence_requires_the_same_issue_reservation_consumer(tmp_path, monkeypatch):
+    result_path = tmp_path / "decision.json"
+    now, _marker, issue = _cadence_result(result_path)
+    issue["body"] = issue["body"].replace("Alert pending consumer: 700/2", "Alert pending consumer: 701/1")
+    monkeypatch.setattr(incidents, "_request_json", lambda *_args, **_kwargs: issue)
+
+    with pytest.raises(LivenessAuditError, match="reservation_mismatch"):
+        incidents.finalize_alert_cadence(
+            result_path=result_path, repository="owner/repo", api_url="https://api.github.com",
+            token="token", consumer_run_id="700", consumer_attempt=2, consumer_sha="a" * 40,
+            alert_emitted=True, alert_step_outcome="failure", now=now,
+        )
+
+
+def test_alert_cadence_rejects_invalid_pending_reservation_time(tmp_path, monkeypatch):
+    result_path = tmp_path / "decision.json"
+    now, _marker, issue = _cadence_result(result_path)
+    issue["body"] = issue["body"].replace(
+        f"Alert pending since: {now.isoformat()}",
+        "Alert pending since: invalid",
+    )
+    monkeypatch.setattr(incidents, "_request_json", lambda *_args, **_kwargs: issue)
+
+    with pytest.raises(LivenessAuditError, match="reservation_mismatch"):
+        incidents.finalize_alert_cadence(
+            result_path=result_path, repository="owner/repo", api_url="https://api.github.com",
+            token="token", consumer_run_id="700", consumer_attempt=2, consumer_sha="a" * 40,
+            alert_emitted=True, alert_step_outcome="failure", now=now,
+        )
 
 
 def test_alert_cadence_rejects_duplicate_issue_and_consumer_mismatch(tmp_path, monkeypatch):

@@ -34,10 +34,12 @@ from scripts.monitor_liveness import (
 from scripts.official_event_incidents import reconcile_incidents as reconcile_official_events
 from scripts.scheduled_brief_incidents import ISSUE_MARKER as SCHEDULED_INCIDENT_MARKER
 from scripts.scheduled_brief_incidents import reconcile as reconcile_scheduled_brief
+from src.incident_cadence import can_emit_pending_alert, clear_pending_alert, mark_pending_alert
 from src.scheduled_slot_audit import _open_artifact_url
 
 RESEARCH_TITLE_PREFIX = "Unified research report degraded"
 RESEARCH_MARKER = "unified-research-incident="
+CENTRAL_HEALTH_MARKER = "central-incident-health="
 REMINDER_INTERVAL = timedelta(minutes=30)
 SOURCE_WORKFLOWS = {
     ".github/workflows/scheduled-brief.yml": "Scheduled market brief",
@@ -57,9 +59,12 @@ SOURCE_ARTIFACTS = {
 CENTRAL_WORKFLOW_PATH = ".github/workflows/incident-reconciliation.yml"
 STATE_ARTIFACT_MEMBER = "incident-reconciliation-state.json"
 STATE_SCHEMA = "incident-reconciliation-cursor-v1"
-SOURCE_PAGE_SIZE = 100
+SOURCE_PAGE_SIZE = 10
 SOURCE_MAX_PAGES = 10
+MAX_SOURCE_RUNS_PER_CYCLE = 10
+SOURCE_BACKFILL_WINDOW = timedelta(hours=6)
 STATE_ARTIFACT_LIMIT = 20 * 1024 * 1024
+INITIAL_BACKFILL_AT = datetime(2026, 10, 21, tzinfo=UTC)
 CADENCE_MARKER_PREFIXES = (
     AUDIT_INCIDENT_MARKER,
     EVENT_INCIDENT_MARKER,
@@ -114,8 +119,9 @@ def _cadence_marker_valid(marker: object) -> bool:
     value = str(marker or "")
     if not value or len(value) > 200 or "\n" in value or "\r" in value:
         return False
-    if value.startswith((EVENT_INCIDENT_MARKER, SCHEDULED_INCIDENT_MARKER, RESEARCH_MARKER)):
-        return re.fullmatch(r"[^=]+=([0-9a-f]{32})", value) is not None
+    if value.startswith((EVENT_INCIDENT_MARKER, SCHEDULED_INCIDENT_MARKER, RESEARCH_MARKER, CENTRAL_HEALTH_MARKER)):
+        marker_length = r"[0-9a-f]{24}" if value.startswith(EVENT_INCIDENT_MARKER) else r"[0-9a-f]{32}"
+        return re.fullmatch(rf"[^=]+=({marker_length})", value) is not None
     if value.startswith(INCIDENT_MARKER):
         return value == f"{INCIDENT_MARKER}official-monitor-stalled:main"
     if value.startswith(AUDIT_INCIDENT_MARKER):
@@ -190,6 +196,18 @@ def finalize_alert_cadence(
                 continue
             if state != "open":
                 raise LivenessAuditError("incident_cadence_issue_state_unknown")
+            expected_consumer = f"{consumer_run_id}/{_safe_int(consumer_attempt) or 0}"
+            issue_lines = body.splitlines()
+            pending_since = _parse_time(_field(body, "Alert pending since"))
+            if (
+                issue_lines.count(f"Alert pending consumer: {expected_consumer}") != 1
+                or sum(line.startswith("Alert pending consumer:") for line in issue_lines) != 1
+                or sum(line.startswith("Alert pending since:") for line in issue_lines) != 1
+                or pending_since is None
+                or pending_since > current + timedelta(minutes=5)
+                or pending_since < current - timedelta(hours=1)
+            ):
+                raise LivenessAuditError("incident_cadence_issue_reservation_mismatch")
             verified.append((number, marker, next_due, issue))
 
         result["alert_terminal"] = {
@@ -200,8 +218,7 @@ def finalize_alert_cadence(
         }
         alert_confirmed = True
         for number, _marker, next_due, issue in verified:
-            lines = str(issue.get("body") or "").splitlines()
-            lines = [line for line in lines if not line.startswith("Alert pending consumer:")]
+            lines = clear_pending_alert(str(issue.get("body") or "").splitlines())
             next_rows = [index for index, line in enumerate(lines) if line.startswith("Next reminder at:")]
             if len(next_rows) > 1:
                 raise LivenessAuditError("incident_cadence_issue_timestamp_ambiguous")
@@ -252,7 +269,7 @@ def finalize_alert_cadence(
 def _research_incident(
     *, event: dict[str, Any], repository: str, api_url: str, token: str,
     now: datetime, terminal: dict[str, Any] | None = None,
-    defer_notification_cadence: bool = False,
+    defer_notification_cadence: bool = False, deadline_monotonic: float | None = None,
 ) -> dict[str, Any]:
     run_id = _safe_int(event.get("run_id"))
     attempt = _safe_int(event.get("attempt"))
@@ -280,7 +297,7 @@ def _research_incident(
             "notification_cadence_confirmations": [],
         }
     key = hashlib.sha256(b"unified-research-report\nworkflow-failure-v1").hexdigest()[:32]
-    deadline = time.monotonic() + MAX_AUDIT_SECONDS
+    deadline = deadline_monotonic or time.monotonic() + MAX_AUDIT_SECONDS
     issues = [
         item for item in _open_incidents(api_url, repository, token, deadline_monotonic=deadline)
         if str(item.get("title") or "").startswith(RESEARCH_TITLE_PREFIX)
@@ -292,18 +309,15 @@ def _research_incident(
     if len(matches) > 1:
         raise LivenessAuditError("incident_research_duplicate_issue")
     terminal_degraded = terminal is not None and terminal.get("business_status") == "degraded"
-    if terminal is None and conclusion in {"success", "neutral", "skipped"}:
-        return {
-            "component": "unified_research_report",
-            "status": "evidence_unavailable",
-            "diagnostic_complete": True,
-            "recovered_issue_numbers": [],
-            "notification_cadence_confirmations": [],
-        }
-    failure = conclusion not in {"success", "neutral", "skipped"} or terminal_degraded
+    terminal_missing = terminal is None
+    failure = terminal_missing or conclusion not in {"success", "neutral", "skipped"} or terminal_degraded
     latest_reason = (
         str(terminal.get("reason") or "") if terminal is not None else ""
-    ) or ("research_workflow_failed" if conclusion not in {"success", "neutral", "skipped"} else "")
+    ) or (
+        "research_terminal_artifact_missing" if terminal_missing
+        else "research_workflow_failed" if conclusion not in {"success", "neutral", "skipped"}
+        else ""
+    )
     if not failure:
         recovered: list[int] = []
         for issue in matches:
@@ -344,6 +358,8 @@ def _research_incident(
             f"Run: {run_url}",
             *([f"Alert pending consumer: {pending_consumer}"] if defer_notification_cadence else []),
         ))
+        if defer_notification_cadence:
+            body = mark_pending_alert(body, pending_consumer, now)
         created = _request_json(
             api_url, repository, token, "POST", "issues",
             {"title": f"{RESEARCH_TITLE_PREFIX} / main", "body": body}, deadline_monotonic=deadline,
@@ -372,7 +388,11 @@ def _research_incident(
         defer_notification_cadence
         and _field(issue.get("body"), "Alert pending consumer") == pending_consumer
     )
-    if due and not pending_current:
+    notify_due = due and (
+        not defer_notification_cadence
+        or can_emit_pending_alert(issue.get("body"), pending_consumer, now)
+    )
+    if notify_due and not pending_current:
         scheduled_next = (
             (next_due or now) if defer_notification_cadence else now + REMINDER_INTERVAL
         )
@@ -388,6 +408,8 @@ def _research_incident(
             f"Run: {run_url}",
             *([f"Alert pending consumer: {pending_consumer}"] if defer_notification_cadence else []),
         ))
+        if defer_notification_cadence:
+            body = mark_pending_alert(body, pending_consumer, now)
         _request_json(api_url, repository, token, "PATCH", f"issues/{number}", {"body": body}, deadline_monotonic=deadline)
         _request_json(
             api_url, repository, token, "POST", f"issues/{number}/comments",
@@ -398,10 +420,10 @@ def _research_incident(
         "issue_number": number,
         "marker": f"{RESEARCH_MARKER}{key}",
         "next_reminder_at": (now + REMINDER_INTERVAL).isoformat(),
-    }] if defer_notification_cadence and due else []
+    }] if defer_notification_cadence and notify_due else []
     return {
         "component": "unified_research_report", "status": "degraded",
-        "reminded_issue_numbers": [number] if due else [],
+        "reminded_issue_numbers": [number] if notify_due else [],
         "notification_cadence_confirmations": confirmations,
     }
 
@@ -428,17 +450,84 @@ def _workflow_runs_since(
     *, path: str, workflow_id: int, repository: str, api_url: str, token: str,
     cursor: dict[str, Any], now: datetime, deadline: float, repository_id: int,
 ) -> tuple[list[dict[str, Any]], dict[str, Any], bool]:
-    cursor_time = _parse_time(cursor.get("created_at")) or (now - timedelta(minutes=20))
+    legacy_cursor = "mode" not in cursor
+    mode = str(cursor.get("mode") or "backfill").casefold()
+    if mode not in {"backfill", "live"}:
+        raise LivenessAuditError("incident_source_cursor_mode_invalid")
+    cutoff = now - timedelta(minutes=20)
+    if mode == "backfill":
+        window_start = _parse_time(cursor.get("window_start")) or INITIAL_BACKFILL_AT
+        if window_start >= cutoff:
+            mode = "live"
+            cursor_time = _parse_time(cursor.get("created_at")) or cutoff
+            window_end = None
+        else:
+            window_end = _parse_time(cursor.get("window_end")) or min(
+                window_start + SOURCE_BACKFILL_WINDOW - timedelta(seconds=1), cutoff,
+            )
+            cursor_time = window_start if legacy_cursor else (_parse_time(cursor.get("created_at")) or window_start)
+    else:
+        cursor_time = _parse_time(cursor.get("created_at")) or cutoff
+        window_start = window_end = None
     cursor_id = _safe_int(cursor.get("run_id")) or 0
-    created_filter = f">={cursor_time.strftime('%Y-%m-%dT%H:%M:%SZ')}"
+    if mode == "backfill" and window_start is not None and window_end is not None:
+        created_filter = (
+            f"{window_start.strftime('%Y-%m-%dT%H:%M:%SZ')}.."
+            f"{window_end.strftime('%Y-%m-%dT%H:%M:%SZ')}"
+        )
+    else:
+        created_filter = f">={cursor_time.strftime('%Y-%m-%dT%H:%M:%SZ')}"
     filters = {"branch": "main", "created": created_filter}
     query = urlencode({"branch": "main", "created": created_filter, "per_page": SOURCE_PAGE_SIZE, "page": 1})
     endpoint_path = f"/repos/{repository}/actions/workflows/{workflow_id}/runs"
     numeric_path = f"/repositories/{repository_id}/actions/workflows/{workflow_id}/runs"
     request_path = f"actions/workflows/{workflow_id}/runs?{query}"
-    collected: dict[int, dict[str, Any]] = {}
+    collected: dict[tuple[int, int], dict[str, Any]] = {}
     observed_run_ids: set[int] = set()
-    active_times: list[tuple[datetime, int]] = []
+    pending: dict[int, dict[str, Any]] = {}
+    prior_pending = cursor.get("pending_runs", [])
+    if not isinstance(prior_pending, list):
+        raise LivenessAuditError("incident_source_pending_runs_invalid")
+    for item in prior_pending:
+        if not isinstance(item, dict):
+            raise LivenessAuditError("incident_source_pending_run_identity_invalid")
+        pending_id = _safe_int(item.get("run_id"))
+        if not pending_id or _safe_int(item.get("workflow_id")) != workflow_id:
+            raise LivenessAuditError("incident_source_pending_run_identity_invalid")
+        run = _request_json(
+            api_url, repository, token, "GET", f"actions/runs/{pending_id}",
+            deadline_monotonic=deadline,
+        )
+        if not isinstance(run, dict) or _safe_int(run.get("id")) != pending_id or _safe_int(run.get("workflow_id")) != workflow_id:
+            raise LivenessAuditError("incident_source_pending_run_identity_invalid")
+        if str(run.get("head_branch") or "") != "main":
+            raise LivenessAuditError("incident_source_pending_run_branch_invalid")
+        head_repository = run.get("head_repository")
+        if not isinstance(head_repository, dict) or str(head_repository.get("full_name") or "") != repository:
+            raise LivenessAuditError("incident_source_pending_run_repository_invalid")
+        created_at = _parse_time(run.get("created_at"))
+        attempt = _safe_int(run.get("run_attempt"))
+        sha = str(run.get("head_sha") or "").lower()
+        if created_at is None or not attempt or not re.fullmatch(r"[0-9a-f]{40}", sha):
+            raise LivenessAuditError("incident_source_pending_run_revision_invalid")
+        stored_created_at = _parse_time(item.get("created_at"))
+        stored_attempt = _safe_int(item.get("attempt"))
+        stored_sha = str(item.get("head_sha") or "").lower()
+        if (
+            stored_created_at is None or created_at != stored_created_at
+            or (stored_attempt is not None and attempt < stored_attempt)
+            or (stored_sha and stored_sha != sha)
+        ):
+            raise LivenessAuditError("incident_source_pending_run_identity_changed")
+        if str(run.get("status") or "").casefold() == "completed":
+            run["_incident_source_origin"] = "pending"
+            collected[(pending_id, attempt)] = run
+        pending[pending_id] = {
+            "run_id": pending_id, "workflow_id": workflow_id,
+            "created_at": created_at.isoformat(), "attempt": attempt, "head_sha": sha,
+        }
+        if len(pending) > 100:
+            raise LivenessAuditError("incident_source_pending_runs_limit_exceeded")
     expected_total: int | None = None
     fetched_total = 0
     next_cursor = {"created_at": cursor_time.isoformat(), "run_id": cursor_id}
@@ -461,12 +550,22 @@ def _workflow_runs_since(
         for row in rows:
             run_id = _safe_int(row.get("id"))
             created_at = _parse_time(row.get("created_at"))
-            if run_id is None or created_at is None or _safe_int(row.get("workflow_id")) != workflow_id:
+            attempt = _safe_int(row.get("run_attempt"))
+            sha = str(row.get("head_sha") or "").lower()
+            head_repository = row.get("head_repository")
+            if (
+                run_id is None or created_at is None or _safe_int(row.get("workflow_id")) != workflow_id
+                or not attempt or not re.fullmatch(r"[0-9a-f]{40}", sha)
+                or not isinstance(head_repository, dict)
+                or not isinstance(head_repository.get("full_name"), str)
+            ):
                 raise LivenessAuditError("incident_source_run_identity_invalid")
             if run_id in observed_run_ids:
                 raise LivenessAuditError("incident_source_run_duplicated_across_pages")
             observed_run_ids.add(run_id)
             if str(row.get("head_branch") or "") != "main":
+                continue
+            if str(head_repository.get("full_name") or "") != repository:
                 continue
             if (
                 created_at < cursor_time
@@ -474,12 +573,21 @@ def _workflow_runs_since(
             ):
                 continue
             if str(row.get("status") or "").casefold() != "completed":
-                active_times.append((created_at, run_id))
+                pending[run_id] = {
+                    "run_id": run_id, "workflow_id": workflow_id,
+                    "created_at": created_at.isoformat(), "attempt": attempt, "head_sha": sha,
+                }
                 continue
-            previous = collected.get(run_id)
-            if previous is not None and previous != row:
-                raise LivenessAuditError("incident_source_run_changed_during_read")
-            collected[run_id] = row
+            previous = collected.get((run_id, attempt))
+            if previous is not None:
+                stable_fields = (
+                    "id", "workflow_id", "run_attempt", "created_at", "head_branch",
+                    "head_sha", "status", "conclusion", "head_repository",
+                )
+                if any(previous.get(field) != row.get(field) for field in stable_fields):
+                    raise LivenessAuditError("incident_source_run_changed_during_read")
+            row["_incident_source_origin"] = "scan"
+            collected[(run_id, attempt)] = row
         next_url = _next_link(
             headers.get("link", ""), api_url=api_url,
             expected_path=(endpoint_path, numeric_path), expected_page=page + 1,
@@ -503,26 +611,40 @@ def _workflow_runs_since(
         if fetched_total < (expected_total or 0):
             raise LivenessAuditError("incident_source_runs_pagination_incomplete")
         break
+    if len(pending) > 100:
+        raise LivenessAuditError("incident_source_pending_runs_limit_exceeded")
     runs = sorted(collected.values(), key=lambda row: (
         _parse_time(row.get("created_at")) or datetime.min.replace(tzinfo=UTC),
         _safe_int(row.get("id")) or 0,
     ))
-    hold = False
-    if active_times:
-        oldest_active = min(active_times)
-        next_cursor = {"created_at": oldest_active[0].isoformat(), "run_id": 0}
-        hold = True
-    elif runs:
-        latest = max(runs, key=lambda row: (
+    scan_complete = fetched_total >= (expected_total or 0)
+    scanned = [row for row in runs if row.get("_incident_source_origin") == "scan"]
+    next_cursor: dict[str, Any] = {
+        "mode": mode,
+        "created_at": cursor_time.isoformat(),
+        "run_id": cursor_id,
+        "pending_runs": sorted(pending.values(), key=lambda item: (item["created_at"], item["run_id"])),
+        "scan_complete": scan_complete,
+    }
+    if mode == "backfill" and window_start is not None and window_end is not None:
+        next_cursor["window_start"] = window_start.isoformat()
+        next_cursor["window_end"] = window_end.isoformat()
+    if scanned:
+        latest = max(scanned, key=lambda row: (
             _parse_time(row.get("created_at")) or datetime.min.replace(tzinfo=UTC),
             _safe_int(row.get("id")) or 0,
         ))
-        next_cursor = {"created_at": _parse_time(latest.get("created_at")).isoformat(), "run_id": _safe_int(latest.get("id")) or 0}
-    return runs, next_cursor, hold
+        next_cursor["created_at"] = _parse_time(latest.get("created_at")).isoformat()
+        next_cursor["run_id"] = _safe_int(latest.get("id")) or 0
+    stale_pending = any(
+        (created := _parse_time(item.get("created_at"))) is None or created <= now - timedelta(minutes=10)
+        for item in pending.values()
+    )
+    return runs, next_cursor, (not scan_complete) or stale_pending
 
 
 def _download_artifact_json(
-    *, run: dict[str, Any], expected_artifact_name: str, expected_member: str,
+    *, run: dict[str, Any], expected_artifact_name: str, expected_member: str | tuple[str, ...],
     repository: str, api_url: str, token: str, deadline: float,
 ) -> bytes:
     run_id = _safe_int(run.get("id"))
@@ -574,7 +696,8 @@ def _download_artifact_json(
     try:
         with zipfile.ZipFile(io.BytesIO(archive_bytes)) as archive:
             files = [name for name in archive.namelist() if not name.endswith("/")]
-            if len(files) != 1 or files[0] != expected_member:
+            allowed_members = (expected_member,) if isinstance(expected_member, str) else expected_member
+            if len(files) != 1 or files[0] not in allowed_members:
                 raise LivenessAuditError("incident_artifact_archive_contract_invalid")
             info = archive.getinfo(files[0])
             if info.file_size > 1_000_000:
@@ -596,7 +719,7 @@ def _load_cursor_state(
         raise LivenessAuditError("incident_cursor_workflow_identity_invalid")
     runs_payload = _request_json(
         api_url, repository, token, "GET",
-        f"actions/workflows/{workflow_id}/runs?per_page=20&page=1&branch=main&status=completed",
+        f"actions/workflows/{workflow_id}/runs?per_page=10&page=1&branch=main&status=completed",
         deadline_monotonic=deadline,
     )
     runs = runs_payload.get("workflow_runs") if isinstance(runs_payload, dict) else None
@@ -686,7 +809,7 @@ def _reconcile_source_run(
                 raise
             return _research_incident(
                 event=event, repository=repository, api_url=api_url, token=token, now=now,
-                defer_notification_cadence=True,
+                defer_notification_cadence=True, deadline_monotonic=deadline,
             )
         try:
             terminal = json.loads(content.decode("utf-8"))
@@ -696,31 +819,41 @@ def _reconcile_source_run(
             raise LivenessAuditError("incident_research_terminal_json_invalid")
         return _research_incident(
             event=event, repository=repository, api_url=api_url, token=token, now=now,
-            terminal=terminal, defer_notification_cadence=True,
+            terminal=terminal, defer_notification_cadence=True, deadline_monotonic=deadline,
         )
     if workflow_name == "Official event monitor":
-        expected_member = "official-event-trace.json"
+        expected_member: str | tuple[str, ...] = "official-event-trace.json"
+        evidence_filename = expected_member
     elif workflow_name == "Scheduled market brief":
-        expected_member = f"scheduled-terminal-{run_id}-attempt-{attempt}.json"
+        evidence_filename = f"scheduled-terminal-{run_id}-attempt-{attempt}.json"
+        expected_member = (
+            evidence_filename,
+            f"prstk-notification-terminal-{run_id}.json",  # legacy producer filename
+        )
     else:
-        expected_member = f"scheduled-slot-audit-{run_id}-attempt-{attempt}.json"
+        evidence_filename = f"scheduled-slot-audit-{run_id}-attempt-{attempt}.json"
+        expected_member = (
+            evidence_filename,
+            f"scheduled-slot-audit-{run_id}-{attempt}.json",  # legacy producer filename
+        )
     content = _download_artifact_json(
         run=run, expected_artifact_name=artifact_name, expected_member=expected_member,
         repository=repository, api_url=api_url, token=token, deadline=deadline,
     )
     with tempfile.TemporaryDirectory(prefix="prstk-incident-") as temp:
         directory = Path(temp)
-        evidence_path = directory / expected_member
+        evidence_path = directory / evidence_filename
         evidence_path.write_bytes(content)
         if workflow_name in {"Scheduled market brief", "Scheduled brief slot receipt audit"}:
             return reconcile_scheduled_brief(
                 event=event, evidence_directory=directory,
                 repository=repository, api_url=api_url, token=token, now=now,
-                defer_notification_cadence=True,
+                defer_notification_cadence=True, deadline_monotonic=deadline,
             )
         return reconcile_official_events(
             api_url=api_url, repository=repository, token=token,
             trace_path=evidence_path, now=now, defer_notification_cadence=True,
+            deadline_monotonic=deadline,
         )
 
 
@@ -742,14 +875,17 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
         deadline=deadline,
     )
     repository_info = _request_json(
-        api_url, repository, token, "GET", f"repos/{repository}", deadline_monotonic=deadline,
+        api_url, repository, token, "GET", f"{api_url.rstrip('/')}/repos/{repository}",
+        deadline_monotonic=deadline,
     )
     repository_id = _safe_int(repository_info.get("id")) if isinstance(repository_info, dict) else None
     if repository_id is None:
         raise LivenessAuditError("incident_repository_identity_unavailable")
     source_definitions: dict[str, tuple[int, str]] = {}
     cursor_updates: dict[str, dict[str, Any]] = {}
-    source_rows: list[tuple[datetime, int, str, dict[str, Any]]] = []
+    discovered_cursors: dict[str, dict[str, Any]] = {}
+    scan_holds: dict[str, bool] = {}
+    source_rows: list[tuple[datetime, int, str, str, dict[str, Any], bool]] = []
     for path, workflow_name in SOURCE_WORKFLOWS.items():
         workflow_id = _source_workflow_id(
             path=path, repository=repository, api_url=api_url, token=token,
@@ -757,21 +893,25 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
         )
         source_definitions[path] = (workflow_id, workflow_name)
         old_cursor = cursors.get(path) if isinstance(cursors.get(path), dict) else {
-            "created_at": (now - timedelta(minutes=20)).isoformat(), "run_id": 0,
+            "created_at": INITIAL_BACKFILL_AT.isoformat(), "run_id": 0,
         }
         cursors[path] = old_cursor
-        runs, next_cursor, _held = _workflow_runs_since(
+        runs, next_cursor, held = _workflow_runs_since(
             path=path, workflow_id=workflow_id, repository=repository,
             api_url=api_url, token=token, cursor=old_cursor, now=now,
             deadline=deadline, repository_id=repository_id,
         )
-        cursor_updates[path] = next_cursor
+        discovered_cursors[path] = next_cursor
+        scan_holds[path] = held
         for run in runs:
             created = _parse_time(run.get("created_at"))
             run_id = _safe_int(run.get("id"))
             if created is None or run_id is None:
                 raise LivenessAuditError("incident_source_run_identity_invalid")
-            source_rows.append((created, run_id, workflow_name, run))
+            source_rows.append((
+                created, run_id, path, workflow_name, run,
+                run.get("_incident_source_origin") == "scan",
+            ))
 
     # A webhook is authoritative for its completed run, including a long-running
     # source whose creation time predates the saved cursor window.
@@ -787,22 +927,67 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
                 if _safe_int(incoming_run.get("id")) is not None:
                     created = _parse_time(incoming_run.get("created_at")) or now
                     key = (_safe_int(incoming_run.get("id")) or 0, _safe_int(incoming_run.get("run_attempt")) or 1)
-                    existing = {
-                        (_safe_int(row.get("id")) or 0, _safe_int(row.get("run_attempt")) or 1)
-                        for _created, _run_id, _name, row in source_rows
-                    }
-                    if key not in existing:
-                        source_rows.append((created, key[0], workflow_name, incoming_run))
+                    existing_index = next((
+                        index for index, row in enumerate(source_rows)
+                        if (_safe_int(row[4].get("id")) or 0, _safe_int(row[4].get("run_attempt")) or 1) == key
+                    ), None)
+                    source_path = next(
+                        p for p, (source_workflow_id, _name) in source_definitions.items()
+                        if source_workflow_id == incoming_id
+                    )
+                    if existing_index is not None:
+                        source_rows[existing_index][4]["_incident_source_origin"] = "webhook"
+                        source_rows[existing_index] = (*source_rows[existing_index][:5], False)
+                    else:
+                        incoming_run["_incident_source_origin"] = "webhook"
+                        source_rows.append((created, key[0], source_path, workflow_name, incoming_run, False))
+                    head_repository = incoming_run.get("head_repository")
+                    head_sha = str(incoming_run.get("head_sha") or "").lower()
+                    if (
+                        isinstance(head_repository, dict)
+                        and str(head_repository.get("full_name") or "") == repository
+                        and str(incoming_run.get("head_branch") or "") == "main"
+                        and re.fullmatch(r"[0-9a-f]{40}", head_sha)
+                    ):
+                        source_cursor = discovered_cursors[source_path]
+                        pending_rows = source_cursor.get("pending_runs", [])
+                        if not isinstance(pending_rows, list):
+                            raise LivenessAuditError("incident_source_pending_runs_invalid")
+                        if not any(_safe_int(item.get("run_id")) == key[0] for item in pending_rows if isinstance(item, dict)):
+                            pending_rows.append({
+                                "run_id": key[0], "workflow_id": workflow_id,
+                                "created_at": created.isoformat(),
+                                "attempt": key[1], "head_sha": head_sha,
+                            })
+                        source_cursor["pending_runs"] = pending_rows
                 break
-    source_rows.sort(key=lambda item: (item[0], item[1], item[2]))
-    if len(source_rows) > 100:
+    source_rows.sort(key=lambda item: (
+        0 if item[4].get("_incident_source_origin") == "webhook" else 1,
+        item[0], item[1], item[2],
+    ))
+    if len(source_rows) > 400:
         raise LivenessAuditError("incident_source_backlog_limit_exceeded")
     results: list[dict[str, Any]] = []
-    for _created, run_id, workflow_name, run in source_rows:
-        source_result = _reconcile_source_run(
-            run=run, workflow_name=workflow_name, repository=repository,
-            api_url=api_url, token=token, now=now, deadline=deadline,
-        )
+    processed_last: dict[str, dict[str, Any]] = {}
+    failed_paths: set[str] = set()
+    selected_rows = source_rows[:MAX_SOURCE_RUNS_PER_CYCLE]
+    deferred_rows = source_rows[MAX_SOURCE_RUNS_PER_CYCLE:]
+    processed_pending: dict[str, set[int]] = {path: set() for path in source_definitions}
+    for created, run_id, path, workflow_name, run, advance_cursor in selected_rows:
+        if path in failed_paths:
+            continue
+        try:
+            source_result = _reconcile_source_run(
+                run=run, workflow_name=workflow_name, repository=repository,
+                api_url=api_url, token=token, now=now, deadline=deadline,
+            )
+        except LivenessAuditError as exc:
+            source_result = {
+                "status": "evidence_unavailable",
+                "diagnostic_complete": False,
+                "incident_active": False,
+                "failure_reason": str(exc)[:180],
+            }
         results.append({
             "source_workflow": workflow_name,
             "source_run_id": run_id,
@@ -810,22 +995,65 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
             **source_result,
         })
         if source_result.get("diagnostic_complete") is False:
-            path = next((p for p, (_wid, name) in source_definitions.items() if name == workflow_name), "")
-            if path:
-                cursor_updates[path] = {
-                    "created_at": (_parse_time(run.get("created_at")) or now).isoformat(),
-                    "run_id": 0,
-                }
+            failed_paths.add(path)
+        else:
+            if advance_cursor:
+                processed_last[path] = {"created_at": created.isoformat(), "run_id": run_id}
+            if any(
+                _safe_int(item.get("run_id")) == run_id
+                for item in discovered_cursors[path].get("pending_runs", [])
+                if isinstance(item, dict)
+            ):
+                processed_pending[path].add(run_id)
+    for path in SOURCE_WORKFLOWS:
+        old_cursor = cursors.get(path) if isinstance(cursors.get(path), dict) else {
+            "mode": "backfill", "window_start": INITIAL_BACKFILL_AT.isoformat(),
+            "created_at": INITIAL_BACKFILL_AT.isoformat(), "run_id": 0, "pending_runs": [],
+        }
+        remaining_for_path = any(row[2] == path and row[5] for row in deferred_rows)
+        next_cursor = dict(discovered_cursors.get(path, old_cursor))
+        next_cursor["pending_runs"] = [
+            row for row in next_cursor.get("pending_runs", [])
+            if _safe_int(row.get("run_id")) not in processed_pending[path]
+        ]
+        if path in failed_paths or remaining_for_path:
+            checkpoint = processed_last.get(path, old_cursor)
+            next_cursor.update(checkpoint)
+            next_cursor["scan_complete"] = False if path in failed_paths else next_cursor.get("scan_complete", False)
+            cursor_updates[path] = next_cursor
+        elif next_cursor.get("scan_complete") is True and next_cursor.get("mode") == "backfill":
+            end = _parse_time(next_cursor.get("window_end"))
+            if end is None:
+                raise LivenessAuditError("incident_source_cursor_window_invalid")
+            cutoff = now - timedelta(minutes=20)
+            next_start = end + timedelta(seconds=1)
+            if next_start >= cutoff:
+                next_cursor.update({"mode": "live", "created_at": cutoff.isoformat(), "run_id": 0})
+                next_cursor.pop("window_start", None)
+                next_cursor.pop("window_end", None)
+            else:
+                next_end = min(next_start + SOURCE_BACKFILL_WINDOW - timedelta(seconds=1), cutoff)
+                next_cursor.update({
+                    "mode": "backfill", "window_start": next_start.isoformat(),
+                    "window_end": next_end.isoformat(), "created_at": next_start.isoformat(), "run_id": 0,
+                })
+            next_cursor["scan_complete"] = True
+            cursor_updates[path] = next_cursor
+        else:
+            if processed_last.get(path):
+                next_cursor.update(processed_last[path])
+            cursor_updates[path] = next_cursor
     if os.environ.get("GITHUB_EVENT_NAME") in {"schedule", "workflow_dispatch"}:
         try:
             result = audit_liveness(
                 api_url=api_url, repository=repository, token=token, now=now,
-                defer_notification_cadence=True,
+                defer_notification_cadence=True, deadline_monotonic=deadline,
             )
         except LivenessAuditError as exc:
             result = reconcile_audit_failure_incident(
                 api_url=api_url, repository=repository, token=token,
                 reason=str(exc), now=now, defer_notification_cadence=True,
+                deadline_monotonic=deadline,
             )
             result["audit_failure_reason"] = str(exc)[:160]
         results.append({"source_workflow": "Official monitor liveness audit", **result})
@@ -846,7 +1074,10 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
         if existing is not None and existing != row:
             raise LivenessAuditError("incident_notification_cadence_conflict")
         confirmations_by_issue[number] = row
-    diagnostic_complete = all(item.get("diagnostic_complete") is not False for item in results)
+    coverage_complete = not deferred_rows and not any(scan_holds.values())
+    diagnostic_complete = coverage_complete and all(
+        item.get("diagnostic_complete") is not False for item in results
+    )
     final_cursors = {
         path: cursor
         for path, cursor in cursor_updates.items()
@@ -857,12 +1088,19 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
         "consumer_attempt": _safe_int(os.environ.get("GITHUB_RUN_ATTEMPT", "")),
         "consumer_sha": os.environ.get("GITHUB_SHA", "")[:40],
         "source_run_ids": sorted({str(item.get("source_run_id")) for item in results if item.get("source_run_id")}),
-        "business_status": "degraded" if any(item.get("status") in {"stalled", "degraded"} or item.get("incident_active") for item in results) else "healthy",
+        "business_status": (
+            "degraded"
+            if any(item.get("status") in {"stalled", "degraded", "evidence_unavailable"} or item.get("incident_active") for item in results)
+            else "healthy" if diagnostic_complete else "unknown"
+        ),
         "diagnostic_complete": diagnostic_complete,
-        "incident_handoff_status": "accepted" if diagnostic_complete or all(
-            item.get("diagnostic_complete") is not False or item.get("incident_active") is True
-            for item in results
-        ) else "incomplete",
+        "coverage_status": "complete" if coverage_complete else "incomplete",
+        "unprocessed_source_runs": [
+            {"workflow": row[3], "run_id": row[1], "attempt": _safe_int(row[4].get("run_attempt")) or 1}
+            for row in deferred_rows
+        ],
+        "source_scan_holds": sorted(path for path, held in scan_holds.items() if held),
+        "incident_handoff_status": "accepted" if diagnostic_complete else "incomplete",
         "notification_due": bool(notification_reasons),
         "notification_reasons": sorted(set(notification_reasons)),
         "notification_cadence_confirmations": list(confirmations_by_issue.values()),
@@ -938,7 +1176,10 @@ def main() -> int:
         with open(summary, "a", encoding="utf-8") as handle:
             handle.write("\n## Central incident reconciliation\n")
             handle.write(f"- business_status: {result['business_status']}\n")
+            handle.write(f"- diagnostic_complete: {str(result.get('diagnostic_complete', False)).lower()}\n")
+            handle.write(f"- coverage_status: {result.get('coverage_status', 'incomplete')}\n")
             handle.write(f"- incident_handoff_status: {result['incident_handoff_status']}\n")
+            handle.write(f"- unprocessed_source_runs: {len(result.get('unprocessed_source_runs', []))}\n")
             handle.write(f"- notification_due: {str(result['notification_due']).lower()}\n")
     return 0 if result.get("incident_handoff_status") == "accepted" else 1
 
