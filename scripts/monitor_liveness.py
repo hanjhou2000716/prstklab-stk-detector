@@ -37,6 +37,57 @@ class LivenessAuditError(RuntimeError):
     """A required GitHub API response could not be trusted."""
 
 
+class GitHubAPIHttpError(LivenessAuditError):
+    """A GitHub HTTP failure with safe request context for durable diagnostics."""
+
+    def __init__(
+        self, *, status_code: int, method: str, endpoint_class: str,
+        request_id: str, retry_count: int,
+    ) -> None:
+        self.status_code = status_code
+        self.method = method.upper()
+        self.endpoint_class = endpoint_class
+        self.request_id = request_id
+        self.retry_count = retry_count
+        super().__init__(f"monitor_liveness_api_http_{status_code}")
+
+    @property
+    def handoff_to_health(self) -> bool:
+        # A bounded read-side 404 is an operational degradation. The immutable
+        # result is handed to the independent health workflow, which owns the
+        # first/30-minute/recovery notification cadence.
+        return self.method == "GET" and self.status_code == 404
+
+    def diagnostic(self) -> dict[str, Any]:
+        return {
+            "method": self.method,
+            "endpoint_class": self.endpoint_class,
+            "http_status": self.status_code,
+            "request_id": self.request_id or "unavailable",
+            "retry_count": self.retry_count,
+        }
+
+
+def _safe_endpoint_class(url: str, *, api_url: str, repository: str) -> str:
+    path = urlsplit(url).path
+    api_path = urlsplit(api_url).path.rstrip("/")
+    prefix = f"{api_path}/repos/{repository}/".lstrip("/")
+    relative = path.lstrip("/")
+    if prefix and relative.startswith(prefix):
+        relative = relative[len(prefix):]
+    elif relative.startswith("repos/"):
+        return "repository"
+    if re.fullmatch(r"actions/workflows/[^/]+(?:/runs)?", relative):
+        return re.sub(r"actions/workflows/[^/]+", "actions/workflows/{workflow}", relative)
+    if re.fullmatch(r"actions/runs/\d+(?:/(?:jobs|artifacts))?", relative):
+        return re.sub(r"actions/runs/\d+", "actions/runs/{run_id}", relative)
+    if re.fullmatch(r"actions/artifacts/\d+/zip", relative):
+        return "actions/artifacts/{artifact_id}/zip"
+    if re.fullmatch(r"issues(?:/\d+(?:/comments)?)?", relative):
+        return re.sub(r"issues/\d+", "issues/{issue_number}", relative)
+    return "unclassified"
+
+
 def _parse_time(value: object) -> datetime | None:
     raw = str(value or "").strip()
     if not raw:
@@ -62,35 +113,57 @@ def _request_json(
     deadline_monotonic: float | None = None,
 ) -> Any:
     body = json.dumps(payload, separators=(",", ":")).encode() if payload is not None else None
-    request = Request(
-        path if path.startswith("https://") else f"{api_url.rstrip('/')}/repos/{repository}/{path.lstrip('/')}",
-        data=body,
-        method=method,
-        headers={
-            "Accept": "application/vnd.github+json",
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-            "X-GitHub-Api-Version": "2022-11-28",
-            "User-Agent": "PRStK-monitor-liveness-audit",
-        },
+    request_url = (
+        path if path.startswith("https://")
+        else f"{api_url.rstrip('/')}/repos/{repository}/{path.lstrip('/')}"
     )
-    try:
-        remaining = 15.0 if deadline_monotonic is None else deadline_monotonic - time.monotonic()
-        if remaining <= 0:
-            raise LivenessAuditError("monitor_liveness_audit_deadline_exceeded")
-        with urlopen(request, timeout=min(15.0, remaining)) as response:
-            if response_headers is not None:
-                response_headers["link"] = str(response.headers.get("Link") or "")
-            raw = response.read(1_000_001)
-            if len(raw) > 1_000_000:
-                raise LivenessAuditError("monitor_liveness_response_too_large")
-            if not raw:
-                return None
-            return json.loads(raw.decode("utf-8"))
-    except HTTPError as exc:
-        raise LivenessAuditError(f"monitor_liveness_api_http_{exc.code}") from exc
-    except (URLError, TimeoutError, UnicodeError, json.JSONDecodeError) as exc:
-        raise LivenessAuditError(f"monitor_liveness_api_{type(exc).__name__}") from exc
+    endpoint_class = _safe_endpoint_class(request_url, api_url=api_url, repository=repository)
+    for attempt in range(3):
+        request = Request(
+            request_url,
+            data=body,
+            method=method,
+            headers={
+                "Accept": "application/vnd.github+json",
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+                "X-GitHub-Api-Version": "2022-11-28",
+                "User-Agent": "PRStK-monitor-liveness-audit",
+            },
+        )
+        try:
+            remaining = 15.0 if deadline_monotonic is None else deadline_monotonic - time.monotonic()
+            if remaining <= 0:
+                raise LivenessAuditError("monitor_liveness_audit_deadline_exceeded")
+            with urlopen(request, timeout=min(15.0, remaining)) as response:
+                if response_headers is not None:
+                    response_headers["link"] = str(response.headers.get("Link") or "")
+                raw = response.read(1_000_001)
+                if len(raw) > 1_000_000:
+                    raise LivenessAuditError("monitor_liveness_response_too_large")
+                if not raw:
+                    return None
+                return json.loads(raw.decode("utf-8"))
+        except HTTPError as exc:
+            if exc.code == 404 and method.upper() == "GET" and attempt < 2:
+                remaining = 15.0 if deadline_monotonic is None else deadline_monotonic - time.monotonic()
+                delay = min(float(2 ** attempt), max(0.0, remaining))
+                exc.close()
+                if delay > 0:
+                    time.sleep(delay)
+                    continue
+            raw_request_id = str(exc.headers.get("X-GitHub-Request-Id") or "") if exc.headers else ""
+            request_id = raw_request_id if re.fullmatch(r"[A-Za-z0-9:-]{1,100}", raw_request_id) else ""
+            raise GitHubAPIHttpError(
+                status_code=exc.code,
+                method=method,
+                endpoint_class=endpoint_class,
+                request_id=request_id,
+                retry_count=attempt + 1,
+            ) from exc
+        except (URLError, TimeoutError, UnicodeError, json.JSONDecodeError) as exc:
+            raise LivenessAuditError(f"monitor_liveness_api_{type(exc).__name__}") from exc
+    raise LivenessAuditError("monitor_liveness_api_retry_exhausted")
 
 
 def _next_link(
