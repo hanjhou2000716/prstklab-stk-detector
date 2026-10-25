@@ -11,7 +11,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 import pytest
 
 import scripts.incident_reconciliation as incidents
-from scripts.monitor_liveness import GitHubAPIHttpError, LivenessAuditError
+from scripts.monitor_liveness import GitHubAPIHttpError, LivenessAuditError, _safe_endpoint_class
 
 
 def test_central_reconciliation_wakes_on_gmail_sync_completion():
@@ -80,11 +80,16 @@ def test_source_runs_cursor_advances_past_active_run_and_persists_it(monkeypatch
     assert [row["id"] for row in rows] == [11]
     assert cursor["created_at"] == "2026-10-24T03:55:00+00:00"
     assert cursor["run_id"] == 11
-    assert cursor["pending_runs"] == [{
+    assert cursor["pending_runs"][0] == {
         "run_id": 10, "workflow_id": workflow_id,
         "created_at": "2026-10-24T03:50:00+00:00", "attempt": 1,
         "head_sha": "a" * 40,
-    }]
+        "terminal_jobs_check": {
+            "status": "unverified",
+            "reason": "workflow_contract_unknown_for_fixed_sha",
+            "workflow_sha": "a" * 40,
+        },
+    }
     assert held is True
 
 
@@ -247,6 +252,179 @@ def test_stale_terminal_job_resolution_fails_closed_on_contract_mismatch(monkeyp
             deadline=incidents.time.monotonic() + 30,
             expected_jobs=frozenset({"monitor-admission", "monitor-send-deploy"}),
         )
+
+
+def test_newly_discovered_stale_run_is_probed_and_fixed_after_second_stable_read(monkeypatch):
+    workflow_id = 320209983
+    run_id = 39698088993
+    sha = "cc40ba0401362f6214b540c70b5e1aa3100d5773"
+    run = {
+        "id": run_id,
+        "workflow_id": workflow_id,
+        "run_attempt": 1,
+        "created_at": "2026-10-22T00:10:37Z",
+        "updated_at": "2026-10-22T00:10:48Z",
+        "status": "in_progress",
+        "head_branch": "main",
+        "head_sha": sha,
+        "head_repository": {"full_name": "owner/repo"},
+    }
+    # De-identified capture of the official Jobs API response. GitHub's job
+    # objects include runner/steps fields in production, but the contract uses
+    # only stable identity and terminal fields.
+    jobs = [
+        {
+            "id": 119560307175, "run_id": run_id, "run_attempt": 1,
+            "name": "monitor-admission", "status": "completed", "conclusion": "success",
+            "started_at": "2026-10-22T00:10:39Z", "completed_at": "2026-10-22T00:10:44Z",
+        },
+        {
+            "id": 119560351562, "run_id": run_id, "run_attempt": 1,
+            "name": "monitor-send-deploy", "status": "completed", "conclusion": "success",
+            "started_at": "2026-10-22T00:10:48Z", "completed_at": "2026-10-22T00:14:51Z",
+        },
+    ]
+    now = datetime(2026, 10, 25, 20, 0, tzinfo=UTC)
+
+    def call(cursor, observed_at):
+        def request(_api, _repo, _token, _method, path, *, response_headers=None, deadline_monotonic=None):
+            if path.startswith(f"actions/workflows/{workflow_id}/runs?"):
+                return {"total_count": 1, "workflow_runs": [dict(run)]}
+            if path.startswith(f"actions/runs/{run_id}/attempts/1/jobs?"):
+                return {"total_count": 2, "jobs": list(jobs)}
+            if path == f"actions/runs/{run_id}":
+                return dict(run)
+            raise AssertionError(f"Unexpected GitHub API path: {path}")
+
+        monkeypatch.setattr(incidents, "_request_json", request)
+        return incidents._workflow_runs_since(
+            path=".github/workflows/official-event-monitor.yml",
+            workflow_id=workflow_id, repository="owner/repo", api_url="https://api.github.com",
+            token="test-token", cursor=cursor, now=observed_at,
+            deadline=incidents.time.monotonic() + 30, repository_id=1309835643,
+        )
+
+    first_rows, first_cursor, first_held = call({
+        "mode": "backfill",
+        "window_start": "2026-10-22T00:00:00+00:00",
+        "window_end": "2026-10-22T05:59:59+00:00",
+        "created_at": "2026-10-22T00:00:00+00:00",
+        "run_id": 0,
+        "pending_runs": [],
+    }, now)
+    assert first_rows == []
+    assert first_held is True
+    first_pending = first_cursor["pending_runs"][0]
+    assert first_pending["terminal_jobs_check"]["status"] == "awaiting_confirmation"
+    assert first_pending["terminal_jobs_check"]["jobs"][1]["name"] == "monitor-send-deploy"
+
+    second_rows, second_cursor, second_held = call(first_cursor, now + timedelta(seconds=3))
+    assert len(second_rows) == 1
+    assert second_rows[0]["_incident_source_terminal_evidence"]["resolution"] == "stable_complete_jobs_snapshot"
+    assert second_cursor["pending_runs"][0]["terminal_jobs_check"]["status"] == "confirmed_complete"
+    assert second_held is True
+
+
+def test_terminal_job_observation_from_another_attempt_cannot_confirm_current_attempt(monkeypatch):
+    run_id = 39698088993
+    sha = "cc40ba0401362f6214b540c70b5e1aa3100d5773"
+    now = datetime(2026, 10, 25, 20, 0, tzinfo=UTC)
+    snapshot = {
+        "fingerprint": "b" * 64,
+        "job_ids": [1, 2],
+        "job_names": ["monitor-admission", "monitor-send-deploy"],
+        "jobs": [
+            {"completed_at": "2026-10-22T00:10:44+00:00"},
+            {"completed_at": "2026-10-22T00:14:51+00:00"},
+        ],
+        "all_completed": True,
+    }
+    monkeypatch.setattr(incidents, "_read_source_job_snapshot", lambda **_kwargs: snapshot)
+
+    observation, evidence, check = incidents._observe_terminal_jobs(
+        run={
+            "id": run_id,
+            "workflow_id": 320209983,
+            "run_attempt": 2,
+            "created_at": "2026-10-22T00:10:37Z",
+            "status": "in_progress",
+            "head_sha": sha,
+        },
+        path=".github/workflows/official-event-monitor.yml",
+        repository="owner/repo",
+        repository_id=1309835643,
+        api_url="https://api.github.com",
+        token="test-token",
+        deadline=incidents.time.monotonic() + 30,
+        now=now,
+        previous={
+            "run_id": run_id,
+            "attempt": 1,
+            "fingerprint": snapshot["fingerprint"],
+            "observed_at": (now - timedelta(seconds=3)).isoformat(),
+        },
+    )
+
+    assert observation == {
+        "run_id": run_id,
+        "attempt": 2,
+        "fingerprint": snapshot["fingerprint"],
+        "observed_at": now.isoformat(),
+    }
+    assert evidence is None
+    assert check["status"] == "awaiting_confirmation"
+
+
+def test_stale_job_probe_404_is_durable_and_reports_safe_endpoint(monkeypatch):
+    workflow_id = 320209983
+    run_id = 39698088993
+    run = {
+        "id": run_id, "workflow_id": workflow_id, "run_attempt": 1,
+        "created_at": "2026-10-22T00:10:37Z", "status": "in_progress",
+        "head_branch": "main", "head_sha": "cc40ba0401362f6214b540c70b5e1aa3100d5773",
+        "head_repository": {"full_name": "owner/repo"},
+    }
+
+    def request(_api, _repo, _token, _method, path, *, response_headers=None, deadline_monotonic=None):
+        if path == f"actions/runs/{run_id}":
+            return dict(run)
+        if path.startswith(f"actions/runs/{run_id}/attempts/1/jobs?"):
+            raise GitHubAPIHttpError(
+                status_code=404, method="GET",
+                endpoint_class="actions/runs/{run_id}/attempts/{attempt}/jobs",
+                request_id="SAFE:123", retry_count=3,
+            )
+        if path.startswith(f"actions/workflows/{workflow_id}/runs?"):
+            return {"total_count": 0, "workflow_runs": []}
+        raise AssertionError(f"Unexpected GitHub API path: {path}")
+
+    monkeypatch.setattr(incidents, "_request_json", request)
+    _rows, cursor, held = incidents._workflow_runs_since(
+        path=".github/workflows/official-event-monitor.yml",
+        workflow_id=workflow_id, repository="owner/repo", api_url="https://api.github.com",
+        token="test-token", cursor={
+            "mode": "live", "created_at": "2026-10-22T00:00:00+00:00", "run_id": 0,
+            "pending_runs": [{
+                "run_id": run_id, "workflow_id": workflow_id,
+                "created_at": "2026-10-22T00:10:37+00:00", "attempt": 1,
+                "head_sha": run["head_sha"],
+            }],
+        }, now=datetime(2026, 10, 25, 20, 0, tzinfo=UTC),
+        deadline=incidents.time.monotonic() + 30, repository_id=1309835643,
+    )
+
+    check = cursor["pending_runs"][0]["terminal_jobs_check"]
+    assert held is True
+    assert check["status"] == "unavailable"
+    assert check["failure_evidence"]["endpoint_class"] == "actions/runs/{run_id}/attempts/{attempt}/jobs"
+    assert check["failure_evidence"]["http_status"] == 404
+
+
+def test_attempt_jobs_endpoint_class_is_safe_and_identifiable():
+    assert _safe_endpoint_class(
+        "https://api.github.com/repos/owner/repo/actions/runs/39698088993/attempts/1/jobs",
+        api_url="https://api.github.com", repository="owner/repo",
+    ) == "actions/runs/{run_id}/attempts/{attempt}/jobs"
 
 
 def test_stale_terminal_job_snapshot_waits_for_active_contract_job(monkeypatch):
@@ -606,6 +784,27 @@ def test_main_keeps_reconciliation_failures_nonzero(tmp_path, monkeypatch):
     assert saved["incident_handoff_status"] == "failed"
     assert saved["diagnostic_complete"] is False
     assert saved["failure_reason"] == "source_artifact_identity_invalid"
+
+
+def test_main_preserves_safe_unexpected_exception_stage_in_result(tmp_path, monkeypatch):
+    result_path = tmp_path / "incident-reconciliation.json"
+
+    def fail_reconcile(*, result_path, evidence_directory):
+        raise RuntimeError("response body must not be copied to evidence")
+
+    monkeypatch.setattr(incidents, "reconcile", fail_reconcile)
+    monkeypatch.setattr(incidents.sys, "argv", ["scripts.incident_reconciliation"])
+    monkeypatch.setenv("INCIDENT_RECONCILIATION_RESULT_PATH", str(result_path))
+    monkeypatch.setenv("INCIDENT_EVIDENCE_DIR", str(tmp_path / "evidence"))
+    monkeypatch.setenv("GITHUB_RUN_ID", "40183001117")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "1")
+    monkeypatch.setenv("GITHUB_SHA", "a" * 40)
+
+    assert incidents.main() == 1
+    saved = json.loads(result_path.read_text(encoding="utf-8"))
+    assert saved["failure_reason"] == "incident_reconciliation_unexpected_RuntimeError"
+    assert saved["failure_stage"] == "reconcile"
+    assert "response body" not in json.dumps(saved)
 
 
 def test_main_hands_off_bounded_get_404_with_durable_identity_bound_result(tmp_path, monkeypatch, capsys):
@@ -1079,6 +1278,80 @@ def test_missing_artifact_without_trusted_completion_time_keeps_cursor_blocked()
     result = incidents._settled_missing_artifact_resolution(
         {"diagnostic_complete": False, "failure_reason": "incident_artifact_missing"},
         {"status": "completed", "created_at": (now - timedelta(days=1)).isoformat()},
+        now,
+    )
+
+    assert result is None
+
+
+@pytest.mark.parametrize(
+    ("completion_age", "expected"),
+    [
+        (timedelta(minutes=29, seconds=59), None),
+        (timedelta(minutes=30), "advance_with_unknown"),
+    ],
+)
+def test_terminal_job_evidence_settles_missing_artifact_for_stuck_run(completion_age, expected):
+    now = datetime(2026, 10, 26, 0, 0, tzinfo=UTC)
+    completed_at = now - completion_age
+    sha = "a" * 40
+    result = incidents._settled_missing_artifact_resolution(
+        {
+            "status": "evidence_unavailable",
+            "diagnostic_complete": False,
+            "failure_reason": "incident_artifact_missing",
+        },
+        {
+            "id": 39698088993,
+            "run_attempt": 1,
+            "head_sha": sha,
+            "status": "in_progress",
+            "created_at": (completed_at - timedelta(minutes=5)).isoformat(),
+            "_incident_source_terminal_evidence": {
+                "schema_version": "source-run-terminal-jobs-v1",
+                "resolution": "stable_complete_jobs_snapshot",
+                "run_id": 39698088993,
+                "attempt": 1,
+                "workflow_sha": sha,
+                "job_fingerprint": "b" * 64,
+                "terminal_jobs_completed_at": completed_at.isoformat(),
+            },
+        },
+        now,
+    )
+
+    if expected is None:
+        assert result is None
+    else:
+        assert result is not None
+        assert result["cursor_resolution"] == expected
+        assert result["source_completed_at"] == completed_at.isoformat()
+
+
+def test_terminal_job_evidence_cannot_settle_another_attempt_or_sha():
+    now = datetime(2026, 10, 26, 0, 0, tzinfo=UTC)
+    completed_at = now - timedelta(hours=1)
+    sha = "a" * 40
+    run = {
+        "id": 39698088993,
+        "run_attempt": 2,
+        "head_sha": sha,
+        "status": "in_progress",
+        "created_at": (completed_at - timedelta(minutes=5)).isoformat(),
+        "_incident_source_terminal_evidence": {
+            "schema_version": "source-run-terminal-jobs-v1",
+            "resolution": "stable_complete_jobs_snapshot",
+            "run_id": 39698088993,
+            "attempt": 1,
+            "workflow_sha": sha,
+            "job_fingerprint": "b" * 64,
+            "terminal_jobs_completed_at": completed_at.isoformat(),
+        },
+    }
+
+    result = incidents._settled_missing_artifact_resolution(
+        {"diagnostic_complete": False, "failure_reason": "incident_artifact_missing"},
+        run,
         now,
     )
 

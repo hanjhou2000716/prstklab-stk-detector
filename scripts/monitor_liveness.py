@@ -79,8 +79,9 @@ def _safe_endpoint_class(url: str, *, api_url: str, repository: str) -> str:
         return "repository"
     if re.fullmatch(r"actions/workflows/[^/]+(?:/runs)?", relative):
         return re.sub(r"actions/workflows/[^/]+", "actions/workflows/{workflow}", relative)
-    if re.fullmatch(r"actions/runs/\d+(?:/(?:jobs|artifacts))?", relative):
-        return re.sub(r"actions/runs/\d+", "actions/runs/{run_id}", relative)
+    if re.fullmatch(r"actions/runs/\d+(?:/attempts/\d+/jobs|/(?:jobs|artifacts))?", relative):
+        relative = re.sub(r"actions/runs/\d+", "actions/runs/{run_id}", relative)
+        return re.sub(r"/attempts/\d+/jobs$", "/attempts/{attempt}/jobs", relative)
     if re.fullmatch(r"actions/artifacts/\d+/zip", relative):
         return "actions/artifacts/{artifact_id}/zip"
     if re.fullmatch(r"issues(?:/\d+(?:/comments)?)?", relative):

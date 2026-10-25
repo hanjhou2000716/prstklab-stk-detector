@@ -94,12 +94,30 @@ def _settled_missing_artifact_resolution(
     if (
         source_result.get("diagnostic_complete") is not False
         or source_result.get("failure_reason") != "incident_artifact_missing"
-        or str(run.get("status") or "").casefold() != "completed"
     ):
         return None
-    completed_at = _parse_time(run.get("completed_at")) or _parse_time(run.get("updated_at"))
     created_at = _parse_time(run.get("created_at"))
-    if completed_at is None or (created_at is not None and completed_at < created_at):
+    if created_at is None:
+        return None
+    if str(run.get("status") or "").casefold() == "completed":
+        completed_at = _parse_time(run.get("completed_at")) or _parse_time(run.get("updated_at"))
+    else:
+        evidence = run.get("_incident_source_terminal_evidence")
+        run_id = _safe_int(run.get("id"))
+        attempt = _safe_int(run.get("run_attempt"))
+        sha = str(run.get("head_sha") or "").lower()
+        if (
+            not isinstance(evidence, dict)
+            or evidence.get("schema_version") != "source-run-terminal-jobs-v1"
+            or evidence.get("resolution") != "stable_complete_jobs_snapshot"
+            or _safe_int(evidence.get("run_id")) != run_id
+            or _safe_int(evidence.get("attempt")) != attempt
+            or str(evidence.get("workflow_sha") or "").lower() != sha
+            or not re.fullmatch(r"[0-9a-f]{64}", str(evidence.get("job_fingerprint") or ""))
+        ):
+            return None
+        completed_at = _parse_time(evidence.get("terminal_jobs_completed_at"))
+    if completed_at is None or completed_at < created_at or completed_at > now.astimezone(UTC):
         return None
     settled_at = now.astimezone(UTC) - MISSING_ARTIFACT_SETTLE_WINDOW
     if completed_at > settled_at:
@@ -493,6 +511,121 @@ def _source_workflow_id(
     return workflow_id
 
 
+def _observe_terminal_jobs(
+    *, run: dict[str, Any], path: str, repository: str, repository_id: int,
+    api_url: str, token: str, deadline: float, now: datetime,
+    previous: object,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None, dict[str, Any]]:
+    """Classify a stale run from its fixed-SHA workflow contract and jobs API.
+
+    The run-level status is not authoritative for a small set of verified old
+    GitHub runs whose protected jobs are already terminal. Keep unknown or
+    incomplete evidence pending; only a stable two-read snapshot may resolve it.
+    """
+    run_id = _safe_int(run.get("id"))
+    attempt = _safe_int(run.get("run_attempt"))
+    workflow_id = _safe_int(run.get("workflow_id"))
+    created_at = _parse_time(run.get("created_at"))
+    sha = str(run.get("head_sha") or "").lower()
+    status = str(run.get("status") or "").casefold()
+    observed_at = now.astimezone(UTC)
+    if not run_id or not attempt or not workflow_id or created_at is None:
+        raise LivenessAuditError("incident_source_pending_jobs_identity_invalid")
+    if status != "in_progress" or created_at > observed_at - STALE_PENDING_JOB_CHECK_AFTER:
+        if isinstance(previous, dict) and status != "in_progress":
+            return None, None, {
+                "status": "unverified",
+                "reason": "run_state_changed_after_terminal_observation",
+                "run_id": run_id,
+                "attempt": attempt,
+                "workflow_sha": sha,
+                "observed_run_status": status,
+            }
+        if status != "in_progress" and created_at <= observed_at - STALE_PENDING_JOB_CHECK_AFTER:
+            return None, None, {
+                "status": "unverified",
+                "reason": "stale_run_status_not_supported_for_terminal_probe",
+                "run_id": run_id,
+                "attempt": attempt,
+                "workflow_sha": sha,
+                "observed_run_status": status,
+            }
+        return None, None, {
+            "status": "not_eligible",
+            "reason": "run_not_stale_in_progress",
+        }
+    contract = SOURCE_TERMINAL_JOB_CONTRACTS.get((path, sha))
+    if contract is None:
+        return None, None, {
+            "status": "unverified",
+            "reason": "workflow_contract_unknown_for_fixed_sha",
+            "workflow_sha": sha,
+        }
+    try:
+        snapshot = _read_source_job_snapshot(
+            run=run, repository=repository, repository_id=repository_id,
+            api_url=api_url, token=token, deadline=deadline,
+            expected_jobs=contract["jobs"],
+        )
+    except LivenessAuditError as exc:
+        return None, None, {
+            "status": "unavailable",
+            "reason": str(exc)[:160],
+            "failure_stage": "terminal_job_snapshot",
+            "failure_evidence": exc.diagnostic() if isinstance(exc, GitHubAPIHttpError) else {},
+        }
+
+    previous_at = _parse_time(previous.get("observed_at")) if isinstance(previous, dict) else None
+    same_snapshot = (
+        isinstance(previous, dict)
+        and _safe_int(previous.get("run_id")) == run_id
+        and _safe_int(previous.get("attempt")) == attempt
+        and previous.get("fingerprint") == snapshot["fingerprint"]
+        and previous_at is not None
+        and previous_at <= observed_at - TERMINAL_JOB_SNAPSHOT_CONFIRMATION
+    )
+    observation = {
+        "run_id": run_id,
+        "attempt": attempt,
+        "fingerprint": snapshot["fingerprint"],
+        "observed_at": observed_at.isoformat(),
+    }
+    check = {
+        "status": "awaiting_confirmation" if snapshot["all_completed"] else "jobs_not_terminal",
+        "workflow_contract": contract["contract"],
+        "workflow_sha": sha,
+        "run_id": run_id,
+        "attempt": attempt,
+        "job_ids": snapshot["job_ids"],
+        "jobs": snapshot["jobs"],
+        "fingerprint": snapshot["fingerprint"],
+        "observed_at": observed_at.isoformat(),
+    }
+    if not snapshot["all_completed"]:
+        return observation, None, check
+    if not same_snapshot or previous_at is None:
+        return observation, None, check
+    evidence = {
+        "schema_version": "source-run-terminal-jobs-v1",
+        "resolution": "stable_complete_jobs_snapshot",
+        "workflow_contract": contract["contract"],
+        "workflow_sha": sha,
+        "run_id": run_id,
+        "attempt": attempt,
+        "job_fingerprint": snapshot["fingerprint"],
+        "job_ids": snapshot["job_ids"],
+        "job_names": snapshot["job_names"],
+        "terminal_jobs_completed_at": max(
+            row["completed_at"] for row in snapshot["jobs"]
+        ),
+        "first_observed_at": previous_at.isoformat(),
+        "confirmed_at": observed_at.isoformat(),
+        "workflow_run_status": status,
+    }
+    check["status"] = "confirmed_complete"
+    return observation, evidence, check
+
+
 def _workflow_runs_since(
     *, path: str, workflow_id: int, repository: str, api_url: str, token: str,
     cursor: dict[str, Any], now: datetime, deadline: float, repository_id: int,
@@ -532,6 +665,7 @@ def _workflow_runs_since(
     collected: dict[tuple[int, int], dict[str, Any]] = {}
     observed_run_ids: set[int] = set()
     pending: dict[int, dict[str, Any]] = {}
+    pending_probe_diagnostics: dict[int, dict[str, Any]] = {}
     prior_pending = cursor.get("pending_runs", [])
     if not isinstance(prior_pending, list):
         raise LivenessAuditError("incident_source_pending_runs_invalid")
@@ -568,57 +702,31 @@ def _workflow_runs_since(
             raise LivenessAuditError("incident_source_pending_run_identity_changed")
         terminal_evidence: dict[str, Any] | None = None
         terminal_observation: dict[str, Any] | None = None
+        terminal_check: dict[str, Any] | None = None
         if str(run.get("status") or "").casefold() == "completed":
             run["_incident_source_origin"] = "pending"
             collected[(pending_id, attempt)] = run
-        elif (
-            str(run.get("status") or "").casefold() == "in_progress"
-            and created_at <= now.astimezone(UTC) - STALE_PENDING_JOB_CHECK_AFTER
-        ):
-            contract = SOURCE_TERMINAL_JOB_CONTRACTS.get((path, sha))
-            if contract is not None:
-                snapshot = _read_source_job_snapshot(
-                    run=run, repository=repository, repository_id=repository_id,
-                    api_url=api_url, token=token, deadline=deadline,
-                    expected_jobs=contract["jobs"],
-                )
-                if snapshot["all_completed"]:
-                    previous = item.get("terminal_jobs_observation")
-                    previous_at = _parse_time(previous.get("observed_at")) if isinstance(previous, dict) else None
-                    same_snapshot = (
-                        isinstance(previous, dict)
-                        and previous.get("fingerprint") == snapshot["fingerprint"]
-                        and previous_at is not None
-                        and previous_at <= now.astimezone(UTC) - TERMINAL_JOB_SNAPSHOT_CONFIRMATION
-                    )
-                    terminal_observation = {
-                        "fingerprint": snapshot["fingerprint"],
-                        "observed_at": now.astimezone(UTC).isoformat(),
-                    }
-                    if same_snapshot and previous_at is not None:
-                        terminal_evidence = {
-                            "schema_version": "source-run-terminal-jobs-v1",
-                            "resolution": "stable_complete_jobs_snapshot",
-                            "workflow_contract": contract["contract"],
-                            "workflow_sha": sha,
-                            "run_id": pending_id,
-                            "attempt": attempt,
-                            "job_fingerprint": snapshot["fingerprint"],
-                            "job_ids": snapshot["job_ids"],
-                            "job_names": snapshot["job_names"],
-                            "first_observed_at": previous_at.isoformat(),
-                            "confirmed_at": now.astimezone(UTC).isoformat(),
-                            "workflow_run_status": str(run.get("status") or "").casefold(),
-                        }
-                        run["_incident_source_origin"] = "pending"
-                        run["_incident_source_terminal_evidence"] = terminal_evidence
-                        collected[(pending_id, attempt)] = run
+        else:
+            terminal_observation, terminal_evidence, terminal_check = _observe_terminal_jobs(
+                run=run, path=path, repository=repository, repository_id=repository_id,
+                api_url=api_url, token=token, deadline=deadline, now=now,
+                previous=item.get("terminal_jobs_observation"),
+            )
+            if terminal_evidence is not None:
+                run["_incident_source_origin"] = "pending"
+                run["_incident_source_terminal_evidence"] = terminal_evidence
+                collected[(pending_id, attempt)] = run
         pending[pending_id] = {
             "run_id": pending_id, "workflow_id": workflow_id,
             "created_at": created_at.isoformat(), "attempt": attempt, "head_sha": sha,
         }
         if terminal_observation is not None:
             pending[pending_id]["terminal_jobs_observation"] = terminal_observation
+        elif isinstance(item.get("terminal_jobs_observation"), dict):
+            pending[pending_id]["terminal_jobs_observation"] = item["terminal_jobs_observation"]
+        if terminal_check is not None and terminal_check.get("status") != "not_eligible":
+            pending[pending_id]["terminal_jobs_check"] = terminal_check
+            pending_probe_diagnostics[pending_id] = terminal_check
         if len(pending) > 100:
             raise LivenessAuditError("incident_source_pending_runs_limit_exceeded")
     expected_total: int | None = None
@@ -671,8 +779,25 @@ def _workflow_runs_since(
                     "created_at": created_at.isoformat(), "attempt": attempt, "head_sha": sha,
                 }
                 existing_pending = pending.get(run_id)
-                if isinstance(existing_pending, dict) and isinstance(existing_pending.get("terminal_jobs_observation"), dict):
-                    pending_row["terminal_jobs_observation"] = existing_pending["terminal_jobs_observation"]
+                if isinstance(existing_pending, dict):
+                    for key in ("terminal_jobs_observation", "terminal_jobs_check"):
+                        if isinstance(existing_pending.get(key), dict):
+                            pending_row[key] = existing_pending[key]
+                else:
+                    observation, evidence, check = _observe_terminal_jobs(
+                        run=row, path=path, repository=repository, repository_id=repository_id,
+                        api_url=api_url, token=token, deadline=deadline, now=now,
+                        previous=None,
+                    )
+                    if observation is not None:
+                        pending_row["terminal_jobs_observation"] = observation
+                    if check.get("status") != "not_eligible":
+                        pending_row["terminal_jobs_check"] = check
+                        pending_probe_diagnostics[run_id] = check
+                    if evidence is not None:
+                        row["_incident_source_terminal_evidence"] = evidence
+                        row["_incident_source_origin"] = "pending"
+                        collected[(run_id, attempt)] = row
                 pending[run_id] = pending_row
                 continue
             previous = collected.get((run_id, attempt))
@@ -683,7 +808,14 @@ def _workflow_runs_since(
                 )
                 if any(previous.get(field) != row.get(field) for field in stable_fields):
                     raise LivenessAuditError("incident_source_run_changed_during_read")
-            row["_incident_source_origin"] = "scan"
+                terminal_evidence = previous.get("_incident_source_terminal_evidence")
+                if isinstance(terminal_evidence, dict):
+                    row["_incident_source_terminal_evidence"] = terminal_evidence
+                    row["_incident_source_origin"] = "pending"
+                elif previous.get("_incident_source_origin") == "pending":
+                    row["_incident_source_origin"] = "pending"
+            if row.get("_incident_source_origin") != "pending":
+                row["_incident_source_origin"] = "scan"
             collected[(run_id, attempt)] = row
         next_url = _next_link(
             headers.get("link", ""), api_url=api_url,
@@ -721,6 +853,9 @@ def _workflow_runs_since(
         "created_at": cursor_time.isoformat(),
         "run_id": cursor_id,
         "pending_runs": sorted(pending.values(), key=lambda item: (item["created_at"], item["run_id"])),
+        "pending_run_diagnostics": [
+            pending_probe_diagnostics[key] for key in sorted(pending_probe_diagnostics)
+        ],
         "scan_complete": scan_complete,
     }
     if mode == "backfill" and window_start is not None and window_end is not None:
@@ -846,6 +981,17 @@ def _read_source_job_snapshot(
         "fingerprint": fingerprint,
         "job_ids": [row["id"] for row in ordered],
         "job_names": [row["name"] for row in ordered],
+        "jobs": [
+            {
+                "id": row["id"],
+                "name": row["name"],
+                "status": row["status"],
+                "conclusion": row["conclusion"],
+                "started_at": row["started_at"],
+                "completed_at": row["completed_at"],
+            }
+            for row in ordered
+        ],
         "all_completed": all(row["status"] == "completed" for row in ordered),
     }
 
@@ -1218,6 +1364,8 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
                 "diagnostic_complete": False,
                 "incident_active": False,
                 "failure_reason": str(exc)[:180],
+                "failure_stage": "source_evidence_read",
+                "failure_evidence": exc.diagnostic() if isinstance(exc, GitHubAPIHttpError) else {},
             }
         settled_gap = _settled_missing_artifact_resolution(source_result, run, now)
         if settled_gap is not None:
@@ -1314,6 +1462,16 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
                 row for row in confirmations if isinstance(row, dict)
             )
     notification_reasons = _notification_reasons(results)
+    pending_run_diagnostics = [
+        {"source_workflow": SOURCE_WORKFLOWS[path], **diagnostic}
+        for path, cursor in discovered_cursors.items()
+        for diagnostic in cursor.get("pending_run_diagnostics", [])
+        if isinstance(diagnostic, dict)
+    ]
+    unresolved_pending_diagnostics = [
+        item for item in pending_run_diagnostics
+        if item.get("status") != "confirmed_complete"
+    ]
     confirmations_by_issue: dict[int, dict[str, str | int]] = {}
     for row in cadence_confirmations:
         number = _safe_int(row.get("issue_number"))
@@ -1339,11 +1497,19 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
         "source_run_ids": sorted({str(item.get("source_run_id")) for item in results if item.get("source_run_id")}),
         "business_status": (
             "degraded"
-            if any(item.get("status") in {"stalled", "degraded", "evidence_unavailable"} or item.get("incident_active") for item in results)
+            if unresolved_pending_diagnostics or any(
+                item.get("status") in {"stalled", "degraded", "evidence_unavailable"}
+                or item.get("incident_active") for item in results
+            )
             else "healthy" if diagnostic_complete else "unknown"
         ),
         "diagnostic_complete": diagnostic_complete,
         "coverage_status": "complete" if coverage_complete else "incomplete",
+        "failure_reason": (
+            "source_pending_terminal_state_unverified"
+            if unresolved_pending_diagnostics and not diagnostic_complete else ""
+        ),
+        "pending_run_diagnostics": pending_run_diagnostics,
         "unprocessed_source_runs": [
             {"workflow": row[3], "run_id": row[1], "attempt": _safe_int(row[4].get("run_attempt")) or 1}
             for row in deferred_rows
@@ -1419,6 +1585,7 @@ def main() -> int:
             "incident_handoff_status": "incomplete" if handoff else "failed",
             "notification_due": False,
             "failure_reason": str(exc)[:200],
+            "failure_stage": "github_api_read" if isinstance(exc, GitHubAPIHttpError) else "reconciliation",
             "failure_evidence": exc.diagnostic() if isinstance(exc, GitHubAPIHttpError) else {},
             "observed_at": datetime.now(UTC).isoformat(),
         }
@@ -1448,6 +1615,34 @@ def main() -> int:
         # independent health workflow. Its issue cadence owns notifications;
         # all other errors keep the native failure email.
         return 0 if handoff else 1
+    except Exception as exc:
+        run_id = os.environ.get("GITHUB_RUN_ID", "")
+        attempt = _safe_int(os.environ.get("GITHUB_RUN_ATTEMPT", ""))
+        sha = os.environ.get("GITHUB_SHA", "").lower()
+        result = {
+            "schema_version": "incident-reconciliation-v1",
+            "consumer_run_id": run_id[:32],
+            "consumer_attempt": attempt,
+            "consumer_sha": sha[:40] if re.fullmatch(r"[0-9a-f]{40}", sha) else "",
+            "business_status": "unknown",
+            "diagnostic_complete": False,
+            "coverage_status": "incomplete",
+            "incident_handoff_status": "failed",
+            "notification_due": False,
+            "failure_reason": f"incident_reconciliation_unexpected_{type(exc).__name__}",
+            "failure_stage": "reconcile",
+            "observed_at": datetime.now(UTC).isoformat(),
+        }
+        try:
+            _write_json_atomic(path, result)
+        except OSError as write_error:
+            print(
+                f"incident_reconciliation_result_persistence_failed:{type(write_error).__name__}",
+                file=sys.stderr,
+            )
+            return 1
+        print(f"incident_reconciliation_failed:{result['failure_reason']}", file=sys.stderr)
+        return 1
     print(json.dumps(result, sort_keys=True, separators=(",", ":")))
     summary = os.environ.get("GITHUB_STEP_SUMMARY", "")
     if summary:
