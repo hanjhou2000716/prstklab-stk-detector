@@ -1,5 +1,7 @@
+import io
 import json
 from datetime import UTC, datetime, timedelta
+from urllib.error import HTTPError
 
 import pytest
 
@@ -13,6 +15,99 @@ def _run(run_id: int, created_at: datetime, *, status: str = "queued") -> dict[s
         "created_at": created_at.isoformat(),
         "status": status,
     }
+
+
+def test_github_get_404_retries_within_bound_then_succeeds(monkeypatch):
+    calls = 0
+    delays: list[float] = []
+
+    class Response:
+        headers = {}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self, _limit):
+            return b'{"ok":true}'
+
+    def open_url(request, *, timeout):
+        nonlocal calls
+        calls += 1
+        assert timeout > 0
+        if calls == 1:
+            raise HTTPError(request.full_url, 404, "not visible yet", {}, io.BytesIO())
+        return Response()
+
+    monkeypatch.setattr(monitor_liveness, "urlopen", open_url)
+    monkeypatch.setattr(monitor_liveness.time, "sleep", delays.append)
+
+    result = monitor_liveness._request_json(
+        "https://api.github.com", "owner/repo", "secret", "GET",
+        "actions/runs/123/jobs?per_page=10",
+    )
+
+    assert result == {"ok": True}
+    assert calls == 2
+    assert delays == [1.0]
+
+
+def test_github_get_404_exhaustion_has_safe_diagnostic_and_health_handoff(monkeypatch):
+    calls = 0
+    delays: list[float] = []
+
+    def open_url(request, *, timeout):
+        nonlocal calls
+        calls += 1
+        assert timeout > 0
+        raise HTTPError(
+            request.full_url, 404, "not found", {"X-GitHub-Request-Id": "ABC:123"}, io.BytesIO(b"private"),
+        )
+
+    monkeypatch.setattr(monitor_liveness, "urlopen", open_url)
+    monkeypatch.setattr(monitor_liveness.time, "sleep", delays.append)
+
+    with pytest.raises(monitor_liveness.GitHubAPIHttpError) as captured:
+        monitor_liveness._request_json(
+            "https://api.github.com", "owner/repo", "secret", "GET",
+            "actions/runs/123/jobs?cursor=private-value",
+        )
+
+    error = captured.value
+    assert error.handoff_to_health is True
+    assert error.retry_count == 3
+    assert calls == 3
+    assert delays == [1.0, 2.0]
+    assert error.diagnostic() == {
+        "method": "GET",
+        "endpoint_class": "actions/runs/{run_id}/jobs",
+        "http_status": 404,
+        "request_id": "ABC:123",
+        "retry_count": 3,
+    }
+    assert "private-value" not in repr(error.diagnostic())
+    assert "secret" not in repr(error.diagnostic())
+
+
+def test_github_non_get_404_is_not_retried_or_handed_off(monkeypatch):
+    calls = 0
+
+    def open_url(request, *, timeout):
+        nonlocal calls
+        calls += 1
+        raise HTTPError(request.full_url, 404, "not found", {}, io.BytesIO())
+
+    monkeypatch.setattr(monitor_liveness, "urlopen", open_url)
+
+    with pytest.raises(monitor_liveness.GitHubAPIHttpError) as captured:
+        monitor_liveness._request_json(
+            "https://api.github.com", "owner/repo", "secret", "PATCH", "issues/123", {"state": "closed"},
+        )
+
+    assert calls == 1
+    assert captured.value.handoff_to_health is False
 
 
 def test_unstarted_job_with_populated_started_at_opens_one_incident(monkeypatch):
