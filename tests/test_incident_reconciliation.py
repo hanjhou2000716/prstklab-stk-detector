@@ -9,7 +9,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 import pytest
 
 import scripts.incident_reconciliation as incidents
-from scripts.monitor_liveness import LivenessAuditError
+from scripts.monitor_liveness import GitHubAPIHttpError, LivenessAuditError
 
 
 def test_source_run_identity_is_bound_to_main_and_same_repository():
@@ -205,6 +205,45 @@ def test_main_keeps_reconciliation_failures_nonzero(tmp_path, monkeypatch):
     assert saved["incident_handoff_status"] == "failed"
     assert saved["diagnostic_complete"] is False
     assert saved["failure_reason"] == "source_artifact_identity_invalid"
+
+
+def test_main_hands_off_bounded_get_404_with_durable_identity_bound_result(tmp_path, monkeypatch, capsys):
+    result_path = tmp_path / "incident-reconciliation.json"
+    output_path = tmp_path / "github-output.txt"
+    summary_path = tmp_path / "step-summary.md"
+
+    def fail_reconcile(*, result_path, evidence_directory):
+        raise GitHubAPIHttpError(
+            status_code=404, method="GET", endpoint_class="actions/runs/{run_id}",
+            request_id="ABC:123", retry_count=3,
+        )
+
+    monkeypatch.setattr(incidents, "reconcile", fail_reconcile)
+    monkeypatch.setattr(incidents.sys, "argv", ["scripts.incident_reconciliation"])
+    monkeypatch.setenv("INCIDENT_RECONCILIATION_RESULT_PATH", str(result_path))
+    monkeypatch.setenv("GITHUB_RUN_ID", "40183001117")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "2")
+    monkeypatch.setenv("GITHUB_SHA", "a" * 40)
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output_path))
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary_path))
+
+    assert incidents.main() == 0
+
+    saved = json.loads(result_path.read_text(encoding="utf-8"))
+    assert saved["consumer_run_id"] == "40183001117"
+    assert saved["consumer_attempt"] == 2
+    assert saved["consumer_sha"] == "a" * 40
+    assert saved["business_status"] == "degraded"
+    assert saved["diagnostic_complete"] is False
+    assert saved["coverage_status"] == "incomplete"
+    assert saved["incident_handoff_status"] == "incomplete"
+    assert saved["failure_reason"] == "monitor_liveness_api_http_404"
+    assert saved["failure_evidence"]["endpoint_class"] == "actions/runs/{run_id}"
+    assert saved["failure_evidence"]["request_id"] == "ABC:123"
+    assert "notification_due=false" in output_path.read_text(encoding="utf-8")
+    assert "business_status=degraded" in output_path.read_text(encoding="utf-8")
+    assert "alert owner: independent central health workflow" in summary_path.read_text(encoding="utf-8")
+    assert "incident_reconciliation_failed:monitor_liveness_api_http_404" in capsys.readouterr().err
 
 
 def test_download_artifact_verifies_run_sha_and_bounded_zip_member(monkeypatch):
