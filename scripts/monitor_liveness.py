@@ -100,7 +100,7 @@ def _next_link(
     expected_path: str | tuple[str, ...],
     expected_page: int,
     per_page: int = PAGE_SIZE,
-    expected_query: Mapping[str, list[str]] | None = None,
+    expected_query: Mapping[str, str | list[str]] | None = None,
 ) -> str | None:
     matches = re.findall(r"<([^>]+)>\s*;\s*rel=\"([^\"]+)\"", link_header)
     next_urls = [url for url, relation in matches if relation == "next"]
@@ -127,7 +127,10 @@ def _next_link(
             f"host={safe_host};path={safe_path}"
         )
     query = parse_qs(parsed.query, keep_blank_values=True)
-    expected = {key: list(values) for key, values in (expected_query or {}).items()}
+    expected = {
+        key: [values] if isinstance(values, str) else list(values)
+        for key, values in (expected_query or {}).items()
+    }
     expected.update({"page": [str(expected_page)], "per_page": [str(per_page)]})
     if query != expected:
         raise LivenessAuditError(

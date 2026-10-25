@@ -4,6 +4,7 @@ import io
 import json
 import zipfile
 from datetime import UTC, datetime
+from urllib.parse import parse_qs, urlencode, urlsplit
 
 import pytest
 
@@ -74,6 +75,71 @@ def test_source_runs_cursor_advances_past_active_run_and_persists_it(monkeypatch
         "head_sha": "a" * 40,
     }]
     assert held is True
+
+
+def test_official_monitor_backfill_accepts_github_numeric_repo_link(monkeypatch):
+    workflow_id = 320209983
+    path = ".github/workflows/official-event-monitor.yml"
+    now = datetime(2026, 10, 21, 6, 30, tzinfo=UTC)
+    created_filter = "2026-10-21T00:00:00Z..2026-10-21T05:59:59Z"
+    rows = [
+        {
+            "id": 100 + index,
+            "workflow_id": workflow_id,
+            "created_at": f"2026-10-21T01:{index:02d}:00Z",
+            "head_branch": "main",
+            "head_sha": f"{index + 1:040x}",
+            "head_repository": {"full_name": "owner/repo"},
+            "run_attempt": 1,
+            "status": "completed",
+            "conclusion": "success",
+        }
+        for index in range(12)
+    ]
+    calls: list[str] = []
+
+    def request(_api, _repo, _token, _method, request_path, *, response_headers=None, deadline_monotonic=None):
+        calls.append(request_path)
+        query = parse_qs(urlsplit(f"https://api.github.com/{request_path}").query)
+        page = int(query["page"][0])
+        if page == 1:
+            assert query["branch"] == ["main"]
+            assert query["created"] == [created_filter]
+            assert query["per_page"] == [str(incidents.SOURCE_PAGE_SIZE)]
+            assert response_headers is not None
+            response_headers["link"] = (
+                "<https://api.github.com/repositories/1309835643/actions/workflows/"
+                f"{workflow_id}/runs?{urlencode({'branch': 'main', 'created': created_filter, 'per_page': incidents.SOURCE_PAGE_SIZE, 'page': 2})}>; rel=\"next\""
+            )
+        start = (page - 1) * incidents.SOURCE_PAGE_SIZE
+        return {
+            "total_count": len(rows),
+            "workflow_runs": rows[start:start + incidents.SOURCE_PAGE_SIZE],
+        }
+
+    monkeypatch.setattr(incidents, "_request_json", request)
+    selected, cursor, held = incidents._workflow_runs_since(
+        path=path,
+        workflow_id=workflow_id,
+        repository="owner/repo",
+        api_url="https://api.github.com",
+        token="test-token",
+        cursor={
+            "mode": "backfill",
+            "window_start": incidents.INITIAL_BACKFILL_AT.isoformat(),
+            "created_at": incidents.INITIAL_BACKFILL_AT.isoformat(),
+            "run_id": 0,
+            "pending_runs": [],
+        },
+        now=now,
+        deadline=incidents.time.monotonic() + 10,
+        repository_id=1309835643,
+    )
+
+    assert [row["id"] for row in selected] == [row["id"] for row in rows]
+    assert len(calls) == 2
+    assert cursor["scan_complete"] is True
+    assert held is False
 
 
 def test_download_artifact_verifies_run_sha_and_bounded_zip_member(monkeypatch):
