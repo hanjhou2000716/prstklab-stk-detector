@@ -40,6 +40,9 @@ MAX_RUNS = 10
 
 def _safe_root(value: object) -> str:
     raw = str(value or "").casefold()
+    api_http = re.search(r"(?:monitor_liveness|incident)_api_http_(\d{3})", raw)
+    if api_http:
+        return f"central_reconciliation_api_http_{api_http.group(1)}"
     if "artifact" in raw or "terminal" in raw or "result" in raw:
         return "central_reconciliation_result_unavailable"
     if "cursor" in raw or "pagination" in raw or "coverage" in raw:
@@ -77,6 +80,7 @@ def _run_identity(run: object, *, workflow_id: int, repository: str) -> dict[str
 
 def _read_runs(
     *, repository: str, api_url: str, token: str, deadline: float,
+    triggered_run_id: str = "", triggered_run_attempt: str = "", triggered_run_sha: str = "",
 ) -> tuple[int, list[dict[str, Any]]]:
     workflow = _request_json(
         api_url, repository, token, "GET",
@@ -96,6 +100,54 @@ def _read_runs(
     if not isinstance(runs, list) or len(runs) > MAX_RUNS:
         raise LivenessAuditError("central_health_runs_response_invalid")
     verified = [_run_identity(run, workflow_id=workflow_id, repository=repository) for run in runs]
+
+    # The workflow_run event is emitted as soon as the source run completes, but
+    # the workflow-runs listing can lag behind that event. Resolve the exact
+    # event run by ID before turning an empty or stale listing into a
+    # run-missing incident. The event identity is only a lookup hint; the API
+    # response remains authoritative and must match the trusted workflow.
+    expected_id = _safe_int(triggered_run_id)
+    if triggered_run_id and not expected_id:
+        raise LivenessAuditError("central_health_trigger_identity_invalid")
+    if expected_id:
+        expected_attempt = _safe_int(triggered_run_attempt)
+        expected_sha = str(triggered_run_sha or "").lower()
+        if not expected_attempt or not re.fullmatch(r"[0-9a-f]{40}", expected_sha):
+            raise LivenessAuditError("central_health_trigger_identity_invalid")
+        trigger_run = next((
+            run for run in verified if _safe_int(run.get("id")) == expected_id
+        ), None)
+        if trigger_run is None:
+            for attempt in range(3):
+                try:
+                    candidate = _request_json(
+                        api_url, repository, token, "GET", f"actions/runs/{expected_id}",
+                        deadline_monotonic=deadline,
+                    )
+                except LivenessAuditError as exc:
+                    if "_http_404" not in str(exc) or attempt == 2:
+                        if "_http_404" in str(exc):
+                            raise LivenessAuditError("central_health_trigger_run_not_visible") from exc
+                        raise
+                    remaining = max(0.0, deadline - time.monotonic())
+                    delay = min(2 ** attempt, 4, remaining)
+                    if delay <= 0:
+                        raise LivenessAuditError("central_health_trigger_run_not_visible") from exc
+                    time.sleep(delay)
+                    continue
+                trigger_run = _run_identity(candidate, workflow_id=workflow_id, repository=repository)
+                break
+        if trigger_run is None:
+            raise LivenessAuditError("central_health_trigger_run_not_visible")
+        if (
+            _safe_int(trigger_run.get("id")) != expected_id
+            or str(trigger_run.get("head_sha") or "").lower() != expected_sha
+            or (_safe_int(trigger_run.get("run_attempt")) or 0) < expected_attempt
+        ):
+            raise LivenessAuditError("central_health_trigger_run_identity_mismatch")
+        if not any(_safe_int(run.get("id")) == expected_id for run in verified):
+            verified.append(trigger_run)
+
     verified.sort(key=lambda row: (_parse_time(row.get("created_at")) or datetime.min.replace(tzinfo=UTC), _safe_int(row.get("id")) or 0), reverse=True)
     return workflow_id, verified
 
@@ -155,6 +207,15 @@ def _cursor_fingerprint(result: dict[str, Any]) -> str:
 
 
 def _result_is_complete(result: dict[str, Any]) -> tuple[bool, str, str]:
+    # Preserve the original source failure when a bounded early exit could not
+    # produce cursor state. Otherwise a missing cursor would mask the actionable
+    # HTTP/contract cause with a generic coverage failure.
+    if result.get("diagnostic_complete") is not True and result.get("failure_reason"):
+        try:
+            fingerprint = _cursor_fingerprint(result)
+        except LivenessAuditError:
+            fingerprint = ""
+        return False, _safe_root(result.get("failure_reason")), fingerprint
     try:
         fingerprint = _cursor_fingerprint(result)
     except LivenessAuditError as exc:
@@ -236,6 +297,50 @@ def _issue_body(
     return "\n".join(lines)
 
 
+def _consolidate_duplicate_issues(
+    *, issues: list[dict[str, Any]], repository: str, api_url: str, token: str,
+    deadline: float,
+) -> list[int]:
+    groups: dict[str, list[dict[str, Any]]] = {}
+    marker_pattern = re.compile(re.escape(CENTRAL_HEALTH_MARKER) + r"[0-9a-f]{32}")
+    for issue in issues:
+        lines = set(str(issue.get("body") or "").splitlines())
+        markers = [line for line in lines if marker_pattern.fullmatch(line)]
+        root = next((line.partition(":")[2].strip() for line in lines if line.startswith("Root cause:")), "")
+        if (
+            len(markers) == 1
+            and root
+            and _marker(root) in markers
+            and "Component: central_incident_reconciliation" in lines
+            and f"Contract: {CONTRACT}" in lines
+        ):
+            groups.setdefault(markers[0], []).append(issue)
+
+    consolidated: list[int] = []
+    for marker, duplicates in groups.items():
+        if len(duplicates) < 2:
+            continue
+        numbered = [(_safe_int(issue.get("number")), issue) for issue in duplicates]
+        numbers = [number for number, _issue in numbered]
+        if any(not number for number in numbers) or len(set(numbers)) != len(numbers):
+            raise LivenessAuditError("central_health_duplicate_issue_identity_invalid")
+        numbered.sort(key=lambda pair: int(pair[0] or 0))
+        primary_number = int(numbered[0][0] or 0)
+        for duplicate_number_value, _duplicate in numbered[1:]:
+            duplicate_number = int(duplicate_number_value or 0)
+            _request_json(
+                api_url, repository, token, "POST", f"issues/{duplicate_number}/comments",
+                {"body": f"Duplicate central-health incident consolidated into #{primary_number}. The incident fingerprint {marker} matches exactly; this duplicate closure is not a recovery. The primary incident remains open until recovery is verified."},
+                deadline_monotonic=deadline,
+            )
+            _request_json(
+                api_url, repository, token, "PATCH", f"issues/{duplicate_number}",
+                {"state": "closed", "state_reason": "duplicate"}, deadline_monotonic=deadline,
+            )
+            consolidated.append(duplicate_number)
+    return consolidated
+
+
 def _evaluate(
     *, runs: list[dict[str, Any]], workflow_id: int, repository: str,
     api_url: str, token: str, now: datetime, deadline: float,
@@ -279,6 +384,7 @@ def _evaluate(
 def reconcile_health(
     *, repository: str, api_url: str, token: str, now: datetime | None = None,
     consumer_run_id: str, consumer_attempt: int, consumer_sha: str,
+    triggered_run_id: str = "", triggered_run_attempt: str = "", triggered_run_sha: str = "",
 ) -> dict[str, Any]:
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository) or not token:
         raise LivenessAuditError("central_health_configuration_invalid")
@@ -286,6 +392,9 @@ def reconcile_health(
     deadline = time.monotonic() + MAX_AUDIT_SECONDS
     workflow_id, runs = _read_runs(
         repository=repository, api_url=api_url, token=token, deadline=deadline,
+        triggered_run_id=triggered_run_id,
+        triggered_run_attempt=triggered_run_attempt,
+        triggered_run_sha=triggered_run_sha,
     )
     evaluation = _evaluate(
         runs=runs, workflow_id=workflow_id, repository=repository,
@@ -295,6 +404,11 @@ def reconcile_health(
         issue for issue in _open_incidents(api_url, repository, token, deadline_monotonic=deadline)
         if str(issue.get("title") or "").startswith(ISSUE_TITLE_PREFIX)
     ]
+    consolidated = _consolidate_duplicate_issues(
+        issues=issues, repository=repository, api_url=api_url, token=token, deadline=deadline,
+    )
+    consolidated_set = set(consolidated)
+    issues = [issue for issue in issues if _safe_int(issue.get("number")) not in consolidated_set]
     result: dict[str, Any] = {
         "schema_version": "incident-reconciliation-v1",
         "consumer_run_id": str(consumer_run_id)[:32],
@@ -306,6 +420,7 @@ def reconcile_health(
         "notification_due": False,
         "notification_reasons": [],
         "notification_cadence_confirmations": [],
+        "consolidated_issue_numbers": consolidated,
         "results": [],
         "observed_at": current.isoformat(),
     }
@@ -435,6 +550,7 @@ def reconcile_health(
     result.update({
         "health_status": "degraded",
         "failure_reason": root,
+        "consolidated_issue_numbers": consolidated,
         "latest_central_run_id": _safe_int(latest.get("id")) if latest else None,
         "latest_progress": evaluation.get("progress", ""),
         "evidence_error": evaluation.get("evidence_error", ""),
@@ -472,6 +588,9 @@ def main() -> int:
             repository=repository, api_url=api_url, token=token,
             consumer_run_id=consumer_run_id, consumer_attempt=consumer_attempt,
             consumer_sha=consumer_sha,
+            triggered_run_id=os.environ.get("TRIGGERED_CENTRAL_RUN_ID", ""),
+            triggered_run_attempt=os.environ.get("TRIGGERED_CENTRAL_RUN_ATTEMPT", ""),
+            triggered_run_sha=os.environ.get("TRIGGERED_CENTRAL_RUN_SHA", ""),
         )
     except (LivenessAuditError, OSError) as exc:
         result = {
