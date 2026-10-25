@@ -64,8 +64,34 @@ SOURCE_PAGE_SIZE = 10
 SOURCE_MAX_PAGES = 10
 MAX_SOURCE_RUNS_PER_CYCLE = 10
 SOURCE_BACKFILL_WINDOW = timedelta(hours=6)
+MISSING_ARTIFACT_SETTLE_WINDOW = timedelta(minutes=30)
 STATE_ARTIFACT_LIMIT = 20 * 1024 * 1024
 INITIAL_BACKFILL_AT = datetime(2026, 10, 21, tzinfo=UTC)
+
+def _settled_missing_artifact_resolution(
+    source_result: dict[str, Any], run: dict[str, Any], now: datetime,
+) -> dict[str, Any] | None:
+    if (
+        source_result.get("diagnostic_complete") is not False
+        or source_result.get("failure_reason") != "incident_artifact_missing"
+        or str(run.get("status") or "").casefold() != "completed"
+    ):
+        return None
+    completed_at = _parse_time(run.get("completed_at")) or _parse_time(run.get("updated_at"))
+    created_at = _parse_time(run.get("created_at"))
+    if completed_at is None or (created_at is not None and completed_at < created_at):
+        return None
+    settled_at = now.astimezone(UTC) - MISSING_ARTIFACT_SETTLE_WINDOW
+    if completed_at > settled_at:
+        return None
+    return {
+        "evidence_gap": "artifact_missing_after_settle_window",
+        "cursor_resolution": "advance_with_unknown",
+        "source_completed_at": completed_at.isoformat(),
+        "artifact_settled_at": settled_at.isoformat(),
+    }
+
+
 CADENCE_MARKER_PREFIXES = (
     AUDIT_INCIDENT_MARKER,
     EVENT_INCIDENT_MARKER,
@@ -989,13 +1015,20 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
                 "incident_active": False,
                 "failure_reason": str(exc)[:180],
             }
+        settled_gap = _settled_missing_artifact_resolution(source_result, run, now)
+        if settled_gap is not None:
+            source_result.update(settled_gap)
         results.append({
             "source_workflow": workflow_name,
             "source_run_id": run_id,
             "source_attempt": _safe_int(run.get("run_attempt")) or 1,
             **source_result,
         })
-        if source_result.get("diagnostic_complete") is False:
+        cursor_can_advance = (
+            source_result.get("diagnostic_complete") is not False
+            or source_result.get("cursor_resolution") == "advance_with_unknown"
+        )
+        if not cursor_can_advance:
             failed_paths.add(path)
         else:
             if advance_cursor:

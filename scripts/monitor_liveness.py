@@ -387,6 +387,7 @@ def _open_incidents(api_url: str, repository: str, token: str, *, deadline_monot
             ISSUE_TITLE_PREFIX, AUDIT_ISSUE_TITLE_PREFIX, EVENT_ISSUE_TITLE_PREFIX,
             "Scheduled market brief delivery degraded",
             "Unified research report degraded",
+            "Central incident reconciliation degraded",
         )):
             if not isinstance(row.get("number"), int):
                 raise LivenessAuditError("monitor_liveness_issue_identity_invalid")
