@@ -8,6 +8,11 @@ from scripts import incident_reconciliation_health as health
 from scripts.monitor_liveness import LivenessAuditError
 
 
+def test_pending_terminal_state_failure_has_specific_incident_root():
+    assert health._safe_root("source_pending_terminal_state_unverified") == "central_reconciliation_source_run_unresolved"
+    assert health._safe_root("workflow_contract_unknown_for_fixed_sha") == "central_reconciliation_source_run_unresolved"
+
+
 def _run(run_id: int, created: str, sha: str | None = None) -> dict:
     return {
         "id": run_id,

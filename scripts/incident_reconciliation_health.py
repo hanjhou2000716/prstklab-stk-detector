@@ -40,6 +40,8 @@ MAX_RUNS = 10
 
 def _safe_root(value: object) -> str:
     raw = str(value or "").casefold()
+    if "source_pending_terminal_state_unverified" in raw or "workflow_contract_unknown" in raw:
+        return "central_reconciliation_source_run_unresolved"
     api_http = re.search(r"(?:monitor_liveness|incident)_api_http_(\d{3})", raw)
     if api_http:
         return f"central_reconciliation_api_http_{api_http.group(1)}"
