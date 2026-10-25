@@ -90,7 +90,11 @@ def _read_runs(
     workflow_id = _safe_int(workflow.get("id")) if isinstance(workflow, dict) else None
     if not workflow_id or str(workflow.get("path") or "") != CENTRAL_WORKFLOW_PATH:
         raise LivenessAuditError("central_health_workflow_identity_invalid")
-    query = urlencode({"branch": "main", "per_page": MAX_RUNS, "page": 1, "status": "all"})
+    # GitHub's workflow-runs endpoint does not accept "all" as a status
+    # filter. It silently returns an empty list, which creates a false
+    # central_reconciliation_run_missing incident. Omitting status returns
+    # runs across states while the evaluator handles in-progress runs itself.
+    query = urlencode({"branch": "main", "per_page": MAX_RUNS, "page": 1})
     payload = _request_json(
         api_url, repository, token, "GET",
         f"actions/workflows/{workflow_id}/runs?{query}",

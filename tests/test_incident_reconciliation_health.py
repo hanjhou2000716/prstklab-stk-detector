@@ -54,6 +54,9 @@ def _arrange(monkeypatch, runs, *, complete=True, issues=None, calls=None):
         if path.endswith("incident-reconciliation.yml"):
             return {"id": 777, "path": health.CENTRAL_WORKFLOW_PATH, "state": "active"}
         if path.startswith("actions/workflows/777/runs?"):
+            # The real Actions API silently returns zero rows for status=all.
+            if "status=all" in path:
+                return {"workflow_runs": []}
             return {"workflow_runs": runs}
         if method == "POST" and path == "issues":
             issue = {"number": 901, "title": payload["title"], "body": payload["body"], "state": "open"}
@@ -88,12 +91,16 @@ def test_health_watcher_opens_one_incident_for_incomplete_central_evidence(monke
     )
 
     assert result["health_status"] == "degraded"
+    assert result["failure_reason"] == "central_reconciliation_coverage_incomplete"
+    assert result["latest_central_run_id"] == run["id"]
     assert result["notification_due"] is True
     assert result["incident_handoff_status"] == "accepted"
     assert len(issues) == 1
     assert issues[0]["title"].startswith(health.ISSUE_TITLE_PREFIX)
     assert "Root cause: central_reconciliation_coverage_incomplete" in issues[0]["body"]
     assert any(method == "POST" and path == "issues" for method, path, _ in calls)
+    list_request = next(path for method, path, _ in calls if method == "GET" and path.startswith("actions/workflows/777/runs?"))
+    assert "status=all" not in list_request
 
 
 def test_health_watcher_preserves_source_http_failure_without_cursor_state(monkeypatch):
