@@ -84,6 +84,27 @@ SOURCE_TERMINAL_JOB_CONTRACTS: dict[tuple[str, str], dict[str, Any]] = {
         "jobs": frozenset({"monitor-admission", "monitor-send-deploy"}),
     },
 }
+LEGACY_AUDIT_LOG_CONTRACTS: dict[tuple[str, str], dict[str, str]] = {
+    # This immutable workflow revision printed the complete audit decision to
+    # its single, named job but did not upload a result artifact. Its log
+    # contract was verified against runs 39828958057, 39834814908, and
+    # 39867216973 before enabling this narrowly scoped recovery path.
+    (
+        ".github/workflows/scheduled-brief-slot-audit.yml",
+        "cc40ba0401362f6214b540c70b5e1aa3100d5773",
+    ): {"job_name": "Verify scheduled slot receipt (read-only)"},
+}
+LEGACY_AUDIT_LOG_RECOVERY_RUNS: dict[int, dict[str, Any]] = {
+    # These completed runs were independently verified to have no artifact and
+    # to retain one unambiguous, structured audit result in the job log.
+    39828958057: {"attempt": 1, "sha": "cc40ba0401362f6214b540c70b5e1aa3100d5773"},
+    39834814908: {"attempt": 1, "sha": "cc40ba0401362f6214b540c70b5e1aa3100d5773"},
+    39867216973: {"attempt": 1, "sha": "cc40ba0401362f6214b540c70b5e1aa3100d5773"},
+}
+LEGACY_AUDIT_RECOVERY_SCHEMA = "incident-legacy-audit-recovery-v1"
+LEGACY_AUDIT_STEP_NAME = "Audit scheduled slot receipt without dispatch or mutation"
+LEGACY_AUDIT_LOG_LIMIT = 1_000_000
+_ANSI_ESCAPE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 TERMINAL_JOB_CONCLUSIONS = frozenset({
     "success", "failure", "neutral", "cancelled", "skipped", "timed_out",
     "action_required", "stale", "startup_failure",
@@ -345,6 +366,85 @@ def _validated_source_evidence_gaps(
         seen.add(identity)
         normalized.append(dict(row))
     return normalized
+
+
+def _validated_legacy_audit_recoveries(
+    value: Any, *, workflow_path: str, workflow_id: int,
+) -> list[dict[str, Any]]:
+    """Keep a small immutable queue for the three verified pre-artifact audit runs."""
+    if workflow_path != ".github/workflows/scheduled-brief-slot-audit.yml" or workflow_id != 367335737:
+        if value not in (None, []):
+            raise LivenessAuditError("incident_legacy_audit_recovery_workflow_invalid")
+        return []
+    if value is None:
+        return [
+            {
+                "schema_version": LEGACY_AUDIT_RECOVERY_SCHEMA,
+                "run_id": run_id,
+                "attempt": expected["attempt"],
+                "sha": expected["sha"],
+                "state": "pending",
+                "result_status": "",
+                "resolved_at": "",
+                "evidence_kind": "",
+                "job_id": 0,
+                "log_sha256": "",
+            }
+            for run_id, expected in sorted(LEGACY_AUDIT_LOG_RECOVERY_RUNS.items())
+        ]
+    if not isinstance(value, list) or len(value) != len(LEGACY_AUDIT_LOG_RECOVERY_RUNS):
+        raise LivenessAuditError("incident_legacy_audit_recoveries_invalid")
+    expected_fields = {
+        "schema_version", "run_id", "attempt", "sha", "state", "result_status",
+        "resolved_at", "evidence_kind", "job_id", "log_sha256",
+    }
+    normalized: list[dict[str, Any]] = []
+    seen: set[int] = set()
+    for row in value:
+        if not isinstance(row, dict) or set(row) != expected_fields:
+            raise LivenessAuditError("incident_legacy_audit_recovery_identity_invalid")
+        run_id = _safe_int(row.get("run_id"))
+        expected = LEGACY_AUDIT_LOG_RECOVERY_RUNS.get(run_id or 0)
+        if (
+            row.get("schema_version") != LEGACY_AUDIT_RECOVERY_SCHEMA
+            or expected is None
+            or run_id in seen
+            or _safe_int(row.get("attempt")) != expected["attempt"]
+            or str(row.get("sha") or "").lower() != expected["sha"]
+            or row.get("state") not in {"pending", "reconciled"}
+        ):
+            raise LivenessAuditError("incident_legacy_audit_recovery_identity_invalid")
+        seen.add(run_id)
+        if row["state"] == "pending":
+            if any(
+                row.get(key) not in ("", 0)
+                for key in ("result_status", "resolved_at", "evidence_kind", "job_id", "log_sha256")
+            ):
+                raise LivenessAuditError("incident_legacy_audit_recovery_pending_invalid")
+        else:
+            resolved_at = _parse_time(row.get("resolved_at"))
+            if (
+                row.get("result_status") not in {
+                    "delivered", "missing_receipt", "incomplete_receipt",
+                    "expected_skip", "not_applicable", "not_due",
+                }
+                or resolved_at is None
+                or row.get("evidence_kind") not in {"verified_legacy_job_log", "verified_artifact"}
+                or (
+                    row.get("evidence_kind") == "verified_legacy_job_log"
+                    and (
+                        not _safe_int(row.get("job_id"))
+                        or not re.fullmatch(r"[0-9a-f]{64}", str(row.get("log_sha256") or ""))
+                    )
+                )
+                or (
+                    row.get("evidence_kind") == "verified_artifact"
+                    and (row.get("job_id") != 0 or row.get("log_sha256") != "")
+                )
+            ):
+                raise LivenessAuditError("incident_legacy_audit_recovery_resolution_invalid")
+        normalized.append(dict(row))
+    return sorted(normalized, key=lambda row: _safe_int(row.get("run_id")) or 0)
 
 
 CADENCE_MARKER_PREFIXES = (
@@ -1073,6 +1173,9 @@ def _workflow_runs_since(
         "source_evidence_gaps": _validated_source_evidence_gaps(
             cursor.get("source_evidence_gaps"), workflow_path=path, workflow_id=workflow_id,
         ),
+        "legacy_audit_recoveries": _validated_legacy_audit_recoveries(
+            cursor.get("legacy_audit_recoveries"), workflow_path=path, workflow_id=workflow_id,
+        ),
         "pending_runs": sorted(pending.values(), key=lambda item: (item["created_at"], item["run_id"])),
         "pending_run_diagnostics": [
             pending_probe_diagnostics[key] for key in sorted(pending_probe_diagnostics)
@@ -1301,6 +1404,271 @@ def _download_artifact_json(
         raise LivenessAuditError("incident_artifact_archive_invalid") from exc
 
 
+def _sanitize_legacy_audit_result(result: dict[str, Any], *, repository: str) -> dict[str, Any]:
+    """Keep only bounded, non-sensitive fields needed for incident classification."""
+    text_fields = (
+        "status", "executionStatus", "dataStatus", "completionStatus", "reason",
+        "ledger_source", "ledger_commit_sha", "audit_started_at", "trigger_source",
+        "slot", "market_date", "anchor", "scheduled_slot_at", "audit_due_at",
+        "recipient_set_version", "obligation", "policy_reason",
+    )
+    optional_text = {
+        "slot", "market_date", "anchor", "scheduled_slot_at", "audit_due_at",
+        "recipient_set_version", "obligation", "policy_reason",
+    }
+    safe: dict[str, Any] = {}
+    for key in text_fields:
+        value = result.get(key)
+        if value is None and key in optional_text:
+            safe[key] = ""
+            continue
+        if not isinstance(value, str) or len(value) > 240 or any(ord(char) < 32 for char in value):
+            raise LivenessAuditError("incident_legacy_audit_log_result_field_invalid")
+        safe[key] = value
+    if not re.fullmatch(r"[A-Za-z0-9_.:-]{1,180}", safe["reason"]):
+        raise LivenessAuditError("incident_legacy_audit_log_result_reason_invalid")
+    reason_codes = result.get("reasonCodes")
+    if (
+        not isinstance(reason_codes, list) or len(reason_codes) > 20
+        or any(not isinstance(item, str) or not re.fullmatch(r"[A-Za-z0-9_.:-]{1,180}", item) for item in reason_codes)
+    ):
+        raise LivenessAuditError("incident_legacy_audit_log_result_codes_invalid")
+    safe["reasonCodes"] = list(reason_codes)
+    if result.get("read_only") is not True:
+        raise LivenessAuditError("incident_legacy_audit_log_result_mode_invalid")
+    safe["read_only"] = True
+    delay = result.get("audit_delay_seconds")
+    if isinstance(delay, int) and not isinstance(delay, bool) and 0 <= delay <= 31_536_000:
+        safe["audit_delay_seconds"] = delay
+
+    diagnosis = result.get("run_diagnosis")
+    if diagnosis is not None:
+        if not isinstance(diagnosis, dict):
+            raise LivenessAuditError("incident_legacy_audit_log_diagnosis_invalid")
+        safe_diagnosis: dict[str, Any] = {}
+        for key in (
+            "status", "reason", "run_conclusion", "terminal_status", "terminal_reason",
+            "terminal_schema_version", "sender_status", "receipt_status",
+        ):
+            value = diagnosis.get(key)
+            if value is not None:
+                if not isinstance(value, str) or (value and not re.fullmatch(r"[A-Za-z0-9_.:-]{1,180}", value)):
+                    raise LivenessAuditError("incident_legacy_audit_diagnosis_field_invalid")
+                safe_diagnosis[key] = value
+        for key in ("expected", "durable_receipt_verified", "no_resend"):
+            value = diagnosis.get(key)
+            if value is not None:
+                if not isinstance(value, bool):
+                    raise LivenessAuditError("incident_legacy_audit_diagnosis_field_invalid")
+                safe_diagnosis[key] = value
+        diagnosis_run_id = diagnosis.get("run_id")
+        if diagnosis_run_id is not None:
+            if isinstance(diagnosis_run_id, bool) or _safe_int(diagnosis_run_id) is None:
+                raise LivenessAuditError("incident_legacy_audit_diagnosis_field_invalid")
+            safe_diagnosis["run_id"] = _safe_int(diagnosis_run_id)
+        terminal_sha = diagnosis.get("workflow_sha")
+        if terminal_sha is not None:
+            if not isinstance(terminal_sha, str) or not re.fullmatch(r"[0-9a-fA-F]{40}", terminal_sha):
+                raise LivenessAuditError("incident_legacy_audit_diagnosis_field_invalid")
+            safe_diagnosis["workflow_sha"] = terminal_sha.lower()
+        run_url = diagnosis.get("run_url")
+        if run_url is not None:
+            run_number = safe_diagnosis.get("run_id")
+            expected_url = f"https://github.com/{repository}/actions/runs/{run_number}"
+            if not isinstance(run_url, str) or run_url != expected_url:
+                raise LivenessAuditError("incident_legacy_audit_diagnosis_url_invalid")
+            safe_diagnosis["run_url"] = run_url
+        safe["run_diagnosis"] = safe_diagnosis
+    return safe
+
+
+def _download_legacy_audit_result_from_job_log(
+    *, run: dict[str, Any], event: dict[str, Any], repository: str,
+    api_url: str, token: str, deadline: float,
+) -> tuple[dict[str, Any], int, str] | None:
+    """Recover only the verified structured result from the known pre-artifact audit workflow."""
+    workflow_path = str(run.get("path") or "")
+    sha = str(run.get("head_sha") or "").lower()
+    contract = LEGACY_AUDIT_LOG_CONTRACTS.get((workflow_path, sha))
+    run_id = _safe_int(run.get("id"))
+    attempt = _safe_int(run.get("run_attempt"))
+    if (
+        event.get("workflow_name") != "Scheduled brief slot receipt audit"
+        or contract is None
+        or not run_id or not attempt
+        or str(run.get("status") or "").casefold() != "completed"
+        or str(run.get("conclusion") or "") not in TERMINAL_JOB_CONCLUSIONS
+    ):
+        return None
+
+    jobs_payload = _request_json(
+        api_url, repository, token, "GET",
+        f"actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100&page=1",
+        deadline_monotonic=deadline,
+    )
+    jobs = jobs_payload.get("jobs") if isinstance(jobs_payload, dict) else None
+    total = jobs_payload.get("total_count") if isinstance(jobs_payload, dict) else None
+    if not isinstance(jobs, list) or not isinstance(total, int) or total != len(jobs) or total != 1:
+        raise LivenessAuditError("incident_legacy_audit_job_list_incomplete")
+    job = jobs[0]
+    job_id = _safe_int(job.get("id")) if isinstance(job, dict) else None
+    steps = job.get("steps") if isinstance(job, dict) else None
+    audit_steps = [
+        row for row in steps if isinstance(row, dict) and row.get("name") == LEGACY_AUDIT_STEP_NAME
+    ] if isinstance(steps, list) else []
+    if (
+        not job_id
+        or job.get("name") != contract["job_name"]
+        or _safe_int(job.get("run_id")) != run_id
+        or _safe_int(job.get("run_attempt")) != attempt
+        or str(job.get("status") or "").casefold() != "completed"
+        or str(job.get("conclusion") or "") not in TERMINAL_JOB_CONCLUSIONS
+        or len(audit_steps) != 1
+        or str(audit_steps[0].get("status") or "").casefold() != "completed"
+        or str(audit_steps[0].get("conclusion") or "") not in TERMINAL_JOB_CONCLUSIONS
+    ):
+        raise LivenessAuditError("incident_legacy_audit_job_identity_invalid")
+
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise LivenessAuditError("incident_legacy_audit_log_deadline_exceeded")
+    endpoint = f"{api_url.rstrip('/')}/repos/{repository}/actions/jobs/{job_id}/logs"
+    request = Request(endpoint, headers={
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {token}",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "PRStK-incident-reconciliation",
+    })
+    try:
+        with _open_artifact_url(request, timeout=max(1, int(min(15, remaining)))) as response:
+            raw_log = response.read(LEGACY_AUDIT_LOG_LIMIT + 1)
+    except (HTTPError, URLError, TimeoutError, OSError) as exc:
+        raise LivenessAuditError(f"incident_legacy_audit_log_download_{type(exc).__name__}") from exc
+    if len(raw_log) > LEGACY_AUDIT_LOG_LIMIT:
+        raise LivenessAuditError("incident_legacy_audit_log_too_large")
+    try:
+        log_text = raw_log.decode("utf-8-sig")
+    except UnicodeError as exc:
+        raise LivenessAuditError("incident_legacy_audit_log_encoding_invalid") from exc
+
+    clean_lines = [_ANSI_ESCAPE.sub("", line) for line in log_text.splitlines()]
+    command_lines = [
+        index for index, line in enumerate(clean_lines)
+        if "Run python -m src.scheduled_slot_audit --ledger" in line
+    ]
+    if len(command_lines) != 1:
+        raise LivenessAuditError("incident_legacy_audit_log_command_ambiguous")
+    command_index = command_lines[0]
+    env_start = next((
+        index for index in range(command_index, min(len(clean_lines), command_index + 20))
+        if clean_lines[index].strip().endswith("env:")
+    ), None)
+    if env_start is None:
+        raise LivenessAuditError("incident_legacy_audit_log_environment_missing")
+    env: dict[str, list[str]] = {}
+    for line in clean_lines[env_start + 1:]:
+        if "##[endgroup]" in line:
+            break
+        match = re.search(r"\b([A-Z][A-Z0-9_]+):\s*(.*?)\s*$", line)
+        if match:
+            env.setdefault(match.group(1), []).append(match.group(2))
+    required_env = {
+        "RUN_CREATED_AT", "GITHUB_REPOSITORY", "TRIGGER_SOURCE",
+        "AUDIT_STARTED_AT", "LEDGER_COMMIT_SHA",
+    }
+    if any(len(env.get(key, [])) != 1 for key in required_env):
+        raise LivenessAuditError("incident_legacy_audit_log_environment_ambiguous")
+    run_id_lines = [line for line in clean_lines if re.search(rf"\bGITHUB_RUN_ID:\s*{run_id}\s*$", line)]
+    if len(run_id_lines) != 1 or env["GITHUB_REPOSITORY"][0] != repository:
+        raise LivenessAuditError("incident_legacy_audit_log_run_identity_mismatch")
+    created_at = _parse_time(run.get("created_at"))
+    logged_created_at = _parse_time(env["RUN_CREATED_AT"][0])
+    logged_started_at = _parse_time(env["AUDIT_STARTED_AT"][0])
+    if (
+        created_at is None or logged_created_at != created_at
+        or logged_started_at is None
+        or env["TRIGGER_SOURCE"][0] != str(run.get("event") or "")
+        or not re.fullmatch(r"[0-9a-fA-F]{40}", env["LEDGER_COMMIT_SHA"][0])
+    ):
+        raise LivenessAuditError("incident_legacy_audit_log_execution_identity_mismatch")
+
+    json_results: list[tuple[datetime, dict[str, Any]]] = []
+    for line in clean_lines:
+        match = re.match(r"^(\d{4}-\d{2}-\d{2}T[^ ]+Z) (\{.*\})$", line)
+        if not match:
+            continue
+        try:
+            candidate = json.loads(match.group(2))
+        except json.JSONDecodeError:
+            continue
+        if (
+            isinstance(candidate, dict)
+            and {"status", "executionStatus", "dataStatus", "completionStatus"}.issubset(candidate)
+        ):
+            printed_at = _parse_time(match.group(1))
+            if printed_at is not None:
+                json_results.append((printed_at, candidate))
+    if len(json_results) != 1:
+        raise LivenessAuditError("incident_legacy_audit_log_result_missing_or_ambiguous")
+    printed_at, result = json_results[0]
+    result_status = str(result.get("status") or "")
+    valid_statuses = {
+        "delivered", "missing_receipt", "incomplete_receipt",
+        "expected_skip", "not_applicable", "not_due",
+    }
+    expected_completion = (
+        "COMPLETE" if result_status == "delivered"
+        else "INCOMPLETE" if result_status in {"missing_receipt", "incomplete_receipt"}
+        else "EXPECTED_SKIP"
+    )
+    expected_data = "UNHEALTHY" if expected_completion == "INCOMPLETE" else "PASS"
+    if (
+        result_status not in valid_statuses
+        or result.get("ledger_source") != "data-release"
+        or str(result.get("ledger_commit_sha") or "").lower() != env["LEDGER_COMMIT_SHA"][0].lower()
+        or str(result.get("audit_started_at") or "") != env["AUDIT_STARTED_AT"][0]
+        or str(result.get("trigger_source") or "") != env["TRIGGER_SOURCE"][0]
+        or result.get("executionStatus") != "COMPLETED"
+        or result.get("completionStatus") != expected_completion
+        or result.get("dataStatus") != expected_data
+        or printed_at < logged_started_at
+    ):
+        raise LivenessAuditError("incident_legacy_audit_log_result_contract_invalid")
+    run_completed_at = _parse_time(run.get("completed_at")) or _parse_time(run.get("updated_at"))
+    if run_completed_at is None or printed_at > run_completed_at + timedelta(seconds=30):
+        raise LivenessAuditError("incident_legacy_audit_log_time_mismatch")
+    safe_result = _sanitize_legacy_audit_result(result, repository=repository)
+
+    envelope = {
+        "schema_version": "scheduled-slot-audit-result-v1",
+        "run_id": str(run_id),
+        "attempt": attempt,
+        "workflow_sha": sha,
+        "original_slot": {
+            "slot": str(result.get("slot") or "")[:40],
+            "date": str(result.get("market_date") or "")[:20],
+            "anchor": str(result.get("anchor") or "")[:120],
+            "scheduled_slot_at": str(result.get("scheduled_slot_at") or "")[:80],
+        },
+        "audit_due_at": str(result.get("audit_due_at") or "")[:80],
+        "audited_at": printed_at.isoformat(),
+        "ledger_sha": env["LEDGER_COMMIT_SHA"][0].lower(),
+        "recipient_set_version": str(result.get("recipient_set_version") or "unknown")[:64],
+        "execution_status": "COMPLETED",
+        "report_receipt_status": result_status,
+        "incident_handoff_status": "legacy_log_recovered",
+        "diagnostic_complete": True,
+        "first_failure_reason": str(result.get("reason") or "")[:240],
+        "result": safe_result,
+        "evidence_source": {
+            "kind": "verified_legacy_job_log",
+            "job_id": job_id,
+            "log_sha256": hashlib.sha256(raw_log).hexdigest(),
+        },
+    }
+    return envelope, job_id, hashlib.sha256(raw_log).hexdigest()
+
+
 def _load_cursor_state(
     *, repository: str, api_url: str, token: str, current_run_id: int, deadline: float,
 ) -> dict[str, Any]:
@@ -1430,20 +1798,39 @@ def _reconcile_source_run(
             evidence_filename,
             f"scheduled-slot-audit-{run_id}-{attempt}.json",  # legacy producer filename
         )
-    content = _download_artifact_json(
-        run=run, expected_artifact_name=artifact_name, expected_member=expected_member,
-        repository=repository, api_url=api_url, token=token, deadline=deadline,
-    )
+    legacy_log_metadata: tuple[int, str] | None = None
+    try:
+        content = _download_artifact_json(
+            run=run, expected_artifact_name=artifact_name, expected_member=expected_member,
+            repository=repository, api_url=api_url, token=token, deadline=deadline,
+        )
+    except LivenessAuditError as exc:
+        if workflow_name != "Scheduled brief slot receipt audit" or str(exc) != "incident_artifact_missing":
+            raise
+        recovered = _download_legacy_audit_result_from_job_log(
+            run=run, event=event, repository=repository,
+            api_url=api_url, token=token, deadline=deadline,
+        )
+        if recovered is None:
+            raise
+        legacy_envelope, job_id, log_digest = recovered
+        content = json.dumps(legacy_envelope, ensure_ascii=False, sort_keys=True).encode("utf-8")
+        legacy_log_metadata = (job_id, log_digest)
     with tempfile.TemporaryDirectory(prefix="prstk-incident-") as temp:
         directory = Path(temp)
         evidence_path = directory / evidence_filename
         evidence_path.write_bytes(content)
         if workflow_name in {"Scheduled market brief", "Scheduled brief slot receipt audit"}:
-            return reconcile_scheduled_brief(
+            source_result = reconcile_scheduled_brief(
                 event=event, evidence_directory=directory,
                 repository=repository, api_url=api_url, token=token, now=now,
                 defer_notification_cadence=True, deadline_monotonic=deadline,
             )
+            if legacy_log_metadata is not None:
+                source_result["source_evidence_kind"] = "verified_legacy_job_log"
+                source_result["source_job_id"] = legacy_log_metadata[0]
+                source_result["source_log_sha256"] = legacy_log_metadata[1]
+            return source_result
         pre_scan_evidence = _pre_scan_trace_evidence(
             content=content, run=run,
             workflow_path=".github/workflows/official-event-monitor.yml",
@@ -1516,6 +1903,60 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
                 created, run_id, path, workflow_name, run,
                 run.get("_incident_source_origin") == "scan",
             ))
+
+    # Retry the three already verified pre-artifact audit runs even though the
+    # ordinary source cursor has moved past them. The exact run SHA and attempt
+    # are pinned in the durable cursor; each run is re-fetched and identity
+    # checked before its log or artifact is used.
+    audit_path = ".github/workflows/scheduled-brief-slot-audit.yml"
+    audit_workflow_id, audit_workflow_name = source_definitions[audit_path]
+    audit_cursor = discovered_cursors[audit_path]
+    recovery_rows = audit_cursor.get("legacy_audit_recoveries", [])
+    if not isinstance(recovery_rows, list):
+        raise LivenessAuditError("incident_legacy_audit_recoveries_invalid")
+    for recovery in recovery_rows:
+        if not isinstance(recovery, dict) or recovery.get("state") != "pending":
+            continue
+        run_id = _safe_int(recovery.get("run_id"))
+        attempt = _safe_int(recovery.get("attempt"))
+        sha = str(recovery.get("sha") or "").lower()
+        run = _request_json(
+            api_url, repository, token, "GET", f"actions/runs/{run_id}",
+            deadline_monotonic=deadline,
+        )
+        head_repository = run.get("head_repository") if isinstance(run, dict) else None
+        if (
+            not run_id or not attempt
+            or not isinstance(run, dict)
+            or _safe_int(run.get("id")) != run_id
+            or _safe_int(run.get("workflow_id")) != audit_workflow_id
+            or str(run.get("path") or "") != audit_path
+            or str(run.get("head_branch") or "") != "main"
+            or not isinstance(head_repository, dict)
+            or str(head_repository.get("full_name") or "") != repository
+            or _safe_int(run.get("run_attempt")) != attempt
+            or str(run.get("head_sha") or "").lower() != sha
+            or str(run.get("status") or "").casefold() != "completed"
+        ):
+            raise LivenessAuditError("incident_legacy_audit_recovery_run_identity_invalid")
+        run["_incident_source_origin"] = "legacy_recovery"
+        run["_incident_legacy_recovery"] = True
+        if not any(
+            (_safe_int(existing[4].get("id")), _safe_int(existing[4].get("run_attempt"))) == (run_id, attempt)
+            for existing in source_rows
+        ):
+            created = _parse_time(run.get("created_at"))
+            if created is None:
+                raise LivenessAuditError("incident_legacy_audit_recovery_run_time_invalid")
+            source_rows.append((created, run_id, audit_path, audit_workflow_name, run, False))
+        else:
+            for existing in source_rows:
+                if (
+                    _safe_int(existing[4].get("id")) == run_id
+                    and _safe_int(existing[4].get("run_attempt")) == attempt
+                ):
+                    existing[4]["_incident_legacy_recovery"] = True
+                    break
 
     # A webhook is authoritative for its completed run, including a long-running
     # source whose creation time predates the saved cursor window.
@@ -1599,6 +2040,42 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
             settled_gap = _settled_missing_artifact_resolution(source_result, run, now)
         if settled_gap is not None:
             source_result.update(settled_gap)
+        if run.get("_incident_legacy_recovery") is True:
+            recovery = next(
+                (
+                    item for item in discovered_cursors[path].get("legacy_audit_recoveries", [])
+                    if isinstance(item, dict)
+                    and _safe_int(item.get("run_id")) == run_id
+                    and _safe_int(item.get("attempt")) == (_safe_int(run.get("run_attempt")) or 1)
+                ),
+                None,
+            )
+            if recovery is None:
+                raise LivenessAuditError("incident_legacy_audit_recovery_cursor_missing")
+            if source_result.get("diagnostic_complete") is True:
+                result_status = str(source_result.get("evidence_status") or source_result.get("status") or "")
+                evidence_kind = (
+                    "verified_legacy_job_log"
+                    if source_result.get("source_evidence_kind") == "verified_legacy_job_log"
+                    else "verified_artifact"
+                )
+                job_id = _safe_int(source_result.get("source_job_id")) or 0
+                log_digest = str(source_result.get("source_log_sha256") or "")
+                if result_status not in {
+                    "delivered", "missing_receipt", "incomplete_receipt",
+                    "expected_skip", "not_applicable", "not_due",
+                }:
+                    raise LivenessAuditError("incident_legacy_audit_recovery_result_invalid")
+                recovery.update({
+                    "state": "reconciled",
+                    "result_status": result_status,
+                    "resolved_at": now.astimezone(UTC).isoformat(),
+                    "evidence_kind": evidence_kind,
+                    "job_id": job_id,
+                    "log_sha256": log_digest,
+                })
+            else:
+                failed_paths.add(path)
         gap = source_result.get("source_evidence_gap")
         if gap is not None:
             existing_gaps = _validated_source_evidence_gaps(
@@ -1751,7 +2228,15 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
         for gap in cursor.get("source_evidence_gaps", [])
         if isinstance(gap, dict)
     ]
-    coverage_complete = not deferred_rows and not any(scan_holds.values()) and not source_evidence_gaps
+    legacy_audit_recovery_pending = [
+        {"run_id": _safe_int(row.get("run_id")), "attempt": _safe_int(row.get("attempt"))}
+        for row in cursor_updates.get(audit_path, {}).get("legacy_audit_recoveries", [])
+        if isinstance(row, dict) and row.get("state") == "pending"
+    ]
+    coverage_complete = (
+        not deferred_rows and not any(scan_holds.values())
+        and not source_evidence_gaps and not legacy_audit_recovery_pending
+    )
     diagnostic_complete = coverage_complete and all(
         item.get("diagnostic_complete") is not False for item in results
     )
@@ -1783,6 +2268,7 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
         ),
         "source_evidence_gaps": source_evidence_gaps,
         "source_evidence_gap_count": len(source_evidence_gaps),
+        "legacy_audit_recovery_pending": legacy_audit_recovery_pending,
         "pending_run_diagnostics": pending_run_diagnostics,
         "unprocessed_source_runs": [
             {"workflow": row[3], "run_id": row[1], "attempt": _safe_int(row[4].get("run_attempt")) or 1}
