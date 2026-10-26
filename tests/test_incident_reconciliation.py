@@ -11,7 +11,61 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 import pytest
 
 import scripts.incident_reconciliation as incidents
+import scripts.scheduled_brief_incidents as scheduled_incidents
 from scripts.monitor_liveness import GitHubAPIHttpError, LivenessAuditError, _safe_endpoint_class
+
+
+def _legacy_audit_log(*, run_id=39828958057, status="missing_receipt", trigger="schedule"):
+    if trigger == "repository_dispatch":
+        created_at = "2026-10-22T22:45:19Z"
+        started_at = "2026-10-22T22:46:02Z"
+        printed_at = "2026-10-22T22:46:04Z"
+    else:
+        created_at = "2026-10-22T18:09:59Z"
+        started_at = "2026-10-22T18:10:47Z"
+        printed_at = "2026-10-22T18:10:50Z"
+    ledger_sha = "f" * 40
+    result = {
+        "status": status,
+        "executionStatus": "COMPLETED",
+        "dataStatus": "UNHEALTHY" if status == "missing_receipt" else "PASS",
+        "completionStatus": "INCOMPLETE" if status == "missing_receipt" else "EXPECTED_SKIP",
+        "reason": "scheduled_anchor_claim_missing" if status == "missing_receipt" else "schedule_candidate_not_applicable",
+        "reasonCodes": ["scheduled_anchor_claim_missing"] if status == "missing_receipt" else ["schedule_candidate_not_applicable"],
+        "ledger_source": "data-release",
+        "ledger_commit_sha": ledger_sha,
+        "audit_started_at": started_at,
+        "trigger_source": trigger,
+        "read_only": True,
+        "slot": "us_premarket" if status == "missing_receipt" else "",
+        "market_date": "2026-10-22" if status == "missing_receipt" else "",
+        "anchor": "us:2026-10-22:us_premarket" if status == "missing_receipt" else "",
+        "scheduled_slot_at": "2026-10-22T09:00:00-04:00" if status == "missing_receipt" else "",
+        "audit_due_at": "2026-10-22T09:45:00-04:00" if status == "missing_receipt" else "",
+        "recipient_set_version": "recipients-test" if status == "missing_receipt" else "unknown",
+    }
+    lines = [
+        f"{started_at}   GITHUB_RUN_ID: {run_id}",
+    ]
+    if trigger == "repository_dispatch":
+        lines.extend([
+            "2026-10-22T22:45:25Z ##[group]Run python -m src.scheduled_slot_audit --wait-until-due --slot morning",
+            "2026-10-22T22:45:25Z env:",
+            "2026-10-22T22:45:25Z   AUDIT_SLOT: morning",
+            "2026-10-22T22:45:25Z ##[endgroup]",
+        ])
+    lines.extend([
+        f"{started_at} ##[group]Run python -m src.scheduled_slot_audit --ledger receipt-ledger/site/data/event-ledger.json",
+        f"{started_at} env:",
+        f"{started_at}   RUN_CREATED_AT: {created_at}",
+        f"{started_at}   GITHUB_REPOSITORY: owner/repo",
+        f"{started_at}   TRIGGER_SOURCE: {trigger}",
+        f"{started_at}   AUDIT_STARTED_AT: {started_at}",
+        f"{started_at}   LEDGER_COMMIT_SHA: {ledger_sha}",
+        f"{started_at} ##[endgroup]",
+        f"{printed_at} {json.dumps(result, sort_keys=True)}",
+    ])
+    return "\n".join(lines).encode("utf-8"), result, created_at, started_at, printed_at, ledger_sha
 
 
 def test_central_reconciliation_wakes_on_gmail_sync_completion():
@@ -21,6 +75,294 @@ def test_central_reconciliation_wakes_on_gmail_sync_completion():
 
     assert "Gmail history sync (Supabase)" in workflow_run
     assert "types: [completed]" in workflow_run
+
+
+@pytest.mark.parametrize(
+    ("status", "trigger"),
+    [("missing_receipt", "schedule"), ("not_applicable", "schedule"), ("missing_receipt", "repository_dispatch")],
+)
+def test_verified_legacy_scheduled_audit_log_is_bound_to_run_job_and_ledger(monkeypatch, status, trigger):
+    run_id = 39828958057
+    sha = "cc40ba0401362f6214b540c70b5e1aa3100d5773"
+    raw_log, result, created_at, _started_at, printed_at, ledger_sha = _legacy_audit_log(
+        run_id=run_id, status=status, trigger=trigger,
+    )
+    completed_at = "2026-10-22T22:46:08Z" if trigger == "repository_dispatch" else "2026-10-22T18:10:54Z"
+    run = {
+        "id": run_id,
+        "workflow_id": 367335737,
+        "run_attempt": 1,
+        "path": ".github/workflows/scheduled-brief-slot-audit.yml",
+        "head_branch": "main",
+        "head_sha": sha,
+        "head_repository": {"full_name": "owner/repo"},
+        "event": trigger,
+        "created_at": created_at,
+        "completed_at": completed_at,
+        "status": "completed",
+        "conclusion": "success",
+    }
+    event = incidents._source_event_from_run(
+        run, workflow_name="Scheduled brief slot receipt audit", repository="owner/repo",
+    )
+    job = {
+        "id": 119999679309,
+        "run_id": run_id,
+        "run_attempt": 1,
+        "name": "Verify scheduled slot receipt (read-only)",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [{
+            "name": "Audit scheduled slot receipt without dispatch or mutation",
+            "status": "completed",
+            "conclusion": "success",
+        }],
+    }
+
+    def request(_api, _repo, _token, method, path, **_kwargs):
+        assert method == "GET"
+        assert path == f"actions/runs/{run_id}/attempts/1/jobs?per_page=100&page=1"
+        return {"total_count": 1, "jobs": [job]}
+
+    monkeypatch.setattr(incidents, "_request_json", request)
+    monkeypatch.setattr(incidents, "_open_artifact_url", lambda request, **_kwargs: io.BytesIO(raw_log))
+    envelope, job_id, digest = incidents._download_legacy_audit_result_from_job_log(
+        run=run, event=event, repository="owner/repo", api_url="https://api.github.com",
+        token="test-token", deadline=incidents.time.monotonic() + 30,
+    )
+
+    assert envelope["schema_version"] == "scheduled-slot-audit-result-v1"
+    assert envelope["run_id"] == str(run_id)
+    assert envelope["attempt"] == 1
+    assert envelope["workflow_sha"] == sha
+    assert envelope["ledger_sha"] == ledger_sha
+    assert envelope["audited_at"] == incidents._parse_time(printed_at).isoformat()
+    assert envelope["result"]["status"] == result["status"]
+    assert envelope["result"]["reason"] == result["reason"]
+    assert envelope["report_receipt_status"] == status
+    assert envelope["evidence_source"]["kind"] == "verified_legacy_job_log"
+    assert envelope["evidence_source"]["job_id"] == job_id == 119999679309
+    assert envelope["evidence_source"]["log_sha256"] == digest
+
+
+def test_legacy_audit_log_fallback_uses_normal_incident_contract(monkeypatch):
+    run_id = 39828958057
+    sha = "cc40ba0401362f6214b540c70b5e1aa3100d5773"
+    raw_log, result, created_at, _started_at, _printed_at, _ledger_sha = _legacy_audit_log(run_id=run_id)
+    run = {
+        "id": run_id, "workflow_id": 367335737, "run_attempt": 1,
+        "path": ".github/workflows/scheduled-brief-slot-audit.yml",
+        "head_branch": "main", "head_sha": sha,
+        "head_repository": {"full_name": "owner/repo"}, "event": "schedule",
+        "created_at": created_at, "completed_at": "2026-10-22T18:10:54Z",
+        "status": "completed", "conclusion": "success",
+    }
+    job = {
+        "id": 119999679309, "run_id": run_id, "run_attempt": 1,
+        "name": "Verify scheduled slot receipt (read-only)", "status": "completed", "conclusion": "success",
+        "steps": [{"name": incidents.LEGACY_AUDIT_STEP_NAME, "status": "completed", "conclusion": "success"}],
+    }
+    monkeypatch.setattr(
+        incidents, "_download_artifact_json",
+        lambda **_kwargs: (_ for _ in ()).throw(LivenessAuditError("incident_artifact_missing")),
+    )
+    monkeypatch.setattr(incidents, "_request_json", lambda *_args, **_kwargs: {"total_count": 1, "jobs": [job]})
+    monkeypatch.setattr(incidents, "_open_artifact_url", lambda request, **_kwargs: io.BytesIO(raw_log))
+    captured = {}
+
+    def reconcile_brief(*, event, evidence_directory, **_kwargs):
+        captured["evidence"] = scheduled_incidents._validated_evidence(event, evidence_directory)
+        return {"status": "incident_active", "diagnostic_complete": True}
+
+    monkeypatch.setattr(incidents, "reconcile_scheduled_brief", reconcile_brief)
+    source_result = incidents._reconcile_source_run(
+        run=run, workflow_name="Scheduled brief slot receipt audit", repository="owner/repo",
+        api_url="https://api.github.com", token="test-token",
+        now=datetime.fromisoformat("2026-10-22T19:00:00+00:00"),
+        deadline=incidents.time.monotonic() + 30,
+    )
+    assert captured["evidence"]["valid"] is True
+    assert captured["evidence"]["result"]["status"] == result["status"]
+    assert captured["evidence"]["result"]["reason"] == result["reason"]
+    assert source_result["source_evidence_kind"] == "verified_legacy_job_log"
+    assert source_result["source_job_id"] == 119999679309
+
+
+def test_legacy_audit_log_recovery_is_sha_pinned_and_rejects_mismatched_job(monkeypatch):
+    run_id = 39828958057
+    run = {
+        "id": run_id, "workflow_id": 367335737, "run_attempt": 1,
+        "path": ".github/workflows/scheduled-brief-slot-audit.yml",
+        "head_branch": "main", "head_sha": "a" * 40,
+        "head_repository": {"full_name": "owner/repo"}, "event": "schedule",
+        "created_at": "2026-10-22T18:09:59Z", "completed_at": "2026-10-22T18:10:54Z",
+        "status": "completed", "conclusion": "success",
+    }
+    event = incidents._source_event_from_run(
+        run, workflow_name="Scheduled brief slot receipt audit", repository="owner/repo",
+    )
+    monkeypatch.setattr(incidents, "_request_json", lambda *_args, **_kwargs: pytest.fail("unknown SHA must not fetch logs"))
+    assert incidents._download_legacy_audit_result_from_job_log(
+        run=run, event=event, repository="owner/repo", api_url="https://api.github.com",
+        token="test-token", deadline=incidents.time.monotonic() + 30,
+    ) is None
+
+    raw_log, _result, _created_at, _started_at, _printed_at, _ledger_sha = _legacy_audit_log(run_id=run_id)
+    run["head_sha"] = "cc40ba0401362f6214b540c70b5e1aa3100d5773"
+    event = incidents._source_event_from_run(
+        run, workflow_name="Scheduled brief slot receipt audit", repository="owner/repo",
+    )
+    job = {
+        "id": 119999679309, "run_id": run_id + 1, "run_attempt": 1,
+        "name": "Verify scheduled slot receipt (read-only)", "status": "completed", "conclusion": "success",
+        "steps": [{"name": incidents.LEGACY_AUDIT_STEP_NAME, "status": "completed", "conclusion": "success"}],
+    }
+    monkeypatch.setattr(incidents, "_request_json", lambda *_args, **_kwargs: {"total_count": 1, "jobs": [job]})
+    monkeypatch.setattr(incidents, "_open_artifact_url", lambda request, **_kwargs: io.BytesIO(raw_log))
+    with pytest.raises(LivenessAuditError, match="legacy_audit_job_identity_invalid"):
+        incidents._download_legacy_audit_result_from_job_log(
+            run=run, event=event, repository="owner/repo", api_url="https://api.github.com",
+            token="test-token", deadline=incidents.time.monotonic() + 30,
+        )
+
+
+def test_legacy_audit_recovery_queue_is_pinned_and_migrates_once():
+    path = ".github/workflows/scheduled-brief-slot-audit.yml"
+    queued = incidents._validated_legacy_audit_recoveries(
+        None, workflow_path=path, workflow_id=367335737,
+    )
+    assert [row["run_id"] for row in queued] == [39828958057, 39834814908, 39867216973]
+    assert all(row["state"] == "pending" for row in queued)
+
+    resolved = dict(queued[0])
+    resolved.update({
+        "state": "reconciled",
+        "result_status": "missing_receipt",
+        "resolved_at": "2026-10-26T01:00:00+00:00",
+        "evidence_kind": "verified_legacy_job_log",
+        "job_id": 119999679309,
+        "log_sha256": "a" * 64,
+    })
+    round_tripped = incidents._validated_legacy_audit_recoveries(
+        [resolved, *queued[1:]], workflow_path=path, workflow_id=367335737,
+    )
+    assert round_tripped[0]["state"] == "reconciled"
+    with pytest.raises(LivenessAuditError, match="incident_legacy_audit_recovery_identity_invalid"):
+        incidents._validated_legacy_audit_recoveries(
+            [{**queued[0], "sha": "b" * 40}, *queued[1:]],
+            workflow_path=path, workflow_id=367335737,
+        )
+
+
+def test_reconcile_replays_pinned_legacy_audit_runs_after_source_cursor_advanced(monkeypatch, tmp_path):
+    audit_path = ".github/workflows/scheduled-brief-slot-audit.yml"
+    workflow_ids = {
+        ".github/workflows/scheduled-brief.yml": 1,
+        audit_path: 367335737,
+        ".github/workflows/official-event-monitor.yml": 3,
+        ".github/workflows/unified-research-report.yml": 4,
+    }
+    sha = "cc40ba0401362f6214b540c70b5e1aa3100d5773"
+    run_details = {}
+    expected_outcomes = {
+        39828958057: ("missing_receipt", "schedule"),
+        39834814908: ("not_applicable", "schedule"),
+        39867216973: ("missing_receipt", "repository_dispatch"),
+    }
+    for run_id, (status, trigger) in expected_outcomes.items():
+        _raw, _result, created_at, _started, printed_at, _ledger = _legacy_audit_log(
+            run_id=run_id, status=status, trigger=trigger,
+        )
+        completed_at = (
+            "2026-10-22T22:46:08Z"
+            if trigger == "repository_dispatch" else "2026-10-22T18:10:54Z"
+        )
+        run_details[run_id] = {
+            "id": run_id,
+            "workflow_id": workflow_ids[audit_path],
+            "run_attempt": 1,
+            "path": audit_path,
+            "head_branch": "main",
+            "head_sha": sha,
+            "head_repository": {"full_name": "owner/repo"},
+            "event": trigger,
+            "created_at": created_at,
+            "completed_at": completed_at,
+            "updated_at": completed_at,
+            "status": "completed",
+            "conclusion": "success",
+        }
+
+    monkeypatch.setattr(incidents, "_load_cursor_state", lambda **_kwargs: {})
+    monkeypatch.setattr(
+        incidents, "_source_workflow_id",
+        lambda *, path, **_kwargs: workflow_ids[path],
+    )
+
+    def runs_since(*, path, workflow_id, cursor, **_kwargs):
+        return [], {
+            "mode": "live",
+            "created_at": "2026-10-26T00:00:00+00:00",
+            "run_id": 999999,
+            "source_evidence_gaps": [],
+            "legacy_audit_recoveries": incidents._validated_legacy_audit_recoveries(
+                cursor.get("legacy_audit_recoveries"),
+                workflow_path=path,
+                workflow_id=workflow_id,
+            ),
+            "pending_runs": [],
+            "pending_run_diagnostics": [],
+            "scan_complete": True,
+        }, False
+
+    monkeypatch.setattr(incidents, "_workflow_runs_since", runs_since)
+
+    def request_json(_api, _repo, _token, _method, path, **_kwargs):
+        if path.endswith("/repos/owner/repo"):
+            return {"id": 1309835643}
+        if path.startswith("actions/runs/"):
+            run_id = int(path.rsplit("/", 1)[-1])
+            return run_details[run_id]
+        pytest.fail(f"unexpected API request: {path}")
+
+    monkeypatch.setattr(incidents, "_request_json", request_json)
+
+    def reconcile_run(*, run, **_kwargs):
+        audit_status, _trigger = expected_outcomes[run["id"]]
+        return {
+            "status": "incident_active" if audit_status == "missing_receipt" else "no_notification",
+            "diagnostic_complete": True,
+            "incident_active": audit_status == "missing_receipt",
+            "evidence_status": audit_status,
+            "source_evidence_kind": "verified_legacy_job_log",
+            "source_job_id": 120000000000 + run["id"],
+            "source_log_sha256": "c" * 64,
+        }
+
+    monkeypatch.setattr(incidents, "_reconcile_source_run", reconcile_run)
+    monkeypatch.setenv("GITHUB_EVENT_PATH", str(tmp_path / "event.json"))
+    (tmp_path / "event.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_run")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+    monkeypatch.setenv("GITHUB_API_URL", "https://api.github.com")
+    monkeypatch.setenv("GITHUB_TOKEN", "test-token")
+    monkeypatch.setenv("GITHUB_RUN_ID", "999999")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "1")
+    monkeypatch.setenv("GITHUB_SHA", "d" * 40)
+    monkeypatch.setenv("GITHUB_OUTPUT", "")
+
+    result = incidents.reconcile(
+        result_path=tmp_path / "result.json", evidence_directory=tmp_path / "evidence",
+    )
+
+    assert {row["source_run_id"] for row in result["results"]} == set(expected_outcomes)
+    assert result["coverage_status"] == "complete"
+    assert result["diagnostic_complete"] is True
+    assert result["business_status"] == "degraded"
+    assert result["legacy_audit_recovery_pending"] == []
+    stored = result["source_cursors"][audit_path]["legacy_audit_recoveries"]
+    assert {row["state"] for row in stored} == {"reconciled"}
+    assert {row["result_status"] for row in stored} == {"missing_receipt", "not_applicable"}
 
 
 def test_source_run_identity_is_bound_to_main_and_same_repository():

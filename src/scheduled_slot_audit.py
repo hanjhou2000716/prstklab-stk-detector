@@ -43,7 +43,7 @@ class _ArtifactRedirectHandler(HTTPRedirectHandler):
         source = urlparse(request.full_url)
         target = urlparse(new_url)
         artifact_endpoint = re.fullmatch(
-            r"/repos/[^/]+/[^/]+/actions/(?:artifacts/\d+/zip|runs/\d+/logs)",
+            r"/repos/[^/]+/[^/]+/actions/(?:artifacts/\d+/zip|runs/\d+/logs|jobs/\d+/logs)",
             source.path,
         )
         artifact_host = re.fullmatch(r"productionresultssa\d+\.blob\.core\.windows\.net", target.hostname or "")

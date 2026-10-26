@@ -129,7 +129,7 @@ def _root_reason(evidence: dict[str, Any]) -> tuple[str, str, str, dict[str, Any
     audit = evidence["audit"]
     result = evidence["result"]
     status = str(audit.get("report_receipt_status") or result.get("status") or "unknown")
-    if status == "delivered" and audit.get("diagnostic_complete") is True:
+    if status in {"delivered", "expected_skip", "not_applicable", "not_due"} and audit.get("diagnostic_complete") is True:
         return None
     diagnosis = result.get("run_diagnosis") if isinstance(result.get("run_diagnosis"), dict) else {}
     terminal_reason = (

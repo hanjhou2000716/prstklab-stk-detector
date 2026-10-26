@@ -621,6 +621,18 @@ def test_artifact_cross_host_redirect_drops_github_credentials_and_rejects_other
     assert not redirected.has_header("Authorization")
     assert not redirected.has_header("Cookie")
 
+    job_log_request = Request(
+        "https://api.github.com/repos/acme/prstk/actions/jobs/123/logs",
+        headers={"Authorization": "Bearer secret", "Cookie": "session=secret"},
+    )
+    job_log_redirect = handler.redirect_request(
+        job_log_request, object(), 302, "Found", {},
+        "https://productionresultssa12.blob.core.windows.net/actions/log?sig=private",
+    )
+    assert job_log_redirect is not None
+    assert not job_log_redirect.has_header("Authorization")
+    assert not job_log_redirect.has_header("Cookie")
+
     with pytest.raises(URLError):
         handler.redirect_request(
             request, object(), 302, "Found", {}, "https://attacker.example/collect",

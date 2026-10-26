@@ -198,6 +198,39 @@ def test_audit_failure_reminds_after_thirty_minutes_and_verified_receipt_recover
     assert any(method == "PATCH" and path == "issues/23" and payload == {"state": "closed", "state_reason": "completed"} for method, path, payload in calls)
 
 
+@pytest.mark.parametrize("status", ["expected_skip", "not_applicable", "not_due"])
+def test_complete_non_applicable_audit_does_not_open_incident(tmp_path, monkeypatch, status):
+    directory = tmp_path / "audit"
+    directory.mkdir()
+    audit = {
+        "schema_version": "scheduled-slot-audit-result-v1",
+        "run_id": "310",
+        "attempt": 1,
+        "workflow_sha": "f" * 40,
+        "original_slot": {"slot": "", "date": "", "anchor": "", "scheduled_slot_at": ""},
+        "audited_at": "2026-10-22T18:50:45Z",
+        "report_receipt_status": status,
+        "diagnostic_complete": True,
+        "result": {"status": status, "reason": "schedule_candidate_not_applicable"},
+    }
+    (directory / "scheduled-slot-audit-310-attempt-1.json").write_text(json.dumps(audit), encoding="utf-8")
+    monkeypatch.setattr(incidents, "_open_incidents", lambda *_args, **_kwargs: [])
+    monkeypatch.setenv("GITHUB_RUN_ID", "")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "")
+
+    result = incidents.reconcile(
+        event=_event(run_id="310", attempt=1, sha="f" * 40, workflow="Scheduled brief slot receipt audit"),
+        evidence_directory=directory,
+        repository="hanjhou2000716/prstklab-stk-detector",
+        api_url="https://api.github.com", token="token",
+        now=datetime.fromisoformat("2026-10-22T19:00:00Z"),
+    )
+
+    assert result["diagnostic_complete"] is True
+    assert result["incident_active"] is False
+    assert result["opened_issue_numbers"] == []
+
+
 def test_incident_consumer_rejects_untrusted_branch_before_issue_api(tmp_path):
     with pytest.raises(LivenessAuditError, match="trigger_branch_not_trusted"):
         incidents.reconcile(
