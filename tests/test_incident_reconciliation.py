@@ -656,6 +656,172 @@ def test_reconcile_releases_only_stable_terminal_pending_run_and_recovers_next_c
     assert third["diagnostic_complete"] is True
 
 
+def test_reconcile_advances_past_settled_pre_scan_gap_and_keeps_gap_degraded(monkeypatch, tmp_path):
+    target_path = ".github/workflows/official-event-monitor.yml"
+    workflow_ids = {
+        target_path: 320209983,
+        ".github/workflows/scheduled-brief.yml": 10,
+        ".github/workflows/scheduled-brief-slot-audit.yml": 11,
+        ".github/workflows/unified-research-report.yml": 12,
+    }
+    now = datetime.now(UTC).replace(microsecond=0)
+    stuck_id = 39793445128
+    stuck_sha = "cc40ba0401362f6214b540c70b5e1aa3100d5773"
+    stuck_created = now - timedelta(minutes=55)
+    terminal_at = now - timedelta(minutes=36)
+    trace_at = now - timedelta(minutes=35)
+    stuck_run = {
+        "id": stuck_id, "workflow_id": workflow_ids[target_path], "run_attempt": 1,
+        "created_at": stuck_created.isoformat().replace("+00:00", "Z"),
+        "updated_at": terminal_at.isoformat().replace("+00:00", "Z"),
+        "status": "in_progress", "head_branch": "main", "head_sha": stuck_sha,
+        "head_repository": {"full_name": "owner/repo"},
+    }
+    jobs = [
+        {
+            "id": 119560307175, "name": "monitor-admission", "run_id": stuck_id,
+            "run_attempt": 1, "status": "completed", "conclusion": "success",
+            "started_at": (stuck_created + timedelta(seconds=2)).isoformat().replace("+00:00", "Z"),
+            "completed_at": (stuck_created + timedelta(seconds=7)).isoformat().replace("+00:00", "Z"),
+        },
+        {
+            "id": 119560351562, "name": "monitor-send-deploy", "run_id": stuck_id,
+            "run_attempt": 1, "status": "completed", "conclusion": "cancelled",
+            "started_at": (stuck_created + timedelta(seconds=11)).isoformat().replace("+00:00", "Z"),
+            "completed_at": terminal_at.isoformat().replace("+00:00", "Z"),
+        },
+    ]
+    later_id = 40249999999
+    later_created = now - timedelta(minutes=25)
+    later_sha = "b" * 40
+    later_run = {
+        "id": later_id, "workflow_id": workflow_ids[target_path], "run_attempt": 1,
+        "created_at": later_created.isoformat().replace("+00:00", "Z"),
+        "updated_at": (later_created + timedelta(minutes=1)).isoformat().replace("+00:00", "Z"),
+        "status": "completed", "conclusion": "success", "head_branch": "main",
+        "head_sha": later_sha, "head_repository": {"full_name": "owner/repo"},
+    }
+
+    def fake_request(_api, _repo, _token, _method, request_path, *, response_headers=None, deadline_monotonic=None):
+        if request_path == "https://api.github.com/repos/owner/repo":
+            return {"id": 1309835643}
+        if request_path == f"actions/runs/{stuck_id}":
+            return dict(stuck_run)
+        if request_path == f"actions/runs/{stuck_id}/attempts/1/jobs?per_page=100&page=1":
+            return {"total_count": len(jobs), "jobs": list(jobs)}
+        if request_path.startswith("actions/workflows/") and "/runs?" in request_path:
+            workflow_id = int(request_path.split("actions/workflows/", 1)[1].split("/", 1)[0])
+            rows = [dict(later_run), dict(stuck_run)] if workflow_id == workflow_ids[target_path] else []
+            return {"total_count": len(rows), "workflow_runs": rows}
+        raise AssertionError(f"Unexpected GitHub API path: {request_path}")
+
+    monkeypatch.setattr(incidents, "_request_json", fake_request)
+    snapshot = incidents._read_source_job_snapshot(
+        run=stuck_run, repository="owner/repo", repository_id=1309835643,
+        api_url="https://api.github.com", token="test-token",
+        deadline=incidents.time.monotonic() + 30,
+        expected_jobs=incidents.SOURCE_TERMINAL_JOB_CONTRACTS[(
+            target_path, stuck_sha,
+        )]["jobs"],
+    )
+    stuck_observation = {
+        "run_id": stuck_id, "attempt": 1, "fingerprint": snapshot["fingerprint"],
+        "observed_at": (now - timedelta(seconds=5)).isoformat(),
+    }
+    cursor_state = {
+        target_path: {
+            "mode": "live", "created_at": (now - timedelta(hours=1)).isoformat(), "run_id": 0,
+            "pending_runs": [{
+                "run_id": stuck_id, "workflow_id": workflow_ids[target_path],
+                "created_at": stuck_created.isoformat(), "attempt": 1, "head_sha": stuck_sha,
+                "terminal_jobs_observation": stuck_observation,
+            }],
+        },
+    }
+    monkeypatch.setattr(
+        incidents, "_load_cursor_state",
+        lambda **_kwargs: json.loads(json.dumps(cursor_state)),
+    )
+    monkeypatch.setattr(
+        incidents, "_source_workflow_id",
+        lambda *, path, **_kwargs: workflow_ids[path],
+    )
+    skipped_trace = {
+        "events": [], "recorded_at": trace_at.isoformat(), "run_attempt": "1",
+        "schema_version": "official-event-trace-v1", "workflow_run_id": str(stuck_id),
+        "workflow_sha": stuck_sha,
+        "stages": {
+            "batch_failed_event_count": "0", "batch_partial_event_count": "0",
+            "candidate_incident_count": "0", "durable_receipt": "false",
+            "notification_expected": "false", "notification_reason": "not_attempted",
+            "prepare": "not_required", "public_gate": "false", "queue": "not_required",
+            "receipt_callback": "skipped", "scan": "skipped", "sender": "skipped",
+        },
+    }
+    completed_trace = {
+        "events": [], "recorded_at": now.isoformat(), "run_attempt": "1",
+        "schema_version": "official-event-trace-v1", "workflow_run_id": str(later_id),
+        "workflow_sha": later_sha,
+        "stages": {
+            "batch_failed_event_count": "0", "batch_partial_event_count": "0",
+            "candidate_incident_count": "0", "durable_receipt": "false",
+            "notification_expected": "false", "notification_reason": "no_event",
+            "prepare": "not_required", "public_gate": "false", "queue": "not_required",
+            "receipt_callback": "skipped", "scan": "success", "sender": "skipped",
+        },
+    }
+
+    def artifact_bytes(*, run, **_kwargs):
+        trace = skipped_trace if _safe_run_id(run) == stuck_id else completed_trace
+        return json.dumps(trace, sort_keys=True).encode("utf-8")
+
+    def reconcile_trace(*, trace_path, **_kwargs):
+        trace = json.loads(Path(trace_path).read_text(encoding="utf-8"))
+        if trace["workflow_run_id"] == str(stuck_id):
+            return {"status": "evidence_unavailable", "diagnostic_complete": False, "incident_active": False}
+        return {"status": "no_notification", "diagnostic_complete": True, "incident_active": False}
+
+    def _safe_run_id(run):
+        return int(run["id"])
+
+    monkeypatch.setattr(incidents, "_download_artifact_json", artifact_bytes)
+    monkeypatch.setattr(incidents, "reconcile_official_events", reconcile_trace)
+    event_path = tmp_path / "event.json"
+    event_path.write_text("{}", encoding="utf-8")
+    monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_path))
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_run")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+    monkeypatch.setenv("GITHUB_API_URL", "https://api.github.com")
+    monkeypatch.setenv("GITHUB_TOKEN", "test-token")
+    monkeypatch.setenv("GITHUB_RUN_ID", "999999")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "1")
+    monkeypatch.setenv("GITHUB_SHA", "d" * 40)
+    monkeypatch.setenv("GITHUB_OUTPUT", "")
+
+    result = incidents.reconcile(
+        result_path=tmp_path / "result.json", evidence_directory=tmp_path / "evidence",
+    )
+    resolved = next(row for row in result["results"] if row.get("source_run_id") == stuck_id)
+    later = next(row for row in result["results"] if row.get("source_run_id") == later_id)
+    assert resolved["failure_reason"] == "official_scan_never_started"
+    assert resolved["diagnostic_complete"] is False
+    assert resolved["cursor_resolution"] == "advance_with_unknown"
+    assert later["diagnostic_complete"] is True
+    assert result["business_status"] == "degraded"
+    assert result["source_evidence_gaps"][0]["run_id"] == stuck_id
+    assert result["coverage_status"] == "incomplete"
+    assert result["diagnostic_complete"] is False
+    cursor_state.update(result["source_cursors"])
+
+    following = incidents.reconcile(
+        result_path=tmp_path / "result.json", evidence_directory=tmp_path / "evidence",
+    )
+    assert following["source_evidence_gaps"] == result["source_evidence_gaps"]
+    assert following["coverage_status"] == "incomplete"
+    assert following["diagnostic_complete"] is False
+    assert following["business_status"] == "degraded"
+
+
 def test_reconcile_preserves_terminal_job_observation_when_source_failure_rolls_back_cursor(monkeypatch, tmp_path):
     target_path = ".github/workflows/official-event-monitor.yml"
     workflow_ids = {
@@ -1477,6 +1643,144 @@ def test_terminal_job_evidence_cannot_settle_another_attempt_or_sha():
     )
 
     assert result is None
+
+
+def test_pre_scan_trace_resolution_requires_exact_bound_trace_and_terminal_cancellation():
+    now = datetime(2026, 10, 26, 0, 0, tzinfo=UTC)
+    run_id = 39793445128
+    attempt = 1
+    workflow_id = 320209983
+    sha = "cc40ba0401362f6214b540c70b5e1aa3100d5773"
+    created_at = now - timedelta(hours=1)
+    terminal_at = now - timedelta(minutes=31)
+    trace_at = now - timedelta(minutes=30, seconds=30)
+    raw_trace = json.dumps({
+        "events": [], "recorded_at": trace_at.isoformat(), "run_attempt": str(attempt),
+        "schema_version": "official-event-trace-v1", "workflow_run_id": str(run_id),
+        "workflow_sha": sha,
+        "stages": {
+            "batch_failed_event_count": "0", "batch_partial_event_count": "0",
+            "candidate_incident_count": "0", "durable_receipt": "false",
+            "candidate_incident_reason": "", "notification_expected": "false",
+            "notification_reason": "not_attempted", "prepare": "not_required",
+            "public_gate": "false", "queue": "not_required", "receipt_callback": "skipped",
+            "scan": "skipped", "sender": "skipped",
+        },
+    }, sort_keys=True).encode("utf-8")
+    run = {
+        "id": run_id, "workflow_id": workflow_id, "run_attempt": attempt,
+        "created_at": created_at.isoformat(), "status": "in_progress", "head_sha": sha,
+    }
+    job_rows = [
+        {"id": 100, "name": "monitor-admission", "status": "completed", "conclusion": "success"},
+        {"id": 101, "name": "monitor-send-deploy", "status": "completed", "conclusion": "cancelled"},
+    ]
+    terminal = {
+        "schema_version": "source-run-terminal-jobs-v1",
+        "resolution": "stable_complete_jobs_snapshot",
+        "workflow_contract": "official-event-monitor-cc40ba0-jobs-v1",
+        "workflow_sha": sha, "run_id": run_id, "attempt": attempt,
+        "job_fingerprint": "a" * 64,
+        "jobs": job_rows,
+        "terminal_jobs_completed_at": terminal_at.isoformat(),
+    }
+    proof = incidents._pre_scan_trace_evidence(
+        content=raw_trace, run=run,
+        workflow_path=".github/workflows/official-event-monitor.yml",
+    )
+    assert proof is not None
+    trace_payload = json.loads(raw_trace)
+    trace_payload["stages"]["scan"] = "success"
+    assert incidents._pre_scan_trace_evidence(
+        content=json.dumps(trace_payload).encode("utf-8"), run=run,
+        workflow_path=".github/workflows/official-event-monitor.yml",
+    ) is None
+    trace_payload = json.loads(raw_trace)
+    trace_payload["events"] = [{"event_ref": "unexpected"}]
+    assert incidents._pre_scan_trace_evidence(
+        content=json.dumps(trace_payload).encode("utf-8"), run=run,
+        workflow_path=".github/workflows/official-event-monitor.yml",
+    ) is None
+    assert incidents._settled_pre_scan_gap_resolution(
+        {"diagnostic_complete": False, "pre_scan_trace_evidence": proof},
+        {**run, "_incident_source_terminal_evidence": terminal}, now,
+    ) is not None
+    boundary_proof = dict(
+        proof,
+        trace_recorded_at=(now - incidents.MISSING_ARTIFACT_SETTLE_WINDOW).isoformat(),
+    )
+    assert incidents._settled_pre_scan_gap_resolution(
+        {"diagnostic_complete": False, "pre_scan_trace_evidence": boundary_proof},
+        {**run, "_incident_source_terminal_evidence": terminal}, now,
+    ) is not None
+    too_recent_proof = dict(
+        proof,
+        trace_recorded_at=(now - incidents.MISSING_ARTIFACT_SETTLE_WINDOW + timedelta(seconds=1)).isoformat(),
+    )
+    assert incidents._settled_pre_scan_gap_resolution(
+        {"diagnostic_complete": False, "pre_scan_trace_evidence": too_recent_proof},
+        {**run, "_incident_source_terminal_evidence": terminal}, now,
+    ) is None
+
+    wrong_attempt = dict(proof, attempt=2)
+    assert incidents._settled_pre_scan_gap_resolution(
+        {"diagnostic_complete": False, "pre_scan_trace_evidence": wrong_attempt},
+        {**run, "_incident_source_terminal_evidence": terminal}, now,
+    ) is None
+    wrong_sha = dict(terminal, workflow_sha="b" * 40)
+    assert incidents._settled_pre_scan_gap_resolution(
+        {"diagnostic_complete": False, "pre_scan_trace_evidence": proof},
+        {**run, "_incident_source_terminal_evidence": wrong_sha}, now,
+    ) is None
+    wrong_attempt_evidence = dict(terminal, attempt=2)
+    assert incidents._settled_pre_scan_gap_resolution(
+        {"diagnostic_complete": False, "pre_scan_trace_evidence": proof},
+        {**run, "_incident_source_terminal_evidence": wrong_attempt_evidence}, now,
+    ) is None
+    still_running = dict(terminal, jobs=[job_rows[0], dict(job_rows[1], conclusion="success")])
+    assert incidents._settled_pre_scan_gap_resolution(
+        {"diagnostic_complete": False, "pre_scan_trace_evidence": proof},
+        {**run, "_incident_source_terminal_evidence": still_running}, now,
+    ) is None
+    before_settle = dict(proof, trace_recorded_at=(now - timedelta(minutes=5)).isoformat())
+    assert incidents._settled_pre_scan_gap_resolution(
+        {"diagnostic_complete": False, "pre_scan_trace_evidence": before_settle},
+        {**run, "_incident_source_terminal_evidence": terminal}, now,
+    ) is None
+
+
+def test_source_evidence_gap_cursor_rejects_identity_conflicts_and_preserves_valid_gap():
+    gap = {
+        "schema_version": "incident-source-evidence-gap-v1",
+        "workflow_path": ".github/workflows/official-event-monitor.yml",
+        "workflow_id": 320209983,
+        "run_id": 39793445128,
+        "attempt": 1,
+        "sha": "cc40ba0401362f6214b540c70b5e1aa3100d5773",
+        "reason": "official_scan_never_started",
+        "source_created_at": "2026-10-25T22:00:00+00:00",
+        "source_terminal_at": "2026-10-25T22:30:00+00:00",
+        "trace_recorded_at": "2026-10-25T22:30:00+00:00",
+        "trace_sha256": "a" * 64,
+        "settled_at": "2026-10-25T23:00:00+00:00",
+        "recorded_at": "2026-10-25T23:01:00+00:00",
+    }
+    validated = incidents._validated_source_evidence_gaps(
+        [gap], workflow_path=".github/workflows/official-event-monitor.yml",
+        workflow_id=320209983,
+    )
+    assert validated == [gap]
+    with pytest.raises(LivenessAuditError, match="source_evidence_gap_identity_invalid"):
+        incidents._validated_source_evidence_gaps(
+            [dict(gap, workflow_id=99)],
+            workflow_path=".github/workflows/official-event-monitor.yml",
+            workflow_id=320209983,
+        )
+    with pytest.raises(LivenessAuditError, match="source_evidence_gap_duplicated"):
+        incidents._validated_source_evidence_gaps(
+            [gap, gap], workflow_path=".github/workflows/official-event-monitor.yml",
+            workflow_id=320209983,
+        )
 
 
 @pytest.mark.parametrize(
