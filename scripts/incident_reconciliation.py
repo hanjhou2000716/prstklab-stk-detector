@@ -314,6 +314,10 @@ def _settled_pre_scan_gap_resolution(
     return {
         "evidence_gap": "official_scan_never_started",
         "cursor_resolution": "advance_with_unknown",
+        # The report was not scanned or delivered, but the immutable run and
+        # trace evidence fully establish that failure. Keep the business result
+        # degraded while allowing diagnostic coverage to complete.
+        "diagnostic_complete": True,
         "failure_reason": "official_scan_never_started",
         "failure_stage": "official_scan",
         "source_evidence_gap": gap,
@@ -2233,9 +2237,13 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
         for row in cursor_updates.get(audit_path, {}).get("legacy_audit_recoveries", [])
         if isinstance(row, dict) and row.get("state") == "pending"
     ]
+    # Settled source gaps are retained as diagnosed failures below. They make
+    # business_status degraded, but do not mean the source history is still
+    # unread or unprocessed. Only outstanding work and unverified cursors keep
+    # diagnostic coverage incomplete.
     coverage_complete = (
         not deferred_rows and not any(scan_holds.values())
-        and not source_evidence_gaps and not legacy_audit_recovery_pending
+        and not legacy_audit_recovery_pending
     )
     diagnostic_complete = coverage_complete and all(
         item.get("diagnostic_complete") is not False for item in results

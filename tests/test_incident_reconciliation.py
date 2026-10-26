@@ -998,12 +998,12 @@ def test_reconcile_releases_only_stable_terminal_pending_run_and_recovers_next_c
     assert third["diagnostic_complete"] is True
 
 
-def test_reconcile_advances_past_settled_pre_scan_gap_and_keeps_gap_degraded(monkeypatch, tmp_path):
+def test_reconcile_completes_diagnostics_for_settled_pre_scan_gap_and_keeps_gap_degraded(monkeypatch, tmp_path):
     target_path = ".github/workflows/official-event-monitor.yml"
     workflow_ids = {
         target_path: 320209983,
         ".github/workflows/scheduled-brief.yml": 10,
-        ".github/workflows/scheduled-brief-slot-audit.yml": 11,
+        ".github/workflows/scheduled-brief-slot-audit.yml": 367335737,
         ".github/workflows/unified-research-report.yml": 12,
     }
     now = datetime.now(UTC).replace(microsecond=0)
@@ -1080,6 +1080,25 @@ def test_reconcile_advances_past_settled_pre_scan_gap_and_keeps_gap_degraded(mon
             }],
         },
     }
+    audit_path = ".github/workflows/scheduled-brief-slot-audit.yml"
+    cursor_state[audit_path] = {
+        "mode": "live", "created_at": (now - timedelta(hours=1)).isoformat(), "run_id": 0,
+        "legacy_audit_recoveries": [
+            {
+                "schema_version": incidents.LEGACY_AUDIT_RECOVERY_SCHEMA,
+                "run_id": run_id,
+                "attempt": expected["attempt"],
+                "sha": expected["sha"],
+                "state": "reconciled",
+                "result_status": "missing_receipt",
+                "resolved_at": now.isoformat(),
+                "evidence_kind": "verified_legacy_job_log",
+                "job_id": 120000000000 + run_id,
+                "log_sha256": "e" * 64,
+            }
+            for run_id, expected in incidents.LEGACY_AUDIT_LOG_RECOVERY_RUNS.items()
+        ],
+    }
     monkeypatch.setattr(
         incidents, "_load_cursor_state",
         lambda **_kwargs: json.loads(json.dumps(cursor_state)),
@@ -1146,22 +1165,25 @@ def test_reconcile_advances_past_settled_pre_scan_gap_and_keeps_gap_degraded(mon
     resolved = next(row for row in result["results"] if row.get("source_run_id") == stuck_id)
     later = next(row for row in result["results"] if row.get("source_run_id") == later_id)
     assert resolved["failure_reason"] == "official_scan_never_started"
-    assert resolved["diagnostic_complete"] is False
+    assert resolved["diagnostic_complete"] is True
     assert resolved["cursor_resolution"] == "advance_with_unknown"
     assert later["diagnostic_complete"] is True
     assert result["business_status"] == "degraded"
     assert result["source_evidence_gaps"][0]["run_id"] == stuck_id
+    assert result["source_scan_holds"] == [target_path]
     assert result["coverage_status"] == "incomplete"
     assert result["diagnostic_complete"] is False
+    assert result["incident_handoff_status"] == "incomplete"
     cursor_state.update(result["source_cursors"])
 
     following = incidents.reconcile(
         result_path=tmp_path / "result.json", evidence_directory=tmp_path / "evidence",
     )
     assert following["source_evidence_gaps"] == result["source_evidence_gaps"]
-    assert following["coverage_status"] == "incomplete"
-    assert following["diagnostic_complete"] is False
+    assert following["coverage_status"] == "complete"
+    assert following["diagnostic_complete"] is True
     assert following["business_status"] == "degraded"
+    assert following["incident_handoff_status"] == "accepted"
 
 
 def test_reconcile_preserves_terminal_job_observation_when_source_failure_rolls_back_cursor(monkeypatch, tmp_path):
