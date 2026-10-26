@@ -67,6 +67,7 @@ SOURCE_JOB_MAX_PAGES = 10
 MAX_SOURCE_RUNS_PER_CYCLE = 10
 SOURCE_BACKFILL_WINDOW = timedelta(hours=6)
 MISSING_ARTIFACT_SETTLE_WINDOW = timedelta(minutes=30)
+SOURCE_EVIDENCE_GAP_LIMIT = 100
 STALE_PENDING_JOB_CHECK_AFTER = timedelta(minutes=10)
 TERMINAL_JOB_SNAPSHOT_CONFIRMATION = timedelta(seconds=2)
 STATE_ARTIFACT_LIMIT = 20 * 1024 * 1024
@@ -128,6 +129,222 @@ def _settled_missing_artifact_resolution(
         "source_completed_at": completed_at.isoformat(),
         "artifact_settled_at": settled_at.isoformat(),
     }
+
+
+def _pre_scan_trace_evidence(
+    *, content: bytes, run: dict[str, Any], workflow_path: str,
+) -> dict[str, Any] | None:
+    """Return a minimal proof only for an identity-bound trace that never scanned."""
+    if workflow_path != ".github/workflows/official-event-monitor.yml":
+        return None
+    try:
+        trace = json.loads(content.decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError):
+        return None
+    if not isinstance(trace, dict) or not isinstance(trace.get("stages"), dict):
+        return None
+    run_id = _safe_int(run.get("id"))
+    attempt = _safe_int(run.get("run_attempt"))
+    workflow_id = _safe_int(run.get("workflow_id"))
+    sha = str(run.get("head_sha") or "").lower()
+    contract = SOURCE_TERMINAL_JOB_CONTRACTS.get((workflow_path, sha))
+    stages = trace["stages"]
+    if (
+        not run_id or not attempt or not workflow_id or contract is None
+        or trace.get("schema_version") != "official-event-trace-v1"
+        or _safe_int(trace.get("workflow_run_id")) != run_id
+        or _safe_int(trace.get("run_attempt")) != attempt
+        or str(trace.get("workflow_sha") or "").lower() != sha
+        or not re.fullmatch(r"[0-9a-f]{40}", sha)
+        or trace.get("events") != []
+        or str(stages.get("scan") or "").casefold() != "skipped"
+        or str(stages.get("notification_expected") or "").casefold() != "false"
+        or str(stages.get("queue") or "").casefold() != "not_required"
+        or str(stages.get("prepare") or "").casefold() != "not_required"
+        or str(stages.get("public_gate") or "").casefold() != "false"
+        or str(stages.get("sender") or "").casefold() != "skipped"
+        or str(stages.get("durable_receipt") or "").casefold() != "false"
+        or str(stages.get("receipt_callback") or "").casefold() != "skipped"
+        or str(stages.get("notification_reason") or "").casefold() != "not_attempted"
+        or str(stages.get("candidate_incident_reason") or "").strip()
+        or _safe_nonnegative_int(stages.get("batch_failed_event_count")) != 0
+        or _safe_nonnegative_int(stages.get("batch_partial_event_count")) != 0
+        or _safe_nonnegative_int(stages.get("candidate_incident_count")) != 0
+    ):
+        return None
+    recorded_at = _parse_time(trace.get("recorded_at"))
+    if recorded_at is None:
+        return None
+    return {
+        "schema_version": "official-pre-scan-trace-evidence-v1",
+        "workflow_id": _safe_int(run.get("workflow_id")),
+        "workflow_contract": contract["contract"],
+        "run_id": run_id,
+        "attempt": attempt,
+        "sha": sha,
+        "trace_recorded_at": recorded_at.isoformat(),
+        "trace_sha256": hashlib.sha256(content).hexdigest(),
+        "scan": "skipped",
+        "event_count": 0,
+        "protected_stages": "not_started",
+    }
+
+
+def _safe_nonnegative_int(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        number = value
+    elif isinstance(value, str) and re.fullmatch(r"(?:0|[1-9][0-9]{0,8})", value.strip()):
+        number = int(value)
+    else:
+        return None
+    return number if number >= 0 else None
+
+
+def _settled_pre_scan_gap_resolution(
+    source_result: dict[str, Any], run: dict[str, Any], now: datetime,
+) -> dict[str, Any] | None:
+    proof = source_result.get("pre_scan_trace_evidence")
+    run_id = _safe_int(run.get("id"))
+    attempt = _safe_int(run.get("run_attempt"))
+    sha = str(run.get("head_sha") or "").lower()
+    workflow_id = _safe_int(run.get("workflow_id"))
+    created_at = _parse_time(run.get("created_at"))
+    if (
+        source_result.get("diagnostic_complete") is not False
+        or not isinstance(proof, dict)
+        or proof.get("schema_version") != "official-pre-scan-trace-evidence-v1"
+        or proof.get("scan") != "skipped"
+        or proof.get("event_count") != 0
+        or proof.get("protected_stages") != "not_started"
+        or proof.get("workflow_contract") != "official-event-monitor-cc40ba0-jobs-v1"
+        or _safe_int(proof.get("run_id")) != run_id
+        or _safe_int(proof.get("attempt")) != attempt
+        or _safe_int(proof.get("workflow_id")) != workflow_id
+        or str(proof.get("sha") or "").lower() != sha
+        or not re.fullmatch(r"[0-9a-f]{64}", str(proof.get("trace_sha256") or ""))
+        or created_at is None
+    ):
+        return None
+
+    status = str(run.get("status") or "").casefold()
+    if status == "completed":
+        conclusion = str(run.get("conclusion") or "").casefold()
+        if conclusion not in {"cancelled", "failure", "timed_out"}:
+            return None
+        terminal_at = _parse_time(run.get("completed_at")) or _parse_time(run.get("updated_at"))
+    else:
+        terminal = run.get("_incident_source_terminal_evidence")
+        if (
+            status != "in_progress"
+            or not isinstance(terminal, dict)
+            or terminal.get("schema_version") != "source-run-terminal-jobs-v1"
+            or terminal.get("resolution") != "stable_complete_jobs_snapshot"
+            or terminal.get("workflow_contract") != "official-event-monitor-cc40ba0-jobs-v1"
+            or _safe_int(terminal.get("run_id")) != run_id
+            or _safe_int(terminal.get("attempt")) != attempt
+            or str(terminal.get("workflow_sha") or "").lower() != sha
+            or not re.fullmatch(r"[0-9a-f]{64}", str(terminal.get("job_fingerprint") or ""))
+        ):
+            return None
+        jobs = terminal.get("jobs")
+        if not isinstance(jobs, list) or len(jobs) != 2 or any(not isinstance(job, dict) for job in jobs):
+            return None
+        outcomes = {str(job.get("name") or ""): job for job in jobs}
+        admission = outcomes.get("monitor-admission")
+        monitor = outcomes.get("monitor-send-deploy")
+        if (
+            set(outcomes) != {"monitor-admission", "monitor-send-deploy"}
+            or not isinstance(admission, dict) or not isinstance(monitor, dict)
+            or admission.get("status") != "completed" or admission.get("conclusion") != "success"
+            or monitor.get("status") != "completed"
+            or monitor.get("conclusion") not in {"cancelled", "failure", "timed_out", "startup_failure"}
+        ):
+            return None
+        terminal_at = _parse_time(terminal.get("terminal_jobs_completed_at"))
+
+    trace_recorded_at = _parse_time(proof.get("trace_recorded_at"))
+    if (
+        terminal_at is None or trace_recorded_at is None
+        or terminal_at < created_at or terminal_at > now.astimezone(UTC)
+        or trace_recorded_at < created_at or trace_recorded_at > now.astimezone(UTC)
+    ):
+        return None
+    source_terminal_at = max(terminal_at, trace_recorded_at)
+    settled_at = source_terminal_at + MISSING_ARTIFACT_SETTLE_WINDOW
+    if now.astimezone(UTC) < settled_at:
+        return None
+    gap = {
+        "schema_version": "incident-source-evidence-gap-v1",
+        "workflow_path": ".github/workflows/official-event-monitor.yml",
+        "workflow_id": workflow_id,
+        "run_id": run_id,
+        "attempt": attempt,
+        "sha": sha,
+        "reason": "official_scan_never_started",
+        "source_created_at": created_at.isoformat(),
+        "source_terminal_at": source_terminal_at.isoformat(),
+        "trace_recorded_at": trace_recorded_at.isoformat(),
+        "trace_sha256": str(proof["trace_sha256"]),
+        "settled_at": settled_at.isoformat(),
+        "recorded_at": now.astimezone(UTC).isoformat(),
+    }
+    return {
+        "evidence_gap": "official_scan_never_started",
+        "cursor_resolution": "advance_with_unknown",
+        "failure_reason": "official_scan_never_started",
+        "failure_stage": "official_scan",
+        "source_evidence_gap": gap,
+    }
+
+
+def _validated_source_evidence_gaps(
+    value: Any, *, workflow_path: str, workflow_id: int,
+) -> list[dict[str, Any]]:
+    if value is None:
+        return []
+    if not isinstance(value, list) or len(value) > SOURCE_EVIDENCE_GAP_LIMIT:
+        raise LivenessAuditError("incident_source_evidence_gaps_invalid")
+    normalized: list[dict[str, Any]] = []
+    seen: set[tuple[int, int, str]] = set()
+    required = {
+        "schema_version", "workflow_path", "workflow_id", "run_id", "attempt", "sha", "reason",
+        "source_created_at", "source_terminal_at", "trace_recorded_at", "trace_sha256", "settled_at", "recorded_at",
+    }
+    for row in value:
+        if (
+        not isinstance(row, dict) or set(row) != required
+            or row.get("schema_version") != "incident-source-evidence-gap-v1"
+            or row.get("workflow_path") != workflow_path
+            or isinstance(row.get("workflow_id"), bool)
+            or not isinstance(row.get("workflow_id"), int)
+            or row.get("workflow_id") != workflow_id
+            or row.get("reason") != "official_scan_never_started"
+            or not re.fullmatch(r"[0-9a-f]{40}", str(row.get("sha") or ""))
+            or not re.fullmatch(r"[0-9a-f]{64}", str(row.get("trace_sha256") or ""))
+        ):
+            raise LivenessAuditError("incident_source_evidence_gap_identity_invalid")
+        run_id = row.get("run_id") if isinstance(row.get("run_id"), int) and not isinstance(row.get("run_id"), bool) else None
+        attempt = row.get("attempt") if isinstance(row.get("attempt"), int) and not isinstance(row.get("attempt"), bool) else None
+        times = {key: _parse_time(row.get(key)) for key in (
+            "source_created_at", "source_terminal_at", "trace_recorded_at", "settled_at", "recorded_at",
+        )}
+        if (
+            run_id is None or run_id <= 0 or attempt is None or attempt <= 0
+            or any(item is None for item in times.values())
+            or times["source_terminal_at"] < times["source_created_at"]
+            or times["trace_recorded_at"] < times["source_created_at"]
+            or times["settled_at"] < times["source_terminal_at"] + MISSING_ARTIFACT_SETTLE_WINDOW
+            or times["recorded_at"] < times["settled_at"]
+        ):
+            raise LivenessAuditError("incident_source_evidence_gap_time_invalid")
+        identity = (run_id, attempt, str(row["sha"]))
+        if identity in seen:
+            raise LivenessAuditError("incident_source_evidence_gap_duplicated")
+        seen.add(identity)
+        normalized.append(dict(row))
+    return normalized
 
 
 CADENCE_MARKER_PREFIXES = (
@@ -615,6 +832,7 @@ def _observe_terminal_jobs(
         "job_fingerprint": snapshot["fingerprint"],
         "job_ids": snapshot["job_ids"],
         "job_names": snapshot["job_names"],
+        "jobs": snapshot["jobs"],
         "terminal_jobs_completed_at": max(
             row["completed_at"] for row in snapshot["jobs"]
         ),
@@ -852,6 +1070,9 @@ def _workflow_runs_since(
         "mode": mode,
         "created_at": cursor_time.isoformat(),
         "run_id": cursor_id,
+        "source_evidence_gaps": _validated_source_evidence_gaps(
+            cursor.get("source_evidence_gaps"), workflow_path=path, workflow_id=workflow_id,
+        ),
         "pending_runs": sorted(pending.values(), key=lambda item: (item["created_at"], item["run_id"])),
         "pending_run_diagnostics": [
             pending_probe_diagnostics[key] for key in sorted(pending_probe_diagnostics)
@@ -1223,11 +1444,17 @@ def _reconcile_source_run(
                 repository=repository, api_url=api_url, token=token, now=now,
                 defer_notification_cadence=True, deadline_monotonic=deadline,
             )
+        pre_scan_evidence = _pre_scan_trace_evidence(
+            content=content, run=run,
+            workflow_path=".github/workflows/official-event-monitor.yml",
+        )
         source_result = reconcile_official_events(
             api_url=api_url, repository=repository, token=token,
             trace_path=evidence_path, now=now, defer_notification_cadence=True,
             deadline_monotonic=deadline,
         )
+        if pre_scan_evidence is not None:
+            source_result["pre_scan_trace_evidence"] = pre_scan_evidence
         terminal_evidence = run.get("_incident_source_terminal_evidence")
         if isinstance(terminal_evidence, dict):
             source_result["source_run_terminal_evidence"] = terminal_evidence
@@ -1367,9 +1594,37 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
                 "failure_stage": "source_evidence_read",
                 "failure_evidence": exc.diagnostic() if isinstance(exc, GitHubAPIHttpError) else {},
             }
-        settled_gap = _settled_missing_artifact_resolution(source_result, run, now)
+        settled_gap = _settled_pre_scan_gap_resolution(source_result, run, now)
+        if settled_gap is None:
+            settled_gap = _settled_missing_artifact_resolution(source_result, run, now)
         if settled_gap is not None:
             source_result.update(settled_gap)
+        gap = source_result.get("source_evidence_gap")
+        if gap is not None:
+            existing_gaps = _validated_source_evidence_gaps(
+                discovered_cursors[path].get("source_evidence_gaps"),
+                workflow_path=path,
+                workflow_id=source_definitions[path][0],
+            )
+            identity = (
+                _safe_int(gap.get("run_id")) if isinstance(gap, dict) else None,
+                _safe_int(gap.get("attempt")) if isinstance(gap, dict) else None,
+                str(gap.get("sha") or "").lower() if isinstance(gap, dict) else "",
+            )
+            if not isinstance(gap, dict) or identity[0] is None or identity[1] is None:
+                raise LivenessAuditError("incident_source_evidence_gap_identity_invalid")
+            prior = next((
+                row for row in existing_gaps
+                if (_safe_int(row.get("run_id")), _safe_int(row.get("attempt")), str(row.get("sha") or "")) == identity
+            ), None)
+            if prior is not None and prior != gap:
+                raise LivenessAuditError("incident_source_evidence_gap_conflict")
+            if prior is None:
+                if len(existing_gaps) >= SOURCE_EVIDENCE_GAP_LIMIT:
+                    raise LivenessAuditError("incident_source_evidence_gaps_limit_exceeded")
+                existing_gaps.append(gap)
+            discovered_cursors[path]["source_evidence_gaps"] = existing_gaps
+            source_result["status"] = "evidence_unavailable"
         result_row = {
             "source_workflow": workflow_name,
             "source_run_id": run_id,
@@ -1490,7 +1745,13 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
         if existing is not None and existing != row:
             raise LivenessAuditError("incident_notification_cadence_conflict")
         confirmations_by_issue[number] = row
-    coverage_complete = not deferred_rows and not any(scan_holds.values())
+    source_evidence_gaps = [
+        {"source_workflow": SOURCE_WORKFLOWS[path], **gap}
+        for path, cursor in cursor_updates.items()
+        for gap in cursor.get("source_evidence_gaps", [])
+        if isinstance(gap, dict)
+    ]
+    coverage_complete = not deferred_rows and not any(scan_holds.values()) and not source_evidence_gaps
     diagnostic_complete = coverage_complete and all(
         item.get("diagnostic_complete") is not False for item in results
     )
@@ -1506,7 +1767,7 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
         "source_run_ids": sorted({str(item.get("source_run_id")) for item in results if item.get("source_run_id")}),
         "business_status": (
             "degraded"
-            if unresolved_pending_diagnostics or any(
+            if source_evidence_gaps or unresolved_pending_diagnostics or any(
                 item.get("status") in {"stalled", "degraded", "evidence_unavailable"}
                 or item.get("incident_active") for item in results
             )
@@ -1515,9 +1776,13 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
         "diagnostic_complete": diagnostic_complete,
         "coverage_status": "complete" if coverage_complete else "incomplete",
         "failure_reason": (
-            "source_pending_terminal_state_unverified"
+            "central_reconciliation_coverage_incomplete"
+            if source_evidence_gaps and not diagnostic_complete
+            else "source_pending_terminal_state_unverified"
             if unresolved_pending_diagnostics and not diagnostic_complete else ""
         ),
+        "source_evidence_gaps": source_evidence_gaps,
+        "source_evidence_gap_count": len(source_evidence_gaps),
         "pending_run_diagnostics": pending_run_diagnostics,
         "unprocessed_source_runs": [
             {"workflow": row[3], "run_id": row[1], "attempt": _safe_int(row[4].get("run_attempt")) or 1}
@@ -1662,6 +1927,7 @@ def main() -> int:
             handle.write(f"- coverage_status: {result.get('coverage_status', 'incomplete')}\n")
             handle.write(f"- incident_handoff_status: {result['incident_handoff_status']}\n")
             handle.write(f"- unprocessed_source_runs: {len(result.get('unprocessed_source_runs', []))}\n")
+            handle.write(f"- source_evidence_gaps: {result.get('source_evidence_gap_count', 0)}\n")
             handle.write(f"- notification_due: {str(result['notification_due']).lower()}\n")
     # A well-formed incomplete result is still durably handed to the independent
     # health workflow.  Failing this step for bounded backlog would generate a
