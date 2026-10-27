@@ -52813,7 +52813,7 @@
       "location_fingerprint": "",
       "action_fingerprint": "",
       "first_discovered_at": "2026-10-27T06:09:46.024293+00:00",
-      "last_reminded_at": null,
+      "last_reminded_at": "2026-10-27T06:11:09.605017+00:00",
       "escalated": false,
       "risk_level": "持續觀察",
       "risk_rank": 0,
@@ -52824,7 +52824,7 @@
       "compound_item_id": null,
       "compound_event_cluster_key": null,
       "last_decision": {
-        "recorded_at": "2026-10-27T06:09:46.214614+00:00",
+        "recorded_at": "2026-10-27T06:11:06.953166+00:00",
         "allowed": true,
         "status": "eligible",
         "reason": "new_theme",
@@ -52851,9 +52851,59 @@
           "material_state_changed": true,
           "last_notified_at": null,
           "taiwan_priority": 4
+        },
+        {
+          "recorded_at": "2026-10-27T06:11:06.953166+00:00",
+          "allowed": true,
+          "status": "eligible",
+          "reason": "new_theme",
+          "reasons": [],
+          "notification_theme_key": "mops-96ae289c23",
+          "event_key": "620df983e01a3c8102d65e08a9ad8757",
+          "risk": "R1",
+          "theme_window": 7200,
+          "material_state_changed": true,
+          "last_notified_at": null,
+          "taiwan_priority": 4
         }
       ],
-      "updated_at": "2026-10-27T06:09:46.214614+00:00"
+      "updated_at": "2026-10-27T06:11:09.605017+00:00",
+      "delivery_history": [
+        {
+          "event_key": "620df983e01a3c8102d65e08a9ad8757",
+          "notification_id": "620df983e01a3c8102d65e08a9ad8757",
+          "sent_at": "2026-10-27T06:11:09.605017+00:00",
+          "importance": "normal",
+          "alert_type": "macro",
+          "lifecycle_state": "confirmed",
+          "reason": "official_event_monitor",
+          "notification_theme_key": "mops-96ae289c23",
+          "risk": "R1",
+          "taiwan_priority": 4,
+          "material_state_changed": true,
+          "release_id": "release-cee6a684427fbb05",
+          "snapshot_id": "5c9a1c4771ac248e",
+          "delivery_status": "delivered",
+          "event_cluster_key": "evt-2a948c65138d350ab1c86225",
+          "prstk_risk": {
+            "prstk_risk_level": "R1",
+            "source": "event_alerts"
+          },
+          "notification_key": "620df983e01a3c8102d65e08a9ad8757",
+          "release_ready_at": "2026-10-27T06:11:07.405584+00:00",
+          "telegram_attempted_at": "2026-10-27T06:11:07.549707+00:00",
+          "delivery_result": "delivered",
+          "delay_reason": "none",
+          "source_url": "https://mops.twse.com.tw/mops/#/web/t05st02",
+          "source_domain": "mops.twse.com.tw",
+          "alert_lane": "event",
+          "market_scope": "global",
+          "event_policy_reason": "event_materiality_available",
+          "trace_id": "official-392cbe9d2d3ebd19"
+        }
+      ],
+      "last_theme_notification_at": "2026-10-27T06:11:09.605017+00:00",
+      "last_notified_at": "2026-10-27T06:11:09.605017+00:00"
     }
   },
   "delivery_claims": {
@@ -59981,6 +60031,35 @@
       "updated_at": "2026-10-27T00:50:56.210755+00:00",
       "failed_recipient_hashes": [],
       "delivered_at": "2026-10-27T00:50:56.210755+00:00"
+    },
+    "620df983e01a3c8102d65e08a9ad8757": {
+      "notification_key": "620df983e01a3c8102d65e08a9ad8757",
+      "slot_key": "",
+      "status": "delivered",
+      "recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d",
+        "59cf5c3e48bf"
+      ],
+      "delivered_recipient_hashes": [
+        "59cf5c3e48bf",
+        "5b1d66aae79d",
+        "7a30574fc065",
+        "d36bbcc2cd2d"
+      ],
+      "attempted_recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d",
+        "59cf5c3e48bf"
+      ],
+      "claimed_at": "2026-10-27T06:11:07.412688+00:00",
+      "lease_until": null,
+      "run_id_hash": "62ecf67422fe",
+      "updated_at": "2026-10-27T06:11:09.452190+00:00",
+      "failed_recipient_hashes": [],
+      "delivered_at": "2026-10-27T06:11:09.452190+00:00"
     }
   }
 }
