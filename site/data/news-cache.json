@@ -2,40 +2,354 @@
   "schema": 2,
   "markets": {
     "taiwan": {
-      "fetched_at": "2026-10-27T21:46:49.897491+00:00",
+      "fetched_at": "2026-10-27T22:03:47.830033+00:00",
       "stories": [
         {
-          "title": "1. 台積擺尾台股守住4萬6、外資連2賣 三大法人買超31.42億元",
-          "url": "https://news.cnyes.com/news/id/6638339",
+          "title": "〈美股早盤〉油價回落、晶片股續揚 主要指數開高靜待Fed決策",
+          "url": "https://news.cnyes.com/news/id/6638600",
           "provider": "anue",
-          "source": "鉅亨網｜持股關聯",
-          "relevance": "holding",
+          "source": "鉅亨網｜市場焦點",
+          "relevance": "market",
+          "summary": "美股開盤走高，道瓊一度漲逾200點，標普500與那指受晶片股連2日上漲帶動。 中東外交出現轉機，油價回落；市場並等待Fed利率決策與Alphabet、微軟、亞馬遜財報。 UPS、可口可樂財報報喜，PayPal、康寧、UPS等個股盤前分歧，台積電ADR漲1.07%。",
+          "published_at": "2026-10-27T13:41:15+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6638600",
           "market_classification": {
-            "market_scope": "taiwan",
+            "market_scope": "cross_market",
             "taiwan_matches": [
-              "台股"
+              "台積電"
             ],
-            "us_matches": [],
+            "us_matches": [
+              "美股",
+              "fed",
+              "alphabet"
+            ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": null
+              "matched_term_count": 4,
+              "source_market_hint": "cross_market"
             }
           },
-          "market_scope": "taiwan",
+          "market_scope": "cross_market",
           "taiwan_matches": [
-            "台股"
+            "台積電"
           ],
-          "us_matches": [],
+          "us_matches": [
+            "美股",
+            "fed",
+            "alphabet"
+          ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 1,
+            "matched_term_count": 4,
+            "source_market_hint": "cross_market"
+          },
+          "story_id": "news-fc125b8bbf2dbdae8769",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "raw_title": "〈美股早盤〉油價回落、晶片股續揚 主要指數開高靜待Fed決策",
+          "normalized_fact": "美股開盤走高，道瓊一度漲逾200點，標普500與那指受晶片股連2日上漲帶動。 中東外交出現轉機，油價回落；市場並等待Fed利率決策與Alphabet、微軟、亞馬遜財報。 UPS、可口可樂財報報喜，PayPal、康寧、UPS等個股盤前分歧，台積電ADR漲1.07%。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": null,
+          "published_local_date": "",
+          "market": "cross_market",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates",
+            "semiconductor"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美股開盤走高道瓊一度漲逾200點標普500與那指受晶片股連2日上漲帶動中東外交出現轉機油價回落市場並等待fed利率決策與alphabet微軟亞馬遜財報ups可口可樂財報報喜paypal康寧ups等個股盤前分歧台積電adr漲107",
+          "event_cluster_key": "event-9f0a370ee3be7d071e84",
+          "published_time_bucket": "2026-10-27T13:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "title": "外資大砍友達9.6萬張最凶 倒貨3檔主動式ETF、連12賣調節0050",
+          "url": "https://news.cnyes.com/news/id/6638620",
+          "provider": "anue",
+          "source": "鉅亨網｜市場焦點",
+          "relevance": "market",
+          "summary": "台股連假後首日收紅漲54點、成交量9,765億元，盤面以記憶體、機器人、金融族群強勢。\n外資賣超81.03億元、倒貨友達9.59萬張，買超力積電5.6萬張；投信買超236.45億元、連7買台積電。\n法人指本周聚焦微軟、Alphabet、亞馬遜財報與FOMC，台股仍在季線上下震盪整理。",
+          "published_at": "2026-10-27T11:54:02+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6638620",
+          "market_classification": {
+            "market_scope": "cross_market",
+            "taiwan_matches": [
+              "台股",
+              "台積電",
+              "0050"
+            ],
+            "us_matches": [
+              "fomc",
+              "alphabet"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 5,
+              "source_market_hint": null
+            }
+          },
+          "market_scope": "cross_market",
+          "taiwan_matches": [
+            "台股",
+            "台積電",
+            "0050"
+          ],
+          "us_matches": [
+            "fomc",
+            "alphabet"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 5,
             "source_market_hint": null
           }
+        },
+        {
+          "title": "KBRA Japan獲日本金融廳授予信用評等機構註冊資格",
+          "url": "https://tw.stock.yahoo.com/news/kbra-japan%E7%8D%B2%E6%97%A5%E6%9C%AC%E9%87%91%E8%9E%8D%E5%BB%B3%E6%8E%88%E4%BA%88%E4%BF%A1%E7%94%A8%E8%A9%95%E7%AD%89%E6%A9%9F%E6%A7%8B%E8%A8%BB%E5%86%8A%E8%B3%87%E6%A0%BC-214200873.html",
+          "summary": "東京, October 27, 2026--(美國商業資訊)--全球性的全方位信用評等機構KBRA今天宣布KBRA Japan已獲得日本金融廳 (JFSA) 授予的信用評等機構 (Credit Rat",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-27T21:42:00+00:00",
+          "market_classification": {
+            "market_scope": "cross_market",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [
+              "美國"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "cross_market",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [
+            "美國"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "台積電ADR27日上漲12.50美元漲幅2.95%折台股2835.46元",
+          "url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E7%A9%8D%E9%9B%BBadr27%E6%97%A5%E4%B8%8A%E6%BC%B212-50%E7%BE%8E%E5%85%83%E6%BC%B2%E5%B9%852-95-%E6%8A%98%E5%8F%B0%E8%82%A12835-46%E5%85%83-214140549.html",
+          "summary": "(中央社台北2026年10月28日電)台積電在NYSE掛牌 ADR以436.87美元作收，上漲12.50美元，漲幅 2.95%。由於每單位台積電 ADR相當於台股 5股台積電普通股，以10月27日新台",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "cross_market",
+          "relevance": "market",
+          "published_at": "2026-10-27T21:41:40+00:00",
+          "market_classification": {
+            "market_scope": "cross_market",
+            "taiwan_matches": [
+              "台股",
+              "台積電",
+              "taiwan"
+            ],
+            "us_matches": [
+              "nyse"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 4,
+              "source_market_hint": "cross_market"
+            }
+          },
+          "market_scope": "cross_market",
+          "taiwan_matches": [
+            "台股",
+            "台積電",
+            "taiwan"
+          ],
+          "us_matches": [
+            "nyse"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 4,
+            "source_market_hint": "cross_market"
+          },
+          "story_id": "news-213621216cf12d57c5bc",
+          "provider_name": "Yahoo Taiwan Finance",
+          "raw_title": "台積電ADR27日上漲12.50美元漲幅2.95%折台股2835.46元",
+          "normalized_fact": "(中央社台北2026年10月28日電)台積電在NYSE掛牌 ADR以436.87美元作收，上漲12.50美元，漲幅 2.95%。由於每單位台積電 ADR相當於台股 5股台積電普通股，以10月27日新台。",
+          "market_topic": "global_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E7%A9%8D%E9%9B%BBadr27%E6%97%A5%E4%B8%8A%E6%BC%B212-50%E7%BE%8E%E5%85%83%E6%BC%B2%E5%B9%852-95-%E6%8A%98%E5%8F%B0%E8%82%A12835-46%E5%85%83-214140549.html",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": null,
+          "published_local_date": "",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "TAIEX",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "market",
+            "reason": "market_subject_action",
+            "matched_terms": [
+              "nyse",
+              "上漲"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "nyse",
+              "上漲"
+            ],
+            "matched_subject": "nyse",
+            "matched_action": "上漲",
+            "matched_market_object": "nyse",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market"
+          ],
+          "freshness": "published",
+          "dedupe_key": "中央社台北2026年10月28日電台積電在nyse掛牌adr以43687美元作收上漲1250美元漲幅295由於每單位台積電adr相當於台股5股台積電普通股以10月27日新台",
+          "event_cluster_key": "event-55fcd2d7728b06fa2955",
+          "published_time_bucket": "2026-10-27T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "nyse",
+            "上漲"
+          ],
+          "matched_subject": "nyse",
+          "matched_action": "上漲",
+          "matched_market_object": "nyse",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "title": "【能源盤後】下跌",
@@ -206,6 +520,46 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 4,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "〈台股盤前要聞〉新台幣爆量轉升5.6分收32.452元、旺宏Q3 EPS 5.52元史上最賺一季",
+          "url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E8%82%A1%E7%9B%A4%E5%89%8D%E8%A6%81%E8%81%9E-%E6%96%B0%E5%8F%B0%E5%B9%A3%E7%88%86%E9%87%8F%E8%BD%89%E5%8D%875-6%E5%88%86%E6%94%B632-452%E5%85%83-%E6%97%BA%E5%AE%8Fq3-211002830.html",
+          "summary": "台股盤前要聞 1.新台幣27日升貶互見，午盤過後爆量偏強反彈，終場兌一美元以32.452元作收，升值5.6分，台北外匯經紀公司再度擴大至27.33億美元；中央銀行在今日下午最新出爐的書面報告中提到，今",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-27T21:10:02+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股",
+              "taiwan"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股",
+            "taiwan"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
             "source_market_hint": "taiwan"
           }
         },
@@ -490,217 +844,6 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "SLB公布2026年第三季業績",
-          "url": "https://tw.stock.yahoo.com/news/slb%E5%85%AC%E5%B8%832026%E5%B9%B4%E7%AC%AC%E4%B8%89%E5%AD%A3%E6%A5%AD%E7%B8%BE-200100887.html",
-          "summary": "休士頓, October 27, 2026--(美國商業資訊)--SLB (NYSE: SLB)今天公布了2026年第三季業績。",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-27T20:01:00+00:00",
-          "market_classification": {
-            "market_scope": "cross_market",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [
-              "美國",
-              "nyse"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 3,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "cross_market",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [
-            "美國",
-            "nyse"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 3,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "本周科技巨頭財報牽動Fed 12月升息？華許拒釋前瞻指引 留給市場自己找答案",
-          "url": "https://tw.stock.yahoo.com/news/%E6%9C%AC%E5%91%A8%E7%A7%91%E6%8A%80%E5%B7%A8%E9%A0%AD%E8%B2%A1%E5%A0%B1%E7%89%BD%E5%8B%95fed-12%E6%9C%88%E5%8D%87%E6%81%AF-%E8%8F%AF%E8%A8%B1%E6%8B%92%E9%87%8B%E5%89%8D%E7%9E%BB%E6%8C%87%E5%BC%95-%E7%95%99%E7%B5%A6%E5%B8%82%E5%A0%B4%E8%87%AA%E5%B7%B1%E6%89%BE%E7%AD%94%E6%A1%88-200003047.html",
-          "summary": "市場料Fed本周按兵不動，12月升息機率已達73%，焦點轉向科技巨頭財報與新數據。 通膨仍高於2%目標、油價衝擊擴散，AI投資支撐成長但股市回落、半導體指數近月跌12%。 華許面臨溝通考驗；若股市續跌",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "cross_market",
-          "relevance": "market",
-          "published_at": "2026-10-27T20:00:03+00:00",
-          "market_classification": {
-            "market_scope": "cross_market",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [
-              "fed"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "cross_market"
-            }
-          },
-          "market_scope": "cross_market",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [
-            "fed"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "cross_market"
-          },
-          "story_id": "news-6010a167e372a0470d1b",
-          "provider_name": "Yahoo Taiwan Finance",
-          "raw_title": "本周科技巨頭財報牽動Fed 12月升息？華許拒釋前瞻指引 留給市場自己找答案",
-          "normalized_fact": "市場料Fed本周按兵不動，12月升息機率已達73%，焦點轉向科技巨頭財報與新數據。 通膨仍高於2%目標、油價衝擊擴散，AI投資支撐成長但股市回落、半導體指數近月跌12%。 華許面臨溝通考驗；若股市續跌。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%9C%AC%E5%91%A8%E7%A7%91%E6%8A%80%E5%B7%A8%E9%A0%AD%E8%B2%A1%E5%A0%B1%E7%89%BD%E5%8B%95fed-12%E6%9C%88%E5%8D%87%E6%81%AF-%E8%8F%AF%E8%A8%B1%E6%8B%92%E9%87%8B%E5%89%8D%E7%9E%BB%E6%8C%87%E5%BC%95-%E7%95%99%E7%B5%A6%E5%B8%82%E5%A0%B4%E8%87%AA%E5%B7%B1%E6%89%BE%E7%AD%94%E6%A1%88-200003047.html",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": null,
-          "published_local_date": "",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "earnings",
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "升息"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "升息"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "升息",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market"
-          ],
-          "freshness": "published",
-          "dedupe_key": "市場料fed本周按兵不動12月升息機率已達73焦點轉向科技巨頭財報與新數據通膨仍高於2目標油價衝擊擴散ai投資支撐成長但股市回落半導體指數近月跌12華許面臨溝通考驗若股市續跌",
-          "event_cluster_key": "event-753ea4e94972aea50e10",
-          "published_time_bucket": "2026-10-27T20:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "升息"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "升息",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
-          "title": "DDN獲選負責新南威爾斯大學的研究資料基礎設施現代化工程",
-          "url": "https://tw.stock.yahoo.com/news/ddn%E7%8D%B2%E9%81%B8%E8%B2%A0%E8%B2%AC%E6%96%B0%E5%8D%97%E5%A8%81%E7%88%BE%E6%96%AF%E5%A4%A7%E5%AD%B8%E7%9A%84%E7%A0%94%E7%A9%B6%E8%B3%87%E6%96%99%E5%9F%BA%E7%A4%8E%E8%A8%AD%E6%96%BD%E7%8F%BE%E4%BB%A3%E5%8C%96%E5%B7%A5%E7%A8%8B-191900596.html",
-          "summary": "雪梨, October 27, 2026--(美國商業資訊)--全球人工智慧與資料智慧解決方案的領航者DDN今天宣布新南威爾斯大學雪梨分校 (UNSW Sydney) 指定DDN打造一套全新的研究資料",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-10-27T19:19:00+00:00",
-          "market_classification": {
-            "market_scope": "cross_market",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [
-              "美國"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "cross_market",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [
-            "美國"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
             "source_market_hint": "taiwan"
           }
         },
@@ -2210,21 +2353,21 @@
           "ranking_score": 115
         },
         {
-          "title": "談半導體供應鏈點名台積電？ 陳立武：生產集中於特定企業有風險 | 日經中文網 | 國際 - 經濟日報",
-          "url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTFBkaFJFNkJHdVA4VmJQeno4dmVaNXhmbHpId2pfV0dhNkZZMmxDYThya0dLQjEwY1JDN0xoR0hxbk84ekZnbWRXTG5zeXl5Zm5LYUlkVUJXQTVzMXFp",
-          "summary": "談半導體供應鏈點名台積電？ 陳立武：生產集中於特定企業有風險 | 日經中文網 | 國際 經濟日報",
+          "title": "外交部長林佳龍出席SEMICON Taiwan「2026可信賴半導體供應鏈夥伴論壇」 - 中華民國外交部全球資訊網",
+          "url": "https://news.google.com/rss/articles/CBMiZkFVX3lxTE52Wlc2dTVGSUpueGFVek9qWE1qdW8zMEpwaGVac0wtekUwWkx5cHBFS282SHVJdnc5M1dkaTduMnBidEFob0dSRHd6anBIbVpMTjcwQlRvUzdEU1A5LWY5aVpmNFp4dw",
+          "summary": "外交部長林佳龍出席SEMICON Taiwan「2026可信賴半導體供應鏈夥伴論壇」 中華民國外交部全球資訊網",
           "source": "Google News｜台股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-10-27T06:38:51+00:00",
+          "published_at": "2026-10-22T07:00:00+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
               "台股",
-              "台積電"
+              "taiwan"
             ],
             "us_matches": [],
             "global_matches": [],
@@ -2238,7 +2381,7 @@
           "market_scope": "taiwan",
           "taiwan_matches": [
             "台股",
-            "台積電"
+            "taiwan"
           ],
           "us_matches": [],
           "global_matches": [],
@@ -2248,10 +2391,10 @@
             "matched_term_count": 2,
             "source_market_hint": "taiwan"
           },
-          "story_id": "news-e3bbc16e77f168b9e0a8",
+          "story_id": "news-e05e35820dfc4ddf4d8a",
           "provider_name": "Google News",
-          "raw_title": "談半導體供應鏈點名台積電？ 陳立武：生產集中於特定企業有風險 | 日經中文網 | 國際 - 經濟日報",
-          "normalized_fact": "談半導體供應鏈點名台積電？ 陳立武：生產集中於特定企業有風險 | 日經中文網 | 國際 經濟日報。",
+          "raw_title": "外交部長林佳龍出席SEMICON Taiwan「2026可信賴半導體供應鏈夥伴論壇」 - 中華民國外交部全球資訊網",
+          "normalized_fact": "外交部長林佳龍出席SEMICON Taiwan2026可信賴半導體供應鏈夥伴論壇 中華民國外交部全球資訊網。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -2261,19 +2404,16 @@
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTFBkaFJFNkJHdVA4VmJQeno4dmVaNXhmbHpId2pfV0dhNkZZMmxDYThya0dLQjEwY1JDN0xoR0hxbk84ekZnbWRXTG5zeXl5Zm5LYUlkVUJXQTVzMXFp",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiZkFVX3lxTE52Wlc2dTVGSUpueGFVek9qWE1qdW8zMEpwaGVac0wtekUwWkx5cHBFS282SHVJdnc5M1dkaTduMnBidEFob0dSRHd6anBIbVpMTjcwQlRvUzdEU1A5LWY5aVpmNFp4dw",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "recent_reference",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-27",
+          "publication_age_trading_sessions": 4,
+          "published_local_date": "2026-10-22",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
+          "entities": [],
           "sectors": [],
           "topics": [
             "semiconductor"
@@ -2284,17 +2424,17 @@
             "category": "semiconductor",
             "reason": "semiconductor_subject_action",
             "matched_terms": [
-              "台積電",
+              "半導體",
               "供應"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "台積電",
+              "半導體",
               "供應"
             ],
-            "matched_subject": "台積電",
+            "matched_subject": "半導體",
             "matched_action": "供應",
-            "matched_market_object": "台積電",
+            "matched_market_object": "半導體",
             "input_fields": [
               "description",
               "summary",
@@ -2305,19 +2445,19 @@
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "談半導體供應鏈點名台積電陳立武生產集中於特定企業有風險日經中文網國際經濟日報",
-          "event_cluster_key": "event-38aac54fab3d0a875d63",
-          "published_time_bucket": "2026-10-27T06:00:00+00:00",
+          "dedupe_key": "外交部長林佳龍出席semicontaiwan2026可信賴半導體供應鏈夥伴論壇中華民國外交部全球資訊網",
+          "event_cluster_key": "event-48e5ac7c30fed6d0dec8",
+          "published_time_bucket": "2026-10-22T07:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "台積電",
+            "半導體",
             "供應"
           ],
-          "matched_subject": "台積電",
+          "matched_subject": "半導體",
           "matched_action": "供應",
-          "matched_market_object": "台積電",
+          "matched_market_object": "半導體",
           "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
@@ -2345,126 +2485,6 @@
           "market": "taiwan",
           "relevance": "market",
           "published_at": "2026-10-27T09:00:01+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "三大法人買賣超 – 外資買超(2330)台積電、(2454)聯發科，投信買超(2454)聯發科、(2303)聯電，法人合計買超1138.65億元 - 永豐金證券",
-          "url": "https://news.google.com/rss/articles/CBMi4ARBVV95cUxNc0VoZHJxRHkxQXZReExLQWRtVUhMLTlJTjhtUkF4ckxySkRkRDRwc1JrY01QU3hURVpHWVl5QS1FU0d3UjZkemFZTmQtRW9MRnVaTnA4cEY2NDlVMWRIVnBCR1dOY3hqa0FBWlJxYUY0T1hYal92VmVTYlNpa1dlS2gycFBYelIzMjhyaWtEODFzUUM4LVZRS2NMcF85dWd5enU5UVJsREQ5RTBJYUtEVnRZaVJxWWtJUnY0RTB5eFprcnppOHNmczlSLS1EcWwxejkyUER0Z24tUWg3dUFpSFJDakVpSkpwUlh1SWZRLTJGTXFPRlhWVlpIb1Y4LUhyU1IyT3RJLWZscG5oeEx3eXZwamxYMXdDQno4NnYzdTVDcUgyVVNmeUNSZ2ZaWWpNYTBpRC1GNTNOMk5WOFVkVVRfNElQU2ZwdHp3eXBCNEY1b08wdW5nZmZxMnZvWFZwR1dQQi0yV3hoWUx2c3poUGY1THdkdW52dG5uNGlTQThXbEV0WjNsUWpWQXM2alpXUE1zUU1wQTFGYWlJb1V2NkJGbjlJV3VqdTE1bEhaYk1ZMGRaOU1mRmVTbmNoUlZPVXZueGlsc2tycXlUblQwZnV5NWJhOS0wdEp0NU1nZF9zT0RUUXczalU5WUpoUTZEY2NITEpDTWtrQ05qMHhIT1MzV3hheTcxT29LTFg4ZGZrZkJTTWpGUmhkci13MXR1WmtWeEdRUnlUZ3gzdHhMRXNhWmxkODR3b1FSWkZHc1RCVnQ4MVJCdjhVMFh5b1VJcEl4NUZMRVcxQnFKOHc3aQ?oc=5",
-          "summary": "三大法人買賣超 – 外資買超(2330)台積電、(2454)聯發科，投信買超(2454)聯發科、(2303)聯電，法人合計買超1138.65億元 永豐金證券",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-09-07T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股",
-              "台積電",
-              "聯發科"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 3,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股",
-            "台積電",
-            "聯發科"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 3,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "台灣ETF市場為何外資打不進？本土投信跑贏貝萊德、摩根大通 - 鉅亨網",
-          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE1IcXYzSkJtQlJ3WlJfQVdfTkVqTWM0QUpfQnJITFFoMW1KUjJXNEdpMnJ2WEdMNTZ3ODBxT3FKSVlYS1FWWWl2Z3pyZXp3U0U?oc=5",
-          "summary": "台灣ETF市場為何外資打不進？本土投信跑贏貝萊德、摩根大通 鉅亨網",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-06-05T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股",
-              "台灣"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股",
-            "台灣"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "外資狂賣台股還能漲？群益投信揭「它」接棒：錢沒有離開市場 - Yahoo股市",
-          "url": "https://news.google.com/rss/articles/CBMiqwNBVV95cUxPSmJlVG04SjZZdnBPTWFDOERxQlVNNU9EaGRuNThZMWxTMjVwM1ZKMmlDblZBenQzM2JNcFl5TTVrTDB1SDhGaVcwLXhRNllMaFhESjNrczhjNTUweVdpR3RRaGV2LWZtT1k4WmxlRGgyNGRvTHNtOU56dXE3M1VxWW9nanBNY1ByLXdnRFZTRW9UV0ZwZUtTUXR2ZUhiNXA4Y1ZBUTBmWXNGZmQ0NjVkVjBmbU5nVEhHT0I4NzF6MGRYc0YzX2lKdzVJSVlscm1nLWtKVmpDR18xVXFDc1hoVFVNRWZuTDlvMjNwQWFWdnlJS3lzTEwzRFNfel9qa0FmM2NSbUpmNG5EbG4weUNKamltVGRpNlhZUktBRU5FcUlSOEN2UHhhc2gweDA4TEVJYVE5NlpEUmlVY19DMmNUUFM5TlZoVDBWeTRQTENGYzNsb3RTSDZOM2VMTFA1TEtIUU1nWHhNM0ZuQ3FFYXBBWXU3aUhtY3YteFlXM0tkQXB3ckItbWw4WkxzT29CMkVzSFhBc2cxdENHdnh5b1BjdTh0ZDF5a1ZSS1NZ?oc=5",
-          "summary": "外資狂賣台股還能漲？群益投信揭「它」接棒：錢沒有離開市場 Yahoo股市",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-07-06T07:00:00+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -2531,16 +2551,16 @@
           }
         },
         {
-          "title": "「外資大逃殺」壓低台股 投信：對股市影響多為短期 - 自由財經",
-          "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTFBhYmtOTUx0eG9VV2RYT25VWmExdENDZ00wVlY5dHR1S3JBUE9XS3lNTHo1T2p0Vk5SVXNpRGdXS2taVngxMW0tdld2S2pJQ1hzUC1mRmpJaW5adnRZd2Vn?oc=5",
-          "summary": "「外資大逃殺」壓低台股 投信：對股市影響多為短期 自由財經",
+          "title": "台股創高外資轉賣 大砍友達8.7萬張、投信提款聯電6萬張 - 鉅亨網",
+          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTFB5SWM2R1dVdnJ5UzMxUE96M2FoaE9VdThJOXFiUVl0MkUzYVdHckZVWmxzNnEzdUZUeFU5WW4yX1c1UEdyWWZIT3VCR0JkTzQ?oc=5",
+          "summary": "台股創高外資轉賣 大砍友達8.7萬張、投信提款聯電6萬張 鉅亨網",
           "source": "Google News｜台股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-03-14T07:00:00+00:00",
+          "published_at": "2026-10-06T07:00:00+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -2565,6 +2585,248 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "【Follow法人】外資連4買喊卡！狂砍友達8.7萬張最慘 台積電也被提款43億元 - Yahoo股市",
+          "url": "https://news.google.com/rss/articles/CBMiuwNBVV95cUxQQ3pQYUowQlIyOVJYQ21MQkszSlRaTFFVQUMwbUdPQ3hnU0M4MnpXWU5JUkZudE5DTlRMZGRZbE9XTzRBcWlwR2g4RHl4aXdmcDJBTnFnQ1V4akVKQTNmS2FLQTdpc2xUTDVOUVB5RWNaeFIzQks4TXpNYUxuOTE0a0g5RHYyODA5QjdpeHhmQTBMTTFUbEhrY3lVWFBRZ0NETnVPNUFIeFZybVRHUGV6N1RFbkRiS1FqbXlQdWtGa0FOd1NGbFFwNm5vOXNfMlkzczJnaE4yTE5yRkM3WnlVT19RdVVtSm53OUpqLXRMZmp1bkJQdWwyelRPRmtJa01oNHNaMWtyQlREZVBkOGlvUEVSTUNYT0ZtMVJ0cXMydkw3UndsTGN6anlBNzZYTlhaNkZqMjYwSmliUjh4YUFMN1JQU3Q0NzIwWncwTWF0N0pxOW1QNm92cjk4NFVfVTJ5cURkN3cyZElDbEdUbk8xdUZMUGkxVGZCRExVa0VRNWk4V2FLWEdTYjhPay0yZFhhYVJRVjNFeTNaQXJVT2tGWnVwM1RiTm00dndlNnVFYUJGNFNUcHJwcDg4dw?oc=5",
+          "summary": "【Follow法人】外資連4買喊卡！狂砍友達8.7萬張最慘 台積電也被提款43億元 Yahoo股市",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-06T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "cross_market",
+            "taiwan_matches": [
+              "台股",
+              "台積電"
+            ],
+            "us_matches": [
+              "tsm"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 3,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "cross_market",
+          "taiwan_matches": [
+            "台股",
+            "台積電"
+          ],
+          "us_matches": [
+            "tsm"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 3,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "外資大賣後先回補誰？投信同步加碼富喬、凱基金、台泥等15檔出列- 日報 - 工商時報",
+          "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTFBxQ0RNSElsNHNLOXRYVERub2xmNDhpcy1QcGhCM1hzcXVxb280b0I3TjYxNWo2bGdmampWRDZ1TWpfc2ZYMTQzMDJMMENwbnFDa2hJNDFWX1BkSXZiN2x3?oc=5",
+          "summary": "外資大賣後先回補誰？投信同步加碼富喬、凱基金、台泥等15檔出列- 日報 工商時報",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-17T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "南亞科大逃殺 外資+投信+自營商近5日爆賣超6萬張 記憶體賺很多卻危機重重 - 台灣好新聞",
+          "url": "https://news.google.com/rss/articles/CBMi0gNBVV95cUxPb1VUUS1aMnBQMVA0SjZsVl9fQzFOemdOZ2hvZTNnaFBmSlEyS1FFVGdMQ2s2djRsb2JuVTA3MWR5dWs5ZjJNX0hqNDdYNHpaS1hXdWpqQWl6VUpTMFN6aU4yRkpjYm5JNTc1Q0gwOG5xa21DWlBVR1ZpakFLYXZXQ3ZBS0RBblJtUDlucnlaMjVFR2QxQWtRQnhHb3pfTWk0NEVDUEtZWUdxa0NHbU1na2lUMXItM2szcURiaksyaDY1WlpGWUFEZzdHeU5rQ1pySlhGbm5qMmpWYTNUeE5UV25GMkF2N2RJcjRDTTc3REpGVWNVYUlHcVVXY2tyc25JWXh3VVU1eDcxcTVYd3BPaGhXVzdNQUVfdTBYUWhSemZ6X0xiVnU2VVU0MlRXSXRmV0dDdTh5QVZCYVktX2UyLXp5YWVBaFdKLTg4SVdzVnZnaFhqR0xJaEFGWXU3eTNmOXNFQVVCenNrNWcyWGlFbWk3dXhyYU9TMm5ZTWdhdE5JQ3NJQlNxQ1JxazRHSzg4S1VWU3hocXNZT3NiczBudjd0dzQzcXFGcnZXVnhTTGJVZjQ3MUdHQmhaUzdhb1BiVi1hajJqOE9IOUd2RlRpenBn?oc=5",
+          "summary": "南亞科大逃殺 外資+投信+自營商近5日爆賣超6萬張 記憶體賺很多卻危機重重 台灣好新聞",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-10-14T10:04:18+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股",
+              "台灣"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股",
+            "台灣"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "三大法人買賣超 – 外資買超(2330)台積電、(2454)聯發科，投信買超(2454)聯發科、(2303)聯電，法人合計買超1138.65億元 - 永豐金證券",
+          "url": "https://news.google.com/rss/articles/CBMi4ARBVV95cUxNc0VoZHJxRHkxQXZReExLQWRtVUhMLTlJTjhtUkF4ckxySkRkRDRwc1JrY01QU3hURVpHWVl5QS1FU0d3UjZkemFZTmQtRW9MRnVaTnA4cEY2NDlVMWRIVnBCR1dOY3hqa0FBWlJxYUY0T1hYal92VmVTYlNpa1dlS2gycFBYelIzMjhyaWtEODFzUUM4LVZRS2NMcF85dWd5enU5UVJsREQ5RTBJYUtEVnRZaVJxWWtJUnY0RTB5eFprcnppOHNmczlSLS1EcWwxejkyUER0Z24tUWg3dUFpSFJDakVpSkpwUlh1SWZRLTJGTXFPRlhWVlpIb1Y4LUhyU1IyT3RJLWZscG5oeEx3eXZwamxYMXdDQno4NnYzdTVDcUgyVVNmeUNSZ2ZaWWpNYTBpRC1GNTNOMk5WOFVkVVRfNElQU2ZwdHp3eXBCNEY1b08wdW5nZmZxMnZvWFZwR1dQQi0yV3hoWUx2c3poUGY1THdkdW52dG5uNGlTQThXbEV0WjNsUWpWQXM2alpXUE1zUU1wQTFGYWlJb1V2NkJGbjlJV3VqdTE1bEhaYk1ZMGRaOU1mRmVTbmNoUlZPVXZueGlsc2tycXlUblQwZnV5NWJhOS0wdEp0NU1nZF9zT0RUUXczalU5WUpoUTZEY2NITEpDTWtrQ05qMHhIT1MzV3hheTcxT29LTFg4ZGZrZkJTTWpGUmhkci13MXR1WmtWeEdRUnlUZ3gzdHhMRXNhWmxkODR3b1FSWkZHc1RCVnQ4MVJCdjhVMFh5b1VJcEl4NUZMRVcxQnFKOHc3aQ?oc=5",
+          "summary": "三大法人買賣超 – 外資買超(2330)台積電、(2454)聯發科，投信買超(2454)聯發科、(2303)聯電，法人合計買超1138.65億元 永豐金證券",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-09-07T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股",
+              "台積電",
+              "聯發科"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 3,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股",
+            "台積電",
+            "聯發科"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 3,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "投信、外資都在買 台股卻收黑？ 網嘆：沒人要玩了 - Yahoo股市",
+          "url": "https://news.google.com/rss/articles/CBMixAJBVV95cUxQYkJHbGF3ZkFVTENaVlc4RHF0MmcwT0tKT1N2SWRORmJKeGNaRlJGaG44WG5fWkVBWllqZXp5eV9FSmJLZDdHLV9sbjFzLXN5cm5lYXFFbWNRb0VsaV9zZTZ2Rkk0OGNGODVYTFdLRlR4d3poOWpDUVRQVkFIajQ1RTZUUndicW9NLW9zdGJJVHV4MEpGRlQxSFpYX1hUa1Z0QUdCTDZIeHNtS1RTZGNQUG5VQ2UtTlVUTkxCZ3FQVHJndkRpTENNbUFQeWYtUzBSQ3JfQ2x5cnFhaEFkOVNhTDY0THVMblZMY2ZBcW5LcFFiNlRPVU83Rmt1aE84amZqeTZsMEszSlZyTUNNQkdwbGlmb0RUSDNGaTFNVHh2VGc5MGNBdnRLanoxWGl0dlFmXzZ5bGE3d1JaZUtvM1otbGtqMkg?oc=5",
+          "summary": "投信、外資都在買 台股卻收黑？ 網嘆：沒人要玩了 Yahoo股市",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-08-06T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "台灣ETF市場為何外資打不進？本土投信跑贏貝萊德、摩根大通 - 鉅亨網",
+          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE1IcXYzSkJtQlJ3WlJfQVdfTkVqTWM0QUpfQnJITFFoMW1KUjJXNEdpMnJ2WEdMNTZ3ODBxT3FKSVlYS1FWWWl2Z3pyZXp3U0U?oc=5",
+          "summary": "台灣ETF市場為何外資打不進？本土投信跑贏貝萊德、摩根大通 鉅亨網",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-06-05T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股",
+              "台灣"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股",
+            "台灣"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
             "source_market_hint": "taiwan"
           }
         },
@@ -2611,123 +2873,107 @@
             "matched_term_count": 3,
             "source_market_hint": "taiwan"
           }
-        },
-        {
-          "title": "正新(2105)外資、投信、法人籌碼變化與自營買賣超總表 - 股市爆料同學會 - CMoney",
-          "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTE1jYUZJazl1VEwxU1JNN2dTZS01X1JXenRfUGszWDV5U20yd3Z3b3cybjNlZFgyOVFlRTdJTHEzZUxkMjllT0lHYzM2M3RBY2FKZXNzV2Vqb3ZIRHpSMENTcVZtVko?oc=5",
-          "summary": "正新(2105)外資、投信、法人籌碼變化與自營買賣超總表 - 股市爆料同學會 CMoney",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2022-10-06T22:57:46+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "三大法人買賣超 – 外資買超(6770)力積電、(2408)南亞科，投信買超(3008)大立光、(3374)精材，法人合計賣超267.56億元 - 永豐金證券",
-          "url": "https://news.google.com/rss/articles/CBMi3wRBVV95cUxPQmVWTEJhRjRSSXZGNXk4X3hQX3dxVlVuQ19QQm1RblVKQ1JWM2kwRHVtZzRfSHUtU3lvS0YwOURnTVpaTjYzbTJmdmpMajQ3dTJWS01SQVZ1SnBqSF9ybHlyel9POGFVdWkxSm5RRjRrWjBUdkFNVEhZMGlmNi13RDRHTElVSEJZX1JNcDJoX0pkWG81cjNfWU9jZFpjWHBVeGtiT2ZXckFKTnhwT1J3UnF2a0ZvLVp4RVNzNWtjTkprUU1mUXVsWVVjUExZMTM1SWRZSmVaZWlIS3ZZVHh4VFN6MEF6eHVFUEg3YjcxMi0zYndZMGk4cmxnWHhuX05fYmFnNW9oMlNxajBMX242aTdwQzkwSDZ6NUZEVDFGNWhvSkduNTBIeHY1bVl1QmlmX3I3bk9GTFVIQ2pUa0x2bWxybXZhZlNfb3Y1ZXAyUVByUWhyRmpNYzFBMXNhZDgxWG4zMmtlZGJJQUdlVWpKRVhzVXlReTJhcTloVFNldUMyVnBoVkRIaXM3ZjZHVVZaUHlZWVE1VWtyS05lUnIyTV9jb3ExTGNGa3BxTUdZVDhVRGFKdGJGdENqbDNmb0dfV0NvdHMtb1VqanB6M0gwa2VzOFJJLXJ5Q0VTV3d0SlE0aC1hQXJxVFhUd0IwV3J3dzRaN3dOMy1YVXo0REhFLS1raG1tTGhKNXpLNDdaRl94ejBiUy1JeW9ESVpXemdLbnE3b3FGUjVwbFVzQ0pBcFBrSGZBUmVaVHRlZzdOaGRuREFld2lXdVZNUzNtM2tzZEhqRlZ3bXF1dExrUnlV?oc=5",
-          "summary": "三大法人買賣超 – 外資買超(6770)力積電、(2408)南亞科，投信買超(3008)大立光、(3374)精材，法人合計賣超267.56億元 永豐金證券",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-08-31T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "貝萊德、富達、瀚亞3家外資投信 規劃在臺新增區域中心 - 自由財經",
-          "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE55NUZ1ZDR6Mm5uOW9uaUxoTDN6STBOOXd2TTFWbXU4a2M3aEcwT1pOQVE2TTB4SnctT0RXSUcwZzV2dngxNHhnLXhQT0lwUURoRkQ2MjhGWVptRC1BMDlJ0gFkQVVfeXFMTXZHWEl0aFBlOG5Oa3FSTkl4Sk8tS0lXY0YzWVRQSXJxLU1ZM1QweUZmaGRjdGRzN010MDFDVDhIWEIydWdtZlhsdXdqaHJIQ3g1ZVM2T2YzQ0o2aGxoTkNXU3hDMg?oc=5",
-          "summary": "貝萊德、富達、瀚亞3家外資投信 規劃在臺新增區域中心 自由財經",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2025-05-29T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
         }
       ],
       "eligible_inventory": [
+        {
+          "story_id": "news-213621216cf12d57c5bc",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "台積電ADR27日上漲12.50美元漲幅2.95%折台股2835.46元",
+          "raw_title": "台積電ADR27日上漲12.50美元漲幅2.95%折台股2835.46元",
+          "normalized_fact": "(中央社台北2026年10月28日電)台積電在NYSE掛牌 ADR以436.87美元作收，上漲12.50美元，漲幅 2.95%。由於每單位台積電 ADR相當於台股 5股台積電普通股，以10月27日新台。",
+          "market_topic": "global_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "(中央社台北2026年10月28日電)台積電在NYSE掛牌 ADR以436.87美元作收，上漲12.50美元，漲幅 2.95%。由於每單位台積電 ADR相當於台股 5股台積電普通股，以10月27日新台",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E7%A9%8D%E9%9B%BBadr27%E6%97%A5%E4%B8%8A%E6%BC%B212-50%E7%BE%8E%E5%85%83%E6%BC%B2%E5%B9%852-95-%E6%8A%98%E5%8F%B0%E8%82%A12835-46%E5%85%83-214140549.html",
+          "url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E7%A9%8D%E9%9B%BBadr27%E6%97%A5%E4%B8%8A%E6%BC%B212-50%E7%BE%8E%E5%85%83%E6%BC%B2%E5%B9%852-95-%E6%8A%98%E5%8F%B0%E8%82%A12835-46%E5%85%83-214140549.html",
+          "published_at": "2026-10-27T21:41:40+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-28",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "TAIEX",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "market",
+            "reason": "market_subject_action",
+            "matched_terms": [
+              "nyse",
+              "上漲"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "nyse",
+              "上漲"
+            ],
+            "matched_subject": "nyse",
+            "matched_action": "上漲",
+            "matched_market_object": "nyse",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "中央社台北2026年10月28日電台積電在nyse掛牌adr以43687美元作收上漲1250美元漲幅295由於每單位台積電adr相當於台股5股台積電普通股以10月27日新台",
+          "event_cluster_key": "event-55fcd2d7728b06fa2955",
+          "published_time_bucket": "2026-10-27T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "nyse",
+            "上漲"
+          ],
+          "matched_subject": "nyse",
+          "matched_action": "上漲",
+          "matched_market_object": "nyse",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-27T22:03:47.830033+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 140
+        },
         {
           "story_id": "news-e318730c2ba0e3cd081e",
           "provider": "yahoo_finance",
@@ -7329,107 +7575,12 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        },
-        {
-          "story_id": "news-28547d0b2d409cd6cc60",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "氦氣被列入關鍵材料！美晶片廠遭供應商限量 專家：AI擴產計畫卡在「隱形瓶頸」",
-          "raw_title": "氦氣被列入關鍵材料！美晶片廠遭供應商限量 專家：AI擴產計畫卡在「隱形瓶頸」",
-          "normalized_fact": "美國能源部將氦氣列為關鍵材料，第20種戰略物資，將開啟聯邦融資並強化供應鏈監測。 氦氣主要供應國為美國、卡達、俄羅斯；美國去年產量8,100萬立方公尺、佔全球43%，但工廠已近產能極限。 半導體業消耗。",
-          "market_topic": "energy_geopolitics",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "美國能源部將氦氣列為關鍵材料，第20種戰略物資，將開啟聯邦融資並強化供應鏈監測。 氦氣主要供應國為美國、卡達、俄羅斯；美國去年產量8,100萬立方公尺、佔全球43%，但工廠已近產能極限。 半導體業消耗",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%B0%A6%E6%B0%A3%E8%A2%AB%E5%88%97%E5%85%A5%E9%97%9C%E9%8D%B5%E6%9D%90%E6%96%99-%E7%BE%8E%E6%99%B6%E7%89%87%E5%BB%A0%E9%81%AD%E4%BE%9B%E6%87%89%E5%95%86%E9%99%90%E9%87%8F-%E5%B0%88%E5%AE%B6-ai%E6%93%B4%E7%94%A2%E8%A8%88%E7%95%AB%E5%8D%A1%E5%9C%A8-%E9%9A%B1%E5%BD%A2%E7%93%B6%E9%A0%B8-200006136.html",
-          "url": "https://tw.stock.yahoo.com/news/%E6%B0%A6%E6%B0%A3%E8%A2%AB%E5%88%97%E5%85%A5%E9%97%9C%E9%8D%B5%E6%9D%90%E6%96%99-%E7%BE%8E%E6%99%B6%E7%89%87%E5%BB%A0%E9%81%AD%E4%BE%9B%E6%87%89%E5%95%86%E9%99%90%E9%87%8F-%E5%B0%88%E5%AE%B6-ai%E6%93%B4%E7%94%A2%E8%A8%88%E7%95%AB%E5%8D%A1%E5%9C%A8-%E9%9A%B1%E5%BD%A2%E7%93%B6%E9%A0%B8-200006136.html",
-          "published_at": "2026-10-25T20:00:06+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-26",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "energy",
-            "reason": "energy_subject_action",
-            "matched_terms": [
-              "能源",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "能源",
-              "供應"
-            ],
-            "matched_subject": "能源",
-            "matched_action": "供應",
-            "matched_market_object": "能源",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美國能源部將氦氣列為關鍵材料第20種戰略物資將開啟聯邦融資並強化供應鏈監測氦氣主要供應國為美國卡達俄羅斯美國去年產量8100萬立方公尺佔全球43但工廠已近產能極限半導體業消耗",
-          "event_cluster_key": "event-e677a0bb8f1ac3c865ce",
-          "published_time_bucket": "2026-10-25T20:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "能源",
-            "供應"
-          ],
-          "matched_subject": "能源",
-          "matched_action": "供應",
-          "matched_market_object": "能源",
-          "decision_value_class": "energy",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 3,
-          "inventory_saved_at": "2026-10-25T22:03:42.583154+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
         }
       ],
-      "inventory_saved_at": "2026-10-27T21:46:49.897491+00:00"
+      "inventory_saved_at": "2026-10-27T22:03:47.830033+00:00"
     },
     "us": {
-      "fetched_at": "2026-10-27T21:46:49.897491+00:00",
+      "fetched_at": "2026-10-27T22:03:47.830033+00:00",
       "stories": [
         {
           "title": "8-K - RUSH ENTERPRISES INC \\TX\\ (0001012019) (Filer)",
@@ -7812,181 +7963,6 @@
           }
         },
         {
-          "title": "〈美股早盤〉油價回落、晶片股續揚 主要指數開高靜待Fed決策",
-          "url": "https://news.cnyes.com/news/id/6638600",
-          "provider": "anue",
-          "source": "鉅亨網｜持股關聯",
-          "relevance": "holding",
-          "summary": "美股開盤走高，道瓊一度漲逾200點，標普500與那指受晶片股連2日上漲帶動。 中東外交出現轉機，油價回落；市場並等待Fed利率決策與Alphabet、微軟、亞馬遜財報。 UPS、可口可樂財報報喜，PayPal、康寧、UPS等個股盤前分歧，台積電ADR漲1.07%。",
-          "published_at": "2026-10-27T13:41:15+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6638600",
-          "market_classification": {
-            "market_scope": "cross_market",
-            "taiwan_matches": [
-              "台積電"
-            ],
-            "us_matches": [
-              "美股",
-              "fed",
-              "alphabet"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 4,
-              "source_market_hint": "cross_market"
-            }
-          },
-          "market_scope": "cross_market",
-          "taiwan_matches": [
-            "台積電"
-          ],
-          "us_matches": [
-            "美股",
-            "fed",
-            "alphabet"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 4,
-            "source_market_hint": "cross_market"
-          },
-          "story_id": "news-fc125b8bbf2dbdae8769",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "raw_title": "〈美股早盤〉油價回落、晶片股續揚 主要指數開高靜待Fed決策",
-          "normalized_fact": "美股開盤走高，道瓊一度漲逾200點，標普500與那指受晶片股連2日上漲帶動。 中東外交出現轉機，油價回落；市場並等待Fed利率決策與Alphabet、微軟、亞馬遜財報。 UPS、可口可樂財報報喜，PayPal、康寧、UPS等個股盤前分歧，台積電ADR漲1.07%。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "description": "",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": null,
-          "published_local_date": "",
-          "market": "cross_market",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates",
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "利率"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "利率"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "利率",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美股開盤走高道瓊一度漲逾200點標普500與那指受晶片股連2日上漲帶動中東外交出現轉機油價回落市場並等待fed利率決策與alphabet微軟亞馬遜財報ups可口可樂財報報喜paypal康寧ups等個股盤前分歧台積電adr漲107",
-          "event_cluster_key": "event-9f0a370ee3be7d071e84",
-          "published_time_bucket": "2026-10-27T13:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "利率"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "利率",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
-          "title": "外資大砍友達9.6萬張最凶 倒貨3檔主動式ETF、連12賣調節0050",
-          "url": "https://news.cnyes.com/news/id/6638620",
-          "provider": "anue",
-          "source": "鉅亨網｜市場焦點",
-          "relevance": "market",
-          "summary": "台股連假後首日收紅漲54點、成交量9,765億元，盤面以記憶體、機器人、金融族群強勢。\n外資賣超81.03億元、倒貨友達9.59萬張，買超力積電5.6萬張；投信買超236.45億元、連7買台積電。\n法人指本周聚焦微軟、Alphabet、亞馬遜財報與FOMC，台股仍在季線上下震盪整理。",
-          "published_at": "2026-10-27T11:54:02+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6638620",
-          "market_classification": {
-            "market_scope": "cross_market",
-            "taiwan_matches": [
-              "台股",
-              "台積電",
-              "0050"
-            ],
-            "us_matches": [
-              "fomc",
-              "alphabet"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 5,
-              "source_market_hint": null
-            }
-          },
-          "market_scope": "cross_market",
-          "taiwan_matches": [
-            "台股",
-            "台積電",
-            "0050"
-          ],
-          "us_matches": [
-            "fomc",
-            "alphabet"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 5,
-            "source_market_hint": null
-          }
-        },
-        {
           "title": "Dow Jones Futures: Growth Stocks Rally, Tesla Clears Buy Point; Fed, Microsoft, Google On Tap",
           "url": "https://finance.yahoo.com/m/7066a700-b33b-3fa1-858d-f75f49b920da/dow-jones-futures%3A-growth.html?.tsrc=rss",
           "summary": "The S&P 500 reclaimed a key level as Tesla and growth stocks rallied. The Federal Reserve, Microsoft, Google on deck.",
@@ -7996,7 +7972,7 @@
           "authority_tier": "market",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-10-27T21:34:18+00:00",
+          "published_at": "2026-10-27T21:44:02+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
@@ -8029,6 +8005,86 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 5,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "Nvidia’s New $3 Billion AI Bet Is on One of Its Own Customers",
+          "url": "https://www.fool.com/investing/2026/10/27/nvidias-new-3-billion-ai-bet-is-on-one-of-its-own-customers/?.tsrc=rss",
+          "summary": "Nvidia’s $3 billion investment in Meta strengthens an important partnership. It also raises familiar questions about who is funding the AI boom.",
+          "source": "Yahoo Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-27T21:40:01+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "nvidia",
+              "meta"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "nvidia",
+            "meta"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "Jensen Huang's Late-Night Calls With President Trump Come as Nvidia's China AI Chip Shipments Fall 44% in the First Half of 2026. Here's Why His Access Matters.",
+          "url": "https://www.fool.com/investing/2026/10/27/jensen-huangs-late-night-calls-with-trump/?.tsrc=rss",
+          "summary": "Chinese companies reportedly want billions in Nvidia chips, but shipments have still fallen 44% in the first half of 2026.",
+          "source": "Yahoo Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-27T21:39:00+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "trump",
+              "nvidia"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "trump",
+            "nvidia"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
             "source_market_hint": "us"
           }
         },
@@ -8409,40 +8465,44 @@
           "ranking_score": 130
         },
         {
-          "title": "Weekly market commentary - BlackRock",
-          "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxQLWJDTjBBalYwVHVpc0VxV1BwRE1xeUt1RWlLQ1VJdnJQRXNnb3p6MnFNbjRBV0s0TnlldW4wSVIycFRQeVNISWJ3VV9wMWdjX1ZndE1Tc24tNzc0anNYWjl0SVBsRDhSa0dVTWlyVVYxX0w5b2JhTFB0Tm9Vb2FwYVZubTU1SVJlcy0zMEpXOEM4ZlhiSU1QazdVQVlldw?oc=5",
-          "summary": "Weekly market commentary BlackRock",
+          "title": "S&P 500, Nasdaq hit records — but 'the breadth of the rally has narrowed': Chart of the Day - Yahoo Finance",
+          "url": "https://news.google.com/rss/articles/CBMi2gFBVV95cUxPVEp4d2xwaDVOY2E0UmQ3WGxzdV9aRnJwV3JEUWczMUNRU3VORE1taVNseWwybUNwejFRb2trT3BVVV9ialFBdkpwZFdjOG0ySGIwblE4QlJISEVnRlZLSEk0Q1I2MkxBcHZuMHVvNzlIZGF3SE5qU1BGOVVvRHFSM0U2amhXUTJOTmFXcnQ2bVMycmg4dm5Tak5zbzR5LTdKVlZlRGlZT19FLVJqM1hzWlUxYVliLWRrd3NuVXprZk1xd2hkYko4OWxnUVpkejZ3SHM4Unc3ZUdhUQ?oc=5",
+          "summary": "S&P 500, Nasdaq hit records — but 'the breadth of the rally has narrowed': Chart of the Day Yahoo Finance",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-10-26T07:00:00+00:00",
+          "published_at": "2026-10-07T07:00:00+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
             "us_matches": [
-              "美股"
+              "美股",
+              "nasdaq",
+              "s&p 500"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 1,
+              "matched_term_count": 3,
               "source_market_hint": "us"
             }
           },
           "market_scope": "us",
           "taiwan_matches": [],
           "us_matches": [
-            "美股"
+            "美股",
+            "nasdaq",
+            "s&p 500"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 1,
+            "matched_term_count": 3,
             "source_market_hint": "us"
           }
         },
@@ -8560,6 +8620,172 @@
           "ranking_score": 115
         },
         {
+          "title": "Micron and Nvidia Are the 2 Biggest Drivers of S&P 500 Earnings Growth. Are Their Stocks Buys? - The Motley Fool",
+          "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxNcjE1aTB6enNNS2JvTldTbTQ5U0RkRVdnempjbHpZaWRCbFdNRkZWd1FGc2JUUGZBdWpfS09JdEJkTmZYTExKOEdGVEF2anRIQUdVYlRnSGNmaV91S0k3M0JXOHVNV2ZEMEs2VGVONmk3dXpkSjdjU3RpRkZtdlN0UU1OcmI5Ykk4YU8tWXBlU2pjRTlDNlZJY2RpTTd3cWR2LTFtNWItRUZLeFZ4a0hNYm1jTkY1ZUJPWDhTMVlxRkQ3VGpCT1k4U2xGVEJFQjgtTFpjdlp3",
+          "summary": "Micron and Nvidia Are the 2 Biggest Drivers of S&P 500 Earnings Growth. Are Their Stocks Buys? The Motley Fool",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-21T08:44:00+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股",
+              "s&p 500",
+              "nvidia"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 3,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股",
+            "s&p 500",
+            "nvidia"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 3,
+            "source_market_hint": "us"
+          },
+          "story_id": "news-4052a16288e5967ea443",
+          "provider_name": "Google News",
+          "raw_title": "Micron and Nvidia Are the 2 Biggest Drivers of S&P 500 Earnings Growth. Are Their Stocks Buys? - The Motley Fool",
+          "normalized_fact": "Micron and Nvidia Are the 2 Biggest Drivers of S&P 500 Earnings Growth. Are Their Stocks Buys? The Motley Fool。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxNcjE1aTB6enNNS2JvTldTbTQ5U0RkRVdnempjbHpZaWRCbFdNRkZWd1FGc2JUUGZBdWpfS09JdEJkTmZYTExKOEdGVEF2anRIQUdVYlRnSGNmaV91S0k3M0JXOHVNV2ZEMEs2VGVONmk3dXpkSjdjU3RpRkZtdlN0UU1OcmI5Ykk4YU8tWXBlU2pjRTlDNlZJY2RpTTd3cWR2LTFtNWItRUZLeFZ4a0hNYm1jTkY1ZUJPWDhTMVlxRkQ3VGpCT1k4U2xGVEJFQjgtTFpjdlp3",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 5,
+          "published_local_date": "2026-10-21",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [
+            "earnings"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "nvidia",
+              "earnings"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "nvidia",
+              "earnings"
+            ],
+            "matched_subject": "nvidia",
+            "matched_action": "earnings",
+            "matched_market_object": "nvidia",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "micronandnvidiaarethe2biggestdriversofsp500earningsgrowtharetheirstocksbuysthemotleyfool",
+          "event_cluster_key": "event-e9e5dcfcfe5c4cf92966",
+          "published_time_bucket": "2026-10-21T08:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "nvidia",
+            "earnings"
+          ],
+          "matched_subject": "nvidia",
+          "matched_action": "earnings",
+          "matched_market_object": "nvidia",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
+          "title": "These surprising stocks could be some of the biggest drivers of S&P 500 earnings growth - MarketWatch",
+          "url": "https://news.google.com/rss/articles/CBMiygFBVV95cUxQXzFmLVBiTG5yNGZabEo2NWJkaTVzdnhQQ0tELUpBTVhJazN6NURHTjBscTdiOHJiUkE1NDZ0dDFrOXkwM3AwWVhORVl6bVFLQmFLRkdMTHZxUmxkT0Z6eklHZzByWXEtNUF6UTJCYzltQ29RUk50Q0stRHBQM18xVTF5VUJ2VU9HNG4zWXBwV3VMYlhDN0dNdnljU3RGM3ZXV3NXRDZCV0EwWXE4VVNWcVpqV0xTTndxNXZiMGRIcWh1WlgzLUkzY1BB?oc=5",
+          "summary": "These surprising stocks could be some of the biggest drivers of S&P 500 earnings growth MarketWatch",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-18T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股",
+              "s&p 500"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股",
+            "s&p 500"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "us"
+          }
+        },
+        {
           "title": "S&P 500 Bull Market: Drivers, History and Outlook - Raymond James - Commentaries - Advisor Perspectives",
           "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxOODE5WGlvXzVvcUV1Q29XUnZzRVZ2SlBLczBqUzVGdnBNc3RqdjQ4b3JsWVQwbkNackFNN3IyMnYyd3g0anV1M3BBcGwycWt1NVNlT1NIZmI0Vnl0d2JBMUN2cTZKV1NhSjBFdllEeFZmMmRWQm90VlplUmE2ZmNGa3U1MGZhSWhHUmZOdWloNHdCaGktaHNsdGFaLTlOejA?oc=5",
           "summary": "S&P 500 Bull Market: Drivers, History and Outlook - Raymond James - Commentaries Advisor Perspectives",
@@ -8644,44 +8870,6 @@
           }
         },
         {
-          "title": "The Rally Is Back, But Risks Are Rising - Morgan Stanley",
-          "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxQcDZTY2g3eGlvbWRqQTQ4WU5kcmJIWUlZRFB2UDd4XzVMVExBSDRpX1RkODkwTFlYMWlFZUhjM2NzSXNzb3RjNFFZZkJpTXhPMjA2UGg3SE02UGlLUnVRY2pFWFVQUGd0Ni0yTWRHM1lGQ19DSktFRFJ0VktmNkZtU2NhRVBROXpZdnVhOW5kQ296YlpsS3g3Uk53?oc=5",
-          "summary": "The Rally Is Back, But Risks Are Rising Morgan Stanley",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-05-27T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
           "title": "What's Holding Up Record S&P 500 Margins? - LPL Financial",
           "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxPM0ZKcmNBWWl1Y0RRMTUxRWtrRWJkOFJmTDktaWd1UVEwdDJmT1NNZGJqUlNWWVpTVHdCQU53YlNtQWVaS2NwYVUtX1JpWmd1aTd0RDdQZEVyS1RBWmhFNUxsTEJ3enlyeEZNazNxTXpFWUpONHBadHMxMDhZSFotaDZJejhuTDhweENCMmpHMlZxT1IxeTVUd0dyc1BVT3ZfcHc?oc=5",
           "summary": "What's Holding Up Record S&P 500 Margins? LPL Financial",
@@ -8722,16 +8910,16 @@
           }
         },
         {
-          "title": "How to get to 9,000 on the S&P 500 - J.P. Morgan Private Bank",
-          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxQZmFtSnBfRFR2NUdCSXZXdkQ2YnFNZk1RbkVtUE15SjVwVUxiX2RRLVlGX0t4aUg0WHUzQUhGWVJMS1M2R2lrUlFwWDM0bC1UNExIMFF6SlpmZlhkVUZPNUs5cWJOX3QtQW5kQ3gwdFR6V1N6bVhoVEQtZDBYVFQxZnFfUzd5QlFhWk1zU3EtR0hacXJ0UXpFVXNDN2R3QWMxMkoxUlZnMkFJblBEVlNPbWln?oc=5",
-          "summary": "How to get to 9,000 on the S&P 500 J.P. Morgan Private Bank",
+          "title": "Energy Stocks Lead This Year, But Tech Still Drives The S&P 500 - Seeking Alpha",
+          "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxQY2RoWjM4QWNRTkRQRmZEeFRNdVhsck45WndoeXZuWjFTX3daMWN2U3B3ekhGVXFQalFrQ3ZTS1VleVZGeks1dU16QUR6dlFFVXJQZF80Zlc3VkNycG52S0hrb3d4MFFCNFl2R3BiZ01RUVVwbmNnMVc0QzJhaDhoT0ZjekpmRkUtRGU2czhCYUlTamtxMHQ2SQ?oc=5",
+          "summary": "Energy Stocks Lead This Year, But Tech Still Drives The S&P 500 Seeking Alpha",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-05-20T07:00:00+00:00",
+          "published_at": "2026-10-20T15:35:00+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
@@ -8758,6 +8946,44 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 2,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "Fewer Stocks Are Driving the Market’s Rally Lately. These Experts See an Opportunity for Investors - Investopedia",
+          "url": "https://news.google.com/rss/articles/CBMi1wFBVV95cUxPTnpVdlpCRl9jTWJMTk8wSC1pYkRkbXY1WndnTkotVHQwSnB4TDBpWFNLM0dIdmlIUWdDS1o1Rk1iQ2lNQ2xGakNMVXpmeV9aM2NfTVlvMWdBT24yTG1MSG0yWm5EUWhKYkxuSVA2N1BUZUpfdEdpQkw4MWFoeVl5bU9qdklRRkZNOXNUQkQwT0VmZFlEZWkyMTB1dzhBSDJyOTJJLVFKU2hVbWVrTll6QVV5Vi1UaHRwMW9YTW1ndGxvUDk4VFZkdk9uQWxDNkdaYjV0eDB1aw?oc=5",
+          "summary": "Fewer Stocks Are Driving the Market’s Rally Lately. These Experts See an Opportunity for Investors Investopedia",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-09T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
             "source_market_hint": "us"
           }
         },
@@ -8772,86 +8998,6 @@
           "market": "us",
           "relevance": "market",
           "published_at": "2026-06-24T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股",
-              "s&p 500"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股",
-            "s&p 500"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "Mega-Cap Exposure & S&P 500 Concentration - BlackRock",
-          "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxOdExrWFBvZzYybzBCSXAyTVpIdThnQkppWDJvWVRUWFV6c0NZeWxkRmtXLXYxR0J2NEwySzhRclV5c0U5eDUxOEVKUDB3QnFQekw4OWtLOXdEQXZjcFA0Y3JTdzNobWpkTkg2MlhabHZ4NkFLU2dyVEczWkxDc1psTmV0VlBrUW5CNTV0RHlwQVFHbjZIUnUybA?oc=5",
-          "summary": "Mega-Cap Exposure & S&P 500 Concentration BlackRock",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-04-30T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股",
-              "s&p 500"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股",
-            "s&p 500"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "Market concentration is creating 'fragility': Only 60% of S&P 500 stocks are above their 200-day average - Yahoo Finance",
-          "url": "https://news.google.com/rss/articles/CBMi7AFBVV95cUxNR29KM0JFMC1CWm5TNUNBdmxEQXhDeUZZbmlDSE8tdVczamYtcTVTLWRCb2ZZVUUtQ1J2QlI5ZVYwNnZVRnIxYkVxZjVIekw0SDVJbmNXZjhLZ3ZPNEJHZ1BzZ2hXaU9WUnBZNnM4SXFONnM3TnJFUmM5UzlzSFBuaEdaNmxGNnNVM3Q5cHRZV196UU01dVd2dUduQzZkQXlCUl9rV2I5V2htLVJrVHNOLVdEWlNmWWZWeGo2QWNyQ19TZW16UlZnX2wwOXREMjhhdTZlUElpVkNzTHZTMXNScXN5SWMxeklTcVhtRA?oc=5",
-          "summary": "Market concentration is creating 'fragility': Only 60% of S&P 500 stocks are above their 200-day average Yahoo Finance",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-05-31T07:00:00+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
@@ -9421,7 +9567,7 @@
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-10-27T21:22:30+00:00",
+          "published_at": "2026-10-27T20:45:00+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
@@ -9450,6 +9596,46 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 3,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "Bullish Treasury Bets Face Reversal Risk From Hawkish Fed - Bloomberg.com",
+          "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxNWVdDN1Q0dWNoV3p6Z1JKbXlQM0tsU3lGVFVKMzNkZW5qR2FVYUFicy05NURWOXJmUEd3TTR0ZHlRVUY1V3hxU3dWdXA3ODdaZFltdXJ2WnI5NmN0TGNseXFKYXhoUjg4dndnaGlUVXdRQ0YyN2VPaS1IUnd5d2lOaU5RTU0wa05yS1h4b1NmaDlYdmNrQVpxRHpEaTJxQU96UmVPdHhuNEZ5S3k3?oc=5",
+          "summary": "Bullish Treasury Bets Face Reversal Risk From Hawkish Fed Bloomberg.com",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-27T20:30:06+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股",
+              "fed"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股",
+            "fed"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
             "source_market_hint": "us"
           }
         },
@@ -9618,28 +9804,29 @@
           "ranking_score": 115
         },
         {
-          "title": "Where Fed and ECB Rates Could Go Next, According to Bank of America’s Preusser - Morningstar",
-          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxNWDhMcEtDZmhoQnJMSVBVUzFaWVBqeUczRlRZekhZc1RpYWU0ajVLWlNscVRjQ2UzSS1ZVFRsd3BsazVuR2FtVG5PQVQwRW8zY1FhVzlJeE9SVWEtS1VnZzZROWR0dXdNTVQ1X2pMTDZkdjBleGE0akJRSVpKTXRaWTdfTUJhaktpOFRlaHY5UHdtLUZMOE5HMXR2YkpGODBDU1RoaHFlcGFzeEpJMnc",
-          "summary": "Where Fed and ECB Rates Could Go Next, According to Bank of America’s Preusser Morningstar",
+          "title": "Fed to hit pause on rate hikes, but maybe not for long - Reuters",
+          "url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxQMFBxcEVKT0RxYVJKYWZGOUlGd0VJTE5vN2lNTnozcm92NTV5Vzg3aVdhT2p3eGpoVlZlZ19aaGtPa0s2VzBsS2xuamdkTnU4X2dhNGRzYjlaVTFpVzdLSkg4TDRlQThPdnZOandxOE1wV0o0WDFCcDgtbEZIQmR0a3BFOWdIM1dPZGdmQQ",
+          "summary": "Fed to hit pause on rate hikes, but maybe not for long Reuters",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-10-23T09:17:11+00:00",
+          "published_at": "2026-10-26T10:22:43+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
             "us_matches": [
               "美股",
-              "fed"
+              "fed",
+              "amd"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 2,
+              "matched_term_count": 3,
               "source_market_hint": "us"
             }
           },
@@ -9647,19 +9834,20 @@
           "taiwan_matches": [],
           "us_matches": [
             "美股",
-            "fed"
+            "fed",
+            "amd"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 2,
+            "matched_term_count": 3,
             "source_market_hint": "us"
           },
-          "story_id": "news-54cdf1fd4058bf1aa93c",
+          "story_id": "news-5583cdfdafdf5d785287",
           "provider_name": "Google News",
-          "raw_title": "Where Fed and ECB Rates Could Go Next, According to Bank of America’s Preusser - Morningstar",
-          "normalized_fact": "Where Fed and ECB Rates Could Go Next, According to Bank of America’s Preusser Morningstar。",
+          "raw_title": "Fed to hit pause on rate hikes, but maybe not for long - Reuters",
+          "normalized_fact": "Fed to hit pause on rate hikes, but maybe not for long Reuters。",
           "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
@@ -9669,13 +9857,13 @@
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxNWDhMcEtDZmhoQnJMSVBVUzFaWVBqeUczRlRZekhZc1RpYWU0ajVLWlNscVRjQ2UzSS1ZVFRsd3BsazVuR2FtVG5PQVQwRW8zY1FhVzlJeE9SVWEtS1VnZzZROWR0dXdNTVQ1X2pMTDZkdjBleGE0akJRSVpKTXRaWTdfTUJhaktpOFRlaHY5UHdtLUZMOE5HMXR2YkpGODBDU1RoaHFlcGFzeEpJMnc",
+          "canonical_url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxQMFBxcEVKT0RxYVJKYWZGOUlGd0VJTE5vN2lNTnozcm92NTV5Vzg3aVdhT2p3eGpoVlZlZ19aaGtPa0s2VzBsS2xuamdkTnU4X2dhNGRzYjlaVTFpVzdLSkg4TDRlQThPdnZOandxOE1wV0o0WDFCcDgtbEZIQmR0a3BFOWdIM1dPZGdmQQ",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "recent_reference",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-10-23",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-26",
           "market_compatible": true,
           "tickers": [],
           "entities": [],
@@ -9690,15 +9878,15 @@
             "reason": "fed_subject_action",
             "matched_terms": [
               "fed",
-              "rates"
+              "rate"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
               "fed",
-              "rates"
+              "rate"
             ],
             "matched_subject": "fed",
-            "matched_action": "rates",
+            "matched_action": "rate",
             "matched_market_object": "fed",
             "input_fields": [
               "description",
@@ -9710,18 +9898,18 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "wherefedandecbratescouldgonextaccordingtobankofamericaspreussermorningstar",
-          "event_cluster_key": "event-065be349c7a21880258a",
-          "published_time_bucket": "2026-10-23T09:00:00+00:00",
+          "dedupe_key": "fedtohitpauseonratehikesbutmaybenotforlongreuters",
+          "event_cluster_key": "event-7ce8c0d5e4e88573672c",
+          "published_time_bucket": "2026-10-26T10:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
             "fed",
-            "rates"
+            "rate"
           ],
           "matched_subject": "fed",
-          "matched_action": "rates",
+          "matched_action": "rate",
           "matched_market_object": "fed",
           "decision_value_class": "macro",
           "quality_flags": [],
@@ -9738,52 +9926,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        },
-        {
-          "title": "Gold Steadies Above $4,000 With Fed Rate Decision in Focus - Bloomberg.com",
-          "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxNLTRVUHViYXZZWTg4WHdFSXgxV1ZMS2FqdHgtUUxQSlJxN0JzbG5ZNXdOVTJFMUR2VmEtaU9MUGl5T2VXUHg0YmliUFdIOEIzVjhYdHNmUmo2aXVtMll3eGp6WkJCTVRtUl9SQmd0NmFTZXBma1VrVDNXZDVSc3V4M3hrVlFFeU9iV3VmNDhGM2FVQnRvZnA1bFBpSjRfZmRYeGJDX2ZWVEk4OXhE?oc=5",
-          "summary": "Gold Steadies Above $4,000 With Fed Rate Decision in Focus Bloomberg.com",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-10-27T19:37:36+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股",
-              "fed",
-              "meta"
-            ],
-            "global_matches": [
-              "gold"
-            ],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 4,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股",
-            "fed",
-            "meta"
-          ],
-          "global_matches": [
-            "gold"
-          ],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 4,
-            "source_market_hint": "us"
-          }
         },
         {
           "title": "The U.S.-Taiwan ART’s Export Control Puzzle - Lawfare",
@@ -9828,6 +9970,44 @@
           }
         },
         {
+          "title": "China proposes new export controls on AI, life sciences and photovoltaic technologies - Hogan Lovells Cadwalader",
+          "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxNVWtCTld5UTJnajEycGpGcEF6NWFBNGhmNlowYkJNVXZEZDF0WG5zdG5FNVBXdXZ1NmppTnI5Vi0zSmVuTHFRSEN0Vk5kU2RnZFVjbFVnaWltZzFUb1hCQ0pLY1lBYnl2eDlJYlFkOU1QX3dmV1ZJMGwtcUtWeGNkVHRjU1dkLUFGVDB5RVc0OFktUnVOZlBudV8zOTJNNFRXYXpFMnhoTGNKSTFlQTRhWUVnbG1BX1I5Mm9Wcg?oc=5",
+          "summary": "China proposes new export controls on AI, life sciences and photovoltaic technologies Hogan Lovells Cadwalader",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-23T10:22:30+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "us"
+          }
+        },
+        {
           "title": "China proposes new export controls on artificial intelligence, biopharma, and photovoltaic technologies - White & Case LLP",
           "url": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxQQUluM3JRMHRybHBfX0VRX2dPMTRaVEpldTJSMVo5RURBQkYyMzVZOFhTaDU2NmE2dEdEZmNsSzdLWmhQTHd0VnE3c1NEa3pfMTIyRnRCY0xIMk0zaVhNT3hzVkF0SWxqNzg0eklBTEFVZDE2NmhhVzhpemxndC1vN3V5Y1V2blFLM0t6c2h1bXRobUhPM1VDMWlxb0VTT0dBUnJrVWg3eTFGUTNRTlJRM0M4eWdrY2EtOVF3VWU3YkdrdUU?oc=5",
           "summary": "China proposes new export controls on artificial intelligence, biopharma, and photovoltaic technologies White & Case LLP",
@@ -9866,40 +10046,48 @@
           }
         },
         {
-          "title": "Beijing seeks tighter grip on AI exports amid US rivalry - Reuters",
-          "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxNMWNnS1haU3c5T3lybTBzQUNxZF9lMmhWaFp0Yk5UbzhDdklobHpkRHk2dExFU1dWZmVMVENFNEVLOW9JWDdscm15VDhObXhhc1JwYjlIelZjeFJuMG9jVERmTHRNRTZtSlBRYndNc2IxZTRkdWtPUGdlWDhoSEZQTHVZNzIwMFUzWVhjT3gxUWl1X2VpM1VOM29BZElFRjlaek1uRDFQb2N5aF9FTlF4U1N4WFZRVmtyUTBLdmVJc0Rzb3E2NkZ5ZQ?oc=5",
-          "summary": "Beijing seeks tighter grip on AI exports amid US rivalry Reuters",
+          "title": "EXCLUSIVE: TSMC seeks factory-equipment alternatives to thwart China's rare earths grip, sources say - Reuters",
+          "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxOVDZiLXZ3MjNBLVhJa0g3VzJ0SU9MalBLSjFrMWlJUVhXd21CY0x2OVo3SUVLV25tNnBDZVBKYnN4b1E2ZHd4Rm9FTzVGMDYySmtfU1lBRkxYUFl2eGlOWjllZEptTVZ6V3BVVFVtQVBaODVqWmp1V3dTckg2WUZVQVRYNTFIZU9yLU81bVJTNEhzZG8xR0xVNnFUcTRXSkg0cFVLOHBxSjVXSzdtdS13cFF4RkpscWdLeXdPb3Q4Sk9GQ1dybDZn?oc=5",
+          "summary": "EXCLUSIVE: TSMC seeks factory-equipment alternatives to thwart China's rare earths grip, sources say Reuters",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-10-16T07:00:00+00:00",
+          "published_at": "2026-10-22T09:20:00+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
             "us_matches": [
-              "美股"
+              "美股",
+              "bls",
+              "tsm"
             ],
-            "global_matches": [],
+            "global_matches": [
+              "war"
+            ],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 1,
+              "matched_term_count": 4,
               "source_market_hint": "us"
             }
           },
           "market_scope": "us",
           "taiwan_matches": [],
           "us_matches": [
-            "美股"
+            "美股",
+            "bls",
+            "tsm"
           ],
-          "global_matches": [],
+          "global_matches": [
+            "war"
+          ],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 1,
+            "matched_term_count": 4,
             "source_market_hint": "us"
           }
         },
@@ -9942,168 +10130,16 @@
           }
         },
         {
-          "title": "AI & Semiconductor Export Controls Compliance - Kharon",
-          "url": "https://news.google.com/rss/articles/CBMixgFBVV95cUxOcnFLZzFvZWVwdmdLeXQwckpNTFdEdnFjbnVsN00xVUliaWh1SF81NzlsdEYyT1IwMmlmeXdwTG1HQ0lGWkl2dU1CNURGQlZ5WW8wTTdxbjNiSU9VekxDS2dvdm5mWldpYkk4ZVE4d3dNWFFkaERNQU0yRGdrY0hiVjY5TXZFRWh0YkVBV21PZHZyUDRfMGg5OUh0YWRUS09LSkVEZXBhOFJacUtHd0gyQVp4Y0pnTVJ3M3k4UmhJcjUzRmNBX2c?oc=5",
-          "summary": "AI & Semiconductor Export Controls Compliance Kharon",
+          "title": "China Proposes Expanded Export Controls on AI, Biopharma and Solar Energy Technologies - Global Sanctions and Export Controls Blog",
+          "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxQUzR6T2xvUUt2Njl6TUZXaWFPYWxRU3QwRTZKM0d6N2tQUFlLcE1yUWZZLWlXc0w0Y0pMUzRaNlp2LWRZSUUtTWFBY0YzYllNT0dQNGx0eFo5YXUyQkpaZE44aUUtTUhpd29vZ1NmdGc2bFZUd1pSMW9OekJ2ZUljekNvRTFaZ0dNdTNFcVNmNDJic0M1T1RreXNWRUZ6ckxTVUE4NVBPdmRjcjJYTHlObTlFZjhDWHZuVkl4YXcwTk83TE8y?oc=5",
+          "summary": "China Proposes Expanded Export Controls on AI, Biopharma and Solar Energy Technologies Global Sanctions and Export Controls Blog",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-09-29T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "DeepSeek and MiniMax clear China AI export controls for overseas use - The Next Web",
-          "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxOZG9RWEx0RjF1YWhreWp3UnhFeWNLcGR0SHplMDJhVDdLN2dNYlJibWZpeUhLbi1NR0ppVnFOQUtKNkpvdGh0ZVprWGphaEt3WERDVkdVeWI3V0RkMEtXWVNFOWxNaTVLQVZkd04wWW40SXhVbm1DOGJIcUl1a0tmUWZ2TjI?oc=5",
-          "summary": "DeepSeek and MiniMax clear China AI export controls for overseas use The Next Web",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-10-25T11:13:22+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "Commerce Department Extends Export Controls to Advanced AI Models; Authorizes Release to Specific Trusted Partners - Mayer Brown",
-          "url": "https://news.google.com/rss/articles/CBMigwJBVV95cUxOWTQzZjJ5VGNUaGtJY3dTaTVwb0dWN01yWFY2RGtZX0gwZEpFVHM5NTZZQWRRZ04yZk1Hc2tCcFplcTg2VkxPZzVyUDhBeElfM21Id25YX3NpSXpRSmpLRVlkdXdkRWUyU1NMVXRydklfYmI4eWFrS1BqdnpNTlFmSnZ0RkZZeG9zYXRBRmdDYWIxOVA3R3E2aENra054OHl6WjhkTDVuWUY3eDdtc0J4WmVSR0lKbXNXaUNlaF9obXV5ajUwU0RNR3pLdjhlbGJYdllmNnZwZjNISUlvZFVUUkRGNTNoRWEyODgtVUQ3WXVKeDRUbHNYMEJXNnNQQWFyVGZN?oc=5",
-          "summary": "Commerce Department Extends Export Controls to Advanced AI Models; Authorizes Release to Specific Trusted Partners Mayer Brown",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-06-30T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "What’s the Latest with Semiconductor Export Controls? - Blank Rome LLP",
-          "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxOa1o2TVVWRWlLcFJJM0FKQU5mS2F2S2lIRDJKMFBFOG4zZFl0ZXd5RlZfdlJJQVNVTm1od19wcEVDN29RRkgyLXIwdnJqZGNPZjFPT3FqUm5GR2dLVE1TeEFxdmxUbnNYZ3FPTUVWaVgxd3pmZFcxNmZtdmRtamN0T0hycDU0U25lcW9pWHg3dWlRc194QW83MC13?oc=5",
-          "summary": "What’s the Latest with Semiconductor Export Controls? Blank Rome LLP",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-09-23T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "Reported Draft Rules Signal New Semiconductor Export Controls Framework - Global Trade & Sanctions Law",
-          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxPM3l1NDdoWGhiZy1OcENxUVhwTHNtb3RtZTdGci1lODdzQmR0MFlzNVBRcW9pRmJCSVZoTm1EeWtkTDIwSkhBZXB0YW9VbGZ3UklZSjV6aXdPRmxNbjF0XzhYbmxqNlIyakxYVnVLQmNoTTJhcDZNYkxmUTg4X3A2a0xpUGh2R2prdldVZjBsaHR4MUZfMUVoSXdJdlhJald3cmlOSjZrMlhVcG9PZGNNTF9Qd2VNQQ?oc=5",
-          "summary": "Reported Draft Rules Signal New Semiconductor Export Controls Framework Global Trade & Sanctions Law",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-03-13T07:00:00+00:00",
+          "published_at": "2026-10-18T20:25:24+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
@@ -10136,16 +10172,214 @@
           }
         },
         {
-          "title": "China’s Localization Drive in Semiconductors Gains Impetus from Allied Chip Export Controls - CSIS | Center for Strategic and International Studies",
-          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxQNXNzbHRYUmVEM1dKejE1Zmtva3E1ZW9iSzNqREo0MjZFWnpDbXg3NmhxV3lDeGFXUlp2VjBTdU1LV0QyZmN1UjhHREpnUW9mRFpXQS1TR1dBRW03XzA1NVFpTWlTR1J4WjhrQXZpMG1Ia0hNb1M3VXBzeUctelFqbkN0blIxM3lwVXVVQWlFWGt6NGNfREpXZHg2QVlvYUFDTW94THFmd1BJQlgwMEpmb05B?oc=5",
-          "summary": "China’s Localization Drive in Semiconductors Gains Impetus from Allied Chip Export Controls CSIS | Center for Strategic and International Studies",
+          "title": "Strengthening America’s AI Chip Export Controls - American Compass",
+          "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxPSm5Ca1M4dUx5SlRQNFZYa2NqaGNMelRrbXA5QTZJc3hWYmh1OWd0SWVEWk1jTVdWdWhxSEFmZG1Hb2ZXNkxsTFdSLVI5Skg5OUVhWC1ZZ0cyRHFvcWhUQXZYUDB5RlViakppNDNPQjZja1c3N2Fxclh2RjFXUU93VA?oc=5",
+          "summary": "Strengthening America’s AI Chip Export Controls American Compass",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-03-24T07:00:00+00:00",
+          "published_at": "2026-10-15T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "China says it will curb tech exports, including AI, citing national security risks - PBS",
+          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxQV1VUdmQwc0xPcG5KT3AxZFJ2dVJTVXNFc3RYc2lUTlA2R2xGeGJ3TjVqRGlpYUt2WUhNNEZDSDZkX1dJYm1INV9TaTI3eVlMM0RIaHh4V1g4U2FLdGJWOGJNRjFia1Q1amNoWUwzamlLWGFDVVhPNlZzbjRoU29YN3V1X2wyM2E5clBsTnp2MGJkSDNjOTFSVWVBd3MtZUZ1Sk1Yb1JGOGhZUlVoQmR3azVzZzU2Z9IBuwFBVV95cUxOSGI4Vm0wMmNIV3ZNY1NqNkRsaG1kTkd1bm1aZ3ZwZkFERU9YQ29Id3Bnc3FOU2NFNHVPbWwxclR4ZlFYY0hYLVNuMW1KbVRnNGdNTXpQODVReFdOaXZMV3E5cGx3ME9Ha25CZ3V3OXF1Zl9KSFhjWldWcHBwbjJDdGFudGJXVTdwY3dEa0JpYU96VEJqdG5hdW5pVmVvaEcxcFZXUTZoSVlpTWFtMTFlOE1YbUtVYVlBZTdV?oc=5",
+          "summary": "China says it will curb tech exports, including AI, citing national security risks PBS",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-16T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股",
+              "sec"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股",
+            "sec"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "Tokyo Electron Increases Lobbying on Semiconductor Export Controls - Legis1",
+          "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE9jYWhvVXlrYWROV3VTaDh5cDROb3NaU0RXOUo4anRoYk41YUJqX3QzbVNtM2tncXNiYlktcGdmSmJuZUI0SWhrdU1aWFdmSGtBVXU2UWNJdHRKcjlDWVpSWXh5NmFsVzRoSndsVlhkSUt0TmZv",
+          "summary": "Tokyo Electron Increases Lobbying on Semiconductor Export Controls Legis1",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-22T18:02:07+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "us"
+          },
+          "story_id": "news-4ab8b2fc4fd071c78977",
+          "provider_name": "Google News",
+          "raw_title": "Tokyo Electron Increases Lobbying on Semiconductor Export Controls - Legis1",
+          "normalized_fact": "Tokyo Electron Increases Lobbying on Semiconductor Export Controls Legis1。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE9jYWhvVXlrYWROV3VTaDh5cDROb3NaU0RXOUo4anRoYk41YUJqX3QzbVNtM2tncXNiYlktcGdmSmJuZUI0SWhrdU1aWFdmSGtBVXU2UWNJdHRKcjlDWVpSWXh5NmFsVzRoSndsVlhkSUt0TmZv",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 4,
+          "published_local_date": "2026-10-22",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "semiconductor"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "semiconductor",
+              "export control"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "semiconductor",
+              "export control"
+            ],
+            "matched_subject": "semiconductor",
+            "matched_action": "export control",
+            "matched_market_object": "semiconductor",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "tokyoelectronincreaseslobbyingonsemiconductorexportcontrolslegis1",
+          "event_cluster_key": "event-ebad8043486e01b1ebb8",
+          "published_time_bucket": "2026-10-22T18:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "semiconductor",
+            "export control"
+          ],
+          "matched_subject": "semiconductor",
+          "matched_action": "export control",
+          "matched_market_object": "semiconductor",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
+          "title": "DeepSeek and MiniMax clear China AI export controls for overseas use - The Next Web",
+          "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxOZG9RWEx0RjF1YWhreWp3UnhFeWNLcGR0SHplMDJhVDdLN2dNYlJibWZpeUhLbi1NR0ppVnFOQUtKNkpvdGh0ZVprWGphaEt3WERDVkdVeWI3V0RkMEtXWVNFOWxNaTVLQVZkd04wWW40SXhVbm1DOGJIcUl1a0tmUWZ2TjI?oc=5",
+          "summary": "DeepSeek and MiniMax clear China AI export controls for overseas use The Next Web",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-10-25T11:13:22+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
@@ -14179,8 +14413,7 @@
             ]
           },
           "relevance_reasons": [
-            "market:us",
-            "research_candidate:ON"
+            "market:us"
           ],
           "freshness": "published",
           "dedupe_key": "fedtohitpauseonratehikesbutmaybenotforlongreuters",
@@ -14211,7 +14444,7 @@
           "inventory_saved_at": "2026-10-26T13:14:43.746568+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 120
+          "ranking_score": 115
         },
         {
           "story_id": "news-15efb19798dca500a49c",
@@ -15222,7 +15455,7 @@
           "ranking_score": 130
         }
       ],
-      "inventory_saved_at": "2026-10-27T21:46:49.897491+00:00"
+      "inventory_saved_at": "2026-10-27T22:03:47.830033+00:00"
     }
   }
 }
