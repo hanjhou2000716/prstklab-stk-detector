@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "cf17673bbb325cd8",
-  "snapshot_id": "news-94d33adbdba201c3",
+  "market_snapshot_id": "bd60c90c8a46c30f",
+  "snapshot_id": "news-3e9fccfe90ed6bc3",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -437,6 +437,103 @@
       ],
       "stories": [
         {
+          "story_id": "news-fc125b8bbf2dbdae8769",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈美股早盤〉油價回落、晶片股續揚 主要指數開高靜待Fed決策",
+          "raw_title": "〈美股早盤〉油價回落、晶片股續揚 主要指數開高靜待Fed決策",
+          "normalized_fact": "美股開盤走高，道瓊一度漲逾200點，標普500與那指受晶片股連2日上漲帶動。 中東外交出現轉機，油價回落；市場並等待Fed利率決策與Alphabet、微軟、亞馬遜財報。 UPS、可口可樂財報報喜，PayPal、康寧、UPS等個股盤前分歧，台積電ADR漲1.07%。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美股開盤走高，道瓊一度漲逾200點，標普500與那指受晶片股連2日上漲帶動。 中東外交出現轉機，油價回落；市場並等待Fed利率決策與Alphabet、微軟、亞馬遜財報。 UPS、可口可樂財報報喜，PayPal、康寧、UPS等個股盤前分歧，台積電ADR漲1.07%。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6638600",
+          "url": "https://news.cnyes.com/news/id/6638600",
+          "published_at": "2026-10-27T13:41:15+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-27",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates",
+            "semiconductor"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美股開盤走高道瓊一度漲逾200點標普500與那指受晶片股連2日上漲帶動中東外交出現轉機油價回落市場並等待fed利率決策與alphabet微軟亞馬遜財報ups可口可樂財報報喜paypal康寧ups等個股盤前分歧台積電adr漲107",
+          "event_cluster_key": "event-9f0a370ee3be7d071e84",
+          "published_time_bucket": "2026-10-27T13:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 140
+        },
+        {
           "story_id": "news-4e1d012892cfff0136b4",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -826,17 +923,19 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
-        },
+        }
+      ],
+      "editorial_candidates": [
         {
-          "story_id": "news-b98ec5e277299e6c2a96",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Anthropic點名台灣晶片供應風險 AI擴張面臨考驗 - Rti 中央廣播電臺",
-          "raw_title": "Anthropic點名台灣晶片供應風險 AI擴張面臨考驗 - Rti 中央廣播電臺",
-          "normalized_fact": "Anthropic點名台灣晶片供應風險 AI擴張面臨考驗 Rti 中央廣播電臺。",
-          "market_topic": "semiconductor_ai",
+          "story_id": "news-fc125b8bbf2dbdae8769",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈美股早盤〉油價回落、晶片股續揚 主要指數開高靜待Fed決策",
+          "raw_title": "〈美股早盤〉油價回落、晶片股續揚 主要指數開高靜待Fed決策",
+          "normalized_fact": "美股開盤走高，道瓊一度漲逾200點，標普500與那指受晶片股連2日上漲帶動。 中東外交出現轉機，油價回落；市場並等待Fed利率決策與Alphabet、微軟、亞馬遜財報。 UPS、可口可樂財報報喜，PayPal、康寧、UPS等個股盤前分歧，台積電ADR漲1.07%。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -844,11 +943,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "Anthropic點名台灣晶片供應風險 AI擴張面臨考驗 Rti 中央廣播電臺",
+          "summary": "美股開盤走高，道瓊一度漲逾200點，標普500與那指受晶片股連2日上漲帶動。 中東外交出現轉機，油價回落；市場並等待Fed利率決策與Alphabet、微軟、亞馬遜財報。 UPS、可口可樂財報報喜，PayPal、康寧、UPS等個股盤前分歧，台積電ADR漲1.07%。",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiV0FVX3lxTE05SWQ5WXVVVk5pcW1rTUFSWEdIT28zUC15NTJYQVZWRUtEbmxRdW9uMDBLczJfRnk3RW83dTBQUDhPbS1iZUZVSENyUXNLYXc0cU5RZ3M0dw",
-          "url": "https://news.google.com/rss/articles/CBMiV0FVX3lxTE05SWQ5WXVVVk5pcW1rTUFSWEdIT28zUC15NTJYQVZWRUtEbmxRdW9uMDBLczJfRnk3RW83dTBQUDhPbS1iZUZVSENyUXNLYXc0cU5RZ3M0dw",
-          "published_at": "2026-10-27T10:23:16+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6638600",
+          "url": "https://news.cnyes.com/news/id/6638600",
+          "published_at": "2026-10-27T13:41:15+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "recent_reference",
@@ -861,26 +960,26 @@
           "entities": [],
           "sectors": [],
           "topics": [
-            "ai",
+            "rates",
             "semiconductor"
           ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
+            "category": "fed",
+            "reason": "fed_subject_action",
             "matched_terms": [
-              "ai",
-              "供應"
+              "fed",
+              "利率"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "ai",
-              "供應"
+              "fed",
+              "利率"
             ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
             "input_fields": [
               "description",
               "summary",
@@ -888,30 +987,32 @@
             ]
           },
           "relevance_reasons": [
-            "market:taiwan",
-            "active_event:ai"
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "anthropic點名台灣晶片供應風險ai擴張面臨考驗rti中央廣播電臺",
-          "event_cluster_key": "event-7c0184b1d9afafd42ef8",
-          "published_time_bucket": "2026-10-27T10:00:00+00:00",
+          "dedupe_key": "美股開盤走高道瓊一度漲逾200點標普500與那指受晶片股連2日上漲帶動中東外交出現轉機油價回落市場並等待fed利率決策與alphabet微軟亞馬遜財報ups可口可樂財報報喜paypal康寧ups等個股盤前分歧台積電adr漲107",
+          "event_cluster_key": "event-9f0a370ee3be7d071e84",
+          "published_time_bucket": "2026-10-27T13:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "ai",
-            "供應"
+            "fed",
+            "利率"
           ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Google News｜台股線索",
+          "source": "鉅亨網｜市場焦點",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -920,10 +1021,8 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 120
-        }
-      ],
-      "editorial_candidates": [
+          "ranking_score": 140
+        },
         {
           "story_id": "news-4e1d012892cfff0136b4",
           "provider": "google_news",
@@ -2154,103 +2253,6 @@
           "inventory_used": true,
           "inventory_age_trading_sessions": 2,
           "inventory_saved_at": "2026-10-27T00:48:40.144260+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 37
-        },
-        {
-          "story_id": "news-fc125b8bbf2dbdae8769",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "〈美股早盤〉油價回落、晶片股續揚 主要指數開高靜待Fed決策",
-          "raw_title": "〈美股早盤〉油價回落、晶片股續揚 主要指數開高靜待Fed決策",
-          "normalized_fact": "美股開盤走高，道瓊一度漲逾200點，標普500與那指受晶片股連2日上漲帶動。 中東外交出現轉機，油價回落；市場並等待Fed利率決策與Alphabet、微軟、亞馬遜財報。 UPS、可口可樂財報報喜，PayPal、康寧、UPS等個股盤前分歧，台積電ADR漲1.07%。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "美股開盤走高，道瓊一度漲逾200點，標普500與那指受晶片股連2日上漲帶動。 中東外交出現轉機，油價回落；市場並等待Fed利率決策與Alphabet、微軟、亞馬遜財報。 UPS、可口可樂財報報喜，PayPal、康寧、UPS等個股盤前分歧，台積電ADR漲1.07%。",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6638600",
-          "url": "https://news.cnyes.com/news/id/6638600",
-          "published_at": "2026-10-27T13:41:15+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-27",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates",
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "利率"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "利率"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "利率",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美股開盤走高道瓊一度漲逾200點標普500與那指受晶片股連2日上漲帶動中東外交出現轉機油價回落市場並等待fed利率決策與alphabet微軟亞馬遜財報ups可口可樂財報報喜paypal康寧ups等個股盤前分歧台積電adr漲107",
-          "event_cluster_key": "event-9f0a370ee3be7d071e84",
-          "published_time_bucket": "2026-10-27T13:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "利率"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "利率",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-27T15:57:24.094450+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 37
@@ -4707,15 +4709,17 @@
       ],
       "source_diversity": {
         "schema_version": "1.0",
-        "status": "single_source",
-        "cross_checked": false,
+        "status": "multi_source",
+        "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 1,
-        "provider_count": 1,
+        "independent_source_count": 2,
+        "provider_count": 2,
         "provider_ids": [
+          "anue",
           "google_news"
         ],
         "source_domains": [
+          "news.cnyes.com",
           "news.google.com"
         ],
         "supporting_source_count": 0,
@@ -4725,20 +4729,19 @@
       },
       "interest_graph": {
         "ticker_interest": {
+          "2330": 18,
+          "TSM": 18,
           "52": 3,
-          "2330": 17,
-          "TSM": 17,
-          "NVDA": 6,
-          "56": 1
+          "NVDA": 6
         },
         "sector_interest": {},
         "topic_interest": {
-          "ai": 46,
+          "ai": 45,
           "黃金": 1,
           "地震": 1
         },
         "market_interest": {
-          "taiwan": 104
+          "taiwan": 105
         },
         "context": {
           "tracked_tickers": [
@@ -4816,17 +4819,16 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 17,
-            "TSM": 17,
+            "2330": 18,
+            "TSM": 18,
             "NVDA": 6
           },
           "research_candidate": {
-            "52": 3,
-            "56": 1
+            "52": 3
           },
           "tracked_sector": {},
           "active_event": {
-            "ai": 46,
+            "ai": 45,
             "黃金": 1,
             "地震": 1
           },
@@ -4848,11 +4850,11 @@
         "successful_provider_count": 5,
         "failed_provider_count": 0,
         "disabled_provider_count": 0,
-        "fetched": 41,
-        "normalized": 41,
-        "eligible": 10,
+        "fetched": 42,
+        "normalized": 42,
+        "eligible": 11,
         "excluded": 31,
-        "date_eligible_current": 22,
+        "date_eligible_current": 23,
         "date_excluded_current": 19,
         "date_exclusion_reasons_current": {
           "outside_calendar_window": 19
@@ -4860,10 +4862,10 @@
         "date_eligible_inventory": 63,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-27T16:48:56.500609+00:00",
-        "deduped": 10,
+        "reference_time": "2026-10-27T16:53:54.112220+00:00",
+        "deduped": 11,
         "publicly_ranked": 5,
-        "current_eligible": 10,
+        "current_eligible": 11,
         "inventory_considered": 63,
         "inventory_eligible": 51,
         "inventory_selected": 0,
@@ -4872,10 +4874,10 @@
         "shortfall_count": 0,
         "shortfall_reason": null,
         "filtered_story_count": 31,
-        "fetched_story_count": 41,
-        "normalized_story_count": 41,
-        "eligible_story_count": 10,
-        "deduped_story_count": 10,
+        "fetched_story_count": 42,
+        "normalized_story_count": 42,
+        "eligible_story_count": 11,
+        "deduped_story_count": 11,
         "ranked_story_count": 5
       },
       "inventory": {
@@ -4895,8 +4897,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 41,
-          "checked_at": "2026-10-27T16:48:56.500660+00:00"
+          "item_count": 42,
+          "checked_at": "2026-10-27T16:53:54.112257+00:00"
         },
         {
           "provider": "twse",
@@ -4907,10 +4909,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-10-27T16:48:56.500660+00:00",
+          "checked_at": "2026-10-27T16:53:54.112257+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+          "last_success_at": "2026-10-27T16:53:54.112257+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4935,10 +4937,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-10-27T16:48:56.500660+00:00",
+          "checked_at": "2026-10-27T16:53:54.112257+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+          "last_success_at": "2026-10-27T16:53:54.112257+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4959,31 +4961,31 @@
           "key": "news_taiwan_anue",
           "legacy_key": "official_news_taiwan_anue",
           "label": "anue market news",
-          "status": "no_event",
+          "status": "healthy",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 0,
-          "checked_at": "2026-10-27T16:48:56.500660+00:00",
+          "item_count": 1,
+          "checked_at": "2026-10-27T16:53:54.112257+00:00",
           "raw_item_count": 5,
-          "filtered_item_count": 0,
-          "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-10-27T16:53:54.112257+00:00",
           "last_failure_at": null,
-          "stories_ingested": 1,
-          "stories_deduped": 0,
-          "ranked_count": 0,
+          "stories_ingested": 2,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
-            "market": 1
+            "market": 2,
+            "tracked_ticker": 1
           },
           "funnel": {
-            "fetched_count": 1,
-            "normalized_count": 1,
-            "market_compatible_count": 1,
-            "eligible_count": 0,
+            "fetched_count": 2,
+            "normalized_count": 2,
+            "market_compatible_count": 2,
+            "eligible_count": 1,
             "excluded_count": 1,
-            "deduped_count": 0,
-            "ranked_count": 0
-          },
-          "data_gap": "filtered_no_market_match"
+            "deduped_count": 1,
+            "ranked_count": 1
+          }
         },
         {
           "provider": "yahoo_finance",
@@ -4994,10 +4996,10 @@
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
           "item_count": 0,
-          "checked_at": "2026-10-27T16:48:56.500660+00:00",
+          "checked_at": "2026-10-27T16:53:54.112257+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+          "last_success_at": "2026-10-27T16:53:54.112257+00:00",
           "last_failure_at": null,
           "stories_ingested": 9,
           "stories_deduped": 0,
@@ -5026,19 +5028,18 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
-          "item_count": 5,
-          "checked_at": "2026-10-27T16:48:56.500660+00:00",
+          "item_count": 4,
+          "checked_at": "2026-10-27T16:53:54.112257+00:00",
           "raw_item_count": 30,
-          "filtered_item_count": 5,
-          "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+          "filtered_item_count": 4,
+          "last_success_at": "2026-10-27T16:53:54.112257+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
           "stories_deduped": 10,
-          "ranked_count": 5,
+          "ranked_count": 4,
           "relevance_distribution": {
-            "active_event": 5,
+            "active_event": 4,
             "market": 30,
-            "research_candidate": 1,
             "tracked_ticker": 8
           },
           "funnel": {
@@ -5048,54 +5049,54 @@
             "eligible_count": 10,
             "excluded_count": 20,
             "deduped_count": 10,
-            "ranked_count": 5
+            "ranked_count": 4
           }
         }
       ],
       "observability": {
-        "stories_ingested": 41,
-        "stories_deduped": 10,
+        "stories_ingested": 42,
+        "stories_deduped": 11,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 8,
-          "market": 41,
-          "research_candidate": 2,
-          "tracked_ticker": 8
+          "active_event": 7,
+          "market": 42,
+          "research_candidate": 1,
+          "tracked_ticker": 9
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+            "last_success_at": "2026-10-27T16:53:54.112257+00:00",
             "last_failure_at": null,
-            "stories_ingested": 1,
-            "stories_deduped": 0,
-            "ranked_count": 0,
+            "stories_ingested": 2,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
-              "market": 1
+              "market": 2,
+              "tracked_ticker": 1
             },
             "funnel": {
-              "fetched_count": 1,
-              "normalized_count": 1,
-              "market_compatible_count": 1,
-              "eligible_count": 0,
+              "fetched_count": 2,
+              "normalized_count": 2,
+              "market_compatible_count": 2,
+              "eligible_count": 1,
               "excluded_count": 1,
-              "deduped_count": 0,
-              "ranked_count": 0
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           },
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+            "last_success_at": "2026-10-27T16:53:54.112257+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
             "stories_deduped": 10,
-            "ranked_count": 5,
+            "ranked_count": 4,
             "relevance_distribution": {
-              "active_event": 5,
+              "active_event": 4,
               "market": 30,
-              "research_candidate": 1,
               "tracked_ticker": 8
             },
             "funnel": {
@@ -5105,13 +5106,13 @@
               "eligible_count": 10,
               "excluded_count": 20,
               "deduped_count": 10,
-              "ranked_count": 5
+              "ranked_count": 4
             }
           },
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+            "last_success_at": "2026-10-27T16:53:54.112257+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5130,7 +5131,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+            "last_success_at": "2026-10-27T16:53:54.112257+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5170,7 +5171,7 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+            "last_success_at": "2026-10-27T16:53:54.112257+00:00",
             "last_failure_at": null,
             "stories_ingested": 9,
             "stories_deduped": 0,
@@ -5412,195 +5413,6 @@
       ],
       "stories": [
         {
-          "story_id": "news-0747decae87830870d00",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "NVIDIA and Oracle Expand NVIDIA Vera Rubin to Multi-Gigawatt Scale and Bring NVIDIA Vera CPU to Oracle Cloud Infrastructure",
-          "raw_title": "NVIDIA and Oracle Expand NVIDIA Vera Rubin to Multi-Gigawatt Scale and Bring NVIDIA Vera CPU to Oracle Cloud Infrastructure",
-          "normalized_fact": "NVIDIA Vera Rubin NVL72 and NVIDIA Vera CPUs Are Now Generally Available on OCI, With Plans to Introduce HGX Rubin NVL8 Systems to Help Organizations Accelerate Frontier Model Training, Improve Inference Efficiency and Scale Agentic Workloads Oracle and NVIDIA Logos NVIDIA and Oracle today announced plans to expand Oracle Cloud Infrastructure (OCI) Superclusters with NVIDIA Vera Rubin NVL72 systems to multi-gigawatt scale, supporting growing customer demand for AI training, inference and agentic。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "NVIDIA Vera Rubin NVL72 and NVIDIA Vera CPUs Are Now Generally Available on OCI, With Plans to Introduce HGX Rubin NVL8 Systems to Help Organizations Accelerate Frontier Model Training, Improve Inference Efficiency and Scale Agentic Workloads Oracle and NVIDIA Logos NVIDIA and Oracle today announced plans to expand Oracle Cloud Infrastructure (OCI) Superclusters with NVIDIA Vera Rubin NVL72 systems to multi-gigawatt scale, supporting growing customer demand for AI training, inference and agentic",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/technology/ai/articles/nvidia-oracle-expand-nvidia-vera-160000967.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/technology/ai/articles/nvidia-oracle-expand-nvidia-vera-160000967.html?.tsrc=rss",
-          "published_at": "2026-10-27T16:00:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-27",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "nvidia",
-              "demand"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "nvidia",
-              "demand"
-            ],
-            "matched_subject": "nvidia",
-            "matched_action": "demand",
-            "matched_market_object": "nvidia",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:NVDA",
-            "research_candidate:ON",
-            "active_event:ai"
-          ],
-          "freshness": "published",
-          "dedupe_key": "nvidiaverarubinnvl72andnvidiaveracpusarenowgenerallyavailableonociwithplanstointroducehgxrubinnvl8systemstohelporganizationsacceleratefrontiermodeltrainingimproveinferenceefficiencyandscaleagenticworkloadsoracleandnvidialogosnvidiaandoracletodayannouncedplanstoexpandoraclecloudinfrastructureocisuperclusterswithnvidiaverarubinnvl72systemstomultigigawattscalesupportinggrowingcustomerdemandforaitraininginferenceandagentic",
-          "event_cluster_key": "event-d819b6509796f76c0126",
-          "published_time_bucket": "2026-10-27T16:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "nvidia",
-            "demand"
-          ],
-          "matched_subject": "nvidia",
-          "matched_action": "demand",
-          "matched_market_object": "nvidia",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 145
-        },
-        {
-          "story_id": "news-262a12f2cc86f4ca59db",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Fed rate hikes are coming, but not this week: CNBC survey - CNBC",
-          "raw_title": "Fed rate hikes are coming, but not this week: CNBC survey - CNBC",
-          "normalized_fact": "Fed rate hikes are coming, but not this week: CNBC survey CNBC。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Fed rate hikes are coming, but not this week: CNBC survey CNBC",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxPemFCemhRSnI2LTdtSk9nOGRqR3IyQVotVHh4YzEwZzJld3dqNTM4TmRpbHJZSlVRZWZlX0JJYzAtODd1a0lyVlVETlRkbmtWOHpZbzc0eXo2VUFBTzdZZ1ZrWFhKaklMN1JQcmNhaEpEVEpNa0JPRllsdUN0cU9kc1NLM3J0eHpLWHfSAY8BQVVfeXFMTml6aGtHdzhmakJjT00ya2VsRkpBbFpXNDU0YUFmQU96TFRvSFhMWDJhS1RkWG1yNjdWOW1zQTFEV1M3eEg3VEx6ZTM4Z1lSWEZxcnJ6ckQ5Skt2V1hLYUNkX1lZM2R0dklVaHd6dGdSR2lhZEhXVlA4MEphQ0lSTjBSeHp3M0IwMnc5eFhTelk",
-          "url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxPemFCemhRSnI2LTdtSk9nOGRqR3IyQVotVHh4YzEwZzJld3dqNTM4TmRpbHJZSlVRZWZlX0JJYzAtODd1a0lyVlVETlRkbmtWOHpZbzc0eXo2VUFBTzdZZ1ZrWFhKaklMN1JQcmNhaEpEVEpNa0JPRllsdUN0cU9kc1NLM3J0eHpLWHfSAY8BQVVfeXFMTml6aGtHdzhmakJjT00ya2VsRkpBbFpXNDU0YUFmQU96TFRvSFhMWDJhS1RkWG1yNjdWOW1zQTFEV1M3eEg3VEx6ZTM4Z1lSWEZxcnJ6ckQ5Skt2V1hLYUNkX1lZM2R0dklVaHd6dGdSR2lhZEhXVlA4MEphQ0lSTjBSeHp3M0IwMnc5eFhTelk",
-          "published_at": "2026-10-27T11:10:01+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-27",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "rate"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "rate"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "rate",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "fedratehikesarecomingbutnotthisweekcnbcsurveycnbc",
-          "event_cluster_key": "event-0667bcfbfb4da2f756c9",
-          "published_time_bucket": "2026-10-27T11:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "rate"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "rate",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
           "story_id": "news-52de6ecdb468793cee5b",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -5697,6 +5509,282 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 145
+        },
+        {
+          "story_id": "news-fc125b8bbf2dbdae8769",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈美股早盤〉油價回落、晶片股續揚 主要指數開高靜待Fed決策",
+          "raw_title": "〈美股早盤〉油價回落、晶片股續揚 主要指數開高靜待Fed決策",
+          "normalized_fact": "美股開盤走高，道瓊一度漲逾200點，標普500與那指受晶片股連2日上漲帶動。 中東外交出現轉機，油價回落；市場並等待Fed利率決策與Alphabet、微軟、亞馬遜財報。 UPS、可口可樂財報報喜，PayPal、康寧、UPS等個股盤前分歧，台積電ADR漲1.07%。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美股開盤走高，道瓊一度漲逾200點，標普500與那指受晶片股連2日上漲帶動。 中東外交出現轉機，油價回落；市場並等待Fed利率決策與Alphabet、微軟、亞馬遜財報。 UPS、可口可樂財報報喜，PayPal、康寧、UPS等個股盤前分歧，台積電ADR漲1.07%。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6638600",
+          "url": "https://news.cnyes.com/news/id/6638600",
+          "published_at": "2026-10-27T13:41:15+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-27",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates",
+            "semiconductor"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美股開盤走高道瓊一度漲逾200點標普500與那指受晶片股連2日上漲帶動中東外交出現轉機油價回落市場並等待fed利率決策與alphabet微軟亞馬遜財報ups可口可樂財報報喜paypal康寧ups等個股盤前分歧台積電adr漲107",
+          "event_cluster_key": "event-9f0a370ee3be7d071e84",
+          "published_time_bucket": "2026-10-27T13:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜持股關聯",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 140
+        },
+        {
+          "story_id": "news-262a12f2cc86f4ca59db",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Fed rate hikes are coming, but not this week: CNBC survey - CNBC",
+          "raw_title": "Fed rate hikes are coming, but not this week: CNBC survey - CNBC",
+          "normalized_fact": "Fed rate hikes are coming, but not this week: CNBC survey CNBC。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Fed rate hikes are coming, but not this week: CNBC survey CNBC",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxPemFCemhRSnI2LTdtSk9nOGRqR3IyQVotVHh4YzEwZzJld3dqNTM4TmRpbHJZSlVRZWZlX0JJYzAtODd1a0lyVlVETlRkbmtWOHpZbzc0eXo2VUFBTzdZZ1ZrWFhKaklMN1JQcmNhaEpEVEpNa0JPRllsdUN0cU9kc1NLM3J0eHpLWHfSAY8BQVVfeXFMTml6aGtHdzhmakJjT00ya2VsRkpBbFpXNDU0YUFmQU96TFRvSFhMWDJhS1RkWG1yNjdWOW1zQTFEV1M3eEg3VEx6ZTM4Z1lSWEZxcnJ6ckQ5Skt2V1hLYUNkX1lZM2R0dklVaHd6dGdSR2lhZEhXVlA4MEphQ0lSTjBSeHp3M0IwMnc5eFhTelk",
+          "url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxPemFCemhRSnI2LTdtSk9nOGRqR3IyQVotVHh4YzEwZzJld3dqNTM4TmRpbHJZSlVRZWZlX0JJYzAtODd1a0lyVlVETlRkbmtWOHpZbzc0eXo2VUFBTzdZZ1ZrWFhKaklMN1JQcmNhaEpEVEpNa0JPRllsdUN0cU9kc1NLM3J0eHpLWHfSAY8BQVVfeXFMTml6aGtHdzhmakJjT00ya2VsRkpBbFpXNDU0YUFmQU96TFRvSFhMWDJhS1RkWG1yNjdWOW1zQTFEV1M3eEg3VEx6ZTM4Z1lSWEZxcnJ6ckQ5Skt2V1hLYUNkX1lZM2R0dklVaHd6dGdSR2lhZEhXVlA4MEphQ0lSTjBSeHp3M0IwMnc5eFhTelk",
+          "published_at": "2026-10-27T11:10:01+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-27",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "rate"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "rate"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "rate",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "fedratehikesarecomingbutnotthisweekcnbcsurveycnbc",
+          "event_cluster_key": "event-0667bcfbfb4da2f756c9",
+          "published_time_bucket": "2026-10-27T11:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "rate"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "rate",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
+          "story_id": "news-9260426b6dc1d787d6f9",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Broadcom, Nvidia, Boeing, GM, UPS, JetBlue, and More Stocks That Explain Today’s Market",
+          "raw_title": "Broadcom, Nvidia, Boeing, GM, UPS, JetBlue, and More Stocks That Explain Today’s Market",
+          "normalized_fact": "Nvidia rises after saying it would invest $3 billion in Meta’s recently announced share offer。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Nvidia rises after saying it would invest $3 billion in Meta’s recently announced share offer.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/m/2bc48bab-2466-3630-9e5a-76a454b21a8d/broadcom%2C-nvidia%2C-boeing%2C-gm%2C.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/m/2bc48bab-2466-3630-9e5a-76a454b21a8d/broadcom%2C-nvidia%2C-boeing%2C-gm%2C.html?.tsrc=rss",
+          "published_at": "2026-10-27T16:18:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-27",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "AVGO",
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "tracked_ticker:NVDA"
+          ],
+          "freshness": "published",
+          "dedupe_key": "nvidiarisesaftersayingitwouldinvest3billioninmetasrecentlyannouncedshareoffer",
+          "event_cluster_key": "event-852a872796326397584a",
+          "published_time_bucket": "2026-10-27T16:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 135
         },
         {
           "story_id": "news-6e25abfa90eef5782cbf",
@@ -5788,284 +5876,9 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        },
-        {
-          "story_id": "news-9260426b6dc1d787d6f9",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Broadcom, Nvidia, Boeing, GM, UPS, JetBlue, and More Stocks That Explain Today’s Market",
-          "raw_title": "Broadcom, Nvidia, Boeing, GM, UPS, JetBlue, and More Stocks That Explain Today’s Market",
-          "normalized_fact": "Nvidia rises after saying it would invest $3 billion in Meta’s recently announced share offer。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Nvidia rises after saying it would invest $3 billion in Meta’s recently announced share offer.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/m/2bc48bab-2466-3630-9e5a-76a454b21a8d/broadcom%2C-nvidia%2C-boeing%2C-gm%2C.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/m/2bc48bab-2466-3630-9e5a-76a454b21a8d/broadcom%2C-nvidia%2C-boeing%2C-gm%2C.html?.tsrc=rss",
-          "published_at": "2026-10-27T16:18:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-27",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "AVGO",
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:NVDA"
-          ],
-          "freshness": "published",
-          "dedupe_key": "nvidiarisesaftersayingitwouldinvest3billioninmetasrecentlyannouncedshareoffer",
-          "event_cluster_key": "event-852a872796326397584a",
-          "published_time_bucket": "2026-10-27T16:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 135
         }
       ],
       "editorial_candidates": [
-        {
-          "story_id": "news-0747decae87830870d00",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "NVIDIA and Oracle Expand NVIDIA Vera Rubin to Multi-Gigawatt Scale and Bring NVIDIA Vera CPU to Oracle Cloud Infrastructure",
-          "raw_title": "NVIDIA and Oracle Expand NVIDIA Vera Rubin to Multi-Gigawatt Scale and Bring NVIDIA Vera CPU to Oracle Cloud Infrastructure",
-          "normalized_fact": "NVIDIA Vera Rubin NVL72 and NVIDIA Vera CPUs Are Now Generally Available on OCI, With Plans to Introduce HGX Rubin NVL8 Systems to Help Organizations Accelerate Frontier Model Training, Improve Inference Efficiency and Scale Agentic Workloads Oracle and NVIDIA Logos NVIDIA and Oracle today announced plans to expand Oracle Cloud Infrastructure (OCI) Superclusters with NVIDIA Vera Rubin NVL72 systems to multi-gigawatt scale, supporting growing customer demand for AI training, inference and agentic。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "NVIDIA Vera Rubin NVL72 and NVIDIA Vera CPUs Are Now Generally Available on OCI, With Plans to Introduce HGX Rubin NVL8 Systems to Help Organizations Accelerate Frontier Model Training, Improve Inference Efficiency and Scale Agentic Workloads Oracle and NVIDIA Logos NVIDIA and Oracle today announced plans to expand Oracle Cloud Infrastructure (OCI) Superclusters with NVIDIA Vera Rubin NVL72 systems to multi-gigawatt scale, supporting growing customer demand for AI training, inference and agentic",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/technology/ai/articles/nvidia-oracle-expand-nvidia-vera-160000967.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/technology/ai/articles/nvidia-oracle-expand-nvidia-vera-160000967.html?.tsrc=rss",
-          "published_at": "2026-10-27T16:00:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-27",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "nvidia",
-              "demand"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "nvidia",
-              "demand"
-            ],
-            "matched_subject": "nvidia",
-            "matched_action": "demand",
-            "matched_market_object": "nvidia",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:NVDA",
-            "research_candidate:ON",
-            "active_event:ai"
-          ],
-          "freshness": "published",
-          "dedupe_key": "nvidiaverarubinnvl72andnvidiaveracpusarenowgenerallyavailableonociwithplanstointroducehgxrubinnvl8systemstohelporganizationsacceleratefrontiermodeltrainingimproveinferenceefficiencyandscaleagenticworkloadsoracleandnvidialogosnvidiaandoracletodayannouncedplanstoexpandoraclecloudinfrastructureocisuperclusterswithnvidiaverarubinnvl72systemstomultigigawattscalesupportinggrowingcustomerdemandforaitraininginferenceandagentic",
-          "event_cluster_key": "event-d819b6509796f76c0126",
-          "published_time_bucket": "2026-10-27T16:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "nvidia",
-            "demand"
-          ],
-          "matched_subject": "nvidia",
-          "matched_action": "demand",
-          "matched_market_object": "nvidia",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 145
-        },
-        {
-          "story_id": "news-262a12f2cc86f4ca59db",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Fed rate hikes are coming, but not this week: CNBC survey - CNBC",
-          "raw_title": "Fed rate hikes are coming, but not this week: CNBC survey - CNBC",
-          "normalized_fact": "Fed rate hikes are coming, but not this week: CNBC survey CNBC。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Fed rate hikes are coming, but not this week: CNBC survey CNBC",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxPemFCemhRSnI2LTdtSk9nOGRqR3IyQVotVHh4YzEwZzJld3dqNTM4TmRpbHJZSlVRZWZlX0JJYzAtODd1a0lyVlVETlRkbmtWOHpZbzc0eXo2VUFBTzdZZ1ZrWFhKaklMN1JQcmNhaEpEVEpNa0JPRllsdUN0cU9kc1NLM3J0eHpLWHfSAY8BQVVfeXFMTml6aGtHdzhmakJjT00ya2VsRkpBbFpXNDU0YUFmQU96TFRvSFhMWDJhS1RkWG1yNjdWOW1zQTFEV1M3eEg3VEx6ZTM4Z1lSWEZxcnJ6ckQ5Skt2V1hLYUNkX1lZM2R0dklVaHd6dGdSR2lhZEhXVlA4MEphQ0lSTjBSeHp3M0IwMnc5eFhTelk",
-          "url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxPemFCemhRSnI2LTdtSk9nOGRqR3IyQVotVHh4YzEwZzJld3dqNTM4TmRpbHJZSlVRZWZlX0JJYzAtODd1a0lyVlVETlRkbmtWOHpZbzc0eXo2VUFBTzdZZ1ZrWFhKaklMN1JQcmNhaEpEVEpNa0JPRllsdUN0cU9kc1NLM3J0eHpLWHfSAY8BQVVfeXFMTml6aGtHdzhmakJjT00ya2VsRkpBbFpXNDU0YUFmQU96TFRvSFhMWDJhS1RkWG1yNjdWOW1zQTFEV1M3eEg3VEx6ZTM4Z1lSWEZxcnJ6ckQ5Skt2V1hLYUNkX1lZM2R0dklVaHd6dGdSR2lhZEhXVlA4MEphQ0lSTjBSeHp3M0IwMnc5eFhTelk",
-          "published_at": "2026-10-27T11:10:01+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-27",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "rate"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "rate"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "rate",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "fedratehikesarecomingbutnotthisweekcnbcsurveycnbc",
-          "event_cluster_key": "event-0667bcfbfb4da2f756c9",
-          "published_time_bucket": "2026-10-27T11:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "rate"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "rate",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
         {
           "story_id": "news-52de6ecdb468793cee5b",
           "provider": "yahoo_finance",
@@ -6165,6 +5978,196 @@
           "ranking_score": 145
         },
         {
+          "story_id": "news-fc125b8bbf2dbdae8769",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈美股早盤〉油價回落、晶片股續揚 主要指數開高靜待Fed決策",
+          "raw_title": "〈美股早盤〉油價回落、晶片股續揚 主要指數開高靜待Fed決策",
+          "normalized_fact": "美股開盤走高，道瓊一度漲逾200點，標普500與那指受晶片股連2日上漲帶動。 中東外交出現轉機，油價回落；市場並等待Fed利率決策與Alphabet、微軟、亞馬遜財報。 UPS、可口可樂財報報喜，PayPal、康寧、UPS等個股盤前分歧，台積電ADR漲1.07%。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美股開盤走高，道瓊一度漲逾200點，標普500與那指受晶片股連2日上漲帶動。 中東外交出現轉機，油價回落；市場並等待Fed利率決策與Alphabet、微軟、亞馬遜財報。 UPS、可口可樂財報報喜，PayPal、康寧、UPS等個股盤前分歧，台積電ADR漲1.07%。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6638600",
+          "url": "https://news.cnyes.com/news/id/6638600",
+          "published_at": "2026-10-27T13:41:15+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-27",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates",
+            "semiconductor"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美股開盤走高道瓊一度漲逾200點標普500與那指受晶片股連2日上漲帶動中東外交出現轉機油價回落市場並等待fed利率決策與alphabet微軟亞馬遜財報ups可口可樂財報報喜paypal康寧ups等個股盤前分歧台積電adr漲107",
+          "event_cluster_key": "event-9f0a370ee3be7d071e84",
+          "published_time_bucket": "2026-10-27T13:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜持股關聯",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 140
+        },
+        {
+          "story_id": "news-262a12f2cc86f4ca59db",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Fed rate hikes are coming, but not this week: CNBC survey - CNBC",
+          "raw_title": "Fed rate hikes are coming, but not this week: CNBC survey - CNBC",
+          "normalized_fact": "Fed rate hikes are coming, but not this week: CNBC survey CNBC。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Fed rate hikes are coming, but not this week: CNBC survey CNBC",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxPemFCemhRSnI2LTdtSk9nOGRqR3IyQVotVHh4YzEwZzJld3dqNTM4TmRpbHJZSlVRZWZlX0JJYzAtODd1a0lyVlVETlRkbmtWOHpZbzc0eXo2VUFBTzdZZ1ZrWFhKaklMN1JQcmNhaEpEVEpNa0JPRllsdUN0cU9kc1NLM3J0eHpLWHfSAY8BQVVfeXFMTml6aGtHdzhmakJjT00ya2VsRkpBbFpXNDU0YUFmQU96TFRvSFhMWDJhS1RkWG1yNjdWOW1zQTFEV1M3eEg3VEx6ZTM4Z1lSWEZxcnJ6ckQ5Skt2V1hLYUNkX1lZM2R0dklVaHd6dGdSR2lhZEhXVlA4MEphQ0lSTjBSeHp3M0IwMnc5eFhTelk",
+          "url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxPemFCemhRSnI2LTdtSk9nOGRqR3IyQVotVHh4YzEwZzJld3dqNTM4TmRpbHJZSlVRZWZlX0JJYzAtODd1a0lyVlVETlRkbmtWOHpZbzc0eXo2VUFBTzdZZ1ZrWFhKaklMN1JQcmNhaEpEVEpNa0JPRllsdUN0cU9kc1NLM3J0eHpLWHfSAY8BQVVfeXFMTml6aGtHdzhmakJjT00ya2VsRkpBbFpXNDU0YUFmQU96TFRvSFhMWDJhS1RkWG1yNjdWOW1zQTFEV1M3eEg3VEx6ZTM4Z1lSWEZxcnJ6ckQ5Skt2V1hLYUNkX1lZM2R0dklVaHd6dGdSR2lhZEhXVlA4MEphQ0lSTjBSeHp3M0IwMnc5eFhTelk",
+          "published_at": "2026-10-27T11:10:01+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-27",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "rate"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "rate"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "rate",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "fedratehikesarecomingbutnotthisweekcnbcsurveycnbc",
+          "event_cluster_key": "event-0667bcfbfb4da2f756c9",
+          "published_time_bucket": "2026-10-27T11:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "rate"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "rate",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
           "story_id": "news-9260426b6dc1d787d6f9",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -6249,6 +6252,97 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 135
+        },
+        {
+          "story_id": "news-62008a63f5e67e1b6d79",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Stock Market Today: Dow Climbs As Boeing Dives; Steel Firm Melts Up, Offers Entry (Live Coverage)",
+          "raw_title": "Stock Market Today: Dow Climbs As Boeing Dives; Steel Firm Melts Up, Offers Entry (Live Coverage)",
+          "normalized_fact": "Stock Market Today: The Dow Jones index rises Tuesday as the Fed meeting starts. Boeing stock tumbles. Consumer discretionary stocks rose。",
+          "market_topic": "global_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Stock Market Today: The Dow Jones index rises Tuesday as the Fed meeting starts. Boeing stock tumbles. Consumer discretionary stocks rose.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/m/6294d29d-51d6-3bfe-87d4-877203694b78/stock-market-today%3A-dow.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/m/6294d29d-51d6-3bfe-87d4-877203694b78/stock-market-today%3A-dow.html?.tsrc=rss",
+          "published_at": "2026-10-27T16:27:08+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-27",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "market",
+            "reason": "market_subject_action",
+            "matched_terms": [
+              "dow jones",
+              "rises"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "dow jones",
+              "rises"
+            ],
+            "matched_subject": "dow jones",
+            "matched_action": "rises",
+            "matched_market_object": "dow jones",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "stockmarkettodaythedowjonesindexrisestuesdayasthefedmeetingstartsboeingstocktumblesconsumerdiscretionarystocksrose",
+          "event_cluster_key": "event-8924472716709abb6e22",
+          "published_time_bucket": "2026-10-27T16:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "dow jones",
+            "rises"
+          ],
+          "matched_subject": "dow jones",
+          "matched_action": "rises",
+          "matched_market_object": "dow jones",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "story_id": "news-6e25abfa90eef5782cbf",
@@ -6433,6 +6527,102 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
+        },
+        {
+          "story_id": "news-4052a16288e5967ea443",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Micron and Nvidia Are the 2 Biggest Drivers of S&P 500 Earnings Growth. Are Their Stocks Buys? - The Motley Fool",
+          "raw_title": "Micron and Nvidia Are the 2 Biggest Drivers of S&P 500 Earnings Growth. Are Their Stocks Buys? - The Motley Fool",
+          "normalized_fact": "Micron and Nvidia Are the 2 Biggest Drivers of S&P 500 Earnings Growth. Are Their Stocks Buys? The Motley Fool。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Micron and Nvidia Are the 2 Biggest Drivers of S&P 500 Earnings Growth. Are Their Stocks Buys? The Motley Fool",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxNcjE1aTB6enNNS2JvTldTbTQ5U0RkRVdnempjbHpZaWRCbFdNRkZWd1FGc2JUUGZBdWpfS09JdEJkTmZYTExKOEdGVEF2anRIQUdVYlRnSGNmaV91S0k3M0JXOHVNV2ZEMEs2VGVONmk3dXpkSjdjU3RpRkZtdlN0UU1OcmI5Ykk4YU8tWXBlU2pjRTlDNlZJY2RpTTd3cWR2LTFtNWItRUZLeFZ4a0hNYm1jTkY1ZUJPWDhTMVlxRkQ3VGpCT1k4U2xGVEJFQjgtTFpjdlp3",
+          "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxNcjE1aTB6enNNS2JvTldTbTQ5U0RkRVdnempjbHpZaWRCbFdNRkZWd1FGc2JUUGZBdWpfS09JdEJkTmZYTExKOEdGVEF2anRIQUdVYlRnSGNmaV91S0k3M0JXOHVNV2ZEMEs2VGVONmk3dXpkSjdjU3RpRkZtdlN0UU1OcmI5Ykk4YU8tWXBlU2pjRTlDNlZJY2RpTTd3cWR2LTFtNWItRUZLeFZ4a0hNYm1jTkY1ZUJPWDhTMVlxRkQ3VGpCT1k4U2xGVEJFQjgtTFpjdlp3",
+          "published_at": "2026-10-21T08:44:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 5,
+          "published_local_date": "2026-10-21",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [
+            "earnings"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "nvidia",
+              "earnings"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "nvidia",
+              "earnings"
+            ],
+            "matched_subject": "nvidia",
+            "matched_action": "earnings",
+            "matched_market_object": "nvidia",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "tracked_ticker:NVDA"
+          ],
+          "freshness": "published",
+          "dedupe_key": "micronandnvidiaarethe2biggestdriversofsp500earningsgrowtharetheirstocksbuysthemotleyfool",
+          "event_cluster_key": "event-e9e5dcfcfe5c4cf92966",
+          "published_time_bucket": "2026-10-21T08:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "nvidia",
+            "earnings"
+          ],
+          "matched_subject": "nvidia",
+          "matched_action": "earnings",
+          "matched_market_object": "nvidia",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 120
         },
         {
           "story_id": "news-5583cdfdafdf5d785287",
@@ -6706,15 +6896,15 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-fc125b8bbf2dbdae8769",
-          "provider": "anue",
-          "provider_name": "Anue",
+          "story_id": "news-0747decae87830870d00",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "〈美股早盤〉油價回落、晶片股續揚 主要指數開高靜待Fed決策",
-          "raw_title": "〈美股早盤〉油價回落、晶片股續揚 主要指數開高靜待Fed決策",
-          "normalized_fact": "美股開盤走高，道瓊一度漲逾200點，標普500與那指受晶片股連2日上漲帶動。 中東外交出現轉機，油價回落；市場並等待Fed利率決策與Alphabet、微軟、亞馬遜財報。 UPS、可口可樂財報報喜，PayPal、康寧、UPS等個股盤前分歧，台積電ADR漲1.07%。",
-          "market_topic": "rates_fx",
+          "title": "NVIDIA and Oracle Expand NVIDIA Vera Rubin to Multi-Gigawatt Scale and Bring NVIDIA Vera CPU to Oracle Cloud Infrastructure",
+          "raw_title": "NVIDIA and Oracle Expand NVIDIA Vera Rubin to Multi-Gigawatt Scale and Bring NVIDIA Vera CPU to Oracle Cloud Infrastructure",
+          "normalized_fact": "NVIDIA Vera Rubin NVL72 and NVIDIA Vera CPUs Are Now Generally Available on OCI, With Plans to Introduce HGX Rubin NVL8 Systems to Help Organizations Accelerate Frontier Model Training, Improve Inference Efficiency and Scale Agentic Workloads Oracle and NVIDIA Logos NVIDIA and Oracle today announced plans to expand Oracle Cloud Infrastructure (OCI) Superclusters with NVIDIA Vera Rubin NVL72 systems to multi-gigawatt scale, supporting growing customer demand for AI training, inference and agentic。",
+          "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -6722,11 +6912,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "美股開盤走高，道瓊一度漲逾200點，標普500與那指受晶片股連2日上漲帶動。 中東外交出現轉機，油價回落；市場並等待Fed利率決策與Alphabet、微軟、亞馬遜財報。 UPS、可口可樂財報報喜，PayPal、康寧、UPS等個股盤前分歧，台積電ADR漲1.07%。",
+          "summary": "NVIDIA Vera Rubin NVL72 and NVIDIA Vera CPUs Are Now Generally Available on OCI, With Plans to Introduce HGX Rubin NVL8 Systems to Help Organizations Accelerate Frontier Model Training, Improve Inference Efficiency and Scale Agentic Workloads Oracle and NVIDIA Logos NVIDIA and Oracle today announced plans to expand Oracle Cloud Infrastructure (OCI) Superclusters with NVIDIA Vera Rubin NVL72 systems to multi-gigawatt scale, supporting growing customer demand for AI training, inference and agentic",
           "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6638600",
-          "url": "https://news.cnyes.com/news/id/6638600",
-          "published_at": "2026-10-27T13:41:15+00:00",
+          "canonical_url": "https://finance.yahoo.com/technology/ai/articles/nvidia-oracle-expand-nvidia-vera-160000967.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/technology/ai/articles/nvidia-oracle-expand-nvidia-vera-160000967.html?.tsrc=rss",
+          "published_at": "2026-10-27T16:00:00+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -6736,29 +6926,28 @@
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates",
-            "semiconductor"
+          "entities": [
+            "NVDA"
           ],
+          "sectors": [],
+          "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
             "matched_terms": [
-              "fed",
-              "利率"
+              "nvidia",
+              "demand"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "fed",
-              "利率"
+              "nvidia",
+              "demand"
             ],
-            "matched_subject": "fed",
-            "matched_action": "利率",
-            "matched_market_object": "fed",
+            "matched_subject": "nvidia",
+            "matched_action": "demand",
+            "matched_market_object": "nvidia",
             "input_fields": [
               "description",
               "summary",
@@ -6766,41 +6955,41 @@
             ]
           },
           "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM",
-            "market:us"
+            "market:us",
+            "tracked_ticker:NVDA",
+            "research_candidate:ON",
+            "active_event:ai"
           ],
           "freshness": "published",
-          "dedupe_key": "美股開盤走高道瓊一度漲逾200點標普500與那指受晶片股連2日上漲帶動中東外交出現轉機油價回落市場並等待fed利率決策與alphabet微軟亞馬遜財報ups可口可樂財報報喜paypal康寧ups等個股盤前分歧台積電adr漲107",
-          "event_cluster_key": "event-9f0a370ee3be7d071e84",
-          "published_time_bucket": "2026-10-27T13:00:00+00:00",
+          "dedupe_key": "nvidiaverarubinnvl72andnvidiaveracpusarenowgenerallyavailableonociwithplanstointroducehgxrubinnvl8systemstohelporganizationsacceleratefrontiermodeltrainingimproveinferenceefficiencyandscaleagenticworkloadsoracleandnvidialogosnvidiaandoracletodayannouncedplanstoexpandoraclecloudinfrastructureocisuperclusterswithnvidiaverarubinnvl72systemstomultigigawattscalesupportinggrowingcustomerdemandforaitraininginferenceandagentic",
+          "event_cluster_key": "event-d819b6509796f76c0126",
+          "published_time_bucket": "2026-10-27T16:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "fed",
-            "利率"
+            "nvidia",
+            "demand"
           ],
-          "matched_subject": "fed",
-          "matched_action": "利率",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
+          "matched_subject": "nvidia",
+          "matched_action": "demand",
+          "matched_market_object": "nvidia",
+          "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "鉅亨網｜持股關聯",
+          "source": "Yahoo Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "inventory",
           "inventory_used": true,
           "inventory_age_trading_sessions": 1,
-          "inventory_saved_at": "2026-10-27T16:28:26.334442+00:00",
+          "inventory_saved_at": "2026-10-27T16:13:56.955858+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 40
+          "ranking_score": 45
         },
         {
           "story_id": "news-2a98f3003b8b65b8ceb3",
@@ -9401,181 +9590,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 14
-        },
-        {
-          "story_id": "news-2763b4e5c56a7ae68090",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "US Treasury yields hold steady ahead of fed rate decision, PCE inflation data and key US economic reports this week | Hindustan Times - Hindustan Times",
-          "raw_title": "US Treasury yields hold steady ahead of fed rate decision, PCE inflation data and key US economic reports this week | Hindustan Times - Hindustan Times",
-          "normalized_fact": "US Treasury yields hold steady ahead of fed rate decision, PCE inflation data and key US economic reports this week | Hindustan Times Hindustan Times。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "US Treasury yields hold steady ahead of fed rate decision, PCE inflation data and key US economic reports this week | Hindustan Times Hindustan Times",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMikwJBVV95cUxOckRlcFFoQlAwUE1yMUtTVXFmRFZWb1V1Z253Z0NQalRvNWI2TVM4WTd6dkRRMlNVU3pVc3JCMHRFcnM2MldFMElUTEY1bWpjX3RodDhHVVpHbnptOGNhdnN2clBBMHBKRDhITFRDbkNyd1JoSWV5VUNvbl9icXVfYXJFcGxXd29USm9MaURjQ05RV0lMZE1acEFkYThDbnlpX1IxUjQxRVRoaGVJbWhaZ05TY2JRY05yVGNrWWlBUll6b3ZfekVybTd4ZzFfelZOUEk3ZDhyMVlmeENIN0RoU0lHZnF2VzhWZ0o5RXhKRE1vdVBiZzVnbm1JbDBIUG9TZ0UwNHpsVE03bnlTUEtMdkctTdIBmAJBVV95cUxQbXlkQ09nZHVoUEdKaDQtdnZOTUhEYl83V1UtX2ZvLU9UdHpmR0gtLTkxT3RGeEtFUXhCQk01OHQ3QjFCMTRvSWZNa3hjLS1nbFU0NWRqSlA0Y1NRUkxoWkl6UGNYZHhMLTh3YmpmSmZPNmhSVHJETmpEYnFabFMxQV9nZFZUeXpoUVdvWmVtaEpWSlpBdldJenIteWhGTXRIVHk2M0hGN0NKRVhkV2NmRXdKLU9ZaDlZUVRHLVVXbGNoQUhCOEczS29KTm01SU5WdHV6Y0lsWDAwdk4zc05nMGRhSFlFWm5VZFVzWjR1T1oycUtsd3ZDNkN3Q0ppclpoTGNYWEVxa1ZFdWpwQVNBeE02SGJtcFI3",
-          "url": "https://news.google.com/rss/articles/CBMikwJBVV95cUxOckRlcFFoQlAwUE1yMUtTVXFmRFZWb1V1Z253Z0NQalRvNWI2TVM4WTd6dkRRMlNVU3pVc3JCMHRFcnM2MldFMElUTEY1bWpjX3RodDhHVVpHbnptOGNhdnN2clBBMHBKRDhITFRDbkNyd1JoSWV5VUNvbl9icXVfYXJFcGxXd29USm9MaURjQ05RV0lMZE1acEFkYThDbnlpX1IxUjQxRVRoaGVJbWhaZ05TY2JRY05yVGNrWWlBUll6b3ZfekVybTd4ZzFfelZOUEk3ZDhyMVlmeENIN0RoU0lHZnF2VzhWZ0o5RXhKRE1vdVBiZzVnbm1JbDBIUG9TZ0UwNHpsVE03bnlTUEtMdkctTdIBmAJBVV95cUxQbXlkQ09nZHVoUEdKaDQtdnZOTUhEYl83V1UtX2ZvLU9UdHpmR0gtLTkxT3RGeEtFUXhCQk01OHQ3QjFCMTRvSWZNa3hjLS1nbFU0NWRqSlA0Y1NRUkxoWkl6UGNYZHhMLTh3YmpmSmZPNmhSVHJETmpEYnFabFMxQV9nZFZUeXpoUVdvWmVtaEpWSlpBdldJenIteWhGTXRIVHk2M0hGN0NKRVhkV2NmRXdKLU9ZaDlZUVRHLVVXbGNoQUhCOEczS29KTm01SU5WdHV6Y0lsWDAwdk4zc05nMGRhSFlFWm5VZFVzWjR1T1oycUtsd3ZDNkN3Q0ppclpoTGNYWEVxa1ZFdWpwQVNBeE02SGJtcFI3",
-          "published_at": "2026-10-26T14:23:21+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-26",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "rate"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "rate"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "rate",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "ustreasuryyieldsholdsteadyaheadoffedratedecisionpceinflationdataandkeyuseconomicreportsthisweekhindustantimeshindustantimes",
-          "event_cluster_key": "event-5300cdb2932db610c95c",
-          "published_time_bucket": "2026-10-26T14:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "rate"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "rate",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-26T17:23:40.121941+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 12
-        },
-        {
-          "story_id": "news-7a02e48c21ba295d6e7e",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Treasury interest rates are up because they're looking risky - Marketplace.org",
-          "raw_title": "Treasury interest rates are up because they're looking risky - Marketplace.org",
-          "normalized_fact": "Treasury interest rates are up because they're looking risky Marketplace.org。",
-          "market_topic": "company_industry",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Treasury interest rates are up because they're looking risky Marketplace.org",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxQSTM5SkFWd00xSHN1ck1kZXkwZHB1T1E0S0VOUUFmSTZiSGtoaXBPc0xLc1ZubWt4UVNLM281ZGdyRTVMcHptX0h1Mm9sLTRNdVBJOFRsOF8wOWpicV9ZR1Y1eV9aQlhEQmd5Vkl4ZV9LYlpoamZteDh5Skx2MmJtVUIxY29hQ0FiM2hpWGxEc29GbUU",
-          "url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxQSTM5SkFWd00xSHN1ck1kZXkwZHB1T1E0S0VOUUFmSTZiSGtoaXBPc0xLc1ZubWt4UVNLM281ZGdyRTVMcHptX0h1Mm9sLTRNdVBJOFRsOF8wOWpicV9ZR1Y1eV9aQlhEQmd5Vkl4ZV9LYlpoamZteDh5Skx2MmJtVUIxY29hQ0FiM2hpWGxEc29GbUU",
-          "published_at": "2026-10-26T21:15:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-10-26",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "treasuryinterestratesareupbecausetheyrelookingriskymarketplaceorg",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-10-26T21:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-10-27T00:48:40.144260+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 12
         }
       ],
       "source_diversity": {
@@ -9583,14 +9597,16 @@
         "status": "multi_source",
         "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 2,
-        "provider_count": 2,
+        "independent_source_count": 3,
+        "provider_count": 3,
         "provider_ids": [
+          "anue",
           "google_news",
           "yahoo_finance"
         ],
         "source_domains": [
           "finance.yahoo.com",
+          "news.cnyes.com",
           "news.google.com"
         ],
         "supporting_source_count": 0,
@@ -9600,18 +9616,18 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "NVDA": 16,
-          "ON": 30,
-          "2330": 3,
-          "TSM": 5
+          "2330": 4,
+          "TSM": 6,
+          "NVDA": 17,
+          "ON": 25
         },
         "sector_interest": {},
         "topic_interest": {
-          "ai": 36,
+          "ai": 35,
           "oil": 15,
           "shipping": 5,
-          "iran": 5,
-          "war": 4,
+          "iran": 4,
+          "war": 3,
           "hormuz": 1,
           "sanctions": 3,
           "伊朗": 1
@@ -9695,20 +9711,20 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "NVDA": 16,
-            "2330": 3,
-            "TSM": 5
+            "2330": 4,
+            "TSM": 6,
+            "NVDA": 17
           },
           "research_candidate": {
-            "ON": 30
+            "ON": 25
           },
           "tracked_sector": {},
           "active_event": {
-            "ai": 36,
+            "ai": 35,
             "oil": 15,
             "shipping": 5,
-            "iran": 5,
-            "war": 4,
+            "iran": 4,
+            "war": 3,
             "hormuz": 1,
             "sanctions": 3,
             "伊朗": 1
@@ -9716,14 +9732,14 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 50,
+      "excluded_count": 48,
       "exclusion_reasons": {
         "generic_official_filing": 20,
         "incomplete_normalized_fact": 22,
-        "insufficient_market_relevance": 12,
+        "insufficient_market_relevance": 10,
         "market_scope_mismatch": 4,
-        "missing_published_at": 1,
-        "outside_calendar_window": 20
+        "outside_calendar_window": 18,
+        "outside_trading_session_window": 2
       },
       "status": "ready",
       "collection_state": "degraded",
@@ -9735,33 +9751,33 @@
         "disabled_provider_count": 1,
         "fetched": 59,
         "normalized": 59,
-        "eligible": 9,
-        "excluded": 50,
-        "date_eligible_current": 38,
-        "date_excluded_current": 21,
+        "eligible": 11,
+        "excluded": 48,
+        "date_eligible_current": 39,
+        "date_excluded_current": 20,
         "date_exclusion_reasons_current": {
-          "missing_published_at": 1,
-          "outside_calendar_window": 20
+          "outside_calendar_window": 18,
+          "outside_trading_session_window": 2
         },
         "date_eligible_inventory": 80,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-27T16:48:56.500609+00:00",
-        "deduped": 9,
+        "reference_time": "2026-10-27T16:53:54.112220+00:00",
+        "deduped": 11,
         "publicly_ranked": 5,
-        "current_eligible": 9,
+        "current_eligible": 11,
         "inventory_considered": 80,
-        "inventory_eligible": 51,
+        "inventory_eligible": 52,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 50,
+        "filtered_story_count": 48,
         "fetched_story_count": 59,
         "normalized_story_count": 59,
-        "eligible_story_count": 9,
-        "deduped_story_count": 9,
+        "eligible_story_count": 11,
+        "deduped_story_count": 11,
         "ranked_story_count": 5
       },
       "inventory": {
@@ -9769,7 +9785,7 @@
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
         "considered": 80,
-        "eligible": 51,
+        "eligible": 52,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -9782,7 +9798,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 59,
-          "checked_at": "2026-10-27T16:48:56.500660+00:00"
+          "checked_at": "2026-10-27T16:53:54.112257+00:00"
         },
         {
           "provider": "sec",
@@ -9793,10 +9809,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-10-27T16:48:56.500660+00:00",
+          "checked_at": "2026-10-27T16:53:54.112257+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+          "last_success_at": "2026-10-27T16:53:54.112257+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9824,12 +9840,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-10-27T16:48:56.500660+00:00",
+          "checked_at": "2026-10-27T16:53:54.112257+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-10-27T16:48:56.500660+00:00",
+          "last_failure_at": "2026-10-27T16:53:54.112257+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9852,10 +9868,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-10-27T16:48:56.500660+00:00",
+          "checked_at": "2026-10-27T16:53:54.112257+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+          "last_success_at": "2026-10-27T16:53:54.112257+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9876,31 +9892,31 @@
           "key": "news_us_anue",
           "legacy_key": "official_news_us_anue",
           "label": "anue market news",
-          "status": "no_event",
+          "status": "healthy",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 0,
-          "checked_at": "2026-10-27T16:48:56.500660+00:00",
+          "item_count": 1,
+          "checked_at": "2026-10-27T16:53:54.112257+00:00",
           "raw_item_count": 5,
-          "filtered_item_count": 0,
-          "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-10-27T16:53:54.112257+00:00",
           "last_failure_at": null,
           "stories_ingested": 1,
-          "stories_deduped": 0,
-          "ranked_count": 0,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
-            "market": 1
+            "market": 1,
+            "tracked_ticker": 1
           },
           "funnel": {
             "fetched_count": 1,
             "normalized_count": 1,
             "market_compatible_count": 1,
-            "eligible_count": 0,
-            "excluded_count": 1,
-            "deduped_count": 0,
-            "ranked_count": 0
-          },
-          "data_gap": "filtered_no_market_match"
+            "eligible_count": 1,
+            "excluded_count": 0,
+            "deduped_count": 1,
+            "ranked_count": 1
+          }
         },
         {
           "provider": "yahoo_finance",
@@ -9910,20 +9926,20 @@
           "status": "healthy",
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
-          "item_count": 3,
-          "checked_at": "2026-10-27T16:48:56.500660+00:00",
+          "item_count": 2,
+          "checked_at": "2026-10-27T16:53:54.112257+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 3,
-          "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+          "filtered_item_count": 2,
+          "last_success_at": "2026-10-27T16:53:54.112257+00:00",
           "last_failure_at": null,
           "stories_ingested": 6,
           "stories_deduped": 3,
-          "ranked_count": 3,
+          "ranked_count": 2,
           "relevance_distribution": {
-            "active_event": 4,
+            "active_event": 3,
             "market": 6,
-            "research_candidate": 3,
-            "tracked_ticker": 4
+            "research_candidate": 1,
+            "tracked_ticker": 3
           },
           "funnel": {
             "fetched_count": 8,
@@ -9932,7 +9948,7 @@
             "eligible_count": 3,
             "excluded_count": 3,
             "deduped_count": 3,
-            "ranked_count": 3
+            "ranked_count": 2
           }
         },
         {
@@ -9944,67 +9960,69 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
           "item_count": 2,
-          "checked_at": "2026-10-27T16:48:56.500660+00:00",
+          "checked_at": "2026-10-27T16:53:54.112257+00:00",
           "raw_item_count": 40,
           "filtered_item_count": 2,
-          "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+          "last_success_at": "2026-10-27T16:53:54.112257+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
-          "stories_deduped": 6,
+          "stories_deduped": 7,
           "ranked_count": 2,
           "relevance_distribution": {
             "active_event": 16,
             "market": 40,
-            "research_candidate": 9
+            "research_candidate": 7,
+            "tracked_ticker": 1
           },
           "funnel": {
             "fetched_count": 40,
             "normalized_count": 40,
             "market_compatible_count": 40,
-            "eligible_count": 6,
-            "excluded_count": 34,
-            "deduped_count": 6,
+            "eligible_count": 7,
+            "excluded_count": 33,
+            "deduped_count": 7,
             "ranked_count": 2
           }
         }
       ],
       "observability": {
         "stories_ingested": 59,
-        "stories_deduped": 9,
+        "stories_deduped": 11,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 21,
+          "active_event": 20,
           "market": 59,
-          "research_candidate": 12,
-          "tracked_ticker": 5
+          "research_candidate": 8,
+          "tracked_ticker": 6
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+            "last_success_at": "2026-10-27T16:53:54.112257+00:00",
             "last_failure_at": null,
             "stories_ingested": 1,
-            "stories_deduped": 0,
-            "ranked_count": 0,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
-              "market": 1
+              "market": 1,
+              "tracked_ticker": 1
             },
             "funnel": {
               "fetched_count": 1,
               "normalized_count": 1,
               "market_compatible_count": 1,
-              "eligible_count": 0,
-              "excluded_count": 1,
-              "deduped_count": 0,
-              "ranked_count": 0
+              "eligible_count": 1,
+              "excluded_count": 0,
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           },
           {
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-10-27T16:48:56.500660+00:00",
+            "last_failure_at": "2026-10-27T16:53:54.112257+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -10022,30 +10040,31 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+            "last_success_at": "2026-10-27T16:53:54.112257+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
-            "stories_deduped": 6,
+            "stories_deduped": 7,
             "ranked_count": 2,
             "relevance_distribution": {
               "active_event": 16,
               "market": 40,
-              "research_candidate": 9
+              "research_candidate": 7,
+              "tracked_ticker": 1
             },
             "funnel": {
               "fetched_count": 40,
               "normalized_count": 40,
               "market_compatible_count": 40,
-              "eligible_count": 6,
-              "excluded_count": 34,
-              "deduped_count": 6,
+              "eligible_count": 7,
+              "excluded_count": 33,
+              "deduped_count": 7,
               "ranked_count": 2
             }
           },
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+            "last_success_at": "2026-10-27T16:53:54.112257+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -10064,7 +10083,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+            "last_success_at": "2026-10-27T16:53:54.112257+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -10108,16 +10127,16 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-27T16:48:56.500660+00:00",
+            "last_success_at": "2026-10-27T16:53:54.112257+00:00",
             "last_failure_at": null,
             "stories_ingested": 6,
             "stories_deduped": 3,
-            "ranked_count": 3,
+            "ranked_count": 2,
             "relevance_distribution": {
-              "active_event": 4,
+              "active_event": 3,
               "market": 6,
-              "research_candidate": 3,
-              "tracked_ticker": 4
+              "research_candidate": 1,
+              "tracked_ticker": 3
             },
             "funnel": {
               "fetched_count": 8,
@@ -10126,7 +10145,7 @@
               "eligible_count": 3,
               "excluded_count": 3,
               "deduped_count": 3,
-              "ranked_count": 3
+              "ranked_count": 2
             }
           }
         ]
