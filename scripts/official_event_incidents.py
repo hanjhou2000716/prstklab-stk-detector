@@ -81,6 +81,170 @@ def _issue_event_refs(body: object) -> tuple[list[str], bool]:
     return list(dict.fromkeys(refs)), complete
 
 
+def _issue_group_identity(issue: dict[str, Any]) -> tuple[str, str, str, str]:
+    body = issue.get("body")
+    return (
+        _marker(body),
+        _field(body, "Component"),
+        _field(body, "Root cause"),
+        _field(body, "Summary contract"),
+    )
+
+
+def _issue_order(issue: dict[str, Any]) -> tuple[datetime, int]:
+    first = _timestamp(issue.get("body"), "First failure") or _parse_time(issue.get("created_at"))
+    number = issue.get("number")
+    return first or datetime.max.replace(tzinfo=UTC), number if isinstance(number, int) else 2**63 - 1
+
+
+def _replace_body_field(body: str, label: str, value: str) -> str:
+    prefix = f"{label}:"
+    lines = body.splitlines()
+    for index, line in enumerate(lines):
+        if line.startswith(prefix):
+            lines[index] = f"{prefix} {value}"
+            return "\n".join(lines)
+    return "\n".join([*lines, f"{prefix} {value}"])
+
+
+def _existing_issue_evidence(body: object) -> list[dict[str, Any]]:
+    value = _field(body, "Consolidated issue evidence")
+    if not value:
+        return []
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError as exc:
+        raise LivenessAuditError("official_event_incident_consolidated_evidence_invalid") from exc
+    if not isinstance(parsed, list) or any(
+        not isinstance(row, dict)
+        or not isinstance(row.get("issue_number"), int)
+        or row["issue_number"] < 1
+        or not isinstance(row.get("source_run_ids"), list)
+        or any(not str(run_id).isdigit() for run_id in row["source_run_ids"])
+        for row in parsed
+    ):
+        raise LivenessAuditError("official_event_incident_consolidated_evidence_invalid")
+    return parsed
+
+
+def _consolidate_issue_group(
+    *, api_url: str, repository: str, token: str, key: str,
+    rows: list[dict[str, Any]], deadline: float,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Keep one deterministic open issue and preserve every duplicate's evidence.
+
+    Identity disagreement is not resolved by choosing a winner.  The caller
+    records that group as incomplete and continues reconciling independent
+    incident groups.
+    """
+    identities = {_issue_group_identity(row) for row in rows}
+    if len(identities) != 1:
+        raise LivenessAuditError("official_event_incident_duplicate_identity_conflict")
+    marker, component, reason, contract = next(iter(identities))
+    if marker != key or not component or not reason or not contract:
+        raise LivenessAuditError("official_event_incident_duplicate_identity_incomplete")
+    ordered = sorted(rows, key=_issue_order)
+    canonical = ordered[0]
+    canonical_number = canonical.get("number")
+    if not isinstance(canonical_number, int):
+        raise LivenessAuditError("official_event_incident_identity_invalid")
+
+    issue_numbers: set[int] = set()
+    source_runs: set[str] = set()
+    source_evidence: dict[int, dict[str, Any]] = {}
+    refs: list[str] = []
+    references_complete = True
+    first_failures: list[datetime] = []
+    for row in ordered:
+        number = row.get("number")
+        if isinstance(number, int):
+            issue_numbers.add(number)
+        body = str(row.get("body") or "")
+        for evidence in _existing_issue_evidence(body):
+            evidence_number = evidence["issue_number"]
+            source_evidence[evidence_number] = evidence
+            source_runs.update(str(run_id) for run_id in evidence["source_run_ids"])
+        for item in _field(body, "Consolidated issue numbers").split(","):
+            try:
+                parsed = int(item.strip().lstrip("#"))
+            except ValueError:
+                continue
+            if parsed > 0:
+                issue_numbers.add(parsed)
+        for item in _field(body, "Consolidated source runs").split(","):
+            if item.strip().isdigit():
+                source_runs.add(item.strip())
+        latest_run = _field(body, "Latest run").split(maxsplit=1)[0]
+        if latest_run.isdigit():
+            source_runs.add(latest_run)
+        if isinstance(number, int):
+            row_runs = [latest_run] if latest_run.isdigit() else []
+            row_first = _timestamp(body, "First failure")
+            source_evidence[number] = {
+                "issue_number": number,
+                "first_failure_at": row_first.isoformat() if row_first else None,
+                "source_run_ids": row_runs,
+                "comments_preserved_on_issue": number,
+            }
+        row_refs, row_complete = _issue_event_refs(body)
+        refs.extend(row_refs)
+        references_complete = references_complete and row_complete
+        first = _timestamp(body, "First failure")
+        if first is not None:
+            first_failures.append(first)
+
+    refs = list(dict.fromkeys(refs))
+    if len(source_evidence) > 100:
+        raise LivenessAuditError("official_event_incident_consolidation_evidence_limit_exceeded")
+    refs_complete = references_complete and bool(refs)
+    body = str(canonical.get("body") or "")
+    if first_failures:
+        body = _replace_body_field(body, "First failure", min(first_failures).isoformat())
+    body = _replace_body_field(body, "Affected event count", str(len(refs)) if refs_complete else "unknown")
+    body = _replace_body_field(body, "Event refs", ", ".join(refs[:100]) if refs else "not available")
+    body = _replace_body_field(body, "Event refs complete", "true" if refs_complete and len(refs) <= 100 else "false")
+    body = _replace_body_field(body, "Consolidated issue numbers", ", ".join(str(item) for item in sorted(issue_numbers)))
+    body = _replace_body_field(body, "Consolidated source runs", ", ".join(sorted(source_runs, key=int)) or "unknown")
+    evidence_json = json.dumps(
+        [source_evidence[number] for number in sorted(source_evidence)],
+        sort_keys=True, separators=(",", ":"),
+    )
+    body = _replace_body_field(body, "Consolidated issue evidence", evidence_json)
+    if body != str(canonical.get("body") or ""):
+        _request_json(
+            api_url, repository, token, "PATCH", f"issues/{canonical_number}",
+            {"body": body}, deadline_monotonic=deadline,
+        )
+
+    duplicate_numbers: list[int] = []
+    for duplicate in ordered[1:]:
+        number = duplicate.get("number")
+        if not isinstance(number, int):
+            raise LivenessAuditError("official_event_incident_identity_invalid")
+        duplicate_body = str(duplicate.get("body") or "")
+        duplicate_link = f"#{canonical_number}"
+        if _field(duplicate_body, "Duplicate of") != duplicate_link:
+            duplicate_body = _replace_body_field(duplicate_body, "Duplicate of", duplicate_link)
+            _request_json(
+                api_url, repository, token, "PATCH", f"issues/{number}",
+                {"body": duplicate_body}, deadline_monotonic=deadline,
+            )
+        _request_json(
+            api_url, repository, token, "PATCH", f"issues/{number}",
+            {"state": "closed", "state_reason": "not_planned"}, deadline_monotonic=deadline,
+        )
+        duplicate_numbers.append(number)
+
+    canonical = {**canonical, "body": body}
+    return canonical, {
+        "marker": key,
+        "canonical_issue_number": canonical_number,
+        "duplicate_issue_numbers": duplicate_numbers,
+        "source_run_ids": sorted(source_runs, key=int),
+        "event_refs_complete": refs_complete,
+    }
+
+
 def _resolved_event_refs(trace: dict[str, Any]) -> set[str]:
     resolved: set[str] = set()
     for row in trace.get("events", []):
@@ -230,18 +394,43 @@ def reconcile_incidents(
         issue for issue in issues
         if str(issue.get("title") or "").startswith(EVENT_ISSUE_TITLE_PREFIX)
     ]
-    indexed: dict[str, list[dict[str, Any]]] = {}
+    grouped: dict[str, list[dict[str, Any]]] = {}
     for issue in event_issues:
         key = _marker(issue.get("body"))
         if key:
-            indexed.setdefault(key, []).append(issue)
-    if any(len(rows) > 1 for rows in indexed.values()):
-        raise LivenessAuditError("official_event_incident_duplicate_issue")
+            grouped.setdefault(key, []).append(issue)
+    indexed: dict[str, list[dict[str, Any]]] = {}
+    unresolved_groups: list[dict[str, Any]] = []
+    consolidated_groups: list[dict[str, Any]] = []
+    unresolved_keys: set[str] = set()
+    for key, rows in grouped.items():
+        if len(rows) == 1:
+            indexed[key] = rows
+            continue
+        try:
+            canonical, result = _consolidate_issue_group(
+                api_url=api_url, repository=repository, token=token,
+                key=key, rows=rows, deadline=deadline,
+            )
+        except LivenessAuditError as exc:
+            unresolved_keys.add(key)
+            unresolved_groups.append({
+                "marker": key,
+                "issue_numbers": sorted(
+                    int(row["number"]) for row in rows if isinstance(row.get("number"), int)
+                ),
+                "reason": str(exc)[:160],
+            })
+            continue
+        indexed[key] = [canonical]
+        consolidated_groups.append(result)
     opened: list[int] = []
     reminded: list[int] = []
     recovered: list[int] = []
     cadence_confirmations: list[dict[str, str | int]] = []
     for key, incident in active.items():
+        if key in unresolved_keys:
+            continue
         matches = indexed.get(key, [])
         if not matches:
             next_reminder = current if defer_notification_cadence else current + REMINDER_INTERVAL
@@ -289,6 +478,10 @@ def reconcile_incidents(
                 else next_due
             ),
         )
+        for label in ("Consolidated issue numbers", "Consolidated source runs"):
+            value = _field(issue.get("body"), label)
+            if value:
+                body = _replace_body_field(body, label, value)
         if defer_notification_cadence:
             if notify_due:
                 body = _mark_alert_pending(body, _pending_alert_consumer(), current)
@@ -318,7 +511,7 @@ def reconcile_incidents(
     if scan_complete:
         resolved_refs = _resolved_event_refs(trace)
         for key, rows in indexed.items():
-            if key in active:
+            if key in active or key in unresolved_keys:
                 continue
             issue = rows[0]
             number = issue.get("number")
@@ -344,11 +537,13 @@ def reconcile_incidents(
             recovered.append(number)
     return {
         "schema_version": "official-event-incident-reconcile-v1",
-        "diagnostic_complete": scan_complete,
-        "incident_active": bool(active),
+        "diagnostic_complete": scan_complete and not unresolved_groups,
+        "incident_active": bool(active) or bool(unresolved_groups),
         "opened_issue_numbers": opened,
         "reminded_issue_numbers": reminded,
         "recovered_issue_numbers": recovered,
+        "consolidated_issue_groups": consolidated_groups,
+        "unresolved_issue_groups": unresolved_groups,
         "notification_cadence_confirmations": cadence_confirmations,
     }
 

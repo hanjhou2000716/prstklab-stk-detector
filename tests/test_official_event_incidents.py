@@ -275,8 +275,142 @@ def test_placeholder_event_refs_never_count_as_recovery_evidence():
     assert refs == []
     assert complete is False
 
+
+def test_duplicate_incident_issues_are_consolidated_without_losing_unknown_evidence(monkeypatch, tmp_path):
+    now = datetime(2026, 10, 27, 12, 0, tzinfo=UTC)
+    reason = "recipient_receipt_partial"
+    contract = "public-summary-v4"
+    key = incidents._incident_group(reason, contract)[1]
+    older = {
+        "number": 39,
+        "created_at": "2026-10-26T07:50:57Z",
+        "title": f"{incidents.EVENT_ISSUE_TITLE_PREFIX} / official_event_delivery",
+        "body": (
+            f"{incidents.EVENT_INCIDENT_MARKER}{key}\n"
+            "Component: official_event_delivery\n"
+            f"Root cause: {reason}\nSummary contract: {contract}\n"
+            "Affected event count: 0\nEvent refs: not available\nEvent refs complete: false\n"
+            "First failure: 2026-10-25T15:20:18+00:00\n"
+            "Latest run: 40206088425 (e" + "0" * 39 + ")"
+        ),
+    }
+    newer = {
+        "number": 40,
+        "created_at": "2026-10-26T07:51:03Z",
+        "title": older["title"],
+        "body": (
+            f"{incidents.EVENT_INCIDENT_MARKER}{key}\n"
+            "Component: official_event_delivery\n"
+            f"Root cause: {reason}\nSummary contract: {contract}\n"
+            "Affected event count: 0\nEvent refs: not available\nEvent refs complete: false\n"
+            "First failure: 2026-10-25T15:46:08+00:00\n"
+            "Latest run: 40207665385 (e" + "0" * 39 + ")"
+        ),
+    }
+    path = tmp_path / "trace.json"
+    path.write_text(json.dumps(_trace("partial", detected=now - timedelta(minutes=45), reason=reason)), encoding="utf-8")
+    monkeypatch.setattr(incidents, "_open_incidents", lambda *_args, **_kwargs: [newer, older])
+    calls = []
+
+    def request(_api, _repo, _token, method, endpoint, payload=None, **_kwargs):
+        calls.append((method, endpoint, payload))
+        return {}
+
+    monkeypatch.setattr(incidents, "_request_json", request)
+    result = incidents.reconcile_incidents(
+        api_url="https://api.github.com", repository="owner/repo", token="token",
+        trace_path=path, now=now,
+    )
+
+    assert result["diagnostic_complete"] is True
+    assert result["incident_active"] is True
+    assert result["consolidated_issue_groups"] == [{
+        "marker": key,
+        "canonical_issue_number": 39,
+        "duplicate_issue_numbers": [40],
+        "source_run_ids": ["40206088425", "40207665385"],
+        "event_refs_complete": False,
+    }]
+    duplicate_body = next(payload["body"] for method, endpoint, payload in calls if method == "PATCH" and endpoint == "issues/40" and "body" in payload)
+    assert "Duplicate of: #39" in duplicate_body
+    assert "Event refs: not available" in duplicate_body
+    assert any(
+        method == "PATCH" and endpoint == "issues/40"
+        and payload == {"state": "closed", "state_reason": "not_planned"}
+        for method, endpoint, payload in calls
+    )
+    canonical_body = next(payload["body"] for method, endpoint, payload in calls if method == "PATCH" and endpoint == "issues/39" and "body" in payload)
+    assert "Consolidated issue numbers: 39, 40" in canonical_body
+    assert "Consolidated source runs: 40206088425, 40207665385" in canonical_body
+    assert "Event refs complete: false" in canonical_body
+    evidence = json.loads(incidents._field(canonical_body, "Consolidated issue evidence"))
+    assert evidence == [
+        {
+            "issue_number": 39,
+            "first_failure_at": "2026-10-25T15:20:18+00:00",
+            "source_run_ids": ["40206088425"],
+            "comments_preserved_on_issue": 39,
+        },
+        {
+            "issue_number": 40,
+            "first_failure_at": "2026-10-25T15:46:08+00:00",
+            "source_run_ids": ["40207665385"],
+            "comments_preserved_on_issue": 40,
+        },
+    ]
+
     refs, complete = incidents._issue_event_refs(
         "Affected event count: 0\nEvent refs: unknown\nEvent refs complete: true"
     )
     assert refs == []
     assert complete is False
+
+
+def test_conflicting_duplicate_group_does_not_block_independent_incident(monkeypatch, tmp_path):
+    now = datetime(2026, 10, 27, 12, 0, tzinfo=UTC)
+    active_trace = _trace("partial", detected=now - timedelta(minutes=45), reason="recipient_receipt_partial")
+    active_key = incidents._incident_group("recipient_receipt_partial", "public-summary-v4")[1]
+    conflict_key = "f" * 24
+
+    def row(number, reason):
+        return {
+            "number": number,
+            "title": f"{incidents.EVENT_ISSUE_TITLE_PREFIX} / official_event_delivery",
+            "body": (
+                f"{incidents.EVENT_INCIDENT_MARKER}{conflict_key}\n"
+                "Component: official_event_delivery\n"
+                f"Root cause: {reason}\nSummary contract: public-summary-v4\n"
+                "Affected event count: 0\nEvent refs: not available\nEvent refs complete: false"
+            ),
+        }
+
+    active_issue = {
+        "number": 51,
+        "title": f"{incidents.EVENT_ISSUE_TITLE_PREFIX} / official_event_delivery",
+        "body": (
+            f"{incidents.EVENT_INCIDENT_MARKER}{active_key}\n"
+            "Component: official_event_delivery\nRoot cause: recipient_receipt_partial\n"
+            "Summary contract: public-summary-v4\nAffected event count: 1\n"
+            "Event refs: opaque-ref\nEvent refs complete: true\n"
+            f"First failure: {(now - timedelta(minutes=45)).isoformat()}\n"
+            f"Next reminder at: {(now + timedelta(hours=1)).isoformat()}"
+        ),
+    }
+    path = tmp_path / "trace.json"
+    path.write_text(json.dumps(active_trace), encoding="utf-8")
+    monkeypatch.setattr(incidents, "_open_incidents", lambda *_args, **_kwargs: [row(49, "cause_a"), row(50, "cause_b"), active_issue])
+    calls = []
+    monkeypatch.setattr(incidents, "_request_json", lambda *args, **kwargs: calls.append(args) or {})
+
+    result = incidents.reconcile_incidents(
+        api_url="https://api.github.com", repository="owner/repo", token="token",
+        trace_path=path, now=now,
+    )
+
+    assert result["diagnostic_complete"] is False
+    assert result["unresolved_issue_groups"] == [{
+        "marker": conflict_key,
+        "issue_numbers": [49, 50],
+        "reason": "official_event_incident_duplicate_identity_conflict",
+    }]
+    assert any(len(args) > 4 and args[3] == "PATCH" and args[4] == "issues/51" for args in calls)

@@ -8,4 +8,4 @@ def test_release_manifest_schema_declares_optional_creator_contract():
     assert properties["creator_status"]["enum"] == ["ready", "unavailable", "not_available"]
     assert "creator_artifact_hash" in properties
     assert "ready_with_quarantine" in properties["status"]["enum"]
-    assert properties["alert_projection_status"]["enum"] == ["ready", "ready_with_quarantine", "invalid"]
+    assert properties["alert_projection_status"]["enum"] == ["ready", "ready_with_quarantine", "blocked", "invalid"]

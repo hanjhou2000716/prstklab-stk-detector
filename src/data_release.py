@@ -13,6 +13,7 @@ import json
 import os
 import re
 import subprocess
+import time
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -86,6 +87,51 @@ def _fetch_branch(branch: str) -> bool:
         check=False,
     )
     return result.returncode == 0
+
+
+def _is_transient_push_failure(detail: str) -> bool:
+    normalized = str(detail or "").casefold()
+    return any(marker in normalized for marker in (
+        "internal server error",
+        "requested url returned error: 500",
+        "requested url returned error: 502",
+        "requested url returned error: 503",
+        "requested url returned error: 504",
+        "http 500", "http 502", "http 503", "http 504",
+    ))
+
+
+def _push_commit_with_retry(
+    *, branch: str, commit: str, expected_parent: str, max_attempts: int = 3,
+) -> bool:
+    """Push only while the remote still equals the prepared base.
+
+    A server error can be returned after GitHub accepted the ref update.  Each
+    retry therefore fetches and checks the ref first; an already-installed
+    candidate is success, while any other movement fails closed.
+    """
+    if max_attempts < 1 or max_attempts > 3:
+        raise DataReleaseError("data_release_push_retry_limit_invalid")
+    remote_ref = f"refs/remotes/origin/{branch}"
+    for attempt in range(max_attempts):
+        remote = _run("rev-parse", remote_ref, check=False)
+        current = remote.stdout.strip() if remote.returncode == 0 else ""
+        if current == commit:
+            return attempt > 0
+        if current != expected_parent:
+            raise DataReleaseError("data_release_push_remote_ref_changed")
+        pushed = _run("push", "origin", f"{commit}:refs/heads/{branch}", check=False)
+        if pushed.returncode == 0:
+            return attempt > 0
+        detail = (pushed.stderr or pushed.stdout or "data-release push failed").strip()
+        if not _is_transient_push_failure(detail):
+            raise DataReleaseError(f"data_release_push_rejected:{detail[:240]}")
+        if attempt + 1 >= max_attempts:
+            raise DataReleaseError("data_release_push_transient_retry_exhausted")
+        time.sleep(min(2 ** attempt, 2))
+        if not _fetch_branch(branch):
+            raise DataReleaseError("data_release_push_recovery_fetch_failed")
+    raise DataReleaseError("data_release_push_transient_retry_exhausted")
 
 
 def _remote_files(branch: str, files: list[str]) -> set[str]:
@@ -283,13 +329,14 @@ def publish(
         commit = commit_result.stdout.strip()
         # Use a fully-qualified destination ref.  GitHub's remote rejects an
         # abbreviated branch ref when the source is a raw commit object.
-        pushed = _run("push", "origin", f"{commit}:refs/heads/{branch}", check=False)
-        if pushed.returncode:
-            raise DataReleaseError(pushed.stderr.strip() or "data-release push failed")
+        push_recovered = _push_commit_with_retry(
+            branch=branch, commit=commit, expected_parent=parent,
+        )
         return {
             "published": True, "branch": branch, "commit": commit,
             "files": files, "tree": tree, "base_sha": parent,
             "published_sha": commit,
+            "push_recovered_after_server_error": push_recovered,
         }
     finally:
         index.unlink(missing_ok=True)

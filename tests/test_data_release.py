@@ -66,6 +66,118 @@ def test_fetch_branch_updates_remote_tracking_ref(monkeypatch):
     ]
 
 
+def test_push_retry_treats_candidate_already_on_remote_as_success(monkeypatch):
+    base = "a" * 40
+    candidate = "b" * 40
+    remote_tip = base
+    pushes = []
+
+    def fake_run(*args, **kwargs):
+        nonlocal remote_tip
+        if args[:2] == ("rev-parse", "refs/remotes/origin/data-release"):
+            return data_release.subprocess.CompletedProcess(args, 0, remote_tip + "\n", "")
+        if args[:1] == ("push",):
+            pushes.append(args)
+            return data_release.subprocess.CompletedProcess(args, 1, "", "remote: Internal Server Error")
+        raise AssertionError(args)
+
+    monkeypatch.setattr(data_release, "_run", fake_run)
+    monkeypatch.setattr(data_release, "time", type("Clock", (), {"sleep": staticmethod(lambda _seconds: None)}))
+
+    def fetch(_branch):
+        nonlocal remote_tip
+        remote_tip = candidate
+        return True
+
+    monkeypatch.setattr(data_release, "_fetch_branch", fetch)
+    recovered = data_release._push_commit_with_retry(
+        branch="data-release", commit=candidate, expected_parent=base,
+    )
+
+    assert recovered is True
+    assert len(pushes) == 1
+
+
+def test_push_retry_retries_only_when_prepared_base_is_still_current(monkeypatch):
+    base = "a" * 40
+    candidate = "b" * 40
+    remote_tip = base
+    pushes = []
+
+    def fake_run(*args, **kwargs):
+        if args[:2] == ("rev-parse", "refs/remotes/origin/data-release"):
+            return data_release.subprocess.CompletedProcess(args, 0, remote_tip + "\n", "")
+        if args[:1] == ("push",):
+            pushes.append(args)
+            if len(pushes) == 1:
+                return data_release.subprocess.CompletedProcess(args, 1, "", "HTTP 503")
+            return data_release.subprocess.CompletedProcess(args, 0, "", "")
+        raise AssertionError(args)
+
+    monkeypatch.setattr(data_release, "_run", fake_run)
+    monkeypatch.setattr(data_release, "time", type("Clock", (), {"sleep": staticmethod(lambda _seconds: None)}))
+    monkeypatch.setattr(data_release, "_fetch_branch", lambda _branch: True)
+
+    recovered = data_release._push_commit_with_retry(
+        branch="data-release", commit=candidate, expected_parent=base,
+    )
+
+    assert recovered is True
+    assert len(pushes) == 2
+    assert all("--force" not in call for call in pushes)
+
+
+def test_push_retry_stops_when_remote_base_changes(monkeypatch):
+    base = "a" * 40
+    candidate = "b" * 40
+    remote_tip = base
+    pushes = []
+
+    def fake_run(*args, **kwargs):
+        if args[:2] == ("rev-parse", "refs/remotes/origin/data-release"):
+            return data_release.subprocess.CompletedProcess(args, 0, remote_tip + "\n", "")
+        if args[:1] == ("push",):
+            pushes.append(args)
+            return data_release.subprocess.CompletedProcess(args, 1, "", "HTTP 500")
+        raise AssertionError(args)
+
+    def fetch(_branch):
+        nonlocal remote_tip
+        remote_tip = "c" * 40
+        return True
+
+    monkeypatch.setattr(data_release, "_run", fake_run)
+    monkeypatch.setattr(data_release, "time", type("Clock", (), {"sleep": staticmethod(lambda _seconds: None)}))
+    monkeypatch.setattr(data_release, "_fetch_branch", fetch)
+
+    with pytest.raises(DataReleaseError, match="data_release_push_remote_ref_changed"):
+        data_release._push_commit_with_retry(
+            branch="data-release", commit=candidate, expected_parent=base,
+        )
+    assert len(pushes) == 1
+
+
+def test_push_retry_does_not_retry_permission_or_non_server_failures(monkeypatch):
+    base = "a" * 40
+    candidate = "b" * 40
+    pushes = []
+
+    def fake_run(*args, **kwargs):
+        if args[:2] == ("rev-parse", "refs/remotes/origin/data-release"):
+            return data_release.subprocess.CompletedProcess(args, 0, base + "\n", "")
+        if args[:1] == ("push",):
+            pushes.append(args)
+            return data_release.subprocess.CompletedProcess(args, 1, "", "HTTP 403: denied")
+        raise AssertionError(args)
+
+    monkeypatch.setattr(data_release, "_run", fake_run)
+    with pytest.raises(DataReleaseError, match="data_release_push_rejected"):
+        data_release._push_commit_with_retry(
+            branch="data-release", commit=candidate, expected_parent=base,
+        )
+    assert len(pushes) == 1
+
+
 def test_publish_dry_run_expands_only_existing_data(tmp_path):
     data = tmp_path / "site" / "data"
     data.mkdir(parents=True)

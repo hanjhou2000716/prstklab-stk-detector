@@ -416,6 +416,7 @@ def test_required_background_identity_conflict_fails_closed(tmp_path):
     manifest = build_release_manifest(root=tmp_path)
 
     assert manifest["status"] == "invalid"
+    assert manifest["alert_projection_status"] == "blocked"
     assert any("alert_projection_identity_conflict" in error for error in manifest["validation_errors"])
 
 

@@ -144,6 +144,7 @@ def default_sources(data_dir: Path) -> list[dict[str, str]]:
 
 def selected_strategy_keys(
     target_market: str, target_strategy: str, selected_strategies: str | None = None,
+    selected_pairs: str | None = None,
 ) -> set[tuple[str, str]]:
     """Resolve the exact market/strategy set scanned in this run.
 
@@ -153,6 +154,18 @@ def selected_strategy_keys(
     intentionally not produced by this run.
     """
     markets = ("taiwan", "us") if target_market == "both" else (target_market,)
+    allowed = {"momentum", "price_action", "resonance", "value"}
+    explicit_pairs = {
+        tuple(item.strip().split(":", 1))
+        for item in str(selected_pairs or "").split(",") if item.strip()
+    }
+    if explicit_pairs:
+        if any(
+            len(pair) != 2 or pair[0] not in markets or pair[1] not in allowed
+            for pair in explicit_pairs
+        ):
+            raise ValueError("selected research market/strategy pair is invalid")
+        return {(market, strategy) for market, strategy in explicit_pairs}
     requested = {
         item.strip() for item in str(selected_strategies or "").split(",") if item.strip()
     }
@@ -162,7 +175,6 @@ def selected_strategy_keys(
         strategies = {"momentum", "price_action", "resonance", "value"}
     else:
         strategies = {target_strategy}
-    allowed = {"momentum", "price_action", "resonance", "value"}
     return {(market, strategy) for market in markets for strategy in strategies if strategy in allowed}
 
 
@@ -409,6 +421,10 @@ def main() -> None:
         "--selected-strategies",
         help="comma-separated strategies actually scanned; untouched matrix entries are preserved",
     )
+    parser.add_argument(
+        "--selected-pairs",
+        help="comma-separated market:strategy pairs actually scanned; overrides strategy-wide selection",
+    )
     args = parser.parse_args()
     previous: dict[str, Any] | None = None
     if args.previous_report:
@@ -444,7 +460,10 @@ def main() -> None:
             report,
             previous,
             target_market=args.target_market,
-            selected_keys=selected_strategy_keys(args.target_market, args.target_strategy, args.selected_strategies),
+            selected_keys=selected_strategy_keys(
+                args.target_market, args.target_strategy,
+                args.selected_strategies, args.selected_pairs,
+            ),
         )
         attach_instrument_lineage(report, extend_from_candidates=True)
         attach_backtest_contract(report, args.backtest_release)

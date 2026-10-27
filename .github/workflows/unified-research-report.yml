@@ -189,72 +189,16 @@ jobs:
           echo "RESEARCH_DUE=$(grep '^due=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2)" >> "$GITHUB_ENV"
           echo "RESEARCH_SLOT_KEY=$(grep '^slot_key=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2-)" >> "$GITHUB_ENV"
       - name: Resolve strategy selection
+        id: strategy_selection
         if: env.RESEARCH_DUE == 'true'
-        run: |
-          python - "$TARGET_MARKET" "$TARGET_STRATEGY" "$RESEARCH_ACTION" research-artifacts/research-report-previous.json <<'PY'
-          import json
-          import os
-          import sys
-          from pathlib import Path
-
-          market, requested, action, previous_path = sys.argv[1:]
-          allowed = {"all", "momentum", "price_action", "resonance", "value"}
-          actions = {"scan", "resume_incomplete", "repair_state"}
-          if requested not in allowed:
-              raise SystemExit(f"invalid target_strategy={requested}")
-          if action not in actions:
-              raise SystemExit(f"invalid research_action={action}")
-          markets = {"taiwan", "us"} if market == "both" else {market}
-          run = {name: requested in {"all", name} for name in allowed if name != "all"}
-          if action == "repair_state":
-              run = {name: False for name in run}
-          elif action == "resume_incomplete" and requested == "all":
-              run = {name: False for name in run}
-              try:
-                  previous = json.loads(Path(previous_path).read_text(encoding="utf-8"))
-              except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-                  previous = {}
-              previous_sources = previous.get("sources", []) if isinstance(previous, dict) else []
-              if not isinstance(previous_sources, list) or not previous_sources:
-                  run = {name: True for name in run}
-              for source in previous_sources:
-                  if not isinstance(source, dict) or str(source.get("market")) not in markets:
-                      continue
-                  strategy = str(source.get("strategy") or "")
-                  if strategy not in run:
-                      continue
-                  requires_current_value_rule = (
-                      str(source.get("market")) == "taiwan"
-                      and strategy == "value"
-                      and source.get("rule_version") != "tw_value_current_quality_v2"
-                  )
-                  needs_retry = (
-                      source.get("scan_state") != "complete"
-                      or source.get("historical_fallback") is True
-                      or source.get("strategy_version_state") in {"historical", "unavailable"}
-                      or source.get("candidate_state") in {"building", "data_gap", "data_unavailable", "failed"}
-                      or requires_current_value_rule
-                  )
-                  run[strategy] = run[strategy] or needs_retry
-          if os.getenv("SCAN_MODE", "production") == "production" and action != "repair_state":
-              from src.research_attempts import claim_strategies
-              claim = claim_strategies(
-                  Path("data/research-attempts.json"),
-                  slot_key=os.getenv("RESEARCH_SLOT_KEY", ""),
-                  target_market=market,
-                  strategies=[name for name, enabled in run.items() if enabled],
-              )
-              allowed = set(claim["allowed_strategies"])
-              run = {name: enabled and name in allowed for name, enabled in run.items()}
-              print("research attempt claim:", json.dumps({"allowed": sorted(allowed), "suppressed": claim["suppressed"]}, ensure_ascii=False))
-          for name, enabled in run.items():
-              with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
-                  handle.write(f"RUN_{name.upper()}={'true' if enabled else 'false'}\n")
-          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
-              handle.write(f"RESEARCH_ACTION={action}\nTARGET_STRATEGY={requested}\n")
-              handle.write("SCANNED_STRATEGIES=" + ",".join(name for name, enabled in run.items() if enabled) + "\n")
-          print("strategy selection:", ", ".join(name for name, enabled in run.items() if enabled) or "none")
-          PY
+        run: >-
+          python -m src.research_selection
+          --target-market "$TARGET_MARKET"
+          --target-strategy "$TARGET_STRATEGY"
+          --action "$RESEARCH_ACTION"
+          --slot-key "$RESEARCH_SLOT_KEY"
+          --previous-report research-artifacts/research-report-previous.json
+          --attempts data/research-attempts.json
       - name: Clear previous research scan artifacts for target market
         if: env.RESEARCH_DUE == 'true' && env.RESEARCH_ACTION != 'repair_state'
         run: |
@@ -269,39 +213,42 @@ jobs:
           enabled = ("momentum", "price_action", "resonance", "value")
           file_stems = {"momentum": "momentum", "price_action": "price-action", "resonance": "resonance", "value": "value"}
           import os
-          strategies = [name for name in enabled if os.environ.get(f"RUN_{name.upper()}") == "true"]
           markets = ("taiwan", "us") if target == "both" else (target,)
-          prefixes = tuple(f"{market}-{file_stems[strategy]}-" for market in markets for strategy in strategies)
+          prefixes = tuple(
+              f"{market}-{file_stems[strategy]}-"
+              for market in markets for strategy in enabled
+              if os.environ.get(f"RUN_{market.upper()}_{strategy.upper()}") == "true"
+          )
           for path in Path("data").glob("*"):
               if path.is_file() and any(path.name.startswith(prefix) and ("-scan" in path.name or "-summary" in path.name) for prefix in prefixes):
                   path.unlink()
           PY
           : > research-artifacts/scan-failures.ndjson
       - name: 台股動能研究掃描
-        if: env.RESEARCH_DUE == 'true' && env.RUN_MOMENTUM == 'true' && (env.TARGET_MARKET == 'taiwan' || env.TARGET_MARKET == 'both')
+        if: env.RESEARCH_DUE == 'true' && env.RUN_TAIWAN_MOMENTUM == 'true'
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market taiwan --strategy momentum --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_taiwan_momentum_scan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
       - name: 美股動能研究掃描
-        if: env.RESEARCH_DUE == 'true' && env.RUN_MOMENTUM == 'true' && (env.TARGET_MARKET == 'us' || env.TARGET_MARKET == 'both')
+        if: env.RESEARCH_DUE == 'true' && env.RUN_US_MOMENTUM == 'true'
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market us --strategy momentum --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_us_momentum_scan --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
       - name: 台股裸 K 結構研究掃描
-        if: env.RESEARCH_DUE == 'true' && env.RUN_PRICE_ACTION == 'true' && (env.TARGET_MARKET == 'taiwan' || env.TARGET_MARKET == 'both')
+        if: env.RESEARCH_DUE == 'true' && env.RUN_TAIWAN_PRICE_ACTION == 'true'
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market taiwan --strategy price_action --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_taiwan_price_action_scan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
       - name: 美股裸 K 結構研究掃描
-        if: env.RESEARCH_DUE == 'true' && env.RUN_PRICE_ACTION == 'true' && (env.TARGET_MARKET == 'us' || env.TARGET_MARKET == 'both')
+        if: env.RESEARCH_DUE == 'true' && env.RUN_US_PRICE_ACTION == 'true'
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market us --strategy price_action --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_us_price_action_scan --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
       - name: 台股三維共振研究掃描
-        if: env.RESEARCH_DUE == 'true' && env.RUN_RESONANCE == 'true' && (env.TARGET_MARKET == 'taiwan' || env.TARGET_MARKET == 'both')
+        if: env.RESEARCH_DUE == 'true' && env.RUN_TAIWAN_RESONANCE == 'true'
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market taiwan --strategy resonance --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_resonance_scan --market taiwan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
       - name: 美股三維共振研究掃描
-        if: env.RESEARCH_DUE == 'true' && env.RUN_RESONANCE == 'true' && (env.TARGET_MARKET == 'us' || env.TARGET_MARKET == 'both')
+        if: env.RESEARCH_DUE == 'true' && env.RUN_US_RESONANCE == 'true'
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market us --strategy resonance --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_resonance_scan --market us --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
       - name: 台股品質價值覆核
-        if: env.RESEARCH_DUE == 'true' && env.RUN_VALUE == 'true' && (env.TARGET_MARKET == 'taiwan' || env.TARGET_MARKET == 'both')
+        if: env.RESEARCH_DUE == 'true' && env.RUN_TAIWAN_VALUE == 'true'
         env:
           WORKER_TIMEOUT_SECONDS: '600'
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market taiwan --strategy value --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_value_quality_scan --market taiwan --batch-size "$BATCH_SIZE" --mops-max-refresh "$MOPS_MAX_REFRESH" --time-budget-seconds "$VALUE_INTERNAL_BUDGET_SECONDS" --diagnostics-path research-artifacts/taiwan-value-diagnostics.json
       - name: 美股品質價值覆核
-        if: env.RESEARCH_DUE == 'true' && env.RUN_VALUE == 'true' && (env.TARGET_MARKET == 'us' || env.TARGET_MARKET == 'both')
+        if: env.RESEARCH_DUE == 'true' && env.RUN_US_VALUE == 'true'
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market us --strategy value --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_value_quality_scan --market us --batch-size "$BATCH_SIZE"
       - name: Build research report with optional backtest identity
         if: env.RESEARCH_DUE == 'true'
@@ -319,6 +266,7 @@ jobs:
             --research-action "$RESEARCH_ACTION"
             --slot-key "$RESEARCH_SLOT_KEY"
             --selected-strategies "$SCANNED_STRATEGIES"
+            --selected-pairs "$SCANNED_PAIRS"
           )
           if [[ -n "$BACKTEST_RELEASE_PATH" ]]; then
             args+=(--backtest-release "$BACKTEST_RELEASE_PATH")
@@ -395,11 +343,11 @@ jobs:
               print("::warning::incomplete strategy cache must be persisted for the next continuation run")
           PY
       - name: Refresh market data for prepared release
-        if: env.SCAN_MODE == 'production'
+        if: env.SCAN_MODE == 'production' && env.RESEARCH_DUE == 'true'
         run: python -m src.refresh_market_data
       - name: Record publication admission
         id: publication_admission
-        if: env.SCAN_MODE == 'production'
+        if: env.SCAN_MODE == 'production' && env.RESEARCH_DUE == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python -m src.writer_queue --create-admission
@@ -539,6 +487,9 @@ jobs:
           JOB_STATUS: ${{ job.status }}
           SCAN_MODE: ${{ env.SCAN_MODE }}
           RESEARCH_DUE: ${{ env.RESEARCH_DUE }}
+          RESEARCH_NOOP: ${{ env.RESEARCH_NOOP || 'false' }}
+          RESEARCH_SELECTION_STATUS: ${{ env.RESEARCH_SELECTION_STATUS || 'unknown' }}
+          RESEARCH_SELECTION_REASON: ${{ env.RESEARCH_SELECTION_REASON || '' }}
           QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'not_required' }}
           QUEUE_ERROR_CODE: ${{ steps.writer_queue.outputs.queue_error_code || '' }}
           RESEARCH_GATE_OUTCOME: ${{ steps.research_gate.outcome || 'skipped' }}
@@ -556,11 +507,15 @@ jobs:
           mode = os.environ.get("SCAN_MODE", "unknown")
           queue_status = os.environ.get("QUEUE_STATUS", "unknown")
           due = os.environ.get("RESEARCH_DUE") == "true"
+          no_op = os.environ.get("RESEARCH_NOOP") == "true"
+          selection_status = os.environ.get("RESEARCH_SELECTION_STATUS", "unknown")
+          selection_reason = os.environ.get("RESEARCH_SELECTION_REASON", "")
           gate_outcome = os.environ.get("RESEARCH_GATE_OUTCOME", "unknown")
           gate_publish = os.environ.get("RESEARCH_GATE_PUBLISH") == "true"
           gate_fallback = os.environ.get("RESEARCH_GATE_FALLBACK") == "true"
-          degraded = (
+          degraded = not no_op and (
               os.environ.get("JOB_STATUS") == "failure"
+              or selection_status in {"blocked", "scan_selected_with_suppressed_pairs"}
               or queue_status == "failed"
               or os.environ.get("PREPARED_RELEASE_OUTCOME") == "failure"
               or os.environ.get("DEPLOYMENT_OUTCOME") == "failure"
@@ -570,9 +525,18 @@ jobs:
           if mode != "production":
               business_status = "not_applicable"
               reason = "non_production_scan"
+          elif no_op:
+              business_status = "healthy"
+              reason = selection_reason or "research_slot_already_current"
           else:
               business_status = "degraded" if degraded else "healthy"
-              reason = os.environ.get("QUEUE_ERROR_CODE", "")
+              reason = (
+                  "research_due_market_strategy_pairs_suppressed"
+                  if selection_status == "scan_selected_with_suppressed_pairs"
+                  else os.environ.get("QUEUE_ERROR_CODE", "")
+              )
+              if not reason and selection_status == "blocked":
+                  reason = selection_reason or "research_strategy_selection_blocked"
               if not reason and queue_status == "failed":
                   reason = "writer_queue_failed"
               if not reason and gate_outcome == "failure":
@@ -599,6 +563,9 @@ jobs:
                   "research_gate": gate_outcome,
                   "research_publish": gate_publish,
                   "research_fallback": gate_fallback,
+                  "research_selection": os.environ.get("RESEARCH_SELECTION_STATUS", "unknown"),
+                  "research_selection_reason": os.environ.get("RESEARCH_SELECTION_REASON", ""),
+                  "research_noop": no_op,
                   "prepared_release": os.environ.get("PREPARED_RELEASE_OUTCOME", "unknown"),
                   "deployment": os.environ.get("DEPLOYMENT_OUTCOME", "unknown"),
               },
