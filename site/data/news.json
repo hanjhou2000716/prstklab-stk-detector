@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "edcb097bcbd2ba21",
-  "snapshot_id": "news-e0de854a98858b60",
+  "market_snapshot_id": "a2a2459605195fc9",
+  "snapshot_id": "news-a34a568e1db37242",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -4706,7 +4706,7 @@
           "地震": 1
         },
         "market_interest": {
-          "taiwan": 104
+          "taiwan": 102
         },
         "context": {
           "tracked_tickers": [
@@ -4780,10 +4780,12 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 31,
+      "excluded_count": 30,
       "exclusion_reasons": {
-        "insufficient_market_relevance": 26,
-        "outside_calendar_window": 18
+        "incomplete_normalized_fact": 2,
+        "insufficient_market_relevance": 22,
+        "outside_calendar_window": 17,
+        "outside_trading_session_window": 1
       },
       "status": "ready",
       "collection_state": "ready",
@@ -4793,32 +4795,33 @@
         "successful_provider_count": 5,
         "failed_provider_count": 0,
         "disabled_provider_count": 0,
-        "fetched": 41,
-        "normalized": 41,
+        "fetched": 40,
+        "normalized": 40,
         "eligible": 10,
-        "excluded": 31,
-        "date_eligible_current": 23,
+        "excluded": 30,
+        "date_eligible_current": 22,
         "date_excluded_current": 18,
         "date_exclusion_reasons_current": {
-          "outside_calendar_window": 18
+          "outside_calendar_window": 17,
+          "outside_trading_session_window": 1
         },
-        "date_eligible_inventory": 63,
+        "date_eligible_inventory": 62,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-27T12:53:51.668780+00:00",
+        "reference_time": "2026-10-27T12:58:41.240812+00:00",
         "deduped": 10,
         "publicly_ranked": 5,
         "current_eligible": 10,
-        "inventory_considered": 63,
+        "inventory_considered": 62,
         "inventory_eligible": 50,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 31,
-        "fetched_story_count": 41,
-        "normalized_story_count": 41,
+        "filtered_story_count": 30,
+        "fetched_story_count": 40,
+        "normalized_story_count": 40,
         "eligible_story_count": 10,
         "deduped_story_count": 10,
         "ranked_story_count": 5
@@ -4827,7 +4830,7 @@
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 63,
+        "considered": 62,
         "eligible": 50,
         "selected": 0,
         "target_count": 5,
@@ -4840,8 +4843,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 41,
-          "checked_at": "2026-10-27T12:53:51.668832+00:00"
+          "item_count": 40,
+          "checked_at": "2026-10-27T12:58:41.240851+00:00"
         },
         {
           "provider": "twse",
@@ -4852,10 +4855,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-10-27T12:53:51.668832+00:00",
+          "checked_at": "2026-10-27T12:58:41.240851+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+          "last_success_at": "2026-10-27T12:58:41.240851+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4880,10 +4883,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-10-27T12:53:51.668832+00:00",
+          "checked_at": "2026-10-27T12:58:41.240851+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+          "last_success_at": "2026-10-27T12:58:41.240851+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4908,10 +4911,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 0,
-          "checked_at": "2026-10-27T12:53:51.668832+00:00",
+          "checked_at": "2026-10-27T12:58:41.240851+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+          "last_success_at": "2026-10-27T12:58:41.240851+00:00",
           "last_failure_at": null,
           "stories_ingested": 1,
           "stories_deduped": 0,
@@ -4939,10 +4942,10 @@
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
           "item_count": 0,
-          "checked_at": "2026-10-27T12:53:51.668832+00:00",
+          "checked_at": "2026-10-27T12:58:41.240851+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+          "last_success_at": "2026-10-27T12:58:41.240851+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -4970,36 +4973,36 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
           "item_count": 5,
-          "checked_at": "2026-10-27T12:53:51.668832+00:00",
-          "raw_item_count": 30,
+          "checked_at": "2026-10-27T12:58:41.240851+00:00",
+          "raw_item_count": 29,
           "filtered_item_count": 5,
-          "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+          "last_success_at": "2026-10-27T12:58:41.240851+00:00",
           "last_failure_at": null,
-          "stories_ingested": 30,
+          "stories_ingested": 29,
           "stories_deduped": 10,
           "ranked_count": 5,
           "relevance_distribution": {
-            "market": 30,
+            "market": 29,
             "research_candidate": 1,
             "tracked_ticker": 9
           },
           "funnel": {
-            "fetched_count": 30,
-            "normalized_count": 30,
-            "market_compatible_count": 30,
+            "fetched_count": 29,
+            "normalized_count": 29,
+            "market_compatible_count": 29,
             "eligible_count": 10,
-            "excluded_count": 20,
+            "excluded_count": 19,
             "deduped_count": 10,
             "ranked_count": 5
           }
         }
       ],
       "observability": {
-        "stories_ingested": 41,
+        "stories_ingested": 40,
         "stories_deduped": 10,
         "ranked_count": 5,
         "relevance_distribution": {
-          "market": 41,
+          "market": 40,
           "research_candidate": 1,
           "tracked_ticker": 9
         },
@@ -5007,7 +5010,7 @@
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+            "last_success_at": "2026-10-27T12:58:41.240851+00:00",
             "last_failure_at": null,
             "stories_ingested": 1,
             "stories_deduped": 0,
@@ -5028,22 +5031,22 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+            "last_success_at": "2026-10-27T12:58:41.240851+00:00",
             "last_failure_at": null,
-            "stories_ingested": 30,
+            "stories_ingested": 29,
             "stories_deduped": 10,
             "ranked_count": 5,
             "relevance_distribution": {
-              "market": 30,
+              "market": 29,
               "research_candidate": 1,
               "tracked_ticker": 9
             },
             "funnel": {
-              "fetched_count": 30,
-              "normalized_count": 30,
-              "market_compatible_count": 30,
+              "fetched_count": 29,
+              "normalized_count": 29,
+              "market_compatible_count": 29,
               "eligible_count": 10,
-              "excluded_count": 20,
+              "excluded_count": 19,
               "deduped_count": 10,
               "ranked_count": 5
             }
@@ -5051,7 +5054,7 @@
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+            "last_success_at": "2026-10-27T12:58:41.240851+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5070,7 +5073,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+            "last_success_at": "2026-10-27T12:58:41.240851+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5089,7 +5092,7 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+            "last_success_at": "2026-10-27T12:58:41.240851+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -5515,105 +5518,6 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-8c6572d695412a6ddc71",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Semiconductor Equipment Selloff Challenges Applied Materials (AMAT)",
-          "raw_title": "Semiconductor Equipment Selloff Challenges Applied Materials (AMAT)",
-          "normalized_fact": "Renaissance Investment Management, an investment management company, released its Q3 2026 investor letter for “Large Cap Growth Strategy.” The letter can be downloaded here. Stocks showed modest gains in Q3, with the S&P 500 up 2.3%. Energy, Technology, and Health Care sectors excelled, while Utilities, Industrials, Real Estate, and Consumer Discretionary lagged. Market breadth was […]。",
-          "market_topic": "global_market",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Renaissance Investment Management, an investment management company, released its Q3 2026 investor letter for “Large Cap Growth Strategy.” The letter can be downloaded here. Stocks showed modest gains in Q3, with the S&P 500 up 2.3%. Energy, Technology, and Health Care sectors excelled, while Utilities, Industrials, Real Estate, and Consumer Discretionary lagged. Market breadth was […]",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/semiconductor-equipment-selloff-challenges-applied-120417903.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/semiconductor-equipment-selloff-challenges-applied-120417903.html?.tsrc=rss",
-          "published_at": "2026-10-27T12:04:17+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-27",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "market",
-            "reason": "market_subject_action",
-            "matched_terms": [
-              "s&p 500",
-              "selloff"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "s&p 500",
-              "selloff"
-            ],
-            "matched_subject": "s&p 500",
-            "matched_action": "selloff",
-            "matched_market_object": "s&p 500",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "renaissanceinvestmentmanagementaninvestmentmanagementcompanyreleaseditsq32026investorletterforlargecapgrowthstrategythelettercanbedownloadedherestocksshowedmodestgainsinq3withthesp500up23energytechnologyandhealthcaresectorsexcelledwhileutilitiesindustrialsrealestateandconsumerdiscretionarylaggedmarketbreadthwas",
-          "event_cluster_key": "event-b3d33ffcf950afcbd689",
-          "published_time_bucket": "2026-10-27T12:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "s&p 500",
-            "selloff"
-          ],
-          "matched_subject": "s&p 500",
-          "matched_action": "selloff",
-          "matched_market_object": "s&p 500",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130,
-          "supporting_sources": [
-            {
-              "provider": "yahoo_finance",
-              "url": "https://finance.yahoo.com/markets/stocks/articles/market-rotation-overshadows-kla-corp-120735835.html?.tsrc=rss"
-            }
-          ]
-        },
-        {
           "story_id": "news-32f6cd9b7915d23b2971",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -5800,12 +5704,101 @@
             {
               "provider": "google_news",
               "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTFBuMHdVTzdFRXVreExDSnZnLXBYU2g1di1vY2doR3VKcWVmSDlsdTduc2pjQTVRejNsbFZjTjlqb3BMTEVmVGh4YW5WQTNUbmF4bG1pZmU5THM1QXp6a0tQbkc0RUltTjQzUjZCQm40RjBDa2JZaFV5eXlPcw"
-            },
-            {
-              "provider": "google_news",
-              "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxOM0lwSlFXRjJ0TnJZZy00OTRjT1BCSUNYQmVycjhXemxTX0gzWjJMY2xDb2VnblRtbGRsMlQzWHJXWGJKdW9QbGprQ1VyZEZ1SmMxWDdqSXFnMmpXMUVIRVhnYks1Ml9OUTllc2tlN01EZ0Q3REZLVW5hTVV2Wno3eTl1MzhqRXpKeW1tdF9BeGhjV1BycmpFNF84TDVZaExsOEhEbU9aZw"
             }
           ]
+        },
+        {
+          "story_id": "news-4ab8b2fc4fd071c78977",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Tokyo Electron Increases Lobbying on Semiconductor Export Controls - Legis1",
+          "raw_title": "Tokyo Electron Increases Lobbying on Semiconductor Export Controls - Legis1",
+          "normalized_fact": "Tokyo Electron Increases Lobbying on Semiconductor Export Controls Legis1。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Tokyo Electron Increases Lobbying on Semiconductor Export Controls Legis1",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE9jYWhvVXlrYWROV3VTaDh5cDROb3NaU0RXOUo4anRoYk41YUJqX3QzbVNtM2tncXNiYlktcGdmSmJuZUI0SWhrdU1aWFdmSGtBVXU2UWNJdHRKcjlDWVpSWXh5NmFsVzRoSndsVlhkSUt0TmZv",
+          "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE9jYWhvVXlrYWROV3VTaDh5cDROb3NaU0RXOUo4anRoYk41YUJqX3QzbVNtM2tncXNiYlktcGdmSmJuZUI0SWhrdU1aWFdmSGtBVXU2UWNJdHRKcjlDWVpSWXh5NmFsVzRoSndsVlhkSUt0TmZv",
+          "published_at": "2026-10-22T18:02:07+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 4,
+          "published_local_date": "2026-10-22",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "semiconductor"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "semiconductor",
+              "export control"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "semiconductor",
+              "export control"
+            ],
+            "matched_subject": "semiconductor",
+            "matched_action": "export control",
+            "matched_market_object": "semiconductor",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "tokyoelectronincreaseslobbyingonsemiconductorexportcontrolslegis1",
+          "event_cluster_key": "event-ebad8043486e01b1ebb8",
+          "published_time_bucket": "2026-10-22T18:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "semiconductor",
+            "export control"
+          ],
+          "matched_subject": "semiconductor",
+          "matched_action": "export control",
+          "matched_market_object": "semiconductor",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
         }
       ],
       "editorial_candidates": [
@@ -5996,105 +5989,6 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-8c6572d695412a6ddc71",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Semiconductor Equipment Selloff Challenges Applied Materials (AMAT)",
-          "raw_title": "Semiconductor Equipment Selloff Challenges Applied Materials (AMAT)",
-          "normalized_fact": "Renaissance Investment Management, an investment management company, released its Q3 2026 investor letter for “Large Cap Growth Strategy.” The letter can be downloaded here. Stocks showed modest gains in Q3, with the S&P 500 up 2.3%. Energy, Technology, and Health Care sectors excelled, while Utilities, Industrials, Real Estate, and Consumer Discretionary lagged. Market breadth was […]。",
-          "market_topic": "global_market",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Renaissance Investment Management, an investment management company, released its Q3 2026 investor letter for “Large Cap Growth Strategy.” The letter can be downloaded here. Stocks showed modest gains in Q3, with the S&P 500 up 2.3%. Energy, Technology, and Health Care sectors excelled, while Utilities, Industrials, Real Estate, and Consumer Discretionary lagged. Market breadth was […]",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/semiconductor-equipment-selloff-challenges-applied-120417903.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/semiconductor-equipment-selloff-challenges-applied-120417903.html?.tsrc=rss",
-          "published_at": "2026-10-27T12:04:17+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-27",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "market",
-            "reason": "market_subject_action",
-            "matched_terms": [
-              "s&p 500",
-              "selloff"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "s&p 500",
-              "selloff"
-            ],
-            "matched_subject": "s&p 500",
-            "matched_action": "selloff",
-            "matched_market_object": "s&p 500",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "renaissanceinvestmentmanagementaninvestmentmanagementcompanyreleaseditsq32026investorletterforlargecapgrowthstrategythelettercanbedownloadedherestocksshowedmodestgainsinq3withthesp500up23energytechnologyandhealthcaresectorsexcelledwhileutilitiesindustrialsrealestateandconsumerdiscretionarylaggedmarketbreadthwas",
-          "event_cluster_key": "event-b3d33ffcf950afcbd689",
-          "published_time_bucket": "2026-10-27T12:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "s&p 500",
-            "selloff"
-          ],
-          "matched_subject": "s&p 500",
-          "matched_action": "selloff",
-          "matched_market_object": "s&p 500",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130,
-          "supporting_sources": [
-            {
-              "provider": "yahoo_finance",
-              "url": "https://finance.yahoo.com/markets/stocks/articles/market-rotation-overshadows-kla-corp-120735835.html?.tsrc=rss"
-            }
-          ]
-        },
-        {
           "story_id": "news-32f6cd9b7915d23b2971",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -6281,22 +6175,18 @@
             {
               "provider": "google_news",
               "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTFBuMHdVTzdFRXVreExDSnZnLXBYU2g1di1vY2doR3VKcWVmSDlsdTduc2pjQTVRejNsbFZjTjlqb3BMTEVmVGh4YW5WQTNUbmF4bG1pZmU5THM1QXp6a0tQbkc0RUltTjQzUjZCQm40RjBDa2JZaFV5eXlPcw"
-            },
-            {
-              "provider": "google_news",
-              "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxOM0lwSlFXRjJ0TnJZZy00OTRjT1BCSUNYQmVycjhXemxTX0gzWjJMY2xDb2VnblRtbGRsMlQzWHJXWGJKdW9QbGprQ1VyZEZ1SmMxWDdqSXFnMmpXMUVIRVhnYks1Ml9OUTllc2tlN01EZ0Q3REZLVW5hTVV2Wno3eTl1MzhqRXpKeW1tdF9BeGhjV1BycmpFNF84TDVZaExsOEhEbU9aZw"
             }
           ]
         },
         {
-          "story_id": "news-4052a16288e5967ea443",
+          "story_id": "news-4ab8b2fc4fd071c78977",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "Micron and Nvidia Are the 2 Biggest Drivers of S&P 500 Earnings Growth. Are Their Stocks Buys? - The Motley Fool",
-          "raw_title": "Micron and Nvidia Are the 2 Biggest Drivers of S&P 500 Earnings Growth. Are Their Stocks Buys? - The Motley Fool",
-          "normalized_fact": "Micron and Nvidia Are the 2 Biggest Drivers of S&P 500 Earnings Growth. Are Their Stocks Buys? The Motley Fool。",
+          "title": "Tokyo Electron Increases Lobbying on Semiconductor Export Controls - Legis1",
+          "raw_title": "Tokyo Electron Increases Lobbying on Semiconductor Export Controls - Legis1",
+          "normalized_fact": "Tokyo Electron Increases Lobbying on Semiconductor Export Controls Legis1。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -6305,26 +6195,24 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "Micron and Nvidia Are the 2 Biggest Drivers of S&P 500 Earnings Growth. Are Their Stocks Buys? The Motley Fool",
+          "summary": "Tokyo Electron Increases Lobbying on Semiconductor Export Controls Legis1",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxNcjE1aTB6enNNS2JvTldTbTQ5U0RkRVdnempjbHpZaWRCbFdNRkZWd1FGc2JUUGZBdWpfS09JdEJkTmZYTExKOEdGVEF2anRIQUdVYlRnSGNmaV91S0k3M0JXOHVNV2ZEMEs2VGVONmk3dXpkSjdjU3RpRkZtdlN0UU1OcmI5Ykk4YU8tWXBlU2pjRTlDNlZJY2RpTTd3cWR2LTFtNWItRUZLeFZ4a0hNYm1jTkY1ZUJPWDhTMVlxRkQ3VGpCT1k4U2xGVEJFQjgtTFpjdlp3",
-          "url": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxNcjE1aTB6enNNS2JvTldTbTQ5U0RkRVdnempjbHpZaWRCbFdNRkZWd1FGc2JUUGZBdWpfS09JdEJkTmZYTExKOEdGVEF2anRIQUdVYlRnSGNmaV91S0k3M0JXOHVNV2ZEMEs2VGVONmk3dXpkSjdjU3RpRkZtdlN0UU1OcmI5Ykk4YU8tWXBlU2pjRTlDNlZJY2RpTTd3cWR2LTFtNWItRUZLeFZ4a0hNYm1jTkY1ZUJPWDhTMVlxRkQ3VGpCT1k4U2xGVEJFQjgtTFpjdlp3",
-          "published_at": "2026-10-21T08:44:00+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE9jYWhvVXlrYWROV3VTaDh5cDROb3NaU0RXOUo4anRoYk41YUJqX3QzbVNtM2tncXNiYlktcGdmSmJuZUI0SWhrdU1aWFdmSGtBVXU2UWNJdHRKcjlDWVpSWXh5NmFsVzRoSndsVlhkSUt0TmZv",
+          "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE9jYWhvVXlrYWROV3VTaDh5cDROb3NaU0RXOUo4anRoYk41YUJqX3QzbVNtM2tncXNiYlktcGdmSmJuZUI0SWhrdU1aWFdmSGtBVXU2UWNJdHRKcjlDWVpSWXh5NmFsVzRoSndsVlhkSUt0TmZv",
+          "published_at": "2026-10-22T18:02:07+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "recent_reference",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 5,
-          "published_local_date": "2026-10-21",
+          "publication_age_trading_sessions": 4,
+          "published_local_date": "2026-10-22",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
+          "entities": [],
           "sectors": [],
           "topics": [
-            "earnings"
+            "semiconductor"
           ],
           "event_classification": {
             "schema_version": "1.0",
@@ -6332,17 +6220,17 @@
             "category": "semiconductor",
             "reason": "semiconductor_subject_action",
             "matched_terms": [
-              "nvidia",
-              "earnings"
+              "semiconductor",
+              "export control"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "nvidia",
-              "earnings"
+              "semiconductor",
+              "export control"
             ],
-            "matched_subject": "nvidia",
-            "matched_action": "earnings",
-            "matched_market_object": "nvidia",
+            "matched_subject": "semiconductor",
+            "matched_action": "export control",
+            "matched_market_object": "semiconductor",
             "input_fields": [
               "description",
               "summary",
@@ -6350,23 +6238,22 @@
             ]
           },
           "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:NVDA"
+            "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "micronandnvidiaarethe2biggestdriversofsp500earningsgrowtharetheirstocksbuysthemotleyfool",
-          "event_cluster_key": "event-e9e5dcfcfe5c4cf92966",
-          "published_time_bucket": "2026-10-21T08:00:00+00:00",
+          "dedupe_key": "tokyoelectronincreaseslobbyingonsemiconductorexportcontrolslegis1",
+          "event_cluster_key": "event-ebad8043486e01b1ebb8",
+          "published_time_bucket": "2026-10-22T18:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "nvidia",
-            "earnings"
+            "semiconductor",
+            "export control"
           ],
-          "matched_subject": "nvidia",
-          "matched_action": "earnings",
-          "matched_market_object": "nvidia",
+          "matched_subject": "semiconductor",
+          "matched_action": "export control",
+          "matched_market_object": "semiconductor",
           "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
@@ -6382,7 +6269,98 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 120
+          "ranking_score": 115
+        },
+        {
+          "story_id": "news-74f45d1402f845aad519",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Federal Reserve raises interest rates for the 1st time since 2023 - ABC News - Breaking News, Latest News and Videos",
+          "raw_title": "Federal Reserve raises interest rates for the 1st time since 2023 - ABC News - Breaking News, Latest News and Videos",
+          "normalized_fact": "Federal Reserve raises interest rates for the 1st time since 2023 ABC News - Breaking News, Latest News and Videos。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Federal Reserve raises interest rates for the 1st time since 2023 ABC News - Breaking News, Latest News and Videos",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxOYktxZlJxRVNrdUZFRWViQjVMLUh3OGJwNGhrVFpJY2E5QTAyajNfcnFSb09rZUVkSnVMUHd4WkpsYktvZGczX05nRzVhSTdKNWtfU2hWb09IYnNQQ01tTlMwMV95YzJkbWVDMklwZ19XMC1RNmVsckpGS3FpNUpiRlUxZkVtNXk5NE5YRnpBSTI4eEhVOWxaUlBzZDlxb3p1ZVBFeHFR0gGrAUFVX3lxTFBrZzU3UXhjRlBBblFYNzJZZ3dINVFwMnpIOFQwRlJ1NmRTa3JNUGlkamJyS08wRjM5UlFuMkRJcHAtUEQxYjF3b2Yyc2E2V1hOOEhQRHRPckpidllEOHpLRG9VUTFxSUwyaE95SzNNZ0pkemQwQkNBYkZPbTBpN0ZMYTBWU25nT3FrUVNNal9Eb0lCNnJwZTVFUVVhM0dDRlMzQ1pQTF8xRTV6bw",
+          "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxOYktxZlJxRVNrdUZFRWViQjVMLUh3OGJwNGhrVFpJY2E5QTAyajNfcnFSb09rZUVkSnVMUHd4WkpsYktvZGczX05nRzVhSTdKNWtfU2hWb09IYnNQQ01tTlMwMV95YzJkbWVDMklwZ19XMC1RNmVsckpGS3FpNUpiRlUxZkVtNXk5NE5YRnpBSTI4eEhVOWxaUlBzZDlxb3p1ZVBFeHFR0gGrAUFVX3lxTFBrZzU3UXhjRlBBblFYNzJZZ3dINVFwMnpIOFQwRlJ1NmRTa3JNUGlkamJyS08wRjM5UlFuMkRJcHAtUEQxYjF3b2Yyc2E2V1hOOEhQRHRPckpidllEOHpLRG9VUTFxSUwyaE95SzNNZ0pkemQwQkNBYkZPbTBpN0ZMYTBWU25nT3FrUVNNal9Eb0lCNnJwZTVFUVVhM0dDRlMzQ1pQTF8xRTV6bw",
+          "published_at": "2026-10-26T00:40:01+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 3,
+          "published_local_date": "2026-10-25",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "federal reserve",
+              "rates"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "federal reserve",
+              "rates"
+            ],
+            "matched_subject": "federal reserve",
+            "matched_action": "rates",
+            "matched_market_object": "federal reserve",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "federalreserveraisesinterestratesforthe1sttimesince2023abcnewsbreakingnewslatestnewsandvideos",
+          "event_cluster_key": "event-63963974bd4a393e91b8",
+          "published_time_bucket": "2026-10-26T00:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "federal reserve",
+            "rates"
+          ],
+          "matched_subject": "federal reserve",
+          "matched_action": "rates",
+          "matched_market_object": "federal reserve",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
         },
         {
           "story_id": "news-7a02e48c21ba295d6e7e",
@@ -6825,6 +6803,99 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 35
+        },
+        {
+          "story_id": "news-8c6572d695412a6ddc71",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Semiconductor Equipment Selloff Challenges Applied Materials (AMAT)",
+          "raw_title": "Semiconductor Equipment Selloff Challenges Applied Materials (AMAT)",
+          "normalized_fact": "Renaissance Investment Management, an investment management company, released its Q3 2026 investor letter for “Large Cap Growth Strategy.” The letter can be downloaded here. Stocks showed modest gains in Q3, with the S&P 500 up 2.3%. Energy, Technology, and Health Care sectors excelled, while Utilities, Industrials, Real Estate, and Consumer Discretionary lagged. Market breadth was […]。",
+          "market_topic": "global_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Renaissance Investment Management, an investment management company, released its Q3 2026 investor letter for “Large Cap Growth Strategy.” The letter can be downloaded here. Stocks showed modest gains in Q3, with the S&P 500 up 2.3%. Energy, Technology, and Health Care sectors excelled, while Utilities, Industrials, Real Estate, and Consumer Discretionary lagged. Market breadth was […]",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/semiconductor-equipment-selloff-challenges-applied-120417903.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/semiconductor-equipment-selloff-challenges-applied-120417903.html?.tsrc=rss",
+          "published_at": "2026-10-27T11:52:45+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-27",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "semiconductor"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "market",
+            "reason": "market_subject_action",
+            "matched_terms": [
+              "s&p 500",
+              "selloff"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "s&p 500",
+              "selloff"
+            ],
+            "matched_subject": "s&p 500",
+            "matched_action": "selloff",
+            "matched_market_object": "s&p 500",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "renaissanceinvestmentmanagementaninvestmentmanagementcompanyreleaseditsq32026investorletterforlargecapgrowthstrategythelettercanbedownloadedherestocksshowedmodestgainsinq3withthesp500up23energytechnologyandhealthcaresectorsexcelledwhileutilitiesindustrialsrealestateandconsumerdiscretionarylaggedmarketbreadthwas",
+          "event_cluster_key": "event-8b846f4afe31c1400abd",
+          "published_time_bucket": "2026-10-27T11:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "s&p 500",
+            "selloff"
+          ],
+          "matched_subject": "s&p 500",
+          "matched_action": "selloff",
+          "matched_market_object": "s&p 500",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-27T12:08:33.086320+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 30
         },
         {
           "story_id": "news-adc8250fc3e6744f27c2",
@@ -9398,99 +9469,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 12
-        },
-        {
-          "story_id": "news-54cdf1fd4058bf1aa93c",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Where Fed and ECB Rates Could Go Next, According to Bank of America’s Preusser - Morningstar",
-          "raw_title": "Where Fed and ECB Rates Could Go Next, According to Bank of America’s Preusser - Morningstar",
-          "normalized_fact": "Where Fed and ECB Rates Could Go Next, According to Bank of America’s Preusser Morningstar。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Where Fed and ECB Rates Could Go Next, According to Bank of America’s Preusser Morningstar",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxNWDhMcEtDZmhoQnJMSVBVUzFaWVBqeUczRlRZekhZc1RpYWU0ajVLWlNscVRjQ2UzSS1ZVFRsd3BsazVuR2FtVG5PQVQwRW8zY1FhVzlJeE9SVWEtS1VnZzZROWR0dXdNTVQ1X2pMTDZkdjBleGE0akJRSVpKTXRaWTdfTUJhaktpOFRlaHY5UHdtLUZMOE5HMXR2YkpGODBDU1RoaHFlcGFzeEpJMnc",
-          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxNWDhMcEtDZmhoQnJMSVBVUzFaWVBqeUczRlRZekhZc1RpYWU0ajVLWlNscVRjQ2UzSS1ZVFRsd3BsazVuR2FtVG5PQVQwRW8zY1FhVzlJeE9SVWEtS1VnZzZROWR0dXdNTVQ1X2pMTDZkdjBleGE0akJRSVpKTXRaWTdfTUJhaktpOFRlaHY5UHdtLUZMOE5HMXR2YkpGODBDU1RoaHFlcGFzeEpJMnc",
-          "published_at": "2026-10-23T09:17:11+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-10-23",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "rates"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "rates"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "rates",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "wherefedandecbratescouldgonextaccordingtobankofamericaspreussermorningstar",
-          "event_cluster_key": "event-065be349c7a21880258a",
-          "published_time_bucket": "2026-10-23T09:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "rates"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "rates",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 3,
-          "inventory_saved_at": "2026-10-25T02:28:36.866812+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 9
         }
       ],
       "source_diversity": {
@@ -9508,31 +9486,31 @@
           "finance.yahoo.com",
           "news.google.com"
         ],
-        "supporting_source_count": 3,
+        "supporting_source_count": 1,
         "inventory_only": false,
         "current_story_count": 5,
         "inventory_story_count": 0
       },
       "interest_graph": {
         "ticker_interest": {
-          "NVDA": 9,
-          "2330": 2,
-          "TSM": 4
+          "NVDA": 11,
+          "TSM": 8,
+          "2330": 2
         },
         "sector_interest": {},
         "topic_interest": {
           "sanctions": 3,
-          "oil": 11,
+          "oil": 12,
           "shipping": 2,
-          "iran": 5,
-          "war": 2,
-          "hormuz": 1,
+          "iran": 6,
           "israel": 1,
+          "hormuz": 1,
+          "war": 2,
           "伊朗": 1,
           "gold": 1
         },
         "market_interest": {
-          "us": 130
+          "us": 132
         },
         "context": {
           "tracked_tickers": [
@@ -9590,34 +9568,34 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "NVDA": 9,
-            "2330": 2,
-            "TSM": 4
+            "NVDA": 11,
+            "TSM": 8,
+            "2330": 2
           },
           "research_candidate": {},
           "tracked_sector": {},
           "active_event": {
             "sanctions": 3,
-            "oil": 11,
+            "oil": 12,
             "shipping": 2,
-            "iran": 5,
-            "war": 2,
-            "hormuz": 1,
+            "iran": 6,
             "israel": 1,
+            "hormuz": 1,
+            "war": 2,
             "伊朗": 1,
             "gold": 1
           },
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 46,
+      "excluded_count": 48,
       "exclusion_reasons": {
         "generic_official_filing": 20,
         "incomplete_normalized_fact": 10,
-        "insufficient_market_relevance": 12,
-        "market_scope_mismatch": 2,
+        "insufficient_market_relevance": 16,
+        "market_scope_mismatch": 4,
         "outside_calendar_window": 22,
-        "outside_trading_session_window": 2
+        "outside_trading_session_window": 1
       },
       "status": "ready",
       "collection_state": "degraded",
@@ -9629,32 +9607,32 @@
         "disabled_provider_count": 1,
         "fetched": 57,
         "normalized": 57,
-        "eligible": 11,
-        "excluded": 46,
-        "date_eligible_current": 33,
-        "date_excluded_current": 24,
+        "eligible": 9,
+        "excluded": 48,
+        "date_eligible_current": 34,
+        "date_excluded_current": 23,
         "date_exclusion_reasons_current": {
           "outside_calendar_window": 22,
-          "outside_trading_session_window": 2
+          "outside_trading_session_window": 1
         },
-        "date_eligible_inventory": 73,
+        "date_eligible_inventory": 75,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-27T12:53:51.668780+00:00",
+        "reference_time": "2026-10-27T12:58:41.240812+00:00",
         "deduped": 8,
         "publicly_ranked": 5,
-        "current_eligible": 11,
-        "inventory_considered": 73,
-        "inventory_eligible": 51,
+        "current_eligible": 9,
+        "inventory_considered": 75,
+        "inventory_eligible": 50,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 46,
+        "filtered_story_count": 48,
         "fetched_story_count": 57,
         "normalized_story_count": 57,
-        "eligible_story_count": 11,
+        "eligible_story_count": 9,
         "deduped_story_count": 8,
         "ranked_story_count": 5
       },
@@ -9662,8 +9640,8 @@
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 73,
-        "eligible": 51,
+        "considered": 75,
+        "eligible": 50,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -9676,7 +9654,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 57,
-          "checked_at": "2026-10-27T12:53:51.668832+00:00"
+          "checked_at": "2026-10-27T12:58:41.240851+00:00"
         },
         {
           "provider": "sec",
@@ -9687,10 +9665,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-10-27T12:53:51.668832+00:00",
+          "checked_at": "2026-10-27T12:58:41.240851+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+          "last_success_at": "2026-10-27T12:58:41.240851+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9718,12 +9696,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-10-27T12:53:51.668832+00:00",
+          "checked_at": "2026-10-27T12:58:41.240851+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-10-27T12:53:51.668832+00:00",
+          "last_failure_at": "2026-10-27T12:58:41.240851+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9746,10 +9724,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-10-27T12:53:51.668832+00:00",
+          "checked_at": "2026-10-27T12:58:41.240851+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+          "last_success_at": "2026-10-27T12:58:41.240851+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9774,11 +9752,11 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 0,
-          "checked_at": "2026-10-27T12:53:51.668832+00:00",
+          "checked_at": "2026-10-27T12:58:41.240851+00:00",
           "data_gap": "filtered_no_market_match",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+          "last_success_at": "2026-10-27T12:58:41.240851+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9802,26 +9780,27 @@
           "status": "healthy",
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
-          "item_count": 2,
-          "checked_at": "2026-10-27T12:53:51.668832+00:00",
+          "item_count": 1,
+          "checked_at": "2026-10-27T12:58:41.240851+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 2,
-          "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-10-27T12:58:41.240851+00:00",
           "last_failure_at": null,
-          "stories_ingested": 6,
-          "stories_deduped": 2,
-          "ranked_count": 2,
+          "stories_ingested": 5,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
-            "market": 6
+            "market": 5,
+            "tracked_ticker": 1
           },
           "funnel": {
             "fetched_count": 7,
-            "normalized_count": 6,
-            "market_compatible_count": 6,
-            "eligible_count": 3,
-            "excluded_count": 3,
-            "deduped_count": 2,
-            "ranked_count": 2
+            "normalized_count": 5,
+            "market_compatible_count": 5,
+            "eligible_count": 1,
+            "excluded_count": 4,
+            "deduped_count": 1,
+            "ranked_count": 1
           }
         },
         {
@@ -9832,17 +9811,17 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
-          "item_count": 3,
-          "checked_at": "2026-10-27T12:53:51.668832+00:00",
+          "item_count": 4,
+          "checked_at": "2026-10-27T12:58:41.240851+00:00",
           "raw_item_count": 40,
-          "filtered_item_count": 3,
-          "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+          "filtered_item_count": 4,
+          "last_success_at": "2026-10-27T12:58:41.240851+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
-          "stories_deduped": 6,
-          "ranked_count": 3,
+          "stories_deduped": 7,
+          "ranked_count": 4,
           "relevance_distribution": {
-            "active_event": 10,
+            "active_event": 11,
             "market": 40,
             "tracked_ticker": 1
           },
@@ -9852,8 +9831,8 @@
             "market_compatible_count": 40,
             "eligible_count": 8,
             "excluded_count": 32,
-            "deduped_count": 6,
-            "ranked_count": 3
+            "deduped_count": 7,
+            "ranked_count": 4
           }
         }
       ],
@@ -9862,15 +9841,15 @@
         "stories_deduped": 8,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 10,
+          "active_event": 11,
           "market": 57,
-          "tracked_ticker": 2
+          "tracked_ticker": 4
         },
         "providers": [
           {
             "provider": "anue",
             "status": "no_event",
-            "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+            "last_success_at": "2026-10-27T12:58:41.240851+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9890,7 +9869,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-10-27T12:53:51.668832+00:00",
+            "last_failure_at": "2026-10-27T12:58:41.240851+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9908,13 +9887,13 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+            "last_success_at": "2026-10-27T12:58:41.240851+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
-            "stories_deduped": 6,
-            "ranked_count": 3,
+            "stories_deduped": 7,
+            "ranked_count": 4,
             "relevance_distribution": {
-              "active_event": 10,
+              "active_event": 11,
               "market": 40,
               "tracked_ticker": 1
             },
@@ -9924,14 +9903,14 @@
               "market_compatible_count": 40,
               "eligible_count": 8,
               "excluded_count": 32,
-              "deduped_count": 6,
-              "ranked_count": 3
+              "deduped_count": 7,
+              "ranked_count": 4
             }
           },
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+            "last_success_at": "2026-10-27T12:58:41.240851+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9950,7 +9929,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+            "last_success_at": "2026-10-27T12:58:41.240851+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -9973,19 +9952,19 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 1,
+            "stories_ingested": 2,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 1,
-              "tracked_ticker": 1
+              "market": 2,
+              "tracked_ticker": 2
             },
             "funnel": {
-              "fetched_count": 1,
-              "normalized_count": 1,
+              "fetched_count": 2,
+              "normalized_count": 2,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 1,
+              "excluded_count": 2,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -9993,22 +9972,23 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-27T12:53:51.668832+00:00",
+            "last_success_at": "2026-10-27T12:58:41.240851+00:00",
             "last_failure_at": null,
-            "stories_ingested": 6,
-            "stories_deduped": 2,
-            "ranked_count": 2,
+            "stories_ingested": 5,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
-              "market": 6
+              "market": 5,
+              "tracked_ticker": 1
             },
             "funnel": {
               "fetched_count": 7,
-              "normalized_count": 6,
-              "market_compatible_count": 6,
-              "eligible_count": 3,
-              "excluded_count": 3,
-              "deduped_count": 2,
-              "ranked_count": 2
+              "normalized_count": 5,
+              "market_compatible_count": 5,
+              "eligible_count": 1,
+              "excluded_count": 4,
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           }
         ]
