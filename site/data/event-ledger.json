@@ -54107,7 +54107,7 @@
       "location_fingerprint": "",
       "action_fingerprint": "",
       "first_discovered_at": "2026-10-28T19:24:33.992963+00:00",
-      "last_reminded_at": null,
+      "last_reminded_at": "2026-10-28T19:26:10.252404+00:00",
       "escalated": false,
       "risk_level": "持續觀察",
       "risk_rank": 0,
@@ -54118,7 +54118,7 @@
       "compound_item_id": null,
       "compound_event_cluster_key": null,
       "last_decision": {
-        "recorded_at": "2026-10-28T19:24:34.163447+00:00",
+        "recorded_at": "2026-10-28T19:26:07.090213+00:00",
         "allowed": true,
         "status": "eligible",
         "reason": "new_theme",
@@ -54145,9 +54145,59 @@
           "material_state_changed": true,
           "last_notified_at": null,
           "taiwan_priority": 4
+        },
+        {
+          "recorded_at": "2026-10-28T19:26:07.090213+00:00",
+          "allowed": true,
+          "status": "eligible",
+          "reason": "new_theme",
+          "reasons": [],
+          "notification_theme_key": "semiconductor-13cf51c97c",
+          "event_key": "1e3075065e471e3ea7f1813ed1a08c41",
+          "risk": "R2",
+          "theme_window": 7200,
+          "material_state_changed": true,
+          "last_notified_at": null,
+          "taiwan_priority": 4
         }
       ],
-      "updated_at": "2026-10-28T19:24:34.163447+00:00"
+      "updated_at": "2026-10-28T19:26:10.252404+00:00",
+      "delivery_history": [
+        {
+          "event_key": "1e3075065e471e3ea7f1813ed1a08c41",
+          "notification_id": "1e3075065e471e3ea7f1813ed1a08c41",
+          "sent_at": "2026-10-28T19:26:10.252404+00:00",
+          "importance": "normal",
+          "alert_type": "semiconductor",
+          "lifecycle_state": "confirmed",
+          "reason": "official_event_monitor",
+          "notification_theme_key": "semiconductor-13cf51c97c",
+          "risk": "R2",
+          "taiwan_priority": 4,
+          "material_state_changed": true,
+          "release_id": "release-f3d69969afffb01b",
+          "snapshot_id": "dab214a0eef77d24",
+          "delivery_status": "delivered",
+          "event_cluster_key": "evt-3543920207c8d43c94762ee4",
+          "prstk_risk": {
+            "prstk_risk_level": "R2",
+            "source": "event_alerts"
+          },
+          "notification_key": "1e3075065e471e3ea7f1813ed1a08c41",
+          "release_ready_at": "2026-10-28T19:26:07.480662+00:00",
+          "telegram_attempted_at": "2026-10-28T19:26:07.623089+00:00",
+          "delivery_result": "delivered",
+          "delay_reason": "none",
+          "source_url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE1nSHQ3VnBHYUdrc3V1YjlZREIzcGQ0RUQ4a19SLUF5cmExWGpNQWtqTEtsOGVuSEg5dnhNellFcDRGbkl3MVFKTTdqRGtWOUlZangtM0gzWlRTV0Yzb1NZ",
+          "source_domain": "news.google.com",
+          "alert_lane": "event",
+          "market_scope": "taiwan",
+          "event_policy_reason": "event_materiality_available",
+          "trace_id": "official-72a19ccb13856fd5"
+        }
+      ],
+      "last_theme_notification_at": "2026-10-28T19:26:10.252404+00:00",
+      "last_notified_at": "2026-10-28T19:26:10.252404+00:00"
     }
   },
   "delivery_claims": {
@@ -61689,6 +61739,35 @@
       "updated_at": "2026-10-28T17:03:47.892974+00:00",
       "failed_recipient_hashes": [],
       "delivered_at": "2026-10-28T17:03:47.892974+00:00"
+    },
+    "1e3075065e471e3ea7f1813ed1a08c41": {
+      "notification_key": "1e3075065e471e3ea7f1813ed1a08c41",
+      "slot_key": "",
+      "status": "delivered",
+      "recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d",
+        "59cf5c3e48bf"
+      ],
+      "delivered_recipient_hashes": [
+        "59cf5c3e48bf",
+        "5b1d66aae79d",
+        "7a30574fc065",
+        "d36bbcc2cd2d"
+      ],
+      "attempted_recipient_hashes": [
+        "7a30574fc065",
+        "d36bbcc2cd2d",
+        "5b1d66aae79d",
+        "59cf5c3e48bf"
+      ],
+      "claimed_at": "2026-10-28T19:26:07.486625+00:00",
+      "lease_until": null,
+      "run_id_hash": "d9e6d65d7a68",
+      "updated_at": "2026-10-28T19:26:10.104419+00:00",
+      "failed_recipient_hashes": [],
+      "delivered_at": "2026-10-28T19:26:10.104419+00:00"
     }
   }
 }
