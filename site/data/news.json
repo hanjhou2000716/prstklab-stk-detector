@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "9f82ebb6eef3a433",
-  "snapshot_id": "news-2a4cd54f7c654fc5",
+  "market_snapshot_id": "3a1b5c813b83f3a9",
+  "snapshot_id": "news-b169d21c5c12592e",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -4637,10 +4637,9 @@
       "interest_graph": {
         "ticker_interest": {
           "52": 3,
-          "2330": 19,
-          "TSM": 19,
-          "NVDA": 6,
-          "56": 1
+          "NVDA": 8,
+          "2330": 20,
+          "TSM": 20
         },
         "sector_interest": {},
         "topic_interest": {
@@ -4652,7 +4651,7 @@
           "地震": 1
         },
         "market_interest": {
-          "taiwan": 107
+          "taiwan": 106
         },
         "context": {
           "tracked_tickers": [
@@ -4729,13 +4728,12 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 19,
-            "TSM": 19,
-            "NVDA": 6
+            "NVDA": 8,
+            "2330": 20,
+            "TSM": 20
           },
           "research_candidate": {
-            "52": 3,
-            "56": 1
+            "52": 3
           },
           "tracked_sector": {},
           "active_event": {
@@ -4751,10 +4749,10 @@
       },
       "excluded_count": 33,
       "exclusion_reasons": {
-        "insufficient_market_relevance": 26,
-        "market_scope_mismatch": 2,
-        "outside_calendar_window": 18,
-        "outside_trading_session_window": 1
+        "incomplete_normalized_fact": 2,
+        "insufficient_market_relevance": 22,
+        "market_scope_mismatch": 4,
+        "outside_calendar_window": 19
       },
       "status": "ready",
       "collection_state": "ready",
@@ -4771,18 +4769,17 @@
         "date_eligible_current": 22,
         "date_excluded_current": 19,
         "date_exclusion_reasons_current": {
-          "outside_calendar_window": 18,
-          "outside_trading_session_window": 1
+          "outside_calendar_window": 19
         },
-        "date_eligible_inventory": 66,
+        "date_eligible_inventory": 65,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-28T10:08:24.455088+00:00",
+        "reference_time": "2026-10-28T10:13:17.536786+00:00",
         "deduped": 8,
         "publicly_ranked": 5,
         "current_eligible": 8,
-        "inventory_considered": 66,
-        "inventory_eligible": 52,
+        "inventory_considered": 65,
+        "inventory_eligible": 51,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
@@ -4799,8 +4796,8 @@
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 66,
-        "eligible": 52,
+        "considered": 65,
+        "eligible": 51,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -4813,7 +4810,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 41,
-          "checked_at": "2026-10-28T10:08:24.455126+00:00"
+          "checked_at": "2026-10-28T10:13:17.536825+00:00"
         },
         {
           "provider": "twse",
@@ -4824,10 +4821,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-10-28T10:08:24.455126+00:00",
+          "checked_at": "2026-10-28T10:13:17.536825+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+          "last_success_at": "2026-10-28T10:13:17.536825+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4852,10 +4849,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-10-28T10:08:24.455126+00:00",
+          "checked_at": "2026-10-28T10:13:17.536825+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+          "last_success_at": "2026-10-28T10:13:17.536825+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4880,10 +4877,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 0,
-          "checked_at": "2026-10-28T10:08:24.455126+00:00",
+          "checked_at": "2026-10-28T10:13:17.536825+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+          "last_success_at": "2026-10-28T10:13:17.536825+00:00",
           "last_failure_at": null,
           "stories_ingested": 1,
           "stories_deduped": 0,
@@ -4912,24 +4909,24 @@
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
           "item_count": 1,
-          "checked_at": "2026-10-28T10:08:24.455126+00:00",
+          "checked_at": "2026-10-28T10:13:17.536825+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 1,
-          "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+          "last_success_at": "2026-10-28T10:13:17.536825+00:00",
           "last_failure_at": null,
-          "stories_ingested": 9,
+          "stories_ingested": 8,
           "stories_deduped": 1,
           "ranked_count": 1,
           "relevance_distribution": {
-            "market": 9,
-            "tracked_ticker": 2
+            "market": 8,
+            "tracked_ticker": 3
           },
           "funnel": {
             "fetched_count": 10,
-            "normalized_count": 9,
-            "market_compatible_count": 9,
+            "normalized_count": 8,
+            "market_compatible_count": 8,
             "eligible_count": 1,
-            "excluded_count": 8,
+            "excluded_count": 7,
             "deduped_count": 1,
             "ranked_count": 1
           }
@@ -4943,18 +4940,17 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
           "item_count": 4,
-          "checked_at": "2026-10-28T10:08:24.455126+00:00",
+          "checked_at": "2026-10-28T10:13:17.536825+00:00",
           "raw_item_count": 30,
           "filtered_item_count": 4,
-          "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+          "last_success_at": "2026-10-28T10:13:17.536825+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
           "stories_deduped": 7,
           "ranked_count": 4,
           "relevance_distribution": {
             "market": 30,
-            "research_candidate": 1,
-            "tracked_ticker": 7
+            "tracked_ticker": 8
           },
           "funnel": {
             "fetched_count": 30,
@@ -4973,14 +4969,14 @@
         "ranked_count": 5,
         "relevance_distribution": {
           "market": 41,
-          "research_candidate": 2,
-          "tracked_ticker": 9
+          "research_candidate": 1,
+          "tracked_ticker": 11
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+            "last_success_at": "2026-10-28T10:13:17.536825+00:00",
             "last_failure_at": null,
             "stories_ingested": 1,
             "stories_deduped": 0,
@@ -5002,15 +4998,14 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+            "last_success_at": "2026-10-28T10:13:17.536825+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
             "stories_deduped": 7,
             "ranked_count": 4,
             "relevance_distribution": {
               "market": 30,
-              "research_candidate": 1,
-              "tracked_ticker": 7
+              "tracked_ticker": 8
             },
             "funnel": {
               "fetched_count": 30,
@@ -5025,7 +5020,7 @@
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+            "last_success_at": "2026-10-28T10:13:17.536825+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5044,7 +5039,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+            "last_success_at": "2026-10-28T10:13:17.536825+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5065,18 +5060,18 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 1,
+            "stories_ingested": 2,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 1
+              "market": 2
             },
             "funnel": {
-              "fetched_count": 1,
-              "normalized_count": 1,
+              "fetched_count": 2,
+              "normalized_count": 2,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 1,
+              "excluded_count": 2,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -5084,21 +5079,21 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+            "last_success_at": "2026-10-28T10:13:17.536825+00:00",
             "last_failure_at": null,
-            "stories_ingested": 9,
+            "stories_ingested": 8,
             "stories_deduped": 1,
             "ranked_count": 1,
             "relevance_distribution": {
-              "market": 9,
-              "tracked_ticker": 2
+              "market": 8,
+              "tracked_ticker": 3
             },
             "funnel": {
               "fetched_count": 10,
-              "normalized_count": 9,
-              "market_compatible_count": 9,
+              "normalized_count": 8,
+              "market_compatible_count": 8,
               "eligible_count": 1,
-              "excluded_count": 8,
+              "excluded_count": 7,
               "deduped_count": 1,
               "ranked_count": 1
             }
@@ -6544,6 +6539,99 @@
           "ranking_score": 115
         },
         {
+          "story_id": "news-b6e8c1e830858c266ae6",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "What the Fed's interest rate decision means for your bank accounts, loans, credit cards, and investments - Yahoo Finance",
+          "raw_title": "What the Fed's interest rate decision means for your bank accounts, loans, credit cards, and investments - Yahoo Finance",
+          "normalized_fact": "What the Fed's interest rate decision means for your bank accounts, loans, credit cards, and investments Yahoo Finance。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "What the Fed's interest rate decision means for your bank accounts, loans, credit cards, and investments Yahoo Finance",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMihAJBVV95cUxOaDlWS0VRSklaemMzd3V4dllmTlZRbTQtOVV6WlA2SjlkcTI2LTl4RU1PTk93OHpIelZWUWczX1RfS0xCRHVnN0FlWUZBOFUtc2dWdjE1OXFaekxLWjR0b243b1VWRENCeko4OVFnSXBEVFhCeUhGVFQxMFZVby1CY3dNMG1ZR3JEd0dRWGgyblV2UjIxQkwxZXNjakpHV0dBWUtoeXJlUUpJR2pkaVFlRGEtMEZqd1M2UXlwT1RfRWlxbzhYQU1WdUxXWkh0MHZNa1J6QVl2SFliSVIzVmgwSjBoZ1V1RlZjUGloa2xIWmVBeURVSHNLcFNtM21LMXY2RHNTOQ",
+          "url": "https://news.google.com/rss/articles/CBMihAJBVV95cUxOaDlWS0VRSklaemMzd3V4dllmTlZRbTQtOVV6WlA2SjlkcTI2LTl4RU1PTk93OHpIelZWUWczX1RfS0xCRHVnN0FlWUZBOFUtc2dWdjE1OXFaekxLWjR0b243b1VWRENCeko4OVFnSXBEVFhCeUhGVFQxMFZVby1CY3dNMG1ZR3JEd0dRWGgyblV2UjIxQkwxZXNjakpHV0dBWUtoeXJlUUpJR2pkaVFlRGEtMEZqd1M2UXlwT1RfRWlxbzhYQU1WdUxXWkh0MHZNa1J6QVl2SFliSVIzVmgwSjBoZ1V1RlZjUGloa2xIWmVBeURVSHNLcFNtM21LMXY2RHNTOQ",
+          "published_at": "2026-10-27T13:55:27+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-27",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "rate"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "rate"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "rate",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "whatthefedsinterestratedecisionmeansforyourbankaccountsloanscreditcardsandinvestmentsyahoofinance",
+          "event_cluster_key": "event-ddf3f9bc8d6bfeb4df8c",
+          "published_time_bucket": "2026-10-27T13:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "rate"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "rate",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
           "story_id": "news-ba71d75fb2dc66f618ee",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -7741,105 +7829,6 @@
           "ranking_score": 37
         },
         {
-          "story_id": "news-55481b11bdd09c71870e",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Global Flip Chip Technology Market Report 2026: Size, Share, Trends, and Forecast to 2030 | Capitalize on AI, 5G, and 3D Packaging with TSMC, Intel, Samsung, AMD, and Amkor",
-          "raw_title": "Global Flip Chip Technology Market Report 2026: Size, Share, Trends, and Forecast to 2030 | Capitalize on AI, 5G, and 3D Packaging with TSMC, Intel, Samsung, AMD, and Amkor",
-          "normalized_fact": "Boost ROI with water-soluble fluxes that raise yields, reliability and efficiency; acquire surface-treatment capabilities to expand advanced-packaging portfolios.Dublin, Oct. 26, 2026 (GLOBE NEWSWIRE) -- \"Flip Chip Technology Market Global Report 2026\" has been added to ResearchAndMarkets.com's offering. Flip Chip Technology Market Forecast to Reach $46.33 Billion by 2030 as 5G, AI and Advanced Packaging Demand Accelerates The global flip chip technology market is experiencing strong growth as s。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Boost ROI with water-soluble fluxes that raise yields, reliability and efficiency; acquire surface-treatment capabilities to expand advanced-packaging portfolios.Dublin, Oct. 26, 2026 (GLOBE NEWSWIRE) -- \"Flip Chip Technology Market Global Report 2026\" has been added to ResearchAndMarkets.com's offering. Flip Chip Technology Market Forecast to Reach $46.33 Billion by 2030 as 5G, AI and Advanced Packaging Demand Accelerates The global flip chip technology market is experiencing strong growth as s",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/technology/articles/global-flip-chip-technology-market-142300958.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/technology/articles/global-flip-chip-technology-market-142300958.html?.tsrc=rss",
-          "published_at": "2026-10-26T14:23:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-10-26",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "AMD",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "tsmc",
-              "forecast"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "tsmc",
-              "forecast"
-            ],
-            "matched_subject": "tsmc",
-            "matched_action": "forecast",
-            "matched_market_object": "tsmc",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:TSM",
-            "research_candidate:HAS"
-          ],
-          "freshness": "published",
-          "dedupe_key": "boostroiwithwatersolublefluxesthatraiseyieldsreliabilityandefficiencyacquiresurfacetreatmentcapabilitiestoexpandadvancedpackagingportfoliosdublinoct262026globenewswireflipchiptechnologymarketglobalreport2026hasbeenaddedtoresearchandmarketscomsofferingflipchiptechnologymarketforecasttoreach4633billionby2030as5gaiandadvancedpackagingdemandacceleratestheglobalflipchiptechnologymarketisexperiencingstronggrowthass",
-          "event_cluster_key": "event-6f23d375a5f570f45bcb",
-          "published_time_bucket": "2026-10-26T14:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "tsmc",
-            "forecast"
-          ],
-          "matched_subject": "tsmc",
-          "matched_action": "forecast",
-          "matched_market_object": "tsmc",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 3,
-          "inventory_saved_at": "2026-10-26T14:59:19.836913+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 34
-        },
-        {
           "story_id": "news-80db4ca5e65af129424b",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -8574,89 +8563,6 @@
           "inventory_used": true,
           "inventory_age_trading_sessions": 3,
           "inventory_saved_at": "2026-10-27T06:08:43.713386+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 29
-        },
-        {
-          "story_id": "news-dd889185981c651e44d0",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Coop Pank AS own shares acquisition transactions",
-          "raw_title": "Coop Pank AS own shares acquisition transactions",
-          "normalized_fact": "Coop Pank AS (the Bank) announces that during the period 19.10.2026 – 25.10.2026, it has acquired the company’s own shares on the Nasdaq Tallinn Stock Exchange as follows: DateAggregated volume (pcs)Weighted average price per day (EUR)19.10.20269,2642.3450000022.10.20269,2642.3850000023.10.20263,0882.37500000 Bank is acquiring its own shares based on the resolution of the company’s general meeting of shareholders held on 8 April 2026, and under the conditions decided by the Supervisory Board and。",
-          "market_topic": "global_market",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Coop Pank AS (the Bank) announces that during the period 19.10.2026 – 25.10.2026, it has acquired the company’s own shares on the Nasdaq Tallinn Stock Exchange as follows: DateAggregated volume (pcs)Weighted average price per day (EUR)19.10.20269,2642.3450000022.10.20269,2642.3850000023.10.20263,0882.37500000 Bank is acquiring its own shares based on the resolution of the company’s general meeting of shareholders held on 8 April 2026, and under the conditions decided by the Supervisory Board and",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/coop-pank-own-shares-acquisition-140000269.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/coop-pank-own-shares-acquisition-140000269.html?.tsrc=rss",
-          "published_at": "2026-10-26T14:00:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-10-26",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "research_candidate:HAS"
-          ],
-          "freshness": "published",
-          "dedupe_key": "cooppankasthebankannouncesthatduringtheperiod1910202625102026ithasacquiredthecompanysownsharesonthenasdaqtallinnstockexchangeasfollowsdateaggregatedvolumepcsweightedaveragepriceperdayeur191020269264234500000221020269264238500000231020263088237500000bankisacquiringitsownsharesbasedontheresolutionofthecompanysgeneralmeetingofshareholdersheldon8april2026andundertheconditionsdecidedbythesupervisoryboardand",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-10-26T14:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "company_event",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 3,
-          "inventory_saved_at": "2026-10-26T14:43:16.186628+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 29
@@ -9464,6 +9370,97 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 12
+        },
+        {
+          "story_id": "news-6e25abfa90eef5782cbf",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "U.S. Treasury yields tick higher as Federal Reserve's monetary policy meeting gets underway - CNBC",
+          "raw_title": "U.S. Treasury yields tick higher as Federal Reserve's monetary policy meeting gets underway - CNBC",
+          "normalized_fact": "U.S. Treasury yields tick higher as Federal Reserve's monetary policy meeting gets underway CNBC。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "U.S. Treasury yields tick higher as Federal Reserve's monetary policy meeting gets underway CNBC",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxQNmh6WFAzNWdIOWhlWXJxTjdEVk44cmliSXBmSlVuVDVmMkNxVzY0Ykc5TzFBVEVrNXcxSXNnc0VqZlAxemFpTEJHczdCSHBGTWFBclBQVkcyUm5qQzF0am5OOHhYVnRBTnhZYlFGRmRKOTJfX0RFOXd0bHZ0VXhNRmhoUWZfeVREdFQ3MWpOcGtIaHZMeHZB0gGcAUFVX3lxTE92WXJpR0xaYlIzNERkNzFvZHJnek1vLTIzNjhLUWRGb2RBTnhfQWMzQ2ttREhuZHowck9iY2hDM3VrRnUtd25EWVh1cWM2bG9VSWw3N0VSUWVLV3IwbG9tUWhXWnRjenZ1bFRTaDhtX2FJN0E1VzJnWkUwbU9DQk4tZXp5MVhXaExXQnRZc2xFdEc5QUFZVXVWQ0VSVA",
+          "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxQNmh6WFAzNWdIOWhlWXJxTjdEVk44cmliSXBmSlVuVDVmMkNxVzY0Ykc5TzFBVEVrNXcxSXNnc0VqZlAxemFpTEJHczdCSHBGTWFBclBQVkcyUm5qQzF0am5OOHhYVnRBTnhZYlFGRmRKOTJfX0RFOXd0bHZ0VXhNRmhoUWZfeVREdFQ3MWpOcGtIaHZMeHZB0gGcAUFVX3lxTE92WXJpR0xaYlIzNERkNzFvZHJnek1vLTIzNjhLUWRGb2RBTnhfQWMzQ2ttREhuZHowck9iY2hDM3VrRnUtd25EWVh1cWM2bG9VSWw3N0VSUWVLV3IwbG9tUWhXWnRjenZ1bFRTaDhtX2FJN0E1VzJnWkUwbU9DQk4tZXp5MVhXaExXQnRZc2xFdEc5QUFZVXVWQ0VSVA",
+          "published_at": "2026-10-27T09:44:07+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-27",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "federal reserve",
+              "monetary policy"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "federal reserve",
+              "monetary policy"
+            ],
+            "matched_subject": "federal reserve",
+            "matched_action": "monetary policy",
+            "matched_market_object": "federal reserve",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "ustreasuryyieldstickhigherasfederalreservesmonetarypolicymeetinggetsunderwaycnbc",
+          "event_cluster_key": "event-61ae147849ea9ac2a385",
+          "published_time_bucket": "2026-10-27T09:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "federal reserve",
+            "monetary policy"
+          ],
+          "matched_subject": "federal reserve",
+          "matched_action": "monetary policy",
+          "matched_market_object": "federal reserve",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 2,
+          "inventory_saved_at": "2026-10-27T10:38:25.431429+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 12
         }
       ],
       "source_diversity": {
@@ -9491,24 +9488,24 @@
       "interest_graph": {
         "ticker_interest": {
           "HOOD": 2,
-          "HAS": 10,
+          "HAS": 8,
           "NVDA": 11,
           "2330": 2,
-          "TSM": 4
+          "TSM": 3
         },
         "sector_interest": {},
         "topic_interest": {
           "黃金": 2,
-          "oil": 13,
-          "sanctions": 4,
-          "iran": 4,
+          "oil": 14,
+          "sanctions": 3,
+          "iran": 3,
           "war": 2,
           "shipping": 3,
           "gold": 1,
           "伊朗": 1
         },
         "market_interest": {
-          "us": 141
+          "us": 138
         },
         "context": {
           "tracked_tickers": [
@@ -9587,18 +9584,18 @@
           "tracked_ticker": {
             "NVDA": 11,
             "2330": 2,
-            "TSM": 4
+            "TSM": 3
           },
           "research_candidate": {
             "HOOD": 2,
-            "HAS": 10
+            "HAS": 8
           },
           "tracked_sector": {},
           "active_event": {
             "黃金": 2,
-            "oil": 13,
-            "sanctions": 4,
-            "iran": 4,
+            "oil": 14,
+            "sanctions": 3,
+            "iran": 3,
             "war": 2,
             "shipping": 3,
             "gold": 1,
@@ -9607,11 +9604,11 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 47,
+      "excluded_count": 46,
       "exclusion_reasons": {
         "generic_official_filing": 20,
         "incomplete_normalized_fact": 8,
-        "insufficient_market_relevance": 28,
+        "insufficient_market_relevance": 26,
         "market_scope_mismatch": 2,
         "outside_calendar_window": 15,
         "outside_trading_session_window": 3
@@ -9626,41 +9623,41 @@
         "disabled_provider_count": 1,
         "fetched": 58,
         "normalized": 58,
-        "eligible": 11,
-        "excluded": 47,
+        "eligible": 12,
+        "excluded": 46,
         "date_eligible_current": 40,
         "date_excluded_current": 18,
         "date_exclusion_reasons_current": {
           "outside_calendar_window": 15,
           "outside_trading_session_window": 3
         },
-        "date_eligible_inventory": 83,
+        "date_eligible_inventory": 80,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-28T10:08:24.455088+00:00",
-        "deduped": 10,
+        "reference_time": "2026-10-28T10:13:17.536786+00:00",
+        "deduped": 11,
         "publicly_ranked": 5,
-        "current_eligible": 11,
-        "inventory_considered": 83,
-        "inventory_eligible": 54,
+        "current_eligible": 12,
+        "inventory_considered": 80,
+        "inventory_eligible": 52,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 47,
+        "filtered_story_count": 46,
         "fetched_story_count": 58,
         "normalized_story_count": 58,
-        "eligible_story_count": 11,
-        "deduped_story_count": 10,
+        "eligible_story_count": 12,
+        "deduped_story_count": 11,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 83,
-        "eligible": 54,
+        "considered": 80,
+        "eligible": 52,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -9673,7 +9670,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 58,
-          "checked_at": "2026-10-28T10:08:24.455126+00:00"
+          "checked_at": "2026-10-28T10:13:17.536825+00:00"
         },
         {
           "provider": "sec",
@@ -9684,10 +9681,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-10-28T10:08:24.455126+00:00",
+          "checked_at": "2026-10-28T10:13:17.536825+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+          "last_success_at": "2026-10-28T10:13:17.536825+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9715,12 +9712,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-10-28T10:08:24.455126+00:00",
+          "checked_at": "2026-10-28T10:13:17.536825+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-10-28T10:08:24.455126+00:00",
+          "last_failure_at": "2026-10-28T10:13:17.536825+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9743,10 +9740,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-10-28T10:08:24.455126+00:00",
+          "checked_at": "2026-10-28T10:13:17.536825+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+          "last_success_at": "2026-10-28T10:13:17.536825+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9771,10 +9768,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 1,
-          "checked_at": "2026-10-28T10:08:24.455126+00:00",
+          "checked_at": "2026-10-28T10:13:17.536825+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 1,
-          "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+          "last_success_at": "2026-10-28T10:13:17.536825+00:00",
           "last_failure_at": null,
           "stories_ingested": 3,
           "stories_deduped": 1,
@@ -9802,10 +9799,10 @@
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
           "item_count": 1,
-          "checked_at": "2026-10-28T10:08:24.455126+00:00",
+          "checked_at": "2026-10-28T10:13:17.536825+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 1,
-          "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+          "last_success_at": "2026-10-28T10:13:17.536825+00:00",
           "last_failure_at": null,
           "stories_ingested": 4,
           "stories_deduped": 1,
@@ -9834,13 +9831,13 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
           "item_count": 3,
-          "checked_at": "2026-10-28T10:08:24.455126+00:00",
+          "checked_at": "2026-10-28T10:13:17.536825+00:00",
           "raw_item_count": 40,
           "filtered_item_count": 3,
-          "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+          "last_success_at": "2026-10-28T10:13:17.536825+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
-          "stories_deduped": 8,
+          "stories_deduped": 9,
           "ranked_count": 3,
           "relevance_distribution": {
             "active_event": 9,
@@ -9850,16 +9847,16 @@
             "fetched_count": 40,
             "normalized_count": 40,
             "market_compatible_count": 40,
-            "eligible_count": 9,
-            "excluded_count": 31,
-            "deduped_count": 8,
+            "eligible_count": 10,
+            "excluded_count": 30,
+            "deduped_count": 9,
             "ranked_count": 3
           }
         }
       ],
       "observability": {
         "stories_ingested": 58,
-        "stories_deduped": 10,
+        "stories_deduped": 11,
         "ranked_count": 5,
         "relevance_distribution": {
           "active_event": 11,
@@ -9871,7 +9868,7 @@
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+            "last_success_at": "2026-10-28T10:13:17.536825+00:00",
             "last_failure_at": null,
             "stories_ingested": 3,
             "stories_deduped": 1,
@@ -9894,7 +9891,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-10-28T10:08:24.455126+00:00",
+            "last_failure_at": "2026-10-28T10:13:17.536825+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9912,10 +9909,10 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+            "last_success_at": "2026-10-28T10:13:17.536825+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
-            "stories_deduped": 8,
+            "stories_deduped": 9,
             "ranked_count": 3,
             "relevance_distribution": {
               "active_event": 9,
@@ -9925,16 +9922,16 @@
               "fetched_count": 40,
               "normalized_count": 40,
               "market_compatible_count": 40,
-              "eligible_count": 9,
-              "excluded_count": 31,
-              "deduped_count": 8,
+              "eligible_count": 10,
+              "excluded_count": 30,
+              "deduped_count": 9,
               "ranked_count": 3
             }
           },
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+            "last_success_at": "2026-10-28T10:13:17.536825+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9953,7 +9950,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+            "last_success_at": "2026-10-28T10:13:17.536825+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -9997,7 +9994,7 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-28T10:08:24.455126+00:00",
+            "last_success_at": "2026-10-28T10:13:17.536825+00:00",
             "last_failure_at": null,
             "stories_ingested": 4,
             "stories_deduped": 1,
