@@ -1,0 +1,114 @@
+name: Incident notification outlet
+
+on:
+  workflow_run:
+    workflows:
+      - Central incident reconciliation
+      - Central incident reconciliation health
+    types: [completed]
+  schedule:
+    - cron: "0,30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+concurrency:
+  group: prstk-incident-notification-outlet
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out trusted notification consumer
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.repository.default_branch || 'main' }}
+          fetch-depth: 1
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11"
+      - name: Resolve and verify due incident notifications
+        id: prepare
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REPOSITORY_ID: ${{ github.event.repository.id }}
+          GITHUB_API_URL: ${{ github.api_url }}
+          INCIDENT_OUTLET_RESULT_PATH: ${{ runner.temp }}/incident-notification-outlet.json
+        run: python -m scripts.incident_notification_outlet prepare
+      - name: Preserve an explicit result if outlet resolution stopped early
+        if: always()
+        env:
+          INCIDENT_OUTLET_RESULT_PATH: ${{ runner.temp }}/incident-notification-outlet.json
+          OUTLET_RUN_ID: ${{ github.run_id }}
+          OUTLET_ATTEMPT: ${{ github.run_attempt }}
+          OUTLET_SHA: ${{ github.sha }}
+          PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from datetime import UTC, datetime
+          from pathlib import Path
+          path = Path(os.environ["INCIDENT_OUTLET_RESULT_PATH"])
+          if not path.exists():
+              path.write_text(json.dumps({
+                  "schema_version": "incident-notification-outlet-v1",
+                  "status": "failed_before_decision",
+                  "notification_due": False,
+                  "failure_reason": "incident_outlet_prepare_failed" if os.environ.get("PREPARE_OUTCOME") == "failure" else "incident_outlet_result_missing",
+                  "outlet_run_id": os.environ["OUTLET_RUN_ID"],
+                  "outlet_attempt": int(os.environ["OUTLET_ATTEMPT"]),
+                  "outlet_sha": os.environ["OUTLET_SHA"],
+                  "observed_at": datetime.now(UTC).isoformat(),
+              }, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+          PY
+      - name: Preserve the notification decision before native alert
+        id: decision_artifact
+        if: always() && steps.prepare.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: incident-notification-outlet-decision-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/incident-notification-outlet.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Send one consolidated native incident alert
+        id: native_alert
+        if: >-
+          always() && steps.decision_artifact.outcome == 'success' &&
+          steps.prepare.outputs.notification_due == 'true'
+        run: |
+          echo "alert_emitted=true" >> "$GITHUB_OUTPUT"
+          echo "::error::One or more verified PRStK incidents remain active; see the consolidated incident evidence artifact."
+          exit 1
+      - name: Confirm the alert and advance incident reminder records
+        if: >-
+          always() && steps.decision_artifact.outcome == 'success' &&
+          steps.native_alert.outputs.alert_emitted == 'true' &&
+          steps.native_alert.outcome == 'failure'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_API_URL: ${{ github.api_url }}
+          INCIDENT_OUTLET_RESULT_PATH: ${{ runner.temp }}/incident-notification-outlet.json
+          INCIDENT_ALERT_EMITTED: ${{ steps.native_alert.outputs.alert_emitted }}
+          INCIDENT_ALERT_STEP_OUTCOME: ${{ steps.native_alert.outcome }}
+        run: python -m scripts.incident_notification_outlet finalize
+      - name: Upload immutable outlet result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: incident-notification-outlet-result-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/incident-notification-outlet.json
+          if-no-files-found: error
+          retention-days: 90

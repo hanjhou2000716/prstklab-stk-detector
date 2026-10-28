@@ -290,14 +290,24 @@ def select_official_event(
     candidates: list[dict[str, Any]] = []
     if items and not baseline_official:
         for item in items:
-            detailed = next(
-                (
+            source_identity = str(item.get("source_identity") or "").strip()
+            if source_identity:
+                matches = [event for event in detailed_events if str(event.get("source_identity") or "").strip() == source_identity]
+            else:
+                matches = [
                     event for event in detailed_events
-                    if event.get("url") == item.get("url")
-                    or event.get("source_url") == item.get("url")
-                ),
-                None,
-            )
+                    if (event.get("url") == item.get("url") or event.get("source_url") == item.get("url"))
+                    and str(event.get("source_key") or "").casefold() == str(item.get("source_key") or "").casefold()
+                ]
+            detailed = matches[0] if len(matches) == 1 else None
+            corporate = bool(item.get("corporate_event") or item.get("source_key") in {"mops", "twse", "twse_market", "sec"})
+            # A generic daily MOPS URL cannot identify a disclosure. Corporate
+            # alerts require one exact detailed record; ambiguous/missing joins
+            # remain visible as observations and fail closed for delivery.
+            if corporate and detailed is None:
+                continue
+            if item.get("corporate_alert_eligible") is False or item.get("corporate_routine") is True:
+                continue
             # Corporate notices are only eligible after their own market
             # scope has been synchronized. Routine calendar notices and
             # pending events remain visible in Mini App but must not push.
@@ -317,7 +327,8 @@ def select_official_event(
             detailed = next(
                 (
                     event for event in detailed_events
-                    if (event.get("url") == item.get("url") or event.get("source_url") == item.get("url"))
+                    if (event.get("source_identity") == source_identity if source_identity else
+                        (event.get("url") == item.get("url") or event.get("source_url") == item.get("url")))
                     and event.get("high_risk_eligible", True)
                     and (event.get("impact_confirmation") or {}).get("confirmed")
                 ),
@@ -331,6 +342,8 @@ def select_official_event(
     # the existing official + market-sync gate is satisfied.
     for event in detailed_events:
         if event.get("kind") == "market_signal":
+            continue
+        if event.get("corporate_alert_eligible") is False or event.get("corporate_routine") is True:
             continue
         status = str(event.get("notification_status") or "").strip().lower()
         if status not in {"eligible", "ready"}:
@@ -827,6 +840,9 @@ def write_status_output(
                     event_key(candidate).encode("utf-8")
                 ).hexdigest()[:16] if event_key(candidate) else "",
                 "notification_key": str(notification_key_for_event(candidate) or "")[:160],
+                "source_type": str(candidate.get("source_key") or candidate.get("source_type") or "")[:48],
+                "source_identity": str(candidate.get("source_identity") or candidate.get("event_ref") or "")[:160],
+                "summary_status": str(candidate.get("summary_status") or ("pending" if candidate_incomplete and is_financialjuice_priority_event(candidate) else ""))[:48],
                 "summary_contract_version": str(candidate.get("public_summary_version") or "")[:40],
                 "summary_fingerprint": hashlib.sha256(
                     candidate_caption.encode("utf-8")
@@ -960,6 +976,9 @@ def write_status_output(
                 "fact_fingerprint": "",
                 "key_fingerprint": "",
                 "notification_key": "",
+                "source_type": "financialjuice",
+                "source_identity": ref[:160],
+                "summary_status": "pending",
                 "summary_contract_version": str(pending.get("summary_contract_version") or "")[:40],
                 "summary_fingerprint": "",
                 "stage": "summary",
@@ -1110,6 +1129,9 @@ def write_status_output(
             "fact_fingerprint": batch_fingerprint,
             "key_fingerprint": batch_fingerprint,
             "notification_key": str(notification_key_for_event(batch_candidate) or "")[:160],
+            "source_type": str(batch_candidate.get("source_key") or batch_candidate.get("source_type") or "")[:48],
+            "source_identity": str(batch_candidate.get("source_identity") or batch_candidate.get("event_ref") or "")[:160],
+            "summary_status": str(batch_candidate.get("summary_status") or "")[:48],
             "summary_contract_version": str(batch_candidate.get("public_summary_version") or "")[:40],
             "summary_fingerprint": hashlib.sha256(batch_caption.encode("utf-8")).hexdigest(),
             "stage": "notification_preflight",
@@ -1289,7 +1311,7 @@ def _pending_detection_age_seconds(event: dict[str, Any]) -> float:
     """Measure summary work from its first detection, never from source age."""
     raw = next((
         event.get(field) for field in (
-            "first_detected_at", "summary_first_seen_at", "candidate_at", "received_at",
+            "first_detected_at", "summary_first_seen_at",
         ) if event.get(field)
     ), None)
     if not raw:

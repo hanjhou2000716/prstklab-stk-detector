@@ -244,9 +244,9 @@ def _result_is_complete(result: dict[str, Any]) -> tuple[bool, str, str]:
     if result.get("notification_due") is True:
         if (
             not isinstance(alert_terminal, dict)
-            or alert_terminal.get("status") != "confirmed"
+            or alert_terminal.get("status") not in {"confirmed", "delegated"}
             or not isinstance(cadence, dict)
-            or cadence.get("status") != "completed"
+            or cadence.get("status") not in {"completed", "delegated"}
         ):
             return False, "central_reconciliation_alert_handoff_incomplete", fingerprint
     elif (
@@ -323,7 +323,7 @@ def _consolidate_duplicate_issues(
             groups.setdefault(markers[0], []).append(issue)
 
     consolidated: list[int] = []
-    for marker, duplicates in groups.items():
+    for _marker_key, duplicates in groups.items():
         if len(duplicates) < 2:
             continue
         numbered = [(_safe_int(issue.get("number")), issue) for issue in duplicates]
@@ -332,16 +332,13 @@ def _consolidate_duplicate_issues(
             raise LivenessAuditError("central_health_duplicate_issue_identity_invalid")
         numbered.sort(key=lambda pair: int(pair[0] or 0))
         primary_number = int(numbered[0][0] or 0)
-        for duplicate_number_value, _duplicate in numbered[1:]:
+        for duplicate_number_value, duplicate_issue in numbered[1:]:
             duplicate_number = int(duplicate_number_value or 0)
-            _request_json(
-                api_url, repository, token, "POST", f"issues/{duplicate_number}/comments",
-                {"body": f"Duplicate central-health incident consolidated into #{primary_number}. The incident fingerprint {marker} matches exactly; this duplicate closure is not a recovery. The primary incident remains open until recovery is verified."},
-                deadline_monotonic=deadline,
-            )
+            duplicate_body = str(duplicate_issue.get("body") or "").rstrip()
+            duplicate_body += f"\nDuplicate consolidated into #{primary_number} at {datetime.now(UTC).isoformat()}; not a recovery.\n"
             _request_json(
                 api_url, repository, token, "PATCH", f"issues/{duplicate_number}",
-                {"state": "closed", "state_reason": "duplicate"}, deadline_monotonic=deadline,
+                {"body": duplicate_body[:12000], "state": "closed", "state_reason": "duplicate"}, deadline_monotonic=deadline,
             )
             consolidated.append(duplicate_number)
     return consolidated
@@ -369,9 +366,15 @@ def _evaluate(
     except LivenessAuditError as exc:
         return {"healthy": False, "root": _safe_root(exc), "latest_run": latest, "progress": "", "evidence_error": str(exc)[:160]}
     healthy_runs = 1
+    latest_id = _safe_int(latest.get("id"))
     for run in runs[1:]:
-        if healthy_runs >= 2 or str(run.get("status") or "").casefold() != "completed":
-            continue
+        if healthy_runs >= 2:
+            break
+        if (
+            _safe_int(run.get("id")) == latest_id
+            or str(run.get("status") or "").casefold() != "completed"
+        ):
+            break
         try:
             prior = _read_result(
                 run=run, repository=repository, api_url=api_url, token=token, deadline=deadline,
@@ -379,8 +382,9 @@ def _evaluate(
             good, _root, _fingerprint = _result_is_complete(prior)
         except LivenessAuditError:
             good = False
-        if good and _safe_int(run.get("id")) != _safe_int(latest.get("id")):
-            healthy_runs += 1
+        if not good:
+            break
+        healthy_runs += 1
     return {
         "healthy": True, "root": "", "latest_run": latest,
         "progress": fingerprint, "result": result, "healthy_run_count": healthy_runs,
@@ -426,6 +430,8 @@ def reconcile_health(
         "notification_due": False,
         "notification_reasons": [],
         "notification_cadence_confirmations": [],
+        "alert_terminal": {"status": "not_due"},
+        "cadence_finalization": {"status": "not_due"},
         "consolidated_issue_numbers": consolidated,
         "results": [],
         "observed_at": current.isoformat(),
@@ -454,14 +460,11 @@ def reconcile_health(
                     or _marker(root) not in body.splitlines()
                 ):
                     continue
-                _request_json(
-                    api_url, repository, token, "POST", f"issues/{number}/comments",
-                    {"body": f"Central reconciliation recovery verified by two distinct complete runs at {current.isoformat()}. Historical missed reports remain unchanged."},
-                    deadline_monotonic=deadline,
-                )
+                prior_body = str(issue.get("body") or "").rstrip()
+                prior_body += f"\nRecovery verified by two consecutive complete runs at {current.isoformat()}; historical missed reports remain unchanged.\n"
                 _request_json(
                     api_url, repository, token, "PATCH", f"issues/{number}",
-                    {"state": "closed", "state_reason": "completed"}, deadline_monotonic=deadline,
+                    {"body": prior_body[:12000], "state": "closed", "state_reason": "completed"}, deadline_monotonic=deadline,
                 )
                 recovered.append(number)
         result.update({
@@ -539,12 +542,6 @@ def reconcile_health(
             api_url, repository, token, "PATCH", f"issues/{number}",
             {"body": body}, deadline_monotonic=deadline,
         )
-        if notify_due and not pending_current:
-            _request_json(
-                api_url, repository, token, "POST", f"issues/{number}/comments",
-                {"body": f"Central reconciliation remains degraded ({root}); latest run {(_safe_int(latest.get('id')) if latest else 'unavailable')}. Checked at {current.isoformat()}."},
-                deadline_monotonic=deadline,
-            )
     if notify_due and not pending_current:
         cadence.append({
             "issue_number": number,
@@ -553,6 +550,8 @@ def reconcile_health(
         })
         result["notification_due"] = True
         result["notification_reasons"] = ["central_health_incident_opened" if issue is None else "central_health_reminder_due"]
+        result["alert_terminal"] = {"status": "delegated"}
+        result["cadence_finalization"] = {"status": "delegated"}
     result.update({
         "health_status": "degraded",
         "failure_reason": root,

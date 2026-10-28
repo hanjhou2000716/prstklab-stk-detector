@@ -177,7 +177,8 @@ def test_audit_failure_reminds_after_thirty_minutes_and_verified_receipt_recover
         now=datetime.fromisoformat("2026-10-21T08:00:00Z"),
     )
     assert result["reminded_issue_numbers"] == [23]
-    assert any(method == "POST" and path == "issues/23/comments" for method, path, _ in calls)
+    assert not any(method == "POST" and path.endswith("/comments") for method, path, _ in calls)
+    assert any(method == "PATCH" and path == "issues/23" for method, path, _ in calls)
 
     calls.clear()
     recovered = {
@@ -195,7 +196,37 @@ def test_audit_failure_reminds_after_thirty_minutes_and_verified_receipt_recover
         now=datetime.fromisoformat("2026-10-21T08:05:00Z"),
     )
     assert recovery_result["recovered_issue_numbers"] == [23]
-    assert any(method == "PATCH" and path == "issues/23" and payload == {"state": "closed", "state_reason": "completed"} for method, path, payload in calls)
+    recovery_patch = next(
+        payload for method, path, payload in calls
+        if method == "PATCH" and path == "issues/23" and payload and payload.get("state") == "closed"
+    )
+    assert recovery_patch["state_reason"] == "completed"
+    assert "Recovery verified by a complete receipt audit" in recovery_patch["body"]
+
+
+def test_public_sync_incident_waits_ten_minutes_after_original_release_verification():
+    from datetime import UTC, datetime, timedelta
+
+    since = datetime(2026, 10, 28, 10, 0, tzinfo=UTC)
+    terminal = {
+        "status": "delivered_public_sync_pending",
+        "release_evidence": {
+            "post_delivery_gate": {
+                "evidence_status": "verified",
+                "public_sync_pending": True,
+                "verified_original_release_id": "release-original",
+                "public_sync_pending_since": since.isoformat(),
+            },
+        },
+    }
+    evidence = {"kind": "report", "valid": True, "terminal": terminal}
+
+    assert incidents._root_reason(evidence, since + timedelta(minutes=9)) is None
+    reason = incidents._root_reason(evidence, since + timedelta(minutes=10))
+    assert reason is not None
+    assert reason[:3] == (
+        "scheduled_public_release_sync", "receipt_release_public_sync_stalled", "release-gate-result-v1",
+    )
 
 
 @pytest.mark.parametrize("status", ["expected_skip", "not_applicable", "not_due"])

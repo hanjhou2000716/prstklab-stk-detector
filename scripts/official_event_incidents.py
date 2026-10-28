@@ -267,6 +267,31 @@ def _resolved_event_refs(trace: dict[str, Any]) -> set[str]:
     return resolved
 
 
+def _historical_event_refs(trace: dict[str, Any], now: datetime) -> set[str]:
+    historical: set[str] = set()
+    for row in trace.get("events", []):
+        if not isinstance(row, dict):
+            continue
+        event_ref = str(row.get("event_ref") or "").strip()[:64]
+        if not event_ref:
+            continue
+        status = str(row.get("status") or "").casefold()
+        expiry = _parse_time(row.get("expires_at") or row.get("source_expires_at"))
+        if status in {"expired", "historical_diagnosed"} or row.get("expired") is True or (expiry and expiry <= now):
+            historical.add(event_ref)
+            continue
+        source_type = str(row.get("source_type") or row.get("source_key") or "").casefold()
+        detected = _parse_time(row.get("first_detected_at"))
+        if (
+            source_type in {"financialjuice", "financial_juice", "fj"}
+            and status in {"summary_pending", "summary_timeout"}
+            and detected is not None
+            and now - detected >= timedelta(minutes=30)
+        ):
+            historical.add(event_ref)
+    return historical
+
+
 def _incident_group(reason: str, contract: str) -> tuple[str, str]:
     component = "financialjuice_summary" if "summary" in reason or "content" in reason else "official_event_delivery"
     source = f"{component}\n{reason[:120]}\n{contract[:40]}"
@@ -302,7 +327,12 @@ def _active_incidents(trace: dict[str, Any], now: datetime) -> dict[str, dict[st
         reason = str(row.get("reason") or status)[:120]
         if status in {"suppressed", "no_event"}:
             reason = reason or "expected_event_not_processed"
-        detected = _parse_time(row.get("first_detected_at") or row.get("candidate_recorded_at"))
+        detected = _parse_time(row.get("first_detected_at"))
+        recorded = _parse_time(row.get("candidate_recorded_at"))
+        if status in {"expired", "historical_diagnosed"} or row.get("expired") is True:
+            # Keep the immutable trace as the historical record, but do not
+            # reopen a reminder cycle for an occurrence that can no longer run.
+            continue
         if status == "ready":
             if str(stages.get("queue") or "").casefold() not in {"acquired", "completed", "not_required"}:
                 reason = "writer_queue_blocked"
@@ -316,10 +346,25 @@ def _active_incidents(trace: dict[str, Any], now: datetime) -> dict[str, dict[st
                 reason = "durable_receipt_unverified"
             else:
                 continue
-        if status in {"summary_pending", "summary_timeout", "content_incomplete"}:
-            if detected is None or now - detected < SUMMARY_ESCALATION:
+        if status in {"summary_pending", "summary_timeout"}:
+            source_type = str(row.get("source_type") or row.get("source_key") or "").strip().casefold()
+            if source_type in {"financialjuice", "financial_juice", "fj"}:
+                # Only a verified FJ summary wait may become this incident;
+                # source time and later audit observation time are not substitutes.
+                if detected is None:
+                    continue
+                age = now - detected
+                if age < SUMMARY_ESCALATION:
+                    continue
+                if age >= timedelta(minutes=30):
+                    continue
+                reason = "priority_summary_timeout"
+            elif status == "summary_pending" and detected and now - detected < SUMMARY_ESCALATION:
                 continue
-            reason = "priority_summary_timeout"
+        elif status == "content_incomplete":
+            # Preserve the original classification; an ordinary incomplete
+            # notice is not an FJ summary timeout.
+            pass
         elif status == "unknown" and reason in {"candidate_ready", "notification_policy_not_eligible"}:
             continue
         contract = str(row.get("summary_contract_version") or "unknown")[:40]
@@ -328,11 +373,11 @@ def _active_incidents(trace: dict[str, Any], now: datetime) -> dict[str, dict[st
             "component": component,
             "reason": reason,
             "contract_version": contract,
-            "first_failure_at": detected.isoformat() if detected else now.isoformat(),
+            "first_failure_at": (detected or recorded or now).isoformat(),
             "event_refs": [],
             "latest_progress_at": str(row.get("last_progress_at") or row.get("candidate_recorded_at") or "")[:80],
-            "workflow_run_id": str(trace["workflow_run_id"])[:32],
-            "workflow_sha": str(trace["workflow_sha"])[:40],
+            "workflow_run_id": str(trace.get("workflow_run_id") or "")[:32],
+            "workflow_sha": str(trace.get("workflow_sha") or "")[:40],
         })
         event_ref = str(row.get("event_ref") or "")[:64]
         if event_ref and event_ref not in incident["event_refs"]:
@@ -494,13 +539,6 @@ def reconcile_incidents(
             deadline_monotonic=deadline,
         )
         if notify_due and not pending_current:
-            _request_json(
-                api_url, repository, token, "POST", f"issues/{number}/comments",
-                {"body": (
-                    f"Still degraded: {incident['reason']}; {len(incident['event_refs'])} affected event(s). "
-                    f"Latest run {incident['workflow_run_id']} at {current.isoformat()}."
-                )}, deadline_monotonic=deadline,
-            )
             reminded.append(number)
             if defer_notification_cadence:
                 cadence_confirmations.append({
@@ -510,6 +548,7 @@ def reconcile_incidents(
                 })
     if scan_complete:
         resolved_refs = _resolved_event_refs(trace)
+        historical_refs = _historical_event_refs(trace, current)
         for key, rows in indexed.items():
             if key in active or key in unresolved_keys:
                 continue
@@ -518,21 +557,34 @@ def reconcile_incidents(
             if not isinstance(number, int):
                 raise LivenessAuditError("official_event_incident_identity_invalid")
             issue_refs, refs_complete = _issue_event_refs(issue.get("body"))
+            if refs_complete and issue_refs and set(issue_refs).issubset(historical_refs):
+                body = str(issue.get("body") or "")
+                lines = [
+                    line for line in body.splitlines()
+                    if not line.startswith(("Next reminder at:", "Alert pending consumer:", "Alert pending since:"))
+                ]
+                if _field(body, "Lifecycle") != "historical_diagnosed":
+                    lines.append("Lifecycle: historical_diagnosed")
+                    lines.append(f"Historical diagnosis confirmed at: {current.isoformat()}")
+                    lines.append("Reminder policy: stopped; source event expired and was not resent")
+                    _request_json(
+                        api_url, repository, token, "PATCH", f"issues/{number}",
+                        {"body": "\n".join(lines)[:12000]}, deadline_monotonic=deadline,
+                    )
+                continue
             # A clean scan with no candidates is not evidence of recovery. Close
             # only when every event recorded on the issue has a terminal outcome.
             if not refs_complete or not issue_refs or not set(issue_refs).issubset(resolved_refs):
                 continue
-            _request_json(
-                api_url, repository, token, "POST", f"issues/{number}/comments",
-                {"body": (
-                    "Recovery verified by a complete official-event scan at "
-                    f"{current.isoformat()}; terminal event evidence: {', '.join(issue_refs[:20])}."
-                )},
-                deadline_monotonic=deadline,
+            prior_body = str(issue.get("body") or "").rstrip()
+            prior_body += (
+                f"\nRecovery verified by a complete official-event scan at {current.isoformat()}; "
+                f"terminal event evidence: {', '.join(issue_refs[:20])}.\n"
             )
             _request_json(
                 api_url, repository, token, "PATCH", f"issues/{number}",
-                {"state": "closed", "state_reason": "completed"}, deadline_monotonic=deadline,
+                {"body": prior_body[:12000], "state": "closed", "state_reason": "completed"},
+                deadline_monotonic=deadline,
             )
             recovered.append(number)
     return {

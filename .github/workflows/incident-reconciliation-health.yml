@@ -86,28 +86,6 @@ jobs:
           path: ${{ runner.temp }}/incident-reconciliation-state.json
           if-no-files-found: error
           retention-days: 90
-      - name: Emit one native alert for a new or due central incident
-        id: native_alert
-        if: >-
-          always() && steps.upload_decision.outcome == 'success' &&
-          steps.inspect.outputs.notification_due == 'true'
-        run: |
-          echo "alert_emitted=true" >> "$GITHUB_OUTPUT"
-          echo "::error::Central incident reconciliation is degraded; evidence was recorded and grouped into one incident."
-          exit 1
-      - name: Finalize reminder cadence after the alert terminal
-        if: >-
-          always() && steps.upload_decision.outcome == 'success' &&
-          steps.native_alert.outputs.alert_emitted == 'true' &&
-          steps.native_alert.outcome == 'failure'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_API_URL: ${{ github.api_url }}
-          INCIDENT_RECONCILIATION_RESULT_PATH: ${{ runner.temp }}/incident-reconciliation-state.json
-          INCIDENT_ALERT_EMITTED: ${{ steps.native_alert.outputs.alert_emitted }}
-          INCIDENT_ALERT_STEP_OUTCOME: ${{ steps.native_alert.outcome }}
-        run: python -m scripts.incident_reconciliation_health --finalize-alert-cadence
       - name: Upload immutable central health evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

@@ -1416,6 +1416,10 @@ jobs:
           RECONCILED_DEPLOYMENT_VERIFIED: ${{ steps.reconciled_deployment_identity.outputs.verified || 'false' }}
           RECONCILED_GATE_ALLOWED: ${{ steps.reconciled_release_gate.outputs.allowed || 'false' }}
           RECONCILED_GATE_OUTCOME: ${{ steps.reconciled_release_gate.outcome || 'skipped' }}
+          RECONCILED_GATE_PUBLIC_SYNC_PENDING: ${{ steps.reconciled_release_gate.outputs.public_sync_pending || 'false' }}
+          RECONCILED_GATE_VERIFIED_ORIGINAL_RELEASE_ID: ${{ steps.reconciled_release_gate.outputs.verified_original_release_id || '' }}
+          POST_DELIVERY_GATE_RESULT_PATH: /tmp/prstk-release-gate-post-${{ github.run_id }}-${{ github.run_attempt }}.json
+          POST_DELIVERY_GATE_OUTCOME: ${{ steps.reconciled_release_gate.outcome || 'skipped' }}
           HANDOFF_STATUS: ${{ steps.writer_queue.outputs.handoff_status || 'not_attempted' }}
           HANDOFF_RUN_ID: ${{ steps.writer_queue.outputs.handoff_run_id || '' }}
           WRITER_QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'not_required' }}

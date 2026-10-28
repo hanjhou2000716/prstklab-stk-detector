@@ -226,29 +226,37 @@ jobs:
           : > research-artifacts/scan-failures.ndjson
       - name: 台股動能研究掃描
         if: env.RESEARCH_DUE == 'true' && env.RUN_TAIWAN_MOMENTUM == 'true'
+        id: scan_tw_momentum
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market taiwan --strategy momentum --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_taiwan_momentum_scan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
       - name: 美股動能研究掃描
         if: env.RESEARCH_DUE == 'true' && env.RUN_US_MOMENTUM == 'true'
+        id: scan_us_momentum
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market us --strategy momentum --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_us_momentum_scan --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
       - name: 台股裸 K 結構研究掃描
         if: env.RESEARCH_DUE == 'true' && env.RUN_TAIWAN_PRICE_ACTION == 'true'
+        id: scan_tw_price_action
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market taiwan --strategy price_action --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_taiwan_price_action_scan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
       - name: 美股裸 K 結構研究掃描
         if: env.RESEARCH_DUE == 'true' && env.RUN_US_PRICE_ACTION == 'true'
+        id: scan_us_price_action
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market us --strategy price_action --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_us_price_action_scan --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
       - name: 台股三維共振研究掃描
         if: env.RESEARCH_DUE == 'true' && env.RUN_TAIWAN_RESONANCE == 'true'
+        id: scan_tw_resonance
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market taiwan --strategy resonance --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_resonance_scan --market taiwan --limit "$TAIWAN_LIMIT" --batch-size "$BATCH_SIZE" --offset 0 --universe-file data/runtime-taiwan-universe.json
       - name: 美股三維共振研究掃描
         if: env.RESEARCH_DUE == 'true' && env.RUN_US_RESONANCE == 'true'
+        id: scan_us_resonance
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market us --strategy resonance --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_resonance_scan --market us --limit "$US_LIMIT" --batch-size "$BATCH_SIZE"
       - name: 台股品質價值覆核
         if: env.RESEARCH_DUE == 'true' && env.RUN_TAIWAN_VALUE == 'true'
+        id: scan_tw_value
         env:
           WORKER_TIMEOUT_SECONDS: '600'
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market taiwan --strategy value --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_value_quality_scan --market taiwan --batch-size "$BATCH_SIZE" --mops-max-refresh "$MOPS_MAX_REFRESH" --time-budget-seconds "$VALUE_INTERNAL_BUDGET_SECONDS" --diagnostics-path research-artifacts/taiwan-value-diagnostics.json
       - name: 美股品質價值覆核
         if: env.RESEARCH_DUE == 'true' && env.RUN_US_VALUE == 'true'
+        id: scan_us_value
         run: python -m src.research_worker_runner --retries 1 --timeout-seconds "$WORKER_TIMEOUT_SECONDS" --market us --strategy value --ledger research-artifacts/scan-failures.ndjson -- python -m src.run_value_quality_scan --market us --batch-size "$BATCH_SIZE"
       - name: Build research report with optional backtest identity
         if: env.RESEARCH_DUE == 'true'
@@ -490,6 +498,16 @@ jobs:
           RESEARCH_NOOP: ${{ env.RESEARCH_NOOP || 'false' }}
           RESEARCH_SELECTION_STATUS: ${{ env.RESEARCH_SELECTION_STATUS || 'unknown' }}
           RESEARCH_SELECTION_REASON: ${{ env.RESEARCH_SELECTION_REASON || '' }}
+          RESEARCH_SELECTION_PATH: research-artifacts/research-selection.json
+          RESEARCH_REPORT_PATH: site/data/research-report.json
+          OUTCOME_TW_MOMENTUM: ${{ steps.scan_tw_momentum.outcome || 'skipped' }}
+          OUTCOME_US_MOMENTUM: ${{ steps.scan_us_momentum.outcome || 'skipped' }}
+          OUTCOME_TW_PRICE_ACTION: ${{ steps.scan_tw_price_action.outcome || 'skipped' }}
+          OUTCOME_US_PRICE_ACTION: ${{ steps.scan_us_price_action.outcome || 'skipped' }}
+          OUTCOME_TW_RESONANCE: ${{ steps.scan_tw_resonance.outcome || 'skipped' }}
+          OUTCOME_US_RESONANCE: ${{ steps.scan_us_resonance.outcome || 'skipped' }}
+          OUTCOME_TW_VALUE: ${{ steps.scan_tw_value.outcome || 'skipped' }}
+          OUTCOME_US_VALUE: ${{ steps.scan_us_value.outcome || 'skipped' }}
           QUEUE_STATUS: ${{ steps.writer_queue.outputs.queue_status || 'not_required' }}
           QUEUE_ERROR_CODE: ${{ steps.writer_queue.outputs.queue_error_code || '' }}
           RESEARCH_GATE_OUTCOME: ${{ steps.research_gate.outcome || 'skipped' }}
@@ -510,12 +528,92 @@ jobs:
           no_op = os.environ.get("RESEARCH_NOOP") == "true"
           selection_status = os.environ.get("RESEARCH_SELECTION_STATUS", "unknown")
           selection_reason = os.environ.get("RESEARCH_SELECTION_REASON", "")
+          def read_json(path):
+              try:
+                  value = json.loads(Path(path).read_text(encoding="utf-8"))
+                  return value if isinstance(value, dict) else {}
+              except (OSError, UnicodeError, json.JSONDecodeError):
+                  return {}
+          selection = read_json(os.environ.get("RESEARCH_SELECTION_PATH", ""))
+          report = read_json(os.environ.get("RESEARCH_REPORT_PATH", ""))
+          required_pairs = sorted(set(
+              str(item) for item in selection.get("required_market_strategy_pairs", [])
+              if isinstance(item, str) and ":" in item
+          ))
+          selected_pairs = sorted(set(
+              str(item) for item in os.environ.get("SCANNED_PAIRS", "").split(",") if ":" in item
+          ))
+          current_pairs = sorted(set(
+              str(item) for item in selection.get("already_current_pairs", [])
+              if isinstance(item, str) and ":" in item
+          ))
+          suppressed_pairs = selection.get("suppressed_market_strategy_pairs", {})
+          suppressed_pairs = suppressed_pairs if isinstance(suppressed_pairs, dict) else {}
+          step_outcomes = {
+              "taiwan:momentum": os.environ.get("OUTCOME_TW_MOMENTUM", "skipped"),
+              "us:momentum": os.environ.get("OUTCOME_US_MOMENTUM", "skipped"),
+              "taiwan:price_action": os.environ.get("OUTCOME_TW_PRICE_ACTION", "skipped"),
+              "us:price_action": os.environ.get("OUTCOME_US_PRICE_ACTION", "skipped"),
+              "taiwan:resonance": os.environ.get("OUTCOME_TW_RESONANCE", "skipped"),
+              "us:resonance": os.environ.get("OUTCOME_US_RESONANCE", "skipped"),
+              "taiwan:value": os.environ.get("OUTCOME_TW_VALUE", "skipped"),
+              "us:value": os.environ.get("OUTCOME_US_VALUE", "skipped"),
+          }
+          sources = {
+              (str(row.get("market") or ""), str(row.get("strategy") or "")): row
+              for row in report.get("sources", []) if isinstance(row, dict)
+          }
+          publication = {
+              (str(row.get("market") or ""), str(row.get("strategy") or "")): row
+              for row in report.get("strategy_publication", []) if isinstance(row, dict)
+          }
+          pair_dispositions = {}
+          for pair in sorted(set(required_pairs + selected_pairs + current_pairs)):
+              market, strategy = pair.split(":", 1)
+              source = sources.get((market, strategy), {})
+              publish = publication.get((market, strategy), {})
+              outcome = step_outcomes.get(pair, "skipped")
+              fallback = source.get("historical_fallback") is True or publish.get("historical_fallback") is True
+              if pair in suppressed_pairs:
+                  state = "suppressed_by_attempt_policy"
+              elif fallback:
+                  state = "historical_fallback"
+              elif pair in current_pairs and pair not in required_pairs and pair not in selected_pairs:
+                  state = "already_current"
+              elif pair in selected_pairs and outcome == "skipped":
+                  state = "selected_but_not_started"
+              elif pair in selected_pairs and outcome not in {"success", "skipped"}:
+                  state = f"worker_{outcome}"
+              elif str(source.get("scan_state") or "").casefold() == "complete":
+                  try:
+                      candidate_count = int(source.get("candidates"))
+                  except (TypeError, ValueError):
+                      candidate_count = -1
+                  state = "complete_scan_zero_candidates" if candidate_count == 0 else "complete_scan"
+              elif pair in required_pairs and pair not in selected_pairs:
+                  state = "required_but_not_selected"
+              elif pair in selected_pairs:
+                  state = "scan_result_unverified"
+              else:
+                  state = "not_run"
+              pair_dispositions[pair] = {
+                  "state": state,
+                  "step_outcome": outcome,
+                  "candidate_count": source.get("candidates"),
+                  "scan_state": str(source.get("scan_state") or "unknown"),
+                  "blocking_reason": str(source.get("blocking_reason") or publish.get("blocking_reason") or suppressed_pairs.get(pair) or "")[:160],
+              }
+          unstarted_required_pairs = [
+              pair for pair in required_pairs
+              if pair in selected_pairs and step_outcomes.get(pair, "skipped") == "skipped"
+          ]
           gate_outcome = os.environ.get("RESEARCH_GATE_OUTCOME", "unknown")
           gate_publish = os.environ.get("RESEARCH_GATE_PUBLISH") == "true"
           gate_fallback = os.environ.get("RESEARCH_GATE_FALLBACK") == "true"
           degraded = not no_op and (
               os.environ.get("JOB_STATUS") == "failure"
               or selection_status in {"blocked", "scan_selected_with_suppressed_pairs"}
+              or bool(unstarted_required_pairs)
               or queue_status == "failed"
               or os.environ.get("PREPARED_RELEASE_OUTCOME") == "failure"
               or os.environ.get("DEPLOYMENT_OUTCOME") == "failure"
@@ -565,6 +663,15 @@ jobs:
                   "research_fallback": gate_fallback,
                   "research_selection": os.environ.get("RESEARCH_SELECTION_STATUS", "unknown"),
                   "research_selection_reason": os.environ.get("RESEARCH_SELECTION_REASON", ""),
+                  "required_market_strategy_pairs": required_pairs,
+                  "selected_market_strategy_pairs": selected_pairs,
+                  "already_current_pairs": current_pairs,
+                  "executed_market_strategy_pairs": sorted(
+                      pair for pair, outcome in step_outcomes.items() if outcome != "skipped"
+                  ),
+                  "strategy_step_outcomes": step_outcomes,
+                  "strategy_pair_dispositions": pair_dispositions,
+                  "unstarted_required_pairs": unstarted_required_pairs,
                   "research_noop": no_op,
                   "prepared_release": os.environ.get("PREPARED_RELEASE_OUTCOME", "unknown"),
                   "deployment": os.environ.get("DEPLOYMENT_OUTCOME", "unknown"),

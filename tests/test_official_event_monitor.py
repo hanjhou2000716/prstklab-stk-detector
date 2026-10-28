@@ -42,6 +42,44 @@ def test_monitor_prioritizes_current_official_event_source():
     assert select_official_event(snapshot)["title"] == "FOMC statement"
 
 
+def test_mops_routine_flag_cannot_be_bypassed_by_detailed_event_lane():
+    notice = {
+        "title": "台達電合併財務報告董事會通過", "url": "https://mops.twse.com.tw/mops/#/web/t05st02",
+        "source_key": "mops", "source_identity": "mops:routine-1", "corporate_event": True,
+        "corporate_routine": True, "corporate_alert_eligible": False,
+    }
+    snapshot = {
+        "official_events": {"items": [notice]},
+        "events": {"items": [{**notice, "notification_status": "eligible"}]},
+    }
+    assert select_official_event(snapshot) is None
+
+
+def test_mops_same_daily_url_joins_by_source_identity_not_shared_url():
+    url = "https://mops.twse.com.tw/mops/#/web/t05st02"
+    routine = {
+        "title": "台達電合併財務報告董事會通過", "url": url, "source_key": "mops",
+        "source_identity": "mops:routine", "corporate_event": True,
+        "corporate_routine": True, "corporate_alert_eligible": False,
+    }
+    acquisition = {
+        "title": "台積電併購案核准", "url": url, "source_key": "mops",
+        "source_identity": "mops:acquisition", "corporate_event": True,
+        "corporate_alert_eligible": True,
+    }
+    snapshot = {
+        "official_events": {"items": [routine, acquisition]},
+        "events": {"items": [
+            {**routine, "notification_status": "observe_only"},
+            {**acquisition, "notification_status": "eligible"},
+        ]},
+    }
+
+    selected = select_official_event(snapshot)
+
+    assert selected["source_identity"] == "mops:acquisition"
+
+
 def test_first_run_baseline_suppresses_official_headline_but_keeps_price_signal():
     snapshot = {
         "official_events": {"items": [{"title": "FOMC statement", "url": "https://www.federalreserve.gov/x"}]},

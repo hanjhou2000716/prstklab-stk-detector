@@ -12,6 +12,7 @@ def _trace(status: str, *, detected: datetime, reason: str = "summary_semantics_
         "stages": {"scan": "success"},
         "events": [{
             "event_ref": "opaque-ref", "expected": True, "status": status,
+            "source_type": "financialjuice",
             "reason": reason, "summary_contract_version": "public-summary-v4",
             "first_detected_at": detected.isoformat(),
             "candidate_recorded_at": detected.isoformat(),
@@ -45,6 +46,36 @@ def test_summary_incident_opens_only_after_ten_minutes_and_is_grouped(monkeypatc
     assert "Root cause: priority_summary_timeout" in payload["body"]
 
 
+def test_ordinary_content_incomplete_is_never_reclassified_as_fj_timeout(monkeypatch, tmp_path):
+    now = datetime(2026, 10, 16, 3, 0, tzinfo=UTC)
+    trace = _trace("content_incomplete", detected=now - timedelta(hours=1))
+    trace["events"][0]["source_type"] = "mops"
+    trace["events"][0]["reason"] = "content_incomplete"
+    path = tmp_path / "trace.json"
+    path.write_text(json.dumps(trace), encoding="utf-8")
+    monkeypatch.setattr(incidents, "_open_incidents", lambda *_args, **_kwargs: [])
+    calls = []
+    monkeypatch.setattr(incidents, "_request_json", lambda *args, **kwargs: calls.append((args, kwargs)) or {"number": 98})
+
+    incidents.reconcile_incidents(
+        api_url="https://api.github.com", repository="owner/repo", token="token",
+        trace_path=path, now=now,
+    )
+
+    assert calls
+    assert "Root cause: content_incomplete" in calls[0][0][5]["body"]
+    assert "priority_summary_timeout" not in calls[0][0][5]["body"]
+
+
+def test_non_fj_summary_wait_keeps_original_reason_after_ten_minutes():
+    now = datetime(2026, 10, 16, 3, 0, tzinfo=UTC)
+    trace = _trace("summary_pending", detected=now - timedelta(minutes=20), reason="summary_semantics_incomplete")
+    trace["events"][0]["source_type"] = "mops"
+    grouped = incidents._active_incidents(trace, now)
+    assert len(grouped) == 1
+    assert next(iter(grouped.values()))["reason"] == "summary_semantics_incomplete"
+
+
 def test_event_incident_reminder_and_recovery_are_separate_transitions(monkeypatch, tmp_path):
     now = datetime(2026, 10, 16, 4, 0, tzinfo=UTC)
     active_trace = _trace("partial", detected=now - timedelta(minutes=45), reason="recipient_receipt_partial")
@@ -71,7 +102,8 @@ def test_event_incident_reminder_and_recovery_are_separate_transitions(monkeypat
         trace_path=trace_path, now=now,
     )
     assert result["reminded_issue_numbers"] == [11]
-    assert any(args[3] == "POST" and args[4] == "issues/11/comments" for args, _ in calls)
+    assert not any(args[3] == "POST" and args[4].endswith("/comments") for args, _ in calls)
+    assert any(args[3] == "PATCH" and args[4] == "issues/11" for args, _ in calls)
 
     trace_path.write_text(json.dumps({
         **active_trace,
@@ -414,3 +446,47 @@ def test_conflicting_duplicate_group_does_not_block_independent_incident(monkeyp
         "reason": "official_event_incident_duplicate_identity_conflict",
     }]
     assert any(len(args) > 4 and args[3] == "PATCH" and args[4] == "issues/51" for args in calls)
+
+
+def test_non_fj_summary_and_expired_rows_do_not_reopen_alert_cycles():
+    now = datetime(2026, 10, 28, 10, 0, tzinfo=UTC)
+    base = {"expected": True, "event_ref": "evt-1", "summary_contract_version": "v1", "reason": "content_incomplete"}
+    trace = {"events": [{**base, "status": "summary_pending", "source_type": "mops", "first_detected_at": (now - timedelta(minutes=40)).isoformat()}], "stages": {}}
+    active = incidents._active_incidents(trace, now)
+    assert all(item["reason"] != "priority_summary_timeout" for item in active.values())
+    trace["events"] = [{**base, "status": "expired", "source_type": "financialjuice", "first_detected_at": (now - timedelta(hours=1)).isoformat()}]
+    assert incidents._active_incidents(trace, now) == {}
+
+
+def test_expired_event_stops_reminder_cycle_without_claiming_recovery(monkeypatch, tmp_path):
+    now = datetime(2026, 10, 28, 10, 0, tzinfo=UTC)
+    trace = _trace("expired", detected=now - timedelta(hours=1))
+    trace["events"][0]["expected"] = True
+    path = tmp_path / "expired-trace.json"
+    path.write_text(json.dumps(trace), encoding="utf-8")
+    marker = incidents._incident_group("priority_summary_timeout", "public-summary-v4")[1]
+    issue = {
+        "number": 91,
+        "title": f"{incidents.EVENT_ISSUE_TITLE_PREFIX} / financialjuice_summary",
+        "body": (
+            f"{incidents.EVENT_INCIDENT_MARKER}{marker}\n"
+            "Affected event count: 1\nEvent refs: opaque-ref\nEvent refs complete: true\n"
+            "Next reminder at: 2026-10-28T09:30:00+00:00\n"
+            "Alert pending consumer: 123/1\nAlert pending since: 2026-10-28T09:00:00+00:00"
+        ),
+    }
+    calls = []
+    monkeypatch.setattr(incidents, "_open_incidents", lambda *_args, **_kwargs: [issue])
+    monkeypatch.setattr(incidents, "_request_json", lambda *args, **kwargs: calls.append(args) or {})
+
+    result = incidents.reconcile_incidents(
+        api_url="https://api.github.com", repository="owner/repo", token="token",
+        trace_path=path, now=now, defer_notification_cadence=True,
+    )
+
+    assert result["reminded_issue_numbers"] == []
+    assert result["recovered_issue_numbers"] == []
+    patch = next(args[5] for args in calls if args[3] == "PATCH")
+    assert "Lifecycle: historical_diagnosed" in patch["body"]
+    assert "Next reminder at:" not in patch["body"]
+    assert "Alert pending consumer:" not in patch["body"]

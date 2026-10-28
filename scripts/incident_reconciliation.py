@@ -37,6 +37,7 @@ from scripts.scheduled_brief_incidents import ISSUE_MARKER as SCHEDULED_INCIDENT
 from scripts.scheduled_brief_incidents import reconcile as reconcile_scheduled_brief
 from src.incident_cadence import can_emit_pending_alert, clear_pending_alert, mark_pending_alert
 from src.scheduled_slot_audit import _open_artifact_url
+from src.writer_queue import WriterQueueError, _verified_workflow_contract
 
 RESEARCH_TITLE_PREFIX = "Unified research report degraded"
 RESEARCH_MARKER = "unified-research-incident="
@@ -154,6 +155,8 @@ def _settled_missing_artifact_resolution(
 
 def _pre_scan_trace_evidence(
     *, content: bytes, run: dict[str, Any], workflow_path: str,
+    api_url: str = "", repository: str = "", token: str = "",
+    deadline: float | None = None,
 ) -> dict[str, Any] | None:
     """Return a minimal proof only for an identity-bound trace that never scanned."""
     if workflow_path != ".github/workflows/official-event-monitor.yml":
@@ -169,6 +172,26 @@ def _pre_scan_trace_evidence(
     workflow_id = _safe_int(run.get("workflow_id"))
     sha = str(run.get("head_sha") or "").lower()
     contract = SOURCE_TERMINAL_JOB_CONTRACTS.get((workflow_path, sha))
+    if contract is None and api_url and repository and token:
+        try:
+            verified = _verified_workflow_contract(
+                run, api_url=api_url, repository=repository, token=token,
+                deadline_monotonic=deadline,
+            )
+        except WriterQueueError:
+            return None
+        protected_jobs = verified.get("protected_jobs")
+        content_sha256 = str(verified.get("workflow_content_sha256") or "")
+        if (
+            not isinstance(protected_jobs, list) or not protected_jobs
+            or not re.fullmatch(r"[0-9a-f]{64}", content_sha256)
+        ):
+            return None
+        contract = {
+            "contract": f"official-event-monitor-content-{content_sha256[:12]}-jobs-v1",
+            "jobs": frozenset(str(job) for job in protected_jobs),
+            "workflow_content_sha256": content_sha256,
+        }
     stages = trace["stages"]
     if (
         not run_id or not attempt or not workflow_id or contract is None
@@ -710,14 +733,12 @@ def _research_incident(
             number = _safe_int(issue.get("number"))
             if not number:
                 raise LivenessAuditError("incident_research_issue_identity_invalid")
-            _request_json(
-                api_url, repository, token, "POST", f"issues/{number}/comments",
-                {"body": f"Recovery verified by workflow run {run_id} attempt {attempt} ({sha}) at {now.isoformat()}."},
-                deadline_monotonic=deadline,
-            )
+            prior_issue = next((row for row in matches if _safe_int(row.get("number")) == number), {})
+            prior_body = str(prior_issue.get("body") or "")
+            recovered_body = prior_body.rstrip() + f"\nRecovery verified: run {run_id} attempt {attempt} ({sha}) at {now.isoformat()}.\n"
             _request_json(
                 api_url, repository, token, "PATCH", f"issues/{number}",
-                {"state": "closed", "state_reason": "completed"}, deadline_monotonic=deadline,
+                {"body": recovered_body[:12000], "state": "closed", "state_reason": "completed"}, deadline_monotonic=deadline,
             )
             recovered.append(number)
         return {
@@ -797,11 +818,6 @@ def _research_incident(
         if defer_notification_cadence:
             body = mark_pending_alert(body, pending_consumer, now)
         _request_json(api_url, repository, token, "PATCH", f"issues/{number}", {"body": body}, deadline_monotonic=deadline)
-        _request_json(
-            api_url, repository, token, "POST", f"issues/{number}/comments",
-            {"body": f"Still degraded: research workflow concluded {conclusion}; business_status={terminal.get('business_status') if terminal else 'unavailable'}, reason={latest_reason or 'unknown'}. Latest run {run_id} attempt {attempt} ({sha})."},
-            deadline_monotonic=deadline,
-        )
     confirmations = [{
         "issue_number": number,
         "marker": f"{RESEARCH_MARKER}{key}",
@@ -877,10 +893,32 @@ def _observe_terminal_jobs(
         }
     contract = SOURCE_TERMINAL_JOB_CONTRACTS.get((path, sha))
     if contract is None:
-        return None, None, {
-            "status": "unverified",
-            "reason": "workflow_contract_unknown_for_fixed_sha",
-            "workflow_sha": sha,
+        try:
+            verified = _verified_workflow_contract(
+                run, api_url=api_url, repository=repository, token=token,
+                deadline_monotonic=deadline,
+            )
+        except WriterQueueError as exc:
+            return None, None, {
+                "status": "unverified",
+                "reason": str(exc)[:160],
+                "workflow_sha": sha,
+            }
+        protected_jobs = verified.get("protected_jobs")
+        content_sha256 = str(verified.get("workflow_content_sha256") or "")
+        if (
+            not isinstance(protected_jobs, list) or not protected_jobs
+            or not re.fullmatch(r"[0-9a-f]{64}", content_sha256)
+        ):
+            return None, None, {
+                "status": "unverified",
+                "reason": "workflow_contract_definition_invalid",
+                "workflow_sha": sha,
+            }
+        contract = {
+            "contract": f"{path.rsplit('/', 1)[-1].removesuffix('.yml')}-content-{content_sha256[:12]}-jobs-v1",
+            "jobs": frozenset(str(job) for job in protected_jobs),
+            "workflow_content_sha256": content_sha256,
         }
     try:
         snapshot = _read_source_job_snapshot(
@@ -972,6 +1010,7 @@ def _workflow_runs_since(
         cursor_time = _parse_time(cursor.get("created_at")) or cutoff
         window_start = window_end = None
     cursor_id = _safe_int(cursor.get("run_id")) or 0
+    cursor_attempt = _safe_int(cursor.get("run_attempt")) or 1
     if mode == "backfill" and window_start is not None and window_end is not None:
         created_filter = (
             f"{window_start.strftime('%Y-%m-%dT%H:%M:%SZ')}.."
@@ -1053,7 +1092,10 @@ def _workflow_runs_since(
             raise LivenessAuditError("incident_source_pending_runs_limit_exceeded")
     expected_total: int | None = None
     fetched_total = 0
-    next_cursor = {"created_at": cursor_time.isoformat(), "run_id": cursor_id}
+    next_cursor = {
+        "created_at": cursor_time.isoformat(), "run_id": cursor_id,
+        "run_attempt": cursor_attempt,
+    }
     page = 1
     while page <= SOURCE_MAX_PAGES:
         headers: dict[str, str] = {}
@@ -1092,7 +1134,11 @@ def _workflow_runs_since(
                 continue
             if (
                 created_at < cursor_time
-                or (created_at == cursor_time and run_id <= cursor_id)
+                or (created_at == cursor_time and run_id < cursor_id)
+                or (
+                    created_at == cursor_time and run_id == cursor_id
+                    and attempt <= cursor_attempt
+                )
             ):
                 continue
             if str(row.get("status") or "").casefold() != "completed":
@@ -1196,6 +1242,7 @@ def _workflow_runs_since(
         ))
         next_cursor["created_at"] = _parse_time(latest.get("created_at")).isoformat()
         next_cursor["run_id"] = _safe_int(latest.get("id")) or 0
+        next_cursor["run_attempt"] = _safe_int(latest.get("run_attempt")) or 1
     stale_pending = any(
         (created := _parse_time(item.get("created_at"))) is None or created <= now - timedelta(minutes=10)
         for item in pending.values()
@@ -1326,7 +1373,7 @@ def _read_source_job_snapshot(
 
 def _record_processed_checkpoint(
     *, processed_last: dict[str, dict[str, Any]], cursors: dict[str, Any],
-    path: str, created_at: datetime, run_id: int, advance_cursor: bool,
+    path: str, created_at: datetime, run_id: int, attempt: int, advance_cursor: bool,
     terminal_evidence: Any,
 ) -> None:
     if not advance_cursor and not isinstance(terminal_evidence, dict):
@@ -1337,11 +1384,33 @@ def _record_processed_checkpoint(
         previous = cursor if isinstance(cursor, dict) else {}
     previous_at = _parse_time(previous.get("created_at"))
     previous_id = _safe_int(previous.get("run_id")) or 0
+    previous_attempt = _safe_int(previous.get("run_attempt")) or 1
     if (
         previous_at is None or created_at > previous_at
         or (created_at == previous_at and run_id > previous_id)
+        or (created_at == previous_at and run_id == previous_id and attempt > previous_attempt)
     ):
-        processed_last[path] = {"created_at": created_at.isoformat(), "run_id": run_id}
+        processed_last[path] = {
+            "created_at": created_at.isoformat(), "run_id": run_id,
+            "run_attempt": attempt,
+        }
+
+
+def _source_cursor_covers_event(cursor: dict[str, Any], run: dict[str, Any]) -> bool:
+    """Return whether this completed run attempt is already behind the durable cursor."""
+    created_at = _parse_time(run.get("created_at"))
+    cursor_at = _parse_time(cursor.get("created_at"))
+    run_id = _safe_int(run.get("id"))
+    cursor_id = _safe_int(cursor.get("run_id"))
+    attempt = _safe_int(run.get("run_attempt"))
+    cursor_attempt = _safe_int(cursor.get("run_attempt")) or 1
+    if created_at is None or cursor_at is None or run_id is None or cursor_id is None or attempt is None:
+        raise LivenessAuditError("incident_source_replay_cursor_identity_invalid")
+    return (
+        created_at < cursor_at
+        or (created_at == cursor_at and run_id < cursor_id)
+        or (created_at == cursor_at and run_id == cursor_id and attempt <= cursor_attempt)
+    )
 
 
 def _download_artifact_json(
@@ -1838,6 +1907,7 @@ def _reconcile_source_run(
         pre_scan_evidence = _pre_scan_trace_evidence(
             content=content, run=run,
             workflow_path=".github/workflows/official-event-monitor.yml",
+            api_url=api_url, repository=repository, token=token, deadline=deadline,
         )
         source_result = reconcile_official_events(
             api_url=api_url, repository=repository, token=token,
@@ -1965,6 +2035,7 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
     # A webhook is authoritative for its completed run, including a long-running
     # source whose creation time predates the saved cursor window.
     incoming = payload.get("workflow_run") if isinstance(payload, dict) else None
+    suppressed_webhook_replays: list[dict[str, Any]] = []
     if isinstance(incoming, dict):
         incoming_id = _safe_int(incoming.get("workflow_id"))
         for workflow_id, workflow_name in source_definitions.values():
@@ -1984,6 +2055,24 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
                         p for p, (source_workflow_id, _name) in source_definitions.items()
                         if source_workflow_id == incoming_id
                     )
+                    source_cursor = discovered_cursors[source_path]
+                    pending_rows = source_cursor.get("pending_runs", [])
+                    if not isinstance(pending_rows, list):
+                        raise LivenessAuditError("incident_source_pending_runs_invalid")
+                    is_pending = any(
+                        _safe_int(item.get("run_id")) == key[0]
+                        for item in pending_rows if isinstance(item, dict)
+                    )
+                    if (
+                        existing_index is None and not is_pending
+                        and _source_cursor_covers_event(source_cursor, incoming_run)
+                    ):
+                        suppressed_webhook_replays.append({
+                            "source_workflow": workflow_name,
+                            "source_run_id": key[0],
+                            "source_attempt": key[1],
+                        })
+                        break
                     if existing_index is not None:
                         source_rows[existing_index][4]["_incident_source_origin"] = "webhook"
                         source_rows[existing_index] = (*source_rows[existing_index][:5], False)
@@ -1998,10 +2087,6 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
                         and str(incoming_run.get("head_branch") or "") == "main"
                         and re.fullmatch(r"[0-9a-f]{40}", head_sha)
                     ):
-                        source_cursor = discovered_cursors[source_path]
-                        pending_rows = source_cursor.get("pending_runs", [])
-                        if not isinstance(pending_rows, list):
-                            raise LivenessAuditError("incident_source_pending_runs_invalid")
                         if not any(_safe_int(item.get("run_id")) == key[0] for item in pending_rows if isinstance(item, dict)):
                             pending_rows.append({
                                 "run_id": key[0], "workflow_id": workflow_id,
@@ -2017,6 +2102,13 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
     if len(source_rows) > 400:
         raise LivenessAuditError("incident_source_backlog_limit_exceeded")
     results: list[dict[str, Any]] = []
+    results.extend({
+        **row,
+        "status": "duplicate_replay_suppressed",
+        "diagnostic_complete": True,
+        "incident_active": False,
+        "notification_cadence_confirmations": [],
+    } for row in suppressed_webhook_replays)
     processed_last: dict[str, dict[str, Any]] = {}
     failed_paths: set[str] = set()
     selected_rows = source_rows[:MAX_SOURCE_RUNS_PER_CYCLE]
@@ -2129,6 +2221,7 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
                 path=path,
                 created_at=created,
                 run_id=run_id,
+                attempt=_safe_int(run.get("run_attempt")) or 1,
                 advance_cursor=advance_cursor,
                 terminal_evidence=run.get("_incident_source_terminal_evidence"),
             )
@@ -2207,6 +2300,8 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
                 row for row in confirmations if isinstance(row, dict)
             )
     notification_reasons = _notification_reasons(results)
+    if notification_reasons and not cadence_confirmations:
+        raise LivenessAuditError("incident_notification_cadence_confirmation_missing")
     pending_run_diagnostics = [
         {"source_workflow": SOURCE_WORKFLOWS[path], **diagnostic}
         for path, cursor in discovered_cursors.items()
@@ -2287,8 +2382,9 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
         "notification_due": bool(notification_reasons),
         "notification_reasons": sorted(set(notification_reasons)),
         "notification_cadence_confirmations": list(confirmations_by_issue.values()),
-        "alert_terminal": {"status": "pending" if notification_reasons else "not_due"},
-        "cadence_finalization": {"status": "pending" if notification_reasons else "not_due"},
+        "alert_terminal": {"status": "delegated" if notification_reasons else "not_due"},
+        "cadence_finalization": {"status": "delegated" if notification_reasons else "not_due"},
+        "notification_outlet_status": "pending" if notification_reasons else "not_due",
         "results": results,
         "source_cursors": final_cursors,
         "observed_at": now.isoformat(),
