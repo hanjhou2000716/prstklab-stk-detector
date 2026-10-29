@@ -40,12 +40,16 @@ def test_actual_workflow_terminal_and_legacy_artifact_share_consumer_contract(mo
     script = step["run"].split("<<'PY'\n", 1)[1].rsplit("\nPY", 1)[0]
     env = {
         **os.environ, "PYTHONPATH": str(ROOT), "SCAN_MODE": "production",
+        "PRSTK_TEST_WORKDIR": str(tmp_path),
         "RESEARCH_DUE": "true", "QUEUE_STATUS": "failed", "QUEUE_ERROR_CODE": LEGACY_REASON,
         "JOB_STATUS": "failure", "GITHUB_RUN_ID": "40790581515", "GITHUB_RUN_ATTEMPT": "1",
         "GITHUB_SHA": SHA,
     }
+    # Initialize the subprocess with the project's coverage configuration, then
+    # isolate workflow artifacts before running the actual producer entry.
+    script = 'import os\nos.chdir(os.environ["PRSTK_TEST_WORKDIR"])\n' + script
     result = subprocess.run(
-        [sys.executable, "-c", script], cwd=tmp_path, env=env,
+        [sys.executable, "-c", script], cwd=ROOT, env=env,
         capture_output=True, text=True, encoding="utf-8", timeout=20, check=False,
     )
     assert result.returncode == 0, result.stderr
