@@ -1394,6 +1394,8 @@ jobs:
           PREPARE_FAILURE_REASON: ${{ steps.prepare.outputs.prepare_failure_reason || steps.prepare.outputs.reason || steps.preparation_record_fallback.outputs.reason || '' }}
           RELEASE_MANIFEST_OUTCOME: ${{ steps.release_manifest.outcome || 'not_run' }}
           RELEASE_MANIFEST_STATUS: ${{ steps.release_manifest.outputs.manifest_status || '' }}
+          RELEASE_BUILD_RESULT_PATH: /tmp/prstk-release-build-${{ github.run_id }}-${{ github.run_attempt }}.json
+          PRE_DELIVERY_GATE_RESULT_PATH: /tmp/prstk-release-gate-pre-${{ github.run_id }}-${{ github.run_attempt }}.json
           PREPARE_READY: ${{ steps.prepare.outputs.prepared || 'false' }}
           SEND_OUTCOME: ${{ steps.send_brief.outcome || 'skipped' }}
           SEND_STATUS: ${{ steps.send_brief.outputs.notification_status || '' }}

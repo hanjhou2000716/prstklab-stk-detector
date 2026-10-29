@@ -49,6 +49,21 @@ def test_prepare_groups_one_verified_consumer_into_one_window_notification(monke
     assert result["consumers"][0]["confirmations"][0]["issue_number"] == 123
 
 
+def test_historical_pending_issue_cannot_reuse_an_old_notification_reservation(monkeypatch):
+    issue = _issue()
+    issue["body"] += "\nLifecycle: historical_pending_verification"
+    monkeypatch.setattr(outlet, "_open_incidents", lambda *a, **k: [issue])
+    calls = []
+    monkeypatch.setattr(outlet, "_load_verified_consumer", lambda **k: calls.append(k))
+    result = outlet.prepare_outlet(
+        repository="owner/repo", api_url="https://api.github.com", token="x",
+        now=datetime(2026, 10, 28, 10, 0, tzinfo=UTC), deadline_monotonic=10**20,
+    )
+    assert result["notification_due"] is False
+    assert result["candidate_count"] == 0
+    assert calls == []
+
+
 def test_critical_identity_or_claim_incident_can_alert_immediately(monkeypatch):
     issue = _issue(root="notification_claim_state_conflict", due="2026-10-28T11:00:00+00:00")
     issue["body"] = issue["body"].replace("2026-10-28T09:30:00+00:00", "2026-10-28T10:10:00+00:00")

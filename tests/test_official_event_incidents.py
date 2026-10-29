@@ -1,6 +1,8 @@
 import json
 from datetime import UTC, datetime, timedelta
 
+import pytest
+
 from scripts import official_event_incidents as incidents
 
 
@@ -490,3 +492,94 @@ def test_expired_event_stops_reminder_cycle_without_claiming_recovery(monkeypatc
     assert "Lifecycle: historical_diagnosed" in patch["body"]
     assert "Next reminder at:" not in patch["body"]
     assert "Alert pending consumer:" not in patch["body"]
+
+
+def test_unreferenced_historical_issue_is_parked_and_new_attributable_impact_reactivates(monkeypatch, tmp_path):
+    now = datetime(2026, 10, 29, 13, 0, tzinfo=UTC)
+    key = incidents._incident_group("release_preparation_failed", "unknown")[1]
+    issue = {
+        "number": 1054, "title": f"{incidents.EVENT_ISSUE_TITLE_PREFIX} / official_event_delivery",
+        "body": (
+            f"{incidents.EVENT_INCIDENT_MARKER}{key}\nRoot cause: release_preparation_failed\n"
+            "Summary contract: unknown\nAffected event count: 0\nEvent refs: not available\n"
+            "Event refs complete: false\nFirst failure: 2026-10-19T14:19:18+00:00\n"
+            "Next reminder at: 2026-10-29T12:30:00+00:00\n"
+            "Alert pending consumer: 456/1\nAlert pending since: 2026-10-29T12:00:00+00:00"
+        ),
+    }
+    trace = _trace("no_event", detected=now)
+    trace["events"] = []
+    path = tmp_path / "trace.json"
+    path.write_text(json.dumps(trace), encoding="utf-8")
+    calls = []
+    monkeypatch.setattr(incidents, "_open_incidents", lambda *a, **k: [issue])
+
+    def request(*args, **kwargs):
+        calls.append(args)
+        issue["body"] = args[5]["body"]
+        return {}
+
+    monkeypatch.setattr(incidents, "_request_json", request)
+    result = incidents.reconcile_incidents(
+        api_url="https://api.github.com", repository="owner/repo", token="token",
+        trace_path=path, now=now, defer_notification_cadence=True,
+    )
+    assert not result["recovered_issue_numbers"]
+    assert not result["notification_cadence_confirmations"]
+    assert result["historical_pending_issue_numbers"] == [1054]
+    assert "Lifecycle: historical_pending_verification" in issue["body"]
+    assert "Next reminder at:" not in issue["body"]
+    assert "Alert pending consumer:" not in issue["body"]
+    assert "First failure: 2026-10-19T14:19:18+00:00" in issue["body"]
+    before = len(calls)
+    incidents.reconcile_incidents(
+        api_url="https://api.github.com", repository="owner/repo", token="token", trace_path=path, now=now,
+    )
+    assert len(calls) == before
+
+    trace = _trace("ready", detected=now, reason="candidate_ready")
+    trace["events"][0]["summary_contract_version"] = "unknown"
+    trace["stages"].update({"queue": "acquired", "prepare": "failed"})
+    path.write_text(json.dumps(trace), encoding="utf-8")
+    result = incidents.reconcile_incidents(
+        api_url="https://api.github.com", repository="owner/repo", token="token",
+        trace_path=path, now=now, defer_notification_cadence=True,
+    )
+    assert result["incident_active"] is True
+    assert result["reminded_issue_numbers"] == [1054]
+    assert "Lifecycle: historical_pending_verification" not in issue["body"]
+    assert "opaque-ref" in issue["body"]
+    assert "Alert pending consumer:" in issue["body"]
+
+
+@pytest.mark.parametrize("first_age,refs,scan", [
+    (10, "not available", "success"),
+    (60, "known-event", "success"),
+    (60, "not available", "failed"),
+])
+def test_historical_policy_keeps_recent_or_attributable_or_incomplete_scan_incidents(
+    monkeypatch, tmp_path, first_age, refs, scan,
+):
+    now = datetime(2026, 10, 29, 13, 0, tzinfo=UTC)
+    issue = {
+        "number": 1054, "title": f"{incidents.EVENT_ISSUE_TITLE_PREFIX} / official_event_delivery",
+        "body": (
+            f"{incidents.EVENT_INCIDENT_MARKER}{'f' * 24}\n"
+            f"First failure: {(now - timedelta(minutes=first_age)).isoformat()}\n"
+            f"Event refs: {refs}\nEvent refs complete: false\n"
+            "Next reminder at: 2026-10-29T12:30:00+00:00"
+        ),
+    }
+    trace = _trace("no_event", detected=now)
+    trace["events"] = []
+    trace["stages"]["scan"] = scan
+    path = tmp_path / "trace.json"
+    path.write_text(json.dumps(trace), encoding="utf-8")
+    calls = []
+    monkeypatch.setattr(incidents, "_open_incidents", lambda *a, **k: [issue])
+    monkeypatch.setattr(incidents, "_request_json", lambda *a, **k: calls.append(a) or {})
+    result = incidents.reconcile_incidents(
+        api_url="https://api.github.com", repository="owner/repo", token="token", trace_path=path, now=now,
+    )
+    assert result["historical_pending_issue_numbers"] == []
+    assert calls == []
