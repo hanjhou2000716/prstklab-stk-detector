@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "54c70a9b52b3e031",
-  "snapshot_id": "news-142dc1ac238ef990",
+  "market_snapshot_id": "a6d632fe6ee123e6",
+  "snapshot_id": "news-32a63a006ca2ed75",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -629,15 +629,15 @@
           "ranking_score": 125
         },
         {
-          "story_id": "news-c572a835fd99fa6fd049",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "AI供應鏈最新第三季財報放榜！單月外資賣超破兆元，台積電擴廠成亮點-財經焦點情報站 - CMoney投資網誌",
-          "raw_title": "AI供應鏈最新第三季財報放榜！單月外資賣超破兆元，台積電擴廠成亮點-財經焦點情報站 - CMoney投資網誌",
-          "normalized_fact": "AI供應鏈最新第三季財報放榜，單月外資賣超破兆元，台積電擴廠成亮點-財經焦點情報站 CMoney投資網誌。",
-          "market_topic": "semiconductor_ai",
+          "story_id": "news-c068cfe1fabbe3136cc0",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "通膨又來施壓！美國9月PCE年增3.6% Fed12月升息機率逾八成",
+          "raw_title": "通膨又來施壓！美國9月PCE年增3.6% Fed12月升息機率逾八成",
+          "normalized_fact": "美國9月PCE年增3.6%，核心PCE升至3.1%，皆高於Fed 2%目標，通膨再度加速 BEA稱月增0.5%符合預期，汽油與商品價格上漲；超級核心PCE升至2024年12月來高點 實質消費支出持平、。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -645,11 +645,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "AI供應鏈最新第三季財報放榜！單月外資賣超破兆元，台積電擴廠成亮點-財經焦點情報站 CMoney投資網誌",
+          "summary": "美國9月PCE年增3.6%，核心PCE升至3.1%，皆高於Fed 2%目標，通膨再度加速 BEA稱月增0.5%符合預期，汽油與商品價格上漲；超級核心PCE升至2024年12月來高點 實質消費支出持平、",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxQcnJtS1ZVNTNaR3N6MlJqLXRaZkktVGhBRkQ1b3d4Z19uMmVSZDgyU3NIOXI1SWJBZV9tNk1OMnBZR0pEMkZqQWpZXzZxXzdITk16QW9MRVpCUUJXQTAtS0ZrOHU5bXNfZG10YjF3cWY1LUoyV3JXRXZaWkVaMU9aaHVn",
-          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxQcnJtS1ZVNTNaR3N6MlJqLXRaZkktVGhBRkQ1b3d4Z19uMmVSZDgyU3NIOXI1SWJBZV9tNk1OMnBZR0pEMkZqQWpZXzZxXzdITk16QW9MRVpCUUJXQTAtS0ZrOHU5bXNfZG10YjF3cWY1LUoyV3JXRXZaWkVaMU9aaHVn",
-          "published_at": "2026-10-29T10:40:04+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E9%80%9A%E8%86%A8%E5%8F%88%E4%BE%86%E6%96%BD%E5%A3%93-%E7%BE%8E%E5%9C%8B9%E6%9C%88pce%E5%B9%B4%E5%A2%9E3-6-fed12%E6%9C%88%E5%8D%87%E6%81%AF%E6%A9%9F%E7%8E%87%E9%80%BE%E5%85%AB%E6%88%90-123549034.html",
+          "url": "https://tw.stock.yahoo.com/news/%E9%80%9A%E8%86%A8%E5%8F%88%E4%BE%86%E6%96%BD%E5%A3%93-%E7%BE%8E%E5%9C%8B9%E6%9C%88pce%E5%B9%B4%E5%A2%9E3-6-fed12%E6%9C%88%E5%8D%87%E6%81%AF%E6%A9%9F%E7%8E%87%E9%80%BE%E5%85%AB%E6%88%90-123549034.html",
+          "published_at": "2026-10-29T12:35:49+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -659,32 +659,26 @@
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
+          "entities": [],
           "sectors": [],
-          "topics": [
-            "ai",
-            "earnings"
-          ],
+          "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
+            "category": "fed",
+            "reason": "fed_subject_action",
             "matched_terms": [
-              "ai",
-              "財報"
+              "fed",
+              "升息"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "ai",
-              "財報"
+              "fed",
+              "升息"
             ],
-            "matched_subject": "ai",
-            "matched_action": "財報",
-            "matched_market_object": "ai",
+            "matched_subject": "fed",
+            "matched_action": "升息",
+            "matched_market_object": "fed",
             "input_fields": [
               "description",
               "summary",
@@ -692,31 +686,30 @@
             ]
           },
           "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM"
+            "market:cross_market",
+            "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "ai供應鏈最新第三季財報放榜單月外資賣超破兆元台積電擴廠成亮點財經焦點情報站cmoney投資網誌",
-          "event_cluster_key": "event-137d75eff7a3a513f6ec",
-          "published_time_bucket": "2026-10-29T10:00:00+00:00",
+          "dedupe_key": "美國9月pce年增36核心pce升至31皆高於fed2目標通膨再度加速bea稱月增05符合預期汽油與商品價格上漲超級核心pce升至2024年12月來高點實質消費支出持平",
+          "event_cluster_key": "event-4f137f07c621ab65d6e0",
+          "published_time_bucket": "2026-10-29T12:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "ai",
-            "財報"
+            "fed",
+            "升息"
           ],
-          "matched_subject": "ai",
-          "matched_action": "財報",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
+          "matched_subject": "fed",
+          "matched_action": "升息",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Google News｜台股線索",
+          "source": "Yahoo Taiwan Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -725,7 +718,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 125
+          "ranking_score": 130
         },
         {
           "story_id": "news-ffeec92f4b35d4965b01",
@@ -1114,15 +1107,15 @@
           "ranking_score": 125
         },
         {
-          "story_id": "news-c572a835fd99fa6fd049",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "AI供應鏈最新第三季財報放榜！單月外資賣超破兆元，台積電擴廠成亮點-財經焦點情報站 - CMoney投資網誌",
-          "raw_title": "AI供應鏈最新第三季財報放榜！單月外資賣超破兆元，台積電擴廠成亮點-財經焦點情報站 - CMoney投資網誌",
-          "normalized_fact": "AI供應鏈最新第三季財報放榜，單月外資賣超破兆元，台積電擴廠成亮點-財經焦點情報站 CMoney投資網誌。",
-          "market_topic": "semiconductor_ai",
+          "story_id": "news-c068cfe1fabbe3136cc0",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "通膨又來施壓！美國9月PCE年增3.6% Fed12月升息機率逾八成",
+          "raw_title": "通膨又來施壓！美國9月PCE年增3.6% Fed12月升息機率逾八成",
+          "normalized_fact": "美國9月PCE年增3.6%，核心PCE升至3.1%，皆高於Fed 2%目標，通膨再度加速 BEA稱月增0.5%符合預期，汽油與商品價格上漲；超級核心PCE升至2024年12月來高點 實質消費支出持平、。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -1130,11 +1123,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "AI供應鏈最新第三季財報放榜！單月外資賣超破兆元，台積電擴廠成亮點-財經焦點情報站 CMoney投資網誌",
+          "summary": "美國9月PCE年增3.6%，核心PCE升至3.1%，皆高於Fed 2%目標，通膨再度加速 BEA稱月增0.5%符合預期，汽油與商品價格上漲；超級核心PCE升至2024年12月來高點 實質消費支出持平、",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxQcnJtS1ZVNTNaR3N6MlJqLXRaZkktVGhBRkQ1b3d4Z19uMmVSZDgyU3NIOXI1SWJBZV9tNk1OMnBZR0pEMkZqQWpZXzZxXzdITk16QW9MRVpCUUJXQTAtS0ZrOHU5bXNfZG10YjF3cWY1LUoyV3JXRXZaWkVaMU9aaHVn",
-          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxQcnJtS1ZVNTNaR3N6MlJqLXRaZkktVGhBRkQ1b3d4Z19uMmVSZDgyU3NIOXI1SWJBZV9tNk1OMnBZR0pEMkZqQWpZXzZxXzdITk16QW9MRVpCUUJXQTAtS0ZrOHU5bXNfZG10YjF3cWY1LUoyV3JXRXZaWkVaMU9aaHVn",
-          "published_at": "2026-10-29T10:40:04+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E9%80%9A%E8%86%A8%E5%8F%88%E4%BE%86%E6%96%BD%E5%A3%93-%E7%BE%8E%E5%9C%8B9%E6%9C%88pce%E5%B9%B4%E5%A2%9E3-6-fed12%E6%9C%88%E5%8D%87%E6%81%AF%E6%A9%9F%E7%8E%87%E9%80%BE%E5%85%AB%E6%88%90-123549034.html",
+          "url": "https://tw.stock.yahoo.com/news/%E9%80%9A%E8%86%A8%E5%8F%88%E4%BE%86%E6%96%BD%E5%A3%93-%E7%BE%8E%E5%9C%8B9%E6%9C%88pce%E5%B9%B4%E5%A2%9E3-6-fed12%E6%9C%88%E5%8D%87%E6%81%AF%E6%A9%9F%E7%8E%87%E9%80%BE%E5%85%AB%E6%88%90-123549034.html",
+          "published_at": "2026-10-29T12:35:49+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -1144,32 +1137,26 @@
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
+          "entities": [],
           "sectors": [],
-          "topics": [
-            "ai",
-            "earnings"
-          ],
+          "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
+            "category": "fed",
+            "reason": "fed_subject_action",
             "matched_terms": [
-              "ai",
-              "財報"
+              "fed",
+              "升息"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "ai",
-              "財報"
+              "fed",
+              "升息"
             ],
-            "matched_subject": "ai",
-            "matched_action": "財報",
-            "matched_market_object": "ai",
+            "matched_subject": "fed",
+            "matched_action": "升息",
+            "matched_market_object": "fed",
             "input_fields": [
               "description",
               "summary",
@@ -1177,31 +1164,30 @@
             ]
           },
           "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM"
+            "market:cross_market",
+            "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "ai供應鏈最新第三季財報放榜單月外資賣超破兆元台積電擴廠成亮點財經焦點情報站cmoney投資網誌",
-          "event_cluster_key": "event-137d75eff7a3a513f6ec",
-          "published_time_bucket": "2026-10-29T10:00:00+00:00",
+          "dedupe_key": "美國9月pce年增36核心pce升至31皆高於fed2目標通膨再度加速bea稱月增05符合預期汽油與商品價格上漲超級核心pce升至2024年12月來高點實質消費支出持平",
+          "event_cluster_key": "event-4f137f07c621ab65d6e0",
+          "published_time_bucket": "2026-10-29T12:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "ai",
-            "財報"
+            "fed",
+            "升息"
           ],
-          "matched_subject": "ai",
-          "matched_action": "財報",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
+          "matched_subject": "fed",
+          "matched_action": "升息",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Google News｜台股線索",
+          "source": "Yahoo Taiwan Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -1210,7 +1196,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 125
+          "ranking_score": 130
         },
         {
           "story_id": "news-ffeec92f4b35d4965b01",
@@ -1784,6 +1770,100 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
+        },
+        {
+          "story_id": "news-9a70223483d18fad084b",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "AI長線趨勢不變 震盪分批布局半導體供應鏈 - 自由財經",
+          "raw_title": "AI長線趨勢不變 震盪分批布局半導體供應鏈 - 自由財經",
+          "normalized_fact": "AI長線趨勢不變 震盪分批布局半導體供應鏈 自由財經。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "AI長線趨勢不變 震盪分批布局半導體供應鏈 自由財經",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE56c1JSUjRrWUNXSEJxSnRLc0FZblhQejk4Ym1aTnlXdWxEZWMwMVlzRzlHeUlvdUpSVWRSTk9ERFdEWmFJVDZTWml5cWlrREdTX0lyX09xdi02VE1uWTVv0gFkQVVfeXFMTU9sSlpxbzdNM3VZSi1zUUViMXB0TkNXN1pxMXZLbDFiQkVNRTlLeHZqNkRiM3hvY0J2MHItMldqc1BsS2lOUHJIT0p6LWxYMm5vcV83aF9WSmJJQkJxVXJTLWU2Nw",
+          "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE56c1JSUjRrWUNXSEJxSnRLc0FZblhQejk4Ym1aTnlXdWxEZWMwMVlzRzlHeUlvdUpSVWRSTk9ERFdEWmFJVDZTWml5cWlrREdTX0lyX09xdi02VE1uWTVv0gFkQVVfeXFMTU9sSlpxbzdNM3VZSi1zUUViMXB0TkNXN1pxMXZLbDFiQkVNRTlLeHZqNkRiM3hvY0J2MHItMldqc1BsS2lOUHJIT0p6LWxYMm5vcV83aF9WSmJJQkJxVXJTLWU2Nw",
+          "published_at": "2026-10-25T02:40:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 4,
+          "published_local_date": "2026-10-25",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai",
+            "semiconductor"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "ai長線趨勢不變震盪分批布局半導體供應鏈自由財經",
+          "event_cluster_key": "event-89c7954a35b7308c9c61",
+          "published_time_bucket": "2026-10-25T02:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜台股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
         },
         {
           "story_id": "news-0880448e391fe339b9e4",
@@ -4535,106 +4615,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 25
-        },
-        {
-          "story_id": "news-f0a33ed4199c1864cdfc",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "美股財報揭露AI資本支出隱憂，牽動先進封裝供應鏈，台積電遇亂流-財經焦點情報站 - CMoney投資網誌",
-          "raw_title": "美股財報揭露AI資本支出隱憂，牽動先進封裝供應鏈，台積電遇亂流-財經焦點情報站 - CMoney投資網誌",
-          "normalized_fact": "美股財報揭露AI資本支出隱憂，牽動先進封裝供應鏈，台積電遇亂流-財經焦點情報站 CMoney投資網誌。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "美股財報揭露AI資本支出隱憂，牽動先進封裝供應鏈，台積電遇亂流-財經焦點情報站 CMoney投資網誌",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxQZjhQU0tVa0V3QXllUG95MnJUSUV4eW9VdV95TmNGX21pbTB0NkhLQWVJLXZmWWI2bS04aVE0ZG4za1JDLWU3cTllbTlSc3dPV2VFbWYzVXVzTHkwMEg2OXBGbVNUNEN4a0pOTUFoaTlHVEZpa2ZPU0V6bXF2XzlRcUVR",
-          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxQZjhQU0tVa0V3QXllUG95MnJUSUV4eW9VdV95TmNGX21pbTB0NkhLQWVJLXZmWWI2bS04aVE0ZG4za1JDLWU3cTllbTlSc3dPV2VFbWYzVXVzTHkwMEg2OXBGbVNUNEN4a0pOTUFoaTlHVEZpa2ZPU0V6bXF2XzlRcUVR",
-          "published_at": "2026-10-29T05:09:51+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-29",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "earnings"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "財報"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "財報"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "財報",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美股財報揭露ai資本支出隱憂牽動先進封裝供應鏈台積電遇亂流財經焦點情報站cmoney投資網誌",
-          "event_cluster_key": "event-4eb2495280e9f00efb49",
-          "published_time_bucket": "2026-10-29T05:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "財報"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "財報",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 1,
-          "inventory_saved_at": "2026-10-29T06:03:59.847486+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 25
         }
       ],
       "source_diversity": {
@@ -4660,8 +4640,8 @@
       "interest_graph": {
         "ticker_interest": {
           "006208": 2,
-          "2330": 20,
-          "TSM": 20,
+          "2330": 18,
+          "TSM": 18,
           "52": 2,
           "NVDA": 1
         },
@@ -4672,7 +4652,7 @@
           "原油": 1
         },
         "market_interest": {
-          "taiwan": 107
+          "taiwan": 105
         },
         "context": {
           "tracked_tickers": [
@@ -4752,8 +4732,8 @@
         "source_interest": {
           "tracked_ticker": {
             "006208": 2,
-            "2330": 20,
-            "TSM": 20,
+            "2330": 18,
+            "TSM": 18,
             "NVDA": 1
           },
           "research_candidate": {
@@ -4768,10 +4748,10 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 32,
+      "excluded_count": 30,
       "exclusion_reasons": {
-        "insufficient_market_relevance": 26,
-        "outside_calendar_window": 19
+        "insufficient_market_relevance": 24,
+        "outside_calendar_window": 18
       },
       "status": "ready",
       "collection_state": "ready",
@@ -4781,41 +4761,41 @@
         "successful_provider_count": 5,
         "failed_provider_count": 0,
         "disabled_provider_count": 0,
-        "fetched": 41,
-        "normalized": 41,
-        "eligible": 9,
-        "excluded": 32,
+        "fetched": 40,
+        "normalized": 40,
+        "eligible": 10,
+        "excluded": 30,
         "date_eligible_current": 22,
-        "date_excluded_current": 19,
+        "date_excluded_current": 18,
         "date_exclusion_reasons_current": {
-          "outside_calendar_window": 19
+          "outside_calendar_window": 18
         },
-        "date_eligible_inventory": 66,
+        "date_eligible_inventory": 65,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-29T13:23:30.703216+00:00",
-        "deduped": 9,
+        "reference_time": "2026-10-29T13:29:10.296222+00:00",
+        "deduped": 10,
         "publicly_ranked": 5,
-        "current_eligible": 9,
-        "inventory_considered": 66,
+        "current_eligible": 10,
+        "inventory_considered": 65,
         "inventory_eligible": 53,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 32,
-        "fetched_story_count": 41,
-        "normalized_story_count": 41,
-        "eligible_story_count": 9,
-        "deduped_story_count": 9,
+        "filtered_story_count": 30,
+        "fetched_story_count": 40,
+        "normalized_story_count": 40,
+        "eligible_story_count": 10,
+        "deduped_story_count": 10,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 66,
+        "considered": 65,
         "eligible": 53,
         "selected": 0,
         "target_count": 5,
@@ -4828,8 +4808,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 41,
-          "checked_at": "2026-10-29T13:23:30.703254+00:00"
+          "item_count": 40,
+          "checked_at": "2026-10-29T13:29:10.296259+00:00"
         },
         {
           "provider": "twse",
@@ -4840,10 +4820,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-10-29T13:23:30.703254+00:00",
+          "checked_at": "2026-10-29T13:29:10.296259+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-29T13:23:30.703254+00:00",
+          "last_success_at": "2026-10-29T13:29:10.296259+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4868,10 +4848,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-10-29T13:23:30.703254+00:00",
+          "checked_at": "2026-10-29T13:29:10.296259+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-29T13:23:30.703254+00:00",
+          "last_success_at": "2026-10-29T13:29:10.296259+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4896,10 +4876,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 0,
-          "checked_at": "2026-10-29T13:23:30.703254+00:00",
+          "checked_at": "2026-10-29T13:29:10.296259+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-29T13:23:30.703254+00:00",
+          "last_success_at": "2026-10-29T13:29:10.296259+00:00",
           "last_failure_at": null,
           "stories_ingested": 1,
           "stories_deduped": 0,
@@ -4927,15 +4907,15 @@
           "status": "healthy",
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
-          "item_count": 1,
-          "checked_at": "2026-10-29T13:23:30.703254+00:00",
+          "item_count": 2,
+          "checked_at": "2026-10-29T13:29:10.296259+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 1,
-          "last_success_at": "2026-10-29T13:23:30.703254+00:00",
+          "filtered_item_count": 2,
+          "last_success_at": "2026-10-29T13:29:10.296259+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
-          "stories_deduped": 1,
-          "ranked_count": 1,
+          "stories_deduped": 2,
+          "ranked_count": 2,
           "relevance_distribution": {
             "market": 10
           },
@@ -4943,10 +4923,10 @@
             "fetched_count": 10,
             "normalized_count": 10,
             "market_compatible_count": 10,
-            "eligible_count": 1,
-            "excluded_count": 9,
-            "deduped_count": 1,
-            "ranked_count": 1
+            "eligible_count": 2,
+            "excluded_count": 8,
+            "deduped_count": 2,
+            "ranked_count": 2
           }
         },
         {
@@ -4957,43 +4937,43 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
-          "item_count": 4,
-          "checked_at": "2026-10-29T13:23:30.703254+00:00",
-          "raw_item_count": 30,
-          "filtered_item_count": 4,
-          "last_success_at": "2026-10-29T13:23:30.703254+00:00",
+          "item_count": 3,
+          "checked_at": "2026-10-29T13:29:10.296259+00:00",
+          "raw_item_count": 29,
+          "filtered_item_count": 3,
+          "last_success_at": "2026-10-29T13:29:10.296259+00:00",
           "last_failure_at": null,
-          "stories_ingested": 30,
+          "stories_ingested": 29,
           "stories_deduped": 8,
-          "ranked_count": 4,
+          "ranked_count": 3,
           "relevance_distribution": {
-            "market": 30,
-            "tracked_ticker": 9
+            "market": 29,
+            "tracked_ticker": 7
           },
           "funnel": {
-            "fetched_count": 30,
-            "normalized_count": 30,
-            "market_compatible_count": 30,
+            "fetched_count": 29,
+            "normalized_count": 29,
+            "market_compatible_count": 29,
             "eligible_count": 8,
-            "excluded_count": 22,
+            "excluded_count": 21,
             "deduped_count": 8,
-            "ranked_count": 4
+            "ranked_count": 3
           }
         }
       ],
       "observability": {
-        "stories_ingested": 41,
-        "stories_deduped": 9,
+        "stories_ingested": 40,
+        "stories_deduped": 10,
         "ranked_count": 5,
         "relevance_distribution": {
-          "market": 41,
-          "tracked_ticker": 10
+          "market": 40,
+          "tracked_ticker": 8
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-29T13:23:30.703254+00:00",
+            "last_success_at": "2026-10-29T13:29:10.296259+00:00",
             "last_failure_at": null,
             "stories_ingested": 1,
             "stories_deduped": 0,
@@ -5015,29 +4995,29 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-29T13:23:30.703254+00:00",
+            "last_success_at": "2026-10-29T13:29:10.296259+00:00",
             "last_failure_at": null,
-            "stories_ingested": 30,
+            "stories_ingested": 29,
             "stories_deduped": 8,
-            "ranked_count": 4,
+            "ranked_count": 3,
             "relevance_distribution": {
-              "market": 30,
-              "tracked_ticker": 9
+              "market": 29,
+              "tracked_ticker": 7
             },
             "funnel": {
-              "fetched_count": 30,
-              "normalized_count": 30,
-              "market_compatible_count": 30,
+              "fetched_count": 29,
+              "normalized_count": 29,
+              "market_compatible_count": 29,
               "eligible_count": 8,
-              "excluded_count": 22,
+              "excluded_count": 21,
               "deduped_count": 8,
-              "ranked_count": 4
+              "ranked_count": 3
             }
           },
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-10-29T13:23:30.703254+00:00",
+            "last_success_at": "2026-10-29T13:29:10.296259+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5056,7 +5036,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-10-29T13:23:30.703254+00:00",
+            "last_success_at": "2026-10-29T13:29:10.296259+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5075,11 +5055,11 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-29T13:23:30.703254+00:00",
+            "last_success_at": "2026-10-29T13:29:10.296259+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
-            "stories_deduped": 1,
-            "ranked_count": 1,
+            "stories_deduped": 2,
+            "ranked_count": 2,
             "relevance_distribution": {
               "market": 10
             },
@@ -5087,10 +5067,10 @@
               "fetched_count": 10,
               "normalized_count": 10,
               "market_compatible_count": 10,
-              "eligible_count": 1,
-              "excluded_count": 9,
-              "deduped_count": 1,
-              "ranked_count": 1
+              "eligible_count": 2,
+              "excluded_count": 8,
+              "deduped_count": 2,
+              "ranked_count": 2
             }
           }
         ]
@@ -5315,98 +5295,6 @@
       ],
       "stories": [
         {
-          "story_id": "news-50497b771047bc297d3f",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "3 energy stocks we approach with caution",
-          "raw_title": "3 energy stocks we approach with caution",
-          "normalized_fact": "Energy businesses quietly power the physical things we depend on, from cars and homes to e-commerce infrastructure. But they are at the whim of volatile macroeconomic factors that sway capital spending, like interest rates and commodity prices. Wariness surrounding these influences has caused the industry to underperform the market as it was flat over the past six months while the S&P 500 climbed by 8.2%。",
-          "market_topic": "global_market",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Energy businesses quietly power the physical things we depend on, from cars and homes to e-commerce infrastructure. But they are at the whim of volatile macroeconomic factors that sway capital spending, like interest rates and commodity prices. Wariness surrounding these influences has caused the industry to underperform the market as it was flat over the past six months while the S&P 500 climbed by 8.2%.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/energy/articles/3-energy-stocks-approach-caution-122725438.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/energy/articles/3-energy-stocks-approach-caution-122725438.html?.tsrc=rss",
-          "published_at": "2026-10-29T12:27:25+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-29",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "market",
-            "reason": "market_subject_action",
-            "matched_terms": [
-              "s&p 500",
-              "volatile"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "s&p 500",
-              "volatile"
-            ],
-            "matched_subject": "s&p 500",
-            "matched_action": "volatile",
-            "matched_market_object": "s&p 500",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "research_candidate:HAS"
-          ],
-          "freshness": "published",
-          "dedupe_key": "energybusinessesquietlypowerthephysicalthingswedependonfromcarsandhomestoecommerceinfrastructurebuttheyareatthewhimofvolatilemacroeconomicfactorsthatswaycapitalspendinglikeinterestratesandcommoditypriceswarinesssurroundingtheseinfluenceshascausedtheindustrytounderperformthemarketasitwasflatoverthepastsixmonthswhilethesp500climbedby82",
-          "event_cluster_key": "event-c64f9d26acbdeccd46a0",
-          "published_time_bucket": "2026-10-29T12:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "s&p 500",
-            "volatile"
-          ],
-          "matched_subject": "s&p 500",
-          "matched_action": "volatile",
-          "matched_market_object": "s&p 500",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 135
-        },
-        {
           "story_id": "news-b2b24b26456d071a4ab4",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -5500,15 +5388,15 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-70ea9aafc5990ff53c75",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
+          "story_id": "news-51dc9dd77a549bdb8d5e",
+          "provider": "anue",
+          "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "PowerBank Announces First 2 MW Modular Data Center in Ontario with Potential Annual Lease Revenue of Approximately C$2 Million",
-          "raw_title": "PowerBank Announces First 2 MW Modular Data Center in Ontario with Potential Annual Lease Revenue of Approximately C$2 Million",
-          "normalized_fact": "PowerBank Corporation (Nasdaq: PBK) (Cboe CA: PBK) (FSE: 103) (\"PowerBank\" or the \"Company\"), a leader in independent energy development and asset ownership in North America, is pleased to announce that its joint development partner has executed the first lease and it is in development of a 2 MW modular data center in Ontario (the \"Project\") under a joint development agreement. The Project is the first of several sites PowerBank plans to develop across Ontario. PowerBank expects to earn revenue。",
-          "market_topic": "global_market",
+          "title": "〈美股盤後〉Anthropic IPO熱潮延燒 費半漲3.6% 波音崩逾10%壓抑道瓊",
+          "raw_title": "〈美股盤後〉Anthropic IPO熱潮延燒 費半漲3.6% 波音崩逾10%壓抑道瓊",
+          "normalized_fact": "美股週二收高，標普連2日上漲；那指漲1.18%，費半勁揚3.6%，道瓊僅小漲16點，油價下跌提振情緒。 Anthropic申請上市、Meta 250億美元發行認購超額5倍，AI熱度回溫；博通、AMD領漲晶片股。 財報與Fed成焦點，Alphabet、微軟、亞馬遜將公布業績；市場預期Fed按兵不動。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5516,36 +5404,42 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "PowerBank Corporation (Nasdaq: PBK) (Cboe CA: PBK) (FSE: 103) (\"PowerBank\" or the \"Company\"), a leader in independent energy development and asset ownership in North America, is pleased to announce that its joint development partner has executed the first lease and it is in development of a 2 MW modular data center in Ontario (the \"Project\") under a joint development agreement. The Project is the first of several sites PowerBank plans to develop across Ontario. PowerBank expects to earn revenue",
+          "summary": "美股週二收高，標普連2日上漲；那指漲1.18%，費半勁揚3.6%，道瓊僅小漲16點，油價下跌提振情緒。 Anthropic申請上市、Meta 250億美元發行認購超額5倍，AI熱度回溫；博通、AMD領漲晶片股。 財報與Fed成焦點，Alphabet、微軟、亞馬遜將公布業績；市場預期Fed按兵不動。",
           "description": "",
-          "canonical_url": "https://finance.yahoo.com/news/powerbank-announces-first-2-mw-123000215.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/news/powerbank-announces-first-2-mw-123000215.html?.tsrc=rss",
-          "published_at": "2026-10-29T12:30:00+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6638589",
+          "url": "https://news.cnyes.com/news/id/6638589",
+          "published_at": "2026-10-27T21:26:49+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "current",
+          "date_eligibility_status": "recent_reference",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-29",
+          "publication_age_trading_sessions": 3,
+          "published_local_date": "2026-10-27",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "earnings"
+          "entities": [
+            "SOX"
           ],
+          "sectors": [],
+          "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "預期"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "預期"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "預期",
+            "matched_market_object": "fed",
             "input_fields": [
               "description",
               "summary",
@@ -5553,27 +5447,29 @@
             ]
           },
           "relevance_reasons": [
-            "market:us",
-            "research_candidate:HAS"
+            "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "powerbankcorporationnasdaqpbkcboecapbkfse103powerbankorthecompanyaleaderinindependentenergydevelopmentandassetownershipinnorthamericaispleasedtoannouncethatitsjointdevelopmentpartnerhasexecutedthefirstleaseanditisindevelopmentofa2mwmodulardatacenterinontariotheprojectunderajointdevelopmentagreementtheprojectisthefirstofseveralsitespowerbankplanstodevelopacrossontariopowerbankexpectstoearnrevenue",
-          "event_cluster_key": "event-052443a236cd6f812736",
-          "published_time_bucket": "2026-10-29T12:00:00+00:00",
+          "dedupe_key": "美股週二收高標普連2日上漲那指漲118費半勁揚36道瓊僅小漲16點油價下跌提振情緒anthropic申請上市meta250億美元發行認購超額5倍ai熱度回溫博通amd領漲晶片股財報與fed成焦點alphabet微軟亞馬遜將公布業績市場預期fed按兵不動",
+          "event_cluster_key": "event-a38276ec36b8e7f19fcb",
+          "published_time_bucket": "2026-10-27T21:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "company_event",
+          "classification_evidence": [
+            "fed",
+            "預期"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "預期",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Yahoo Finance",
+          "source": "鉅亨網｜市場焦點",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -5582,7 +5478,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 135
+          "ranking_score": 130
         },
         {
           "story_id": "news-b98f14eb2845bf5d6cd3",
@@ -5771,19 +5667,17 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 120
-        }
-      ],
-      "editorial_candidates": [
+        },
         {
-          "story_id": "news-50497b771047bc297d3f",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "3 energy stocks we approach with caution",
-          "raw_title": "3 energy stocks we approach with caution",
-          "normalized_fact": "Energy businesses quietly power the physical things we depend on, from cars and homes to e-commerce infrastructure. But they are at the whim of volatile macroeconomic factors that sway capital spending, like interest rates and commodity prices. Wariness surrounding these influences has caused the industry to underperform the market as it was flat over the past six months while the S&P 500 climbed by 8.2%。",
-          "market_topic": "global_market",
+          "story_id": "news-10e0e423fc153dadb014",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Federal Reserve makes interest rate decision ahead of midterms - Fox Business",
+          "raw_title": "Federal Reserve makes interest rate decision ahead of midterms - Fox Business",
+          "normalized_fact": "Federal Reserve makes interest rate decision ahead of midterms Fox Business。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5791,40 +5685,42 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "Energy businesses quietly power the physical things we depend on, from cars and homes to e-commerce infrastructure. But they are at the whim of volatile macroeconomic factors that sway capital spending, like interest rates and commodity prices. Wariness surrounding these influences has caused the industry to underperform the market as it was flat over the past six months while the S&P 500 climbed by 8.2%.",
+          "summary": "Federal Reserve makes interest rate decision ahead of midterms Fox Business",
           "description": "",
-          "canonical_url": "https://finance.yahoo.com/energy/articles/3-energy-stocks-approach-caution-122725438.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/energy/articles/3-energy-stocks-approach-caution-122725438.html?.tsrc=rss",
-          "published_at": "2026-10-29T12:27:25+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxOR0hLUjN3TllXcDVjaXRBaUwxOW1QcnJLRkc3ZGR3SnR1U283WVdPeWozMmw2eFlLa3ZVb011TlEtMHI0RjV6eWE0T2ZXcXRNQVR5eEIzbVhRektfTHkzLWNLbVc5U0RQaXUyRnFSZ2VCUmZNOFlpcTQyWXc5S21zRWxpb2FBSS1FSkpiVnc0VnV5S2o50gGaAUFVX3lxTE1DUFpkcUswb2dYdVhleE1XejZfZVdTSHJsbUhOelF3Z1B4UUpGdWhqUGQzTmxvTmhGbFFQZ1VNdmhNenprZE1Hbjh6bW9RUTFGN0lfYkZMZ3g4YUh1VlM2eUhGNHNpVUN5ZG12R2RrSnpxTDRKTVR6Y29oMUhHNVdMZ1N1UzFLUjF3LUNnc0pvUFNQZXA1T1JnQ0E",
+          "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxOR0hLUjN3TllXcDVjaXRBaUwxOW1QcnJLRkc3ZGR3SnR1U283WVdPeWozMmw2eFlLa3ZVb011TlEtMHI0RjV6eWE0T2ZXcXRNQVR5eEIzbVhRektfTHkzLWNLbVc5U0RQaXUyRnFSZ2VCUmZNOFlpcTQyWXc5S21zRWxpb2FBSS1FSkpiVnc0VnV5S2o50gGaAUFVX3lxTE1DUFpkcUswb2dYdVhleE1XejZfZVdTSHJsbUhOelF3Z1B4UUpGdWhqUGQzTmxvTmhGbFFQZ1VNdmhNenprZE1Hbjh6bW9RUTFGN0lfYkZMZ3g4YUh1VlM2eUhGNHNpVUN5ZG12R2RrSnpxTDRKTVR6Y29oMUhHNVdMZ1N1UzFLUjF3LUNnc0pvUFNQZXA1T1JnQ0E",
+          "published_at": "2026-10-28T21:17:00+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "current",
+          "date_eligibility_status": "recent_reference",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-29",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-28",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
           "entities": [],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "rates"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "market",
-            "reason": "market_subject_action",
+            "category": "fed",
+            "reason": "fed_subject_action",
             "matched_terms": [
-              "s&p 500",
-              "volatile"
+              "federal reserve",
+              "rate"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "s&p 500",
-              "volatile"
+              "federal reserve",
+              "rate"
             ],
-            "matched_subject": "s&p 500",
-            "matched_action": "volatile",
-            "matched_market_object": "s&p 500",
+            "matched_subject": "federal reserve",
+            "matched_action": "rate",
+            "matched_market_object": "federal reserve",
             "input_fields": [
               "description",
               "summary",
@@ -5832,30 +5728,29 @@
             ]
           },
           "relevance_reasons": [
-            "market:us",
-            "research_candidate:HAS"
+            "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "energybusinessesquietlypowerthephysicalthingswedependonfromcarsandhomestoecommerceinfrastructurebuttheyareatthewhimofvolatilemacroeconomicfactorsthatswaycapitalspendinglikeinterestratesandcommoditypriceswarinesssurroundingtheseinfluenceshascausedtheindustrytounderperformthemarketasitwasflatoverthepastsixmonthswhilethesp500climbedby82",
-          "event_cluster_key": "event-c64f9d26acbdeccd46a0",
-          "published_time_bucket": "2026-10-29T12:00:00+00:00",
+          "dedupe_key": "federalreservemakesinterestratedecisionaheadofmidtermsfoxbusiness",
+          "event_cluster_key": "event-c2a0188f8f4f1699aa2c",
+          "published_time_bucket": "2026-10-28T21:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "s&p 500",
-            "volatile"
+            "federal reserve",
+            "rate"
           ],
-          "matched_subject": "s&p 500",
-          "matched_action": "volatile",
-          "matched_market_object": "s&p 500",
-          "decision_value_class": "market_context",
+          "matched_subject": "federal reserve",
+          "matched_action": "rate",
+          "matched_market_object": "federal reserve",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Yahoo Finance",
+          "source": "Google News｜美股線索",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -5864,8 +5759,10 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 135
-        },
+          "ranking_score": 115
+        }
+      ],
+      "editorial_candidates": [
         {
           "story_id": "news-b2b24b26456d071a4ab4",
           "provider": "google_news",
@@ -5960,15 +5857,15 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-70ea9aafc5990ff53c75",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
+          "story_id": "news-51dc9dd77a549bdb8d5e",
+          "provider": "anue",
+          "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "PowerBank Announces First 2 MW Modular Data Center in Ontario with Potential Annual Lease Revenue of Approximately C$2 Million",
-          "raw_title": "PowerBank Announces First 2 MW Modular Data Center in Ontario with Potential Annual Lease Revenue of Approximately C$2 Million",
-          "normalized_fact": "PowerBank Corporation (Nasdaq: PBK) (Cboe CA: PBK) (FSE: 103) (\"PowerBank\" or the \"Company\"), a leader in independent energy development and asset ownership in North America, is pleased to announce that its joint development partner has executed the first lease and it is in development of a 2 MW modular data center in Ontario (the \"Project\") under a joint development agreement. The Project is the first of several sites PowerBank plans to develop across Ontario. PowerBank expects to earn revenue。",
-          "market_topic": "global_market",
+          "title": "〈美股盤後〉Anthropic IPO熱潮延燒 費半漲3.6% 波音崩逾10%壓抑道瓊",
+          "raw_title": "〈美股盤後〉Anthropic IPO熱潮延燒 費半漲3.6% 波音崩逾10%壓抑道瓊",
+          "normalized_fact": "美股週二收高，標普連2日上漲；那指漲1.18%，費半勁揚3.6%，道瓊僅小漲16點，油價下跌提振情緒。 Anthropic申請上市、Meta 250億美元發行認購超額5倍，AI熱度回溫；博通、AMD領漲晶片股。 財報與Fed成焦點，Alphabet、微軟、亞馬遜將公布業績；市場預期Fed按兵不動。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5976,36 +5873,42 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "PowerBank Corporation (Nasdaq: PBK) (Cboe CA: PBK) (FSE: 103) (\"PowerBank\" or the \"Company\"), a leader in independent energy development and asset ownership in North America, is pleased to announce that its joint development partner has executed the first lease and it is in development of a 2 MW modular data center in Ontario (the \"Project\") under a joint development agreement. The Project is the first of several sites PowerBank plans to develop across Ontario. PowerBank expects to earn revenue",
+          "summary": "美股週二收高，標普連2日上漲；那指漲1.18%，費半勁揚3.6%，道瓊僅小漲16點，油價下跌提振情緒。 Anthropic申請上市、Meta 250億美元發行認購超額5倍，AI熱度回溫；博通、AMD領漲晶片股。 財報與Fed成焦點，Alphabet、微軟、亞馬遜將公布業績；市場預期Fed按兵不動。",
           "description": "",
-          "canonical_url": "https://finance.yahoo.com/news/powerbank-announces-first-2-mw-123000215.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/news/powerbank-announces-first-2-mw-123000215.html?.tsrc=rss",
-          "published_at": "2026-10-29T12:30:00+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6638589",
+          "url": "https://news.cnyes.com/news/id/6638589",
+          "published_at": "2026-10-27T21:26:49+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "current",
+          "date_eligibility_status": "recent_reference",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-29",
+          "publication_age_trading_sessions": 3,
+          "published_local_date": "2026-10-27",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "earnings"
+          "entities": [
+            "SOX"
           ],
+          "sectors": [],
+          "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "預期"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "預期"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "預期",
+            "matched_market_object": "fed",
             "input_fields": [
               "description",
               "summary",
@@ -6013,27 +5916,29 @@
             ]
           },
           "relevance_reasons": [
-            "market:us",
-            "research_candidate:HAS"
+            "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "powerbankcorporationnasdaqpbkcboecapbkfse103powerbankorthecompanyaleaderinindependentenergydevelopmentandassetownershipinnorthamericaispleasedtoannouncethatitsjointdevelopmentpartnerhasexecutedthefirstleaseanditisindevelopmentofa2mwmodulardatacenterinontariotheprojectunderajointdevelopmentagreementtheprojectisthefirstofseveralsitespowerbankplanstodevelopacrossontariopowerbankexpectstoearnrevenue",
-          "event_cluster_key": "event-052443a236cd6f812736",
-          "published_time_bucket": "2026-10-29T12:00:00+00:00",
+          "dedupe_key": "美股週二收高標普連2日上漲那指漲118費半勁揚36道瓊僅小漲16點油價下跌提振情緒anthropic申請上市meta250億美元發行認購超額5倍ai熱度回溫博通amd領漲晶片股財報與fed成焦點alphabet微軟亞馬遜將公布業績市場預期fed按兵不動",
+          "event_cluster_key": "event-a38276ec36b8e7f19fcb",
+          "published_time_bucket": "2026-10-27T21:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "company_event",
+          "classification_evidence": [
+            "fed",
+            "預期"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "預期",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Yahoo Finance",
+          "source": "鉅亨網｜市場焦點",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -6042,7 +5947,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 135
+          "ranking_score": 130
         },
         {
           "story_id": "news-b98f14eb2845bf5d6cd3",
@@ -6882,6 +6787,98 @@
           "ranking_score": 115
         },
         {
+          "story_id": "news-50497b771047bc297d3f",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "3 energy stocks we approach with caution",
+          "raw_title": "3 energy stocks we approach with caution",
+          "normalized_fact": "Energy businesses quietly power the physical things we depend on, from cars and homes to e-commerce infrastructure. But they are at the whim of volatile macroeconomic factors that sway capital spending, like interest rates and commodity prices. Wariness surrounding these influences has caused the industry to underperform the market as it was flat over the past six months while the S&P 500 climbed by 8.2%。",
+          "market_topic": "global_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Energy businesses quietly power the physical things we depend on, from cars and homes to e-commerce infrastructure. But they are at the whim of volatile macroeconomic factors that sway capital spending, like interest rates and commodity prices. Wariness surrounding these influences has caused the industry to underperform the market as it was flat over the past six months while the S&P 500 climbed by 8.2%.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/energy/articles/3-energy-stocks-approach-caution-122725438.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/energy/articles/3-energy-stocks-approach-caution-122725438.html?.tsrc=rss",
+          "published_at": "2026-10-29T12:27:25+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-29",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "market",
+            "reason": "market_subject_action",
+            "matched_terms": [
+              "s&p 500",
+              "volatile"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "s&p 500",
+              "volatile"
+            ],
+            "matched_subject": "s&p 500",
+            "matched_action": "volatile",
+            "matched_market_object": "s&p 500",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "research_candidate:HAS"
+          ],
+          "freshness": "published",
+          "dedupe_key": "energybusinessesquietlypowerthephysicalthingswedependonfromcarsandhomestoecommerceinfrastructurebuttheyareatthewhimofvolatilemacroeconomicfactorsthatswaycapitalspendinglikeinterestratesandcommoditypriceswarinesssurroundingtheseinfluenceshascausedtheindustrytounderperformthemarketasitwasflatoverthepastsixmonthswhilethesp500climbedby82",
+          "event_cluster_key": "event-c64f9d26acbdeccd46a0",
+          "published_time_bucket": "2026-10-29T12:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "s&p 500",
+            "volatile"
+          ],
+          "matched_subject": "s&p 500",
+          "matched_action": "volatile",
+          "matched_market_object": "s&p 500",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-29T12:48:27.365404+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 35
+        },
+        {
           "story_id": "news-38a580fbc723b9839032",
           "provider": "sec",
           "provider_name": "SEC EDGAR",
@@ -7129,6 +7126,91 @@
           "inventory_used": true,
           "inventory_age_trading_sessions": 1,
           "inventory_saved_at": "2026-10-29T12:33:47.209282+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 35
+        },
+        {
+          "story_id": "news-70ea9aafc5990ff53c75",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "PowerBank Announces First 2 MW Modular Data Center in Ontario with Potential Annual Lease Revenue of Approximately C$2 Million",
+          "raw_title": "PowerBank Announces First 2 MW Modular Data Center in Ontario with Potential Annual Lease Revenue of Approximately C$2 Million",
+          "normalized_fact": "PowerBank Corporation (Nasdaq: PBK) (Cboe CA: PBK) (FSE: 103) (\"PowerBank\" or the \"Company\"), a leader in independent energy development and asset ownership in North America, is pleased to announce that its joint development partner has executed the first lease and it is in development of a 2 MW modular data center in Ontario (the \"Project\") under a joint development agreement. The Project is the first of several sites PowerBank plans to develop across Ontario. PowerBank expects to earn revenue。",
+          "market_topic": "global_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "PowerBank Corporation (Nasdaq: PBK) (Cboe CA: PBK) (FSE: 103) (\"PowerBank\" or the \"Company\"), a leader in independent energy development and asset ownership in North America, is pleased to announce that its joint development partner has executed the first lease and it is in development of a 2 MW modular data center in Ontario (the \"Project\") under a joint development agreement. The Project is the first of several sites PowerBank plans to develop across Ontario. PowerBank expects to earn revenue",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/news/powerbank-announces-first-2-mw-123000215.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/news/powerbank-announces-first-2-mw-123000215.html?.tsrc=rss",
+          "published_at": "2026-10-29T12:30:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-29",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "earnings"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "research_candidate:HAS"
+          ],
+          "freshness": "published",
+          "dedupe_key": "powerbankcorporationnasdaqpbkcboecapbkfse103powerbankorthecompanyaleaderinindependentenergydevelopmentandassetownershipinnorthamericaispleasedtoannouncethatitsjointdevelopmentpartnerhasexecutedthefirstleaseanditisindevelopmentofa2mwmodulardatacenterinontariotheprojectunderajointdevelopmentagreementtheprojectisthefirstofseveralsitespowerbankplanstodevelopacrossontariopowerbankexpectstoearnrevenue",
+          "event_cluster_key": "event-052443a236cd6f812736",
+          "published_time_bucket": "2026-10-29T12:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "company_event",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-29T12:48:27.365404+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 35
@@ -8965,99 +9047,6 @@
           "ranking_score": 27
         },
         {
-          "story_id": "news-51dc9dd77a549bdb8d5e",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "〈美股盤後〉Anthropic IPO熱潮延燒 費半漲3.6% 波音崩逾10%壓抑道瓊",
-          "raw_title": "〈美股盤後〉Anthropic IPO熱潮延燒 費半漲3.6% 波音崩逾10%壓抑道瓊",
-          "normalized_fact": "美股週二收高，標普連2日上漲；那指漲1.18%，費半勁揚3.6%，道瓊僅小漲16點，油價下跌提振情緒。 Anthropic申請上市、Meta 250億美元發行認購超額5倍，AI熱度回溫；博通、AMD領漲晶片股。 財報與Fed成焦點，Alphabet、微軟、亞馬遜將公布業績；市場預期Fed按兵不動。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "美股週二收高，標普連2日上漲；那指漲1.18%，費半勁揚3.6%，道瓊僅小漲16點，油價下跌提振情緒。 Anthropic申請上市、Meta 250億美元發行認購超額5倍，AI熱度回溫；博通、AMD領漲晶片股。 財報與Fed成焦點，Alphabet、微軟、亞馬遜將公布業績；市場預期Fed按兵不動。",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6638589",
-          "url": "https://news.cnyes.com/news/id/6638589",
-          "published_at": "2026-10-27T21:26:49+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-10-27",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "SOX"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "預期"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "預期"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "預期",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美股週二收高標普連2日上漲那指漲118費半勁揚36道瓊僅小漲16點油價下跌提振情緒anthropic申請上市meta250億美元發行認購超額5倍ai熱度回溫博通amd領漲晶片股財報與fed成焦點alphabet微軟亞馬遜將公布業績市場預期fed按兵不動",
-          "event_cluster_key": "event-a38276ec36b8e7f19fcb",
-          "published_time_bucket": "2026-10-27T21:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "預期"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "預期",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 3,
-          "inventory_saved_at": "2026-10-27T23:41:55.833560+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 24
-        },
-        {
           "story_id": "news-047d01af9a0ae0466774",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -9442,11 +9431,11 @@
         "independent_source_count": 2,
         "provider_count": 2,
         "provider_ids": [
-          "google_news",
-          "yahoo_finance"
+          "anue",
+          "google_news"
         ],
         "source_domains": [
-          "finance.yahoo.com",
+          "news.cnyes.com",
           "news.google.com"
         ],
         "supporting_source_count": 0,
@@ -9457,11 +9446,12 @@
       "interest_graph": {
         "ticker_interest": {
           "NVDA": 9,
-          "HAS": 11,
+          "HAS": 9,
           "52": 1
         },
         "sector_interest": {},
         "topic_interest": {
+          "黃金": 2,
           "sanctions": 3,
           "iran": 3,
           "oil": 11,
@@ -9470,7 +9460,7 @@
           "wti": 1
         },
         "market_interest": {
-          "us": 133
+          "us": 134
         },
         "context": {
           "tracked_tickers": [
@@ -9552,11 +9542,12 @@
             "NVDA": 9
           },
           "research_candidate": {
-            "HAS": 11,
+            "HAS": 9,
             "52": 1
           },
           "tracked_sector": {},
           "active_event": {
+            "黃金": 2,
             "sanctions": 3,
             "iran": 3,
             "oil": 11,
@@ -9567,11 +9558,11 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 44,
+      "excluded_count": 45,
       "exclusion_reasons": {
         "generic_official_filing": 20,
         "incomplete_normalized_fact": 12,
-        "insufficient_market_relevance": 14,
+        "insufficient_market_relevance": 16,
         "market_scope_mismatch": 6,
         "outside_calendar_window": 16,
         "outside_trading_session_window": 2
@@ -9586,40 +9577,40 @@
         "disabled_provider_count": 1,
         "fetched": 57,
         "normalized": 57,
-        "eligible": 13,
-        "excluded": 44,
+        "eligible": 12,
+        "excluded": 45,
         "date_eligible_current": 39,
         "date_excluded_current": 18,
         "date_exclusion_reasons_current": {
           "outside_calendar_window": 16,
           "outside_trading_session_window": 2
         },
-        "date_eligible_inventory": 76,
+        "date_eligible_inventory": 77,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-29T13:23:30.703216+00:00",
-        "deduped": 12,
+        "reference_time": "2026-10-29T13:29:10.296222+00:00",
+        "deduped": 11,
         "publicly_ranked": 5,
-        "current_eligible": 13,
-        "inventory_considered": 76,
+        "current_eligible": 12,
+        "inventory_considered": 77,
         "inventory_eligible": 50,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 44,
+        "filtered_story_count": 45,
         "fetched_story_count": 57,
         "normalized_story_count": 57,
-        "eligible_story_count": 13,
-        "deduped_story_count": 12,
+        "eligible_story_count": 12,
+        "deduped_story_count": 11,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 76,
+        "considered": 77,
         "eligible": 50,
         "selected": 0,
         "target_count": 5,
@@ -9633,7 +9624,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 57,
-          "checked_at": "2026-10-29T13:23:30.703254+00:00"
+          "checked_at": "2026-10-29T13:29:10.296259+00:00"
         },
         {
           "provider": "sec",
@@ -9644,10 +9635,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-10-29T13:23:30.703254+00:00",
+          "checked_at": "2026-10-29T13:29:10.296259+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-29T13:23:30.703254+00:00",
+          "last_success_at": "2026-10-29T13:29:10.296259+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9675,12 +9666,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-10-29T13:23:30.703254+00:00",
+          "checked_at": "2026-10-29T13:29:10.296259+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-10-29T13:23:30.703254+00:00",
+          "last_failure_at": "2026-10-29T13:29:10.296259+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9703,10 +9694,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-10-29T13:23:30.703254+00:00",
+          "checked_at": "2026-10-29T13:29:10.296259+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-29T13:23:30.703254+00:00",
+          "last_success_at": "2026-10-29T13:29:10.296259+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9727,23 +9718,55 @@
           "key": "news_us_anue",
           "legacy_key": "official_news_us_anue",
           "label": "anue market news",
-          "status": "no_event",
+          "status": "healthy",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 0,
-          "checked_at": "2026-10-29T13:23:30.703254+00:00",
+          "item_count": 1,
+          "checked_at": "2026-10-29T13:29:10.296259+00:00",
           "raw_item_count": 5,
+          "filtered_item_count": 1,
+          "last_success_at": "2026-10-29T13:29:10.296259+00:00",
+          "last_failure_at": null,
+          "stories_ingested": 3,
+          "stories_deduped": 1,
+          "ranked_count": 1,
+          "relevance_distribution": {
+            "active_event": 1,
+            "market": 3
+          },
+          "funnel": {
+            "fetched_count": 3,
+            "normalized_count": 3,
+            "market_compatible_count": 3,
+            "eligible_count": 1,
+            "excluded_count": 2,
+            "deduped_count": 1,
+            "ranked_count": 1
+          }
+        },
+        {
+          "provider": "yahoo_finance",
+          "key": "news_us_yahoo_finance",
+          "legacy_key": "official_news_us_yahoo_finance",
+          "label": "yahoo_finance market news",
+          "status": "no_event",
+          "source_tier": "market",
+          "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
+          "item_count": 0,
+          "checked_at": "2026-10-29T13:29:10.296259+00:00",
+          "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-29T13:23:30.703254+00:00",
+          "last_success_at": "2026-10-29T13:29:10.296259+00:00",
           "last_failure_at": null,
           "stories_ingested": 1,
           "stories_deduped": 0,
           "ranked_count": 0,
           "relevance_distribution": {
-            "market": 1
+            "market": 1,
+            "research_candidate": 1
           },
           "funnel": {
-            "fetched_count": 1,
+            "fetched_count": 4,
             "normalized_count": 1,
             "market_compatible_count": 1,
             "eligible_count": 0,
@@ -9754,37 +9777,6 @@
           "data_gap": "filtered_no_market_match"
         },
         {
-          "provider": "yahoo_finance",
-          "key": "news_us_yahoo_finance",
-          "legacy_key": "official_news_us_yahoo_finance",
-          "label": "yahoo_finance market news",
-          "status": "healthy",
-          "source_tier": "market",
-          "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
-          "item_count": 2,
-          "checked_at": "2026-10-29T13:23:30.703254+00:00",
-          "raw_item_count": 10,
-          "filtered_item_count": 2,
-          "last_success_at": "2026-10-29T13:23:30.703254+00:00",
-          "last_failure_at": null,
-          "stories_ingested": 3,
-          "stories_deduped": 2,
-          "ranked_count": 2,
-          "relevance_distribution": {
-            "market": 3,
-            "research_candidate": 3
-          },
-          "funnel": {
-            "fetched_count": 6,
-            "normalized_count": 3,
-            "market_compatible_count": 3,
-            "eligible_count": 2,
-            "excluded_count": 1,
-            "deduped_count": 2,
-            "ranked_count": 2
-          }
-        },
-        {
           "provider": "google_news",
           "key": "news_us_google_news",
           "legacy_key": "official_news_us_google_news",
@@ -9792,15 +9784,15 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
-          "item_count": 3,
-          "checked_at": "2026-10-29T13:23:30.703254+00:00",
+          "item_count": 4,
+          "checked_at": "2026-10-29T13:29:10.296259+00:00",
           "raw_item_count": 40,
-          "filtered_item_count": 3,
-          "last_success_at": "2026-10-29T13:23:30.703254+00:00",
+          "filtered_item_count": 4,
+          "last_success_at": "2026-10-29T13:29:10.296259+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
           "stories_deduped": 10,
-          "ranked_count": 3,
+          "ranked_count": 4,
           "relevance_distribution": {
             "active_event": 8,
             "market": 40,
@@ -9813,47 +9805,48 @@
             "eligible_count": 11,
             "excluded_count": 29,
             "deduped_count": 10,
-            "ranked_count": 3
+            "ranked_count": 4
           }
         }
       ],
       "observability": {
         "stories_ingested": 57,
-        "stories_deduped": 12,
+        "stories_deduped": 11,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 8,
+          "active_event": 9,
           "market": 57,
-          "research_candidate": 3,
+          "research_candidate": 1,
           "tracked_ticker": 3
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-29T13:23:30.703254+00:00",
+            "last_success_at": "2026-10-29T13:29:10.296259+00:00",
             "last_failure_at": null,
-            "stories_ingested": 1,
-            "stories_deduped": 0,
-            "ranked_count": 0,
+            "stories_ingested": 3,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
-              "market": 1
+              "active_event": 1,
+              "market": 3
             },
             "funnel": {
-              "fetched_count": 1,
-              "normalized_count": 1,
-              "market_compatible_count": 1,
-              "eligible_count": 0,
-              "excluded_count": 1,
-              "deduped_count": 0,
-              "ranked_count": 0
+              "fetched_count": 3,
+              "normalized_count": 3,
+              "market_compatible_count": 3,
+              "eligible_count": 1,
+              "excluded_count": 2,
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           },
           {
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-10-29T13:23:30.703254+00:00",
+            "last_failure_at": "2026-10-29T13:29:10.296259+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9871,11 +9864,11 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-29T13:23:30.703254+00:00",
+            "last_success_at": "2026-10-29T13:29:10.296259+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
             "stories_deduped": 10,
-            "ranked_count": 3,
+            "ranked_count": 4,
             "relevance_distribution": {
               "active_event": 8,
               "market": 40,
@@ -9888,13 +9881,13 @@
               "eligible_count": 11,
               "excluded_count": 29,
               "deduped_count": 10,
-              "ranked_count": 3
+              "ranked_count": 4
             }
           },
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-10-29T13:23:30.703254+00:00",
+            "last_success_at": "2026-10-29T13:29:10.296259+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9913,7 +9906,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-10-29T13:23:30.703254+00:00",
+            "last_success_at": "2026-10-29T13:29:10.296259+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -9956,23 +9949,23 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-29T13:23:30.703254+00:00",
+            "last_success_at": "2026-10-29T13:29:10.296259+00:00",
             "last_failure_at": null,
-            "stories_ingested": 3,
-            "stories_deduped": 2,
-            "ranked_count": 2,
+            "stories_ingested": 1,
+            "stories_deduped": 0,
+            "ranked_count": 0,
             "relevance_distribution": {
-              "market": 3,
-              "research_candidate": 3
+              "market": 1,
+              "research_candidate": 1
             },
             "funnel": {
-              "fetched_count": 6,
-              "normalized_count": 3,
-              "market_compatible_count": 3,
-              "eligible_count": 2,
+              "fetched_count": 4,
+              "normalized_count": 1,
+              "market_compatible_count": 1,
+              "eligible_count": 0,
               "excluded_count": 1,
-              "deduped_count": 2,
-              "ranked_count": 2
+              "deduped_count": 0,
+              "ranked_count": 0
             }
           }
         ]
