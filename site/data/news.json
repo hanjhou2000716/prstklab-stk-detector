@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "7fafbaa1fe669901",
-  "snapshot_id": "news-4f61bad657a58a36",
+  "market_snapshot_id": "db39a8c15c6c136e",
+  "snapshot_id": "news-e481369629fdcab3",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -1681,6 +1681,100 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
+        },
+        {
+          "story_id": "news-9a70223483d18fad084b",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "AI長線趨勢不變 震盪分批布局半導體供應鏈 - 自由財經",
+          "raw_title": "AI長線趨勢不變 震盪分批布局半導體供應鏈 - 自由財經",
+          "normalized_fact": "AI長線趨勢不變 震盪分批布局半導體供應鏈 自由財經。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "AI長線趨勢不變 震盪分批布局半導體供應鏈 自由財經",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE56c1JSUjRrWUNXSEJxSnRLc0FZblhQejk4Ym1aTnlXdWxEZWMwMVlzRzlHeUlvdUpSVWRSTk9ERFdEWmFJVDZTWml5cWlrREdTX0lyX09xdi02VE1uWTVv0gFkQVVfeXFMTU9sSlpxbzdNM3VZSi1zUUViMXB0TkNXN1pxMXZLbDFiQkVNRTlLeHZqNkRiM3hvY0J2MHItMldqc1BsS2lOUHJIT0p6LWxYMm5vcV83aF9WSmJJQkJxVXJTLWU2Nw",
+          "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE56c1JSUjRrWUNXSEJxSnRLc0FZblhQejk4Ym1aTnlXdWxEZWMwMVlzRzlHeUlvdUpSVWRSTk9ERFdEWmFJVDZTWml5cWlrREdTX0lyX09xdi02VE1uWTVv0gFkQVVfeXFMTU9sSlpxbzdNM3VZSi1zUUViMXB0TkNXN1pxMXZLbDFiQkVNRTlLeHZqNkRiM3hvY0J2MHItMldqc1BsS2lOUHJIT0p6LWxYMm5vcV83aF9WSmJJQkJxVXJTLWU2Nw",
+          "published_at": "2026-10-25T02:40:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 4,
+          "published_local_date": "2026-10-25",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai",
+            "semiconductor"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "ai長線趨勢不變震盪分批布局半導體供應鏈自由財經",
+          "event_cluster_key": "event-89c7954a35b7308c9c61",
+          "published_time_bucket": "2026-10-25T02:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜台股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
         },
         {
           "story_id": "news-0880448e391fe339b9e4",
@@ -4532,102 +4626,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 20
-        },
-        {
-          "story_id": "news-5b71ccc4c2788180f875",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "台股第三季財報出爐，先進封裝與AI供應鏈表現分歧，這4檔指標股兩樣情-財經焦點情報站 - CMoney投資網誌",
-          "raw_title": "台股第三季財報出爐，先進封裝與AI供應鏈表現分歧，這4檔指標股兩樣情-財經焦點情報站 - CMoney投資網誌",
-          "normalized_fact": "台股第三季財報出爐，先進封裝與AI供應鏈表現分歧，這4檔指標股兩樣情-財經焦點情報站 CMoney投資網誌。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "台股第三季財報出爐，先進封裝與AI供應鏈表現分歧，這4檔指標股兩樣情-財經焦點情報站 CMoney投資網誌",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxOQm5scGFhU2l3cUlUOUFlQXY2djk1Nkt2SDlkTWxQRGRCd2Y4X2tOdWNXSjdtSG9ueHdLUlc0NTdhRF9KaXBnVFhyLUJOcy1yZ3RwcjV0bl9yc3RrLXdPOHpVdGZRcFdtZ2h6NjNKb1pVcDZ5OHJNUUpzSUxtQVM1QzZ3",
-          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxOQm5scGFhU2l3cUlUOUFlQXY2djk1Nkt2SDlkTWxQRGRCd2Y4X2tOdWNXSjdtSG9ueHdLUlc0NTdhRF9KaXBnVFhyLUJOcy1yZ3RwcjV0bl9yc3RrLXdPOHpVdGZRcFdtZ2h6NjNKb1pVcDZ5OHJNUUpzSUxtQVM1QzZ3",
-          "published_at": "2026-10-28T23:39:52+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-29",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "TAIEX"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "earnings"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "財報"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "財報"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "財報",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "台股第三季財報出爐先進封裝與ai供應鏈表現分歧這4檔指標股兩樣情財經焦點情報站cmoney投資網誌",
-          "event_cluster_key": "event-149b7a87ead54862ffe5",
-          "published_time_bucket": "2026-10-28T23:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "財報"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "財報",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 1,
-          "inventory_saved_at": "2026-10-29T00:48:58.261507+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 15
         }
       ],
       "source_diversity": {
@@ -4652,9 +4650,9 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 19,
-          "TSM": 19,
-          "52": 2,
+          "52": 4,
+          "2330": 18,
+          "TSM": 18,
           "NVDA": 1
         },
         "sector_interest": {},
@@ -4664,7 +4662,7 @@
           "原油": 1
         },
         "market_interest": {
-          "taiwan": 103
+          "taiwan": 106
         },
         "context": {
           "tracked_tickers": [
@@ -4742,12 +4740,12 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 19,
-            "TSM": 19,
+            "2330": 18,
+            "TSM": 18,
             "NVDA": 1
           },
           "research_candidate": {
-            "52": 2
+            "52": 4
           },
           "tracked_sector": {},
           "active_event": {
@@ -4758,12 +4756,12 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 31,
+      "excluded_count": 32,
       "exclusion_reasons": {
         "incomplete_normalized_fact": 4,
         "insufficient_market_relevance": 20,
         "market_scope_mismatch": 2,
-        "outside_calendar_window": 18
+        "outside_calendar_window": 19
       },
       "status": "ready",
       "collection_state": "ready",
@@ -4773,42 +4771,42 @@
         "successful_provider_count": 5,
         "failed_provider_count": 0,
         "disabled_provider_count": 0,
-        "fetched": 39,
-        "normalized": 39,
-        "eligible": 8,
-        "excluded": 31,
-        "date_eligible_current": 21,
-        "date_excluded_current": 18,
+        "fetched": 41,
+        "normalized": 41,
+        "eligible": 9,
+        "excluded": 32,
+        "date_eligible_current": 22,
+        "date_excluded_current": 19,
         "date_exclusion_reasons_current": {
-          "outside_calendar_window": 18
+          "outside_calendar_window": 19
         },
-        "date_eligible_inventory": 64,
+        "date_eligible_inventory": 65,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-29T11:59:15.823607+00:00",
-        "deduped": 8,
+        "reference_time": "2026-10-29T12:03:56.731312+00:00",
+        "deduped": 9,
         "publicly_ranked": 5,
-        "current_eligible": 8,
-        "inventory_considered": 64,
-        "inventory_eligible": 51,
+        "current_eligible": 9,
+        "inventory_considered": 65,
+        "inventory_eligible": 52,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 31,
-        "fetched_story_count": 39,
-        "normalized_story_count": 39,
-        "eligible_story_count": 8,
-        "deduped_story_count": 8,
+        "filtered_story_count": 32,
+        "fetched_story_count": 41,
+        "normalized_story_count": 41,
+        "eligible_story_count": 9,
+        "deduped_story_count": 9,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 64,
-        "eligible": 51,
+        "considered": 65,
+        "eligible": 52,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -4820,8 +4818,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 39,
-          "checked_at": "2026-10-29T11:59:15.823648+00:00"
+          "item_count": 41,
+          "checked_at": "2026-10-29T12:03:56.731352+00:00"
         },
         {
           "provider": "twse",
@@ -4832,10 +4830,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-10-29T11:59:15.823648+00:00",
+          "checked_at": "2026-10-29T12:03:56.731352+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+          "last_success_at": "2026-10-29T12:03:56.731352+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4860,10 +4858,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-10-29T11:59:15.823648+00:00",
+          "checked_at": "2026-10-29T12:03:56.731352+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+          "last_success_at": "2026-10-29T12:03:56.731352+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4888,25 +4886,28 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 0,
-          "checked_at": "2026-10-29T11:59:15.823648+00:00",
-          "data_gap": "filtered_no_market_match",
+          "checked_at": "2026-10-29T12:03:56.731352+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+          "last_success_at": "2026-10-29T12:03:56.731352+00:00",
           "last_failure_at": null,
-          "stories_ingested": 0,
+          "stories_ingested": 1,
           "stories_deduped": 0,
           "ranked_count": 0,
-          "relevance_distribution": {},
+          "relevance_distribution": {
+            "market": 1,
+            "research_candidate": 1
+          },
           "funnel": {
-            "fetched_count": 0,
-            "normalized_count": 0,
-            "market_compatible_count": 0,
+            "fetched_count": 1,
+            "normalized_count": 1,
+            "market_compatible_count": 1,
             "eligible_count": 0,
-            "excluded_count": 0,
+            "excluded_count": 1,
             "deduped_count": 0,
             "ranked_count": 0
-          }
+          },
+          "data_gap": "filtered_no_market_match"
         },
         {
           "provider": "yahoo_finance",
@@ -4917,10 +4918,10 @@
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
           "item_count": 1,
-          "checked_at": "2026-10-29T11:59:15.823648+00:00",
+          "checked_at": "2026-10-29T12:03:56.731352+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 1,
-          "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+          "last_success_at": "2026-10-29T12:03:56.731352+00:00",
           "last_failure_at": null,
           "stories_ingested": 9,
           "stories_deduped": 1,
@@ -4947,53 +4948,57 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
           "item_count": 4,
-          "checked_at": "2026-10-29T11:59:15.823648+00:00",
-          "raw_item_count": 29,
+          "checked_at": "2026-10-29T12:03:56.731352+00:00",
+          "raw_item_count": 30,
           "filtered_item_count": 4,
-          "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+          "last_success_at": "2026-10-29T12:03:56.731352+00:00",
           "last_failure_at": null,
-          "stories_ingested": 29,
-          "stories_deduped": 7,
+          "stories_ingested": 30,
+          "stories_deduped": 8,
           "ranked_count": 4,
           "relevance_distribution": {
-            "market": 29,
+            "market": 30,
             "tracked_ticker": 8
           },
           "funnel": {
-            "fetched_count": 29,
-            "normalized_count": 29,
-            "market_compatible_count": 29,
-            "eligible_count": 7,
+            "fetched_count": 30,
+            "normalized_count": 30,
+            "market_compatible_count": 30,
+            "eligible_count": 8,
             "excluded_count": 22,
-            "deduped_count": 7,
+            "deduped_count": 8,
             "ranked_count": 4
           }
         }
       ],
       "observability": {
-        "stories_ingested": 39,
-        "stories_deduped": 8,
+        "stories_ingested": 41,
+        "stories_deduped": 9,
         "ranked_count": 5,
         "relevance_distribution": {
-          "market": 39,
+          "market": 41,
+          "research_candidate": 1,
           "tracked_ticker": 8
         },
         "providers": [
           {
             "provider": "anue",
-            "status": "no_event",
-            "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+            "status": "healthy",
+            "last_success_at": "2026-10-29T12:03:56.731352+00:00",
             "last_failure_at": null,
-            "stories_ingested": 0,
+            "stories_ingested": 1,
             "stories_deduped": 0,
             "ranked_count": 0,
-            "relevance_distribution": {},
+            "relevance_distribution": {
+              "market": 1,
+              "research_candidate": 1
+            },
             "funnel": {
-              "fetched_count": 0,
-              "normalized_count": 0,
-              "market_compatible_count": 0,
+              "fetched_count": 1,
+              "normalized_count": 1,
+              "market_compatible_count": 1,
               "eligible_count": 0,
-              "excluded_count": 0,
+              "excluded_count": 1,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -5001,29 +5006,29 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+            "last_success_at": "2026-10-29T12:03:56.731352+00:00",
             "last_failure_at": null,
-            "stories_ingested": 29,
-            "stories_deduped": 7,
+            "stories_ingested": 30,
+            "stories_deduped": 8,
             "ranked_count": 4,
             "relevance_distribution": {
-              "market": 29,
+              "market": 30,
               "tracked_ticker": 8
             },
             "funnel": {
-              "fetched_count": 29,
-              "normalized_count": 29,
-              "market_compatible_count": 29,
-              "eligible_count": 7,
+              "fetched_count": 30,
+              "normalized_count": 30,
+              "market_compatible_count": 30,
+              "eligible_count": 8,
               "excluded_count": 22,
-              "deduped_count": 7,
+              "deduped_count": 8,
               "ranked_count": 4
             }
           },
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+            "last_success_at": "2026-10-29T12:03:56.731352+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5042,7 +5047,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+            "last_success_at": "2026-10-29T12:03:56.731352+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5082,7 +5087,7 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+            "last_success_at": "2026-10-29T12:03:56.731352+00:00",
             "last_failure_at": null,
             "stories_ingested": 9,
             "stories_deduped": 1,
@@ -5322,15 +5327,15 @@
       ],
       "stories": [
         {
-          "story_id": "news-3ec4282b8b312cdac8ef",
+          "story_id": "news-f2b628fbb63005602be5",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "Stocks Down Pre-Bell Ahead of Key Inflation Report, Amazon Earnings",
-          "raw_title": "Stocks Down Pre-Bell Ahead of Key Inflation Report, Amazon Earnings",
-          "normalized_fact": "US equity futures were tracking in the red on Thursday as traders await a key inflation report and t。",
-          "market_topic": "rates_fx",
+          "title": "Dow Jones Futures: Microsoft Rises, But Google, ServiceNow, Fortinet Dive On Earnings",
+          "raw_title": "Dow Jones Futures: Microsoft Rises, But Google, ServiceNow, Fortinet Dive On Earnings",
+          "normalized_fact": "After the stock market rose for a third day, Microsoft rose late on strong earnings. But Google, ServiceNow and Fortinet dived。",
+          "market_topic": "global_market",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5338,11 +5343,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "US equity futures were tracking in the red on Thursday as traders await a key inflation report and t",
+          "summary": "After the stock market rose for a third day, Microsoft rose late on strong earnings. But Google, ServiceNow and Fortinet dived.",
           "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/stocks-down-pre-bell-ahead-114743483.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/stocks-down-pre-bell-ahead-114743483.html?.tsrc=rss",
-          "published_at": "2026-10-29T11:47:43+00:00",
+          "canonical_url": "https://finance.yahoo.com/m/6c0b166b-19af-3d40-b6ff-7c6d65d3c4da/dow-jones-futures%3A-microsoft.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/m/6c0b166b-19af-3d40-b6ff-7c6d65d3c4da/dow-jones-futures%3A-microsoft.html?.tsrc=rss",
+          "published_at": "2026-10-29T11:33:36+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -5360,20 +5365,20 @@
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "macro",
-            "reason": "macro_subject_action",
+            "category": "market",
+            "reason": "market_subject_action",
             "matched_terms": [
-              "inflation",
-              "report"
+              "dow jones",
+              "rises"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "inflation",
-              "report"
+              "dow jones",
+              "rises"
             ],
-            "matched_subject": "inflation",
-            "matched_action": "report",
-            "matched_market_object": "inflation",
+            "matched_subject": "dow jones",
+            "matched_action": "rises",
+            "matched_market_object": "dow jones",
             "input_fields": [
               "description",
               "summary",
@@ -5384,20 +5389,20 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "usequityfuturesweretrackingintheredonthursdayastradersawaitakeyinflationreportandt",
-          "event_cluster_key": "event-6fb6f6133a254d6bde6e",
+          "dedupe_key": "afterthestockmarketroseforathirddaymicrosoftroselateonstrongearningsbutgoogleservicenowandfortinetdived",
+          "event_cluster_key": "event-68a474a84d9cced29d7b",
           "published_time_bucket": "2026-10-29T11:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "inflation",
-            "report"
+            "dow jones",
+            "rises"
           ],
-          "matched_subject": "inflation",
-          "matched_action": "report",
-          "matched_market_object": "inflation",
-          "decision_value_class": "macro",
+          "matched_subject": "dow jones",
+          "matched_action": "rises",
+          "matched_market_object": "dow jones",
+          "decision_value_class": "market_context",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -5508,15 +5513,15 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-9f20bc15fb831858f605",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
+          "story_id": "news-51dc9dd77a549bdb8d5e",
+          "provider": "anue",
+          "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "Dow Jones Futures Fall; Microsoft Rises, But Google, ServiceNow, Fortinet Dive On Earnings",
-          "raw_title": "Dow Jones Futures Fall; Microsoft Rises, But Google, ServiceNow, Fortinet Dive On Earnings",
-          "normalized_fact": "After the stock market rose for a third day, Microsoft rose late on strong earnings. But Google, ServiceNow and Fortinet dived。",
-          "market_topic": "global_market",
+          "title": "〈美股盤後〉Anthropic IPO熱潮延燒 費半漲3.6% 波音崩逾10%壓抑道瓊",
+          "raw_title": "〈美股盤後〉Anthropic IPO熱潮延燒 費半漲3.6% 波音崩逾10%壓抑道瓊",
+          "normalized_fact": "美股週二收高，標普連2日上漲；那指漲1.18%，費半勁揚3.6%，道瓊僅小漲16點，油價下跌提振情緒。 Anthropic申請上市、Meta 250億美元發行認購超額5倍，AI熱度回溫；博通、AMD領漲晶片股。 財報與Fed成焦點，Alphabet、微軟、亞馬遜將公布業績；市場預期Fed按兵不動。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5524,42 +5529,42 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "After the stock market rose for a third day, Microsoft rose late on strong earnings. But Google, ServiceNow and Fortinet dived.",
+          "summary": "美股週二收高，標普連2日上漲；那指漲1.18%，費半勁揚3.6%，道瓊僅小漲16點，油價下跌提振情緒。 Anthropic申請上市、Meta 250億美元發行認購超額5倍，AI熱度回溫；博通、AMD領漲晶片股。 財報與Fed成焦點，Alphabet、微軟、亞馬遜將公布業績；市場預期Fed按兵不動。",
           "description": "",
-          "canonical_url": "https://finance.yahoo.com/m/6c0b166b-19af-3d40-b6ff-7c6d65d3c4da/dow-jones-futures-fall%3B.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/m/6c0b166b-19af-3d40-b6ff-7c6d65d3c4da/dow-jones-futures-fall%3B.html?.tsrc=rss",
-          "published_at": "2026-10-29T11:54:44+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6638589",
+          "url": "https://news.cnyes.com/news/id/6638589",
+          "published_at": "2026-10-27T21:26:49+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "current",
+          "date_eligibility_status": "recent_reference",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-29",
+          "publication_age_trading_sessions": 3,
+          "published_local_date": "2026-10-27",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "earnings"
+          "entities": [
+            "SOX"
           ],
+          "sectors": [],
+          "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "market",
-            "reason": "market_subject_action",
+            "category": "fed",
+            "reason": "fed_subject_action",
             "matched_terms": [
-              "dow jones",
-              "rises"
+              "fed",
+              "預期"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "dow jones",
-              "rises"
+              "fed",
+              "預期"
             ],
-            "matched_subject": "dow jones",
-            "matched_action": "rises",
-            "matched_market_object": "dow jones",
+            "matched_subject": "fed",
+            "matched_action": "預期",
+            "matched_market_object": "fed",
             "input_fields": [
               "description",
               "summary",
@@ -5570,26 +5575,26 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "afterthestockmarketroseforathirddaymicrosoftroselateonstrongearningsbutgoogleservicenowandfortinetdived",
-          "event_cluster_key": "event-68a474a84d9cced29d7b",
-          "published_time_bucket": "2026-10-29T11:00:00+00:00",
+          "dedupe_key": "美股週二收高標普連2日上漲那指漲118費半勁揚36道瓊僅小漲16點油價下跌提振情緒anthropic申請上市meta250億美元發行認購超額5倍ai熱度回溫博通amd領漲晶片股財報與fed成焦點alphabet微軟亞馬遜將公布業績市場預期fed按兵不動",
+          "event_cluster_key": "event-a38276ec36b8e7f19fcb",
+          "published_time_bucket": "2026-10-27T21:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "dow jones",
-            "rises"
+            "fed",
+            "預期"
           ],
-          "matched_subject": "dow jones",
-          "matched_action": "rises",
-          "matched_market_object": "dow jones",
-          "decision_value_class": "market_context",
+          "matched_subject": "fed",
+          "matched_action": "預期",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Yahoo Finance",
+          "source": "鉅亨網｜市場焦點",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -5791,15 +5796,15 @@
       ],
       "editorial_candidates": [
         {
-          "story_id": "news-3ec4282b8b312cdac8ef",
+          "story_id": "news-f2b628fbb63005602be5",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "Stocks Down Pre-Bell Ahead of Key Inflation Report, Amazon Earnings",
-          "raw_title": "Stocks Down Pre-Bell Ahead of Key Inflation Report, Amazon Earnings",
-          "normalized_fact": "US equity futures were tracking in the red on Thursday as traders await a key inflation report and t。",
-          "market_topic": "rates_fx",
+          "title": "Dow Jones Futures: Microsoft Rises, But Google, ServiceNow, Fortinet Dive On Earnings",
+          "raw_title": "Dow Jones Futures: Microsoft Rises, But Google, ServiceNow, Fortinet Dive On Earnings",
+          "normalized_fact": "After the stock market rose for a third day, Microsoft rose late on strong earnings. But Google, ServiceNow and Fortinet dived。",
+          "market_topic": "global_market",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5807,11 +5812,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "US equity futures were tracking in the red on Thursday as traders await a key inflation report and t",
+          "summary": "After the stock market rose for a third day, Microsoft rose late on strong earnings. But Google, ServiceNow and Fortinet dived.",
           "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/stocks-down-pre-bell-ahead-114743483.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/stocks-down-pre-bell-ahead-114743483.html?.tsrc=rss",
-          "published_at": "2026-10-29T11:47:43+00:00",
+          "canonical_url": "https://finance.yahoo.com/m/6c0b166b-19af-3d40-b6ff-7c6d65d3c4da/dow-jones-futures%3A-microsoft.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/m/6c0b166b-19af-3d40-b6ff-7c6d65d3c4da/dow-jones-futures%3A-microsoft.html?.tsrc=rss",
+          "published_at": "2026-10-29T11:33:36+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -5829,20 +5834,20 @@
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "macro",
-            "reason": "macro_subject_action",
+            "category": "market",
+            "reason": "market_subject_action",
             "matched_terms": [
-              "inflation",
-              "report"
+              "dow jones",
+              "rises"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "inflation",
-              "report"
+              "dow jones",
+              "rises"
             ],
-            "matched_subject": "inflation",
-            "matched_action": "report",
-            "matched_market_object": "inflation",
+            "matched_subject": "dow jones",
+            "matched_action": "rises",
+            "matched_market_object": "dow jones",
             "input_fields": [
               "description",
               "summary",
@@ -5853,20 +5858,20 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "usequityfuturesweretrackingintheredonthursdayastradersawaitakeyinflationreportandt",
-          "event_cluster_key": "event-6fb6f6133a254d6bde6e",
+          "dedupe_key": "afterthestockmarketroseforathirddaymicrosoftroselateonstrongearningsbutgoogleservicenowandfortinetdived",
+          "event_cluster_key": "event-68a474a84d9cced29d7b",
           "published_time_bucket": "2026-10-29T11:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "inflation",
-            "report"
+            "dow jones",
+            "rises"
           ],
-          "matched_subject": "inflation",
-          "matched_action": "report",
-          "matched_market_object": "inflation",
-          "decision_value_class": "macro",
+          "matched_subject": "dow jones",
+          "matched_action": "rises",
+          "matched_market_object": "dow jones",
+          "decision_value_class": "market_context",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -5977,15 +5982,15 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-9f20bc15fb831858f605",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
+          "story_id": "news-51dc9dd77a549bdb8d5e",
+          "provider": "anue",
+          "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "Dow Jones Futures Fall; Microsoft Rises, But Google, ServiceNow, Fortinet Dive On Earnings",
-          "raw_title": "Dow Jones Futures Fall; Microsoft Rises, But Google, ServiceNow, Fortinet Dive On Earnings",
-          "normalized_fact": "After the stock market rose for a third day, Microsoft rose late on strong earnings. But Google, ServiceNow and Fortinet dived。",
-          "market_topic": "global_market",
+          "title": "〈美股盤後〉Anthropic IPO熱潮延燒 費半漲3.6% 波音崩逾10%壓抑道瓊",
+          "raw_title": "〈美股盤後〉Anthropic IPO熱潮延燒 費半漲3.6% 波音崩逾10%壓抑道瓊",
+          "normalized_fact": "美股週二收高，標普連2日上漲；那指漲1.18%，費半勁揚3.6%，道瓊僅小漲16點，油價下跌提振情緒。 Anthropic申請上市、Meta 250億美元發行認購超額5倍，AI熱度回溫；博通、AMD領漲晶片股。 財報與Fed成焦點，Alphabet、微軟、亞馬遜將公布業績；市場預期Fed按兵不動。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5993,42 +5998,42 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "After the stock market rose for a third day, Microsoft rose late on strong earnings. But Google, ServiceNow and Fortinet dived.",
+          "summary": "美股週二收高，標普連2日上漲；那指漲1.18%，費半勁揚3.6%，道瓊僅小漲16點，油價下跌提振情緒。 Anthropic申請上市、Meta 250億美元發行認購超額5倍，AI熱度回溫；博通、AMD領漲晶片股。 財報與Fed成焦點，Alphabet、微軟、亞馬遜將公布業績；市場預期Fed按兵不動。",
           "description": "",
-          "canonical_url": "https://finance.yahoo.com/m/6c0b166b-19af-3d40-b6ff-7c6d65d3c4da/dow-jones-futures-fall%3B.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/m/6c0b166b-19af-3d40-b6ff-7c6d65d3c4da/dow-jones-futures-fall%3B.html?.tsrc=rss",
-          "published_at": "2026-10-29T11:54:44+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6638589",
+          "url": "https://news.cnyes.com/news/id/6638589",
+          "published_at": "2026-10-27T21:26:49+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "current",
+          "date_eligibility_status": "recent_reference",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-10-29",
+          "publication_age_trading_sessions": 3,
+          "published_local_date": "2026-10-27",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "earnings"
+          "entities": [
+            "SOX"
           ],
+          "sectors": [],
+          "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "market",
-            "reason": "market_subject_action",
+            "category": "fed",
+            "reason": "fed_subject_action",
             "matched_terms": [
-              "dow jones",
-              "rises"
+              "fed",
+              "預期"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "dow jones",
-              "rises"
+              "fed",
+              "預期"
             ],
-            "matched_subject": "dow jones",
-            "matched_action": "rises",
-            "matched_market_object": "dow jones",
+            "matched_subject": "fed",
+            "matched_action": "預期",
+            "matched_market_object": "fed",
             "input_fields": [
               "description",
               "summary",
@@ -6039,26 +6044,26 @@
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "afterthestockmarketroseforathirddaymicrosoftroselateonstrongearningsbutgoogleservicenowandfortinetdived",
-          "event_cluster_key": "event-68a474a84d9cced29d7b",
-          "published_time_bucket": "2026-10-29T11:00:00+00:00",
+          "dedupe_key": "美股週二收高標普連2日上漲那指漲118費半勁揚36道瓊僅小漲16點油價下跌提振情緒anthropic申請上市meta250億美元發行認購超額5倍ai熱度回溫博通amd領漲晶片股財報與fed成焦點alphabet微軟亞馬遜將公布業績市場預期fed按兵不動",
+          "event_cluster_key": "event-a38276ec36b8e7f19fcb",
+          "published_time_bucket": "2026-10-27T21:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "dow jones",
-            "rises"
+            "fed",
+            "預期"
           ],
-          "matched_subject": "dow jones",
-          "matched_action": "rises",
-          "matched_market_object": "dow jones",
-          "decision_value_class": "market_context",
+          "matched_subject": "fed",
+          "matched_action": "預期",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Yahoo Finance",
+          "source": "鉅亨網｜市場焦點",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -6530,13 +6535,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 115,
-          "supporting_sources": [
-            {
-              "provider": "google_news",
-              "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxPUEhoYVl4OGJtaXFLRU1idHB1dmlvYk1uNEtNNnlMVkFlZEN4N3hpNVB5cmNjWkFEajM2WUZ4bDJJN0pNYlpra21QSGI4cFFwLWllM0xxZlptYWRmdkRlbXAwRWVLcGRBd3J3MDFpUDBvUjVWMElMOGwtZlJMemRJQzczLXI1cWNFMnJKeEcwcGJhUjkzVjZfZ3puam1BQUZFMTRFZ1BIa9IBrAFBVV95cUxQeXRhLUNLYUFqaEtwY25VNnhEUzVzZmRMczBrdVo0SnJXdjdCZjhCbVpURUZJQ2M2MUwyVzlHblFrcTQ0UGhIYUVubHhUZHFVbldqNnJxOFprRG9FRmJIV3ZPaFJiSHZ2a1k0N2R4Q2swcFJ2cDNhZVVJdG0zbG9qaFdvd1l5MXcwbjFWZnBFelBZdFZBMk9pekEzOGFmaEVqVVNmTkx4dXU0eXha"
-            }
-          ]
+          "ranking_score": 115
         },
         {
           "story_id": "news-4927e8f8e7984d025798",
@@ -6707,6 +6706,97 @@
           "matched_subject": "fed",
           "matched_action": "rates",
           "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
+          "story_id": "news-8c5d0cd7dbc7dffa7666",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Federal Reserve holds interest rates steady as midterm elections loom - ABC7 Chicago",
+          "raw_title": "Federal Reserve holds interest rates steady as midterm elections loom - ABC7 Chicago",
+          "normalized_fact": "Federal Reserve holds interest rates steady as midterm elections loom ABC7 Chicago。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Federal Reserve holds interest rates steady as midterm elections loom ABC7 Chicago",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMi4AJBVV95cUxQNzJ0LV8xd0hsR0lHSW5TWk81b21kN0djUnNhMFZEYV9WaGdfaXlYSHBwdURDc3ZITFlpUFJHdk1IQ09iY1JlOUstOERHYTI0Mk0zX0ctN3hHRVU3MHExYmRfVU1GdmFNdzNMN0h4OE5wS3NzV1YzR0ktdExKSzhsTWJXT0RWMXdSSWpDbUJKdmo0WVF0aEoyWDJxb2Y0QkhvV2hQOTExTjFUaldxSjRCT0QzemswWnJ2ZHBocWtkak1JX2FtTENsS2JTLXhJc1JUQ2pxbjkxRGo3UmZrRkZtWlNVQmtqVjAxLWFSMnRMNlpJZUF3Y3pjRDUweG9NNVRkWk9EckxCTTZLM2pRLU53M0tydC1fcVdVbVpwUWhaMEdXcmJBaUVJamxPVFpiVEh2d3NhN0ktZThma0dYZ2Z1R2RnU0RJbWRvZlpvRDRXWl82bzVPMDQta3dBQmhaOENG",
+          "url": "https://news.google.com/rss/articles/CBMi4AJBVV95cUxQNzJ0LV8xd0hsR0lHSW5TWk81b21kN0djUnNhMFZEYV9WaGdfaXlYSHBwdURDc3ZITFlpUFJHdk1IQ09iY1JlOUstOERHYTI0Mk0zX0ctN3hHRVU3MHExYmRfVU1GdmFNdzNMN0h4OE5wS3NzV1YzR0ktdExKSzhsTWJXT0RWMXdSSWpDbUJKdmo0WVF0aEoyWDJxb2Y0QkhvV2hQOTExTjFUaldxSjRCT0QzemswWnJ2ZHBocWtkak1JX2FtTENsS2JTLXhJc1JUQ2pxbjkxRGo3UmZrRkZtWlNVQmtqVjAxLWFSMnRMNlpJZUF3Y3pjRDUweG9NNVRkWk9EckxCTTZLM2pRLU53M0tydC1fcVdVbVpwUWhaMEdXcmJBaUVJamxPVFpiVEh2d3NhN0ktZThma0dYZ2Z1R2RnU0RJbWRvZlpvRDRXWl82bzVPMDQta3dBQmhaOENG",
+          "published_at": "2026-10-28T22:56:46+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-10-28",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "federal reserve",
+              "rates"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "federal reserve",
+              "rates"
+            ],
+            "matched_subject": "federal reserve",
+            "matched_action": "rates",
+            "matched_market_object": "federal reserve",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "federalreserveholdsinterestratessteadyasmidtermelectionsloomabc7chicago",
+          "event_cluster_key": "event-7bfe4c204e86458e27b1",
+          "published_time_bucket": "2026-10-28T22:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "federal reserve",
+            "rates"
+          ],
+          "matched_subject": "federal reserve",
+          "matched_action": "rates",
+          "matched_market_object": "federal reserve",
           "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
@@ -7082,6 +7172,99 @@
           "ranking_score": 27
         },
         {
+          "story_id": "news-3ec4282b8b312cdac8ef",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Stocks Down Pre-Bell Ahead of Key Inflation Report, Amazon Earnings",
+          "raw_title": "Stocks Down Pre-Bell Ahead of Key Inflation Report, Amazon Earnings",
+          "normalized_fact": "US equity futures were tracking in the red on Thursday as traders await a key inflation report and t。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "US equity futures were tracking in the red on Thursday as traders await a key inflation report and t",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/stocks-down-pre-bell-ahead-114743483.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/stocks-down-pre-bell-ahead-114743483.html?.tsrc=rss",
+          "published_at": "2026-10-29T11:47:43+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-10-29",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "earnings"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "macro",
+            "reason": "macro_subject_action",
+            "matched_terms": [
+              "inflation",
+              "report"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "inflation",
+              "report"
+            ],
+            "matched_subject": "inflation",
+            "matched_action": "report",
+            "matched_market_object": "inflation",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "usequityfuturesweretrackingintheredonthursdayastradersawaitakeyinflationreportandt",
+          "event_cluster_key": "event-6fb6f6133a254d6bde6e",
+          "published_time_bucket": "2026-10-29T11:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "inflation",
+            "report"
+          ],
+          "matched_subject": "inflation",
+          "matched_action": "report",
+          "matched_market_object": "inflation",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-10-29T11:59:15.823607+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 30
+        },
+        {
           "story_id": "news-5aa7e02ad24d2a38b021",
           "provider": "sec",
           "provider_name": "SEC EDGAR",
@@ -7163,105 +7346,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 47
-        },
-        {
-          "story_id": "news-52de6ecdb468793cee5b",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Blockmate Ventures enters AI compute market with NVIDIA B200 GPU investment",
-          "raw_title": "Blockmate Ventures enters AI compute market with NVIDIA B200 GPU investment",
-          "normalized_fact": "Blockmate Ventures Chairman Domenic Carosa joined Steve Darling from Proactive to announce that the company has entered into a binding agreement with Scannit Inc. to acquire its first NVIDIA B200 AI compute node, marking its entry into the AI neocloud and GPU computing market. Under the agreement dated October 27, 2026, Blockmate will acquire a high-performance computing node featuring eight NVIDIA B200 GPUs for approximately US$635,000. The turnkey purchase price includes shipping, data centre setup, installation, network connectivity and onboarding. The acquisition represents a shift in Blockmate's business model as it moves from a venture builder toward becoming an owner of AI infrastructure. The company intends to generate revenue by owning specialised computing hardware and making its capacity available to AI developers and businesses through a specialist operating partner. Delivery of the initial node is currently expected in the first quarter of 2027, subject to vendor timing and NVIDIA allocation. Following delivery, installation, testing and commissioning are expected to take approximately one week before the equipment becomes available for commercial workloads, subject to。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Blockmate Ventures Chairman Domenic Carosa joined Steve Darling from Proactive to announce that the company has entered into a binding agreement with Scannit Inc. to acquire its first NVIDIA B200 AI compute node, marking its entry into the AI neocloud and GPU computing market. Under the agreement dated October 27, 2026, Blockmate will acquire a high-performance computing node featuring eight NVIDIA B200 GPUs for approximately US$635,000. The turnkey purchase price includes shipping, data centre setup, installation, network connectivity and onboarding. The acquisition represents a shift in Blockmate's business model as it moves from a venture builder toward becoming an owner of AI infrastructure. The company intends to generate revenue by owning specialised computing hardware and making its capacity available to AI developers and businesses through a specialist operating partner. Delivery of the initial node is currently expected in the first quarter of 2027, subject to vendor timing and NVIDIA allocation. Following delivery, installation, testing and commissioning are expected to take approximately one week before the equipment becomes available for commercial workloads, subject to",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/video/blockmate-ventures-enters-ai-compute-160316521.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/video/blockmate-ventures-enters-ai-compute-160316521.html?.tsrc=rss",
-          "published_at": "2026-10-27T16:03:16+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-10-27",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "nvidia",
-              "revenue"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "nvidia",
-              "revenue"
-            ],
-            "matched_subject": "nvidia",
-            "matched_action": "revenue",
-            "matched_market_object": "nvidia",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:NVDA",
-            "active_event:ai",
-            "active_event:shipping",
-            "research_candidate:HAS"
-          ],
-          "freshness": "published",
-          "dedupe_key": "blockmateventureschairmandomeniccarosajoinedstevedarlingfromproactivetoannouncethatthecompanyhasenteredintoabindingagreementwithscannitinctoacquireitsfirstnvidiab200aicomputenodemarkingitsentryintotheaineocloudandgpucomputingmarketundertheagreementdatedoctober272026blockmatewillacquireahighperformancecomputingnodefeaturingeightnvidiab200gpusforapproximatelyus635000theturnkeypurchasepriceincludesshippingdatacentresetupinstallationnetworkconnectivityandonboardingtheacquisitionrepresentsashiftinblockmatesbusinessmodelasitmovesfromaventurebuildertowardbecominganownerofaiinfrastructurethecompanyintendstogeneraterevenuebyowningspecialisedcomputinghardwareandmakingitscapacityavailabletoaidevelopersandbusinessesthroughaspecialistoperatingpartnerdeliveryoftheinitialnodeiscurrentlyexpectedinthefirstquarterof2027subjecttovendortimingandnvidiaallocationfollowingdeliveryinstallationtestingandcommissioningareexpectedtotakeapproximatelyoneweekbeforetheequipmentbecomesavailableforcommercialworkloadssubjectto",
-          "event_cluster_key": "event-62468f5a996b827561c6",
-          "published_time_bucket": "2026-10-27T16:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "nvidia",
-            "revenue"
-          ],
-          "matched_subject": "nvidia",
-          "matched_action": "revenue",
-          "matched_market_object": "nvidia",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 3,
-          "inventory_saved_at": "2026-10-27T16:35:48.264323+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 44
         },
         {
           "story_id": "news-36a08d9389734329bbbd",
@@ -8724,99 +8808,6 @@
           "ranking_score": 27
         },
         {
-          "story_id": "news-51dc9dd77a549bdb8d5e",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "〈美股盤後〉Anthropic IPO熱潮延燒 費半漲3.6% 波音崩逾10%壓抑道瓊",
-          "raw_title": "〈美股盤後〉Anthropic IPO熱潮延燒 費半漲3.6% 波音崩逾10%壓抑道瓊",
-          "normalized_fact": "美股週二收高，標普連2日上漲；那指漲1.18%，費半勁揚3.6%，道瓊僅小漲16點，油價下跌提振情緒。 Anthropic申請上市、Meta 250億美元發行認購超額5倍，AI熱度回溫；博通、AMD領漲晶片股。 財報與Fed成焦點，Alphabet、微軟、亞馬遜將公布業績；市場預期Fed按兵不動。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "美股週二收高，標普連2日上漲；那指漲1.18%，費半勁揚3.6%，道瓊僅小漲16點，油價下跌提振情緒。 Anthropic申請上市、Meta 250億美元發行認購超額5倍，AI熱度回溫；博通、AMD領漲晶片股。 財報與Fed成焦點，Alphabet、微軟、亞馬遜將公布業績；市場預期Fed按兵不動。",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6638589",
-          "url": "https://news.cnyes.com/news/id/6638589",
-          "published_at": "2026-10-27T21:26:49+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-10-27",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "SOX"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "預期"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "預期"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "預期",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美股週二收高標普連2日上漲那指漲118費半勁揚36道瓊僅小漲16點油價下跌提振情緒anthropic申請上市meta250億美元發行認購超額5倍ai熱度回溫博通amd領漲晶片股財報與fed成焦點alphabet微軟亞馬遜將公布業績市場預期fed按兵不動",
-          "event_cluster_key": "event-a38276ec36b8e7f19fcb",
-          "published_time_bucket": "2026-10-27T21:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "預期"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "預期",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 3,
-          "inventory_saved_at": "2026-10-27T23:41:55.833560+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 24
-        },
-        {
           "story_id": "news-62008a63f5e67e1b6d79",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -9481,14 +9472,16 @@
         "status": "multi_source",
         "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 2,
-        "provider_count": 2,
+        "independent_source_count": 3,
+        "provider_count": 3,
         "provider_ids": [
+          "anue",
           "google_news",
           "yahoo_finance"
         ],
         "source_domains": [
           "finance.yahoo.com",
+          "news.cnyes.com",
           "news.google.com"
         ],
         "supporting_source_count": 0,
@@ -9499,22 +9492,22 @@
       "interest_graph": {
         "ticker_interest": {
           "ADI": 2,
-          "NVDA": 9,
+          "NVDA": 8,
           "52": 1,
-          "HAS": 5
+          "HAS": 4
         },
         "sector_interest": {},
         "topic_interest": {
-          "wti": 3,
-          "伊朗": 2,
+          "黃金": 2,
+          "oil": 12,
           "sanctions": 3,
-          "oil": 11,
-          "shipping": 3,
           "iran": 3,
-          "war": 1
+          "war": 2,
+          "shipping": 2,
+          "wti": 1
         },
         "market_interest": {
-          "us": 138
+          "us": 132
         },
         "context": {
           "tracked_tickers": [
@@ -9592,33 +9585,35 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "NVDA": 9
+            "NVDA": 8
           },
           "research_candidate": {
             "ADI": 2,
             "52": 1,
-            "HAS": 5
+            "HAS": 4
           },
           "tracked_sector": {},
           "active_event": {
-            "wti": 3,
-            "伊朗": 2,
+            "黃金": 2,
+            "oil": 12,
             "sanctions": 3,
-            "oil": 11,
-            "shipping": 3,
             "iran": 3,
-            "war": 1
+            "war": 2,
+            "shipping": 2,
+            "wti": 1
           },
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 46,
+      "excluded_count": 44,
       "exclusion_reasons": {
         "generic_official_filing": 20,
-        "incomplete_normalized_fact": 14,
-        "insufficient_market_relevance": 18,
+        "incomplete_normalized_fact": 10,
+        "insufficient_market_relevance": 16,
         "market_scope_mismatch": 4,
-        "outside_calendar_window": 18
+        "missing_published_at": 1,
+        "outside_calendar_window": 13,
+        "outside_trading_session_window": 5
       },
       "status": "ready",
       "collection_state": "degraded",
@@ -9628,42 +9623,44 @@
         "successful_provider_count": 4,
         "failed_provider_count": 1,
         "disabled_provider_count": 1,
-        "fetched": 59,
-        "normalized": 59,
+        "fetched": 57,
+        "normalized": 57,
         "eligible": 13,
-        "excluded": 46,
-        "date_eligible_current": 41,
-        "date_excluded_current": 18,
+        "excluded": 44,
+        "date_eligible_current": 38,
+        "date_excluded_current": 19,
         "date_exclusion_reasons_current": {
-          "outside_calendar_window": 18
+          "missing_published_at": 1,
+          "outside_calendar_window": 13,
+          "outside_trading_session_window": 5
         },
-        "date_eligible_inventory": 79,
+        "date_eligible_inventory": 75,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-10-29T11:59:15.823607+00:00",
-        "deduped": 11,
+        "reference_time": "2026-10-29T12:03:56.731312+00:00",
+        "deduped": 12,
         "publicly_ranked": 5,
         "current_eligible": 13,
-        "inventory_considered": 79,
-        "inventory_eligible": 51,
+        "inventory_considered": 75,
+        "inventory_eligible": 50,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 46,
-        "fetched_story_count": 59,
-        "normalized_story_count": 59,
+        "filtered_story_count": 44,
+        "fetched_story_count": 57,
+        "normalized_story_count": 57,
         "eligible_story_count": 13,
-        "deduped_story_count": 11,
+        "deduped_story_count": 12,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 79,
-        "eligible": 51,
+        "considered": 75,
+        "eligible": 50,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -9675,8 +9672,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 59,
-          "checked_at": "2026-10-29T11:59:15.823648+00:00"
+          "item_count": 57,
+          "checked_at": "2026-10-29T12:03:56.731352+00:00"
         },
         {
           "provider": "sec",
@@ -9687,10 +9684,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-10-29T11:59:15.823648+00:00",
+          "checked_at": "2026-10-29T12:03:56.731352+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+          "last_success_at": "2026-10-29T12:03:56.731352+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9718,12 +9715,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-10-29T11:59:15.823648+00:00",
+          "checked_at": "2026-10-29T12:03:56.731352+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-10-29T11:59:15.823648+00:00",
+          "last_failure_at": "2026-10-29T12:03:56.731352+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9746,10 +9743,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-10-29T11:59:15.823648+00:00",
+          "checked_at": "2026-10-29T12:03:56.731352+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+          "last_success_at": "2026-10-29T12:03:56.731352+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9770,32 +9767,31 @@
           "key": "news_us_anue",
           "legacy_key": "official_news_us_anue",
           "label": "anue market news",
-          "status": "no_event",
+          "status": "healthy",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 0,
-          "checked_at": "2026-10-29T11:59:15.823648+00:00",
+          "item_count": 1,
+          "checked_at": "2026-10-29T12:03:56.731352+00:00",
           "raw_item_count": 5,
-          "filtered_item_count": 0,
-          "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-10-29T12:03:56.731352+00:00",
           "last_failure_at": null,
-          "stories_ingested": 4,
-          "stories_deduped": 0,
-          "ranked_count": 0,
+          "stories_ingested": 3,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
             "active_event": 1,
-            "market": 4
+            "market": 3
           },
           "funnel": {
-            "fetched_count": 4,
-            "normalized_count": 4,
-            "market_compatible_count": 4,
-            "eligible_count": 0,
-            "excluded_count": 4,
-            "deduped_count": 0,
-            "ranked_count": 0
-          },
-          "data_gap": "filtered_no_market_match"
+            "fetched_count": 3,
+            "normalized_count": 3,
+            "market_compatible_count": 3,
+            "eligible_count": 1,
+            "excluded_count": 2,
+            "deduped_count": 1,
+            "ranked_count": 1
+          }
         },
         {
           "provider": "yahoo_finance",
@@ -9805,28 +9801,28 @@
           "status": "healthy",
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
-          "item_count": 2,
-          "checked_at": "2026-10-29T11:59:15.823648+00:00",
+          "item_count": 1,
+          "checked_at": "2026-10-29T12:03:56.731352+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 2,
-          "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-10-29T12:03:56.731352+00:00",
           "last_failure_at": null,
-          "stories_ingested": 3,
-          "stories_deduped": 2,
-          "ranked_count": 2,
+          "stories_ingested": 2,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
-            "market": 3,
+            "market": 2,
             "research_candidate": 1,
             "tracked_ticker": 1
           },
           "funnel": {
-            "fetched_count": 5,
-            "normalized_count": 3,
-            "market_compatible_count": 3,
-            "eligible_count": 2,
+            "fetched_count": 4,
+            "normalized_count": 2,
+            "market_compatible_count": 2,
+            "eligible_count": 1,
             "excluded_count": 1,
-            "deduped_count": 2,
-            "ranked_count": 2
+            "deduped_count": 1,
+            "ranked_count": 1
           }
         },
         {
@@ -9838,13 +9834,13 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
           "item_count": 3,
-          "checked_at": "2026-10-29T11:59:15.823648+00:00",
+          "checked_at": "2026-10-29T12:03:56.731352+00:00",
           "raw_item_count": 40,
           "filtered_item_count": 3,
-          "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+          "last_success_at": "2026-10-29T12:03:56.731352+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
-          "stories_deduped": 9,
+          "stories_deduped": 10,
           "ranked_count": 3,
           "relevance_distribution": {
             "active_event": 9,
@@ -9857,18 +9853,18 @@
             "market_compatible_count": 40,
             "eligible_count": 11,
             "excluded_count": 29,
-            "deduped_count": 9,
+            "deduped_count": 10,
             "ranked_count": 3
           }
         }
       ],
       "observability": {
-        "stories_ingested": 59,
-        "stories_deduped": 11,
+        "stories_ingested": 57,
+        "stories_deduped": 12,
         "ranked_count": 5,
         "relevance_distribution": {
           "active_event": 10,
-          "market": 59,
+          "market": 57,
           "research_candidate": 1,
           "tracked_ticker": 2
         },
@@ -9876,30 +9872,30 @@
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+            "last_success_at": "2026-10-29T12:03:56.731352+00:00",
             "last_failure_at": null,
-            "stories_ingested": 4,
-            "stories_deduped": 0,
-            "ranked_count": 0,
+            "stories_ingested": 3,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
               "active_event": 1,
-              "market": 4
+              "market": 3
             },
             "funnel": {
-              "fetched_count": 4,
-              "normalized_count": 4,
-              "market_compatible_count": 4,
-              "eligible_count": 0,
-              "excluded_count": 4,
-              "deduped_count": 0,
-              "ranked_count": 0
+              "fetched_count": 3,
+              "normalized_count": 3,
+              "market_compatible_count": 3,
+              "eligible_count": 1,
+              "excluded_count": 2,
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           },
           {
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-10-29T11:59:15.823648+00:00",
+            "last_failure_at": "2026-10-29T12:03:56.731352+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9917,10 +9913,10 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+            "last_success_at": "2026-10-29T12:03:56.731352+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
-            "stories_deduped": 9,
+            "stories_deduped": 10,
             "ranked_count": 3,
             "relevance_distribution": {
               "active_event": 9,
@@ -9933,14 +9929,14 @@
               "market_compatible_count": 40,
               "eligible_count": 11,
               "excluded_count": 29,
-              "deduped_count": 9,
+              "deduped_count": 10,
               "ranked_count": 3
             }
           },
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+            "last_success_at": "2026-10-29T12:03:56.731352+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9959,7 +9955,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+            "last_success_at": "2026-10-29T12:03:56.731352+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -10001,24 +9997,24 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-10-29T11:59:15.823648+00:00",
+            "last_success_at": "2026-10-29T12:03:56.731352+00:00",
             "last_failure_at": null,
-            "stories_ingested": 3,
-            "stories_deduped": 2,
-            "ranked_count": 2,
+            "stories_ingested": 2,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
-              "market": 3,
+              "market": 2,
               "research_candidate": 1,
               "tracked_ticker": 1
             },
             "funnel": {
-              "fetched_count": 5,
-              "normalized_count": 3,
-              "market_compatible_count": 3,
-              "eligible_count": 2,
+              "fetched_count": 4,
+              "normalized_count": 2,
+              "market_compatible_count": 2,
+              "eligible_count": 1,
               "excluded_count": 1,
-              "deduped_count": 2,
-              "ranked_count": 2
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           }
         ]
