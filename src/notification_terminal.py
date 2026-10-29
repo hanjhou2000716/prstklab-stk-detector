@@ -131,6 +131,10 @@ def _release_result_evidence(
         evidence.update({
             "phase": str(payload.get("phase") or "")[:32],
             "allowed": payload.get("allowed") is True,
+            "gate_status": str(payload.get("gate_status") or "unknown")[:80],
+            "public_sync_pending": payload.get("public_sync_pending") is True,
+            "verified_original_release_id": str(payload.get("verified_original_release_id") or "")[:100],
+            "public_sync_pending_since": str(payload.get("public_sync_pending_since") or "")[:40],
             "expected_release_id": str(payload.get("expected_release_id") or "")[:100],
             "actual_release_id": str(payload.get("actual_release_id") or "")[:100],
             "expected_snapshot_id": str(payload.get("expected_snapshot_id") or "")[:100],
@@ -702,6 +706,19 @@ def evaluate_scheduled_terminal(values: Mapping[str, str]) -> dict[str, Any]:
             values, "scheduled", status="delivered_reconciliation_incomplete",
             reason="configured_receipt_callback_failed_do_not_resend",
             expected=True, failure=True, no_resend=True,
+        )
+    if _flag(values, "RECONCILED_GATE_PUBLIC_SYNC_PENDING"):
+        original_release = _text(values, "RECONCILED_GATE_VERIFIED_ORIGINAL_RELEASE_ID")
+        if _text(values, "RECONCILED_GATE_ALLOWED") != "true" or not original_release:
+            return _result(
+                values, "scheduled", status="delivered_reconciliation_incomplete",
+                reason="public_sync_pending_without_verified_original_release_do_not_resend",
+                expected=True, failure=True, no_resend=True,
+            )
+        return _result(
+            values, "scheduled", status="delivered_public_sync_pending",
+            reason="original_public_notification_and_durable_receipt_verified_receipt_release_sync_pending",
+            expected=True, failure=False, no_resend=True,
         )
     return _result(
         values, "scheduled", status="delivered",

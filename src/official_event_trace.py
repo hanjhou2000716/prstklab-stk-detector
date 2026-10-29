@@ -82,6 +82,9 @@ def build_trace(
             "summary_contract_version": _bounded(raw.get("summary_contract_version"), 40),
             "notification_key": _bounded(delivery.get("notification_key") or notification_key, 160),
             "notification_id": _bounded(delivery.get("alert_id") or raw.get("notification_key"), 160),
+            "source_type": _bounded(raw.get("source_type") or raw.get("source_key") or raw.get("provider"), 48),
+            "source_identity": _bounded(raw.get("source_identity") or raw.get("source_event_id"), 160),
+            "observation_id": _bounded(raw.get("observation_id") or raw.get("snapshot_id"), 160),
             "release_id": _bounded(delivery.get("release_id"), 160),
             "snapshot_id": _bounded(delivery.get("snapshot_id") or raw.get("snapshot_id"), 160),
             "claim_key": _bounded(delivery.get("notification_key"), 160),
@@ -92,6 +95,8 @@ def build_trace(
             "source_published_at": _bounded(raw.get("source_published_at"), 80),
             "expires_at": _bounded(raw.get("expires_at"), 80),
             "first_detected_at": _bounded(raw.get("first_detected_at"), 80),
+            "summary_status": _bounded(raw.get("summary_status") or raw.get("summary_state"), 48),
+            "summary_started_at": _bounded(raw.get("summary_started_at"), 80),
             "candidate_recorded_at": _bounded(raw.get("recorded_at") or recorded_at, 80),
             "first_failure": (
                 {

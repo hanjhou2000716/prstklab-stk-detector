@@ -356,9 +356,9 @@ def test_existing_incident_is_reminded_after_thirty_minutes(monkeypatch):
 
     assert result["incident_active"] is True
     assert result["reminder_sent"] is True
-    assert len(updates) == 2
+    assert len(updates) == 1
     assert f"Next reminder at: {(now + timedelta(minutes=30)).isoformat()}" in updates[0]["body"]
-    assert "comment" in updates[1]
+    assert all("comment" not in update for update in updates)
 
 
 def test_liveness_audit_error_is_deduplicated_in_issue_without_failing_the_workflow(monkeypatch, tmp_path, capsys):

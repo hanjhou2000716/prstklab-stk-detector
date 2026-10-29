@@ -162,12 +162,14 @@ def test_health_watcher_consolidates_duplicate_matching_incidents(monkeypatch):
     assert result["consolidated_issue_numbers"] == [1073]
     assert issues[0]["state"] == "open"
     assert issues[1]["state"] == "closed"
-    assert any(
-        method == "PATCH" and path == "issues/1073"
-        and payload == {"state": "closed", "state_reason": "duplicate"}
-        for method, path, payload in calls
+    duplicate_patch = next(
+        payload for method, path, payload in calls
+        if method == "PATCH" and path == "issues/1073"
     )
-    assert any(method == "POST" and path == "issues/1073/comments" for method, path, _ in calls)
+    assert duplicate_patch["state"] == "closed"
+    assert duplicate_patch["state_reason"] == "duplicate"
+    assert "Duplicate consolidated into #1068" in duplicate_patch["body"]
+    assert not any(method == "POST" and path.endswith("/comments") for method, path, _ in calls)
 
 
 def test_health_watcher_resolves_workflow_run_event_when_listing_lags(monkeypatch):
@@ -427,7 +429,7 @@ def test_health_watcher_waits_ten_minutes_before_classifying_running_reconcile_a
     assert issues == []
 
 
-def test_health_workflow_is_independent_and_alerts_only_from_health_decision():
+def test_health_workflow_delegates_notifications_to_single_outlet():
     from pathlib import Path
 
     root = Path(__file__).parents[1]
@@ -435,8 +437,12 @@ def test_health_workflow_is_independent_and_alerts_only_from_health_decision():
     assert 'cron: "*/5 * * * *"' in workflow
     assert "Central incident reconciliation" in workflow
     assert "prstk-central-incident-health" in workflow
-    assert "steps.inspect.outputs.notification_due == 'true'" in workflow
-    assert "finalize-alert-cadence" in workflow
+    assert "steps.inspect.outputs.notification_due == 'true'" not in workflow
+    assert "native_alert" not in workflow
+    outlet = (root / ".github/workflows/incident-notification-outlet.yml").read_text(encoding="utf-8")
+    assert "Central incident reconciliation health" in outlet
+    assert "steps.prepare.outputs.notification_due == 'true'" in outlet
+    assert "python -m scripts.incident_notification_outlet finalize" in outlet
     assert "workflow_dispatch" in workflow
     assert "TRIGGERED_CENTRAL_RUN_ID" in workflow
     assert "TRIGGERED_CENTRAL_RUN_ATTEMPT" in workflow

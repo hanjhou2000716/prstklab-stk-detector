@@ -677,6 +677,89 @@ def test_release_gate_retries_only_when_artifact_bytes_match_pinned_previous_man
         assert query.get("attempt")
 
 
+def test_post_delivery_accepts_verified_original_release_after_sync_deadline(tmp_path, monkeypatch):
+    import copy
+
+    path, current = _ready_release(tmp_path)
+    previous = copy.deepcopy(current)
+    previous["release_id"] = "trusted-original-release"
+    previous["created_at"] = "2026-10-28T00:00:00Z"
+    target = {
+        "notification_id": "notice-original",
+        "release_id": previous["release_id"],
+        "snapshot_id": current["market_snapshot_id"],
+        "sha256": "a" * 64,
+    }
+    monkeypatch.setattr(
+        "src.release_gate.requests.get",
+        lambda *_args, **_kwargs: _public_response(json.dumps(previous).encode(), previous),
+    )
+    monkeypatch.setattr(
+        "src.release_gate._fetch_public_release_artifacts",
+        lambda *_args, **_kwargs: ({"market.json": {}, "research-report.json": {}, "event-ledger.json": {}}, []),
+    )
+    monkeypatch.setattr("src.release_gate._public_target_errors", lambda *_args, **_kwargs: [])
+
+    result = verify_release_for_delivery(
+        manifest_path=path,
+        expected_snapshot_id=current["market_snapshot_id"],
+        expected_release_id=current["release_id"],
+        public_url="https://example.test/",
+        public_timeout_seconds=0.5,
+        public_delay=0.25,
+        public_max_delay=0.25,
+        expected_alert_targets=[target],
+        previous_manifest=previous,
+        post_delivery=True,
+    )
+
+    assert result.allowed is True
+    assert result.public_sync_pending is True
+    assert result.gate_status == "allowed_original_release_public_sync_pending"
+    assert result.verified_original_release_id == "trusted-original-release"
+    assert result.errors == ()
+
+
+def test_post_delivery_does_not_treat_changed_previous_manifest_as_trusted(tmp_path, monkeypatch):
+    import copy
+
+    path, current = _ready_release(tmp_path)
+    previous = copy.deepcopy(current)
+    previous["release_id"] = "trusted-original-release"
+    previous["created_at"] = "2026-10-28T00:00:00Z"
+    remote = copy.deepcopy(previous)
+    remote["artifact_hashes"]["event-ledger.json"] = "b" * 64
+    monkeypatch.setattr(
+        "src.release_gate.requests.get",
+        lambda *_args, **_kwargs: _public_response(json.dumps(remote).encode(), remote),
+    )
+    monkeypatch.setattr(
+        "src.release_gate._fetch_public_release_artifacts",
+        lambda *_args, **_kwargs: ({"market.json": {}, "research-report.json": {}, "event-ledger.json": {}}, []),
+    )
+    monkeypatch.setattr("src.release_gate._public_target_errors", lambda *_args, **_kwargs: [])
+
+    result = verify_release_for_delivery(
+        manifest_path=path,
+        expected_snapshot_id=current["market_snapshot_id"],
+        expected_release_id=current["release_id"],
+        public_url="https://example.test/",
+        public_timeout_seconds=0.2,
+        public_delay=0.1,
+        public_max_delay=0.1,
+        expected_alert_targets=[{
+            "notification_id": "notice-original", "release_id": previous["release_id"],
+            "snapshot_id": current["market_snapshot_id"], "sha256": "a" * 64,
+        }],
+        previous_manifest=previous,
+        post_delivery=True,
+    )
+
+    assert result.allowed is False
+    assert result.public_sync_pending is False
+    assert result.verified_original_release_id == ""
+
+
 def test_release_gate_result_artifact_is_bound_and_contains_no_signed_url(tmp_path, monkeypatch):
     from src.release_gate import ReleaseGateResult
 

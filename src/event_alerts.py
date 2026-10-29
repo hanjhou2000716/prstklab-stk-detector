@@ -255,6 +255,8 @@ def _corporate_event_scope(
 
 def _is_routine_corporate_event(event: dict[str, Any]) -> bool:
     """Identify calendar/meeting notices that should remain observe-only."""
+    if event.get("corporate_routine") is True:
+        return True
     text = " ".join(
         str(event.get(key) or "")
         for key in ("title", "brief_summary", "summary", "event_type", "category")

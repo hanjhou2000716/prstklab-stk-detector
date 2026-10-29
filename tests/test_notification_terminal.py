@@ -319,6 +319,18 @@ def test_scheduled_delivery_requires_receipt_and_public_reconciliation() -> None
     assert partial["no_resend"] is True
 
 
+def test_scheduled_verified_original_release_keeps_delivery_success_while_sync_is_pending() -> None:
+    result = evaluate_scheduled_terminal(scheduled(
+        RECONCILED_GATE_PUBLIC_SYNC_PENDING="true",
+        RECONCILED_GATE_VERIFIED_ORIGINAL_RELEASE_ID="release-original",
+    ))
+
+    assert result["status"] == "delivered_public_sync_pending"
+    assert result["expected"] is True
+    assert result["failure"] is False
+    assert result["no_resend"] is True
+
+
 def test_holiday_notice_obligation_is_a_required_deliverable() -> None:
     result = evaluate_scheduled_terminal(scheduled(
         DELIVERY_OBLIGATION="holiday_notice_required",

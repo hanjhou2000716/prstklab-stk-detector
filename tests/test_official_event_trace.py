@@ -26,6 +26,10 @@ def test_trace_joins_preflight_to_actual_claim_and_receipt_without_source_conten
             "fact_fingerprint": "fact-hash",
             "key_fingerprint": "key-hash",
             "notification_key": "candidate-key",
+            "source_key": "financialjuice",
+            "source_identity": "fj:stable-fact-ref",
+            "observation_id": "obs-1",
+            "summary_status": "pending",
             "expected": True,
             "stage": "notification_preflight",
             "status": "ready",
@@ -44,6 +48,10 @@ def test_trace_joins_preflight_to_actual_claim_and_receipt_without_source_conten
     assert event["notification_id"] == "public-notification-id"
     assert event["stage"] == "recipient_receipt"
     assert event["status"] == "delivered"
+    assert event["source_type"] == "financialjuice"
+    assert event["source_identity"] == "fj:stable-fact-ref"
+    assert event["observation_id"] == "obs-1"
+    assert event["summary_status"] == "pending"
     assert event["delivered_count"] == 4
     assert "source_text" not in json.dumps(trace)
 

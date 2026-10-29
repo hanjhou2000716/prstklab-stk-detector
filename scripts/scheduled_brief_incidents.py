@@ -111,7 +111,25 @@ def _validated_evidence(event: dict[str, Any], directory: Path) -> dict[str, Any
     return {"kind": "audit", "valid": True, "audit": audit, "result": result}
 
 
-def _root_reason(evidence: dict[str, Any]) -> tuple[str, str, str, dict[str, Any]] | None:
+def _public_sync_reason(
+    terminal: dict[str, Any], now: datetime | None,
+) -> tuple[str, str, str, dict[str, Any]] | None:
+    release_evidence = terminal.get("release_evidence")
+    gate = release_evidence.get("post_delivery_gate") if isinstance(release_evidence, dict) else None
+    if not isinstance(gate, dict) or gate.get("evidence_status") != "verified":
+        return "scheduled_market_brief", "public_sync_pending_gate_evidence_unverified", "notification-terminal-v2", terminal
+    if gate.get("public_sync_pending") is not True or not str(gate.get("verified_original_release_id") or ""):
+        return "scheduled_market_brief", "public_sync_pending_original_release_not_verified", "notification-terminal-v2", terminal
+    since = _parse_time(gate.get("public_sync_pending_since"))
+    current = (now or datetime.now(UTC)).astimezone(UTC)
+    if since is None:
+        return "scheduled_market_brief", "public_sync_pending_start_time_missing", "notification-terminal-v2", terminal
+    if current - since < timedelta(minutes=10):
+        return None
+    return "scheduled_public_release_sync", "receipt_release_public_sync_stalled", "release-gate-result-v1", terminal
+
+
+def _root_reason(evidence: dict[str, Any], now: datetime | None = None) -> tuple[str, str, str, dict[str, Any]] | None:
     kind = evidence.get("kind")
     if not evidence.get("valid"):
         reason = str(evidence.get("reason") or "evidence_invalid")
@@ -119,6 +137,8 @@ def _root_reason(evidence: dict[str, Any]) -> tuple[str, str, str, dict[str, Any
     if kind == "report":
         terminal = evidence["terminal"]
         status = str(terminal.get("status") or "unknown")
+        if status == "delivered_public_sync_pending":
+            return _public_sync_reason(terminal, now)
         reason = _release_failure_reason(terminal.get("release_evidence")) or str(terminal.get("reason") or status)
         if terminal.get("expected") is False and terminal.get("failure") is not True:
             return None
@@ -128,10 +148,16 @@ def _root_reason(evidence: dict[str, Any]) -> tuple[str, str, str, dict[str, Any
         return "scheduled_market_brief", reason[:180], str(terminal.get("schema_version") or "notification-terminal-v2"), terminal
     audit = evidence["audit"]
     result = evidence["result"]
+    diagnosis = result.get("run_diagnosis") if isinstance(result.get("run_diagnosis"), dict) else {}
+    if str(diagnosis.get("terminal_status") or "") == "delivered_public_sync_pending":
+        terminal = {
+            "status": "delivered_public_sync_pending",
+            "release_evidence": diagnosis.get("release_evidence", {}),
+        }
+        return _public_sync_reason(terminal, now)
     status = str(audit.get("report_receipt_status") or result.get("status") or "unknown")
     if status in {"delivered", "expected_skip", "not_applicable", "not_due"} and audit.get("diagnostic_complete") is True:
         return None
-    diagnosis = result.get("run_diagnosis") if isinstance(result.get("run_diagnosis"), dict) else {}
     terminal_reason = (
         _release_failure_reason(diagnosis.get("release_evidence"))
         or str(diagnosis.get("terminal_reason") or "").strip()
@@ -273,7 +299,7 @@ def reconcile(
     if any(len(rows) > 1 for rows in indexed.values()):
         raise LivenessAuditError("scheduled_brief_incident_duplicate_issue")
 
-    component_reason = _root_reason(evidence)
+    component_reason = _root_reason(evidence, current)
     opened: list[int] = []
     reminded: list[int] = []
     recovered: list[int] = []
@@ -363,11 +389,6 @@ def reconcile(
                     body = preserve_pending_alert(body, body_before)
             _request_json(api_url, repository, token, "PATCH", f"issues/{number}", {"body": body}, deadline_monotonic=deadline)
             if notify_due and not pending_current:
-                _request_json(
-                    api_url, repository, token, "POST", f"issues/{number}/comments",
-                    {"body": f"Still degraded: {reason}; {len(slots)} affected scheduled slot(s). Latest run {run_id}, attempt {attempt}."},
-                    deadline_monotonic=deadline,
-                )
                 reminded.append(number)
                 if defer_notification_cadence:
                     cadence_confirmations.append({
@@ -392,14 +413,10 @@ def reconcile(
                 body = str(issue.get("body") or "")
                 if not isinstance(number, int) or not _slot_is_recovered(body, current_slot):
                     continue
-                _request_json(
-                    api_url, repository, token, "POST", f"issues/{number}/comments",
-                    {"body": f"Recovery verified by a complete receipt audit at {current.isoformat()}. Historical missed slot(s) remain recorded and were not resent."},
-                    deadline_monotonic=deadline,
-                )
+                recovered_body = body.rstrip() + f"\nRecovery verified by a complete receipt audit at {current.isoformat()}; historical missed slots were not resent.\n"
                 _request_json(
                     api_url, repository, token, "PATCH", f"issues/{number}",
-                    {"state": "closed", "state_reason": "completed"},
+                    {"body": recovered_body[:12000], "state": "closed", "state_reason": "completed"},
                     deadline_monotonic=deadline,
                 )
                 recovered.append(number)

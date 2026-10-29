@@ -456,11 +456,6 @@ def audit_liveness(
     recovered_audit_incidents: list[int] = []
     for issue in audit_incidents:
         number = int(issue["number"])
-        _request_json(
-            api_url, repository, token, "POST", f"issues/{number}/comments",
-            {"body": f"Liveness audit recovered at {current.isoformat()}; a complete identity-verified audit succeeded."},
-            deadline_monotonic=deadline_monotonic,
-        )
         body = _updated_incident_body(issue, observed_at=current, next_reminder_at=None, recovered_at=current)
         _request_json(
             api_url, repository, token, "PATCH", f"issues/{number}",
@@ -472,11 +467,6 @@ def audit_liveness(
         closed: list[int] = []
         for issue in stall_incidents:
             number = int(issue["number"])
-            _request_json(
-                api_url, repository, token, "POST", f"issues/{number}/comments",
-                {"body": f"Monitor recovery verified at {current.isoformat()}; a real monitor step has started."},
-                deadline_monotonic=deadline_monotonic,
-            )
             body = _updated_incident_body(issue, observed_at=current, next_reminder_at=None, recovered_at=current)
             _request_json(
                 api_url, repository, token, "PATCH", f"issues/{number}",
@@ -556,15 +546,6 @@ def audit_liveness(
             _request_json(
                 api_url, repository, token, "PATCH", f"issues/{int(issue['number'])}",
                 {"body": updated_body}, deadline_monotonic=deadline_monotonic,
-            )
-            _request_json(
-                api_url, repository, token, "POST", f"issues/{int(issue['number'])}/comments",
-                {"body": (
-                    f"Still stalled: run {int(oldest_run['id'])} was created at "
-                    f"{oldest_created.isoformat()}; no official monitor step has started. "
-                    f"Checked at {current.isoformat()}. Next reminder is scheduled in 30 minutes."
-                )},
-                deadline_monotonic=deadline_monotonic,
             )
             if defer_notification_cadence:
                 cadence_confirmations.append({
@@ -670,11 +651,6 @@ def reconcile_audit_failure_incident(
         _request_json(
             api_url, repository, token, "PATCH", f"issues/{number}",
             {"body": body}, deadline_monotonic=deadline,
-        )
-        _request_json(
-            api_url, repository, token, "POST", f"issues/{number}/comments",
-            {"body": f"The liveness audit remains incomplete ({reason[:120]}). Checked at {current.isoformat()}; next reminder in 30 minutes."},
-            deadline_monotonic=deadline,
         )
         if defer_notification_cadence:
             cadence_confirmations.append({

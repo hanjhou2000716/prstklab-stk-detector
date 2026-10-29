@@ -91,6 +91,29 @@ def test_mops_daily_api_keeps_material_ordinary_share_announcement(monkeypatch):
     assert items[0]["brief_summary"].startswith("0050｜2330")
 
 
+def test_mops_consolidated_financial_report_is_observation_not_merger_alert(monkeypatch):
+    class Response:
+        @staticmethod
+        def raise_for_status():
+            return None
+
+        @staticmethod
+        def json():
+            return {"result": {"data": [["115/10/28", "10:05:30", "2308", "Delta", "公告本公司115年第3季合併財務報告業經董事會通過"]]}}
+
+    monkeypatch.setattr("src.official_events.requests.post", lambda *args, **kwargs: Response())
+    monkeypatch.setattr("src.official_events._is_recent_release", lambda released_at: released_at is not None)
+    monkeypatch.setattr("src.official_events._taiwan_0050_codes", lambda: frozenset({"2308"}))
+
+    item = _mops_items()[0]
+
+    assert item["corporate_routine"] is True
+    assert item["corporate_alert_eligible"] is False
+    assert item["notification_status"] == "observe_only"
+    assert "例行財務報告" in item["brief_summary"]
+    assert len(item["source_identity"]) > 20
+
+
 def test_mops_non_0050_material_announcement_is_not_a_telegram_candidate(monkeypatch):
     class Response:
         @staticmethod

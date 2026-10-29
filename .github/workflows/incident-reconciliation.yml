@@ -98,28 +98,6 @@ jobs:
           path: ${{ runner.temp }}/incident-reconciliation-state.json
           if-no-files-found: error
           retention-days: 90
-      - name: Send one native alert for new, escalated, or due incidents
-        if: >-
-          always() && steps.upload_decision.outcome == 'success' &&
-          steps.reconcile.outputs.notification_due == 'true'
-        id: native_alert
-        run: |
-          echo "alert_emitted=true" >> "$GITHUB_OUTPUT"
-          echo "::error::Incident remains degraded; issue evidence was reconciled. The centralized notification interval is 30 minutes."
-          exit 1
-      - name: Finalize reminder cadence after the expected alert terminal
-        if: >-
-          always() && steps.upload_decision.outcome == 'success' &&
-          steps.native_alert.outputs.alert_emitted == 'true' &&
-          steps.native_alert.outcome == 'failure'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_API_URL: ${{ github.api_url }}
-          INCIDENT_RECONCILIATION_RESULT_PATH: ${{ runner.temp }}/incident-reconciliation-state.json
-          INCIDENT_ALERT_EMITTED: ${{ steps.native_alert.outputs.alert_emitted }}
-          INCIDENT_ALERT_STEP_OUTCOME: ${{ steps.native_alert.outcome }}
-        run: python -m scripts.incident_reconciliation --finalize-alert-cadence
       - name: Upload immutable reconciliation state
         id: upload_result
         if: always()

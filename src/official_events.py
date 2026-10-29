@@ -7,6 +7,7 @@ pipeline with current market observations.
 
 from __future__ import annotations
 
+import hashlib
 import re
 from datetime import UTC, datetime, timedelta
 from email.utils import parsedate_to_datetime
@@ -134,8 +135,10 @@ def _taiwan_0050_codes() -> frozenset[str]:
 
 def _mops_brief_summary(code: str, name: str, title: str) -> str:
     """Use a classified complete fact instead of truncating a raw MOPS title."""
+    if _is_routine_mops_financial_notice(title):
+        return f"0050｜{code} {name}｜例行財務報告"
     categories = (
-        ("合併／收購", ("合併", "收購", "公開收購")),
+        ("合併／收購", ("合併案", "併購", "收購", "公開收購")),
         ("重大災害", ("重大災害", "火災", "爆炸", "罷工")),
         ("財務重整", ("破產", "重整", "下市")),
         ("資本調整", ("減資", "現金增資")),
@@ -144,6 +147,13 @@ def _mops_brief_summary(code: str, name: str, title: str) -> str:
     )
     category = next((label for label, terms in categories if any(term in title for term in terms)), "重大訊息")
     return f"0050｜{code} {name}｜{category}"
+
+
+def _is_routine_mops_financial_notice(title: str) -> bool:
+    text = str(title or "").replace(" ", "")
+    financial_report = any(term in text for term in ("財務報告", "財報"))
+    routine_action = any(term in text for term in ("董事會通過", "董事會承認", "董事會日期", "提報董事會"))
+    return financial_report and routine_action
 
 
 # Attention/disposition data is high-volume. Only systemic listed names can
@@ -325,11 +335,20 @@ def _mops_items() -> list[dict[str, str]]:
         released_at = _mops_released_at(date, clock)
         if not _is_recent_release(released_at):
             continue
+        routine = _is_routine_mops_financial_notice(title)
+        source_identity = "mops:" + hashlib.sha256(
+            "|".join((code, released_at or "", " ".join(title.split()))).encode("utf-8")
+        ).hexdigest()[:32]
         items.append({
             "title": f"{code} {name}\uff1a{title}", "url": MOPS_DAILY_PAGE,
             "source": "MOPS \u7576\u65e5\u91cd\u5927\u8a0a\u606f", "short_label": "\u53f0\u80a1\u516c\u53f8\u91cd\u5927\u8a0a\u606f",
             "brief_summary": _mops_brief_summary(code, name, title),
             "relevance": "official", "released_at": released_at or "", "source_key": "mops",
+            "issuer_ticker": code, "source_identity": source_identity,
+            "corporate_event": True, "corporate_routine": routine,
+            "corporate_alert_eligible": not routine,
+            "notification_status": "observe_only" if routine else "eligible",
+            "notification_reason": "routine_financial_report" if routine else "",
         })
     return items[:2]
 

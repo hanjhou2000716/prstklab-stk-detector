@@ -173,6 +173,39 @@ def _trusted_previous_hash(previous_manifest: dict[str, Any] | None, name: str) 
     return digest
 
 
+def _matches_trusted_previous_manifest(
+    remote: dict[str, Any], previous_manifest: dict[str, Any] | None,
+) -> bool:
+    if not isinstance(previous_manifest, dict):
+        return False
+    if (
+        remote.get("status") not in PUBLISHABLE_RELEASE_STATUSES
+        or remote.get("release_id") != previous_manifest.get("release_id")
+        or remote.get("market_snapshot_id") != previous_manifest.get("market_snapshot_id")
+    ):
+        return False
+    prior_hashes = previous_manifest.get("artifact_hashes")
+    remote_hashes = remote.get("artifact_hashes")
+    prior_paths = previous_manifest.get("artifact_paths")
+    remote_paths = remote.get("artifact_paths")
+    if not isinstance(prior_hashes, dict):
+        return False
+    if not isinstance(remote_hashes, dict):
+        return False
+    if not isinstance(prior_paths, dict):
+        return False
+    if not isinstance(remote_paths, dict):
+        return False
+    if not prior_hashes or set(prior_hashes) != set(remote_hashes):
+        return False
+    if not prior_paths or set(prior_paths) != set(remote_paths):
+        return False
+    return all(
+        remote_hashes.get(name) == digest and remote_paths.get(name) == prior_paths.get(name)
+        for name, digest in prior_hashes.items()
+    )
+
+
 def _targets_for_gate(
     expected_alert_targets: list[dict[str, Any]] | None,
     expected_notification_id: str | None,
@@ -241,6 +274,9 @@ class ReleaseGateResult:
     elapsed_seconds: float = 0.0
     retryable: bool = False
     superseded: bool = False
+    public_sync_pending: bool = False
+    verified_original_release_id: str = ""
+    public_sync_pending_since: str = ""
 
 
 _SAFE_GATE_DIAGNOSTIC_CATEGORIES = frozenset({
@@ -307,6 +343,7 @@ def _write_gate_result(
         "phase": phase,
         "status": "allowed" if result.allowed else "blocked",
         "allowed": result.allowed,
+        "gate_status": result.gate_status,
         "run_id": os.getenv("GITHUB_RUN_ID", "")[:32],
         "attempt": attempt,
         "workflow_sha": os.getenv("GITHUB_SHA", "")[:40],
@@ -321,6 +358,9 @@ def _write_gate_result(
         "elapsed_seconds": round(max(0.0, result.elapsed_seconds), 3),
         "retryable": result.retryable,
         "superseded": result.superseded,
+        "public_sync_pending": result.public_sync_pending,
+        "verified_original_release_id": result.verified_original_release_id[:100],
+        "public_sync_pending_since": result.public_sync_pending_since[:40],
         "alert_targets": [
             {
                 key: str(target.get(key) or "")[:160]
@@ -751,6 +791,7 @@ def verify_release_for_delivery(
     HTTP request, so the complete gate cannot spend 180 seconds per artifact.
     """
     started = time.monotonic()
+    deadline = started + max(0.0, float(public_timeout_seconds))
     path = Path(manifest_path)
     try:
         manifest = json.loads(path.read_text(encoding="utf-8"))
@@ -887,6 +928,7 @@ def verify_release_for_delivery(
     actual_snapshot_id = ""
     http_status: int | None = None
     superseded = False
+    verified_original_release_id = ""
     manifest_url = public_url.rstrip("/") + "/data/release-manifest.json" if public_url else ""
     try:
         local_manifest_hash = hashlib.sha256(path.read_bytes()).hexdigest()
@@ -895,13 +937,13 @@ def verify_release_for_delivery(
 
     # Do not spend network time when the local release is already invalid.
     if public_url and not errors:
-        deadline = started + max(0.0, float(public_timeout_seconds))
         max_attempts = max(1, int(public_attempts)) if int(public_attempts) > 0 else None
         attempt_number = 0
         while max_attempts is None or attempt_number < max_attempts:
             if attempt_number and time.monotonic() >= deadline:
                 break
             attempt_number += 1
+            verified_original_release_id = ""
             # Per-attempt diagnostics must never inherit a previously served
             # manifest identity after a later timeout or malformed response.
             actual_release_id = ""
@@ -1005,6 +1047,50 @@ def verify_release_for_delivery(
                                 attempt_error = "public release was superseded by a newer valid release"
                                 attempt_category = "parallel_publish_superseded"
                                 attempt_superseded = True
+                        elif (
+                            post_delivery
+                            and _matches_trusted_previous_manifest(remote, previous_manifest)
+                            and actual_snapshot_id == expected_snapshot
+                        ):
+                            original_loaded, original_errors = _fetch_public_release_artifacts(
+                                remote,
+                                public_url=public_url,
+                                timeout=timeout,
+                                require_production_research=require_production_research,
+                                max_research_age_hours=max_research_age_hours,
+                                deadline=deadline,
+                                attempt=attempt_number,
+                            )
+                            if original_errors:
+                                attempt_error = "; ".join(sorted(set(original_errors)))
+                                attempt_retryable = any(
+                                    item.startswith("transient ") for item in original_errors
+                                )
+                                attempt_category = "pages_unavailable" if attempt_retryable else "public_content_mismatch"
+                            else:
+                                targets = _targets_for_gate(
+                                    expected_alert_targets,
+                                    expected_notification_id,
+                                    expected_alert_snapshot_id,
+                                    expected_alert_observation_id,
+                                )
+                                target_errors = _public_target_errors(
+                                    original_loaded,
+                                    remote,
+                                    targets=targets,
+                                    public_url=public_url,
+                                    timeout=timeout,
+                                    deadline=deadline,
+                                    attempt=attempt_number,
+                                )
+                                if target_errors:
+                                    attempt_error = "; ".join(target_errors)
+                                    attempt_category = "public_content_mismatch"
+                                else:
+                                    verified_original_release_id = actual_release_id
+                                    attempt_error = "verified original notification release remains public while receipt reconciliation propagates"
+                                    attempt_category = "public_manifest_stale"
+                                    attempt_retryable = True
                         elif _is_newer_manifest(manifest, remote):
                             attempt_error = "public manifest release_id does not match local release"
                             attempt_category = "public_manifest_stale"
@@ -1108,13 +1194,31 @@ def verify_release_for_delivery(
             )
             if delay > 0:
                 time.sleep(delay)
-        if public_error:
+        public_sync_pending = bool(
+            post_delivery
+            and verified_original_release_id
+            and public_error
+            and time.monotonic() >= deadline
+        )
+        if public_error and not public_sync_pending:
             errors.append(public_error)
         elif public_attempt_records and public_attempt_records[-1].get("superseded"):
             errors.append("public release was superseded by a newer valid release")
 
+    public_sync_pending = bool(
+        public_url
+        and post_delivery
+        and verified_original_release_id
+        and public_error
+        and time.monotonic() >= deadline
+    )
     allowed = not errors
-    gate_status = "allowed" if allowed else "superseded" if superseded else "blocked"
+    gate_status = (
+        "allowed_original_release_public_sync_pending" if allowed and public_sync_pending
+        else "allowed" if allowed else "superseded" if superseded else "blocked"
+    )
+    if public_sync_pending:
+        error_category = "public_sync_pending"
     if errors and error_category == "none":
         error_category = _classify_gate_errors(errors)
     return ReleaseGateResult(
@@ -1136,6 +1240,9 @@ def verify_release_for_delivery(
         elapsed_seconds=max(0.0, time.monotonic() - started),
         retryable=final_retryable,
         superseded=superseded,
+        public_sync_pending=public_sync_pending,
+        verified_original_release_id=verified_original_release_id,
+        public_sync_pending_since=datetime.now(UTC).isoformat() if public_sync_pending else "",
     )
 
 
@@ -1218,6 +1325,9 @@ def main() -> int:
         "elapsed_seconds": f"{result.elapsed_seconds:.3f}",
         "retryable": result.retryable,
         "superseded": result.superseded,
+        "public_sync_pending": result.public_sync_pending,
+        "verified_original_release_id": result.verified_original_release_id,
+        "public_sync_pending_since": result.public_sync_pending_since,
         "errors": ";".join(result.errors),
     }
     values.update(_safe_diagnostic_outputs(result))

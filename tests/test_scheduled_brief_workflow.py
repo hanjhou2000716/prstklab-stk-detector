@@ -324,14 +324,15 @@ def test_scheduled_incident_handoff_produces_an_attempt_bound_artifact():
 
 def test_central_alert_cadence_requires_saved_decision_and_expected_alert_terminal():
     root = Path(__file__).resolve().parents[1]
-    workflow = (root / ".github" / "workflows" / "incident-reconciliation.yml").read_text(encoding="utf-8")
-    decision = workflow.index("id: upload_decision")
-    alert = workflow.index("id: native_alert")
-    finalize = workflow.index("Finalize reminder cadence after the expected alert terminal")
-    final_state = workflow.index("id: upload_result")
-    assert decision < alert < finalize < final_state
-    assert "steps.upload_decision.outcome == 'success'" in workflow
-    assert "steps.native_alert.outputs.alert_emitted == 'true'" in workflow
-    assert "steps.native_alert.outcome == 'failure'" in workflow
-    assert "--finalize-alert-cadence" in workflow
-    assert 'echo "alert_emitted=true" >> "$GITHUB_OUTPUT"' in workflow
+    source = (root / ".github" / "workflows" / "incident-reconciliation.yml").read_text(encoding="utf-8")
+    outlet = (root / ".github" / "workflows" / "incident-notification-outlet.yml").read_text(encoding="utf-8")
+    decision = outlet.index("id: decision_artifact")
+    alert = outlet.index("id: native_alert")
+    finalize = outlet.index("python -m scripts.incident_notification_outlet finalize")
+    result = outlet.index("Upload immutable outlet result")
+    assert decision < alert < finalize < result
+    assert "id: native_alert" not in source
+    assert "steps.decision_artifact.outcome == 'success'" in outlet
+    assert "steps.native_alert.outputs.alert_emitted == 'true'" in outlet
+    assert "steps.native_alert.outcome == 'failure'" in outlet
+    assert 'echo "alert_emitted=true" >> "$GITHUB_OUTPUT"' in outlet

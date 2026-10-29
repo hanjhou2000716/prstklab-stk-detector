@@ -428,7 +428,7 @@ def test_source_runs_cursor_advances_past_active_run_and_persists_it(monkeypatch
         "head_sha": "a" * 40,
         "terminal_jobs_check": {
             "status": "unverified",
-            "reason": "workflow_contract_unknown_for_fixed_sha",
+            "reason": "writer_workflow_contract_identity_invalid",
             "workflow_sha": "a" * 40,
         },
     }
@@ -846,16 +846,22 @@ def test_processed_terminal_job_run_advances_cursor_only_forward():
     incidents._record_processed_checkpoint(
         processed_last=processed, cursors=current, path=path,
         created_at=datetime(2026, 10, 25, 20, 1, tzinfo=UTC), run_id=101,
+        attempt=1,
         advance_cursor=False, terminal_evidence=terminal_evidence,
     )
-    assert processed[path] == {"created_at": "2026-10-25T20:01:00+00:00", "run_id": 101}
+    assert processed[path] == {
+        "created_at": "2026-10-25T20:01:00+00:00", "run_id": 101, "run_attempt": 1,
+    }
 
     incidents._record_processed_checkpoint(
         processed_last=processed, cursors=current, path=path,
         created_at=datetime(2026, 10, 25, 19, 59, tzinfo=UTC), run_id=99,
+        attempt=1,
         advance_cursor=False, terminal_evidence=terminal_evidence,
     )
-    assert processed[path] == {"created_at": "2026-10-25T20:01:00+00:00", "run_id": 101}
+    assert processed[path] == {
+        "created_at": "2026-10-25T20:01:00+00:00", "run_id": 101, "run_attempt": 1,
+    }
 
 
 def test_pending_run_without_terminal_evidence_cannot_advance_cursor():
@@ -867,10 +873,36 @@ def test_pending_run_without_terminal_evidence_cannot_advance_cursor():
         path=path,
         created_at=datetime(2026, 10, 25, 20, 1, tzinfo=UTC),
         run_id=101,
+        attempt=1,
         advance_cursor=False,
         terminal_evidence=None,
     )
     assert processed == {}
+
+
+def test_source_cursor_suppresses_only_already_processed_attempts():
+    cursor = {
+        "created_at": "2026-10-25T20:00:00+00:00",
+        "run_id": 100,
+        "run_attempt": 2,
+    }
+    same_attempt = {"created_at": "2026-10-25T20:00:00+00:00", "id": 100, "run_attempt": 2}
+    newer_attempt = {"created_at": "2026-10-25T20:00:00+00:00", "id": 100, "run_attempt": 3}
+    earlier_run = {"created_at": "2026-10-25T19:59:59+00:00", "id": 101, "run_attempt": 1}
+    later_run = {"created_at": "2026-10-25T20:00:01+00:00", "id": 99, "run_attempt": 1}
+
+    assert incidents._source_cursor_covers_event(cursor, same_attempt)
+    assert not incidents._source_cursor_covers_event(cursor, newer_attempt)
+    assert incidents._source_cursor_covers_event(cursor, earlier_run)
+    assert not incidents._source_cursor_covers_event(cursor, later_run)
+
+
+def test_source_cursor_replay_requires_complete_identity():
+    with pytest.raises(incidents.LivenessAuditError, match="incident_source_replay_cursor_identity_invalid"):
+        incidents._source_cursor_covers_event(
+            {"created_at": "2026-10-25T20:00:00+00:00", "run_id": 100},
+            {"created_at": "2026-10-25T20:00:00+00:00", "id": 100},
+        )
 
 
 def test_reconcile_releases_only_stable_terminal_pending_run_and_recovers_next_cycle(monkeypatch, tmp_path):
