@@ -159,6 +159,7 @@ jobs:
         id: deployment
         uses: ./.github/actions/deploy-pages-retry
         with:
+          phase: emergency_alert
           fallback_url: ${{ env.DASHBOARD_URL }}
       - name: Verify deployed release before emergency delivery
         if: steps.writer_queue.outputs.should_continue == 'true' && (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true') && steps.deployment.outputs.available == 'true'
@@ -170,6 +171,21 @@ jobs:
             --public-attempts 12 \
             --public-delay 5 \
             >> "$GITHUB_OUTPUT"
+      - name: Finalize Pages deployment public observation
+        if: always() && steps.deployment.outputs.binding_path != ''
+        uses: ./.github/actions/finalize-pages-deployment-binding
+        with:
+          binding_path: ${{ steps.deployment.outputs.binding_path }}
+          phase: emergency_alert
+          gate_outcome: ${{ steps.release_gate.outcome || 'not_run' }}
+          gate_allowed: ${{ steps.release_gate.outputs.allowed || 'false' }}
+          gate_status: ${{ steps.release_gate.outputs.gate_status || 'not_run' }}
+          expected_release_id: ${{ steps.release_gate.outputs.expected_release_id || steps.release_gate.outputs.release_id || '' }}
+          actual_release_id: ${{ steps.release_gate.outputs.actual_release_id || steps.release_gate.outputs.release_id || '' }}
+          expected_snapshot_id: ${{ steps.release_gate.outputs.expected_snapshot_id || steps.release_gate.outputs.snapshot_id || '' }}
+          actual_snapshot_id: ${{ steps.release_gate.outputs.actual_snapshot_id || steps.release_gate.outputs.snapshot_id || '' }}
+          http_status: ${{ steps.release_gate.outputs.http_status || '' }}
+          attempts: ${{ steps.release_gate.outputs.attempts || '[]' }}
       - name: Record delivery gate when Pages is unavailable
         if: steps.writer_queue.outputs.should_continue == 'true' && (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true') && steps.deployment.outputs.available != 'true'
         run: echo "Pages unavailable; Telegram delivery intentionally skipped (fail closed)."

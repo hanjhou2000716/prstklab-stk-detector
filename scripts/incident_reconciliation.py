@@ -492,6 +492,15 @@ def _safe_int(value: Any) -> int | None:
     return number if number > 0 else None
 
 
+def _safe_nonnegative_int(value: Any) -> int | None:
+    """Parse a cursor watermark value; zero is a valid empty-scan watermark."""
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number >= 0 else None
+
+
 def _field(body: object, name: str) -> str:
     prefix = f"{name}:"
     for line in str(body or "").splitlines():
@@ -1098,8 +1107,10 @@ def _workflow_runs_since(
     fetched_total = 0
     next_cursor = {
         "created_at": cursor_time.isoformat(), "run_id": cursor_id,
-        "run_attempt": cursor_attempt,
+        "cursor_kind": "run_checkpoint" if cursor_id > 0 else "scan_watermark",
     }
+    if cursor_id > 0:
+        next_cursor["run_attempt"] = cursor_attempt
     page = 1
     while page <= SOURCE_MAX_PAGES:
         headers: dict[str, str] = {}
@@ -1224,6 +1235,7 @@ def _workflow_runs_since(
         "mode": mode,
         "created_at": cursor_time.isoformat(),
         "run_id": cursor_id,
+        "cursor_kind": "run_checkpoint" if cursor_id > 0 else "scan_watermark",
         "source_evidence_gaps": _validated_source_evidence_gaps(
             cursor.get("source_evidence_gaps"), workflow_path=path, workflow_id=workflow_id,
         ),
@@ -1236,6 +1248,8 @@ def _workflow_runs_since(
         ],
         "scan_complete": scan_complete,
     }
+    if cursor_id > 0:
+        next_cursor["run_attempt"] = cursor_attempt
     if mode == "backfill" and window_start is not None and window_end is not None:
         next_cursor["window_start"] = window_start.isoformat()
         next_cursor["window_end"] = window_end.isoformat()
@@ -1247,6 +1261,7 @@ def _workflow_runs_since(
         next_cursor["created_at"] = _parse_time(latest.get("created_at")).isoformat()
         next_cursor["run_id"] = _safe_int(latest.get("id")) or 0
         next_cursor["run_attempt"] = _safe_int(latest.get("run_attempt")) or 1
+        next_cursor["cursor_kind"] = "run_checkpoint"
     stale_pending = any(
         (created := _parse_time(item.get("created_at"))) is None or created <= now - timedelta(minutes=10)
         for item in pending.values()
@@ -1397,6 +1412,7 @@ def _record_processed_checkpoint(
         processed_last[path] = {
             "created_at": created_at.isoformat(), "run_id": run_id,
             "run_attempt": attempt,
+            "cursor_kind": "run_checkpoint",
         }
 
 
@@ -1405,16 +1421,83 @@ def _source_cursor_covers_event(cursor: dict[str, Any], run: dict[str, Any]) -> 
     created_at = _parse_time(run.get("created_at"))
     cursor_at = _parse_time(cursor.get("created_at"))
     run_id = _safe_int(run.get("id"))
-    cursor_id = _safe_int(cursor.get("run_id"))
+    cursor_id = _safe_nonnegative_int(cursor.get("run_id"))
     attempt = _safe_int(run.get("run_attempt"))
-    cursor_attempt = _safe_int(cursor.get("run_attempt")) or 1
-    if created_at is None or cursor_at is None or run_id is None or cursor_id is None or attempt is None:
+    cursor_kind = str(cursor.get("cursor_kind") or "").casefold()
+    # Pre-v1 cursors used run_id=0 for a complete scan with no run at the
+    # boundary. Accept that representation as a watermark, never as a run.
+    if not cursor_kind and cursor_id == 0:
+        cursor_kind = "scan_watermark"
+    if not cursor_kind and cursor_id and _safe_int(cursor.get("run_attempt")):
+        cursor_kind = "run_checkpoint"
+    cursor_attempt = _safe_int(cursor.get("run_attempt"))
+    if (
+        created_at is None or cursor_at is None or run_id is None or cursor_id is None or attempt is None
+        or cursor_kind not in {"scan_watermark", "run_checkpoint"}
+        or (cursor_kind == "scan_watermark" and cursor_id != 0)
+        or (cursor_kind == "run_checkpoint" and (cursor_id == 0 or cursor_attempt is None))
+    ):
         raise LivenessAuditError("incident_source_replay_cursor_identity_invalid")
+    if cursor_kind == "scan_watermark":
+        return created_at < cursor_at
     return (
         created_at < cursor_at
         or (created_at == cursor_at and run_id < cursor_id)
-        or (created_at == cursor_at and run_id == cursor_id and attempt <= cursor_attempt)
+        or (created_at == cursor_at and run_id == cursor_id and attempt <= (cursor_attempt or 0))
     )
+
+
+def _complete_webhook_run_identity(
+    run: dict[str, Any], *, repository: str, api_url: str, token: str,
+    deadline: float,
+) -> dict[str, Any]:
+    """Fill absent webhook identity only from the matching GitHub run record."""
+    run_id = _safe_int(run.get("id"))
+    if run_id is None:
+        raise LivenessAuditError("incident_webhook_run_identity_invalid")
+    identity_fields = ("workflow_id", "run_attempt", "created_at", "head_sha", "head_branch", "path", "head_repository")
+    missing = any(
+        (field in {"workflow_id", "run_attempt"} and _safe_int(run.get(field)) is None)
+        or (field == "created_at" and _parse_time(run.get(field)) is None)
+        or (field == "head_sha" and not re.fullmatch(r"[0-9a-f]{40}", str(run.get(field) or "").lower()))
+        or (field in {"head_branch", "path", "head_repository"} and not run.get(field))
+        for field in identity_fields
+    )
+    if not missing:
+        return dict(run)
+    detail = _request_json(
+        api_url, repository, token, "GET", f"actions/runs/{run_id}",
+        deadline_monotonic=deadline,
+    )
+    if not isinstance(detail, dict) or _safe_int(detail.get("id")) != run_id:
+        raise LivenessAuditError("incident_webhook_run_identity_unverified")
+    if (
+        _safe_int(detail.get("workflow_id")) is None
+        or _safe_int(detail.get("run_attempt")) is None
+        or _parse_time(detail.get("created_at")) is None
+        or not re.fullmatch(r"[0-9a-f]{40}", str(detail.get("head_sha") or "").lower())
+        or str(detail.get("head_branch") or "") != "main"
+        or not str(detail.get("path") or "")
+    ):
+        raise LivenessAuditError("incident_webhook_run_identity_unverified")
+    head_repository = detail.get("head_repository")
+    if not isinstance(head_repository, dict) or str(head_repository.get("full_name") or "").casefold() != repository.casefold():
+        raise LivenessAuditError("incident_webhook_run_repository_mismatch")
+    # The API response is authoritative for all identity-bearing fields. Keep
+    # the event's conclusion only when the API omitted it.
+    resolved = dict(run)
+    resolved.update({field: detail.get(field) for field in identity_fields})
+    resolved.update({
+        "id": detail.get("id"),
+        "workflow_id": detail.get("workflow_id"),
+        "run_attempt": detail.get("run_attempt"),
+        "created_at": detail.get("created_at"),
+        "head_sha": detail.get("head_sha"),
+        "head_branch": detail.get("head_branch"),
+        "path": detail.get("path"),
+        "head_repository": head_repository,
+    })
+    return resolved
 
 
 def _download_artifact_json(
@@ -1756,48 +1839,72 @@ def _load_cursor_state(
     workflow_id = _safe_int(workflow.get("id")) if isinstance(workflow, dict) else None
     if not workflow_id or str(workflow.get("path") or "") != CENTRAL_WORKFLOW_PATH:
         raise LivenessAuditError("incident_cursor_workflow_identity_invalid")
-    runs_payload = _request_json(
-        api_url, repository, token, "GET",
-        f"actions/workflows/{workflow_id}/runs?per_page=10&page=1&branch=main&status=completed",
-        deadline_monotonic=deadline,
-    )
-    runs = runs_payload.get("workflow_runs") if isinstance(runs_payload, dict) else None
-    if not isinstance(runs, list):
-        raise LivenessAuditError("incident_cursor_runs_response_invalid")
-    for run in runs:
-        if not isinstance(run, dict) or _safe_int(run.get("id")) in (None, current_run_id):
-            continue
-        run_id = _safe_int(run.get("id"))
-        attempt = _safe_int(run.get("run_attempt"))
-        sha = str(run.get("head_sha") or "").lower()
-        head_repository = run.get("head_repository")
-        head_full_name = head_repository.get("full_name") if isinstance(head_repository, dict) else ""
-        if (
-            not run_id or not attempt or not re.fullmatch(r"[0-9a-f]{40}", sha)
-            or _safe_int(run.get("workflow_id")) != workflow_id
-            or str(run.get("path") or "") != CENTRAL_WORKFLOW_PATH
-            or str(run.get("head_branch") or "") != "main"
-            or str(head_full_name or "") != repository
-        ):
-            continue
-        name = f"incident-reconciliation-state-{run_id}-attempt-{attempt}"
-        try:
-            data = _download_artifact_json(
-                run=run, expected_artifact_name=name, expected_member=STATE_ARTIFACT_MEMBER,
-                repository=repository, api_url=api_url, token=token, deadline=deadline,
-            )
-            state = json.loads(data.decode("utf-8"))
-        except (LivenessAuditError, UnicodeError, json.JSONDecodeError):
-            continue
-        if (
-            isinstance(state, dict) and state.get("schema_version") == "incident-reconciliation-v1"
-            and isinstance(state.get("source_cursors"), dict)
-            and str(state.get("consumer_run_id") or "") == str(run_id)
-            and _safe_int(state.get("consumer_attempt")) == attempt
-            and str(state.get("consumer_sha") or "").lower() == sha
-        ):
-            return state["source_cursors"]
-    return {}
+    history_seen = 0
+    total_count: int | None = None
+    pages_read = 0
+    for page in range(1, 6):
+        runs_payload = _request_json(
+            api_url, repository, token, "GET",
+            f"actions/workflows/{workflow_id}/runs?per_page=10&page={page}&branch=main&status=completed",
+            deadline_monotonic=deadline,
+        )
+        runs = runs_payload.get("workflow_runs") if isinstance(runs_payload, dict) else None
+        page_total = runs_payload.get("total_count") if isinstance(runs_payload, dict) else None
+        if not isinstance(runs, list) or not isinstance(page_total, int) or page_total < 0:
+            raise LivenessAuditError("incident_cursor_runs_response_invalid")
+        if total_count is None:
+            total_count = page_total
+        elif total_count != page_total:
+            raise LivenessAuditError("incident_cursor_runs_changed_during_read")
+        pages_read = page
+        for run in runs:
+            if not isinstance(run, dict):
+                raise LivenessAuditError("incident_cursor_run_row_invalid")
+            if _safe_int(run.get("id")) == current_run_id:
+                continue
+            head_repository = run.get("head_repository")
+            head_full_name = head_repository.get("full_name") if isinstance(head_repository, dict) else ""
+            if (
+                _safe_int(run.get("workflow_id")) != workflow_id
+                or str(run.get("path") or "") != CENTRAL_WORKFLOW_PATH
+                or str(run.get("head_branch") or "") != "main"
+                or str(head_full_name or "").casefold() != repository.casefold()
+                or str(run.get("status") or "").casefold() != "completed"
+            ):
+                continue
+            history_seen += 1
+            run_id = _safe_int(run.get("id"))
+            attempt = _safe_int(run.get("run_attempt"))
+            sha = str(run.get("head_sha") or "").lower()
+            if not run_id or not attempt or not re.fullmatch(r"[0-9a-f]{40}", sha):
+                continue
+            name = f"incident-reconciliation-state-{run_id}-attempt-{attempt}"
+            try:
+                data = _download_artifact_json(
+                    run=run, expected_artifact_name=name, expected_member=STATE_ARTIFACT_MEMBER,
+                    repository=repository, api_url=api_url, token=token, deadline=deadline,
+                )
+                state = json.loads(data.decode("utf-8"))
+            except (LivenessAuditError, UnicodeError, json.JSONDecodeError):
+                continue
+            if (
+                isinstance(state, dict) and state.get("schema_version") == "incident-reconciliation-v1"
+                and isinstance(state.get("source_cursors"), dict)
+                and str(state.get("consumer_run_id") or "") == str(run_id)
+                and _safe_int(state.get("consumer_attempt")) == attempt
+                and str(state.get("consumer_sha") or "").lower() == sha
+            ):
+                return state["source_cursors"]
+        if len(runs) < 10 or (total_count is not None and pages_read * 10 >= total_count):
+            break
+    # A genuinely empty workflow history is the only safe place to start with
+    # an empty cursor. If even one completed run exists, a missing or damaged
+    # checkpoint must remain visible instead of silently restarting backfill.
+    if history_seen == 0 and total_count == 0:
+        return {}
+    if total_count is not None and pages_read * 10 < total_count and pages_read >= 5:
+        raise LivenessAuditError("incident_cursor_checkpoint_history_limit_exceeded")
+    raise LivenessAuditError("incident_cursor_checkpoint_unavailable")
 
 
 def _source_event_from_run(
@@ -1963,6 +2070,7 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
         source_definitions[path] = (workflow_id, workflow_name)
         old_cursor = cursors.get(path) if isinstance(cursors.get(path), dict) else {
             "created_at": INITIAL_BACKFILL_AT.isoformat(), "run_id": 0,
+            "cursor_kind": "scan_watermark",
         }
         cursors[path] = old_cursor
         runs, next_cursor, held = _workflow_runs_since(
@@ -2041,63 +2149,70 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
     incoming = payload.get("workflow_run") if isinstance(payload, dict) else None
     suppressed_webhook_replays: list[dict[str, Any]] = []
     if isinstance(incoming, dict):
-        incoming_id = _safe_int(incoming.get("workflow_id"))
+        incoming_run = _complete_webhook_run_identity(
+            dict(incoming), repository=repository, api_url=api_url, token=token,
+            deadline=deadline,
+        )
+        incoming_id = _safe_int(incoming_run.get("workflow_id"))
+        if incoming_id is None:
+            raise LivenessAuditError("incident_webhook_workflow_identity_invalid")
         for workflow_id, workflow_name in source_definitions.values():
             if workflow_id == incoming_id:
-                incoming_run = dict(incoming)
-                incoming_run["workflow_id"] = workflow_id
                 incoming_run["status"] = "completed"
-                incoming_run.setdefault("run_attempt", incoming.get("run_attempt"))
-                if _safe_int(incoming_run.get("id")) is not None:
-                    created = _parse_time(incoming_run.get("created_at")) or now
-                    key = (_safe_int(incoming_run.get("id")) or 0, _safe_int(incoming_run.get("run_attempt")) or 1)
-                    existing_index = next((
-                        index for index, row in enumerate(source_rows)
-                        if (_safe_int(row[4].get("id")) or 0, _safe_int(row[4].get("run_attempt")) or 1) == key
-                    ), None)
-                    source_path = next(
-                        p for p, (source_workflow_id, _name) in source_definitions.items()
-                        if source_workflow_id == incoming_id
-                    )
-                    source_cursor = discovered_cursors[source_path]
-                    pending_rows = source_cursor.get("pending_runs", [])
-                    if not isinstance(pending_rows, list):
-                        raise LivenessAuditError("incident_source_pending_runs_invalid")
-                    is_pending = any(
-                        _safe_int(item.get("run_id")) == key[0]
-                        for item in pending_rows if isinstance(item, dict)
-                    )
-                    if (
-                        existing_index is None and not is_pending
-                        and _source_cursor_covers_event(source_cursor, incoming_run)
-                    ):
-                        suppressed_webhook_replays.append({
-                            "source_workflow": workflow_name,
-                            "source_run_id": key[0],
-                            "source_attempt": key[1],
-                        })
-                        break
-                    if existing_index is not None:
-                        source_rows[existing_index][4]["_incident_source_origin"] = "webhook"
-                        source_rows[existing_index] = (*source_rows[existing_index][:5], False)
-                    else:
-                        incoming_run["_incident_source_origin"] = "webhook"
-                        source_rows.append((created, key[0], source_path, workflow_name, incoming_run, False))
-                    head_repository = incoming_run.get("head_repository")
-                    head_sha = str(incoming_run.get("head_sha") or "").lower()
-                    if (
-                        isinstance(head_repository, dict)
-                        and str(head_repository.get("full_name") or "") == repository
-                        and str(incoming_run.get("head_branch") or "") == "main"
-                        and re.fullmatch(r"[0-9a-f]{40}", head_sha)
-                    ):
-                        if not any(_safe_int(item.get("run_id")) == key[0] for item in pending_rows if isinstance(item, dict)):
-                            pending_rows.append({
-                                "run_id": key[0], "workflow_id": workflow_id,
-                                "created_at": created.isoformat(),
-                                "attempt": key[1], "head_sha": head_sha,
-                            })
-                        source_cursor["pending_runs"] = pending_rows
+                source_path = next(
+                    p for p, (source_workflow_id, _name) in source_definitions.items()
+                    if source_workflow_id == incoming_id
+                )
+                run_id = _safe_int(incoming_run.get("id"))
+                attempt = _safe_int(incoming_run.get("run_attempt"))
+                created = _parse_time(incoming_run.get("created_at"))
+                head_repository = incoming_run.get("head_repository")
+                head_sha = str(incoming_run.get("head_sha") or "").lower()
+                if (
+                    run_id is None or attempt is None or created is None
+                    or str(incoming_run.get("path") or "") != source_path
+                    or str(incoming_run.get("head_branch") or "") != "main"
+                    or not isinstance(head_repository, dict)
+                    or str(head_repository.get("full_name") or "").casefold() != repository.casefold()
+                    or not re.fullmatch(r"[0-9a-f]{40}", head_sha)
+                ):
+                    raise LivenessAuditError("incident_webhook_run_identity_invalid")
+                key = (run_id, attempt)
+                existing_index = next((
+                    index for index, row in enumerate(source_rows)
+                    if (_safe_int(row[4].get("id")), _safe_int(row[4].get("run_attempt"))) == key
+                ), None)
+                source_cursor = discovered_cursors[source_path]
+                pending_rows = source_cursor.get("pending_runs", [])
+                if not isinstance(pending_rows, list):
+                    raise LivenessAuditError("incident_source_pending_runs_invalid")
+                is_pending = any(
+                    _safe_int(item.get("run_id")) == key[0]
+                    for item in pending_rows if isinstance(item, dict)
+                )
+                if (
+                    existing_index is None and not is_pending
+                    and _source_cursor_covers_event(source_cursor, incoming_run)
+                ):
+                    suppressed_webhook_replays.append({
+                        "source_workflow": workflow_name,
+                        "source_run_id": key[0],
+                        "source_attempt": key[1],
+                    })
+                    break
+                if existing_index is not None:
+                    source_rows[existing_index][4]["_incident_source_origin"] = "webhook"
+                    source_rows[existing_index] = (*source_rows[existing_index][:5], False)
+                else:
+                    incoming_run["_incident_source_origin"] = "webhook"
+                    source_rows.append((created, key[0], source_path, workflow_name, incoming_run, False))
+                if not any(_safe_int(item.get("run_id")) == key[0] for item in pending_rows if isinstance(item, dict)):
+                    pending_rows.append({
+                        "run_id": key[0], "workflow_id": workflow_id,
+                        "created_at": created.isoformat(),
+                        "attempt": key[1], "head_sha": head_sha,
+                    })
+                source_cursor["pending_runs"] = pending_rows
                 break
     source_rows.sort(key=lambda item: (
         0 if item[4].get("_incident_source_origin") == "webhook" else 1,
@@ -2238,7 +2353,8 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
     for path in SOURCE_WORKFLOWS:
         old_cursor = cursors.get(path) if isinstance(cursors.get(path), dict) else {
             "mode": "backfill", "window_start": INITIAL_BACKFILL_AT.isoformat(),
-            "created_at": INITIAL_BACKFILL_AT.isoformat(), "run_id": 0, "pending_runs": [],
+            "created_at": INITIAL_BACKFILL_AT.isoformat(), "run_id": 0,
+            "cursor_kind": "scan_watermark", "pending_runs": [],
         }
         remaining_for_path = any(row[2] == path and row[5] for row in deferred_rows)
         next_cursor = dict(discovered_cursors.get(path, old_cursor))
@@ -2267,7 +2383,11 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
             cutoff = now - timedelta(minutes=20)
             next_start = end + timedelta(seconds=1)
             if next_start >= cutoff:
-                next_cursor.update({"mode": "live", "created_at": cutoff.isoformat(), "run_id": 0})
+                next_cursor.update({
+                    "mode": "live", "created_at": cutoff.isoformat(), "run_id": 0,
+                    "cursor_kind": "scan_watermark",
+                })
+                next_cursor.pop("run_attempt", None)
                 next_cursor.pop("window_start", None)
                 next_cursor.pop("window_end", None)
             else:
@@ -2275,7 +2395,9 @@ def reconcile(*, result_path: Path, evidence_directory: Path) -> dict[str, Any]:
                 next_cursor.update({
                     "mode": "backfill", "window_start": next_start.isoformat(),
                     "window_end": next_end.isoformat(), "created_at": next_start.isoformat(), "run_id": 0,
+                    "cursor_kind": "scan_watermark",
                 })
+                next_cursor.pop("run_attempt", None)
             next_cursor["scan_complete"] = True
             cursor_updates[path] = next_cursor
         else:

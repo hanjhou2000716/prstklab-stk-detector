@@ -188,9 +188,9 @@ def test_pages_only_publisher_uses_the_shared_single_writer_queue():
     assert "group: main-data-writer-${{ github.run_id }}" in workflow
     assert "python -m src.writer_queue --settle-seconds 0 --poll-seconds 10" in workflow
     assert WRITER_WORKFLOW_IDENTITIES[".github/workflows/deploy-pages.yml"] == 318841880
-    assert "Derive Pages build identity from code and data release" in workflow
-    assert "--mode derive-version" in workflow
-    assert "steps.pages_version.outputs.pages_build_version" in workflow
+    assert "phase: dashboard_release" in workflow
+    assert "steps.deployment.outputs.build_version" in workflow
+    assert "pages_version.outputs" not in workflow
     assert "Verify completed Pages deployment identity" in workflow
     assert "Verify exact public release after deployment" in workflow
     assert "--expected-release-id" in workflow
@@ -215,8 +215,8 @@ def test_scheduled_release_gate_is_identity_bound_bounded_and_fail_closed():
     assert "scheduled_send_window_remaining_seconds" in workflow
     assert "steps.deployment_recovery_window.outputs.timeout_seconds" in workflow
     assert "steps.deployment_recovery_window.outputs.allowed == 'true'" in workflow
-    assert "steps.publish_snapshot.outputs.pages_build_version" in workflow
-    assert "steps.persist_notification_ledger.outputs.pages_build_version" in workflow
+    assert "steps.deployment.outputs.build_version" in workflow
+    assert "steps.reconciled_deployment.outputs.build_version" in workflow
     assert "reconciled_data_release_sha" in workflow
     assert "--manifest \"$MANIFEST_PATH\"" in workflow
     sender = workflow.split("- name: Send Telegram brief after successful publication", 1)[1].split(
@@ -234,7 +234,9 @@ def test_scheduled_release_gate_is_identity_bound_bounded_and_fail_closed():
         / "action.yml"
     ).read_text(encoding="utf-8")
     assert "GITHUB_SHA:" not in action
-    assert "PAGES_BUILD_VERSION: ${{ inputs.build_version || github.sha }}" in action
+    assert "PAGES_BUILD_VERSION: ${{ inputs.build_version }}" in action
+    assert "PAGES_DEPLOYMENT_BINDING_PATH" in action
+    assert "artifact_digest" in action
     assert "--mode deploy" in action
     assert "deployment_status_url" in action
     creator = workflow.split("- name: Send release-gated Creator notifications", 1)[1].split(

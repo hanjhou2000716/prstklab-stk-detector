@@ -1,0 +1,78 @@
+name: Finalize Pages deployment observation
+description: Attach the exact public release gate result to a deployment binding and retain it as an immutable artifact.
+inputs:
+  binding_path:
+    description: Path emitted by deploy-pages-retry.
+    required: true
+  phase:
+    description: Deployment phase identity.
+    required: true
+  gate_outcome:
+    description: Public gate step outcome.
+    required: false
+    default: not_run
+  gate_allowed:
+    description: Public gate allowed output.
+    required: false
+    default: "false"
+  gate_status:
+    description: Public gate status.
+    required: false
+    default: not_run
+  expected_release_id:
+    required: false
+    default: ""
+  actual_release_id:
+    required: false
+    default: ""
+  expected_snapshot_id:
+    required: false
+    default: ""
+  actual_snapshot_id:
+    required: false
+    default: ""
+  http_status:
+    required: false
+    default: ""
+  attempts:
+    description: JSON array of public check attempts; only safe summary fields are retained.
+    required: false
+    default: "[]"
+runs:
+  using: composite
+  steps:
+    - name: Record public observation in the exact binding
+      shell: bash
+      env:
+        BINDING_PATH: ${{ inputs.binding_path }}
+        GATE_OUTCOME: ${{ inputs.gate_outcome }}
+        GATE_ALLOWED: ${{ inputs.gate_allowed }}
+        GATE_STATUS: ${{ inputs.gate_status }}
+        GATE_EXPECTED_RELEASE_ID: ${{ inputs.expected_release_id }}
+        GATE_ACTUAL_RELEASE_ID: ${{ inputs.actual_release_id }}
+        GATE_EXPECTED_SNAPSHOT_ID: ${{ inputs.expected_snapshot_id }}
+        GATE_ACTUAL_SNAPSHOT_ID: ${{ inputs.actual_snapshot_id }}
+        GATE_HTTP_STATUS: ${{ inputs.http_status }}
+        GATE_ATTEMPTS: ${{ inputs.attempts }}
+      run: |
+        set -euo pipefail
+        python -m src.pages_deployment \
+          --mode observe \
+          --binding-path "$BINDING_PATH" \
+          --phase "${{ inputs.phase }}" \
+          --gate-outcome "$GATE_OUTCOME" \
+          --gate-allowed "$GATE_ALLOWED" \
+          --gate-status "$GATE_STATUS" \
+          --expected-release-id "$GATE_EXPECTED_RELEASE_ID" \
+          --actual-release-id "$GATE_ACTUAL_RELEASE_ID" \
+          --expected-snapshot-id "$GATE_EXPECTED_SNAPSHOT_ID" \
+          --actual-snapshot-id "$GATE_ACTUAL_SNAPSHOT_ID" \
+          --gate-http-status "$GATE_HTTP_STATUS" \
+          --gate-attempts "$GATE_ATTEMPTS"
+    - name: Preserve Pages deployment binding with public observation
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: pages-deployment-binding-observed-${{ github.run_id }}-attempt-${{ github.run_attempt }}-${{ inputs.phase }}
+        path: ${{ inputs.binding_path }}
+        if-no-files-found: error
+        retention-days: 90

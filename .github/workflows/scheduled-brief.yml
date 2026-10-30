@@ -570,11 +570,6 @@ jobs:
             --message "chore: refresh public market snapshot"
           git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
           printf 'data_release_sha=%s\n' "$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")" >> "$GITHUB_OUTPUT"
-          python -m src.pages_deployment \
-            --mode derive-version \
-            --source-revision "$GITHUB_SHA" \
-            --release-id "$RELEASE_ID" \
-            >> "$GITHUB_OUTPUT"
       - name: Freeze pre-delivery release manifest
         if: steps.publish_snapshot.outcome == 'success'
         id: freeze_delivery_manifest
@@ -615,7 +610,7 @@ jobs:
         id: deployment
         uses: ./.github/actions/deploy-pages-retry
         with:
-          build_version: ${{ steps.publish_snapshot.outputs.pages_build_version }}
+          phase: scheduled_release
           fallback_url: ${{ env.DASHBOARD_URL }}
       - name: Bound deployment recovery to the original delivery window
         if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.deployment.outputs.recoverable == 'true' && steps.prepare.outputs.notification_expected == 'true'
@@ -655,7 +650,7 @@ jobs:
         run: >-
           python -m src.pages_deployment
           --mode verify
-          --expected-build-version "${{ steps.publish_snapshot.outputs.pages_build_version }}"
+          --expected-build-version "${{ steps.deployment.outputs.build_version }}"
           --deployment-id "${{ steps.deployment.outputs.deployment_id }}"
           --status-url "${{ steps.deployment.outputs.deployment_status_url }}"
           --timeout-seconds "${{ steps.deployment_recovery_window.outputs.timeout_seconds || '180' }}"
@@ -693,6 +688,21 @@ jobs:
             arguments+=(--previous-manifest "${{ steps.previous_release.outputs.path }}")
           fi
           python -m src.release_gate "${arguments[@]}" >> "$GITHUB_OUTPUT"
+      - name: Finalize Pages deployment public observation
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.deployment.outputs.binding_path != ''
+        uses: ./.github/actions/finalize-pages-deployment-binding
+        with:
+          binding_path: ${{ steps.deployment.outputs.binding_path }}
+          phase: scheduled_release
+          gate_outcome: ${{ steps.release_gate.outcome || 'not_run' }}
+          gate_allowed: ${{ steps.release_gate.outputs.allowed || 'false' }}
+          gate_status: ${{ steps.release_gate.outputs.gate_status || 'not_run' }}
+          expected_release_id: ${{ steps.release_gate.outputs.expected_release_id || steps.release_manifest.outputs.release_id || '' }}
+          actual_release_id: ${{ steps.release_gate.outputs.actual_release_id || '' }}
+          expected_snapshot_id: ${{ steps.release_gate.outputs.expected_snapshot_id || steps.prepare.outputs.snapshot_id || '' }}
+          actual_snapshot_id: ${{ steps.release_gate.outputs.actual_snapshot_id || '' }}
+          http_status: ${{ steps.release_gate.outputs.http_status || '' }}
+          attempts: ${{ steps.release_gate.outputs.attempts || '[]' }}
       - name: Preserve pre-delivery gate evidence
         if: always() && steps.late_expiry.outputs.expired != 'true' && steps.release_gate.outcome != 'skipped'
         env:
@@ -1162,10 +1172,6 @@ jobs:
           print(f"reconciled_snapshot_id={manifest.get('market_snapshot_id', '')}")
           PY
           printf 'reconciled_data_release_sha=%s\n' "$data_release_sha"
-          python -m src.pages_deployment \
-            --mode derive-version \
-            --source-revision "$GITHUB_SHA" \
-            --manifest "$MANIFEST_PATH"
           } >> "$GITHUB_OUTPUT"
       - name: Verify durable recipient receipt from the published ledger
         id: durable_receipt
@@ -1215,7 +1221,7 @@ jobs:
         uses: ./.github/actions/deploy-pages-retry
         with:
           artifact_name: github-pages-reconciled
-          build_version: ${{ steps.persist_notification_ledger.outputs.pages_build_version }}
+          phase: receipt_reconciliation
           fallback_url: ${{ env.DASHBOARD_URL }}
       - name: Verify reconciled Pages deployment identity
         if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success' && (steps.reconciled_deployment.outputs.available == 'true' || steps.reconciled_deployment.outputs.recoverable == 'true')
@@ -1225,7 +1231,7 @@ jobs:
         run: >-
           python -m src.pages_deployment
           --mode verify
-          --expected-build-version "${{ steps.persist_notification_ledger.outputs.pages_build_version }}"
+          --expected-build-version "${{ steps.reconciled_deployment.outputs.build_version }}"
           --deployment-id "${{ steps.reconciled_deployment.outputs.deployment_id }}"
           --status-url "${{ steps.reconciled_deployment.outputs.deployment_status_url }}"
           >> "$GITHUB_OUTPUT"
@@ -1247,6 +1253,21 @@ jobs:
           --public-delay 2
           --public-max-delay 20
           >> "$GITHUB_OUTPUT"
+      - name: Finalize reconciled Pages public observation
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.reconciled_deployment.outputs.binding_path != ''
+        uses: ./.github/actions/finalize-pages-deployment-binding
+        with:
+          binding_path: ${{ steps.reconciled_deployment.outputs.binding_path }}
+          phase: receipt_reconciliation
+          gate_outcome: ${{ steps.reconciled_release_gate.outcome || 'not_run' }}
+          gate_allowed: ${{ steps.reconciled_release_gate.outputs.allowed || 'false' }}
+          gate_status: ${{ steps.reconciled_release_gate.outputs.gate_status || 'not_run' }}
+          expected_release_id: ${{ steps.reconciled_release_gate.outputs.expected_release_id || steps.persist_notification_ledger.outputs.reconciled_release_id || '' }}
+          actual_release_id: ${{ steps.reconciled_release_gate.outputs.actual_release_id || '' }}
+          expected_snapshot_id: ${{ steps.reconciled_release_gate.outputs.expected_snapshot_id || steps.prepare.outputs.snapshot_id || '' }}
+          actual_snapshot_id: ${{ steps.reconciled_release_gate.outputs.actual_snapshot_id || '' }}
+          http_status: ${{ steps.reconciled_release_gate.outputs.http_status || '' }}
+          attempts: ${{ steps.reconciled_release_gate.outputs.attempts || '[]' }}
       - name: Preserve post-delivery gate evidence
         if: always() && steps.late_expiry.outputs.expired != 'true' && steps.reconciled_release_gate.outcome != 'skipped'
         env:

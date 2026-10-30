@@ -259,6 +259,7 @@ jobs:
         id: deployment
         uses: ./.github/actions/deploy-pages-retry
         with:
+          phase: official_event_delivery
           fallback_url: ${{ env.DASHBOARD_URL }}
       - name: Verify deployed release before delivery
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true' && steps.deployment.outputs.available == 'true'
@@ -288,6 +289,21 @@ jobs:
             --public-attempts 12 \
             --public-delay 5 \
             >> "$GITHUB_OUTPUT"
+      - name: Finalize Pages deployment public observation
+        if: always() && steps.deployment.outputs.binding_path != ''
+        uses: ./.github/actions/finalize-pages-deployment-binding
+        with:
+          binding_path: ${{ steps.deployment.outputs.binding_path }}
+          phase: official_event_delivery
+          gate_outcome: ${{ steps.release_gate.outcome || 'not_run' }}
+          gate_allowed: ${{ steps.release_gate.outputs.allowed || 'false' }}
+          gate_status: ${{ steps.release_gate.outputs.gate_status || 'not_run' }}
+          expected_release_id: ${{ steps.release_gate.outputs.expected_release_id || steps.release_gate.outputs.release_id || '' }}
+          actual_release_id: ${{ steps.release_gate.outputs.actual_release_id || steps.release_gate.outputs.release_id || '' }}
+          expected_snapshot_id: ${{ steps.release_gate.outputs.expected_snapshot_id || steps.status.outputs.snapshot_id || '' }}
+          actual_snapshot_id: ${{ steps.release_gate.outputs.actual_snapshot_id || steps.release_gate.outputs.snapshot_id || '' }}
+          http_status: ${{ steps.release_gate.outputs.http_status || '' }}
+          attempts: ${{ steps.release_gate.outputs.attempts || '[]' }}
       - name: Record delivery gate when Pages is unavailable
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true' && steps.deployment.outputs.available != 'true'
         run: echo "Pages unavailable; Telegram delivery intentionally skipped (fail closed)."
@@ -470,6 +486,7 @@ jobs:
         uses: ./.github/actions/deploy-pages-retry
         with:
           artifact_name: github-pages-reconciled
+          phase: official_event_receipt_reconciliation
           fallback_url: ${{ env.DASHBOARD_URL }}
       - name: Verify reconciled public release
         id: reconciled_release_gate
@@ -481,6 +498,21 @@ jobs:
           --public-url "${{ steps.reconciled_deployment.outputs.page_url }}"
           --public-attempts 12
           --public-delay 5
+      - name: Finalize reconciled Pages public observation
+        if: always() && steps.reconciled_deployment.outputs.binding_path != ''
+        uses: ./.github/actions/finalize-pages-deployment-binding
+        with:
+          binding_path: ${{ steps.reconciled_deployment.outputs.binding_path }}
+          phase: official_event_receipt_reconciliation
+          gate_outcome: ${{ steps.reconciled_release_gate.outcome || 'not_run' }}
+          gate_allowed: ${{ steps.reconciled_release_gate.outputs.allowed || 'false' }}
+          gate_status: ${{ steps.reconciled_release_gate.outputs.gate_status || 'not_run' }}
+          expected_release_id: ${{ steps.reconciled_release_gate.outputs.expected_release_id || steps.reconciled_release_gate.outputs.release_id || '' }}
+          actual_release_id: ${{ steps.reconciled_release_gate.outputs.actual_release_id || steps.reconciled_release_gate.outputs.release_id || '' }}
+          expected_snapshot_id: ${{ steps.reconciled_release_gate.outputs.expected_snapshot_id || steps.status.outputs.snapshot_id || '' }}
+          actual_snapshot_id: ${{ steps.reconciled_release_gate.outputs.actual_snapshot_id || steps.reconciled_release_gate.outputs.snapshot_id || '' }}
+          http_status: ${{ steps.reconciled_release_gate.outputs.http_status || '' }}
+          attempts: ${{ steps.reconciled_release_gate.outputs.attempts || '[]' }}
       - name: Save event delivery lock
         if: success() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.send.outputs.delivery_status == 'delivered' && steps.send.outputs.failed_count == '0'
         run: touch .official-event-lock
