@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import yaml
+
 from src.writer_queue import WRITER_WORKFLOW_IDENTITIES
 
 
@@ -307,6 +309,19 @@ def test_scheduled_release_evidence_is_bound_into_terminal_and_uploaded():
     assert '"release_evidence"' in terminal
     assert "scheduled-release-gate-pre-${{ github.run_id }}-attempt-${{ github.run_attempt }}" in workflow
     assert "scheduled-release-gate-post-${{ github.run_id }}-attempt-${{ github.run_attempt }}" in workflow
+    parsed = yaml.safe_load(workflow)
+    steps = next(job["steps"] for job in parsed["jobs"].values() if any(
+        step.get("id") == "terminal_diagnostic" for step in job.get("steps", [])
+    ))
+    terminal_env = next(step["env"] for step in steps if step.get("id") == "terminal_diagnostic")
+    build_env = next(step["env"] for step in steps if step.get("id") == "release_manifest")
+    assert terminal_env["RELEASE_BUILD_RESULT_PATH"] == build_env["RELEASE_BUILD_RESULT_PATH"]
+    for field, suffix in (("PRE_DELIVERY_GATE_RESULT_PATH", "pre"), ("POST_DELIVERY_GATE_RESULT_PATH", "post")):
+        producer_paths = [
+            step.get("env", {}).get("GATE_RESULT_PATH", "") for step in steps
+            if f"release-gate-{suffix}-" in step.get("env", {}).get("GATE_RESULT_PATH", "")
+        ]
+        assert producer_paths and terminal_env[field] in producer_paths
 
 
 def test_scheduled_incident_handoff_produces_an_attempt_bound_artifact():

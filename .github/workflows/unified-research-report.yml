@@ -647,6 +647,8 @@ jobs:
                   reason = "pages_deployment_failed"
               if not reason and os.environ.get("JOB_STATUS") == "failure":
                   reason = "workflow_job_failed"
+          from src.research_terminal import normalize_research_reason
+          reason, reason_detail = normalize_research_reason(reason[:200])
           record = {
               "schema_version": "unified-research-terminal-v1",
               "run_id": int(os.environ["GITHUB_RUN_ID"]),
@@ -655,6 +657,7 @@ jobs:
               "production_run": mode == "production",
               "business_status": business_status,
               "reason": reason[:200],
+              "reason_detail": reason_detail,
               "stages": {
                   "writer_queue": queue_status,
                   "writer_queue_error_code": os.environ.get("QUEUE_ERROR_CODE", ""),

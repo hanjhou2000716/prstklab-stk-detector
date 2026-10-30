@@ -40,13 +40,29 @@ def test_prepare_groups_one_verified_consumer_into_one_window_notification(monke
     ))
     result = outlet.prepare_outlet(
         repository="owner/repo", api_url="https://api.github.com", token="x",
-        now=datetime(2026, 10, 28, 10, 0, tzinfo=UTC), deadline_monotonic=10**20,
+        now=datetime(2026, 10, 28, 10, 1, 37, tzinfo=UTC), deadline_monotonic=10**20,
     )
     assert result["notification_due"] is True
     assert result["notification_mode"] == "half_hour_digest"
     assert result["window_key"] == "2026-10-28T10:00:00+00:00"
     assert result["candidate_count"] == 1
     assert result["consumers"][0]["confirmations"][0]["issue_number"] == 123
+    assert result["consumers"][0]["confirmations"][0]["next_reminder_at"] == "2026-10-28T10:30:00+00:00"
+
+
+def test_historical_pending_issue_cannot_reuse_an_old_notification_reservation(monkeypatch):
+    issue = _issue()
+    issue["body"] += "\nLifecycle: historical_pending_verification"
+    monkeypatch.setattr(outlet, "_open_incidents", lambda *a, **k: [issue])
+    calls = []
+    monkeypatch.setattr(outlet, "_load_verified_consumer", lambda **k: calls.append(k))
+    result = outlet.prepare_outlet(
+        repository="owner/repo", api_url="https://api.github.com", token="x",
+        now=datetime(2026, 10, 28, 10, 0, tzinfo=UTC), deadline_monotonic=10**20,
+    )
+    assert result["notification_due"] is False
+    assert result["candidate_count"] == 0
+    assert calls == []
 
 
 def test_critical_identity_or_claim_incident_can_alert_immediately(monkeypatch):
@@ -69,6 +85,7 @@ def test_critical_identity_or_claim_incident_can_alert_immediately(monkeypatch):
     assert result["notification_due"] is True
     assert result["notification_mode"] == "immediate_critical"
     assert result["consumers"][0]["confirmations"][0]["critical"] is True
+    assert result["consumers"][0]["confirmations"][0]["next_reminder_at"] == "2026-10-28T10:42:00+00:00"
 
 
 def test_prepare_rejects_issue_without_source_artifact_confirmation(monkeypatch):
@@ -102,7 +119,10 @@ def test_finalize_updates_cadence_once_and_persists_window(tmp_path, monkeypatch
     }
     path = tmp_path / "outlet.json"
     path.write_text(json.dumps(value), encoding="utf-8")
-    monkeypatch.setattr(outlet, "finalize_alert_cadence", lambda **kwargs: kwargs)
+    cadence_decisions = []
+    def finalize(**kwargs):
+        cadence_decisions.append(json.loads(kwargs["result_path"].read_text(encoding="utf-8")))
+    monkeypatch.setattr(outlet, "finalize_alert_cadence", finalize)
     calls = []
     def request(_api, _repo, _token, method, endpoint, payload=None, **_kwargs):
         calls.append((method, endpoint, payload))
@@ -119,3 +139,4 @@ def test_finalize_updates_cadence_once_and_persists_window(tmp_path, monkeypatch
     assert result["alert_job"] == "failure_confirmed"
     patch = next(row[2] for row in calls if row[0] == "PATCH")
     assert "Last outlet window: 2026-10-28T10:00:00+00:00" in patch["body"]
+    assert cadence_decisions[0]["notification_cadence_confirmations"][0]["next_reminder_at"] == "2026-10-28T10:30:00+00:00"

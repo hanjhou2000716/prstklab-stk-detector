@@ -36,6 +36,7 @@ from scripts.official_event_incidents import reconcile_incidents as reconcile_of
 from scripts.scheduled_brief_incidents import ISSUE_MARKER as SCHEDULED_INCIDENT_MARKER
 from scripts.scheduled_brief_incidents import reconcile as reconcile_scheduled_brief
 from src.incident_cadence import can_emit_pending_alert, clear_pending_alert, mark_pending_alert
+from src.research_terminal import normalize_research_reason
 from src.scheduled_slot_audit import _open_artifact_url
 from src.writer_queue import WriterQueueError, _verified_workflow_contract
 
@@ -694,11 +695,16 @@ def _research_incident(
         or str(terminal.get("sha") or "").lower() != sha
         or not isinstance(terminal.get("production_run"), bool)
         or terminal.get("business_status") not in {"healthy", "degraded", "not_applicable"}
-        or not isinstance(terminal.get("reason"), str)
-        or len(str(terminal.get("reason"))) > 120
-        or re.fullmatch(r"[A-Za-z0-9_.:-]*", str(terminal.get("reason"))) is None
     ):
         raise LivenessAuditError("incident_research_terminal_identity_invalid")
+    reason_code = ""
+    if terminal is not None:
+        try:
+            reason_code, _detail = normalize_research_reason(
+                terminal.get("reason"), terminal.get("reason_detail", ""),
+            )
+        except ValueError as exc:
+            raise LivenessAuditError("incident_research_terminal_reason_invalid") from exc
     if terminal is not None and terminal.get("production_run") is False:
         return {
             "component": "unified_research_report",
@@ -720,9 +726,7 @@ def _research_incident(
     terminal_degraded = terminal is not None and terminal.get("business_status") == "degraded"
     terminal_missing = terminal is None
     failure = terminal_missing or conclusion not in {"success", "neutral", "skipped"} or terminal_degraded
-    latest_reason = (
-        str(terminal.get("reason") or "") if terminal is not None else ""
-    ) or (
+    latest_reason = reason_code or (
         "research_terminal_artifact_missing" if terminal_missing
         else "research_workflow_failed" if conclusion not in {"success", "neutral", "skipped"}
         else ""

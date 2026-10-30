@@ -472,6 +472,7 @@ def reconcile_incidents(
     opened: list[int] = []
     reminded: list[int] = []
     recovered: list[int] = []
+    historical_pending: list[int] = []
     cadence_confirmations: list[dict[str, str | int]] = []
     for key, incident in active.items():
         if key in unresolved_keys:
@@ -557,6 +558,31 @@ def reconcile_incidents(
             if not isinstance(number, int):
                 raise LivenessAuditError("official_event_incident_identity_invalid")
             issue_refs, refs_complete = _issue_event_refs(issue.get("body"))
+            first_failure = _timestamp(issue.get("body"), "First failure")
+            if not issue_refs and first_failure is not None and current - first_failure >= REMINDER_INTERVAL:
+                # A completed scan can classify an unreferenced old incident as
+                # unknown, but cannot establish recovery or delivery. A later
+                # attributable active event rebuilds the body and reactivates it.
+                body = str(issue.get("body") or "")
+                historical_pending.append(number)
+                if _field(body, "Lifecycle") != "historical_pending_verification":
+                    lines = [
+                        line for line in body.splitlines()
+                        if not line.startswith((
+                            "Lifecycle:", "Next reminder at:", "Alert pending consumer:",
+                            "Alert pending since:", "Reminder policy:",
+                        ))
+                    ]
+                    lines.extend((
+                        "Lifecycle: historical_pending_verification",
+                        f"Historical review recorded at: {current.isoformat()}",
+                        "Reminder policy: stopped; prior event identity remains unknown; no recovery claimed",
+                    ))
+                    _request_json(
+                        api_url, repository, token, "PATCH", f"issues/{number}",
+                        {"body": "\n".join(lines)[:12000]}, deadline_monotonic=deadline,
+                    )
+                continue
             if refs_complete and issue_refs and set(issue_refs).issubset(historical_refs):
                 body = str(issue.get("body") or "")
                 lines = [
@@ -594,6 +620,7 @@ def reconcile_incidents(
         "opened_issue_numbers": opened,
         "reminded_issue_numbers": reminded,
         "recovered_issue_numbers": recovered,
+        "historical_pending_issue_numbers": historical_pending,
         "consolidated_issue_groups": consolidated_groups,
         "unresolved_issue_groups": unresolved_groups,
         "notification_cadence_confirmations": cadence_confirmations,

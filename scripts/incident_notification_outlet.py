@@ -82,6 +82,13 @@ def _ordinary_window_open(now: datetime) -> bool:
     return minute < 5 or 30 <= minute < 35
 
 
+def _next_reminder_at(now: datetime, *, immediate: bool) -> str:
+    current = now.astimezone(UTC)
+    if not immediate:
+        current = current.replace(minute=0 if current.minute < 30 else 30, second=0, microsecond=0)
+    return (current + REMINDER_INTERVAL).isoformat()
+
+
 def _critical_fingerprint(issue: dict[str, Any]) -> str:
     body = str(issue.get("body") or "")
     marker = next((line for line in body.splitlines() if re.match(r"^[a-z][a-z0-9-]*=[0-9a-f]{24,64}$", line)), "")
@@ -210,7 +217,10 @@ def prepare_outlet(
                 "critical": critical,
                 "critical_fingerprint": fingerprint if critical else "",
                 "reason": reason,
-                "next_reminder_at": (current + REMINDER_INTERVAL).isoformat(),
+                "reminder_mode": "immediate" if reason == "critical_new_or_escalated_incident" else "window",
+                "next_reminder_at": _next_reminder_at(
+                    current, immediate=reason == "critical_new_or_escalated_incident",
+                ),
             })
     groups: dict[tuple[str, int], list[dict[str, Any]]] = {}
     for row in candidates:
@@ -242,6 +252,7 @@ def prepare_outlet(
                 "next_reminder_at": row["next_reminder_at"],
                 "critical": row["critical"],
                 "critical_fingerprint": row["critical_fingerprint"],
+                "reminder_mode": row["reminder_mode"],
             })
         verified_consumers.append({
             "run_id": run_id,
@@ -250,7 +261,7 @@ def prepare_outlet(
             "workflow_path": str(run["path"]),
             "confirmations": matched,
         })
-    immediate = any(row["critical"] for row in candidates)
+    immediate = any(row["reason"] == "critical_new_or_escalated_incident" for row in candidates)
     due = bool(verified_consumers)
     return {
         "schema_version": OUTLET_SCHEMA,
@@ -292,7 +303,15 @@ def finalize_outlet(
         if not isinstance(rows, list) or not rows:
             raise LivenessAuditError("incident_outlet_confirmation_contract_invalid")
         confirmations = [
-            {"issue_number": row["issue_number"], "marker": row["marker"], "next_reminder_at": (current + REMINDER_INTERVAL).isoformat()}
+            {
+                "issue_number": row["issue_number"], "marker": row["marker"],
+                "next_reminder_at": _next_reminder_at(
+                    current, immediate=row.get("reminder_mode", (
+                        "immediate" if row.get("critical") is True and result.get("notification_mode") == "immediate_critical"
+                        else "window"
+                    )) == "immediate",
+                ),
+            }
             for row in rows if isinstance(row, dict)
         ]
         miniature = {
