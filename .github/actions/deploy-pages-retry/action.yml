@@ -2,9 +2,17 @@ name: Deploy GitHub Pages with identity verification
 description: Select this run's Pages artifact, create one official Pages deployment, and verify its returned deployment identity.
 inputs:
   build_version:
-    description: Compatibility input; Pages build identity is the reserved source GITHUB_SHA.
+    description: Optional assertion; a mismatch with the artifact-bound identity fails closed.
     required: false
     default: ""
+  phase:
+    description: Stable name for the deployment phase within this workflow attempt.
+    required: false
+    default: "release"
+  manifest_path:
+    description: Frozen release manifest included in the selected Pages artifact.
+    required: false
+    default: "site/data/release-manifest.json"
   timeout:
     description: Maximum time in milliseconds to observe the identity-bound Pages deployment.
     required: false
@@ -55,12 +63,27 @@ outputs:
   artifact_id:
     description: Unique Pages artifact ID selected from this workflow run.
     value: ${{ steps.select-url.outputs.artifact_id }}
+  artifact_digest:
+    description: SHA-256 digest of the selected Pages artifact.
+    value: ${{ steps.select-url.outputs.artifact_digest }}
+  manifest_sha256:
+    description: SHA-256 of the exact manifest used to derive the build identity.
+    value: ${{ steps.select-url.outputs.manifest_sha256 }}
+  artifact_manifest_sha256:
+    description: SHA-256 of the manifest extracted from the downloaded exact Pages artifact.
+    value: ${{ steps.select-url.outputs.artifact_manifest_sha256 }}
+  artifact_manifest_matches_frozen:
+    description: Whether the selected Pages artifact contains the exact frozen manifest.
+    value: ${{ steps.select-url.outputs.artifact_manifest_matches_frozen }}
   build_version:
     description: Pages build version sent to the GitHub Pages deployment API.
     value: ${{ steps.select-url.outputs.build_version }}
   source_revision:
     description: Source commit used to build the Pages artifact.
     value: ${{ steps.select-url.outputs.source_revision }}
+  binding_path:
+    description: Local path to the exact deployment binding, for final public-gate observation.
+    value: ${{ steps.select-url.outputs.binding_path }}
 runs:
   using: composite
   steps:
@@ -71,14 +94,30 @@ runs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
         PAGES_ARTIFACT_NAME: ${{ inputs.artifact_name }}
-        PAGES_BUILD_VERSION: ${{ inputs.build_version || github.sha }}
+        PAGES_BUILD_VERSION: ${{ inputs.build_version }}
+        PAGES_DEPLOYMENT_PHASE: ${{ inputs.phase }}
+        PAGES_MANIFEST_PATH: ${{ inputs.manifest_path }}
+        PAGES_DEPLOYMENT_BINDING_PATH: ${{ runner.temp }}/pages-deployment-binding-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.phase }}.json
       run: |
         set -euo pipefail
         timeout_seconds="$(( ${{ inputs.timeout }} / 1000 ))"
         python -m src.pages_deployment \
           --mode deploy \
           --expected-build-version "$PAGES_BUILD_VERSION" \
+          --manifest "$PAGES_MANIFEST_PATH" \
+          --phase "$PAGES_DEPLOYMENT_PHASE" \
+          --run-attempt "${{ github.run_attempt }}" \
+          --binding-path "$PAGES_DEPLOYMENT_BINDING_PATH" \
           --timeout-seconds "$timeout_seconds" >> "$GITHUB_OUTPUT"
+
+    - name: Preserve exact Pages deployment binding
+      if: always()
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: pages-deployment-binding-initial-${{ github.run_id }}-attempt-${{ github.run_attempt }}-${{ inputs.phase }}
+        path: ${{ runner.temp }}/pages-deployment-binding-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.phase }}.json
+        if-no-files-found: error
+        retention-days: 90
 
     - name: Select trusted deployment outputs
       id: select-url
@@ -93,7 +132,12 @@ runs:
         DEPLOY_STATUS_URL: ${{ steps.deployment.outputs.deployment_status_url || '' }}
         DEPLOY_STATUS_URL_SHAPE: ${{ steps.deployment.outputs.deployment_status_url_shape || '' }}
         DEPLOY_ARTIFACT_ID: ${{ steps.deployment.outputs.artifact_id || '' }}
-        DEPLOY_BUILD_VERSION: ${{ steps.deployment.outputs.deployment_build_version || inputs.build_version || github.sha }}
+        DEPLOY_ARTIFACT_DIGEST: ${{ steps.deployment.outputs.artifact_digest || '' }}
+        DEPLOY_MANIFEST_SHA256: ${{ steps.deployment.outputs.manifest_sha256 || '' }}
+        DEPLOY_ARTIFACT_MANIFEST_SHA256: ${{ steps.deployment.outputs.artifact_manifest_sha256 || '' }}
+        DEPLOY_ARTIFACT_MANIFEST_MATCHES: ${{ steps.deployment.outputs.artifact_manifest_matches_frozen || 'false' }}
+        DEPLOY_BINDING_PATH: ${{ runner.temp }}/pages-deployment-binding-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.phase }}.json
+        DEPLOY_BUILD_VERSION: ${{ steps.deployment.outputs.deployment_build_version || '' }}
         DEPLOY_SOURCE_REVISION: ${{ steps.deployment.outputs.source_revision || github.sha }}
         DEPLOY_ERROR: ${{ steps.deployment.outputs.error || '' }}
         DEPLOY_ERROR_CODE: ${{ steps.deployment.outputs.error_code || '' }}
@@ -120,6 +164,11 @@ runs:
         printf 'deployment_status_url=%s\n' "$DEPLOY_STATUS_URL" >> "$GITHUB_OUTPUT"
         printf 'deployment_status_url_shape=%s\n' "${DEPLOY_STATUS_URL_SHAPE:-unknown}" >> "$GITHUB_OUTPUT"
         printf 'artifact_id=%s\n' "$DEPLOY_ARTIFACT_ID" >> "$GITHUB_OUTPUT"
+        printf 'artifact_digest=%s\n' "$DEPLOY_ARTIFACT_DIGEST" >> "$GITHUB_OUTPUT"
+        printf 'manifest_sha256=%s\n' "$DEPLOY_MANIFEST_SHA256" >> "$GITHUB_OUTPUT"
+        printf 'artifact_manifest_sha256=%s\n' "$DEPLOY_ARTIFACT_MANIFEST_SHA256" >> "$GITHUB_OUTPUT"
+        printf 'artifact_manifest_matches_frozen=%s\n' "$DEPLOY_ARTIFACT_MANIFEST_MATCHES" >> "$GITHUB_OUTPUT"
+        printf 'binding_path=%s\n' "$DEPLOY_BINDING_PATH" >> "$GITHUB_OUTPUT"
         printf 'build_version=%s\n' "$DEPLOY_BUILD_VERSION" >> "$GITHUB_OUTPUT"
         printf 'source_revision=%s\n' "$DEPLOY_SOURCE_REVISION" >> "$GITHUB_OUTPUT"
         echo "pages_deploy_outcome=${DEPLOY_OUTCOME:-unknown}"

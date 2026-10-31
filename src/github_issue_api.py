@@ -76,6 +76,7 @@ def read_open_issues(
     fetch_json: Callable[..., Any],
     deadline_monotonic: float,
     repository_id: int | None = None,
+    state: str = "open",
 ) -> list[dict[str, Any]]:
     """Read all open issues under a single deadline and a 10-page/1MB bound.
 
@@ -87,10 +88,12 @@ def read_open_issues(
     """
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository):
         raise IssuePaginationError("issues_repository_identity_invalid")
+    if state not in {"open", "all"}:
+        raise IssuePaginationError("issues_state_filter_invalid")
     api = urlsplit(api_url)
     if api.scheme.casefold() != "https" or not api.netloc:
         raise IssuePaginationError("issues_api_origin_invalid")
-    filters = {"state": ["open"], "sort": ["created"], "direction": ["desc"]}
+    filters = {"state": [state], "sort": ["created"], "direction": ["desc"]}
     query = {**{key: value[0] for key, value in filters.items()}, "per_page": PAGE_SIZE, "page": 1}
     current_url = f"issues?{urlencode(query)}"
     requested: set[str] = set()

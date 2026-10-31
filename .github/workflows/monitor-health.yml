@@ -96,6 +96,34 @@ jobs:
         if: steps.writer_queue.outputs.should_continue == 'true'
         id: deployment
         uses: ./.github/actions/deploy-pages-retry
+        with:
+          phase: monitor_health
+      - name: Verify public release after deployment
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.deployment.outputs.available == 'true'
+        id: public_release_gate
+        run: >-
+          python -m src.release_gate
+          --manifest site/data/release-manifest.json
+          --public-url "${{ steps.deployment.outputs.page_url }}"
+          --public-timeout-seconds 180
+          --public-delay 2
+          --public-max-delay 20
+          >> "$GITHUB_OUTPUT"
+      - name: Finalize Pages deployment public observation
+        if: always() && steps.deployment.outputs.binding_path != ''
+        uses: ./.github/actions/finalize-pages-deployment-binding
+        with:
+          binding_path: ${{ steps.deployment.outputs.binding_path }}
+          phase: monitor_health
+          gate_outcome: ${{ steps.public_release_gate.outcome || 'not_run' }}
+          gate_allowed: ${{ steps.public_release_gate.outputs.allowed || 'false' }}
+          gate_status: ${{ steps.public_release_gate.outputs.gate_status || 'not_run' }}
+          expected_release_id: ${{ steps.public_release_gate.outputs.expected_release_id || steps.public_release_gate.outputs.release_id || '' }}
+          actual_release_id: ${{ steps.public_release_gate.outputs.actual_release_id || steps.public_release_gate.outputs.release_id || '' }}
+          expected_snapshot_id: ${{ steps.public_release_gate.outputs.expected_snapshot_id || steps.public_release_gate.outputs.snapshot_id || '' }}
+          actual_snapshot_id: ${{ steps.public_release_gate.outputs.actual_snapshot_id || steps.public_release_gate.outputs.snapshot_id || '' }}
+          http_status: ${{ steps.public_release_gate.outputs.http_status || '' }}
+          attempts: ${{ steps.public_release_gate.outputs.attempts || '[]' }}
       - name: Publish writer queue decision
         if: always()
         env:

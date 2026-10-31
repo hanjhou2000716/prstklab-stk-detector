@@ -850,7 +850,8 @@ def test_processed_terminal_job_run_advances_cursor_only_forward():
         advance_cursor=False, terminal_evidence=terminal_evidence,
     )
     assert processed[path] == {
-        "created_at": "2026-10-25T20:01:00+00:00", "run_id": 101, "run_attempt": 1,
+        "created_at": "2026-10-25T20:01:00+00:00", "run_id": 101,
+        "run_attempt": 1, "cursor_kind": "run_checkpoint",
     }
 
     incidents._record_processed_checkpoint(
@@ -860,7 +861,8 @@ def test_processed_terminal_job_run_advances_cursor_only_forward():
         advance_cursor=False, terminal_evidence=terminal_evidence,
     )
     assert processed[path] == {
-        "created_at": "2026-10-25T20:01:00+00:00", "run_id": 101, "run_attempt": 1,
+        "created_at": "2026-10-25T20:01:00+00:00", "run_id": 101,
+        "run_attempt": 1, "cursor_kind": "run_checkpoint",
     }
 
 
@@ -902,6 +904,77 @@ def test_source_cursor_replay_requires_complete_identity():
         incidents._source_cursor_covers_event(
             {"created_at": "2026-10-25T20:00:00+00:00", "run_id": 100},
             {"created_at": "2026-10-25T20:00:00+00:00", "id": 100},
+        )
+
+
+def test_empty_scan_cursor_zero_is_a_watermark_not_an_invalid_run_identity():
+    cursor = {
+        "created_at": "2026-10-25T20:00:00+00:00",
+        "run_id": 0,
+        "cursor_kind": "scan_watermark",
+    }
+    same_second_new_run = {
+        "created_at": "2026-10-25T20:00:00+00:00", "id": 100, "run_attempt": 1,
+    }
+    earlier_run = {
+        "created_at": "2026-10-25T19:59:59+00:00", "id": 101, "run_attempt": 1,
+    }
+
+    assert not incidents._source_cursor_covers_event(cursor, same_second_new_run)
+    assert incidents._source_cursor_covers_event(cursor, earlier_run)
+    legacy = {"created_at": cursor["created_at"], "run_id": 0, "run_attempt": 1}
+    assert not incidents._source_cursor_covers_event(legacy, same_second_new_run)
+    assert incidents._source_cursor_covers_event(legacy, earlier_run)
+
+
+def test_zero_cursor_with_run_checkpoint_kind_is_rejected():
+    with pytest.raises(incidents.LivenessAuditError, match="incident_source_replay_cursor_identity_invalid"):
+        incidents._source_cursor_covers_event(
+            {"created_at": "2026-10-25T20:00:00+00:00", "run_id": 0, "cursor_kind": "run_checkpoint"},
+            {"created_at": "2026-10-25T20:00:00+00:00", "id": 100, "run_attempt": 1},
+        )
+
+
+def test_webhook_identity_is_completed_only_from_official_run_api(monkeypatch):
+    run = {
+        "id": 812,
+        "workflow_id": 320209983,
+        "run_attempt": 3,
+        "created_at": "2026-10-25T20:00:00Z",
+        "head_sha": "a" * 40,
+        "head_branch": "main",
+        "path": ".github/workflows/official-event-monitor.yml",
+        "head_repository": {"full_name": "owner/repo"},
+    }
+    calls = []
+
+    def request(_api, _repo, _token, method, endpoint, **_kwargs):
+        calls.append((method, endpoint))
+        assert method == "GET" and endpoint == "actions/runs/812"
+        return run
+
+    monkeypatch.setattr(incidents, "_request_json", request)
+    result = incidents._complete_webhook_run_identity(
+        {"id": 812, "conclusion": "success"}, repository="owner/repo",
+        api_url="https://api.github.com", token="x", deadline=10**20,
+    )
+    assert result["run_attempt"] == 3
+    assert result["created_at"] == run["created_at"]
+    assert result["conclusion"] == "success"
+    assert calls == [("GET", "actions/runs/812")]
+
+
+def test_webhook_identity_does_not_invent_missing_attempt(monkeypatch):
+    monkeypatch.setattr(incidents, "_request_json", lambda *_a, **_k: {
+        "id": 812, "workflow_id": 320209983, "created_at": "2026-10-25T20:00:00Z",
+        "head_sha": "a" * 40, "head_branch": "main",
+        "path": ".github/workflows/official-event-monitor.yml",
+        "head_repository": {"full_name": "owner/repo"},
+    })
+    with pytest.raises(incidents.LivenessAuditError, match="webhook_run_identity_unverified"):
+        incidents._complete_webhook_run_identity(
+            {"id": 812}, repository="owner/repo", api_url="https://api.github.com",
+            token="x", deadline=10**20,
         )
 
 
@@ -1708,16 +1781,11 @@ def test_source_run_reader_rejects_truncated_short_page(monkeypatch):
 def test_cursor_artifact_must_bind_to_exact_consumer_run_and_revision(monkeypatch):
     central_id = 777
     sha = "a" * 40
-    run = {
-        "id": 501, "run_attempt": 2, "workflow_id": central_id,
-        "path": incidents.CENTRAL_WORKFLOW_PATH, "head_branch": "main",
-        "head_sha": sha, "head_repository": {"full_name": "owner/repo"},
-    }
 
     def fake_request(_api, _repo, _token, _method, path, **_kwargs):
         if path.endswith("incident-reconciliation.yml"):
             return {"id": central_id, "path": incidents.CENTRAL_WORKFLOW_PATH, "state": "active"}
-        return {"workflow_runs": [run]}
+        return {"workflow_runs": [], "total_count": 0}
 
     monkeypatch.setattr(incidents, "_request_json", fake_request)
     monkeypatch.setattr(incidents, "_download_artifact_json", lambda **_kwargs: json.dumps({
@@ -1730,6 +1798,32 @@ def test_cursor_artifact_must_bind_to_exact_consumer_run_and_revision(monkeypatc
         repository="owner/repo", api_url="https://api.github.com", token="token",
         current_run_id=700, deadline=incidents.time.monotonic() + 10,
     ) == {}
+
+
+def test_existing_history_without_any_verified_checkpoint_fails_closed(monkeypatch):
+    central_id = 1234
+    run = {
+        "id": 501, "workflow_id": central_id, "run_attempt": 1,
+        "path": incidents.CENTRAL_WORKFLOW_PATH, "head_branch": "main",
+        "head_sha": "a" * 40, "head_repository": {"full_name": "owner/repo"},
+        "status": "completed",
+    }
+
+    def fake_request(_api, _repo, _token, _method, path, **_kwargs):
+        if path.endswith("incident-reconciliation.yml"):
+            return {"id": central_id, "path": incidents.CENTRAL_WORKFLOW_PATH, "state": "active"}
+        return {"workflow_runs": [run], "total_count": 1}
+
+    monkeypatch.setattr(incidents, "_request_json", fake_request)
+    monkeypatch.setattr(
+        incidents, "_download_artifact_json",
+        lambda **_kwargs: (_ for _ in ()).throw(incidents.LivenessAuditError("incident_artifact_missing")),
+    )
+    with pytest.raises(incidents.LivenessAuditError, match="incident_cursor_checkpoint_unavailable"):
+        incidents._load_cursor_state(
+            repository="owner/repo", api_url="https://api.github.com", token="token",
+            current_run_id=700, deadline=incidents.time.monotonic() + 10,
+        )
 
 
 def test_repository_metadata_uses_canonical_api_url_without_duplicate_repos_prefix(monkeypatch):
