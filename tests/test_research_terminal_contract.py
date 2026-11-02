@@ -71,6 +71,27 @@ def test_actual_workflow_terminal_and_legacy_artifact_share_consumer_contract(mo
         assert "Root cause: writer_queue_pagination_incomplete" in calls[-1][5]["body"]
 
 
+def test_parent_success_with_missing_pages_binding_is_still_degraded(monkeypatch):
+    terminal = {
+        "schema_version": "unified-research-terminal-v1",
+        "run_id": _event()["run_id"], "attempt": 1, "sha": SHA,
+        "production_run": True, "business_status": "healthy", "reason": "",
+        "stages": {"deployment": "success", "research_noop": False},
+    }
+    calls = []
+    monkeypatch.setattr(incidents, "_open_incidents", lambda *a, **k: [])
+    monkeypatch.setattr(incidents, "_request_json", lambda *a, **k: calls.append(a) or {"number": 1144})
+
+    result = incidents._research_incident(
+        event=_event(), repository="owner/repo", api_url="https://api.github.com", token="token",
+        now=datetime(2026, 11, 1, 17, 20, tzinfo=UTC), terminal=terminal,
+    )
+
+    assert result["status"] == "degraded"
+    assert result["opened_issue_numbers"] == [1144]
+    assert "Root cause: research_publication_not_verified" in calls[-1][5]["body"]
+
+
 @pytest.mark.parametrize("field,value,error", [
     ("run_id", 40790581516, "incident_research_terminal_identity_invalid"),
     ("attempt", 2, "incident_research_terminal_identity_invalid"),

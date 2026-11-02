@@ -9,6 +9,7 @@ from src.event_ledger import (
     normalize_source_url,
     preflight_event_provenance,
     sanitize_event_ledger_document,
+    source_url_diagnostic,
 )
 from src.financialjuice_notification import financialjuice_notification_key
 
@@ -113,13 +114,33 @@ def test_event_provenance_preflight_rejects_insecure_primary_and_secondary_sourc
         "source_url": "https://example.test/article",
         "verified_sources": ["https://example.test/article", "http://mirror.test/article"],
     }
-    assert preflight_event_provenance(insecure_primary) == {
-        "ok": False,
-        "reason": "ledger_source_url_invalid",
-    }
-    assert preflight_event_provenance(insecure_secondary) == {
-        "ok": False,
-        "reason": "ledger_verified_source_invalid",
+    primary = preflight_event_provenance(insecure_primary)
+    secondary = preflight_event_provenance(insecure_secondary)
+    assert primary["ok"] is False
+    assert primary["reason"] == "ledger_source_url_invalid"
+    assert primary["source_url_evidence"]["scheme"] == "http"
+    assert secondary["ok"] is False
+    assert secondary["reason"] == "ledger_verified_source_invalid"
+
+
+def test_source_url_diagnostic_keeps_safe_identity_and_redacts_query_values():
+    evidence = source_url_diagnostic({
+        "source_url": "http://news.example/story/iran?token=do-not-persist&edition=morning",
+    })
+    serialized = json.dumps(evidence)
+    assert evidence["present"] is True
+    assert evidence["scheme"] == "http"
+    assert evidence["host"] == "news.example"
+    assert evidence["query_keys"] == ["edition", "token"]
+    assert evidence["query_values_redacted"] is True
+    assert "do-not-persist" not in serialized
+    assert "morning" not in serialized
+
+
+def test_source_url_diagnostic_marks_missing_url_as_unknown_evidence():
+    assert source_url_diagnostic({"source_key": "official"}) == {
+        "present": False,
+        "parse_status": "missing",
     }
 
 

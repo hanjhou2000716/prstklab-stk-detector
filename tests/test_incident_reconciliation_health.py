@@ -442,7 +442,11 @@ def test_health_workflow_delegates_notifications_to_single_outlet():
     outlet = (root / ".github/workflows/incident-notification-outlet.yml").read_text(encoding="utf-8")
     assert "Central incident reconciliation health" in outlet
     assert "steps.prepare.outputs.notification_due == 'true'" in outlet
-    assert "python -m scripts.incident_notification_outlet finalize" in outlet
+    assert "Record due notification without manufacturing a failed run" in outlet
+    assert "did not send or confirm email" in outlet
+    assert "id: native_alert" not in outlet
+    assert "python -m scripts.incident_notification_outlet finalize" not in outlet
+    assert "exit 1" not in outlet
     assert "workflow_dispatch" in workflow
     assert "TRIGGERED_CENTRAL_RUN_ID" in workflow
     assert "TRIGGERED_CENTRAL_RUN_ATTEMPT" in workflow

@@ -219,8 +219,14 @@ def _pending_alert_consumer() -> str:
 def _issue_body(
     key: str, *, component: str, reason: str, contract: str, slots: list[str],
     first_failure: str, run_id: str, attempt: int, sha: str, evidence_status: str,
-    now: datetime, next_reminder: datetime,
+    now: datetime, next_reminder: datetime, prior_body: object = "",
 ) -> str:
+    prior_lines = str(prior_body or "").splitlines()
+    prior_state = [
+        line for line in prior_lines
+        if line.startswith(("Lifecycle:", "Historical review recorded at:", "Reminder policy:"))
+    ]
+    state_lines = prior_state or ["Lifecycle: active"]
     return "\n".join((
         f"{ISSUE_MARKER}{key}",
         f"Component: {component}",
@@ -235,6 +241,7 @@ def _issue_body(
         f"Observed at: {now.isoformat()}",
         f"Next reminder at: {next_reminder.isoformat()}",
         "Historical missed slots remain missed; this incident records diagnosis and recovery evidence only.",
+        *state_lines,
     ))
 
 
@@ -303,6 +310,7 @@ def reconcile(
     opened: list[int] = []
     reminded: list[int] = []
     recovered: list[int] = []
+    new_impact_identities: list[dict[str, Any]] = []
     cadence_confirmations: list[dict[str, str | int]] = []
     run_id = str(event["run_id"])
     attempt = int(event["attempt"])
@@ -325,6 +333,34 @@ def reconcile(
         slot_label = _anchor_label(slot_record)
         key = _incident_key(component, reason, contract)
         rows = indexed.get(key, [])
+        if rows:
+            prior_body = str(rows[0].get("body") or "")
+            prior_lifecycle = _field(prior_body, "Lifecycle")
+            prior_slots = [item.strip() for item in _field(prior_body, "Affected slots").split(",") if item.strip()]
+            if prior_lifecycle in {"historical_diagnosed", "historical_pending_verification"}:
+                if slot_label in prior_slots:
+                    # Same historical impact replay: append no mutable body state and
+                    # never recreate a reminder reservation for it.
+                    return {
+                        "schema_version": "scheduled-brief-incident-reconcile-v1",
+                        "diagnostic_complete": bool(evidence.get("valid")),
+                        "incident_active": True,
+                        "opened_issue_numbers": [],
+                        "reminded_issue_numbers": [],
+                        "recovered_issue_numbers": [],
+                        "new_impact_identities": [],
+                        "notification_cadence_confirmations": [],
+                        "evidence_kind": evidence.get("kind", "unknown"),
+                        "evidence_status": str(
+                            (evidence.get("audit") or {}).get("report_receipt_status")
+                            or (evidence.get("terminal") or {}).get("status")
+                            or evidence.get("reason") or "unknown"
+                        ),
+                    }
+                # A distinct scheduled impact after a stopped historical incident
+                # starts a new identity and notification generation.
+                key = _incident_key(component, reason, f"{contract}\nimpact:{slot_label}")
+                rows = indexed.get(key, [])
         if not rows:
             body = _issue_body(
                 key, component=component, reason=reason, contract=contract,
@@ -357,6 +393,16 @@ def reconcile(
             body_before = str(issue.get("body") or "")
             first_existing = _field(body_before, "First failure") or first
             old_slots = [item.strip() for item in _field(body_before, "Affected slots").split(",") if item.strip()]
+            if slot_label not in old_slots:
+                declaration: dict[str, Any] = {"issue_number": number}
+                slot_name = str(slot_record.get("slot") or "").strip()
+                slot_date = str(slot_record.get("market_date") or slot_record.get("date") or "").strip()
+                slot_anchor = str(slot_record.get("anchor") or "").strip()
+                if slot_name and slot_date:
+                    declaration.update({"slot": slot_name, "date": slot_date})
+                    if slot_anchor:
+                        declaration["anchor"] = slot_anchor
+                    new_impact_identities.append(declaration)
             slots = list(dict.fromkeys([*old_slots, slot_label]))
             next_due = _parse_time(_field(body_before, "Next reminder at"))
             pending_current = (
@@ -380,7 +426,7 @@ def reconcile(
                 key, component=component, reason=reason, contract=contract,
                 slots=slots, first_failure=first_existing, run_id=run_id,
                 attempt=attempt, sha=sha, evidence_status=evidence_status,
-                now=current, next_reminder=next_reminder,
+                now=current, next_reminder=next_reminder, prior_body=body_before,
             )
             if defer_notification_cadence:
                 if notify_due:
@@ -428,6 +474,7 @@ def reconcile(
         "opened_issue_numbers": opened,
         "reminded_issue_numbers": reminded,
         "recovered_issue_numbers": recovered,
+        "new_impact_identities": new_impact_identities,
         "notification_cadence_confirmations": cadence_confirmations,
         "evidence_kind": evidence.get("kind", "unknown"),
         "evidence_status": str((evidence.get("audit") or {}).get("report_receipt_status") or (evidence.get("terminal") or {}).get("status") or evidence.get("reason") or "unknown"),

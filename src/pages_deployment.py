@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import io
 import json
 import os
 import re
 import tarfile
+import tempfile
 import time
 import zipfile
 from collections.abc import Callable
@@ -445,9 +445,11 @@ def _select_run_artifact_binding(
     return artifact_id, artifact_digest
 
 
-MAX_PAGES_ARTIFACT_ARCHIVE_BYTES = 128 * 1024 * 1024
-MAX_PAGES_ARTIFACT_TAR_BYTES = 128 * 1024 * 1024
+MAX_PAGES_ARTIFACT_ARCHIVE_BYTES = 900_000_000
+MAX_PAGES_ARTIFACT_TAR_BYTES = 900_000_000
 MAX_PAGES_ARTIFACT_TAR_MEMBERS = 20_000
+MAX_PAGES_MANIFEST_BYTES = 1_000_000
+PAGES_ARTIFACT_READ_CHUNK_BYTES = 1024 * 1024
 PAGES_MANIFEST_MEMBER = "data/release-manifest.json"
 
 
@@ -473,50 +475,112 @@ def _read_manifest_identity(path: Path) -> tuple[dict[str, Any], str]:
     return _manifest_identity_from_bytes(raw)
 
 
-def _manifest_from_pages_artifact_archive(archive_bytes: bytes, *, expected_digest: str) -> bytes:
-    """Extract the exact manifest from a bounded GitHub Pages artifact archive."""
-    if len(archive_bytes) > MAX_PAGES_ARTIFACT_ARCHIVE_BYTES:
-        raise PagesDeploymentError("Pages artifact archive exceeds the verification size limit")
-    actual_digest = "sha256:" + hashlib.sha256(archive_bytes).hexdigest()
-    if actual_digest != expected_digest:
-        raise PagesDeploymentError(
-            "downloaded Pages artifact digest does not match GitHub metadata",
-            error_code="pages_artifact_digest_mismatch",
-        )
+def _normalized_tar_path(value: str) -> str:
+    name = value.replace("\\", "/")
+    if not name or name.startswith("/") or re.match(r"^[A-Za-z]:", name):
+        raise PagesDeploymentError("Pages artifact tar contains an absolute path")
+    parts = [part for part in name.split("/") if part not in {"", "."}]
+    if not parts or any(part == ".." for part in parts):
+        raise PagesDeploymentError("Pages artifact tar contains a path traversal")
+    return "/".join(parts)
+
+
+def _extract_manifest_from_pages_tar(tar_path: Path) -> bytes:
     try:
-        with zipfile.ZipFile(io.BytesIO(archive_bytes)) as archive:
-            files = [item for item in archive.infolist() if not item.is_dir()]
-            if len(files) != 1 or files[0].filename != "artifact.tar":
-                raise PagesDeploymentError("Pages artifact ZIP does not contain exactly one artifact.tar")
-            if files[0].file_size > MAX_PAGES_ARTIFACT_TAR_BYTES:
-                raise PagesDeploymentError("Pages artifact tar exceeds the verification size limit")
-            tar_bytes = archive.read(files[0])
-        with tarfile.open(fileobj=io.BytesIO(tar_bytes), mode="r:") as packed:
+        with tarfile.open(tar_path, mode="r:") as packed:
             members = packed.getmembers()
             if len(members) > MAX_PAGES_ARTIFACT_TAR_MEMBERS:
                 raise PagesDeploymentError("Pages artifact tar contains too many entries")
-            matches = [
-                item for item in members
-                if item.name.replace("\\", "/") in {
-                    PAGES_MANIFEST_MEMBER, f"./{PAGES_MANIFEST_MEMBER}",
-                }
-            ]
-            if len(matches) != 1 or not matches[0].isfile() or matches[0].size > 1_000_000:
+            normalized: dict[str, tarfile.TarInfo] = {}
+            for item in members:
+                name = _normalized_tar_path(item.name)
+                if name in normalized:
+                    raise PagesDeploymentError("Pages artifact tar contains duplicate paths")
+                if not (item.isfile() or item.isdir()):
+                    raise PagesDeploymentError("Pages artifact tar contains an unsupported file type")
+                if item.size < 0 or item.size > MAX_PAGES_ARTIFACT_TAR_BYTES:
+                    raise PagesDeploymentError("Pages artifact tar member exceeds the verification size limit")
+                normalized[name] = item
+            manifest = normalized.get(PAGES_MANIFEST_MEMBER)
+            if manifest is None or not manifest.isfile() or manifest.size > MAX_PAGES_MANIFEST_BYTES:
                 raise PagesDeploymentError("Pages artifact manifest member is missing or ambiguous")
-            member = packed.extractfile(matches[0])
+            member = packed.extractfile(manifest)
             if member is None:
                 raise PagesDeploymentError("Pages artifact manifest member cannot be read")
-            raw = member.read(1_000_001)
-            if len(raw) > 1_000_000:
+            raw = member.read(MAX_PAGES_MANIFEST_BYTES + 1)
+            if len(raw) > MAX_PAGES_MANIFEST_BYTES:
                 raise PagesDeploymentError("Pages artifact manifest exceeds the verification size limit")
+            if len(raw) != manifest.size:
+                raise PagesDeploymentError("Pages artifact manifest size does not match its tar header")
             return raw
     except PagesDeploymentError:
         raise
-    except (OSError, tarfile.TarError, zipfile.BadZipFile, EOFError) as exc:
+    except (OSError, tarfile.TarError, EOFError) as exc:
+        raise PagesDeploymentError(
+            f"Pages artifact tar is invalid: {type(exc).__name__}",
+            error_code="pages_artifact_archive_invalid",
+        ) from exc
+
+
+def _manifest_from_pages_artifact_archive_file(archive_path: Path, *, expected_digest: str) -> bytes:
+    """Verify a Pages ZIP on disk, then stream its tar member to bounded disk storage."""
+    try:
+        archive_size = archive_path.stat().st_size
+        if archive_size > MAX_PAGES_ARTIFACT_ARCHIVE_BYTES:
+            raise PagesDeploymentError("Pages artifact archive exceeds the verification size limit")
+        digest = hashlib.sha256()
+        with archive_path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(PAGES_ARTIFACT_READ_CHUNK_BYTES), b""):
+                digest.update(chunk)
+        actual_digest = "sha256:" + digest.hexdigest()
+        if actual_digest != expected_digest:
+            raise PagesDeploymentError(
+                "downloaded Pages artifact digest does not match GitHub metadata",
+                error_code="pages_artifact_digest_mismatch",
+            )
+        with zipfile.ZipFile(archive_path) as archive:
+            entries = archive.infolist()
+            if len(entries) != 1 or entries[0].filename != "artifact.tar" or entries[0].is_dir():
+                raise PagesDeploymentError("Pages artifact ZIP does not contain exactly one artifact.tar")
+            info = entries[0]
+            if info.flag_bits & 0x1:
+                raise PagesDeploymentError("Pages artifact ZIP member is encrypted")
+            if info.file_size > MAX_PAGES_ARTIFACT_TAR_BYTES:
+                raise PagesDeploymentError("Pages artifact tar exceeds the verification size limit")
+            with tempfile.TemporaryDirectory(prefix="prstk-pages-verify-") as temp_dir:
+                tar_path = Path(temp_dir) / "artifact.tar"
+                written = 0
+                with archive.open(info, "r") as source, tar_path.open("wb") as target:
+                    while True:
+                        chunk = source.read(PAGES_ARTIFACT_READ_CHUNK_BYTES)
+                        if not chunk:
+                            break
+                        written += len(chunk)
+                        if written > MAX_PAGES_ARTIFACT_TAR_BYTES:
+                            raise PagesDeploymentError("Pages artifact tar exceeds the verification size limit")
+                        target.write(chunk)
+                    target.flush()
+                    os.fsync(target.fileno())
+                if written != info.file_size:
+                    raise PagesDeploymentError("Pages artifact tar size does not match its ZIP header")
+                return _extract_manifest_from_pages_tar(tar_path)
+    except PagesDeploymentError:
+        raise
+    except (OSError, tarfile.TarError, zipfile.BadZipFile, EOFError, RuntimeError) as exc:
         raise PagesDeploymentError(
             f"Pages artifact archive is invalid: {type(exc).__name__}",
             error_code="pages_artifact_archive_invalid",
         ) from exc
+
+
+def _manifest_from_pages_artifact_archive(archive_bytes: bytes, *, expected_digest: str) -> bytes:
+    """Compatibility wrapper for bounded fixtures; production reads directly to disk."""
+    if len(archive_bytes) > MAX_PAGES_ARTIFACT_ARCHIVE_BYTES:
+        raise PagesDeploymentError("Pages artifact archive exceeds the verification size limit")
+    with tempfile.TemporaryDirectory(prefix="prstk-pages-fixture-") as temp_dir:
+        archive_path = Path(temp_dir) / "artifact.zip"
+        archive_path.write_bytes(archive_bytes)
+        return _manifest_from_pages_artifact_archive_file(archive_path, expected_digest=expected_digest)
 
 
 def _download_pages_artifact_manifest(
@@ -532,7 +596,28 @@ def _download_pages_artifact_manifest(
     })
     try:
         with _open_artifact_url(request, timeout=max(1, int(timeout))) as response:
-            archive_bytes = response.read(MAX_PAGES_ARTIFACT_ARCHIVE_BYTES + 1)
+            with tempfile.TemporaryDirectory(prefix="prstk-pages-download-") as temp_dir:
+                archive_path = Path(temp_dir) / "artifact.zip"
+                total = 0
+                digest = hashlib.sha256()
+                with archive_path.open("wb") as handle:
+                    while True:
+                        chunk = response.read(PAGES_ARTIFACT_READ_CHUNK_BYTES)
+                        if not chunk:
+                            break
+                        total += len(chunk)
+                        if total > MAX_PAGES_ARTIFACT_ARCHIVE_BYTES:
+                            raise PagesDeploymentError("Pages artifact archive exceeds the verification size limit")
+                        digest.update(chunk)
+                        handle.write(chunk)
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                if "sha256:" + digest.hexdigest() != artifact_digest:
+                    raise PagesDeploymentError(
+                        "downloaded Pages artifact digest does not match GitHub metadata",
+                        error_code="pages_artifact_digest_mismatch",
+                    )
+                return _manifest_from_pages_artifact_archive_file(archive_path, expected_digest=artifact_digest)
     except HTTPError as exc:
         raise PagesDeploymentError(
             f"Pages artifact download returned HTTP {int(exc.code)}",
@@ -545,9 +630,6 @@ def _download_pages_artifact_manifest(
             error_code="pages_artifact_download_failed",
             request_outcome="not_started",
         ) from exc
-    return _manifest_from_pages_artifact_archive(archive_bytes, expected_digest=artifact_digest)
-
-
 def create_deployment(
     *,
     api_url: str,

@@ -71,6 +71,59 @@ def test_pages_artifact_manifest_rejects_digest_mismatch():
         pages_deployment._manifest_from_pages_artifact_archive(artifact, expected_digest=ARTIFACT_DIGEST)
 
 
+def test_pages_artifact_tar_rejects_path_traversal_before_extracting_manifest():
+    tar_stream = BytesIO()
+    with tarfile.open(fileobj=tar_stream, mode="w") as packed:
+        traversal = tarfile.TarInfo("../escape.txt")
+        traversal.size = 1
+        packed.addfile(traversal, BytesIO(b"x"))
+        info = tarfile.TarInfo("data/release-manifest.json")
+        raw = MANIFEST_PATH.read_bytes()
+        info.size = len(raw)
+        packed.addfile(info, BytesIO(raw))
+    archive_stream = BytesIO()
+    with zipfile.ZipFile(archive_stream, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("artifact.tar", tar_stream.getvalue())
+    artifact = archive_stream.getvalue()
+    digest = "sha256:" + hashlib.sha256(artifact).hexdigest()
+
+    with pytest.raises(PagesDeploymentError, match="path traversal"):
+        pages_deployment._manifest_from_pages_artifact_archive(artifact, expected_digest=digest)
+
+
+def test_pages_artifact_tar_rejects_link_members():
+    tar_stream = BytesIO()
+    with tarfile.open(fileobj=tar_stream, mode="w") as packed:
+        link = tarfile.TarInfo("data/link")
+        link.type = tarfile.SYMTYPE
+        link.linkname = "../outside"
+        packed.addfile(link)
+        info = tarfile.TarInfo("data/release-manifest.json")
+        raw = MANIFEST_PATH.read_bytes()
+        info.size = len(raw)
+        packed.addfile(info, BytesIO(raw))
+    archive_stream = BytesIO()
+    with zipfile.ZipFile(archive_stream, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("artifact.tar", tar_stream.getvalue())
+    artifact = archive_stream.getvalue()
+    digest = "sha256:" + hashlib.sha256(artifact).hexdigest()
+
+    with pytest.raises(PagesDeploymentError, match="unsupported file type"):
+        pages_deployment._manifest_from_pages_artifact_archive(artifact, expected_digest=digest)
+
+
+def test_pages_artifact_zip_rejects_extra_entries(monkeypatch):
+    artifact = _pages_artifact_archive(MANIFEST_PATH.read_bytes())
+    extra = BytesIO()
+    with zipfile.ZipFile(BytesIO(artifact)) as original, zipfile.ZipFile(extra, "w") as packed:
+        for item in original.infolist():
+            packed.writestr(item.filename, original.read(item.filename))
+        packed.writestr("unexpected.txt", "not part of the Pages artifact")
+
+    with pytest.raises(PagesDeploymentError, match="exactly one artifact.tar"):
+        pages_deployment._manifest_from_pages_artifact_archive(extra.getvalue(), expected_digest="sha256:" + hashlib.sha256(extra.getvalue()).hexdigest())
+
+
 def test_create_rejects_pages_artifact_manifest_mismatch_before_deployment(monkeypatch):
     calls = []
     monkeypatch.setattr(

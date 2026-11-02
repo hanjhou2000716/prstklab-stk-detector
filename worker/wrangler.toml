@@ -2,9 +2,25 @@ name = "prstk-api"
 main = "src/index.ts"
 compatibility_date = "2026-08-27"
 
+[[durable_objects.bindings]]
+name = "INCIDENT_COORDINATOR"
+class_name = "IncidentCoordinator"
+
+[[migrations]]
+tag = "incident-coordinator-v1"
+new_sqlite_classes = ["IncidentCoordinator"]
+
+[triggers]
+crons = ["* * * * *"]
+
 # Configure secrets with `wrangler secret put`; never commit values here.
 [vars]
 SERVICE_NAME = "PRStK 稜量盤後速覽"
 TELEGRAM_SUBSCRIPTIONS_ENABLED = "true"
 TELEGRAM_EDITOR_CHAT_ID = "8869592162"
 DASHBOARD_URL = "https://hanjhou2000716.github.io/prstklab-stk-detector/"
+INCIDENT_REPOSITORY_ID = "1309835643"
+INCIDENT_REPOSITORY = "hanjhou2000716/prstklab-stk-detector"
+INCIDENT_OPS_AUDIENCE = "https://prstk-incident-ops"
+INCIDENT_OPS_MODE = "shadow"
+INCIDENT_RECEIPT_GMAIL_ADDRESS = "hanjhou2000716@gmail.com"

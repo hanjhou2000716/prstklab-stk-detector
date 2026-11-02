@@ -87,9 +87,10 @@ def _window_key(now: datetime) -> str:
 
 
 def _ordinary_window_open(now: datetime) -> bool:
-    # Allow a five-minute runner-start delay after each half-hour boundary.
-    minute = now.astimezone(UTC).minute
-    return minute < 5 or 30 <= minute < 35
+    # The current fixed :00/:30 window remains eligible after runner delay.
+    # _window_key supplies the active window and the journal supplies dedupe.
+    _ = now
+    return True
 
 
 def _next_reminder_at(now: datetime, *, immediate: bool) -> str:
@@ -293,9 +294,9 @@ def _save_control_journal(
 
 def _critical_fingerprint(issue: dict[str, Any]) -> str:
     body = str(issue.get("body") or "")
-    marker = next((line for line in body.splitlines() if re.match(r"^[a-z][a-z0-9-]*=[0-9a-f]{24,64}$", line)), "")
-    root = _field(body, "Root cause")
-    first = _field(body, "First failure")
+    marker = _issue_marker(issue)
+    root = _field(body, "Root cause") or _field(body, "Failure class")
+    first = _field(body, "First failure") or _field(body, "Observed at")
     return hashlib.sha256(f"{marker}\n{root}\n{first}".encode()).hexdigest()
 
 
@@ -303,16 +304,17 @@ def _is_critical(issue: dict[str, Any], now: datetime) -> bool:
     body = str(issue.get("body") or "")
     if _field(body, "Lifecycle") in {"historical_diagnosed", "historical_pending_verification"}:
         return False
-    root = _field(body, "Root cause").casefold()
+    root = (_field(body, "Root cause") or _field(body, "Failure class")).casefold()
     critical_terms = (
         "identity_conflict", "identity_mismatch", "hash_mismatch", "claim_state_conflict",
         "notification_claim_uncertain", "missed_deadline", "delivery_deadline",
         "insufficient_reserve", "scheduled_anchor_claim_missing",
+        "pagination_identity_invalid", "central_reconciliation_coverage_incomplete",
     )
     if not any(term in root for term in critical_terms):
         return False
     observed = _parse_time(_field(body, "Observed at"))
-    first = _parse_time(_field(body, "First failure"))
+    first = _parse_time(_field(body, "First failure") or _field(body, "Observed at"))
     # An old incident is not a new emergency. Require a recent attached observation.
     anchor = observed or first
     return anchor is not None and timedelta(0) <= now.astimezone(UTC) - anchor <= timedelta(minutes=10)
@@ -326,8 +328,28 @@ def _consumer(issue: dict[str, Any]) -> tuple[str, int] | None:
 
 def _issue_marker(issue: dict[str, Any]) -> str:
     body = str(issue.get("body") or "")
+    title = str(issue.get("title") or "")
     rows = [line for line in body.splitlines() if re.fullmatch(r"[a-z][a-z0-9-]*=[0-9a-f]{24,64}", line)]
+    # Explicit legacy adapter for the pre-v2 monitor audit marker. It is
+    # accepted only under its exact incident title and bounded safe grammar.
+    if title.startswith(AUDIT_ISSUE_TITLE_PREFIX):
+        rows.extend(
+            line for line in body.splitlines()
+            if line.startswith("official-monitor-audit-incident=official-monitor-audit:")
+            and len(line) <= 512
+            and re.fullmatch(r"official-monitor-audit-incident=official-monitor-audit:[A-Za-z0-9_.:/;=-]+", line)
+        )
     return rows[0] if len(rows) == 1 else ""
+
+
+def _valid_issue_marker(marker: str, title: str) -> bool:
+    if re.fullmatch(r"[a-z][a-z0-9-]*=[0-9a-f]{24,64}", marker):
+        return True
+    return bool(
+        title.startswith(AUDIT_ISSUE_TITLE_PREFIX)
+        and len(marker) <= 512
+        and re.fullmatch(r"official-monitor-audit-incident=official-monitor-audit:[A-Za-z0-9_.:/;=-]+", marker)
+    )
 
 
 def _load_verified_consumer(
@@ -470,7 +492,8 @@ def _sync_incident_after_confirmed_alert(
 ) -> None:
     number = _safe_int(row.get("issue_number"))
     marker = str(row.get("marker") or "")
-    if number is None or not re.fullmatch(r"[a-z][a-z0-9-]*=[0-9a-f]{24,64}", marker):
+    title = str(row.get("title") or "")
+    if number is None or not _valid_issue_marker(marker, title):
         raise LivenessAuditError("incident_notification_journal_incident_identity_invalid")
     issue = _request_json(api_url, repository, token, "GET", f"issues/{number}", deadline_monotonic=deadline)
     if not isinstance(issue, dict) or _safe_int(issue.get("number")) != number:
@@ -593,7 +616,7 @@ def _resolve_pending_decision(
 
 def prepare_outlet(
     *, repository: str, api_url: str, token: str, now: datetime | None = None,
-    deadline_monotonic: float | None = None,
+    deadline_monotonic: float | None = None, record_native_delivery: bool = False,
 ) -> dict[str, Any]:
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository) or not token:
         raise LivenessAuditError("incident_outlet_configuration_invalid")
@@ -636,7 +659,7 @@ def prepare_outlet(
         if critical and not already_immediate:
             selected = True
             reason = "critical_new_or_escalated_incident"
-        elif due and _ordinary_window_open(current) and not window_already_confirmed:
+        elif due and not window_already_confirmed:
             selected = True
             reason = "half_hour_reminder_window"
         else:
@@ -646,6 +669,7 @@ def prepare_outlet(
             candidates.append({
                 "issue_number": int(issue["number"]),
                 "marker": marker,
+                "title": title,
                 "consumer_run_id": consumer[0],
                 "consumer_attempt": consumer[1],
                 "critical": critical,
@@ -683,6 +707,7 @@ def prepare_outlet(
             matched.append({
                 "issue_number": row["issue_number"],
                 "marker": row["marker"],
+                "title": row["title"],
                 "next_reminder_at": row["next_reminder_at"],
                 "critical": row["critical"],
                 "critical_fingerprint": row["critical_fingerprint"],
@@ -720,6 +745,17 @@ def prepare_outlet(
     if not due:
         if window_already_confirmed and _ordinary_window_open(current):
             result["suppression_reason"] = "ordinary_window_already_confirmed"
+        return result
+
+    if not record_native_delivery:
+        # The legacy Actions outlet has no mail transport. A failed workflow
+        # step is not evidence of a sent notification, so shadow mode records
+        # the verified decision without reserving or confirming a delivery.
+        result.update({
+            "status": "notification_due_delivery_not_attempted",
+            "delivery_state": "not_sent_legacy_native_emitter_removed",
+            "journal_status": "unchanged_delivery_delegated_to_coordinator",
+        })
         return result
 
     outlet_run_id = _safe_int(os.environ.get("GITHUB_RUN_ID"))

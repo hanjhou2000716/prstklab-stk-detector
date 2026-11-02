@@ -22,9 +22,10 @@ concurrency:
 jobs:
   notify:
     if: >-
-      github.event_name != 'workflow_run' ||
+      vars.INCIDENT_OPS_MODE != 'live' &&
+      (github.event_name != 'workflow_run' ||
       (github.event.workflow_run.head_branch == 'main' &&
-      github.event.workflow_run.head_repository.full_name == github.repository)
+      github.event.workflow_run.head_repository.full_name == github.repository))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -73,7 +74,7 @@ jobs:
                   "observed_at": datetime.now(UTC).isoformat(),
               }, sort_keys=True, indent=2) + "\n", encoding="utf-8")
           PY
-      - name: Preserve the notification decision before native alert
+      - name: Preserve the notification decision before unified delivery
         id: decision_artifact
         if: always() && steps.prepare.outcome == 'success'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -82,28 +83,13 @@ jobs:
           path: ${{ runner.temp }}/incident-notification-outlet.json
           if-no-files-found: error
           retention-days: 90
-      - name: Send one consolidated native incident alert
-        id: native_alert
+      - name: Record due notification without manufacturing a failed run
         if: >-
           always() && steps.decision_artifact.outcome == 'success' &&
           steps.prepare.outputs.notification_due == 'true'
         run: |
-          echo "alert_emitted=true" >> "$GITHUB_OUTPUT"
-          echo "::error::One or more verified PRStK incidents remain active; see the consolidated incident evidence artifact."
-          exit 1
-      - name: Confirm the alert and advance incident reminder records
-        if: >-
-          always() && steps.decision_artifact.outcome == 'success' &&
-          steps.native_alert.outputs.alert_emitted == 'true' &&
-          steps.native_alert.outcome == 'failure'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_API_URL: ${{ github.api_url }}
-          INCIDENT_OUTLET_RESULT_PATH: ${{ runner.temp }}/incident-notification-outlet.json
-          INCIDENT_ALERT_EMITTED: ${{ steps.native_alert.outputs.alert_emitted }}
-          INCIDENT_ALERT_STEP_OUTCOME: ${{ steps.native_alert.outcome }}
-        run: python -m scripts.incident_notification_outlet finalize
+          echo "The legacy GitHub outlet did not send or confirm email. The unified coordinator owns delivery and receipt verification." >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice::A notification decision is due; this legacy workflow records evidence only and does not claim delivery."
       - name: Upload immutable outlet result
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

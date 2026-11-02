@@ -130,6 +130,93 @@ def test_report_failure_and_audit_root_cause_merge_into_same_issue(tmp_path, mon
     assert "Latest run: 200 attempt 2" in body
 
 
+def test_existing_incident_exports_exact_new_slot_identity(tmp_path, monkeypatch):
+    terminal = {
+        "schema_version": "notification-terminal-v2", "run_id": "500", "run_attempt": 1,
+        "workflow_sha": "a" * 40, "slot": "morning", "market_date": "2026-11-01",
+        "anchor": "taiwan:2026-11-01:morning", "scheduled_for_at": "2026-11-01T06:00:00+08:00",
+        "expected": True, "status": "failed", "reason": "scheduled_anchor_claim_missing", "failure": True,
+    }
+    (tmp_path / "scheduled-terminal-500-attempt-1.json").write_text(json.dumps(terminal), encoding="utf-8")
+    marker = f"{incidents.ISSUE_MARKER}{incidents._incident_key('scheduled_market_brief', 'scheduled_anchor_claim_missing', 'notification-terminal-v2')}"
+    issue = {
+        "number": 17,
+        "title": f"{incidents.ISSUE_TITLE_PREFIX} / morning",
+        "body": "\n".join((
+            marker, "Lifecycle: active",
+            "Affected slots: morning:2026-10-31 (taiwan:2026-10-31:morning)",
+            "Next reminder at: 2026-11-01T22:30:00+00:00",
+        )),
+    }
+    monkeypatch.setattr(incidents, "_open_incidents", lambda *_args, **_kwargs: [issue])
+    monkeypatch.setattr(incidents, "_request_json", lambda *_args, **_kwargs: {})
+    monkeypatch.setattr(incidents, "_root_reason", lambda *_args, **_kwargs: (
+        "scheduled_market_brief", "scheduled_anchor_claim_missing", "notification-terminal-v2", terminal,
+    ))
+
+    result = incidents.reconcile(
+        event=_event(run_id="500", attempt=1, sha="a" * 40, workflow="Scheduled market brief"),
+        evidence_directory=tmp_path, repository="hanjhou2000716/prstklab-stk-detector",
+        api_url="https://api.github.com", token="token", now=datetime.fromisoformat("2026-11-01T08:00:00Z"),
+    )
+
+    assert result["new_impact_identities"] == [{
+        "issue_number": 17, "slot": "morning", "date": "2026-11-01",
+        "anchor": "taiwan:2026-11-01:morning",
+    }]
+
+
+def test_replaying_same_historical_slot_does_not_rewrite_or_reopen_it(monkeypatch, tmp_path):
+    now = datetime.fromisoformat("2026-11-01T07:00:00+00:00")
+    slot = {
+        "slot": "morning", "market_date": "2026-11-01",
+        "anchor": "taiwan:2026-11-01:morning",
+    }
+    reason = "scheduled_anchor_claim_missing"
+    contract = "notification-terminal-v2"
+    key = incidents._incident_key("scheduled_market_brief", reason, contract)
+    issue = {
+        "number": 1120,
+        "title": f"{incidents.ISSUE_TITLE_PREFIX} / scheduled_market_brief",
+        "body": "\n".join((
+            f"{incidents.ISSUE_MARKER}{key}",
+            "Component: scheduled_market_brief",
+            f"Root cause: {reason}",
+            f"Contract: {contract}",
+            "Affected slot count: 4",
+            "Affected slots: morning:2026-11-01 (taiwan:2026-11-01:morning)",
+            "Affected slots complete: true",
+            "First failure: 2026-11-01T06:00:00+08:00",
+            "Next reminder at: 2026-11-01T07:00:00+00:00",
+            "Lifecycle: historical_diagnosed",
+        )),
+    }
+    writes = []
+    monkeypatch.setattr(incidents, "_open_incidents", lambda *_a, **_k: [issue])
+    monkeypatch.setattr(incidents, "_request_json", lambda *a, **k: writes.append((a, k)) or {})
+    monkeypatch.setattr(incidents, "_validated_evidence", lambda *_a, **_k: {
+        "valid": False,
+        "kind": "audit",
+        "audit": {"audited_at": now.isoformat(), "report_receipt_status": "missing_receipt"},
+        "result": slot,
+    })
+    monkeypatch.setattr(incidents, "_root_reason", lambda *_a, **_k: (
+        "scheduled_market_brief", reason, contract, slot,
+    ))
+
+    result = incidents.reconcile(
+        event=_event(run_id="41249589716", attempt=1, sha="a" * 40, workflow="Scheduled brief slot receipt audit"),
+        evidence_directory=tmp_path,
+        repository="hanjhou2000716/prstklab-stk-detector",
+        api_url="https://api.github.com", token="token", now=now,
+    )
+
+    assert result["diagnostic_complete"] is False
+    assert result["reminded_issue_numbers"] == []
+    assert writes == []
+    assert "Lifecycle: historical_diagnosed" in issue["body"]
+
+
 def test_audit_failure_reminds_after_thirty_minutes_and_verified_receipt_recovers(tmp_path, monkeypatch):
     directory = tmp_path / "evidence"
     directory.mkdir()

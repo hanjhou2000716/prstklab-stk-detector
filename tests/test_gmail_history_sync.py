@@ -20,6 +20,7 @@ from email_router import route_source  # noqa: E402
 from email_store import EmailStore  # noqa: E402
 from gmail_history_sync import (  # noqa: E402
     _decode_header_value,
+    is_prstk_incident_notification,
     message_record,
     reconcile_priority_pending,
     sync_gmail_history,
@@ -269,6 +270,63 @@ def test_message_record_extracts_only_parser_fields() -> None:
     assert "Oil supply update" in record["body"]
     assert record["source_published_at"] == "2026-08-24T02:15:42+00:00"
     assert "payload" not in record
+
+
+def test_prstk_incident_mail_and_github_copy_are_isolated_from_market_parser(tmp_path, monkeypatch) -> None:
+    monkeypatch.delenv("PRSTK_INCIDENT_GMAIL_FROM", raising=False)
+    store = EmailStore(tmp_path / "mail.sqlite3")
+    store.save_cursor(last_history_id="h0")
+    message = _message("sys-run")
+    message["payload"]["headers"] = [
+        {"name": "From", "value": "GitHub <notifications@github.com>"},
+        {"name": "Subject", "value": "[hanjhou2000716/prstklab-stk-detector] Incident notification outlet workflow run"},
+        {"name": "Message-ID", "value": "<github-run@example.com>"},
+    ]
+
+    class _SystemNotificationClient(_Client):
+        async def get(self, url, **kwargs):
+            self.calls.append(("GET", url, kwargs))
+            if url.endswith("/history"):
+                return _Response({"historyId": "h1", "history": [{"messagesAdded": [{"message": {"id": "sys-run"}}]}]})
+            return _Response(message)
+
+    class _MustNotReachIngress:
+        calls = 0
+
+        def accept_email(self, _record):
+            self.calls += 1
+            raise AssertionError("system notification must not enter market email parser")
+
+    ingress = _MustNotReachIngress()
+    result = asyncio.run(sync_gmail_history(_config(), store, ingress, client_factory=_SystemNotificationClient))
+    assert result["status"] == "healthy"
+    assert result["processed"] == 1
+    assert result["system_notification_ignored_count"] == 1
+    assert ingress.calls == 0
+    assert store.health()["public_observation_count"] == 0
+    assert store.cursor()["last_history_id"] == "h1"
+
+
+def test_incident_sender_filter_requires_exact_coordinator_message_and_does_not_filter_other_mail(monkeypatch) -> None:
+    message = {
+        "sender": "PRStK Alerts <alerts@example.com>",
+        "subject": "[PRStK] 事故摘要",
+        "rfc_message_id": f"<{('a' * 64)}@prstk.invalid>",
+    }
+    monkeypatch.setenv("PRSTK_INCIDENT_GMAIL_FROM", "alerts@example.com")
+    assert is_prstk_incident_notification(message)
+    assert not is_prstk_incident_notification({**message, "sender": "spoof@example.com"})
+    assert not is_prstk_incident_notification({**message, "rfc_message_id": "<ordinary@example.com>"})
+    assert not is_prstk_incident_notification({
+        "sender": "GitHub <notifications@github.com>",
+        "subject": "[another-owner/another-repo] Incident notification outlet workflow run",
+        "rfc_message_id": "<ordinary@example.com>",
+    })
+    assert not is_prstk_incident_notification({
+        "sender": "GitHub <notifications@github.com>",
+        "subject": "[hanjhou2000716/prstklab-stk-detector] Pull request review requested",
+        "rfc_message_id": "<ordinary@example.com>",
+    })
 
 
 def test_cursor_storage_failure_returns_diagnostic_result_instead_of_crashing() -> None:

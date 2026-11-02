@@ -12,6 +12,7 @@ from __future__ import annotations
 import base64
 import binascii
 import html
+import os
 import re
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
@@ -30,6 +31,7 @@ HISTORY_URL = "https://gmail.googleapis.com/gmail/v1/users/me/history"
 MESSAGE_URL = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
 MESSAGE_LIST_URL = MESSAGE_URL
 LATEST_FINANCIALJUICE_QUERY = "{from:financialjuice subject:FinancialJuice}"
+PRSTK_REPOSITORY = "hanjhou2000716/prstklab-stk-detector"
 DEFAULT_MAX_MESSAGES = 50
 MAX_PAGE_SIZE = 100
 MAX_HISTORY_PAGES = 20
@@ -621,6 +623,7 @@ def message_record(message: Mapping[str, Any]) -> dict[str, Any]:
         "gmail_thread_id": str(message.get("threadId") or "").strip(),
         "sender": _header(payload, "From"),
         "subject": _header(payload, "Subject"),
+        "rfc_message_id": _header(payload, "Message-ID"),
         "body": _plain_body(payload),
         "received_at": received_at,
         "source_published_at": _published_at(_header(payload, "Date")),
@@ -631,6 +634,30 @@ def message_record(message: Mapping[str, Any]) -> dict[str, Any]:
         ],
         "label_ids": labels,
     }
+
+
+def is_prstk_incident_notification(record: Mapping[str, Any]) -> bool:
+    """Recognize only this repository's incident mail and its GitHub run copy.
+
+    Two independent message markers are required for the Gmail sender: the
+    coordinator's reserved RFC Message-ID namespace and its fixed subject
+    prefix. The GitHub copy is limited to workflow-run notices from GitHub's
+    notification sender and this exact repository prefix. Other GitHub mail
+    and market/news providers continue through the normal parser.
+    """
+    sender = parseaddr(_decode_header_value(record.get("sender")))[1].strip().casefold()
+    subject = _decode_header_value(record.get("subject")).strip()
+    rfc_message_id = _decode_header_value(record.get("rfc_message_id")).strip()
+    if re.fullmatch(r"<[0-9a-f]{64}@prstk\.invalid>", rfc_message_id, re.IGNORECASE) and subject.startswith("[PRStK]"):
+        configured_sender = str(os.environ.get("PRSTK_INCIDENT_GMAIL_FROM") or "").strip().casefold()
+        return not configured_sender or sender == configured_sender
+    github_prefix = f"[{PRSTK_REPOSITORY}] "
+    if sender == "notifications@github.com" and subject.startswith(github_prefix):
+        return bool(re.fullmatch(
+            r"(?:Incident notification outlet|Central incident reconciliation(?: health)?|Scheduled market brief delivery|Official monitor liveness audit) workflow run",
+            subject[len(github_prefix):], re.IGNORECASE,
+        ))
+    return False
 
 
 async def _access_token(config: GmailWatchConfig, client: Any) -> str:
@@ -703,6 +730,7 @@ async def sync_gmail_history(
 
     bounded = max(1, min(MAX_PAGE_SIZE, int(max_messages)))
     processed = accepted_new = material_candidates = priority_candidates = failed = duplicate = skipped = suppressed = 0
+    ignored_system_notifications = 0
     failure_types: dict[str, int] = {}
     result: dict[str, Any] = {}
     try:
@@ -752,6 +780,10 @@ async def sync_gmail_history(
                     record = message_record(message)
                     payload = message.get("payload") if isinstance(message.get("payload"), Mapping) else {}
                     record["body"] = await _message_body(client, token, message_id, payload)
+                    if is_prstk_incident_notification(record):
+                        processed += 1
+                        ignored_system_notifications += 1
+                        continue
                     result = ingress.accept_email(record)
                     processed += 1
                     message_diagnostics = result.get("candidate_diagnostics")
@@ -799,6 +831,8 @@ async def sync_gmail_history(
                 }
                 if skipped:
                     result["skipped"] = skipped
+                if ignored_system_notifications:
+                    result["system_notification_ignored_count"] = ignored_system_notifications
                 if suppressed:
                     result["suppressed"] = suppressed
                 if failure_types:
@@ -826,6 +860,8 @@ async def sync_gmail_history(
                     result["priority_pending_error_reasons"] = diagnostics["priority_pending_error_reasons"]
                 if skipped:
                     result["skipped"] = skipped
+                if ignored_system_notifications:
+                    result["system_notification_ignored_count"] = ignored_system_notifications
                 if suppressed:
                     result["suppressed"] = suppressed
                 if failure_types:
@@ -838,6 +874,8 @@ async def sync_gmail_history(
                 _persist_sync_diagnostics(store, result, diagnostics, sync_started_at=sync_started_at, complete=True)
     except (httpx.TimeoutException, httpx.HTTPError) as error:
         result = {"status": type(error).__name__.lower(), "processed": processed, "accepted_new_count": accepted_new, "material_candidate_count": material_candidates, "priority_candidate_count": priority_candidates, "failed": failed + 1, "duplicate": duplicate, "duplicate_count": duplicate}
+        if ignored_system_notifications:
+            result["system_notification_ignored_count"] = ignored_system_notifications
         if suppressed:
             result["suppressed"] = suppressed
         _save_cursor_best_effort(store, last_full_sync_at=datetime.now(UTC).isoformat())
@@ -863,6 +901,8 @@ async def sync_gmail_history(
                 "duplicate_count": duplicate,
                 "history_gap": True,
             }
+            if ignored_system_notifications:
+                result["system_notification_ignored_count"] = ignored_system_notifications
             if suppressed:
                 result["suppressed"] = suppressed
             _persist_sync_diagnostics(store, result, diagnostics, sync_started_at=sync_started_at, complete=True)

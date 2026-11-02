@@ -436,6 +436,7 @@ jobs:
         run: |
           python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
           python -m src.asset_contract --root site
+          python -m src.pages_budget --root site --max-bytes 536870912
       - name: Configure GitHub Pages
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
@@ -544,6 +545,12 @@ jobs:
           RESEARCH_GATE_REASON: ${{ steps.research_gate.outputs.reason || '' }}
           PREPARED_RELEASE_OUTCOME: ${{ steps.prepared_release.outcome || 'skipped' }}
           DEPLOYMENT_OUTCOME: ${{ steps.deployment.outcome || 'skipped' }}
+          DEPLOYMENT_AVAILABLE: ${{ steps.deployment.outputs.available || 'false' }}
+          DEPLOYMENT_ID: ${{ steps.deployment.outputs.deployment_id || '' }}
+          DEPLOYMENT_BINDING_PATH: ${{ steps.deployment.outputs.binding_path || '' }}
+          PUBLIC_GATE_OUTCOME: ${{ steps.public_release_gate.outcome || 'skipped' }}
+          PUBLIC_GATE_ALLOWED: ${{ steps.public_release_gate.outputs.allowed || 'false' }}
+          PUBLIC_GATE_STATUS: ${{ steps.public_release_gate.outputs.gate_status || 'not_run' }}
         run: |
           python - <<'PY'
           import json
@@ -638,6 +645,35 @@ jobs:
           gate_outcome = os.environ.get("RESEARCH_GATE_OUTCOME", "unknown")
           gate_publish = os.environ.get("RESEARCH_GATE_PUBLISH") == "true"
           gate_fallback = os.environ.get("RESEARCH_GATE_FALLBACK") == "true"
+          deployment_available = os.environ.get("DEPLOYMENT_AVAILABLE") == "true"
+          public_gate_outcome = os.environ.get("PUBLIC_GATE_OUTCOME", "skipped")
+          public_gate_allowed = os.environ.get("PUBLIC_GATE_ALLOWED") == "true"
+          deployment_binding = read_json(os.environ.get("DEPLOYMENT_BINDING_PATH", ""))
+          bound_deployment_id = str(deployment_binding.get("deployment_id") or "")
+          bound_build_version = str(deployment_binding.get("pages_build_version") or "")
+          binding_identity_matches = bool(
+              deployment_binding.get("schema_version") == "pages-deployment-binding-v1"
+              and str(deployment_binding.get("workflow_run_id") or "") == os.environ.get("GITHUB_RUN_ID", "")
+              and int(deployment_binding.get("workflow_run_attempt") or 0) == int(os.environ.get("GITHUB_RUN_ATTEMPT", "0"))
+              and str(deployment_binding.get("source_revision") or "").lower() == os.environ.get("GITHUB_SHA", "").lower()
+              and str(deployment_binding.get("phase") or "") == "unified_research_report"
+          )
+          public_observation = deployment_binding.get("public_observation", {})
+          public_observation = public_observation if isinstance(public_observation, dict) else {}
+          binding_gate_verified = bool(
+              binding_identity_matches
+              and public_observation.get("status") == "verified"
+              and public_observation.get("allowed") is True
+              and bound_deployment_id
+              and bound_deployment_id == str(os.environ.get("DEPLOYMENT_ID") or "")
+              and bound_build_version
+          )
+          publication_verified = bool(
+              deployment_available
+              and binding_gate_verified
+              and public_gate_outcome == "success"
+              and public_gate_allowed
+          )
           degraded = not no_op and (
               os.environ.get("JOB_STATUS") == "failure"
               or selection_status in {"blocked", "scan_selected_with_suppressed_pairs"}
@@ -645,6 +681,7 @@ jobs:
               or queue_status == "failed"
               or os.environ.get("PREPARED_RELEASE_OUTCOME") == "failure"
               or os.environ.get("DEPLOYMENT_OUTCOME") == "failure"
+              or (due and gate_publish and not publication_verified)
               or gate_outcome == "failure"
               or (due and (not gate_publish or gate_fallback))
           )
@@ -669,6 +706,8 @@ jobs:
                   reason = "research_gate_failed"
               if not reason and due and (not gate_publish or gate_fallback):
                   reason = "production_research_not_current"
+              if not reason and due and gate_publish and not publication_verified:
+                  reason = "research_publication_not_verified"
               if not reason and os.environ.get("PREPARED_RELEASE_OUTCOME") == "failure":
                   reason = "prepared_release_revalidation_failed"
               if not reason and os.environ.get("DEPLOYMENT_OUTCOME") == "failure":
@@ -706,6 +745,14 @@ jobs:
                   "research_noop": no_op,
                   "prepared_release": os.environ.get("PREPARED_RELEASE_OUTCOME", "unknown"),
                   "deployment": os.environ.get("DEPLOYMENT_OUTCOME", "unknown"),
+                  "deployment_available": deployment_available,
+                  "deployment_id": bound_deployment_id,
+                  "pages_build_version": bound_build_version,
+                  "deployment_binding_identity_matches": binding_identity_matches,
+                  "public_gate_outcome": public_gate_outcome,
+                  "public_gate_allowed": public_gate_allowed,
+                  "public_gate_status": str(public_observation.get("status") or os.environ.get("PUBLIC_GATE_STATUS", "not_run")),
+                  "publication_verified": publication_verified,
               },
           }
           Path("unified-research-terminal.json").write_text(

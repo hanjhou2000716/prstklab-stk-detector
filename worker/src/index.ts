@@ -6,7 +6,9 @@
  * GitHub Actions (`jobs/process_report_job.py`).
  */
 
-interface Env {
+import { IncidentCoordinator, verifyGitHubOidc, type IncidentOpsEnv } from "./incident_coordinator.ts";
+
+interface Env extends IncidentOpsEnv {
   SUPABASE_URL: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
   GITHUB_DISPATCH_TOKEN: string;
@@ -30,6 +32,19 @@ interface Env {
   /** Google Pub/Sub authenticated push contract for Gmail notifications. */
   GMAIL_PUBSUB_AUDIENCE?: string;
   GMAIL_PUBSUB_SERVICE_ACCOUNT?: string;
+  INCIDENT_COORDINATOR?: DurableObjectNamespace;
+  INCIDENT_REPOSITORY_ID?: string;
+  INCIDENT_REPOSITORY?: string;
+  INCIDENT_OPS_AUDIENCE?: string;
+  INCIDENT_OPS_MODE?: string;
+  INCIDENT_GMAIL_OAUTH_CLIENT_ID?: string;
+  INCIDENT_GMAIL_OAUTH_CLIENT_SECRET?: string;
+  INCIDENT_GMAIL_REFRESH_TOKEN?: string;
+  INCIDENT_GMAIL_FROM?: string;
+  INCIDENT_RECEIPT_GMAIL_OAUTH_CLIENT_ID?: string;
+  INCIDENT_RECEIPT_GMAIL_OAUTH_CLIENT_SECRET?: string;
+  INCIDENT_RECEIPT_GMAIL_REFRESH_TOKEN?: string;
+  INCIDENT_RECEIPT_GMAIL_ADDRESS?: string;
 }
 
 type Job = Record<string, unknown> & { id: string; status: string };
@@ -620,6 +635,74 @@ async function sendTelegram(env: Env, report: string, provenance: { traceId: str
 async function handle(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: { ...cors(request, env), "access-control-allow-methods": "GET,POST,OPTIONS", "access-control-allow-headers": "content-type,authorization,x-admin-key,x-telegram-init-data,x-telegram-bot-api-secret-token" } });
+  if (url.pathname === "/public/ops/liveness" && request.method === "GET") {
+    if (!env.INCIDENT_COORDINATOR || !env.INCIDENT_REPOSITORY_ID) {
+      return json({ ok: false, component: "incident-coordinator", error: "not_configured" }, 503, { "x-robots-tag": "noindex, nofollow" });
+    }
+    const stub = env.INCIDENT_COORDINATOR.get(env.INCIDENT_COORDINATOR.idFromName(env.INCIDENT_REPOSITORY_ID));
+    const result = await stub.fetch("https://incident-coordinator/internal/liveness", { method: "GET" });
+    if (!result.ok) return json({ ok: false, component: "incident-coordinator", error: "unavailable" }, 503, { "x-robots-tag": "noindex, nofollow" });
+    const body = await result.json().catch(() => null) as Record<string, unknown> | null;
+    if (!body || body.ok !== true || body.component !== "incident-coordinator") {
+      return json({ ok: false, component: "incident-coordinator", error: "invalid_liveness_response" }, 503, { "x-robots-tag": "noindex, nofollow" });
+    }
+    return json({ ok: true, component: "incident-coordinator", observed_at: String(body.observed_at || "") }, 200, { "x-robots-tag": "noindex, nofollow" });
+  }
+  if (url.pathname.startsWith("/ops/")) {
+    if (!env.INCIDENT_COORDINATOR || !env.INCIDENT_REPOSITORY_ID || !env.INCIDENT_REPOSITORY) {
+      return json({ ok: false, error: "INCIDENT_COORDINATOR_NOT_CONFIGURED" }, 503);
+    }
+    const stub = env.INCIDENT_COORDINATOR.get(env.INCIDENT_COORDINATOR.idFromName(env.INCIDENT_REPOSITORY_ID));
+    const proxy = (path: string, method = request.method, body?: string) => stub.fetch(`https://incident-coordinator${path}`, {
+      method, headers: body === undefined ? undefined : { "content-type": "application/json" }, body,
+    });
+    const isAdmin = Boolean(env.ADMIN_KEY && request.headers.get("X-Admin-Key") === env.ADMIN_KEY);
+    const verifyWorkflow = async (allowed: string[]) => {
+      const jwt = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") || "";
+      return verifyGitHubOidc(jwt, env, allowed);
+    };
+    if (url.pathname === "/ops/incidents/evidence" && request.method === "POST") {
+      if (!await verifyWorkflow([".github/workflows/incident-reconciliation.yml"])) return json({ ok: false, error: "UNTRUSTED_WORKFLOW_IDENTITY" }, 401);
+      const body = await request.text();
+      if (new TextEncoder().encode(body).length > 256_000) return json({ ok: false, error: "PAYLOAD_TOO_LARGE" }, 413);
+      try { JSON.parse(body); } catch (_) { return json({ ok: false, error: "INVALID_JSON" }, 400); }
+      return proxy("/internal/evidence", "POST", body);
+    }
+    if (url.pathname === "/ops/incidents/import" && request.method === "POST") {
+      if (!await verifyWorkflow([".github/workflows/incident-ops-import.yml"])) return json({ ok: false, error: "UNTRUSTED_WORKFLOW_IDENTITY" }, 401);
+      const body = await request.text();
+      if (new TextEncoder().encode(body).length > 256_000) return json({ ok: false, error: "PAYLOAD_TOO_LARGE" }, 413);
+      try { JSON.parse(body); } catch (_) { return json({ ok: false, error: "INVALID_JSON" }, 400); }
+      return proxy("/internal/import", "POST", body);
+    }
+    if (url.pathname === "/ops/mail/verify" && request.method === "POST") {
+      if (!await verifyWorkflow([".github/workflows/incident-ops-mail-verification.yml"])) return json({ ok: false, error: "UNTRUSTED_WORKFLOW_IDENTITY" }, 401);
+      const body = await request.text();
+      if (new TextEncoder().encode(body).length > 4_000) return json({ ok: false, error: "PAYLOAD_TOO_LARGE" }, 413);
+      try { JSON.parse(body); } catch (_) { return json({ ok: false, error: "INVALID_JSON" }, 400); }
+      return proxy("/internal/mail/verify", "POST", body);
+    }
+    if (url.pathname === "/ops/mail/pending-receipts" && request.method === "GET") {
+      if (!await verifyWorkflow([".github/workflows/incident-mail-receipts.yml"])) return json({ ok: false, error: "UNTRUSTED_WORKFLOW_IDENTITY" }, 401);
+      return proxy("/internal/pending-receipts", "GET");
+    }
+    if (url.pathname === "/ops/mail/receipt" && request.method === "POST") {
+      if (!await verifyWorkflow([".github/workflows/incident-mail-receipts.yml"])) return json({ ok: false, error: "UNTRUSTED_WORKFLOW_IDENTITY" }, 401);
+      const body = await request.text();
+      if (new TextEncoder().encode(body).length > 16_000) return json({ ok: false, error: "PAYLOAD_TOO_LARGE" }, 413);
+      try { JSON.parse(body); } catch (_) { return json({ ok: false, error: "INVALID_JSON" }, 400); }
+      return proxy("/internal/mail-receipt", "POST", body);
+    }
+    if (url.pathname === "/ops/health" && request.method === "GET") {
+      if (!isAdmin && !await verifyWorkflow([".github/workflows/incident-ops-heartbeat.yml"])) return json({ ok: false, error: "UNAUTHORIZED" }, 401);
+      return proxy("/internal/health", "GET");
+    }
+    if (url.pathname === "/ops/outbox/state" && request.method === "GET") {
+      if (!isAdmin) return json({ ok: false, error: "UNAUTHORIZED" }, 401);
+      return proxy("/internal/outbox/state", "GET");
+    }
+    return json({ ok: false, error: "NOT_FOUND" }, 404);
+  }
   if (url.pathname === "/api/health" && request.method === "GET") {
     let database = "unknown";
     try { await supabase(env, "GET", "system_status", "?select=component,status&limit=1"); database = "ok"; } catch (_) { database = "unavailable"; }
@@ -790,6 +873,16 @@ const handler: ExportedHandler<Env> = {
       return withCors(json({ ok: false, error: error instanceof Error ? error.message.slice(0, 240) : "request failed" }, 500), request, env);
     }
   },
+  scheduled(_event, env, context): void {
+    const work = async () => {
+      if (!env.INCIDENT_COORDINATOR || !env.INCIDENT_REPOSITORY_ID) throw new Error("incident coordinator is not bound");
+      const stub = env.INCIDENT_COORDINATOR.get(env.INCIDENT_COORDINATOR.idFromName(env.INCIDENT_REPOSITORY_ID));
+      const result = await stub.fetch("https://incident-coordinator/internal/tick", { method: "POST" });
+      if (!result.ok) throw new Error(`incident coordinator tick failed (${result.status})`);
+    };
+    context.waitUntil(work());
+  },
 };
 
+export { IncidentCoordinator };
 export default handler;

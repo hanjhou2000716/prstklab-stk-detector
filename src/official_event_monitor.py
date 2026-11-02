@@ -22,6 +22,7 @@ from src.event_ledger import (
     canonical_event_key,
     is_secondary_commentary,
     preflight_event_provenance,
+    source_url_diagnostic,
     taiwan_investor_priority,
 )
 from src.external_observation_input import (
@@ -842,6 +843,7 @@ def write_status_output(
                 "notification_key": str(notification_key_for_event(candidate) or "")[:160],
                 "source_type": str(candidate.get("source_key") or candidate.get("source_type") or "")[:48],
                 "source_identity": str(candidate.get("source_identity") or candidate.get("event_ref") or "")[:160],
+                **_source_evidence_fields(candidate),
                 "summary_status": str(candidate.get("summary_status") or ("pending" if candidate_incomplete and is_financialjuice_priority_event(candidate) else ""))[:48],
                 "summary_contract_version": str(candidate.get("public_summary_version") or "")[:40],
                 "summary_fingerprint": hashlib.sha256(
@@ -978,6 +980,7 @@ def write_status_output(
                 "notification_key": "",
                 "source_type": "financialjuice",
                 "source_identity": ref[:160],
+                **_source_evidence_fields(pending),
                 "summary_status": "pending",
                 "summary_contract_version": str(pending.get("summary_contract_version") or "")[:40],
                 "summary_fingerprint": "",
@@ -1100,6 +1103,9 @@ def write_status_output(
                     "fact_fingerprint": hashlib.sha256(batch_key.encode("utf-8")).hexdigest()[:16],
                     "key_fingerprint": batch_fingerprint,
                     "notification_key": str(notification_key_for_event(batch_candidate) or "")[:160],
+                    "source_type": str(batch_candidate.get("source_key") or batch_candidate.get("source_type") or "")[:48],
+                    "source_identity": str(batch_candidate.get("source_identity") or batch_candidate.get("event_ref") or "")[:160],
+                    **_source_evidence_fields(batch_candidate),
                     "summary_contract_version": str(batch_candidate.get("public_summary_version") or "")[:40],
                     "summary_fingerprint": "",
                     "stage": "content_preflight",
@@ -1131,6 +1137,7 @@ def write_status_output(
             "notification_key": str(notification_key_for_event(batch_candidate) or "")[:160],
             "source_type": str(batch_candidate.get("source_key") or batch_candidate.get("source_type") or "")[:48],
             "source_identity": str(batch_candidate.get("source_identity") or batch_candidate.get("event_ref") or "")[:160],
+            **_source_evidence_fields(batch_candidate),
             "summary_status": str(batch_candidate.get("summary_status") or "")[:48],
             "summary_contract_version": str(batch_candidate.get("public_summary_version") or "")[:40],
             "summary_fingerprint": hashlib.sha256(batch_caption.encode("utf-8")).hexdigest(),
@@ -1293,6 +1300,21 @@ def _safe_vendor_importance(event: dict[str, Any]) -> float:
         return float(event.get("vendor_importance") or 0)
     except (TypeError, ValueError, OverflowError):
         return 0.0
+
+
+def _source_evidence_fields(event: dict[str, Any] | None) -> dict[str, Any]:
+    row = event if isinstance(event, dict) else {}
+    identity = str(row.get("source_identity") or row.get("event_ref") or "").strip()
+    source_time = str(row.get("source_published_at") or row.get("published_at") or "").strip()
+    first_detected = str(row.get("first_detected_at") or "").strip()
+    expires = str(row.get("expires_at") or "").strip()
+    return {
+        "source_identity_known": bool(identity),
+        "source_time_known": bool(source_time),
+        "first_detected_known": bool(first_detected),
+        "expiry_known": bool(expires),
+        "source_url_evidence": source_url_diagnostic(row),
+    }
 
 
 def _event_age_seconds(event: dict[str, Any]) -> float:

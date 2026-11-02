@@ -321,6 +321,48 @@ def test_run_pagination_rejects_cross_host_link():
         )
 
 
+def test_run_pagination_accepts_repository_id_alias_for_exact_known_workflow(monkeypatch):
+    monkeypatch.setenv("GITHUB_REPOSITORY_ID", "1309835643")
+    url = monitor_liveness._next_link(
+        '<https://api.github.com/repositories/1309835643/actions/workflows/official-event-monitor.yml/runs?branch=main&created=%3E%3D2026-11-01T00%3A00%3A00Z&page=2&per_page=25>; rel="next"',
+        api_url="https://api.github.com",
+        expected_path=(
+            "/repos/owner/repo/actions/workflows/official-event-monitor.yml/runs",
+            "/repos/owner/repo/actions/workflows/320209983/runs",
+            "/repositories/1309835643/actions/workflows/official-event-monitor.yml/runs",
+            "/repositories/1309835643/actions/workflows/320209983/runs",
+        ),
+        expected_page=2,
+        per_page=25,
+        expected_query={"branch": "main", "created": ">=2026-11-01T00:00:00Z"},
+    )
+    assert url.startswith("https://api.github.com/repositories/1309835643/")
+
+
+@pytest.mark.parametrize("url", [
+    "https://api.github.com/repositories/999/actions/workflows/official-event-monitor.yml/runs?branch=main&created=x&page=2&per_page=25",
+    "https://attacker.example/repositories/1309835643/actions/workflows/official-event-monitor.yml/runs?branch=main&created=x&page=2&per_page=25",
+    "https://api.github.com/repositories/1309835643/actions/workflows/other.yml/runs?branch=main&created=x&page=2&per_page=25",
+])
+def test_run_pagination_rejects_unapproved_repository_id_alias(url, monkeypatch):
+    monkeypatch.setenv("GITHUB_REPOSITORY_ID", "1309835643")
+    link = f'<{url}>; rel="next"'
+    with pytest.raises(monitor_liveness.LivenessAuditError, match="pagination_identity_invalid"):
+        monitor_liveness._next_link(
+            link,
+            api_url="https://api.github.com",
+            expected_path=(
+                "/repos/owner/repo/actions/workflows/official-event-monitor.yml/runs",
+                "/repos/owner/repo/actions/workflows/320209983/runs",
+                "/repositories/1309835643/actions/workflows/official-event-monitor.yml/runs",
+                "/repositories/1309835643/actions/workflows/320209983/runs",
+            ),
+            expected_page=2,
+            per_page=25,
+            expected_query={"branch": "main", "created": "x"},
+        )
+
+
 def test_existing_incident_is_reminded_after_thirty_minutes(monkeypatch):
     now = datetime(2026, 10, 13, 6, 0, tzinfo=UTC)
     run = _run(5678, now - timedelta(minutes=16))

@@ -1,0 +1,61 @@
+name: Import legacy incident state
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_import:
+        description: Import the read-only incident journal and legacy issue snapshot into the coordinator
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  actions: read
+  contents: read
+  id-token: write
+  issues: read
+
+concurrency:
+  group: prstk-incident-legacy-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    if: github.ref == 'refs/heads/main' && inputs.confirm_import == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out trusted importer
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11"
+      - name: Import one bounded and notification-suppressed snapshot
+        env:
+          CONFIRM_IMPORT: ${{ inputs.confirm_import }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REPOSITORY_ID: ${{ github.event.repository.id }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_API_URL: ${{ github.api_url }}
+          INCIDENT_OPS_URL: ${{ vars.INCIDENT_OPS_URL }}
+          INCIDENT_OPS_AUDIENCE: https://prstk-incident-ops
+          INCIDENT_IMPORT_SNAPSHOT_PATH: ${{ runner.temp }}/incident-legacy-import.json
+          INCIDENT_IMPORT_RESULT_PATH: ${{ runner.temp }}/incident-legacy-import-result.json
+        run: python -m scripts.incident_ops_import
+      - name: Upload immutable import snapshot and result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: incident-legacy-import-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/incident-legacy-import.json
+            ${{ runner.temp }}/incident-legacy-import-result.json
+          if-no-files-found: warn
+          retention-days: 90
