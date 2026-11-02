@@ -34,6 +34,7 @@ from gmail_ingress import GmailIngressService  # noqa: E402
 
 SYNC_RESULT_KEYS = (
     "status", "processed", "failed", "duplicate", "duplicate_count", "accepted_new_count",
+    "system_notification_ignored_count",
     "material_candidate_count", "priority_candidate_count", "skipped", "history_gap",
     "failure_types", "latest_financialjuice_diagnostics", "candidate_diagnostics",
     "notification_requested", "sync_started_at", "sync_completed_at",

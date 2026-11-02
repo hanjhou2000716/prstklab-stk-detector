@@ -94,6 +94,65 @@ def event_source_url(event: dict[str, Any] | None) -> str:
     return normalize_source_url(raw_text)
 
 
+def source_url_diagnostic(event: dict[str, Any] | None) -> dict[str, Any]:
+    """Capture URL shape before validation without persisting credentials or query values."""
+    if not isinstance(event, dict):
+        return {"present": False, "parse_status": "event_missing"}
+    raw: Any = event.get("source_url") or event.get("url")
+    instrument = event.get("instrument")
+    if not raw and isinstance(instrument, dict):
+        raw = instrument.get("source_url") or instrument.get("url")
+    trace = event.get("source_trace")
+    if not raw and isinstance(trace, dict):
+        raw = trace.get("source_url") or trace.get("url")
+    raw_text = str(raw or "").strip()
+    if not raw_text:
+        return {"present": False, "parse_status": "missing"}
+    try:
+        parsed = urlsplit(raw_text)
+        hostname = (parsed.hostname or "").lower()
+        port = parsed.port
+        query_keys = sorted({
+            re.sub(r"[^A-Za-z0-9_.-]", "?", key)[:48]
+            for key, _value in parse_qsl(parsed.query, keep_blank_values=True, max_num_fields=100)
+        })[:20]
+        safe_segments = []
+        for segment in parsed.path.split("/"):
+            if not segment:
+                safe_segments.append("")
+            elif (re.fullmatch(r"[A-Za-z0-9._~-]{1,48}", segment)
+                  and not re.search(r"(?i)(token|secret|password|signature|session|auth|api[-_]?key)", segment)):
+                safe_segments.append(segment)
+            else:
+                safe_segments.append("[redacted]")
+        safe_path = "/".join(safe_segments)[:240]
+        secure_shape = parsed.scheme.casefold() == "https" and bool(hostname) and not parsed.username and not parsed.password
+        redacted = ""
+        if parsed.scheme and hostname:
+            authority = f"[{hostname}]" if ":" in hostname else hostname
+            if port is not None:
+                authority += f":{port}"
+            redacted = f"{parsed.scheme.casefold()}://{authority}{safe_path}"
+            if parsed.query:
+                redacted += f"?[query values redacted; keys={','.join(query_keys)}]"
+        return {
+            "present": True,
+            "parse_status": "parsed" if parsed.scheme and hostname else "invalid_syntax_or_host",
+            "secure_shape": secure_shape,
+            "scheme": parsed.scheme.casefold()[:16],
+            "host": hostname[:200],
+            "port": port,
+            "credentials_present": bool(parsed.username or parsed.password),
+            "path": safe_path,
+            "query_keys": query_keys,
+            "query_values_redacted": bool(parsed.query),
+            "redacted_original": redacted[:500],
+        }
+    except (TypeError, ValueError):
+        # Do not echo malformed raw input: it may contain credentials.
+        return {"present": True, "parse_status": "invalid_syntax", "secure_shape": False}
+
+
 def preflight_event_provenance(event: dict[str, Any] | None) -> dict[str, Any]:
     """Validate all provenance that an event-ledger row would persist.
 
@@ -102,6 +161,7 @@ def preflight_event_provenance(event: dict[str, Any] | None) -> dict[str, Any]:
     """
     if not isinstance(event, dict):
         return {"ok": False, "reason": "ledger_event_identity_invalid"}
+    url_diagnostic = source_url_diagnostic(event)
     try:
         source_url = event_source_url(event)
         source_key = str(event.get("source_key") or event.get("source") or "").strip().casefold()
@@ -113,9 +173,9 @@ def preflight_event_provenance(event: dict[str, Any] | None) -> dict[str, Any]:
             source_url = normalize_source_url(FINANCIALJUICE_SOURCE_URL)
         parsed = urlsplit(source_url)
     except (TypeError, ValueError):
-        return {"ok": False, "reason": "ledger_source_url_invalid"}
+        return {"ok": False, "reason": "ledger_source_url_invalid", "source_url_evidence": url_diagnostic}
     if parsed.scheme != "https" or not parsed.hostname:
-        return {"ok": False, "reason": "ledger_source_url_invalid"}
+        return {"ok": False, "reason": "ledger_source_url_invalid", "source_url_evidence": url_diagnostic}
 
     sources = event.get("verified_sources") or event.get("sources") or event.get("evidence") or []
     if isinstance(sources, list):
@@ -125,23 +185,24 @@ def preflight_event_provenance(event: dict[str, Any] | None) -> dict[str, Any]:
                 continue
             raw_text = str(raw_source).strip()
             if "://" not in raw_text and "." not in raw_text.split("/", 1)[0]:
-                return {"ok": False, "reason": "ledger_verified_source_invalid"}
+                return {"ok": False, "reason": "ledger_verified_source_invalid", "source_url_evidence": url_diagnostic}
             try:
                 verified_url = normalize_source_url(raw_source)
                 verified = urlsplit(verified_url)
             except (TypeError, ValueError):
-                return {"ok": False, "reason": "ledger_verified_source_invalid"}
+                return {"ok": False, "reason": "ledger_verified_source_invalid", "source_url_evidence": url_diagnostic}
             if verified.scheme != "https" or not verified.hostname:
                 return {"ok": False, "reason": "ledger_verified_source_invalid"}
 
     key = canonical_event_key(event)
     if not key or key == "none":
-        return {"ok": False, "reason": "ledger_event_identity_invalid"}
+        return {"ok": False, "reason": "ledger_event_identity_invalid", "source_url_evidence": url_diagnostic}
     return {
         "ok": True,
         "event_key": key,
         "source_url": source_url,
         "source_domain": parsed.hostname.lower().removeprefix("www."),
+        "source_url_evidence": url_diagnostic,
     }
 
 

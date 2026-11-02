@@ -161,6 +161,25 @@ def test_market_rejects_stale_live_and_source_mismatch():
     assert any("source_domain" in error for error in errors)
 
 
+def test_market_accepts_official_provider_display_aliases_when_identity_matches():
+    market = _market()
+    quote = market["indices"][0]
+    quote.update({
+        "ticker": "TXF",
+        "source_label": "TAIFEX日盤備援",
+        "quote_source": "Supabase verified TAIFEX daily observation",
+        "source_url": "https://www.taifex.com.tw/cht/3/futDailyMarketExcel",
+    })
+    assert not any("source_label is not represented" in error for error in validate_market(market))
+
+
+def test_market_still_rejects_different_known_provider_identity_without_url():
+    market = _market()
+    quote = market["indices"][0]
+    quote.update({"source_label": "TWSE", "quote_source": "TAIFEX public futures quote", "source_url": ""})
+    assert any("source_label is not represented" in error for error in validate_market(market))
+
+
 def test_market_schema_accepts_provenance_and_crosscheck_fields():
     market = _market()
     quote = market["indices"][0]

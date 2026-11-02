@@ -928,6 +928,318 @@
         "workflow_path": ".github/workflows/unified-research-report.yml"
       }
     },
+    "ab799dc2abe3c6aecef9da10e0ce1ee5a62517d9": {
+      ".github/workflows/deploy-pages.yml": {
+        "gate_job": "deploy",
+        "gate_step": "Wait for the production writer queue",
+        "gate_step_index": 3,
+        "job_needs": {
+          "deploy": []
+        },
+        "protected_jobs": [
+          "deploy"
+        ],
+        "protected_steps": [
+          {
+            "index": 15,
+            "job": "deploy",
+            "kind": "publication",
+            "name": "\u4e0a\u50b3\u5100\u8868\u677f"
+          },
+          {
+            "index": 16,
+            "job": "deploy",
+            "kind": "publication",
+            "name": "\u90e8\u7f72"
+          }
+        ],
+        "workflow_content_sha256": "36213a55a406ec96b2bb6105ad92cccd6b5fbb470df2c7a11ed553efe7118f4d",
+        "workflow_id": 318841880,
+        "workflow_path": ".github/workflows/deploy-pages.yml"
+      },
+      ".github/workflows/emergency-alert.yml": {
+        "gate_job": "send-emergency-alert",
+        "gate_step": "Wait for production writer queue",
+        "gate_step_index": 3,
+        "job_needs": {
+          "send-emergency-alert": []
+        },
+        "protected_jobs": [
+          "send-emergency-alert"
+        ],
+        "protected_steps": [
+          {
+            "index": 12,
+            "job": "send-emergency-alert",
+            "kind": "publication",
+            "name": "Commit refreshed Mini App data"
+          },
+          {
+            "index": 15,
+            "job": "send-emergency-alert",
+            "kind": "publication",
+            "name": "Upload Pages artifact"
+          },
+          {
+            "index": 16,
+            "job": "send-emergency-alert",
+            "kind": "publication",
+            "name": "Deploy Pages"
+          },
+          {
+            "index": 19,
+            "job": "send-emergency-alert",
+            "kind": "sender",
+            "name": "Send Telegram emergency alert"
+          }
+        ],
+        "workflow_content_sha256": "8cbc0f89416042c7cfb9d23f4ca174d13695cd11abf7e6d992d5f9cc8c413c5f",
+        "workflow_id": 319337480,
+        "workflow_path": ".github/workflows/emergency-alert.yml"
+      },
+      ".github/workflows/monitor-health.yml": {
+        "gate_job": "publish-monitor-health",
+        "gate_step": "Wait for production writer queue",
+        "gate_step_index": 3,
+        "job_needs": {
+          "publish-monitor-health": []
+        },
+        "protected_jobs": [
+          "publish-monitor-health"
+        ],
+        "protected_steps": [
+          {
+            "index": 8,
+            "job": "publish-monitor-health",
+            "kind": "publication",
+            "name": "Commit monitor diagnostics"
+          },
+          {
+            "index": 11,
+            "job": "publish-monitor-health",
+            "kind": "publication",
+            "name": "Upload Pages artifact"
+          },
+          {
+            "index": 12,
+            "job": "publish-monitor-health",
+            "kind": "publication",
+            "name": "Deploy GitHub Pages"
+          }
+        ],
+        "workflow_content_sha256": "e8dd1f6cd0662adc3a7f6b3dc210b09552066be650bd58ebf577b6b846e66dd9",
+        "workflow_id": 326066489,
+        "workflow_path": ".github/workflows/monitor-health.yml"
+      },
+      ".github/workflows/official-event-monitor.yml": {
+        "gate_job": "monitor-send-deploy",
+        "gate_step": "Wait for production writer queue",
+        "gate_step_index": 13,
+        "job_needs": {
+          "monitor-admission": [],
+          "monitor-send-deploy": [
+            "monitor-admission"
+          ]
+        },
+        "protected_jobs": [
+          "monitor-send-deploy"
+        ],
+        "protected_steps": [
+          {
+            "index": 18,
+            "job": "monitor-send-deploy",
+            "kind": "publication",
+            "name": "Build and publish event release"
+          },
+          {
+            "index": 21,
+            "job": "monitor-send-deploy",
+            "kind": "publication",
+            "name": "Upload Pages artifact"
+          },
+          {
+            "index": 22,
+            "job": "monitor-send-deploy",
+            "kind": "publication",
+            "name": "Deploy Pages"
+          },
+          {
+            "index": 25,
+            "job": "monitor-send-deploy",
+            "kind": "sender",
+            "name": "Send new official event"
+          },
+          {
+            "index": 28,
+            "job": "monitor-send-deploy",
+            "kind": "publication",
+            "name": "Persist notification ledger state after delivery"
+          },
+          {
+            "index": 31,
+            "job": "monitor-send-deploy",
+            "kind": "publication",
+            "name": "Upload reconciled Pages artifact"
+          },
+          {
+            "index": 32,
+            "job": "monitor-send-deploy",
+            "kind": "publication",
+            "name": "Deploy reconciled Pages release"
+          }
+        ],
+        "workflow_content_sha256": "06a2d102ec751e14be65729798cacd19a6a636fb6e6075022b8375e99940eb8a",
+        "workflow_id": 320209983,
+        "workflow_path": ".github/workflows/official-event-monitor.yml"
+      },
+      ".github/workflows/refresh-dashboard.yml": {
+        "gate_job": "refresh-and-deploy",
+        "gate_step": "Wait for production writer queue",
+        "gate_step_index": 3,
+        "job_needs": {
+          "refresh-and-deploy": []
+        },
+        "protected_jobs": [
+          "refresh-and-deploy"
+        ],
+        "protected_steps": [
+          {
+            "index": 8,
+            "job": "refresh-and-deploy",
+            "kind": "publication",
+            "name": "Build and publish immutable data release"
+          },
+          {
+            "index": 11,
+            "job": "refresh-and-deploy",
+            "kind": "publication",
+            "name": "Upload Pages artifact"
+          },
+          {
+            "index": 12,
+            "job": "refresh-and-deploy",
+            "kind": "publication",
+            "name": "Deploy Pages"
+          }
+        ],
+        "workflow_content_sha256": "d13ff04f3cffda9661c940249ccfc456c3e42bce8eac54be712bead6e73d9962",
+        "workflow_id": 318848659,
+        "workflow_path": ".github/workflows/refresh-dashboard.yml"
+      },
+      ".github/workflows/scheduled-brief.yml": {
+        "gate_job": "refresh-notify-deploy",
+        "gate_step": "Wait for production writer queue",
+        "gate_step_index": 11,
+        "job_needs": {
+          "occurrence": [],
+          "refresh-notify-deploy": [
+            "occurrence"
+          ]
+        },
+        "protected_jobs": [
+          "refresh-notify-deploy"
+        ],
+        "protected_steps": [
+          {
+            "index": 25,
+            "job": "refresh-notify-deploy",
+            "kind": "publication",
+            "name": "Publish snapshot and manifest"
+          },
+          {
+            "index": 30,
+            "job": "refresh-notify-deploy",
+            "kind": "publication",
+            "name": "Upload Pages artifact"
+          },
+          {
+            "index": 31,
+            "job": "refresh-notify-deploy",
+            "kind": "publication",
+            "name": "Deploy Pages"
+          },
+          {
+            "index": 42,
+            "job": "refresh-notify-deploy",
+            "kind": "sender",
+            "name": "Send Telegram brief after successful publication"
+          },
+          {
+            "index": 45,
+            "job": "refresh-notify-deploy",
+            "kind": "publication",
+            "name": "Persist notification ledger state after delivery"
+          },
+          {
+            "index": 48,
+            "job": "refresh-notify-deploy",
+            "kind": "publication",
+            "name": "Upload reconciled Pages artifact"
+          },
+          {
+            "index": 49,
+            "job": "refresh-notify-deploy",
+            "kind": "publication",
+            "name": "Deploy reconciled Pages release"
+          },
+          {
+            "index": 54,
+            "job": "refresh-notify-deploy",
+            "kind": "sender",
+            "name": "Send release-gated Creator notifications"
+          }
+        ],
+        "workflow_content_sha256": "ad071ee46c89cdf082b2e256351188167dab3994b5d03890b696b586f7ec5e32",
+        "workflow_id": 318853044,
+        "workflow_path": ".github/workflows/scheduled-brief.yml"
+      },
+      ".github/workflows/unified-research-report.yml": {
+        "gate_job": "build-and-deploy",
+        "gate_step": "Recheck production revision before persistence",
+        "gate_step_index": 23,
+        "job_needs": {
+          "build-and-deploy": []
+        },
+        "protected_jobs": [
+          "build-and-deploy"
+        ],
+        "protected_steps": [
+          {
+            "index": 25,
+            "job": "build-and-deploy",
+            "kind": "publication",
+            "name": "Persist research attempt lease"
+          },
+          {
+            "index": 26,
+            "job": "build-and-deploy",
+            "kind": "publication",
+            "name": "Persist incremental research caches"
+          },
+          {
+            "index": 28,
+            "job": "build-and-deploy",
+            "kind": "publication",
+            "name": "\u4fdd\u5b58\u6700\u65b0\u516c\u958b\u7814\u7a76\u6458\u8981"
+          },
+          {
+            "index": 31,
+            "job": "build-and-deploy",
+            "kind": "publication",
+            "name": "Upload Pages artifact"
+          },
+          {
+            "index": 32,
+            "job": "build-and-deploy",
+            "kind": "publication",
+            "name": "Deploy Pages"
+          }
+        ],
+        "workflow_content_sha256": "0fb265c1888d483c67209fa32a0417f63b07f708fe0747aed33aa8ac55c9432d",
+        "workflow_id": 319283753,
+        "workflow_path": ".github/workflows/unified-research-report.yml"
+      }
+    },
     "cc40ba0401362f6214b540c70b5e1aa3100d5773": {
       ".github/workflows/deploy-pages.yml": {
         "gate_job": "deploy",
@@ -1808,7 +2120,7 @@
           "name": "Send release-gated Creator notifications"
         }
       ],
-      "workflow_content_sha256": "bf1d5d52de756cc8f72d7bc53b09b34d54a7160d42f92b194d3657d6bc287745",
+      "workflow_content_sha256": "cf12dc3b6f5063a8a0cafb822be1ef02f458df475a85bfac4ea04d8886637ae6",
       "workflow_id": 318853044,
       "workflow_path": ".github/workflows/scheduled-brief.yml"
     },
@@ -1854,7 +2166,7 @@
           "name": "Deploy Pages"
         }
       ],
-      "workflow_content_sha256": "4495c21f290a48e2a19a2cdd6871ea64b10b00339d8ba9e43632d251a40552e1",
+      "workflow_content_sha256": "492ad2744eb737ca5eae6fb5f444248422290deca197bf8e3d815f85827fb44c",
       "workflow_id": 319283753,
       "workflow_path": ".github/workflows/unified-research-report.yml"
     }

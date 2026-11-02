@@ -20,6 +20,7 @@ permissions:
   actions: read
   contents: read
   issues: write
+  id-token: write
 
 concurrency:
   group: prstk-incident-reconciliation
@@ -107,3 +108,20 @@ jobs:
           path: ${{ runner.temp }}/incident-reconciliation-state.json
           if-no-files-found: error
           retention-days: 90
+      - name: Hand off verified evidence to the durable incident coordinator
+        id: incident_coordinator
+        if: always() && steps.upload_result.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_API_URL: ${{ github.api_url }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+          GITHUB_SHA: ${{ github.sha }}
+          INCIDENT_RECONCILIATION_RESULT_PATH: ${{ runner.temp }}/incident-reconciliation-state.json
+          INCIDENT_RESULT_ARTIFACT_ID: ${{ steps.upload_result.outputs.artifact-id }}
+          INCIDENT_RESULT_ARTIFACT_DIGEST: ${{ steps.upload_result.outputs.artifact-digest }}
+          INCIDENT_OPS_URL: ${{ vars.INCIDENT_OPS_URL }}
+          INCIDENT_OPS_AUDIENCE: https://prstk-incident-ops
+          INCIDENT_OPS_MODE: ${{ vars.INCIDENT_OPS_MODE || 'shadow' }}
+        run: python -m scripts.incident_ops_sync

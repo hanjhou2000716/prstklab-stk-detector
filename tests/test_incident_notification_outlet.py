@@ -74,6 +74,7 @@ def test_prepare_groups_one_verified_consumer_into_one_window_notification(monke
     result = outlet.prepare_outlet(
         repository="owner/repo", api_url="https://api.github.com", token="x",
         now=datetime(2026, 10, 28, 10, 1, 37, tzinfo=UTC), deadline_monotonic=10**20,
+        record_native_delivery=True,
     )
     assert result["notification_due"] is True
     assert result["notification_mode"] == "half_hour_digest"
@@ -98,6 +99,25 @@ def test_prepare_groups_one_verified_consumer_into_one_window_notification(monke
         now=datetime(2026, 10, 28, 10, 4, tzinfo=UTC), deadline_monotonic=10**20,
     )
     assert duplicate["notification_due"] is False
+
+
+def test_default_legacy_outlet_records_due_decision_without_claiming_delivery(monkeypatch):
+    issue = _issue()
+    journal = _stub_journal(monkeypatch)
+    _stub_verified_consumer(monkeypatch)
+    monkeypatch.setattr(outlet, "_open_incidents", lambda *a, **k: [issue])
+
+    result = outlet.prepare_outlet(
+        repository="owner/repo", api_url="https://api.github.com", token="x",
+        now=datetime(2026, 10, 28, 10, 1, 37, tzinfo=UTC), deadline_monotonic=10**20,
+    )
+
+    assert result["notification_due"] is True
+    assert result["status"] == "notification_due_delivery_not_attempted"
+    assert result["delivery_state"] == "not_sent_legacy_native_emitter_removed"
+    assert result["journal_status"] == "unchanged_delivery_delegated_to_coordinator"
+    assert result["decision_id"] == ""
+    assert journal["pending_decision"] is None
 
 
 def test_historical_pending_issue_cannot_reuse_an_old_notification_reservation(monkeypatch):
@@ -131,6 +151,51 @@ def test_critical_identity_or_claim_incident_can_alert_immediately(monkeypatch):
     assert result["notification_mode"] == "immediate_critical"
     assert result["consumers"][0]["confirmations"][0]["critical"] is True
     assert result["consumers"][0]["confirmations"][0]["next_reminder_at"] == "2026-10-28T10:30:00+00:00"
+
+
+def test_real_official_monitor_identity_marker_is_recognized_and_immediate(monkeypatch):
+    marker = (
+        "official-monitor-audit-incident=official-monitor-audit:"
+        "monitor_liveness_pagination_identity_invalid:host=api.github.com;"
+        "path=/repositories/1309835643/actions/workflows/official-event-monitor.yml/runs"
+    )
+    issue = {
+        "number": 1144,
+        "title": f"{outlet.AUDIT_ISSUE_TITLE_PREFIX} / main",
+        "state": "open",
+        "body": "\n".join((
+            marker,
+            "Component: official_monitor_liveness",
+            "Failure class: monitor_liveness_pagination_identity_invalid",
+            "First failure: 2026-11-01T09:06:51Z",
+            "Observed at: 2026-11-01T09:06:51Z",
+            "Alert pending consumer: 41291664641/1",
+            "Alert pending since: 2026-11-01T09:06:56Z",
+        )),
+    }
+    _stub_journal(monkeypatch)
+    _stub_verified_consumer(monkeypatch, issue_number=1144)
+    monkeypatch.setattr(outlet, "_load_verified_consumer", lambda **_k: (
+        {"head_sha": "a" * 40, "path": ".github/workflows/incident-reconciliation.yml"},
+        {"notification_due": True, "notification_cadence_confirmations": [{
+            "issue_number": 1144, "marker": marker, "next_reminder_at": "2026-11-01T09:30:00+00:00",
+        }]},
+    ))
+    monkeypatch.setattr(outlet, "_open_incidents", lambda *a, **k: [issue])
+
+    assert outlet._issue_marker(issue) == marker
+    assert outlet._valid_issue_marker(marker, issue["title"])
+    result = outlet.prepare_outlet(
+        repository="owner/repo", api_url="https://api.github.com", token="x",
+        now=datetime(2026, 11, 1, 9, 12, tzinfo=UTC), deadline_monotonic=10**20,
+    )
+
+    assert result["candidate_count"] == 1
+    assert result["notification_mode"] == "immediate_critical"
+
+
+def test_delayed_worker_still_processes_current_half_hour_window():
+    assert outlet._ordinary_window_open(datetime(2026, 11, 1, 9, 8, tzinfo=UTC)) is True
 
 
 def test_prepare_rejects_issue_without_source_artifact_confirmation(monkeypatch):

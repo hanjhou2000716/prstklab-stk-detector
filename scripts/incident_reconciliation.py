@@ -707,13 +707,31 @@ def _research_incident(
     ):
         raise LivenessAuditError("incident_research_terminal_identity_invalid")
     reason_code = ""
+    stages = terminal.get("stages") if isinstance(terminal, dict) else {}
+    stages = stages if isinstance(stages, dict) else {}
+    research_noop = stages.get("research_noop") is True
+    publication_expected = bool(
+        terminal is not None
+        and terminal.get("production_run") is True
+        and not research_noop
+        and (
+            stages.get("research_publish") is True
+            or stages.get("deployment") in {"success", "failure"}
+            or stages.get("deployment_available") is True
+        )
+    )
+    publication_verified = stages.get("publication_verified") is True
+    if publication_expected and not publication_verified:
+        reason_code = "research_publication_not_verified"
     if terminal is not None:
         try:
-            reason_code, _detail = normalize_research_reason(
+            normalized_reason, _detail = normalize_research_reason(
                 terminal.get("reason"), terminal.get("reason_detail", ""),
             )
         except ValueError as exc:
             raise LivenessAuditError("incident_research_terminal_reason_invalid") from exc
+        if not reason_code:
+            reason_code = normalized_reason
     if terminal is not None and terminal.get("production_run") is False:
         return {
             "component": "unified_research_report",
@@ -732,7 +750,10 @@ def _research_incident(
     ]
     if len(matches) > 1:
         raise LivenessAuditError("incident_research_duplicate_issue")
-    terminal_degraded = terminal is not None and terminal.get("business_status") == "degraded"
+    terminal_degraded = terminal is not None and (
+        terminal.get("business_status") == "degraded"
+        or (publication_expected and not publication_verified)
+    )
     terminal_missing = terminal is None
     failure = terminal_missing or conclusion not in {"success", "neutral", "skipped"} or terminal_degraded
     latest_reason = reason_code or (

@@ -71,6 +71,32 @@ def _instrument_master_contract_errors(document: dict[str, Any]) -> list[str]:
     return errors
 
 
+_SOURCE_PROVIDER_ALIASES = {
+    "twse": ("twse", "taiwan stock exchange", "台灣證券交易所", "臺灣證券交易所", "證交所"),
+    "tpex": ("tpex", "taipei exchange", "taipei exchange market", "櫃買中心", "證券櫃檯買賣中心"),
+    "taifex": ("taifex", "taiwan futures exchange", "台灣期貨交易所", "臺灣期貨交易所"),
+    "yahoo": ("yahoo",),
+}
+_SOURCE_PROVIDER_DOMAINS = {
+    "twse": ("twse.com.tw",),
+    "tpex": ("tpex.org.tw",),
+    "taifex": ("taifex.com.tw",),
+    "yahoo": ("yahoo.com",),
+}
+
+
+def _source_provider_identity(value: str) -> str:
+    normalized = str(value or "").strip().casefold()
+    for provider, aliases in _SOURCE_PROVIDER_ALIASES.items():
+        if any(alias in normalized for alias in aliases):
+            return provider
+    return ""
+
+
+def _host_matches_domain(host: str, expected_domain: str) -> bool:
+    return host == expected_domain or host.endswith(f".{expected_domain}")
+
+
 def _quote_contract_errors(quote: dict[str, Any], path: str) -> list[str]:
     errors: list[str] = []
     freshness = str(quote.get("freshness") or "")
@@ -83,16 +109,19 @@ def _quote_contract_errors(quote: dict[str, Any], path: str) -> list[str]:
     source = str(quote.get("quote_source") or "").strip().lower()
     url = str(quote.get("source_url") or "").strip()
     domain = (urlparse(url).hostname or "").lower().removeprefix("www.") if url else ""
-    official_labels = {"twse", "taifex", "tpex"}
-    if source_label in official_labels and domain and not any(
-        token in domain for token in ("twse.com.tw", "taifex.com.tw", "tpex.org.tw")
-    ):
+    label_provider = _source_provider_identity(source_label)
+    source_provider = _source_provider_identity(source)
+    expected_domains = _SOURCE_PROVIDER_DOMAINS.get(label_provider, ())
+    if expected_domains and domain and not any(_host_matches_domain(domain, item) for item in expected_domains):
         errors.append(f"{path}: official source_label conflicts with source_domain={domain}")
-    if source_label == "yahoo" and domain and "yahoo.com" not in domain:
-        errors.append(f"{path}: Yahoo source_label conflicts with source_domain={domain}")
-    # TPEx is often rendered as TPEX/TPEx in the provider label.
-    normalized_label = "tpex" if source_label == "tpex" else source_label
-    if normalized_label and source and normalized_label not in source:
+    if source_label and source:
+        if label_provider:
+            represented = source_provider == label_provider
+        else:
+            represented = source_label in source
+    else:
+        represented = True
+    if not represented:
         errors.append(f"{path}: source_label is not represented in quote_source")
 
     # Once a producer publishes the source-priority policy, keep the policy

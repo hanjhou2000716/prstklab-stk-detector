@@ -23,6 +23,9 @@ LEGACY_COMMITS = (
     "16bc07cc25aeeb9a7145dbabac6eab1b43251926",
     "017f6da40c8e8900088844f21bfdeb2bcffec4e8",
     "62b8e4fb7e5f53764ae0d8923f50e203c5b009dc",
+    # Still-running producer observed in run 41153602855; keep its exact
+    # publication gate contract during the rolling upgrade from #1122.
+    "ab799dc2abe3c6aecef9da10e0ce1ee5a62517d9",
 )
 PUBLISH_MARKERS = (
     "python -m src.data_release --publish",

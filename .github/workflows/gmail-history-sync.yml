@@ -45,6 +45,7 @@ jobs:
       GMAIL_OAUTH_CLIENT_ID: ${{ secrets.GMAIL_OAUTH_CLIENT_ID }}
       GMAIL_OAUTH_CLIENT_SECRET: ${{ secrets.GMAIL_OAUTH_CLIENT_SECRET }}
       GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+      PRSTK_INCIDENT_GMAIL_FROM: ${{ vars.PRSTK_INCIDENT_GMAIL_FROM }}
       NOTIFY: ${{ github.event_name == 'workflow_dispatch' && (inputs.notify == true && 'true' || 'false') || github.event_name == 'repository_dispatch' && (github.event.client_payload.notify == false || github.event.client_payload.notify == 'false') && 'false' || 'true' }}
     steps:
       - name: Checkout
@@ -172,6 +173,7 @@ jobs:
           candidate_reason=""
           manual_replay="0"
           failed="0"
+          system_notification_ignored="0"
           status="not_checked"
           parser_sync_state="not_started"
           source_health_state="not_checked"
@@ -229,6 +231,7 @@ jobs:
             candidate_reason="$(jq -r '.candidate_diagnostics.primary_reason // ""' gmail-sync-result.json)"
             manual_replay="$(jq -r 'if ((.candidate_diagnostics.counts.manual_replay // 0) | type) == "number" then (.candidate_diagnostics.counts.manual_replay // 0) else 0 end' gmail-sync-result.json)"
             failed="$(jq -r 'if (.failed | type) == "number" then .failed else 0 end' gmail-sync-result.json)"
+            system_notification_ignored="$(jq -r 'if (.system_notification_ignored_count | type) == "number" then .system_notification_ignored_count else 0 end' gmail-sync-result.json)"
             status="$(jq -r '.status // "unknown"' gmail-sync-result.json)"
             storage_error="$(jq -r '.storage_error // ""' gmail-sync-result.json)"
             diagnostic_reason="$(jq -r '.diagnostic_reason // ""' gmail-sync-result.json)"
@@ -296,6 +299,9 @@ jobs:
           elif [ "$failed" -gt 0 ]; then
             notification_status="failed"
             notification_reason="gmail_sync_failed"
+          elif [ "$system_notification_ignored" -gt 0 ] && [ "$accepted_new" -eq 0 ] && [ "$material_candidates" -eq 0 ] && [ "$priority_candidates" -eq 0 ] && [ "$duplicate" -eq 0 ]; then
+            notification_status="system_notification_ignored"
+            notification_reason="trusted_prstk_incident_notification_excluded_from_market_ingestion"
           elif [ "$material_candidates" -gt 0 ] || [ "$priority_candidates" -gt 0 ]; then
             if [ "$DISPATCH_OUTCOME" != "success" ]; then
               notification_status="failed"
@@ -391,6 +397,7 @@ jobs:
             echo "- notification_status: ${notification_status}"
             echo "- notification_reason: ${notification_reason}"
             echo "- processed_count: ${processed_summary}"
+            echo "- system_notification_ignored_count: ${system_notification_ignored}"
             echo "- accepted_new_count: ${accepted_new_summary}"
             echo "- material_candidate_count: ${material_candidates_summary}"
             echo "- priority_candidate_count: ${priority_candidates_summary}"

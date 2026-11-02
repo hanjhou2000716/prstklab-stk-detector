@@ -418,15 +418,23 @@ jobs:
               and result.get("candidate_release_id") == manifest.get("release_id")
               and manifest.get("status") in {"ready", "ready_with_quarantine"}
           )
-          print(f"build_result_status={result.get('status', 'missing')}")
-          print(f"build_result_reason={result.get('first_failure_reason', '')}")
+          status = result.get("status")
+          status = status if status in {"ready", "failed"} else "invalid"
+          print(f"build_result_status={status}")
+          print(f"build_result_ready={'true' if valid else 'false'}")
           if not valid:
-              print("::error::Release build result identity or readiness contract mismatch")
+              print(json.dumps({
+                  "release_build_status": status,
+                  "release_build_reason": result.get("first_failure_reason", ""),
+              }, ensure_ascii=False, sort_keys=True), file=sys.stderr)
               raise SystemExit(1)
           PY
           result_contract_status=$?
           set -e
-          if [ "$result_contract_status" -ne 0 ]; then manifest_status=1; fi
+          if [ "$result_contract_status" -ne 0 ]; then
+            manifest_status=1
+            echo "::error::Release build result identity or readiness contract mismatch"
+          fi
           if [ -f "$MANIFEST_PATH" ]; then
             python - "$MANIFEST_PATH" >> "$GITHUB_OUTPUT" <<'PY'
           import json

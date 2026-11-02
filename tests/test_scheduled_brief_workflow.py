@@ -326,6 +326,19 @@ def test_scheduled_release_evidence_is_bound_into_terminal_and_uploaded():
         assert producer_paths and terminal_env[field] in producer_paths
 
 
+def test_release_build_failure_annotation_is_not_written_as_a_github_output():
+    workflow = (
+        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml"
+    ).read_text(encoding="utf-8")
+    build_step = workflow.split("- name: Build release manifest", 1)[1].split(
+        "- name: Preserve release build result on every exit path", 1
+    )[0]
+
+    assert 'print("::error::Release build result identity or readiness contract mismatch")' not in build_step
+    assert "build_result_ready={'true' if valid else 'false'}" in build_step
+    assert 'echo "::error::Release build result identity or readiness contract mismatch"' in build_step
+
+
 def test_scheduled_incident_handoff_produces_an_attempt_bound_artifact():
     root = Path(__file__).resolve().parents[1]
     workflow = (root / ".github" / "workflows" / "incident-reconciliation.yml").read_text(encoding="utf-8")
@@ -339,17 +352,19 @@ def test_scheduled_incident_handoff_produces_an_attempt_bound_artifact():
     assert "scheduled-brief-incident-handoff-v1" in script
 
 
-def test_central_alert_cadence_requires_saved_decision_and_expected_alert_terminal():
+def test_central_alert_cadence_records_due_decision_without_fake_delivery():
     root = Path(__file__).resolve().parents[1]
     source = (root / ".github" / "workflows" / "incident-reconciliation.yml").read_text(encoding="utf-8")
     outlet = (root / ".github" / "workflows" / "incident-notification-outlet.yml").read_text(encoding="utf-8")
     decision = outlet.index("id: decision_artifact")
-    alert = outlet.index("id: native_alert")
-    finalize = outlet.index("python -m scripts.incident_notification_outlet finalize")
+    record = outlet.index("Record due notification without manufacturing a failed run")
     result = outlet.index("Upload immutable outlet result")
-    assert decision < alert < finalize < result
+    assert decision < record < result
     assert "id: native_alert" not in source
+    assert "id: native_alert" not in outlet
     assert "steps.decision_artifact.outcome == 'success'" in outlet
-    assert "steps.native_alert.outputs.alert_emitted == 'true'" in outlet
-    assert "steps.native_alert.outcome == 'failure'" in outlet
-    assert 'echo "alert_emitted=true" >> "$GITHUB_OUTPUT"' in outlet
+    assert "notification_due_delivery_not_attempted" in Path(
+        root / "scripts" / "incident_notification_outlet.py"
+    ).read_text(encoding="utf-8")
+    assert "python -m scripts.incident_notification_outlet finalize" not in outlet
+    assert "exit 1" not in outlet

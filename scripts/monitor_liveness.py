@@ -218,10 +218,23 @@ def _get_runs(
     api_url: str, repository: str, token: str, *, deadline_monotonic: float,
     now: datetime | None = None,
 ) -> list[dict[str, Any]]:
-    paths = (
+    paths: tuple[str, ...] = (
         f"/repos/{repository}/actions/workflows/official-event-monitor.yml/runs",
         f"/repos/{repository}/actions/workflows/320209983/runs",
     )
+    # GitHub has returned repository-ID aliases in Link pagination for runs
+    # fetched through the owner/name route. Accept only the exact numeric ID
+    # already supplied by the trusted workflow environment, and only the two
+    # known workflow identities. Host, query and pagination checks remain
+    # enforced by _next_link.
+    repository_id = os.environ.get("GITHUB_REPOSITORY_ID", "").strip()
+    if repository_id:
+        if not re.fullmatch(r"[1-9][0-9]{0,19}", repository_id):
+            raise LivenessAuditError("monitor_liveness_repository_id_invalid")
+        paths = (*paths,
+            f"/repositories/{repository_id}/actions/workflows/official-event-monitor.yml/runs",
+            f"/repositories/{repository_id}/actions/workflows/320209983/runs",
+        )
     cutoff = (now or datetime.now(UTC)).astimezone(UTC) - LOOKBACK
     created_filter = f">={cutoff.strftime('%Y-%m-%dT%H:%M:%SZ')}"
     filters = {"branch": "main", "created": created_filter}
