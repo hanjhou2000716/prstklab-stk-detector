@@ -16,12 +16,11 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-
-from src.pages_budget import DEFAULT_MAX_BYTES, MAX_FILES
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
+from src.pages_budget import DEFAULT_MAX_BYTES, MAX_FILES
 from src.scheduled_slot_audit import _open_artifact_url
 
 

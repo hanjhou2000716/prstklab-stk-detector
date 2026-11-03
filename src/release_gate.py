@@ -17,9 +17,9 @@ from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
 import requests
 
+from src.alert_archive import AlertArchiveError, immutable_alert_url, validate_alert_path, validate_alert_sha256
 from src.artifact_contract import validate_news_release, validate_release, validate_source_health_artifact
 from src.asset_contract import validate_assets
-from src.alert_archive import AlertArchiveError, immutable_alert_url, validate_alert_path, validate_alert_sha256, validate_source_commit
 from src.atomic_file import replace_with_retry
 from src.creator_artifact import validate_creator_artifact
 from src.creator_release import validate_creator_release
@@ -465,7 +465,7 @@ def _validate_public_alert_target(
         )
     errors: list[str] = []
     try:
-        request_kwargs = {
+        request_kwargs: dict[str, Any] = {
             "timeout": _request_timeout(timeout, deadline),
             "headers": {"Accept": "application/json", "Cache-Control": "no-cache", "User-Agent": "PRStK-release-gate"},
             "stream": True,

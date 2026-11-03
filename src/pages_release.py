@@ -29,6 +29,7 @@ from typing import Any
 import requests
 
 from src.alert_archive import AlertArchiveError, validate_alert_path, validate_alert_sha256, validate_source_commit
+
 from .release_manifest import PUBLISHABLE_RELEASE_STATUSES, verify_release_files
 
 
