@@ -16,6 +16,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+from src.pages_budget import DEFAULT_MAX_BYTES, MAX_FILES
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
@@ -445,9 +447,9 @@ def _select_run_artifact_binding(
     return artifact_id, artifact_digest
 
 
-MAX_PAGES_ARTIFACT_ARCHIVE_BYTES = 900_000_000
-MAX_PAGES_ARTIFACT_TAR_BYTES = 900_000_000
-MAX_PAGES_ARTIFACT_TAR_MEMBERS = 20_000
+MAX_PAGES_ARTIFACT_ARCHIVE_BYTES = DEFAULT_MAX_BYTES
+MAX_PAGES_ARTIFACT_TAR_BYTES = DEFAULT_MAX_BYTES
+MAX_PAGES_ARTIFACT_TAR_MEMBERS = MAX_FILES
 MAX_PAGES_MANIFEST_BYTES = 1_000_000
 PAGES_ARTIFACT_READ_CHUNK_BYTES = 1024 * 1024
 PAGES_MANIFEST_MEMBER = "data/release-manifest.json"
@@ -487,11 +489,14 @@ def _normalized_tar_path(value: str) -> str:
 
 def _extract_manifest_from_pages_tar(tar_path: Path) -> bytes:
     try:
+        if tar_path.stat().st_size > MAX_PAGES_ARTIFACT_ARCHIVE_BYTES:
+            raise PagesDeploymentError("Pages artifact archive exceeds the verification size budget")
         with tarfile.open(tar_path, mode="r:") as packed:
             members = packed.getmembers()
             if len(members) > MAX_PAGES_ARTIFACT_TAR_MEMBERS:
                 raise PagesDeploymentError("Pages artifact tar contains too many entries")
             normalized: dict[str, tarfile.TarInfo] = {}
+            total_member_bytes = 0
             for item in members:
                 name = _normalized_tar_path(item.name)
                 if name in normalized:
@@ -500,6 +505,10 @@ def _extract_manifest_from_pages_tar(tar_path: Path) -> bytes:
                     raise PagesDeploymentError("Pages artifact tar contains an unsupported file type")
                 if item.size < 0 or item.size > MAX_PAGES_ARTIFACT_TAR_BYTES:
                     raise PagesDeploymentError("Pages artifact tar member exceeds the verification size limit")
+                if item.isfile():
+                    total_member_bytes += item.size
+                    if total_member_bytes > DEFAULT_MAX_BYTES:
+                        raise PagesDeploymentError("Pages artifact contents exceed the verification size budget")
                 normalized[name] = item
             manifest = normalized.get(PAGES_MANIFEST_MEMBER)
             if manifest is None or not manifest.isfile() or manifest.size > MAX_PAGES_MANIFEST_BYTES:

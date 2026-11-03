@@ -2544,8 +2544,17 @@ const lookupArchivedAlertRow = async (snapshot, notificationId, releaseId) => {
     let prefix = "";
     for (let depth = 0; depth <= digest.length; depth += 1) {
       if (Array.isArray(node.rows)) {
-        return node.rows.find((item) => String(item?.notification_id || "") === notificationId
+        const lookupRow = node.rows.find((item) => String(item?.notification_id || "") === notificationId
           && String(item?.release_id || "") === releaseId) || null;
+        if (!lookupRow) return null;
+        const completeIndex = await ensureAlertIndex(snapshot, { forceComplete: true });
+        const indexRow = completeIndex.alerts.find((item) => String(item?.notification_id || "") === notificationId
+          && String(item?.release_id || "") === releaseId) || null;
+        if (!indexRow || String(lookupRow.path || "") !== String(indexRow.path || "")
+          || String(lookupRow.sha256 || "") !== String(indexRow.sha256 || "")) {
+          throw new Error("immutable alert lookup row does not match the release index");
+        }
+        return indexRow;
       }
       const children = node.children;
       const child = children && children[digest[depth]];
@@ -2571,8 +2580,21 @@ const loadArchivedAlert = async (snapshot, notificationId, releaseId, snapshotId
   const row = await lookupArchivedAlertRow(snapshot, notificationId, releaseId);
   if (!row || !row.path || !row.sha256) throw new Error("immutable alert artifact is not indexed");
   const path = String(row.path);
-  if (path.startsWith("/") || path.includes("..") || !path.startsWith("alerts/")) throw new Error("immutable alert artifact path is invalid");
-  const response = await fetchResponseWithRetry(`data/${path}`, { timeoutMs: 12000 });
+  const sourceCommit = String(row.source_commit || "").trim().toLowerCase();
+  let alertUrl = `data/${path}`;
+  let fetchOptions = { timeoutMs: 12000 };
+  if (sourceCommit) {
+    const alertPath = path.startsWith("data/") ? path.slice(5) : path;
+    if (!/^[a-f0-9]{40}$/.test(sourceCommit)
+      || !/^alerts\/[A-Za-z0-9][A-Za-z0-9._-]*\.json$/.test(alertPath)) {
+      throw new Error("immutable alert fixed source is invalid");
+    }
+    alertUrl = `https://raw.githubusercontent.com/hanjhou2000716/prstklab-stk-detector/${sourceCommit}/site/data/${alertPath}`;
+    fetchOptions = { timeoutMs: 12000, revalidate: true, redirect: "error", credentials: "omit" };
+  } else if (path.startsWith("/") || path.includes("..") || !path.startsWith("alerts/")) {
+    throw new Error("immutable alert artifact path is invalid");
+  }
+  const response = await fetchResponseWithRetry(alertUrl, fetchOptions);
   const text = await response.text();
   if (await sha256Hex(text) !== String(row.sha256)) throw new Error("immutable alert artifact hash mismatch");
   const alert = JSON.parse(text);
@@ -2760,6 +2782,8 @@ const fetchResponseWithRetry = async (url, options = {}, attempt = 0) => {
       cache: revalidate ? "no-cache" : "default",
       headers,
       signal: controller?.signal,
+      redirect: options.redirect === "error" ? "error" : "follow",
+      credentials: options.credentials === "omit" ? "omit" : "same-origin",
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const body = await response.arrayBuffer();

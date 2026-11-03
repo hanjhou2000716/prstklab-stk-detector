@@ -380,9 +380,10 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
     current_alert = {**old_alert, "release_id": current_release}
     old_text = json.dumps(old_alert, ensure_ascii=False, separators=(",", ":"))
     current_text = json.dumps(current_alert, ensure_ascii=False, separators=(",", ":"))
+    archive_commit = "a" * 40
     index = {
         "alerts": [
-            {"notification_id": old_alert["notification_id"], "release_id": old_release, "snapshot_id": old_snapshot, "observation_id": observation, "path": "alerts/old.json", "sha256": hashlib.sha256(old_text.encode()).hexdigest()},
+            {"notification_id": old_alert["notification_id"], "release_id": old_release, "snapshot_id": old_snapshot, "observation_id": observation, "path": "alerts/old.json", "sha256": hashlib.sha256(old_text.encode()).hexdigest(), "source_commit": archive_commit},
             {"notification_id": current_alert["notification_id"], "release_id": current_release, "snapshot_id": old_snapshot, "observation_id": observation, "path": "alerts/current.json", "sha256": hashlib.sha256(current_text.encode()).hexdigest()},
         ]
     }
@@ -573,11 +574,16 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
             page = browser.new_page()
             news_fetches = 0
             news_failures_remaining = 3
+            archive_fetches = []
+            archive_fallback_fetches = 0
 
             def fulfill_release(route) -> None:  # type: ignore[no-untyped-def]
-                nonlocal news_fetches, news_failures_remaining
+                nonlocal news_fetches, news_failures_remaining, archive_fallback_fetches
                 url = route.request.url
-                if "/data/release-manifest.json" in url:
+                if f"raw.githubusercontent.com/hanjhou2000716/prstklab-stk-detector/{archive_commit}/site/data/alerts/old.json" in url:
+                    archive_fetches.append({"url": url, "headers": route.request.all_headers()})
+                    route.fulfill(status=200, content_type="application/json", body=old_text)
+                elif "/data/release-manifest.json" in url:
                     route.fulfill(status=200, content_type="application/json", body=manifest_text)
                 elif "/data/market.json" in url:
                     route.fulfill(status=200, content_type="application/json", body=market_text)
@@ -601,6 +607,7 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
                 elif "/data/alerts/index/node-root.json" in url:
                     route.fulfill(status=200, content_type="application/json", body=lookup_node_text)
                 elif "/data/alerts/old.json" in url:
+                    archive_fallback_fetches += 1
                     route.fulfill(status=200, content_type="application/json", body=old_text)
                 elif "/data/alerts/current.json" in url:
                     route.fulfill(status=200, content_type="application/json", body=current_text)
@@ -618,6 +625,10 @@ def test_deep_link_keeps_event_summary_outside_release_status() -> None:
             assert page.locator("#market-focus").text_content() == public_message
             assert "notification" not in (page.locator("#market-focus").text_content() or "")
             assert page.locator("#alert-headline").text_content() == public_message
+            assert len(archive_fetches) == 1
+            assert archive_fetches[0]["url"].endswith(f"/{archive_commit}/site/data/alerts/old.json")
+            assert "cookie" not in archive_fetches[0]["headers"]
+            assert archive_fallback_fetches == 0
             assert page.evaluate("window.marketSnapshot.briefing.report_summary.text") == "原版總結：標普500最近收盤上漲0.58%。"
             assert page.evaluate("window.marketSnapshot.indices[0].price") == 6000
             assert "通知原版" in (page.locator("#data-status").text_content() or "")

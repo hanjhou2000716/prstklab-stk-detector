@@ -436,27 +436,35 @@ jobs:
         run: |
           python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
           python -m src.asset_contract --root site
-          python -m src.pages_budget --root site --max-bytes 536870912
       - name: Configure GitHub Pages
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
-      - name: Upload Pages artifact
+      - name: Prepare bounded Pages payload
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
+        id: stage_pages_payload
+        run: |
+          git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
+          data_release_sha="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"
+          python -m src.pages_budget --stage --source-root site --output-root "$RUNNER_TEMP/prstk-pages" --source-commit "$data_release_sha"
+          printf 'PAGES_MANIFEST_PATH=%s\n' "$RUNNER_TEMP/prstk-pages/data/release-manifest.json" >> "$GITHUB_ENV"
+      - name: Upload Pages artifact
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true' && steps.stage_pages_payload.outcome == 'success'
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
-          path: site
+          path: ${{ runner.temp }}/prstk-pages
       - name: Deploy Pages
         id: deployment
-        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true' && steps.stage_pages_payload.outcome == 'success'
         uses: ./.github/actions/deploy-pages-retry
         with:
+          manifest_path: ${{ runner.temp }}/prstk-pages/data/release-manifest.json
           phase: unified_research_report
       - name: Verify public research release after deployment
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && env.SCAN_MODE == 'production' && steps.research_gate.outputs.publish == 'true' && steps.deployment.outputs.available == 'true'
         id: public_release_gate
         run: >-
           python -m src.release_gate
-          --manifest site/data/release-manifest.json
+          --manifest "$PAGES_MANIFEST_PATH"
           --public-url "${{ steps.deployment.outputs.page_url }}"
           --public-timeout-seconds 180
           --public-delay 2

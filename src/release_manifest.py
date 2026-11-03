@@ -505,6 +505,49 @@ def _briefing_projection(
     }
 
 
+_UNRESOLVED_RECEIPT_STATES = {
+    "accepted", "awaiting_inbox", "blocked", "delivery_uncertain", "delivery_unknown",
+    "expired_not_attempted", "failed", "failed_not_sent", "missing", "missing_receipt",
+    "not_attempted", "not_sent", "partial", "pending", "retryable", "sent", "unknown",
+    "unverified", "verification_unavailable",
+}
+_RESOLVED_RECEIPT_STATES = {"delivered", "inbox_verified", "not_required", "suppressed", "verified"}
+
+
+def _alert_receipt_state(item: dict[str, Any]) -> str:
+    """Return a recipient-free receipt summary for the compact public index."""
+    receipt_rows = item.get("delivery_receipts")
+    if not isinstance(receipt_rows, list):
+        receipt_rows = item.get("receipts")
+    if isinstance(receipt_rows, list) and receipt_rows:
+        states = [
+            str(row.get("delivery_status") or row.get("receipt_state") or row.get("status") or "unknown").strip().lower()
+            for row in receipt_rows if isinstance(row, dict)
+        ]
+        if not states or any(state in _UNRESOLVED_RECEIPT_STATES or state not in _RESOLVED_RECEIPT_STATES for state in states):
+            return "pending"
+        if all(state == "suppressed" for state in states):
+            return "suppressed"
+        if all(state == "not_required" for state in states):
+            return "not_required"
+        return "delivered"
+    if item.get("receipt_required") is True:
+        return "pending"
+    status = str(
+        item.get("delivery_status") or item.get("delivery_result") or item.get("receipt_status")
+        or item.get("notification_status") or ""
+    ).strip().lower()
+    if status in _UNRESOLVED_RECEIPT_STATES:
+        return "pending"
+    if status in _RESOLVED_RECEIPT_STATES:
+        return "delivered" if status not in {"not_required", "suppressed"} else status
+    return "unknown"
+
+
+def _alert_has_pending_receipt(item: dict[str, Any]) -> bool:
+    return _alert_receipt_state(item) == "pending"
+
+
 def _publish_alert_artifacts(
     *, root: Path, market: dict[str, Any], release_id: str, created_at: str,
     resolved: dict[str, Path], hashes: dict[str, str],
@@ -599,6 +642,8 @@ def _publish_alert_artifacts(
                 "observation_id": item.get("observation_id"),
                 "canonical_content_hash": item.get("canonical_content_hash"),
                 "canonical_hash_version": item.get("canonical_hash_version"),
+                "receipt_state": _alert_receipt_state(item),
+                "pending_receipt": _alert_has_pending_receipt(item),
                 "path": f"{ALERT_ARTIFACT_PREFIX}/{path.name}",
                 "sha256": sha256_file(path),
                 "created_at": item.get("created_at"),

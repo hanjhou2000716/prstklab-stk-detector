@@ -54,23 +54,59 @@ def validate_worker_base(value: str) -> str:
     return f"https://{hostname}"
 
 
+def oidc_environment_diagnostics(environment: dict[str, str], *, audience: str) -> list[str]:
+    """Return safe input-shape codes without exposing endpoint or bearer values."""
+    endpoint = environment.get("ACTIONS_ID_TOKEN_REQUEST_URL", "")
+    bearer = environment.get("ACTIONS_ID_TOKEN_REQUEST_TOKEN", "")
+    reasons: list[str] = []
+    if not endpoint:
+        reasons.append("request_url_missing")
+    elif len(endpoint) > 12_000:
+        reasons.append("request_url_too_long")
+    try:
+        parsed = urlsplit(endpoint)
+    except ValueError:
+        parsed = None
+        reasons.append("request_url_malformed")
+    if parsed is not None:
+        hostname = (parsed.hostname or "").casefold()
+        if parsed.scheme.casefold() != "https":
+            reasons.append("request_url_scheme_invalid")
+        if not hostname:
+            reasons.append("request_url_host_missing")
+        elif hostname not in _OIDC_HOSTS:
+            reasons.append("request_url_host_untrusted")
+        if parsed.username is not None or parsed.password is not None:
+            reasons.append("request_url_userinfo_present")
+        try:
+            has_port = parsed.port is not None
+        except ValueError:
+            has_port = True
+            reasons.append("request_url_port_invalid")
+        if has_port:
+            reasons.append("request_url_explicit_port")
+        if parsed.fragment:
+            reasons.append("request_url_fragment_present")
+        if parsed.netloc and hostname and parsed.netloc.casefold() != hostname:
+            reasons.append("request_url_authority_noncanonical")
+    if not bearer:
+        reasons.append("request_token_missing")
+    elif len(bearer) > 32_000:
+        reasons.append("request_token_too_long")
+    if not audience:
+        reasons.append("audience_missing")
+    elif len(audience) > 240:
+        reasons.append("audience_too_long")
+    return sorted(set(reasons))
+
+
 def fetch_oidc_token(environment: dict[str, str], *, audience: str) -> str:
     endpoint = environment.get("ACTIONS_ID_TOKEN_REQUEST_URL", "")
     bearer = environment.get("ACTIONS_ID_TOKEN_REQUEST_TOKEN", "")
+    diagnostics = oidc_environment_diagnostics(environment, audience=audience)
+    if diagnostics:
+        raise IncidentOpsAuthError("github_oidc_request_environment_invalid:" + ",".join(diagnostics))
     parsed = urlsplit(endpoint)
-    if (
-        parsed.scheme.casefold() != "https"
-        or (parsed.hostname or "").casefold() not in _OIDC_HOSTS
-        or parsed.username is not None
-        or parsed.password is not None
-        or parsed.fragment
-        or parsed.port is not None
-        or not bearer
-        or len(bearer) > 32_000
-        or not audience
-        or len(audience) > 240
-    ):
-        raise IncidentOpsAuthError("github_oidc_request_environment_invalid")
     query = parsed.query
     separator = "&" if query else ""
     endpoint_with_audience = urlunsplit((

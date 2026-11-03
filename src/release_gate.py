@@ -19,6 +19,7 @@ import requests
 
 from src.artifact_contract import validate_news_release, validate_release, validate_source_health_artifact
 from src.asset_contract import validate_assets
+from src.alert_archive import AlertArchiveError, immutable_alert_url, validate_alert_path, validate_alert_sha256, validate_source_commit
 from src.atomic_file import replace_with_retry
 from src.creator_artifact import validate_creator_artifact
 from src.creator_release import validate_creator_release
@@ -439,27 +440,39 @@ def _validate_public_alert_target(
         return ["click target alert is not indexed in the published release"]
     path = str(row.get("path") or "").strip()
     digest = str(row.get("sha256") or "").strip()
-    if not (path.startswith("alerts/") or path.startswith("data/alerts/")) or ".." in path.split("/") or len(digest) != 64:
+    try:
+        alert_path = validate_alert_path(path.removeprefix("data/"))
+        indexed_digest = validate_alert_sha256(digest)
+    except AlertArchiveError:
         return ["click target alert index row is invalid"]
     # Alert-index paths are relative to the immutable data root.  The Pages
     # site itself is rooted at ``site/``, so ``alerts/x.json`` is published at
     # ``data/alerts/x.json``.  Keep the index format backward compatible while
     # making the public URL resolution explicit and shared with the publisher.
-    public_path = path if path.startswith("data/") else f"data/{path}"
-    url = _cache_busted_url(
-        urljoin(public_url.rstrip("/") + "/", public_path),
-        release_id=release_id,
-        attempt=attempt,
-        expected_sha256=expected_sha256 or digest,
-    )
+    source_commit = row.get("source_commit")
+    if source_commit:
+        try:
+            url = immutable_alert_url(source_commit, alert_path)
+        except AlertArchiveError:
+            return ["click target alert fixed source is invalid"]
+    else:
+        public_path = f"data/{alert_path}"
+        url = _cache_busted_url(
+            urljoin(public_url.rstrip("/") + "/", public_path),
+            release_id=release_id,
+            attempt=attempt,
+            expected_sha256=expected_sha256 or indexed_digest,
+        )
     errors: list[str] = []
     try:
-        response = requests.get(
-            url,
-            timeout=_request_timeout(timeout, deadline),
-            headers={"Accept": "application/json", "Cache-Control": "no-cache", "User-Agent": "PRStK-release-gate"},
-            stream=True,
-        )
+        request_kwargs = {
+            "timeout": _request_timeout(timeout, deadline),
+            "headers": {"Accept": "application/json", "Cache-Control": "no-cache", "User-Agent": "PRStK-release-gate"},
+            "stream": True,
+        }
+        if source_commit:
+            request_kwargs["allow_redirects"] = False
+        response = requests.get(url, **request_kwargs)
         response.raise_for_status()
         body = _response_body(response, deadline=deadline)
     except (requests.RequestException, TypeError, ValueError) as exc:
@@ -471,8 +484,8 @@ def _validate_public_alert_target(
         suffix = f" HTTP {status}" if status is not None else ""
         return [f"click target alert request rejected:{type(exc).__name__}{suffix}"]
     actual_digest = hashlib.sha256(body).hexdigest()
-    if actual_digest != digest or (expected_sha256 and digest != expected_sha256):
-        expected = expected_sha256 or digest
+    if actual_digest != indexed_digest or (expected_sha256 and indexed_digest != expected_sha256):
+        expected = expected_sha256 or indexed_digest
         return [
             "click target alert hash mismatch "
             f"expected={expected} indexed={digest} actual={actual_digest}"

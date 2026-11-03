@@ -76,7 +76,16 @@ def test_parent_success_with_missing_pages_binding_is_still_degraded(monkeypatch
         "schema_version": "unified-research-terminal-v1",
         "run_id": _event()["run_id"], "attempt": 1, "sha": SHA,
         "production_run": True, "business_status": "healthy", "reason": "",
-        "stages": {"deployment": "success", "research_noop": False},
+        "stages": {
+            "deployment": "success", "research_noop": False,
+            "required_market_strategy_pairs": ["us/value"],
+            "selected_market_strategy_pairs": ["us/value"],
+            "executed_market_strategy_pairs": ["us/value"],
+            "strategy_step_outcomes": {"us/value": "success"},
+            "strategy_pair_dispositions": {
+                "us/value": {"state": "complete_scan", "scan_state": "complete"},
+            },
+        },
     }
     calls = []
     monkeypatch.setattr(incidents, "_open_incidents", lambda *a, **k: [])
@@ -90,6 +99,27 @@ def test_parent_success_with_missing_pages_binding_is_still_degraded(monkeypatch
     assert result["status"] == "degraded"
     assert result["opened_issue_numbers"] == [1144]
     assert "Root cause: research_publication_not_verified" in calls[-1][5]["body"]
+
+
+def test_parent_healthy_without_scan_or_valid_noop_is_not_recovered(monkeypatch):
+    terminal = {
+        "schema_version": "unified-research-terminal-v1",
+        "run_id": _event()["run_id"], "attempt": 1, "sha": SHA,
+        "production_run": True, "business_status": "healthy", "reason": "",
+        "stages": {"research_noop": False, "research_selection": "unknown"},
+    }
+    calls = []
+    monkeypatch.setattr(incidents, "_open_incidents", lambda *a, **k: [])
+    monkeypatch.setattr(incidents, "_request_json", lambda *a, **k: calls.append(a) or {"number": 1145})
+
+    result = incidents._research_incident(
+        event=_event(), repository="owner/repo", api_url="https://api.github.com", token="token",
+        now=datetime(2026, 11, 3, 0, 0, tzinfo=UTC), terminal=terminal,
+    )
+
+    assert result["status"] == "degraded"
+    assert result["opened_issue_numbers"] == [1145]
+    assert "Root cause: research_scan_evidence_incomplete" in calls[-1][5]["body"]
 
 
 @pytest.mark.parametrize("field,value,error", [

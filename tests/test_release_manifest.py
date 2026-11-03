@@ -9,7 +9,9 @@ from src.news_intelligence import build_news_intelligence
 from src.release_manifest import (
     _alert_artifact_filename,
     _alert_filename,
+    _alert_has_pending_receipt,
     _alert_projection,
+    _alert_receipt_state,
     _briefing_projection,
     _gap_count,
     _identity_conflict,
@@ -29,6 +31,30 @@ from src.release_manifest import (
     write_release_build_result,
     write_release_manifest,
 )
+
+
+@pytest.mark.parametrize(
+    ("item", "expected"),
+    [
+        ({"delivery_status": "delivered", "delivery_receipts": [
+            {"recipient_hash": "one", "delivery_status": "delivered"},
+            {"recipient_hash": "two", "delivery_status": "delivered"},
+        ]}, False),
+        ({"delivery_status": "partial", "delivery_receipts": [
+            {"recipient_hash": "one", "delivery_status": "delivered"},
+            {"recipient_hash": "two", "delivery_status": "failed"},
+        ]}, True),
+        ({"delivery_status": "not_sent", "receipt_required": True}, True),
+        ({"delivery_status": "accepted", "receipt_required": True}, True),
+        ({"receipt_required": True}, True),
+        ({"delivery_status": "suppressed"}, False),
+        ({"delivery_receipts": [{"delivery_status": "suppressed"}]}, False),
+        ({}, False),
+    ],
+)
+def test_alert_index_receipt_projection_is_privacy_safe_and_retains_pending(item, expected):
+    assert _alert_has_pending_receipt(item) is expected
+    assert _alert_receipt_state(item) in {"pending", "delivered", "suppressed", "unknown"}
 
 
 def test_release_normalization_quarantines_legacy_event_source_without_dropping_claims():

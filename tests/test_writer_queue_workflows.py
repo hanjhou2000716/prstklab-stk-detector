@@ -122,6 +122,38 @@ def test_every_release_or_pages_publisher_is_registered_by_exact_workflow_identi
     }
 
 
+def test_every_pages_upload_uses_a_prior_bounded_staging_step() -> None:
+    for path in WORKFLOW_ROOT.glob("*.yml"):
+        workflow = yaml.safe_load(path.read_text(encoding="utf-8"))
+        for job_name, job in (workflow.get("jobs") or {}).items():
+            if not isinstance(job, dict):
+                continue
+            steps = job.get("steps", [])
+            if not isinstance(steps, list):
+                continue
+            for index, step in enumerate(steps):
+                if not isinstance(step, dict) or "actions/upload-pages-artifact" not in str(step.get("uses") or ""):
+                    continue
+                uploads = step.get("with") if isinstance(step.get("with"), dict) else {}
+                payload_path = str(uploads.get("path") or "")
+                assert payload_path, f"{path.name}:{job_name} Pages upload has no payload path"
+                staging = [
+                    prior for prior in steps[:index]
+                    if isinstance(prior, dict) and "python -m src.pages_budget --stage" in str(prior.get("run") or "")
+                ]
+                assert staging, f"{path.name}:{job_name} Pages upload has no bounded staging step"
+                stage_text = str(staging[-1].get("run") or "")
+                assert "--source-commit" in stage_text, f"{path.name}:{job_name} archive is not pinned"
+                assert "git fetch --no-tags origin" in stage_text, f"{path.name}:{job_name} does not use the published data branch head"
+                assert any(
+                    key in stage_text
+                    for key in ("PAGES_MANIFEST_PATH", "PAGES_RECONCILED_MANIFEST_PATH")
+                ), f"{path.name}:{job_name} gate does not use staged manifest"
+
+    research_workflow = _workflow_text("unified-research-report.yml")
+    assert "python -m src.pages_budget --root site" not in research_workflow
+
+
 def test_every_writer_has_a_static_publication_gate_job_and_step_contract() -> None:
     assert set(WRITER_QUEUE_GATES) == set(WRITER_WORKFLOW_IDENTITIES)
     for path, gate in WRITER_QUEUE_GATES.items():

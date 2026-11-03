@@ -445,3 +445,49 @@ def test_restore_latest_valid_remains_fail_closed_when_public_preservation_fails
     result = restore_latest_valid(root=tmp_path, preserve_public_url="https://example.test")
 
     assert result["publish"] is False
+
+
+def test_restore_public_release_skips_history_pinned_to_a_fixed_commit(tmp_path, monkeypatch):
+    market_path = "data/market.json"
+    index_path = "data/alert-index.json"
+    market_body = b'{"snapshot_id":"market-current"}'
+    index_body = json.dumps({"alerts": [{
+        "notification_id": "cold-alert", "release_id": "release-old",
+        "path": "alerts/cold-alert.json", "sha256": "a" * 64, "source_commit": "c" * 40,
+    }]}).encode()
+    manifest = {
+        "status": "ready", "release_id": "release-current", "market_snapshot_id": "market-current",
+        "artifact_paths": {"market.json": market_path, "alert-index.json": index_path},
+        "artifact_hashes": {
+            "market.json": hashlib.sha256(market_body).hexdigest(),
+            "alert-index.json": hashlib.sha256(index_body).hexdigest(),
+        },
+    }
+    requested = []
+
+    class Response:
+        def __init__(self, content):
+            self.content = content
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return json.loads(self.content.decode("utf-8"))
+
+    def get(url, **_kwargs):
+        requested.append(url)
+        if url.endswith("release-manifest.json?pages_restore=1"):
+            return Response(json.dumps(manifest).encode())
+        if url.endswith(index_path):
+            return Response(index_body)
+        return Response(market_body)
+
+    monkeypatch.setattr("src.pages_release.requests.get", get)
+    monkeypatch.setattr("src.pages_release._validate", lambda *args, **kwargs: (True, {"status": "ready"}))
+
+    result = restore_public_release(root=tmp_path, public_url="https://example.test")
+
+    assert result["release_id"] == "release-current"
+    assert not (tmp_path / "site" / "data" / "alerts" / "cold-alert.json").exists()
+    assert not any(url.endswith("cold-alert.json") for url in requested)

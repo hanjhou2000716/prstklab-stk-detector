@@ -80,6 +80,19 @@ def test_oidc_request_rejects_untrusted_host(monkeypatch) -> None:
         }, audience="https://prstk-incident-ops")
 
 
+def test_oidc_environment_diagnostic_classifies_missing_and_untrusted_inputs_without_values():
+    environment = {
+        "ACTIONS_ID_TOKEN_REQUEST_URL": "https://evil.example/sensitive-path?secret=do-not-log",
+    }
+    diagnostics = auth.oidc_environment_diagnostics(environment, audience="https://prstk-incident-ops")
+    assert diagnostics == ["request_token_missing", "request_url_host_untrusted"]
+    with pytest.raises(auth.IncidentOpsAuthError) as error:
+        auth.fetch_oidc_token(environment, audience="https://prstk-incident-ops")
+    assert "request_url_host_untrusted" in str(error.value)
+    assert "sensitive-path" not in str(error.value)
+    assert "do-not-log" not in str(error.value)
+
+
 def test_oidc_token_request_uses_audience_and_converts_redirect_to_failure(monkeypatch) -> None:
     captured = {}
 
