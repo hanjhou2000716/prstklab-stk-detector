@@ -87,23 +87,32 @@ jobs:
         if: steps.writer_queue.outputs.should_continue == 'true'
         id: pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
-      - name: Upload Pages artifact
+      - name: Prepare bounded Pages payload
         if: steps.writer_queue.outputs.should_continue == 'true'
+        id: stage_pages_payload
+        run: |
+          git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
+          data_release_sha="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"
+          python -m src.pages_budget --stage --source-root site --output-root "$RUNNER_TEMP/prstk-pages" --source-commit "$data_release_sha"
+          printf 'PAGES_MANIFEST_PATH=%s\n' "$RUNNER_TEMP/prstk-pages/data/release-manifest.json" >> "$GITHUB_ENV"
+      - name: Upload Pages artifact
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.stage_pages_payload.outcome == 'success'
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
-          path: site
+          path: ${{ runner.temp }}/prstk-pages
       - name: Deploy GitHub Pages
-        if: steps.writer_queue.outputs.should_continue == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.stage_pages_payload.outcome == 'success'
         id: deployment
         uses: ./.github/actions/deploy-pages-retry
         with:
+          manifest_path: ${{ runner.temp }}/prstk-pages/data/release-manifest.json
           phase: monitor_health
       - name: Verify public release after deployment
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.deployment.outputs.available == 'true'
         id: public_release_gate
         run: >-
           python -m src.release_gate
-          --manifest site/data/release-manifest.json
+          --manifest "$PAGES_MANIFEST_PATH"
           --public-url "${{ steps.deployment.outputs.page_url }}"
           --public-timeout-seconds 180
           --public-delay 2

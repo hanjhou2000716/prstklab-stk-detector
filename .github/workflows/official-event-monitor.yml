@@ -249,16 +249,25 @@ jobs:
       - name: Configure GitHub Pages
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && (steps.status.outputs.ledger_changed == 'true' || (steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'))
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
-      - name: Upload Pages artifact
+      - name: Prepare bounded Pages payload
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && (steps.status.outputs.ledger_changed == 'true' || (steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'))
+        id: stage_pages_payload
+        run: |
+          git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
+          data_release_sha="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"
+          python -m src.pages_budget --stage --source-root site --output-root "$RUNNER_TEMP/prstk-pages" --source-commit "$data_release_sha"
+          printf 'PAGES_MANIFEST_PATH=%s\n' "$RUNNER_TEMP/prstk-pages/data/release-manifest.json" >> "$GITHUB_ENV"
+      - name: Upload Pages artifact
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && (steps.status.outputs.ledger_changed == 'true' || (steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true')) && steps.stage_pages_payload.outcome == 'success'
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
-          path: site
+          path: ${{ runner.temp }}/prstk-pages
       - name: Deploy Pages
-        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && (steps.status.outputs.ledger_changed == 'true' || (steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true'))
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && (steps.status.outputs.ledger_changed == 'true' || (steps.status.outputs.should_send == 'true' && steps.idempotency.outputs.cache-hit != 'true')) && steps.stage_pages_payload.outcome == 'success'
         id: deployment
         uses: ./.github/actions/deploy-pages-retry
         with:
+          manifest_path: ${{ runner.temp }}/prstk-pages/data/release-manifest.json
           phase: official_event_delivery
           fallback_url: ${{ env.DASHBOARD_URL }}
       - name: Verify deployed release before delivery
@@ -282,7 +291,7 @@ jobs:
           )
           PY
           python -m src.release_gate \
-            --manifest "$MANIFEST_PATH" \
+            --manifest "$PAGES_MANIFEST_PATH" \
             --expected-snapshot-id "${{ steps.status.outputs.snapshot_id }}" \
             --public-url "${{ steps.deployment.outputs.page_url }}" \
             --expected-alert-targets-file "$RUNNER_TEMP/official-alert-targets.json" \
@@ -474,17 +483,26 @@ jobs:
         run: |
           python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
           python -m src.asset_contract --root site
-      - name: Upload reconciled Pages artifact
+      - name: Prepare bounded reconciled Pages payload
         if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success'
+        id: stage_reconciled_pages
+        run: |
+          git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
+          data_release_sha="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"
+          python -m src.pages_budget --stage --source-root site --output-root "$RUNNER_TEMP/prstk-pages-reconciled" --source-commit "$data_release_sha"
+          printf 'PAGES_RECONCILED_MANIFEST_PATH=%s\n' "$RUNNER_TEMP/prstk-pages-reconciled/data/release-manifest.json" >> "$GITHUB_ENV"
+      - name: Upload reconciled Pages artifact
+        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success' && steps.stage_reconciled_pages.outcome == 'success'
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           name: github-pages-reconciled
-          path: site
+          path: ${{ runner.temp }}/prstk-pages-reconciled
       - name: Deploy reconciled Pages release
-        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success'
+        if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success' && steps.stage_reconciled_pages.outcome == 'success'
         id: reconciled_deployment
         uses: ./.github/actions/deploy-pages-retry
         with:
+          manifest_path: ${{ runner.temp }}/prstk-pages-reconciled/data/release-manifest.json
           artifact_name: github-pages-reconciled
           phase: official_event_receipt_reconciliation
           fallback_url: ${{ env.DASHBOARD_URL }}
@@ -493,7 +511,7 @@ jobs:
         if: always() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success' && steps.reconciled_deployment.outputs.available == 'true'
         run: >-
           python -m src.release_gate
-          --manifest "$MANIFEST_PATH"
+          --manifest "$PAGES_RECONCILED_MANIFEST_PATH"
           --expected-snapshot-id "${{ steps.status.outputs.snapshot_id }}"
           --public-url "${{ steps.reconciled_deployment.outputs.page_url }}"
           --public-attempts 12

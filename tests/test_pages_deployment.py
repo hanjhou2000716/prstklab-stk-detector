@@ -112,6 +112,30 @@ def test_pages_artifact_tar_rejects_link_members():
         pages_deployment._manifest_from_pages_artifact_archive(artifact, expected_digest=digest)
 
 
+def test_pages_artifact_tar_enforces_aggregate_formal_payload_budget(monkeypatch):
+    monkeypatch.setattr(pages_deployment, "DEFAULT_MAX_BYTES", 1000)
+    raw_manifest = json.dumps({"release_id": "r", "market_snapshot_id": "s"}).encode()
+    tar_stream = BytesIO()
+    with tarfile.open(fileobj=tar_stream, mode="w") as packed:
+        for name, body in (
+            ("data/release-manifest.json", raw_manifest),
+            ("data/large-a.bin", b"a" * 600),
+            ("data/large-b.bin", b"b" * 600),
+        ):
+            info = tarfile.TarInfo(name)
+            info.size = len(body)
+            packed.addfile(info, BytesIO(body))
+    artifact_stream = BytesIO()
+    with zipfile.ZipFile(artifact_stream, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("artifact.tar", tar_stream.getvalue())
+    artifact = artifact_stream.getvalue()
+
+    with pytest.raises(PagesDeploymentError, match="contents exceed the verification size budget"):
+        pages_deployment._manifest_from_pages_artifact_archive(
+            artifact, expected_digest="sha256:" + hashlib.sha256(artifact).hexdigest(),
+        )
+
+
 def test_pages_artifact_zip_rejects_extra_entries(monkeypatch):
     artifact = _pages_artifact_archive(MANIFEST_PATH.read_bytes())
     extra = BytesIO()

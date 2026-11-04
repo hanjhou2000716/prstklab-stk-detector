@@ -710,19 +710,64 @@ def _research_incident(
     stages = terminal.get("stages") if isinstance(terminal, dict) else {}
     stages = stages if isinstance(stages, dict) else {}
     research_noop = stages.get("research_noop") is True
-    publication_expected = bool(
-        terminal is not None
-        and terminal.get("production_run") is True
-        and not research_noop
-        and (
-            stages.get("research_publish") is True
-            or stages.get("deployment") in {"success", "failure"}
-            or stages.get("deployment_available") is True
+    production_run = terminal is not None and terminal.get("production_run") is True
+    publication_expected = production_run and not research_noop
+    publication_verified = bool(
+        stages.get("publication_verified") is True
+        and stages.get("deployment_available") is True
+        and stages.get("deployment_binding_identity_matches") is True
+        and str(stages.get("deployment_id") or "").strip()
+        and str(stages.get("pages_build_version") or "").strip()
+        and stages.get("public_gate_outcome") == "success"
+        and stages.get("public_gate_allowed") is True
+        and stages.get("public_gate_status") == "verified"
+    )
+    required_pairs = stages.get("required_market_strategy_pairs")
+    selected_pairs = stages.get("selected_market_strategy_pairs")
+    executed_pairs = stages.get("executed_market_strategy_pairs")
+    outcomes = stages.get("strategy_step_outcomes")
+    dispositions = stages.get("strategy_pair_dispositions")
+    required_set = set(required_pairs) if isinstance(required_pairs, list) and all(isinstance(item, str) for item in required_pairs) else set()
+    selected_set = set(selected_pairs) if isinstance(selected_pairs, list) and all(isinstance(item, str) for item in selected_pairs) else set()
+    executed_set = set(executed_pairs) if isinstance(executed_pairs, list) and all(isinstance(item, str) for item in executed_pairs) else set()
+    outcomes = outcomes if isinstance(outcomes, dict) else {}
+    dispositions = dispositions if isinstance(dispositions, dict) else {}
+    selection_status = str(stages.get("research_selection") or "")
+    selection_reason = str(stages.get("research_selection_reason") or "").strip()
+    noop_valid = bool(
+        research_noop
+        and selection_status == "current_noop"
+        and selection_reason == "research_slot_already_current"
+        and not required_set
+        and not selected_set
+        and not executed_set
+        and isinstance(stages.get("unstarted_required_pairs"), list)
+        and not stages.get("unstarted_required_pairs")
+        and (not dispositions or all(
+            isinstance(item, dict) and item.get("state") == "already_current"
+            for item in dispositions.values()
+        ))
+    )
+    scans_verified = bool(
+        selected_set
+        and required_set
+        and required_set <= selected_set
+        and selected_set <= executed_set
+        and all(outcomes.get(pair) == "success" for pair in selected_set)
+        and all(
+            isinstance(dispositions.get(pair), dict)
+            and dispositions[pair].get("scan_state") == "complete"
+            and dispositions[pair].get("state") in {"complete_scan", "complete_scan_zero_candidates"}
+            for pair in required_set
         )
     )
-    publication_verified = stages.get("publication_verified") is True
-    if publication_expected and not publication_verified:
-        reason_code = "research_publication_not_verified"
+    inferred_reason_code = ""
+    if production_run and research_noop and not noop_valid:
+        inferred_reason_code = "research_noop_evidence_invalid"
+    elif publication_expected and not scans_verified:
+        inferred_reason_code = "research_scan_evidence_incomplete"
+    elif publication_expected and not publication_verified:
+        inferred_reason_code = "research_publication_not_verified"
     if terminal is not None:
         try:
             normalized_reason, _detail = normalize_research_reason(
@@ -730,8 +775,12 @@ def _research_incident(
             )
         except ValueError as exc:
             raise LivenessAuditError("incident_research_terminal_reason_invalid") from exc
-        if not reason_code:
-            reason_code = normalized_reason
+        # Preserve an explicit failure diagnosis from the producer. The new
+        # evidence checks provide a reason only when a terminal claims success
+        # or otherwise omits a reason despite missing required evidence.
+        reason_code = normalized_reason or inferred_reason_code
+    else:
+        reason_code = inferred_reason_code
     if terminal is not None and terminal.get("production_run") is False:
         return {
             "component": "unified_research_report",
@@ -752,7 +801,7 @@ def _research_incident(
         raise LivenessAuditError("incident_research_duplicate_issue")
     terminal_degraded = terminal is not None and (
         terminal.get("business_status") == "degraded"
-        or (publication_expected and not publication_verified)
+        or bool(reason_code and production_run)
     )
     terminal_missing = terminal is None
     failure = terminal_missing or conclusion not in {"success", "neutral", "skipped"} or terminal_degraded

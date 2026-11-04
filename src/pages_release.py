@@ -28,6 +28,8 @@ from typing import Any
 
 import requests
 
+from src.alert_archive import AlertArchiveError, validate_alert_path, validate_alert_sha256, validate_source_commit
+
 from .release_manifest import PUBLISHABLE_RELEASE_STATUSES, verify_release_files
 
 
@@ -307,6 +309,17 @@ def restore_public_release(
                 raw_path = row.get("path")
                 expected = row.get("sha256")
                 if not isinstance(raw_path, str) or not raw_path.strip():
+                    continue
+                source_commit = row.get("source_commit")
+                if source_commit:
+                    try:
+                        validate_source_commit(source_commit)
+                        validate_alert_path(raw_path.removeprefix("data/"))
+                        validate_alert_sha256(expected)
+                    except AlertArchiveError as exc:
+                        raise PagesReleaseError("public archived alert source is invalid") from exc
+                    # Pinned immutable history is read directly by the browser.
+                    # It is intentionally not copied back into the Pages tree.
                     continue
                 if not isinstance(expected, str) or len(expected) != 64:
                     continue

@@ -608,16 +608,25 @@ jobs:
       - name: Configure GitHub Pages
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true'
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
-      - name: Upload Pages artifact
+      - name: Prepare bounded Pages payload
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true'
+        id: stage_pages_payload
+        run: |
+          git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
+          data_release_sha="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"
+          python -m src.pages_budget --stage --source-root site --output-root "$RUNNER_TEMP/prstk-pages" --source-commit "$data_release_sha"
+          printf 'PAGES_MANIFEST_PATH=%s\n' "$RUNNER_TEMP/prstk-pages/data/release-manifest.json" >> "$GITHUB_ENV"
+      - name: Upload Pages artifact
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.stage_pages_payload.outcome == 'success'
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
-          path: site
+          path: ${{ runner.temp }}/prstk-pages
       - name: Deploy Pages
-        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.stage_pages_payload.outcome == 'success'
         id: deployment
         uses: ./.github/actions/deploy-pages-retry
         with:
+          manifest_path: ${{ runner.temp }}/prstk-pages/data/release-manifest.json
           phase: scheduled_release
           fallback_url: ${{ env.DASHBOARD_URL }}
       - name: Bound deployment recovery to the original delivery window
@@ -688,7 +697,7 @@ jobs:
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.deployment_identity.outputs.verified == 'true'
         id: release_gate
         run: |
-          arguments=(--manifest "$MANIFEST_PATH" --expected-release-id "${{ steps.release_manifest.outputs.release_id }}" --expected-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" --public-url "${{ steps.deployment.outputs.page_url }}" --deployment-id "${{ steps.deployment_identity.outputs.deployment_id }}" --phase pre_delivery --result-output "/tmp/prstk-release-gate-pre-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json" --public-timeout-seconds 180 --public-delay 2 --public-max-delay 20)
+          arguments=(--manifest "$PAGES_MANIFEST_PATH" --expected-release-id "${{ steps.release_manifest.outputs.release_id }}" --expected-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" --public-url "${{ steps.deployment.outputs.page_url }}" --deployment-id "${{ steps.deployment_identity.outputs.deployment_id }}" --phase pre_delivery --result-output "/tmp/prstk-release-gate-pre-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json" --public-timeout-seconds 180 --public-delay 2 --public-max-delay 20)
           if [ -f "/tmp/prstk-alert-targets-${GITHUB_RUN_ID}.json" ]; then
             arguments+=(--expected-alert-targets-file "/tmp/prstk-alert-targets-${GITHUB_RUN_ID}.json")
           fi
@@ -854,7 +863,7 @@ jobs:
           TELEGRAM_SUBSCRIPTIONS_ENABLED: "true"
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --send-only --slot-key "${{ steps.window.outputs.key }}" --snapshot "$SNAPSHOT_PATH" --manifest "$MANIFEST_PATH" --public-url "${{ steps.deployment.outputs.page_url }}"
+        run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --send-only --slot-key "${{ steps.window.outputs.key }}" --snapshot "$SNAPSHOT_PATH" --manifest "$PAGES_MANIFEST_PATH" --public-url "${{ steps.deployment.outputs.page_url }}"
       - name: Publish scheduled notification decision
         if: always() && steps.late_expiry.outputs.expired != 'true'
         env:
@@ -1217,17 +1226,26 @@ jobs:
         run: |
           python -m src.build_assets --root site --build-sha "$GITHUB_SHA"
           python -m src.asset_contract --root site
-      - name: Upload reconciled Pages artifact
+      - name: Prepare bounded reconciled Pages payload
         if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success'
+        id: stage_reconciled_pages
+        run: |
+          git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
+          data_release_sha="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"
+          python -m src.pages_budget --stage --source-root site --output-root "$RUNNER_TEMP/prstk-pages-reconciled" --source-commit "$data_release_sha"
+          printf 'PAGES_RECONCILED_MANIFEST_PATH=%s\n' "$RUNNER_TEMP/prstk-pages-reconciled/data/release-manifest.json" >> "$GITHUB_ENV"
+      - name: Upload reconciled Pages artifact
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success' && steps.stage_reconciled_pages.outcome == 'success'
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           name: github-pages-reconciled
-          path: site
+          path: ${{ runner.temp }}/prstk-pages-reconciled
       - name: Deploy reconciled Pages release
-        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success'
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success' && steps.stage_reconciled_pages.outcome == 'success'
         id: reconciled_deployment
         uses: ./.github/actions/deploy-pages-retry
         with:
+          manifest_path: ${{ runner.temp }}/prstk-pages-reconciled/data/release-manifest.json
           artifact_name: github-pages-reconciled
           phase: receipt_reconciliation
           fallback_url: ${{ env.DASHBOARD_URL }}
@@ -1248,7 +1266,7 @@ jobs:
         id: reconciled_release_gate
         run: >-
           python -m src.release_gate
-          --manifest "$MANIFEST_PATH"
+          --manifest "$PAGES_RECONCILED_MANIFEST_PATH"
           --expected-release-id "${{ steps.persist_notification_ledger.outputs.reconciled_release_id }}"
           --expected-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}"
           --public-url "${{ steps.reconciled_deployment.outputs.page_url }}"
@@ -1319,7 +1337,7 @@ jobs:
           RECEIPT_CALLBACK_URL: ${{ vars.RECEIPT_CALLBACK_URL }}
         run: |
           python -m src.creator_dispatch \
-            --manifest "$MANIFEST_PATH" \
+            --manifest "$PAGES_RECONCILED_MANIFEST_PATH" \
             --public-url "${{ steps.reconciled_deployment.outputs.page_url || steps.deployment.outputs.page_url }}" \
             >> "$GITHUB_OUTPUT"
       - name: Summarize Creator notification decision

@@ -1651,3 +1651,73 @@ def test_public_alert_target_gate_covers_missing_tampered_and_matching_alerts(mo
     assert _validate_public_alert_target(loaded, manifest, public_url="https://example.test", notification_id="a") == [
         "click target alert request rejected:TypeError"
     ]
+
+
+def test_public_archived_alert_uses_only_the_fixed_commit_source(monkeypatch):
+    import hashlib
+
+    body = json.dumps({
+        "notification_id": "old-alert", "release_id": "release-old",
+        "snapshot_id": "snapshot-old", "observation_id": "observation-old",
+    }, separators=(",", ":")).encode()
+    row = {
+        "notification_id": "old-alert", "release_id": "release-old",
+        "path": "alerts/old-alert.json", "sha256": hashlib.sha256(body).hexdigest(),
+        "source_commit": "a" * 40,
+    }
+    requested = []
+
+    class Response:
+        content = body
+
+        @staticmethod
+        def raise_for_status():
+            return None
+
+    def get(url, **kwargs):
+        requested.append((url, kwargs))
+        return Response()
+
+    monkeypatch.setattr("src.release_gate.requests.get", get)
+    assert _validate_public_alert_target(
+        {"alert-index.json": {"alerts": [row]}},
+        {"release_id": "release-current"},
+        public_url="https://pages.example.test",
+        notification_id="old-alert", target_release_id="release-old",
+        snapshot_id="snapshot-old", observation_id="observation-old",
+    ) == []
+    assert len(requested) == 1
+    url, kwargs = requested[0]
+    assert url == "https://raw.githubusercontent.com/hanjhou2000716/prstklab-stk-detector/" + "a" * 40 + "/site/data/alerts/old-alert.json"
+    assert kwargs["allow_redirects"] is False
+
+
+def test_public_archived_alert_rejects_identity_and_source_mismatch(monkeypatch):
+    import hashlib
+
+    body = json.dumps({"notification_id": "different", "release_id": "release-old"}).encode()
+    row = {
+        "notification_id": "wanted", "release_id": "release-old",
+        "path": "alerts/wanted.json", "sha256": hashlib.sha256(body).hexdigest(),
+        "source_commit": "b" * 40,
+    }
+
+    class Response:
+        content = body
+
+        @staticmethod
+        def raise_for_status():
+            return None
+
+    monkeypatch.setattr("src.release_gate.requests.get", lambda *_args, **_kwargs: Response())
+    assert _validate_public_alert_target(
+        {"alert-index.json": {"alerts": [row]}}, {"release_id": "release-current"},
+        public_url="https://pages.example.test", notification_id="wanted",
+        target_release_id="release-old",
+    ) == ["click target alert identity mismatch"]
+    row["source_commit"] = "not-a-commit"
+    assert _validate_public_alert_target(
+        {"alert-index.json": {"alerts": [row]}}, {"release_id": "release-current"},
+        public_url="https://pages.example.test", notification_id="wanted",
+        target_release_id="release-old",
+    ) == ["click target alert fixed source is invalid"]

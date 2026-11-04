@@ -14,6 +14,12 @@ The legacy GitHub outlet no longer manufactures a failed Actions run to imitate 
 
 The implementation targets the Free tier, but the service owner must re-check the current provider quotas and account plan before deployment. It never provisions paid capacity.
 
+## Bounded Pages history
+
+All Pages publishers stage a separate payload and enforce a shared 512 MiB package budget before upload. The append-only data-release branch remains the complete source of historical notification details. The published index keeps the current release and details with unresolved delivery receipts in Pages; other historical rows point to the exact data-release commit and safe `alerts/*.json` path. The browser and public release gate fetch only that pinned source, verify SHA-256 and notification/release identity, and stop on any mismatch or redirect. They never search another release for a replacement detail. Do not delete or rewrite the archived alert files or their index rows.
+
+Research recovery also requires evidence from the actual scan, exact Pages deployment binding and public release gate. A no-op is healthy only when its selected-work reason is valid. OIDC failures report safe input-shape categories only; keep the hostname allowlist and no-redirect policy intact.
+
 ## Required owner setup
 
 ### 1. Dedicated Gmail sender and OAuth

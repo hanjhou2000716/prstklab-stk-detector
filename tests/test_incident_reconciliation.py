@@ -1685,6 +1685,16 @@ def test_research_incident_uses_open_reminder_and_recovery_policy(monkeypatch):
             "schema_version": "unified-research-terminal-v1", "run_id": 77, "attempt": 2,
             "sha": "c" * 40, "production_run": True,
             "business_status": "healthy", "reason": "",
+            "stages": {
+                "research_noop": True,
+                "research_selection": "current_noop",
+                "research_selection_reason": "research_slot_already_current",
+                "required_market_strategy_pairs": [],
+                "selected_market_strategy_pairs": [],
+                "executed_market_strategy_pairs": [],
+                "unstarted_required_pairs": [],
+                "strategy_pair_dispositions": {},
+            },
         },
     )
     assert recovered["recovered_issue_numbers"] == [900]
