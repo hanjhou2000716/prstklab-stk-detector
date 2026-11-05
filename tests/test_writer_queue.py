@@ -734,9 +734,6 @@ def test_started_collection_before_pending_gate_is_deferred_but_later_step_is_no
         monkeypatch.undo()
 
 
-
-
-
 def test_queue_api_recovers_after_repeated_incomplete_pending_snapshots(monkeypatch):
     sleeps = []
     pending_reads = 0
@@ -785,6 +782,7 @@ def test_queue_api_recovers_after_repeated_incomplete_pending_snapshots(monkeypa
     assert result.recovery_rounds == 3
     assert pending_reads == 4
     assert sleeps == [2.0, 5.0, 10.0]
+
 
 def test_queue_api_restarts_from_first_page_after_transient_count_mismatch(monkeypatch):
     sleeps = []
