@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "df3401b5b6e9ea42",
-  "snapshot_id": "news-cc7cf67d88b6a5fb",
+  "market_snapshot_id": "86ec05136ef4fb2c",
+  "snapshot_id": "news-480bf5e0180ac896",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -437,15 +437,15 @@
       ],
       "stories": [
         {
-          "story_id": "news-47e0d0438e70917d80a3",
+          "story_id": "news-b83f2a8b286abee274ae",
           "provider": "anue",
           "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "〈美股早盤〉選後行情兩樣情！道瓊續揚、那指開低 台積電ADR挫跌4.5%",
-          "raw_title": "〈美股早盤〉選後行情兩樣情！道瓊續揚、那指開低 台積電ADR挫跌4.5%",
-          "normalized_fact": "美股期中選舉後資金續輪動，道瓊一度漲300點、那指跌1.7%，費半跌逾5%，台積電ADR挫4.5%。 市場憂民主黨勝選恐收緊資料中心監管，並押注Fed下月升息1碼機率約80%。 高通、安謀財測未驚喜挫跌；AppLovin財報優於預期大漲，韓國三星、SK海力士皆跌逾7%。",
-          "market_topic": "rates_fx",
+          "title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
+          "raw_title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
+          "normalized_fact": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
+          "market_topic": "energy_geopolitics",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -453,43 +453,42 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "美股期中選舉後資金續輪動，道瓊一度漲300點、那指跌1.7%，費半跌逾5%，台積電ADR挫4.5%。 市場憂民主黨勝選恐收緊資料中心監管，並押注Fed下月升息1碼機率約80%。 高通、安謀財測未驚喜挫跌；AppLovin財報優於預期大漲，韓國三星、SK海力士皆跌逾7%。",
+          "summary": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
           "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6648620",
-          "url": "https://news.cnyes.com/news/id/6648620",
-          "published_at": "2026-11-05T14:42:02+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6644497",
+          "url": "https://news.cnyes.com/news/id/6644497",
+          "published_at": "2026-11-02T21:20:03+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "recent_reference",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-05",
+          "publication_age_trading_sessions": 4,
+          "published_local_date": "2026-11-03",
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
+          "entities": [],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "energy"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
+            "category": "conflict",
+            "reason": "conflict_subject_action",
             "matched_terms": [
-              "fed",
-              "升息"
+              "伊朗",
+              "戰爭"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "fed",
-              "升息"
+              "伊朗",
+              "戰爭"
             ],
-            "matched_subject": "fed",
-            "matched_action": "升息",
-            "matched_market_object": "fed",
+            "matched_subject": "伊朗",
+            "matched_action": "戰爭",
+            "matched_market_object": "伊朗",
             "input_fields": [
               "description",
               "summary",
@@ -497,32 +496,34 @@
             ]
           },
           "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM",
+            "market:global",
+            "active_event:brent",
+            "active_event:wti",
+            "active_event:伊朗",
+            "active_event:原油",
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "美股期中選舉後資金續輪動道瓊一度漲300點那指跌17費半跌逾5台積電adr挫45市場憂民主黨勝選恐收緊資料中心監管並押注fed下月升息1碼機率約80高通安謀財測未驚喜挫跌applovin財報優於預期大漲韓國三星sk海力士皆跌逾7",
-          "event_cluster_key": "event-628c4248f8dbd31ae497",
-          "published_time_bucket": "2026-11-05T14:00:00+00:00",
+          "dedupe_key": "伊朗示意願以對話解決戰爭市場對中東原油供應恢復期待升高布油挫逾7布油跌866美元至10477美元wti跌766美元至9646美元伊朗與卡達官員持續協商美伊協議仍受關注油市對中東消息高度敏感供應風險仍在高盛上調預測若波斯灣產量偏低布蘭特2027年恐升至140美元",
+          "event_cluster_key": "event-47cdd7b0f47f2961142e",
+          "published_time_bucket": "2026-11-02T21:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "fed",
-            "升息"
+            "伊朗",
+            "戰爭"
           ],
-          "matched_subject": "fed",
-          "matched_action": "升息",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
+          "matched_subject": "伊朗",
+          "matched_action": "戰爭",
+          "matched_market_object": "伊朗",
+          "decision_value_class": "geopolitics_policy",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "鉅亨網｜持股關聯",
+          "source": "鉅亨網｜市場焦點",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -531,7 +532,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 140
+          "ranking_score": 150
         },
         {
           "story_id": "news-292019ea40dbe2462333",
@@ -925,15 +926,15 @@
       ],
       "editorial_candidates": [
         {
-          "story_id": "news-47e0d0438e70917d80a3",
+          "story_id": "news-b83f2a8b286abee274ae",
           "provider": "anue",
           "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "〈美股早盤〉選後行情兩樣情！道瓊續揚、那指開低 台積電ADR挫跌4.5%",
-          "raw_title": "〈美股早盤〉選後行情兩樣情！道瓊續揚、那指開低 台積電ADR挫跌4.5%",
-          "normalized_fact": "美股期中選舉後資金續輪動，道瓊一度漲300點、那指跌1.7%，費半跌逾5%，台積電ADR挫4.5%。 市場憂民主黨勝選恐收緊資料中心監管，並押注Fed下月升息1碼機率約80%。 高通、安謀財測未驚喜挫跌；AppLovin財報優於預期大漲，韓國三星、SK海力士皆跌逾7%。",
-          "market_topic": "rates_fx",
+          "title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
+          "raw_title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
+          "normalized_fact": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
+          "market_topic": "energy_geopolitics",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -941,43 +942,42 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "美股期中選舉後資金續輪動，道瓊一度漲300點、那指跌1.7%，費半跌逾5%，台積電ADR挫4.5%。 市場憂民主黨勝選恐收緊資料中心監管，並押注Fed下月升息1碼機率約80%。 高通、安謀財測未驚喜挫跌；AppLovin財報優於預期大漲，韓國三星、SK海力士皆跌逾7%。",
+          "summary": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
           "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6648620",
-          "url": "https://news.cnyes.com/news/id/6648620",
-          "published_at": "2026-11-05T14:42:02+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6644497",
+          "url": "https://news.cnyes.com/news/id/6644497",
+          "published_at": "2026-11-02T21:20:03+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "recent_reference",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-05",
+          "publication_age_trading_sessions": 4,
+          "published_local_date": "2026-11-03",
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
+          "entities": [],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "energy"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
+            "category": "conflict",
+            "reason": "conflict_subject_action",
             "matched_terms": [
-              "fed",
-              "升息"
+              "伊朗",
+              "戰爭"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "fed",
-              "升息"
+              "伊朗",
+              "戰爭"
             ],
-            "matched_subject": "fed",
-            "matched_action": "升息",
-            "matched_market_object": "fed",
+            "matched_subject": "伊朗",
+            "matched_action": "戰爭",
+            "matched_market_object": "伊朗",
             "input_fields": [
               "description",
               "summary",
@@ -985,32 +985,34 @@
             ]
           },
           "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM",
+            "market:global",
+            "active_event:brent",
+            "active_event:wti",
+            "active_event:伊朗",
+            "active_event:原油",
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "美股期中選舉後資金續輪動道瓊一度漲300點那指跌17費半跌逾5台積電adr挫45市場憂民主黨勝選恐收緊資料中心監管並押注fed下月升息1碼機率約80高通安謀財測未驚喜挫跌applovin財報優於預期大漲韓國三星sk海力士皆跌逾7",
-          "event_cluster_key": "event-628c4248f8dbd31ae497",
-          "published_time_bucket": "2026-11-05T14:00:00+00:00",
+          "dedupe_key": "伊朗示意願以對話解決戰爭市場對中東原油供應恢復期待升高布油挫逾7布油跌866美元至10477美元wti跌766美元至9646美元伊朗與卡達官員持續協商美伊協議仍受關注油市對中東消息高度敏感供應風險仍在高盛上調預測若波斯灣產量偏低布蘭特2027年恐升至140美元",
+          "event_cluster_key": "event-47cdd7b0f47f2961142e",
+          "published_time_bucket": "2026-11-02T21:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "fed",
-            "升息"
+            "伊朗",
+            "戰爭"
           ],
-          "matched_subject": "fed",
-          "matched_action": "升息",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
+          "matched_subject": "伊朗",
+          "matched_action": "戰爭",
+          "matched_market_object": "伊朗",
+          "decision_value_class": "geopolitics_policy",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "鉅亨網｜持股關聯",
+          "source": "鉅亨網｜市場焦點",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -1019,7 +1021,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 140
+          "ranking_score": 150
         },
         {
           "story_id": "news-292019ea40dbe2462333",
@@ -2278,6 +2280,103 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 27
+        },
+        {
+          "story_id": "news-47e0d0438e70917d80a3",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈美股早盤〉選後行情兩樣情！道瓊續揚、那指開低 台積電ADR挫跌4.5%",
+          "raw_title": "〈美股早盤〉選後行情兩樣情！道瓊續揚、那指開低 台積電ADR挫跌4.5%",
+          "normalized_fact": "美股期中選舉後資金續輪動，道瓊一度漲300點、那指跌1.7%，費半跌逾5%，台積電ADR挫4.5%。 市場憂民主黨勝選恐收緊資料中心監管，並押注Fed下月升息1碼機率約80%。 高通、安謀財測未驚喜挫跌；AppLovin財報優於預期大漲，韓國三星、SK海力士皆跌逾7%。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美股期中選舉後資金續輪動，道瓊一度漲300點、那指跌1.7%，費半跌逾5%，台積電ADR挫4.5%。 市場憂民主黨勝選恐收緊資料中心監管，並押注Fed下月升息1碼機率約80%。 高通、安謀財測未驚喜挫跌；AppLovin財報優於預期大漲，韓國三星、SK海力士皆跌逾7%。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6648620",
+          "url": "https://news.cnyes.com/news/id/6648620",
+          "published_at": "2026-11-05T14:42:02+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-11-05",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "升息"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "升息"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "升息",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美股期中選舉後資金續輪動道瓊一度漲300點那指跌17費半跌逾5台積電adr挫45市場憂民主黨勝選恐收緊資料中心監管並押注fed下月升息1碼機率約80高通安謀財測未驚喜挫跌applovin財報優於預期大漲韓國三星sk海力士皆跌逾7",
+          "event_cluster_key": "event-628c4248f8dbd31ae497",
+          "published_time_bucket": "2026-11-05T14:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "升息"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "升息",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜持股關聯",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 2,
+          "inventory_saved_at": "2026-11-05T16:24:01.219224+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 37
         },
         {
           "story_id": "news-4335e64c72e291f5e63f",
@@ -4640,104 +4739,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 17
-        },
-        {
-          "story_id": "news-0753b7d9facace3d3cd8",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "蔡司鏡片打中月球上高爾夫球 BBC事實查核中心記者揭晶片供應鏈「台積電神整合」 - UDN",
-          "raw_title": "蔡司鏡片打中月球上高爾夫球 BBC事實查核中心記者揭晶片供應鏈「台積電神整合」 - UDN",
-          "normalized_fact": "蔡司鏡片打中月球上高爾夫球 BBC事實查核中心記者揭晶片供應鏈台積電神整合 UDN。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "蔡司鏡片打中月球上高爾夫球 BBC事實查核中心記者揭晶片供應鏈「台積電神整合」 UDN",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiU0FVX3lxTE9rLVJHeDR0QjVDbWNlT0lUenZ5TXBiQWhRSUE1UkdzME5mZXVzTnVLUFRUcHl2ZzlZMDEwWUxtNm1peFJHNDllYTZhQUpmUHhtUUww0gFYQVVfeXFMTkVRNkhjRzBsUVBzTnlIU0NfRGUtZjA4dGZaS0xMRUFvaW5HM2pGVGdKa3h2Tzg5UXZyOUdzS3k1a3dUN2J5RXAyaTh1enczZ0NXOWh1UGFEMA",
-          "url": "https://news.google.com/rss/articles/CBMiU0FVX3lxTE9rLVJHeDR0QjVDbWNlT0lUenZ5TXBiQWhRSUE1UkdzME5mZXVzTnVLUFRUcHl2ZzlZMDEwWUxtNm1peFJHNDllYTZhQUpmUHhtUUww0gFYQVVfeXFMTkVRNkhjRzBsUVBzTnlIU0NfRGUtZjA4dGZaS0xMRUFvaW5HM2pGVGdKa3h2Tzg5UXZyOUdzS3k1a3dUN2J5RXAyaTh1enczZ0NXOWh1UGFEMA",
-          "published_at": "2026-11-03T04:43:22+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 4,
-          "published_local_date": "2026-11-03",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "台積電",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "台積電",
-              "供應"
-            ],
-            "matched_subject": "台積電",
-            "matched_action": "供應",
-            "matched_market_object": "台積電",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM"
-          ],
-          "freshness": "published",
-          "dedupe_key": "蔡司鏡片打中月球上高爾夫球bbc事實查核中心記者揭晶片供應鏈台積電神整合udn",
-          "event_cluster_key": "event-57553042adba3b29f10d",
-          "published_time_bucket": "2026-11-03T04:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "台積電",
-            "供應"
-          ],
-          "matched_subject": "台積電",
-          "matched_action": "供應",
-          "matched_market_object": "台積電",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 4,
-          "inventory_saved_at": "2026-11-03T15:34:57.080947+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 16
         }
       ],
       "source_diversity": {
@@ -4764,19 +4765,22 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 25,
-          "TSM": 25,
+          "2330": 22,
+          "TSM": 22,
           "NVDA": 6,
           "2059": 1
         },
         "sector_interest": {},
         "topic_interest": {
+          "brent": 2,
+          "wti": 2,
+          "伊朗": 2,
+          "原油": 3,
           "ai": 38,
-          "原油": 1,
           "荷姆茲": 1
         },
         "market_interest": {
-          "taiwan": 111
+          "taiwan": 109
         },
         "context": {
           "tracked_tickers": [
@@ -4862,8 +4866,8 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 25,
-            "TSM": 25,
+            "2330": 22,
+            "TSM": 22,
             "NVDA": 6
           },
           "research_candidate": {
@@ -4871,18 +4875,22 @@
           },
           "tracked_sector": {},
           "active_event": {
+            "brent": 2,
+            "wti": 2,
+            "伊朗": 2,
+            "原油": 3,
             "ai": 38,
-            "原油": 1,
             "荷姆茲": 1
           },
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 32,
+      "excluded_count": 31,
       "exclusion_reasons": {
         "incomplete_normalized_fact": 4,
-        "insufficient_market_relevance": 26,
+        "insufficient_market_relevance": 22,
         "market_scope_mismatch": 6,
+        "missing_published_at": 1,
         "outside_calendar_window": 14
       },
       "status": "ready",
@@ -4893,32 +4901,33 @@
         "successful_provider_count": 5,
         "failed_provider_count": 0,
         "disabled_provider_count": 0,
-        "fetched": 43,
-        "normalized": 43,
+        "fetched": 42,
+        "normalized": 42,
         "eligible": 11,
-        "excluded": 32,
-        "date_eligible_current": 29,
-        "date_excluded_current": 14,
+        "excluded": 31,
+        "date_eligible_current": 27,
+        "date_excluded_current": 15,
         "date_exclusion_reasons_current": {
+          "missing_published_at": 1,
           "outside_calendar_window": 14
         },
-        "date_eligible_inventory": 68,
+        "date_eligible_inventory": 67,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-11-05T16:33:54.949662+00:00",
+        "reference_time": "2026-11-05T16:38:57.878902+00:00",
         "deduped": 11,
         "publicly_ranked": 5,
         "current_eligible": 11,
-        "inventory_considered": 68,
-        "inventory_eligible": 50,
+        "inventory_considered": 67,
+        "inventory_eligible": 51,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 32,
-        "fetched_story_count": 43,
-        "normalized_story_count": 43,
+        "filtered_story_count": 31,
+        "fetched_story_count": 42,
+        "normalized_story_count": 42,
         "eligible_story_count": 11,
         "deduped_story_count": 11,
         "ranked_story_count": 5
@@ -4927,8 +4936,8 @@
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 68,
-        "eligible": 50,
+        "considered": 67,
+        "eligible": 51,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -4940,8 +4949,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 43,
-          "checked_at": "2026-11-05T16:33:54.949707+00:00"
+          "item_count": 42,
+          "checked_at": "2026-11-05T16:38:57.878949+00:00"
         },
         {
           "provider": "twse",
@@ -4952,10 +4961,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-11-05T16:33:54.949707+00:00",
+          "checked_at": "2026-11-05T16:38:57.878949+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+          "last_success_at": "2026-11-05T16:38:57.878949+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4980,10 +4989,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-11-05T16:33:54.949707+00:00",
+          "checked_at": "2026-11-05T16:38:57.878949+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+          "last_success_at": "2026-11-05T16:38:57.878949+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -5008,24 +5017,24 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 1,
-          "checked_at": "2026-11-05T16:33:54.949707+00:00",
+          "checked_at": "2026-11-05T16:38:57.878949+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 1,
-          "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+          "last_success_at": "2026-11-05T16:38:57.878949+00:00",
           "last_failure_at": null,
-          "stories_ingested": 3,
+          "stories_ingested": 2,
           "stories_deduped": 1,
           "ranked_count": 1,
           "relevance_distribution": {
-            "market": 3,
-            "tracked_ticker": 2
+            "active_event": 1,
+            "market": 2
           },
           "funnel": {
-            "fetched_count": 3,
-            "normalized_count": 3,
-            "market_compatible_count": 3,
+            "fetched_count": 2,
+            "normalized_count": 2,
+            "market_compatible_count": 2,
             "eligible_count": 1,
-            "excluded_count": 2,
+            "excluded_count": 1,
             "deduped_count": 1,
             "ranked_count": 1
           }
@@ -5039,10 +5048,10 @@
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
           "item_count": 1,
-          "checked_at": "2026-11-05T16:33:54.949707+00:00",
+          "checked_at": "2026-11-05T16:38:57.878949+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 1,
-          "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+          "last_success_at": "2026-11-05T16:38:57.878949+00:00",
           "last_failure_at": null,
           "stories_ingested": 7,
           "stories_deduped": 1,
@@ -5071,10 +5080,10 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
           "item_count": 3,
-          "checked_at": "2026-11-05T16:33:54.949707+00:00",
+          "checked_at": "2026-11-05T16:38:57.878949+00:00",
           "raw_item_count": 30,
           "filtered_item_count": 3,
-          "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+          "last_success_at": "2026-11-05T16:38:57.878949+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
           "stories_deduped": 9,
@@ -5097,34 +5106,34 @@
         }
       ],
       "observability": {
-        "stories_ingested": 43,
+        "stories_ingested": 42,
         "stories_deduped": 11,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 8,
-          "market": 43,
+          "active_event": 9,
+          "market": 42,
           "research_candidate": 1,
-          "tracked_ticker": 9
+          "tracked_ticker": 7
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+            "last_success_at": "2026-11-05T16:38:57.878949+00:00",
             "last_failure_at": null,
-            "stories_ingested": 3,
+            "stories_ingested": 2,
             "stories_deduped": 1,
             "ranked_count": 1,
             "relevance_distribution": {
-              "market": 3,
-              "tracked_ticker": 2
+              "active_event": 1,
+              "market": 2
             },
             "funnel": {
-              "fetched_count": 3,
-              "normalized_count": 3,
-              "market_compatible_count": 3,
+              "fetched_count": 2,
+              "normalized_count": 2,
+              "market_compatible_count": 2,
               "eligible_count": 1,
-              "excluded_count": 2,
+              "excluded_count": 1,
               "deduped_count": 1,
               "ranked_count": 1
             }
@@ -5132,7 +5141,7 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+            "last_success_at": "2026-11-05T16:38:57.878949+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
             "stories_deduped": 9,
@@ -5156,7 +5165,7 @@
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+            "last_success_at": "2026-11-05T16:38:57.878949+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5175,7 +5184,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+            "last_success_at": "2026-11-05T16:38:57.878949+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5217,7 +5226,7 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+            "last_success_at": "2026-11-05T16:38:57.878949+00:00",
             "last_failure_at": null,
             "stories_ingested": 7,
             "stories_deduped": 1,
@@ -5458,103 +5467,6 @@
         }
       ],
       "stories": [
-        {
-          "story_id": "news-47e0d0438e70917d80a3",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "〈美股早盤〉選後行情兩樣情！道瓊續揚、那指開低 台積電ADR挫跌4.5%",
-          "raw_title": "〈美股早盤〉選後行情兩樣情！道瓊續揚、那指開低 台積電ADR挫跌4.5%",
-          "normalized_fact": "美股期中選舉後資金續輪動，道瓊一度漲300點、那指跌1.7%，費半跌逾5%，台積電ADR挫4.5%。 市場憂民主黨勝選恐收緊資料中心監管，並押注Fed下月升息1碼機率約80%。 高通、安謀財測未驚喜挫跌；AppLovin財報優於預期大漲，韓國三星、SK海力士皆跌逾7%。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "美股期中選舉後資金續輪動，道瓊一度漲300點、那指跌1.7%，費半跌逾5%，台積電ADR挫4.5%。 市場憂民主黨勝選恐收緊資料中心監管，並押注Fed下月升息1碼機率約80%。 高通、安謀財測未驚喜挫跌；AppLovin財報優於預期大漲，韓國三星、SK海力士皆跌逾7%。",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6648620",
-          "url": "https://news.cnyes.com/news/id/6648620",
-          "published_at": "2026-11-05T14:42:02+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-05",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "升息"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "升息"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "升息",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM",
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美股期中選舉後資金續輪動道瓊一度漲300點那指跌17費半跌逾5台積電adr挫45市場憂民主黨勝選恐收緊資料中心監管並押注fed下月升息1碼機率約80高通安謀財測未驚喜挫跌applovin財報優於預期大漲韓國三星sk海力士皆跌逾7",
-          "event_cluster_key": "event-628c4248f8dbd31ae497",
-          "published_time_bucket": "2026-11-05T14:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "升息"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "升息",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 140
-        },
         {
           "story_id": "news-72d5adde0fa474ff2b31",
           "provider": "yahoo_finance",
@@ -5915,19 +5827,17 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        }
-      ],
-      "editorial_candidates": [
+        },
         {
-          "story_id": "news-47e0d0438e70917d80a3",
-          "provider": "anue",
-          "provider_name": "Anue",
+          "story_id": "news-732dc20b1ba631113727",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "〈美股早盤〉選後行情兩樣情！道瓊續揚、那指開低 台積電ADR挫跌4.5%",
-          "raw_title": "〈美股早盤〉選後行情兩樣情！道瓊續揚、那指開低 台積電ADR挫跌4.5%",
-          "normalized_fact": "美股期中選舉後資金續輪動，道瓊一度漲300點、那指跌1.7%，費半跌逾5%，台積電ADR挫4.5%。 市場憂民主黨勝選恐收緊資料中心監管，並押注Fed下月升息1碼機率約80%。 高通、安謀財測未驚喜挫跌；AppLovin財報優於預期大漲，韓國三星、SK海力士皆跌逾7%。",
-          "market_topic": "rates_fx",
+          "title": "Stock Market Today: Nasdaq Slumps 4% As AI Trade Unwinds; CrowdStrike Sells Off (Live Coverage)",
+          "raw_title": "Stock Market Today: Nasdaq Slumps 4% As AI Trade Unwinds; CrowdStrike Sells Off (Live Coverage)",
+          "normalized_fact": "The Dow Jones index rises Thursday after the postelection rally. Cava and Dutch Bros plunge on earnings。",
+          "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5935,11 +5845,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "美股期中選舉後資金續輪動，道瓊一度漲300點、那指跌1.7%，費半跌逾5%，台積電ADR挫4.5%。 市場憂民主黨勝選恐收緊資料中心監管，並押注Fed下月升息1碼機率約80%。 高通、安謀財測未驚喜挫跌；AppLovin財報優於預期大漲，韓國三星、SK海力士皆跌逾7%。",
+          "summary": "The Dow Jones index rises Thursday after the postelection rally. Cava and Dutch Bros plunge on earnings.",
           "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6648620",
-          "url": "https://news.cnyes.com/news/id/6648620",
-          "published_at": "2026-11-05T14:42:02+00:00",
+          "canonical_url": "https://finance.yahoo.com/m/38cb0654-6e49-3715-b4e4-f2f830876d7a/stock-market-today%3A-nasdaq.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/m/38cb0654-6e49-3715-b4e4-f2f830876d7a/stock-market-today%3A-nasdaq.html?.tsrc=rss",
+          "published_at": "2026-11-05T16:15:35+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -5950,28 +5860,29 @@
           "market_compatible": true,
           "tickers": [],
           "entities": [
-            "2330",
-            "TSM"
+            "NASDAQ"
           ],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "ai"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
             "matched_terms": [
-              "fed",
-              "升息"
+              "ai",
+              "earnings"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "fed",
-              "升息"
+              "ai",
+              "earnings"
             ],
-            "matched_subject": "fed",
-            "matched_action": "升息",
-            "matched_market_object": "fed",
+            "matched_subject": "ai",
+            "matched_action": "earnings",
+            "matched_market_object": "ai",
             "input_fields": [
               "description",
               "summary",
@@ -5979,32 +5890,30 @@
             ]
           },
           "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM",
-            "market:us"
+            "market:us",
+            "active_event:ai"
           ],
           "freshness": "published",
-          "dedupe_key": "美股期中選舉後資金續輪動道瓊一度漲300點那指跌17費半跌逾5台積電adr挫45市場憂民主黨勝選恐收緊資料中心監管並押注fed下月升息1碼機率約80高通安謀財測未驚喜挫跌applovin財報優於預期大漲韓國三星sk海力士皆跌逾7",
-          "event_cluster_key": "event-628c4248f8dbd31ae497",
-          "published_time_bucket": "2026-11-05T14:00:00+00:00",
+          "dedupe_key": "thedowjonesindexrisesthursdayafterthepostelectionrallycavaanddutchbrosplungeonearnings",
+          "event_cluster_key": "event-f23ea0cf5bbf3f8093f6",
+          "published_time_bucket": "2026-11-05T16:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "fed",
-            "升息"
+            "ai",
+            "earnings"
           ],
-          "matched_subject": "fed",
-          "matched_action": "升息",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
+          "matched_subject": "ai",
+          "matched_action": "earnings",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
+          "source": "Yahoo Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -6013,8 +5922,10 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 140
-        },
+          "ranking_score": 135
+        }
+      ],
+      "editorial_candidates": [
         {
           "story_id": "news-72d5adde0fa474ff2b31",
           "provider": "yahoo_finance",
@@ -6924,6 +6835,103 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 45
+        },
+        {
+          "story_id": "news-47e0d0438e70917d80a3",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈美股早盤〉選後行情兩樣情！道瓊續揚、那指開低 台積電ADR挫跌4.5%",
+          "raw_title": "〈美股早盤〉選後行情兩樣情！道瓊續揚、那指開低 台積電ADR挫跌4.5%",
+          "normalized_fact": "美股期中選舉後資金續輪動，道瓊一度漲300點、那指跌1.7%，費半跌逾5%，台積電ADR挫4.5%。 市場憂民主黨勝選恐收緊資料中心監管，並押注Fed下月升息1碼機率約80%。 高通、安謀財測未驚喜挫跌；AppLovin財報優於預期大漲，韓國三星、SK海力士皆跌逾7%。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美股期中選舉後資金續輪動，道瓊一度漲300點、那指跌1.7%，費半跌逾5%，台積電ADR挫4.5%。 市場憂民主黨勝選恐收緊資料中心監管，並押注Fed下月升息1碼機率約80%。 高通、安謀財測未驚喜挫跌；AppLovin財報優於預期大漲，韓國三星、SK海力士皆跌逾7%。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6648620",
+          "url": "https://news.cnyes.com/news/id/6648620",
+          "published_at": "2026-11-05T14:42:02+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-05",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "升息"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "升息"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "升息",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美股期中選舉後資金續輪動道瓊一度漲300點那指跌17費半跌逾5台積電adr挫45市場憂民主黨勝選恐收緊資料中心監管並押注fed下月升息1碼機率約80高通安謀財測未驚喜挫跌applovin財報優於預期大漲韓國三星sk海力士皆跌逾7",
+          "event_cluster_key": "event-628c4248f8dbd31ae497",
+          "published_time_bucket": "2026-11-05T14:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "升息"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "升息",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-11-05T15:24:20.121165+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 40
         },
         {
           "story_id": "news-5ec2efa852f40cd7b0e7",
@@ -9574,16 +9582,14 @@
         "status": "multi_source",
         "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 3,
-        "provider_count": 3,
+        "independent_source_count": 2,
+        "provider_count": 2,
         "provider_ids": [
-          "anue",
           "google_news",
           "yahoo_finance"
         ],
         "source_domains": [
           "finance.yahoo.com",
-          "news.cnyes.com",
           "news.google.com"
         ],
         "supporting_source_count": 1,
@@ -9593,27 +9599,27 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 2,
-          "TSM": 2,
-          "NVDA": 15
+          "NVDA": 13,
+          "2330": 1,
+          "TSM": 1
         },
         "sector_interest": {},
         "topic_interest": {
-          "ai": 31,
+          "ai": 28,
+          "wti": 4,
+          "伊朗": 5,
+          "原油": 4,
+          "brent": 2,
           "gold": 5,
           "sanctions": 2,
           "oil": 16,
           "iran": 7,
           "war": 4,
           "israel": 1,
-          "hormuz": 1,
-          "wti": 2,
-          "伊朗": 2,
-          "原油": 2,
-          "brent": 1
+          "hormuz": 1
         },
         "market_interest": {
-          "us": 139
+          "us": 140
         },
         "context": {
           "tracked_tickers": [
@@ -9699,35 +9705,35 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 2,
-            "TSM": 2,
-            "NVDA": 15
+            "NVDA": 13,
+            "2330": 1,
+            "TSM": 1
           },
           "research_candidate": {},
           "tracked_sector": {},
           "active_event": {
-            "ai": 31,
+            "ai": 28,
+            "wti": 4,
+            "伊朗": 5,
+            "原油": 4,
+            "brent": 2,
             "gold": 5,
             "sanctions": 2,
             "oil": 16,
             "iran": 7,
             "war": 4,
             "israel": 1,
-            "hormuz": 1,
-            "wti": 2,
-            "伊朗": 2,
-            "原油": 2,
-            "brent": 1
+            "hormuz": 1
           },
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 49,
+      "excluded_count": 50,
       "exclusion_reasons": {
         "generic_official_filing": 20,
-        "incomplete_normalized_fact": 16,
-        "insufficient_market_relevance": 16,
-        "market_scope_mismatch": 6,
+        "incomplete_normalized_fact": 18,
+        "insufficient_market_relevance": 18,
+        "market_scope_mismatch": 4,
         "missing_published_at": 1,
         "outside_calendar_window": 19
       },
@@ -9741,40 +9747,40 @@
         "disabled_provider_count": 1,
         "fetched": 60,
         "normalized": 60,
-        "eligible": 11,
-        "excluded": 49,
+        "eligible": 10,
+        "excluded": 50,
         "date_eligible_current": 40,
         "date_excluded_current": 20,
         "date_exclusion_reasons_current": {
           "missing_published_at": 1,
           "outside_calendar_window": 19
         },
-        "date_eligible_inventory": 79,
+        "date_eligible_inventory": 80,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-11-05T16:33:54.949662+00:00",
-        "deduped": 10,
+        "reference_time": "2026-11-05T16:38:57.878902+00:00",
+        "deduped": 9,
         "publicly_ranked": 5,
-        "current_eligible": 11,
-        "inventory_considered": 79,
+        "current_eligible": 10,
+        "inventory_considered": 80,
         "inventory_eligible": 50,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 49,
+        "filtered_story_count": 50,
         "fetched_story_count": 60,
         "normalized_story_count": 60,
-        "eligible_story_count": 11,
-        "deduped_story_count": 10,
+        "eligible_story_count": 10,
+        "deduped_story_count": 9,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 79,
+        "considered": 80,
         "eligible": 50,
         "selected": 0,
         "target_count": 5,
@@ -9788,7 +9794,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 60,
-          "checked_at": "2026-11-05T16:33:54.949707+00:00"
+          "checked_at": "2026-11-05T16:38:57.878949+00:00"
         },
         {
           "provider": "sec",
@@ -9799,10 +9805,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-11-05T16:33:54.949707+00:00",
+          "checked_at": "2026-11-05T16:38:57.878949+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+          "last_success_at": "2026-11-05T16:38:57.878949+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9830,12 +9836,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-11-05T16:33:54.949707+00:00",
+          "checked_at": "2026-11-05T16:38:57.878949+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-11-05T16:33:54.949707+00:00",
+          "last_failure_at": "2026-11-05T16:38:57.878949+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9858,10 +9864,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-11-05T16:33:54.949707+00:00",
+          "checked_at": "2026-11-05T16:38:57.878949+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+          "last_success_at": "2026-11-05T16:38:57.878949+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9882,32 +9888,32 @@
           "key": "news_us_anue",
           "legacy_key": "official_news_us_anue",
           "label": "anue market news",
-          "status": "healthy",
+          "status": "no_event",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 1,
-          "checked_at": "2026-11-05T16:33:54.949707+00:00",
+          "item_count": 0,
+          "checked_at": "2026-11-05T16:38:57.878949+00:00",
           "raw_item_count": 5,
-          "filtered_item_count": 1,
-          "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+          "filtered_item_count": 0,
+          "last_success_at": "2026-11-05T16:38:57.878949+00:00",
           "last_failure_at": null,
-          "stories_ingested": 2,
-          "stories_deduped": 1,
-          "ranked_count": 1,
+          "stories_ingested": 3,
+          "stories_deduped": 0,
+          "ranked_count": 0,
           "relevance_distribution": {
-            "active_event": 1,
-            "market": 2,
-            "tracked_ticker": 1
+            "active_event": 2,
+            "market": 3
           },
           "funnel": {
-            "fetched_count": 2,
-            "normalized_count": 2,
-            "market_compatible_count": 2,
-            "eligible_count": 1,
-            "excluded_count": 1,
-            "deduped_count": 1,
-            "ranked_count": 1
-          }
+            "fetched_count": 3,
+            "normalized_count": 3,
+            "market_compatible_count": 3,
+            "eligible_count": 0,
+            "excluded_count": 3,
+            "deduped_count": 0,
+            "ranked_count": 0
+          },
+          "data_gap": "filtered_no_market_match"
         },
         {
           "provider": "yahoo_finance",
@@ -9917,28 +9923,28 @@
           "status": "healthy",
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
-          "item_count": 2,
-          "checked_at": "2026-11-05T16:33:54.949707+00:00",
+          "item_count": 3,
+          "checked_at": "2026-11-05T16:38:57.878949+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 2,
-          "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+          "filtered_item_count": 3,
+          "last_success_at": "2026-11-05T16:38:57.878949+00:00",
           "last_failure_at": null,
           "stories_ingested": 5,
           "stories_deduped": 3,
-          "ranked_count": 2,
+          "ranked_count": 3,
           "relevance_distribution": {
-            "active_event": 3,
+            "active_event": 2,
             "market": 5,
             "tracked_ticker": 3
           },
           "funnel": {
-            "fetched_count": 8,
+            "fetched_count": 7,
             "normalized_count": 5,
             "market_compatible_count": 5,
             "eligible_count": 3,
             "excluded_count": 2,
             "deduped_count": 3,
-            "ranked_count": 2
+            "ranked_count": 3
           }
         },
         {
@@ -9950,10 +9956,10 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
           "item_count": 2,
-          "checked_at": "2026-11-05T16:33:54.949707+00:00",
+          "checked_at": "2026-11-05T16:38:57.878949+00:00",
           "raw_item_count": 40,
           "filtered_item_count": 2,
-          "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+          "last_success_at": "2026-11-05T16:38:57.878949+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
           "stories_deduped": 6,
@@ -9976,42 +9982,41 @@
       ],
       "observability": {
         "stories_ingested": 60,
-        "stories_deduped": 10,
+        "stories_deduped": 9,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 25,
+          "active_event": 24,
           "market": 60,
-          "tracked_ticker": 6
+          "tracked_ticker": 4
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+            "last_success_at": "2026-11-05T16:38:57.878949+00:00",
             "last_failure_at": null,
-            "stories_ingested": 2,
-            "stories_deduped": 1,
-            "ranked_count": 1,
+            "stories_ingested": 3,
+            "stories_deduped": 0,
+            "ranked_count": 0,
             "relevance_distribution": {
-              "active_event": 1,
-              "market": 2,
-              "tracked_ticker": 1
+              "active_event": 2,
+              "market": 3
             },
             "funnel": {
-              "fetched_count": 2,
-              "normalized_count": 2,
-              "market_compatible_count": 2,
-              "eligible_count": 1,
-              "excluded_count": 1,
-              "deduped_count": 1,
-              "ranked_count": 1
+              "fetched_count": 3,
+              "normalized_count": 3,
+              "market_compatible_count": 3,
+              "eligible_count": 0,
+              "excluded_count": 3,
+              "deduped_count": 0,
+              "ranked_count": 0
             }
           },
           {
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-11-05T16:33:54.949707+00:00",
+            "last_failure_at": "2026-11-05T16:38:57.878949+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -10029,7 +10034,7 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+            "last_success_at": "2026-11-05T16:38:57.878949+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
             "stories_deduped": 6,
@@ -10052,7 +10057,7 @@
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+            "last_success_at": "2026-11-05T16:38:57.878949+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -10071,7 +10076,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+            "last_success_at": "2026-11-05T16:38:57.878949+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -10094,20 +10099,19 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 3,
+            "stories_ingested": 2,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "active_event": 2,
-              "market": 3,
-              "tracked_ticker": 1
+              "active_event": 1,
+              "market": 2
             },
             "funnel": {
-              "fetched_count": 3,
-              "normalized_count": 3,
+              "fetched_count": 2,
+              "normalized_count": 2,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 3,
+              "excluded_count": 2,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -10115,24 +10119,24 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-11-05T16:33:54.949707+00:00",
+            "last_success_at": "2026-11-05T16:38:57.878949+00:00",
             "last_failure_at": null,
             "stories_ingested": 5,
             "stories_deduped": 3,
-            "ranked_count": 2,
+            "ranked_count": 3,
             "relevance_distribution": {
-              "active_event": 3,
+              "active_event": 2,
               "market": 5,
               "tracked_ticker": 3
             },
             "funnel": {
-              "fetched_count": 8,
+              "fetched_count": 7,
               "normalized_count": 5,
               "market_compatible_count": 5,
               "eligible_count": 3,
               "excluded_count": 2,
               "deduped_count": 3,
-              "ranked_count": 2
+              "ranked_count": 3
             }
           }
         ]
