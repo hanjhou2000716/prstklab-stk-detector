@@ -283,6 +283,9 @@ _WRITER_WORKFLOW_PATH_BY_ID = {value: key for key, value in WRITER_WORKFLOW_IDEN
 ACTIVE_STATUSES = frozenset({"queued", "in_progress", "waiting", "pending", "requested"})
 _RUNS_PER_PAGE = 100
 _MAX_RUN_PAGES_PER_STATUS = 100
+# A live Actions queue can move runs between states during paginated reads.
+# Retry incomplete snapshots for a bounded settle window before failing closed.
+_QUEUE_SNAPSHOT_RECOVERY_DELAYS = (2.0, 5.0, 10.0, 15.0, 20.0)
 
 
 def _next_jobs_page_url(
@@ -1379,10 +1382,10 @@ def _fetch_runs(
     sleep = sleeper or time.sleep
     started = time.monotonic()
     deadline = min(started + 90.0, deadline_monotonic) if deadline_monotonic is not None else started + 90.0
-    delays = (2.0, 5.0)
+    delays = _QUEUE_SNAPSHOT_RECOVERY_DELAYS
     last_error: RetryableQueueSnapshotError | None = None
     attempts = 0
-    for round_index in range(3):
+    for round_index in range(len(delays) + 1):
         attempts = round_index + 1
         try:
             rows = _fetch_runs_once(
@@ -1398,7 +1401,7 @@ def _fetch_runs(
             )
         except RetryableQueueSnapshotError as exc:
             last_error = exc
-            if round_index >= 2:
+            if round_index >= len(delays):
                 break
             delay = delays[round_index]
             remaining = deadline - time.monotonic()
