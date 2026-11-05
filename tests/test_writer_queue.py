@@ -736,6 +736,56 @@ def test_started_collection_before_pending_gate_is_deferred_but_later_step_is_no
 
 
 
+
+def test_queue_api_recovers_after_repeated_incomplete_pending_snapshots(monkeypatch):
+    sleeps = []
+    pending_reads = 0
+
+    class Response:
+        headers = {}
+
+        def __init__(self, payload):
+            self.payload = payload
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return json.dumps(self.payload).encode()
+
+    stable_rows = [
+        {"id": run_id, "run_attempt": 1, "path": ".github/workflows/quality.yml", "workflow_id": 999}
+        for run_id in (100, 101)
+    ]
+
+    def open_request(request, timeout):
+        nonlocal pending_reads
+        query = request.full_url.split("?", 1)[1]
+        params = dict(item.split("=", 1) for item in query.split("&"))
+        if params["status"] != "pending":
+            return Response({"total_count": 0, "workflow_runs": []})
+        pending_reads += 1
+        if pending_reads <= 3:
+            # GitHub reports the old count while one queued run is changing state.
+            return Response({"total_count": 3, "workflow_runs": stable_rows})
+        return Response({"total_count": len(stable_rows), "workflow_runs": stable_rows})
+
+    monkeypatch.setattr(writer_queue, "urlopen", open_request)
+    result = writer_queue._fetch_runs(
+        api_url="https://api.github.test",
+        repository="owner/repo",
+        token="token",
+        sleeper=sleeps.append,
+    )
+
+    assert [row["id"] for row in result] == [100, 101]
+    assert result.recovery_rounds == 3
+    assert pending_reads == 4
+    assert sleeps == [2.0, 5.0, 10.0]
+
 def test_queue_api_restarts_from_first_page_after_transient_count_mismatch(monkeypatch):
     sleeps = []
     monkeypatch.setattr(writer_queue.time, "sleep", sleeps.append)
