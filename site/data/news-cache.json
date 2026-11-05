@@ -2,7 +2,7 @@
   "schema": 2,
   "markets": {
     "taiwan": {
-      "fetched_at": "2026-11-05T16:59:20.397475+00:00",
+      "fetched_at": "2026-11-05T17:03:48.943587+00:00",
       "stories": [
         {
           "title": "〈台股盤前要聞〉大同華映案和解露曙光、勞動基金前9月賺2.44兆元、10月製造業PMI下滑",
@@ -41,24 +41,30 @@
           }
         },
         {
-          "title": "5. 〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
+          "title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
           "url": "https://news.cnyes.com/news/id/6644497",
           "provider": "anue",
           "source": "鉅亨網｜市場焦點",
           "relevance": "market",
+          "summary": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
+          "published_at": "2026-11-02T21:20:03+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6644497",
           "market_classification": {
             "market_scope": "global",
             "taiwan_matches": [],
             "us_matches": [],
             "global_matches": [
               "伊朗",
-              "brent"
+              "戰爭",
+              "原油",
+              "brent",
+              "wti"
             ],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": null
+              "matched_term_count": 5,
+              "source_market_hint": "global"
             }
           },
           "market_scope": "global",
@@ -66,14 +72,101 @@
           "us_matches": [],
           "global_matches": [
             "伊朗",
-            "brent"
+            "戰爭",
+            "原油",
+            "brent",
+            "wti"
           ],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": null
-          }
+            "matched_term_count": 5,
+            "source_market_hint": "global"
+          },
+          "story_id": "news-b83f2a8b286abee274ae",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "raw_title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
+          "normalized_fact": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
+          "market_topic": "energy_geopolitics",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": null,
+          "published_local_date": "",
+          "market": "global",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "energy"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "conflict",
+            "reason": "conflict_subject_action",
+            "matched_terms": [
+              "伊朗",
+              "戰爭"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "伊朗",
+              "戰爭"
+            ],
+            "matched_subject": "伊朗",
+            "matched_action": "戰爭",
+            "matched_market_object": "伊朗",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:global"
+          ],
+          "freshness": "published",
+          "dedupe_key": "伊朗示意願以對話解決戰爭市場對中東原油供應恢復期待升高布油挫逾7布油跌866美元至10477美元wti跌766美元至9646美元伊朗與卡達官員持續協商美伊協議仍受關注油市對中東消息高度敏感供應風險仍在高盛上調預測若波斯灣產量偏低布蘭特2027年恐升至140美元",
+          "event_cluster_key": "event-47cdd7b0f47f2961142e",
+          "published_time_bucket": "2026-11-02T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "伊朗",
+            "戰爭"
+          ],
+          "matched_subject": "伊朗",
+          "matched_action": "戰爭",
+          "matched_market_object": "伊朗",
+          "decision_value_class": "geopolitics_policy",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "title": "南韓財團加速布局美國、縮減中國業務 10年內美國關係企業增至3.3倍",
@@ -892,16 +985,16 @@
           }
         },
         {
-          "title": "美國45%資料中心擴建恐延宕 專家點名台積電和這些AI供應鏈廠商恐受衝擊 | 徐莉雯 | 新聞 - 風傳媒",
-          "url": "https://news.google.com/rss/articles/CBMiTkFVX3lxTE85MkdvWGdFQ2lKT0I2dHlNdU90a1Y5T0xZOHJQTVoyeG9RY1ZfRTBHZDEzQnItSmpiTXQ2clNwSWdIRUNVWVMzVFJMNk83Zw",
-          "summary": "美國45%資料中心擴建恐延宕 專家點名台積電和這些AI供應鏈廠商恐受衝擊 | 徐莉雯 | 新聞 風傳媒",
+          "title": "美國45%資料中心擴建恐延宕 專家點名台積電和這些AI供應鏈廠商恐受衝擊 - Yahoo新聞",
+          "url": "https://news.google.com/rss/articles/CBMiwwNBVV95cUxQQUtrSGFORWFwOUdQTUtEbjA1Uk1JNnY3RlFNWHRXaGtRVEphSHJNX0FSSHMwbUJHLWFLZWc1Z19kdm16YmFSUWU0UXdyZ0lMM3VDNlpIdTFjQjFxMmJpSUVnNzRvV0RVX3UyX2wxdDg0U19yQ2xHVUN5LWN3VXRpeUljT25rN1EzS1lFTVVHUi1Ic0toaUc2M055bTgxSmtHdlVidy1mWklDR2RaOWY2bEk3SHZ4Y1VGSGIxQVRWR2JfQW1hMjFVQjR2dXhBR3VxNE4ycXVfVTFGZ3E0ZTBNNk45UDROclBRTldmWFRtRFJ6S0s1ZWRnclBORkdMTnBqTU1lYjdwS1lyQS1PMVJmbHBFemRtT19UZ2E3MVhOcnlyWE84WTV0TklHVEJmeDRtVlRoeXdaLS05ZGN6eTVEaFFHc2RhQnJ6dWwzX3ZKYXdUaHNFMGF4dDhabmFyZk01R3pOc19iQlU4NUZhSmtGVVFBdU1hN0o3TjVsaFBaSEpPLU5Uc0c2T3RLWFYxTlA0LTJ0TXNPd29kci1pa3dGMzhpYnllZlZQNnAtNkZvZGdORnVOM2FKYzBRQWsxX3JHd0Fn",
+          "summary": "美國45%資料中心擴建恐延宕 專家點名台積電和這些AI供應鏈廠商恐受衝擊 Yahoo新聞",
           "source": "Google News｜台股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "cross_market",
           "relevance": "market",
-          "published_at": "2026-11-05T14:52:00+00:00",
+          "published_at": "2026-11-05T16:52:46+00:00",
           "market_classification": {
             "market_scope": "cross_market",
             "taiwan_matches": [
@@ -909,14 +1002,13 @@
               "台積電"
             ],
             "us_matches": [
-              "美國",
-              "tsm"
+              "美國"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 4,
+              "matched_term_count": 3,
               "source_market_hint": "cross_market"
             }
           },
@@ -926,30 +1018,29 @@
             "台積電"
           ],
           "us_matches": [
-            "美國",
-            "tsm"
+            "美國"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 4,
+            "matched_term_count": 3,
             "source_market_hint": "cross_market"
           },
-          "story_id": "news-fc94ab39ded93ebe33ab",
+          "story_id": "news-04d4f3b0f68df79af1dd",
           "provider_name": "Google News",
-          "raw_title": "美國45%資料中心擴建恐延宕 專家點名台積電和這些AI供應鏈廠商恐受衝擊 | 徐莉雯 | 新聞 - 風傳媒",
-          "normalized_fact": "美國45%資料中心擴建恐延宕 專家點名台積電和這些AI供應鏈廠商恐受衝擊 | 徐莉雯 | 新聞 風傳媒。",
+          "raw_title": "美國45%資料中心擴建恐延宕 專家點名台積電和這些AI供應鏈廠商恐受衝擊 - Yahoo新聞",
+          "normalized_fact": "美國45%資料中心擴建恐延宕 專家點名台積電和這些AI供應鏈廠商恐受衝擊 Yahoo。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
+          "byline_removed": true,
+          "publisher_removed": true,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiTkFVX3lxTE85MkdvWGdFQ2lKT0I2dHlNdU90a1Y5T0xZOHJQTVoyeG9RY1ZfRTBHZDEzQnItSmpiTXQ2clNwSWdIRUNVWVMzVFJMNk83Zw",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiwwNBVV95cUxQQUtrSGFORWFwOUdQTUtEbjA1Uk1JNnY3RlFNWHRXaGtRVEphSHJNX0FSSHMwbUJHLWFLZWc1Z19kdm16YmFSUWU0UXdyZ0lMM3VDNlpIdTFjQjFxMmJpSUVnNzRvV0RVX3UyX2wxdDg0U19yQ2xHVUN5LWN3VXRpeUljT25rN1EzS1lFTVVHUi1Ic0toaUc2M055bTgxSmtHdlVidy1mWklDR2RaOWY2bEk3SHZ4Y1VGSGIxQVRWR2JfQW1hMjFVQjR2dXhBR3VxNE4ycXVfVTFGZ3E0ZTBNNk45UDROclBRTldmWFRtRFJ6S0s1ZWRnclBORkdMTnBqTU1lYjdwS1lyQS1PMVJmbHBFemRtT19UZ2E3MVhOcnlyWE84WTV0TklHVEJmeDRtVlRoeXdaLS05ZGN6eTVEaFFHc2RhQnJ6dWwzX3ZKYXdUaHNFMGF4dDhabmFyZk01R3pOc19iQlU4NUZhSmtGVVFBdU1hN0o3TjVsaFBaSEpPLU5Uc0c2T3RLWFYxTlA0LTJ0TXNPd29kci1pa3dGMzhpYnllZlZQNnAtNkZvZGdORnVOM2FKYzBRQWsxX3JHd0Fn",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "",
@@ -993,9 +1084,9 @@
             "market:cross_market"
           ],
           "freshness": "published",
-          "dedupe_key": "美國45資料中心擴建恐延宕專家點名台積電和這些ai供應鏈廠商恐受衝擊徐莉雯新聞風傳媒",
-          "event_cluster_key": "event-bbf1f333f668beb1e698",
-          "published_time_bucket": "2026-11-05T14:00:00+00:00",
+          "dedupe_key": "美國45資料中心擴建恐延宕專家點名台積電和這些ai供應鏈廠商恐受衝擊yahoo",
+          "event_cluster_key": "event-bf0534df0c3817cace47",
+          "published_time_bucket": "2026-11-05T16:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
@@ -1680,127 +1771,6 @@
           "ranking_score": 115
         },
         {
-          "title": "矽光子打入AI高速光通訊供應鏈！「磊晶廠」Q3毛利率衝25.82%、創19年新高2027年新產能拚逐季開出 - Yahoo股市",
-          "url": "https://news.google.com/rss/articles/CBMijgNBVV95cUxQaEpxV0FnRmJpUi1LVmZqeTJtWGFlU0JIUDMzeXhNZlNLNGFfYlZsRDBBWU94UXhDbFozaGNJRXBlZmRrRTZTWXNsTFFHWm9iRUdOcU03N0JwVWJhZ21qN1VuWGpnaTY2aTF0c0dFYkREbmVNcm1IelE2T2VSRmVhU29rblBuaFVYbTRGbUU2NEZRWVpqLUg4dEVsWnMzeU9leVp0eHNfby0zRGFLcE1KQjVoY1ZPOTE0NnA5TERCZ0VOeTBweU05RW1INzJPRW9lRExrYXI4LXhvQWRmMmNkN2QyQ0tobWtJdXBVUWhoUEJuYnoxQ3N2T3Z5T2pGOV9FUjU4VG5KQmtrc1ZWVnUtQjQwTzlqdlY4VnFvRkI0TXlKVHVtaWF2TVRYR0FKWU1GRFlucGhPWWxYRldSY3lQR2YxZ19nSEZHdFVHajhET2lUWlVpTm9RNnZubFREcVk3TjItTE1tVHNEREFOMjA2eEZKWkpCOVk2NEJLM2VZaUE5VEVUUE9IaUt5M1Rhdw",
-          "summary": "矽光子打入AI高速光通訊供應鏈！「磊晶廠」Q3毛利率衝25.82%、創19年新高2027年新產能拚逐季開出 Yahoo股市",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-11-04T23:30:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          },
-          "story_id": "news-7bc4f57f7255debd6bd5",
-          "provider_name": "Google News",
-          "raw_title": "矽光子打入AI高速光通訊供應鏈！「磊晶廠」Q3毛利率衝25.82%、創19年新高2027年新產能拚逐季開出 - Yahoo股市",
-          "normalized_fact": "矽光子打入AI高速光通訊供應鏈，磊晶廠Q3毛利率衝25.82%、創19年新高2027年新產能拚逐季開出 Yahoo股市。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMijgNBVV95cUxQaEpxV0FnRmJpUi1LVmZqeTJtWGFlU0JIUDMzeXhNZlNLNGFfYlZsRDBBWU94UXhDbFozaGNJRXBlZmRrRTZTWXNsTFFHWm9iRUdOcU03N0JwVWJhZ21qN1VuWGpnaTY2aTF0c0dFYkREbmVNcm1IelE2T2VSRmVhU29rblBuaFVYbTRGbUU2NEZRWVpqLUg4dEVsWnMzeU9leVp0eHNfby0zRGFLcE1KQjVoY1ZPOTE0NnA5TERCZ0VOeTBweU05RW1INzJPRW9lRExrYXI4LXhvQWRmMmNkN2QyQ0tobWtJdXBVUWhoUEJuYnoxQ3N2T3Z5T2pGOV9FUjU4VG5KQmtrc1ZWVnUtQjQwTzlqdlY4VnFvRkI0TXlKVHVtaWF2TVRYR0FKWU1GRFlucGhPWWxYRldSY3lQR2YxZ19nSEZHdFVHajhET2lUWlVpTm9RNnZubFREcVk3TjItTE1tVHNEREFOMjA2eEZKWkpCOVk2NEJLM2VZaUE5VEVUUE9IaUt5M1Rhdw",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-05",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "產能"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "產能"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "產能",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "矽光子打入ai高速光通訊供應鏈磊晶廠q3毛利率衝2582創19年新高2027年新產能拚逐季開出yahoo股市",
-          "event_cluster_key": "event-7d9f267a323ca0b9e469",
-          "published_time_bucket": "2026-11-04T23:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "產能"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "產能",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
           "title": "陸掌握全球逾半晶片特氣產能 美智庫示警：恐成半導體供應鏈新瓶頸 - 中時新聞網",
           "url": "https://news.google.com/rss/articles/CBMibkFVX3lxTE02dlQ2cVVlSjdHNWU0NFlIODBpMG04ZGtfNjY4UDhTTHQ4VzBhcUFMbHA0NHJaY0VMRmFlRXdiR3VlR3otMU92U01URjZkcEhwaUZMeGM4M1RNQ2VPRUhaYjdKbG9GWFpmenMtSDVR",
           "summary": "陸掌握全球逾半晶片特氣產能 美智庫示警：恐成半導體供應鏈新瓶頸 中時新聞網",
@@ -2047,6 +2017,134 @@
           "ranking_score": 115
         },
         {
+          "title": "AI基建股為何沒跟上美股大漲？美國資料中心監管疑慮升溫台灣伺服器、PCB供應鏈面臨新考驗 - 理財周刊",
+          "url": "https://news.google.com/rss/articles/CBMib0FVX3lxTE54ZnJoNGRqYUlGTEUzOFFBc2JPMnZCU1ZqVG03a05ETlZsdHc3Y3drblZ6UFhJRUl5RHBDeXlYVHktdmVQRW9UNEtZcUtDLTI3ZWwyU2pVRkN1VEEtQ0hiclo4OTk4M2tRN05vdnFybw",
+          "summary": "AI基建股為何沒跟上美股大漲？美國資料中心監管疑慮升溫台灣伺服器、PCB供應鏈面臨新考驗 理財周刊",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "cross_market",
+          "relevance": "market",
+          "published_at": "2026-11-05T01:48:10+00:00",
+          "market_classification": {
+            "market_scope": "cross_market",
+            "taiwan_matches": [
+              "台股",
+              "台灣"
+            ],
+            "us_matches": [
+              "美股",
+              "美國"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 4,
+              "source_market_hint": "cross_market"
+            }
+          },
+          "market_scope": "cross_market",
+          "taiwan_matches": [
+            "台股",
+            "台灣"
+          ],
+          "us_matches": [
+            "美股",
+            "美國"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 4,
+            "source_market_hint": "cross_market"
+          },
+          "story_id": "news-8c3699b09a86bee6f8b3",
+          "provider_name": "Google News",
+          "raw_title": "AI基建股為何沒跟上美股大漲？美國資料中心監管疑慮升溫台灣伺服器、PCB供應鏈面臨新考驗 - 理財周刊",
+          "normalized_fact": "AI基建股為何沒跟上美股大漲？美國資料中心監管疑慮升溫台灣伺服器、PCB供應鏈面臨新考驗 理財周刊。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMib0FVX3lxTE54ZnJoNGRqYUlGTEUzOFFBc2JPMnZCU1ZqVG03a05ETlZsdHc3Y3drblZ6UFhJRUl5RHBDeXlYVHktdmVQRW9UNEtZcUtDLTI3ZWwyU2pVRkN1VEEtQ0hiclo4OTk4M2tRN05vdnFybw",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": null,
+          "published_local_date": "",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market"
+          ],
+          "freshness": "published",
+          "dedupe_key": "ai基建股為何沒跟上美股大漲美國資料中心監管疑慮升溫台灣伺服器pcb供應鏈面臨新考驗理財周刊",
+          "event_cluster_key": "event-159b0b043e7c850a8b4f",
+          "published_time_bucket": "2026-11-05T01:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
           "title": "外資狂倒1499億誰接走？投信276億逆勢撐盤 台股41855點上演千點V轉 - 理財周刊",
           "url": "https://news.google.com/rss/articles/CBMib0FVX3lxTE9tck9nSHQ4VmYyQzJQZnNLVy11NXZmakpIUmdXajNUMjJWakQ5MGwwaVFTbGZBTFN6THRpdTRjbFZ2Z21UU2FacWFyQXFzVFJPdVBiWDJRbF83c01QX19UY1lMVlhuMjZnakNxVFk1SQ?oc=5",
           "summary": "外資狂倒1499億誰接走？投信276億逆勢撐盤 台股41855點上演千點V轉 理財周刊",
@@ -2057,6 +2155,44 @@
           "market": "taiwan",
           "relevance": "market",
           "published_at": "2026-11-04T07:53:24+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "富邦證券攜手富邦投信合辦「2026臺灣週」論壇 - 中央社 CNA",
+          "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTFB6ekZQS2JIS1JHWFRQSXZRUjRrVUh3cXE4aVZFRUM2WXgzZVlnM2dPcWZaQjliZUdldkhfYUNsQjNDb0RsM2lnNDdWeGMxRFBrZmd5ektWNk55UQ?oc=5",
+          "summary": "富邦證券攜手富邦投信合辦「2026臺灣週」論壇 中央社 CNA",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-11-04T02:48:36+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -2129,44 +2265,6 @@
           }
         },
         {
-          "title": "富邦證券攜手富邦投信合辦「2026臺灣週」論壇 - 中央社 CNA",
-          "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTFB6ekZQS2JIS1JHWFRQSXZRUjRrVUh3cXE4aVZFRUM2WXgzZVlnM2dPcWZaQjliZUdldkhfYUNsQjNDb0RsM2lnNDdWeGMxRFBrZmd5ektWNk55UQ?oc=5",
-          "summary": "富邦證券攜手富邦投信合辦「2026臺灣週」論壇 中央社 CNA",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-11-04T02:48:36+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
           "title": "台灣ETF市場為何外資打不進？本土投信跑贏貝萊德、摩根大通 - 鉅亨網",
           "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE1IcXYzSkJtQlJ3WlJfQVdfTkVqTWM0QUpfQnJITFFoMW1KUjJXNEdpMnJ2WEdMNTZ3ODBxT3FKSVlYS1FWWWl2Z3pyZXp3U0U?oc=5",
           "summary": "台灣ETF市場為何外資打不進？本土投信跑贏貝萊德、摩根大通 鉅亨網",
@@ -2203,44 +2301,6 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 2,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "「外資大逃殺」壓低台股 投信：對股市影響多為短期 - 自由財經",
-          "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTFBhYmtOTUx0eG9VV2RYT25VWmExdENDZ00wVlY5dHR1S3JBUE9XS3lNTHo1T2p0Vk5SVXNpRGdXS2taVngxMW0tdld2S2pJQ1hzUC1mRmpJaW5adnRZd2Vn0gFkQVVfeXFMTmlRek9vWm9JVG1mUWhIWFBTb2N2VkJrMmNKXzZ2N2NVdmZScDgxeXhTd29UTmJ2RGdvdVpjaU0wVUd2b1YteHNtWkZVd0M2VDIyMW94b0wzaTJVTzBCVlZDaXhMZA?oc=5",
-          "summary": "「外資大逃殺」壓低台股 投信：對股市影響多為短期 自由財經",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-03-14T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
             "source_market_hint": "taiwan"
           }
         },
@@ -2283,6 +2343,44 @@
           }
         },
         {
+          "title": "「外資大逃殺」壓低台股 投信：對股市影響多為短期 - 自由財經",
+          "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTFBhYmtOTUx0eG9VV2RYT25VWmExdENDZ00wVlY5dHR1S3JBUE9XS3lNTHo1T2p0Vk5SVXNpRGdXS2taVngxMW0tdld2S2pJQ1hzUC1mRmpJaW5adnRZd2Vn0gFkQVVfeXFMTmlRek9vWm9JVG1mUWhIWFBTb2N2VkJrMmNKXzZ2N2NVdmZScDgxeXhTd29UTmJ2RGdvdVpjaU0wVUd2b1YteHNtWkZVd0M2VDIyMW94b0wzaTJVTzBCVlZDaXhMZA?oc=5",
+          "summary": "「外資大逃殺」壓低台股 投信：對股市影響多為短期 自由財經",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-03-14T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
           "title": "三大法人買賣超 – 外資買超(3260)威剛、(3653)健策，投信買超(2303)聯電、(2059)川湖，法人合計賣超163.78億元 - 永豐金證券",
           "url": "https://news.google.com/rss/articles/CBMiuwRBVV95cUxNWGk0eXNBZjh3TE02NkNJOC15djZweF9Sa3ZaX0JhZzBjTkNMWGhwQmFTMnU4ZS1iVHdUWnRBUmlZRlJTYko1dXFCSjhuTjY4RklZa0x3SEh2V2RScEVMLS1fOU5ZbjJrUlFTSWRLa1dhb3ZUZ2huZFVuMEhFaS1fOFhmaXdTSnlxQk8xcHp5NUZQT1Fua203Wm9la0dlQXlrbDBpMEphMkFjbk0wLVVGRnBYM3V0RWw2c2RYQkwzQl9lYW1CbWMzUThxd0tEaEcxSDRUTVFTaGtzejc3ZnM5NzVzc05ZRzhUOTRSdXlZbzg5eUVOZ19EMEVUWjZDMFpVLXk3cENWRmptSzc5M25xOUhERTgyTklrYl9GcTYtRTBwLVJSU2RBVTUxVjVqaG5YWWpJemJjQllqRFEydkczS2p5NWRZSE1vRmFvOTBBMXBnMWZpd3Bidl9EYUtaZHRKaUZrMDFPTWR5UjVBd0lNcGtHeTNrSElISzcwRlV2NXI4NU1QWTFMaTQyMVpScUhRY1pnOUNyRDJfX1pvYU4zeEJ3UmlZclluNHl2RjBSd2ZvSlp1MXlOWDVpZzVpWFIxdVBSWFc0X19ERW1xWVR2Q1pEel9hUENLTkpHN1M5N002V2c0Z3JDcW82aGVEalU5aEl5Umc0ZU5La1ZMdFdSVHZub2RCY0hTX2FwMEZIbjEyOEl5ZXA3T2d3LUJSbEJOVGtmVVJXdTMycTZSTVUwOGFOVXlmcy1nRHNv?oc=5",
           "summary": "三大法人買賣超 – 外資買超(3260)威剛、(3653)健策，投信買超(2303)聯電、(2059)川湖，法人合計賣超163.78億元 永豐金證券",
@@ -2293,6 +2391,44 @@
           "market": "taiwan",
           "relevance": "market",
           "published_at": "2026-08-24T07:00:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "原本要賣的股票，卻突然看到外資大量買進…外資狂買是好是壞？如何觀察外資買賣背後的訊號？｜投資診聊室 - Yahoo股市",
+          "url": "https://news.google.com/rss/articles/CBMimwVBVV95cUxPYUIwM3lEV3JJbWNzLXVYOW9FeHllSkNEaldzeGNuTFV0czhPQVRfbzZUOWVGZkZXcFNOR0VXS2RmMVo1bmc0ejFuLWpWTHBSMTZweDMxNXFEaXF1bmVGQmhoYUpmUzk2dnlTclBCRG83a2NaRmZrZ05IVTFaczlZeEdUaGhSbVI5M3pUQ2c5d3RYQXZRY1gzTmhPRC1PeV9pd3MxLVA5b1c1bnRUMFRiOGdjQ3pSbC1DbVd3UXVzUFZBU0h6N3Z0dEQtbUZfeXNRNWZxcm1YMms5Y0lsY2s1Rk9sWndUaXJJTDZJTHpRWUFJa0U1dkctbzc3Wk54TVpFbnVtU0Y5Z19zeXVUMTNGYW5IYWpYMGJaMlNVSHJoSENra2ZZUkFCbjc4M1h6Wnl5R2lhekd4OHhHRUQ3LTdQck1zYk9fQXZSMnVpZnpUWGU4enNwZ3BrdXVqZzBsWmxlZkRKbHFLTkUyZlNHX0MwZVkwS0VHNV9qSEloVEFIbThUUFRGd0k0ZmExMllGQ1lVV0ZPZ3NFRGVIRTZZNE9hcG1fOFd3VmZZQmREdzVSSkYwZ0JqdGFwdXpoemY1bVJrWGMtN0NoR0lrZmlSS1hVaEVncnFBSl8yTmkyQzdwLXJENnN4NTRVRTEtcUItMTN1ZkROQVdxaW00Ulo2WlNLSUItR3YyaTU1S2p5SHdQay01aEFmRngtSlNGVmZ4b1BpVUJqTEJuMDF6Y1p2Z3AzOUxhY1RPUHgyaVpWQlVldlBma211Uy1aaURVTkZVeVBiQ0o5d1FIVDQ3bnF0dnhWZVdJd0ZwZG9uTTJwcVdiYndXcFRSd0kxeUdiRnFNbnNsamJLaEhRbGdYNm13NXFKRDdnc0JpcGlFVmZF?oc=5",
+          "summary": "原本要賣的股票，卻突然看到外資大量買進…外資狂買是好是壞？如何觀察外資買賣背後的訊號？｜投資診聊室 Yahoo股市",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2025-07-24T07:00:00+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -2395,47 +2531,109 @@
             "matched_term_count": 1,
             "source_market_hint": "taiwan"
           }
-        },
-        {
-          "title": "投信是什麼？投信買賣超怎麼看？投信買賣超個股一定會漲？ - StockFeel 股感",
-          "url": "https://news.google.com/rss/articles/CBMi7wFBVV95cUxNWEROeEU2cFJEZXRaUkwyTEVCQXZoUnFtdHRic09ET1plQmRtQ2tFUlRsZlVrT0lKZkpJVWs5eWh4d0ptUnRIQ0VZWXhOclZTMzV5Y0ZacjJWWk1fLW9hZUVCamhwUml1Y0RhT0lWMG01dDNlR0M4aUdBWFp5Q2psMVNRX21jODctOXVsQXgzLXpWejNwc210aVJyR1F0RTRqdkhjLWJic1NmOHNBUm1IVzl6M3NMWHFQR3M1Y3NQb0xuY3N1dEc4ZmRLMmdrYUh3OEtPREVzUHBkdVVQbWVVaHlULUFPZzBrVFJBQTctTQ?oc=5",
-          "summary": "投信是什麼？投信買賣超怎麼看？投信買賣超個股一定會漲？ StockFeel 股感",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2025-06-26T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
         }
       ],
       "eligible_inventory": [
+        {
+          "story_id": "news-04d4f3b0f68df79af1dd",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "美國45%資料中心擴建恐延宕 專家點名台積電和這些AI供應鏈廠商恐受衝擊 - Yahoo新聞",
+          "raw_title": "美國45%資料中心擴建恐延宕 專家點名台積電和這些AI供應鏈廠商恐受衝擊 - Yahoo新聞",
+          "normalized_fact": "美國45%資料中心擴建恐延宕 專家點名台積電和這些AI供應鏈廠商恐受衝擊 Yahoo。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": true,
+          "publisher_removed": true,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美國45%資料中心擴建恐延宕 專家點名台積電和這些AI供應鏈廠商恐受衝擊 Yahoo新聞",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiwwNBVV95cUxQQUtrSGFORWFwOUdQTUtEbjA1Uk1JNnY3RlFNWHRXaGtRVEphSHJNX0FSSHMwbUJHLWFLZWc1Z19kdm16YmFSUWU0UXdyZ0lMM3VDNlpIdTFjQjFxMmJpSUVnNzRvV0RVX3UyX2wxdDg0U19yQ2xHVUN5LWN3VXRpeUljT25rN1EzS1lFTVVHUi1Ic0toaUc2M055bTgxSmtHdlVidy1mWklDR2RaOWY2bEk3SHZ4Y1VGSGIxQVRWR2JfQW1hMjFVQjR2dXhBR3VxNE4ycXVfVTFGZ3E0ZTBNNk45UDROclBRTldmWFRtRFJ6S0s1ZWRnclBORkdMTnBqTU1lYjdwS1lyQS1PMVJmbHBFemRtT19UZ2E3MVhOcnlyWE84WTV0TklHVEJmeDRtVlRoeXdaLS05ZGN6eTVEaFFHc2RhQnJ6dWwzX3ZKYXdUaHNFMGF4dDhabmFyZk01R3pOc19iQlU4NUZhSmtGVVFBdU1hN0o3TjVsaFBaSEpPLU5Uc0c2T3RLWFYxTlA0LTJ0TXNPd29kci1pa3dGMzhpYnllZlZQNnAtNkZvZGdORnVOM2FKYzBRQWsxX3JHd0Fn",
+          "url": "https://news.google.com/rss/articles/CBMiwwNBVV95cUxQQUtrSGFORWFwOUdQTUtEbjA1Uk1JNnY3RlFNWHRXaGtRVEphSHJNX0FSSHMwbUJHLWFLZWc1Z19kdm16YmFSUWU0UXdyZ0lMM3VDNlpIdTFjQjFxMmJpSUVnNzRvV0RVX3UyX2wxdDg0U19yQ2xHVUN5LWN3VXRpeUljT25rN1EzS1lFTVVHUi1Ic0toaUc2M055bTgxSmtHdlVidy1mWklDR2RaOWY2bEk3SHZ4Y1VGSGIxQVRWR2JfQW1hMjFVQjR2dXhBR3VxNE4ycXVfVTFGZ3E0ZTBNNk45UDROclBRTldmWFRtRFJ6S0s1ZWRnclBORkdMTnBqTU1lYjdwS1lyQS1PMVJmbHBFemRtT19UZ2E3MVhOcnlyWE84WTV0TklHVEJmeDRtVlRoeXdaLS05ZGN6eTVEaFFHc2RhQnJ6dWwzX3ZKYXdUaHNFMGF4dDhabmFyZk01R3pOc19iQlU4NUZhSmtGVVFBdU1hN0o3TjVsaFBaSEpPLU5Uc0c2T3RLWFYxTlA0LTJ0TXNPd29kci1pa3dGMzhpYnllZlZQNnAtNkZvZGdORnVOM2FKYzBRQWsxX3JHd0Fn",
+          "published_at": "2026-11-05T16:52:46+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-06",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "active_event:ai",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美國45資料中心擴建恐延宕專家點名台積電和這些ai供應鏈廠商恐受衝擊yahoo",
+          "event_cluster_key": "event-bf0534df0c3817cace47",
+          "published_time_bucket": "2026-11-05T16:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜台股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-11-05T17:03:48.943587+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
         {
           "story_id": "news-97425ddb03fb60501f92",
           "provider": "yahoo_finance",
@@ -7095,110 +7293,12 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 135
-        },
-        {
-          "story_id": "news-0753b7d9facace3d3cd8",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "蔡司鏡片打中月球上高爾夫球 BBC事實查核中心記者揭晶片供應鏈「台積電神整合」 - UDN",
-          "raw_title": "蔡司鏡片打中月球上高爾夫球 BBC事實查核中心記者揭晶片供應鏈「台積電神整合」 - UDN",
-          "normalized_fact": "蔡司鏡片打中月球上高爾夫球 BBC事實查核中心記者揭晶片供應鏈台積電神整合 UDN。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "蔡司鏡片打中月球上高爾夫球 BBC事實查核中心記者揭晶片供應鏈「台積電神整合」 UDN",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiU0FVX3lxTE9rLVJHeDR0QjVDbWNlT0lUenZ5TXBiQWhRSUE1UkdzME5mZXVzTnVLUFRUcHl2ZzlZMDEwWUxtNm1peFJHNDllYTZhQUpmUHhtUUww0gFYQVVfeXFMTkVRNkhjRzBsUVBzTnlIU0NfRGUtZjA4dGZaS0xMRUFvaW5HM2pGVGdKa3h2Tzg5UXZyOUdzS3k1a3dUN2J5RXAyaTh1enczZ0NXOWh1UGFEMA",
-          "url": "https://news.google.com/rss/articles/CBMiU0FVX3lxTE9rLVJHeDR0QjVDbWNlT0lUenZ5TXBiQWhRSUE1UkdzME5mZXVzTnVLUFRUcHl2ZzlZMDEwWUxtNm1peFJHNDllYTZhQUpmUHhtUUww0gFYQVVfeXFMTkVRNkhjRzBsUVBzTnlIU0NfRGUtZjA4dGZaS0xMRUFvaW5HM2pGVGdKa3h2Tzg5UXZyOUdzS3k1a3dUN2J5RXAyaTh1enczZ0NXOWh1UGFEMA",
-          "published_at": "2026-11-03T04:43:22+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-03",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "台積電",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "台積電",
-              "供應"
-            ],
-            "matched_subject": "台積電",
-            "matched_action": "供應",
-            "matched_market_object": "台積電",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM"
-          ],
-          "freshness": "published",
-          "dedupe_key": "蔡司鏡片打中月球上高爾夫球bbc事實查核中心記者揭晶片供應鏈台積電神整合udn",
-          "event_cluster_key": "event-57553042adba3b29f10d",
-          "published_time_bucket": "2026-11-03T04:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "台積電",
-            "供應"
-          ],
-          "matched_subject": "台積電",
-          "matched_action": "供應",
-          "matched_market_object": "台積電",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 4,
-          "inventory_saved_at": "2026-11-03T15:34:57.080947+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 125
         }
       ],
-      "inventory_saved_at": "2026-11-05T16:59:20.397475+00:00"
+      "inventory_saved_at": "2026-11-05T17:03:48.943587+00:00"
     },
     "us": {
-      "fetched_at": "2026-11-05T16:59:20.397475+00:00",
+      "fetched_at": "2026-11-05T17:03:48.943587+00:00",
       "stories": [
         {
           "title": "8-K - Federal Home Loan Bank of Atlanta (0001331465) (Filer)",
@@ -7758,6 +7858,46 @@
           }
         },
         {
+          "title": "Nvidia has lost nearly $1.4 trillion since its October record",
+          "url": "https://finance.yahoo.com/markets/article/nvidia-has-lost-nearly-14-trillion-since-its-october-record-165912910.html?.tsrc=rss",
+          "summary": "Nvidia is losing the most in S&P 500 stocks by value in Thursday's market rout, on track for a fifth straight week of losses.",
+          "source": "Yahoo Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-11-05T16:59:12+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "s&p 500",
+              "nvidia"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "s&p 500",
+            "nvidia"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "us"
+          }
+        },
+        {
           "title": "The AI Selloff Is Getting Worse. Nvidia, Dell and Data Center Stocks Are Plunging Hard. Is It Time to Buy the Dip?",
           "url": "https://www.fool.com/investing/2026/11/05/the-ai-selloff-is-getting-worse-nvidia-dell-and-data-center-stocks-are-plunging-hard-is-it-time-to-buy-the-dip/?.tsrc=rss",
           "summary": "A day after the midterms hammered AI stocks, the selling deepened and dragged the whole market down with it. Here's what's driving it and whether it's a chance to buy.",
@@ -7796,130 +7936,42 @@
           }
         },
         {
-          "title": "What 3.4% GDP Growth and a 4.2% Jobless Rate Say About a Hard Day on Wall Street",
-          "url": "https://finance.yahoo.com/news/3-4-gdp-growth-4-163400882.html?.tsrc=rss",
-          "summary": "American News Group News Commentary - U.S. stocks were sharply lower on Thursday morning. As of 11:02 a.m. ET, the S&P 500 was down 3.39% at 7,427.97, the Nasdaq Composite was down 5.08% at 24,430.26 and the Dow Jones Industrial Average was down 2.37% at 52,093.82, each measured against Wednesday's close. It is one session. The most recent official readings on output and jobs, along with the latest quarterly reports from large companies in payments, restaurants, medical technology, aerospace and",
+          "title": "Nvidia Faces 600,000-Chip China Bottleneck",
+          "url": "https://finance.yahoo.com/technology/ai/articles/nvidia-faces-600-000-chip-163601502.html?.tsrc=rss",
+          "summary": "Approximately 600,000 H200 AI chips are reportedly stored in Hong Kong.",
           "source": "Yahoo Finance",
           "provider": "yahoo_finance",
           "source_tier": "market",
           "authority_tier": "market",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-11-05T16:34:00+00:00",
+          "published_at": "2026-11-05T16:36:01+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
             "us_matches": [
-              "u.s. stocks",
-              "nasdaq",
-              "s&p 500",
-              "dow jones"
+              "nvidia"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 4,
+              "matched_term_count": 1,
               "source_market_hint": "us"
             }
           },
           "market_scope": "us",
           "taiwan_matches": [],
           "us_matches": [
-            "u.s. stocks",
-            "nasdaq",
-            "s&p 500",
-            "dow jones"
+            "nvidia"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 4,
+            "matched_term_count": 1,
             "source_market_hint": "us"
-          },
-          "story_id": "news-435cb4cfb89ef0ca5097",
-          "provider_name": "Yahoo Taiwan Finance",
-          "raw_title": "What 3.4% GDP Growth and a 4.2% Jobless Rate Say About a Hard Day on Wall Street",
-          "normalized_fact": "American News Group News Commentary - U.S. stocks were sharply lower on Thursday morning. As of 11:02 a.m. ET, the S&P 500 was down 3.39% at 7,427.97, the Nasdaq Composite was down 5.08% at 24,430.26 and the Dow Jones Industrial Average was down 2.37% at 52,093.82, each measured against Wednesday's close. It is one session. The most recent official readings on output and jobs, along with the latest quarterly reports from large companies in payments, restaurants, medical technology, aerospace and。",
-          "market_topic": "global_market",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/news/3-4-gdp-growth-4-163400882.html?.tsrc=rss",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-05",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "market",
-            "reason": "market_subject_action",
-            "matched_terms": [
-              "nasdaq",
-              "lower"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "nasdaq",
-              "lower"
-            ],
-            "matched_subject": "nasdaq",
-            "matched_action": "lower",
-            "matched_market_object": "nasdaq",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "americannewsgroupnewscommentaryusstocksweresharplyloweronthursdaymorningasof1102ametthesp500wasdown339at742797thenasdaqcompositewasdown508at2443026andthedowjonesindustrialaveragewasdown237at5209382eachmeasuredagainstwednesdayscloseitisonesessionthemostrecentofficialreadingsonoutputandjobsalongwiththelatestquarterlyreportsfromlargecompaniesinpaymentsrestaurantsmedicaltechnologyaerospaceand",
-          "event_cluster_key": "event-dbd5fc22e17fc384dd25",
-          "published_time_bucket": "2026-11-05T16:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "nasdaq",
-            "lower"
-          ],
-          "matched_subject": "nasdaq",
-          "matched_action": "lower",
-          "matched_market_object": "nasdaq",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
+          }
         },
         {
           "title": "Nvidia Is the Biggest Bet in Your Index Fund. Here’s What Its Drop Just Cost You",
@@ -8280,46 +8332,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 130
-        },
-        {
-          "title": "Boost Run Announces Date of Third Quarter 2026 Financial Results Conference Call",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/boost-run-announces-date-third-210500115.html?.tsrc=rss",
-          "summary": "NORTHBROOK, Ill., November 05, 2026--Boost Run, Inc. (Nasdaq: BRUN), an NVIDIA Preferred Cloud Partner operating in adherence with NVIDIA Reference Architecture standards, plans to release its financial results for the third quarter ended September 30, 2026, pre-market on Thursday, November 12, 2026. The company plans to host a conference call at 9:00 a.m. Eastern Time to discuss its third quarter 2026 results.",
-          "source": "Yahoo Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-11-05T16:09:00+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "nasdaq",
-              "nvidia"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "nasdaq",
-            "nvidia"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "us"
-          }
         },
         {
           "title": "Microsoft Stock Has Gained More Than 50% in About 4 Months. Here's What It Has Usually Done Next.",
@@ -10098,6 +10110,52 @@
           }
         },
         {
+          "title": "Global Oil Market Implications of U.S.-Israel Attack on Iran - The American Action Forum",
+          "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxQYTlrLWVrajZYZDlvT0ZLbzNNaWhfc1NJVERSeElyb3FDSTNLemdFc0ZqaTVsRVp5dlgwWGZ1dVRIQi1SdklCak9zZzN4YTdIamNTMHF3S2xtWHYwU3cxSWVZTU1yZlh2Z3dlYWlPOVo4ODhtQTg3RmR2RzVUc1hYYU1fbGhtQTRNVU5yRkNmMVJpdTZPWTFNenFDUzN6cU9fYlNObm5VVQ?oc=5",
+          "summary": "Global Oil Market Implications of U.S.-Israel Attack on Iran The American Action Forum",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-03-02T08:00:00+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [
+              "iran",
+              "israel",
+              "oil"
+            ],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 4,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [
+            "iran",
+            "israel",
+            "oil"
+          ],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 4,
+            "source_market_hint": "us"
+          }
+        },
+        {
           "title": "Oil falls over 8% as traders weigh impact on Iran war of Democratic midterms sweep - Investing.com",
           "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxQSzhJa0pDNGtrejlYaUZwQ3NzMG9KSGNPMERjb28zQmpOREFINXBLS1h0Yk84TV9aQTVKd3BQNGwzeExVMm94SnFrMldrQXJacDk1cng1d1dCdmZibncwS2M3VFNVV2RxcFVvSVlBbnluTnRyQzNFa3dWbW9WQ0ZCZG5laVJEMkZqWmVOZHJWUUw1cDVLZGpOMlNoNWNxQ2RFSWh2Wkptd0NMYzFaWi1BemQxek5SUQ",
           "summary": "Oil falls over 8% as traders weigh impact on Iran war of Democratic midterms sweep Investing.com",
@@ -10227,52 +10285,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        },
-        {
-          "title": "Global Oil Market Implications of U.S.-Israel Attack on Iran - The American Action Forum",
-          "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxQYTlrLWVrajZYZDlvT0ZLbzNNaWhfc1NJVERSeElyb3FDSTNLemdFc0ZqaTVsRVp5dlgwWGZ1dVRIQi1SdklCak9zZzN4YTdIamNTMHF3S2xtWHYwU3cxSWVZTU1yZlh2Z3dlYWlPOVo4ODhtQTg3RmR2RzVUc1hYYU1fbGhtQTRNVU5yRkNmMVJpdTZPWTFNenFDUzN6cU9fYlNObm5VVQ?oc=5",
-          "summary": "Global Oil Market Implications of U.S.-Israel Attack on Iran The American Action Forum",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-03-02T08:00:00+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股"
-            ],
-            "global_matches": [
-              "iran",
-              "israel",
-              "oil"
-            ],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 4,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股"
-          ],
-          "global_matches": [
-            "iran",
-            "israel",
-            "oil"
-          ],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 4,
-            "source_market_hint": "us"
-          }
         },
         {
           "title": "Oil settles down more than 3%; investors shrug off US sanctions on Iran - Reuters",
@@ -15069,7 +15081,7 @@
           "ranking_score": 120
         }
       ],
-      "inventory_saved_at": "2026-11-05T16:59:20.397475+00:00"
+      "inventory_saved_at": "2026-11-05T17:03:48.943587+00:00"
     }
   }
 }
