@@ -2,14 +2,17 @@
   "schema": 2,
   "markets": {
     "taiwan": {
-      "fetched_at": "2026-11-06T06:33:59.639008+00:00",
+      "fetched_at": "2026-11-06T06:53:27.389358+00:00",
       "stories": [
         {
-          "title": "4. 〈台股盤前要聞〉大同華映案和解露曙光、勞動基金前9月賺2.44兆元、10月製造業PMI下滑",
+          "title": "〈台股盤前要聞〉大同華映案和解露曙光、勞動基金前9月賺2.44兆元、10月製造業PMI下滑",
           "url": "https://news.cnyes.com/news/id/6644307",
           "provider": "anue",
           "source": "鉅亨網｜持股關聯",
           "relevance": "holding",
+          "summary": "",
+          "published_at": "2026-11-02T21:10:03+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6644307",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -38,24 +41,30 @@
           }
         },
         {
-          "title": "5. 〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
+          "title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
           "url": "https://news.cnyes.com/news/id/6644497",
           "provider": "anue",
           "source": "鉅亨網｜市場焦點",
           "relevance": "market",
+          "summary": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
+          "published_at": "2026-11-02T21:20:03+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6644497",
           "market_classification": {
             "market_scope": "global",
             "taiwan_matches": [],
             "us_matches": [],
             "global_matches": [
               "伊朗",
-              "brent"
+              "戰爭",
+              "原油",
+              "brent",
+              "wti"
             ],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": null
+              "matched_term_count": 5,
+              "source_market_hint": "global"
             }
           },
           "market_scope": "global",
@@ -63,26 +72,153 @@
           "us_matches": [],
           "global_matches": [
             "伊朗",
-            "brent"
+            "戰爭",
+            "原油",
+            "brent",
+            "wti"
           ],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": null
-          }
+            "matched_term_count": 5,
+            "source_market_hint": "global"
+          },
+          "story_id": "news-b83f2a8b286abee274ae",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "raw_title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
+          "normalized_fact": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
+          "market_topic": "energy_geopolitics",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": null,
+          "published_local_date": "",
+          "market": "global",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "energy"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "conflict",
+            "reason": "conflict_subject_action",
+            "matched_terms": [
+              "伊朗",
+              "戰爭"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "伊朗",
+              "戰爭"
+            ],
+            "matched_subject": "伊朗",
+            "matched_action": "戰爭",
+            "matched_market_object": "伊朗",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:global"
+          ],
+          "freshness": "published",
+          "dedupe_key": "伊朗示意願以對話解決戰爭市場對中東原油供應恢復期待升高布油挫逾7布油跌866美元至10477美元wti跌766美元至9646美元伊朗與卡達官員持續協商美伊協議仍受關注油市對中東消息高度敏感供應風險仍在高盛上調預測若波斯灣產量偏低布蘭特2027年恐升至140美元",
+          "event_cluster_key": "event-47cdd7b0f47f2961142e",
+          "published_time_bucket": "2026-11-02T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "伊朗",
+            "戰爭"
+          ],
+          "matched_subject": "伊朗",
+          "matched_action": "戰爭",
+          "matched_market_object": "伊朗",
+          "decision_value_class": "geopolitics_policy",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
-          "title": "科技爸媽瘋學區宅？9所新設國小有7所房價高於區均價　「這校」溢價22%",
-          "url": "https://tw.stock.yahoo.com/news/%E7%A7%91%E6%8A%80%E7%88%B8%E5%AA%BD%E7%98%8B%E5%AD%B8%E5%8D%80%E5%AE%85%EF%BC%9F9%E6%89%80%E6%96%B0%E8%A8%AD%E5%9C%8B%E5%B0%8F%E6%9C%897%E6%89%80%E6%88%BF%E5%83%B9%E9%AB%98%E6%96%BC%E5%8D%80%E5%9D%87%E5%83%B9-%E3%80%8C%E9%80%99%E6%A0%A1%E3%80%8D%E6%BA%A2%E5%83%B922-063220212.html",
-          "summary": "少子化衝擊全台學校招生，但部分科技園區與新興重劃區卻因人口持續移入，出現增設學校的需求，進而帶動「學區宅」買氣。永慶房產集團根據內政部實價登錄資料，統計2023年後七都新設立國民小學近一年周邊成屋房價",
+          "title": "台灣虎航前三季EPS 5.07元，Q4樂觀看待客運需求，線上旅展促銷至9日",
+          "url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E7%81%A3%E8%99%8E%E8%88%AA%E5%89%8D%E4%B8%89%E5%AD%A3eps-5-07%E5%85%83-q4%E6%A8%82%E8%A7%80%E7%9C%8B%E5%BE%85%E5%AE%A2%E9%81%8B%E9%9C%80%E6%B1%82-%E7%B7%9A%E4%B8%8A%E6%97%85%E5%B1%95%E4%BF%83%E9%8A%B7%E8%87%B39%E6%97%A5-064551877.html",
+          "summary": "【財訊快報／記者劉居全報導】「2026 ITF台灣國際旅展」今(6)日熱鬧登場，台灣虎航(6757)同步推出台灣國際旅展線上旅展全航線單程未稅999元起，促銷時程於至11月9日晚間23:59止，旅遊期",
           "source": "Yahoo Taiwan Finance",
           "provider": "yahoo_finance",
           "source_tier": "market",
           "authority_tier": "market",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-11-06T06:32:20+00:00",
+          "published_at": "2026-11-06T06:45:51+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "taiwan",
+              "台灣"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "taiwan",
+            "台灣"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "創見董座稱模組廠獲利將回歸常態，記憶體價格漲價有壓、下跌不易",
+          "url": "https://tw.stock.yahoo.com/news/%E5%89%B5%E8%A6%8B%E8%91%A3%E5%BA%A7%E7%A8%B1%E6%A8%A1%E7%B5%84%E5%BB%A0%E7%8D%B2%E5%88%A9%E5%B0%87%E5%9B%9E%E6%AD%B8%E5%B8%B8%E6%85%8B-%E8%A8%98%E6%86%B6%E9%AB%94%E5%83%B9%E6%A0%BC%E6%BC%B2%E5%83%B9%E6%9C%89%E5%A3%93-%E4%B8%8B%E8%B7%8C%E4%B8%8D%E6%98%93-064042146.html",
+          "summary": "【財訊快報／記者李純君報導】記憶體模組廠創見(2451)董座束崇萬表示，業者的低價庫存紅利，應該都差不多吃完了，接下來模組廠的獲利將回歸常態，後續成長視價格與貨源而定。而就記憶體市況部分，他坦言現在價",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-11-06T06:40:42+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -111,23 +247,99 @@
           }
         },
         {
-          "title": "ING擬透過「競爭性招標」程序，出售5億美元數據中心貸款組合",
-          "url": "https://tw.stock.yahoo.com/news/ing%E6%93%AC%E9%80%8F%E9%81%8E-%E7%AB%B6%E7%88%AD%E6%80%A7%E6%8B%9B%E6%A8%99-%E7%A8%8B%E5%BA%8F-%E5%87%BA%E5%94%AE5%E5%84%84%E7%BE%8E%E5%85%83%E6%95%B8%E6%93%9A%E4%B8%AD%E5%BF%83%E8%B2%B8%E6%AC%BE%E7%B5%84%E5%90%88-062609289.html",
-          "summary": "【財訊快報／劉敏夫】外電報導指出，熟知內情的消息人士透露，荷蘭國際集團(ING)正一次性出售價值約5億美元的數據中心貸款組合。這一罕見舉措恰逢民主黨在美國中期選舉中大勝，引發市場對許多這類項目未來前景",
+          "title": "Brookfield考慮出售知名標籤供應商Trimco，估值或逾10億美元",
+          "url": "https://tw.stock.yahoo.com/news/brookfield%E8%80%83%E6%85%AE%E5%87%BA%E5%94%AE%E7%9F%A5%E5%90%8D%E6%A8%99%E7%B1%A4%E4%BE%9B%E6%87%89%E5%95%86trimco-%E4%BC%B0%E5%80%BC%E6%88%96%E9%80%BE10%E5%84%84%E7%BE%8E%E5%85%83-064024518.html",
+          "summary": "【財訊快報／劉敏夫】外電報導指出，熟知內情的消息人士透露，資產管理機構Brookfield Asset Management Inc正在考慮出售總部位於香港的標籤、包裝及品牌識別跟蹤產品製造商Trim",
           "source": "Yahoo Taiwan Finance",
           "provider": "yahoo_finance",
           "source_tier": "market",
           "authority_tier": "market",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-11-06T06:26:09+00:00",
+          "published_at": "2026-11-06T06:40:24+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "威剛董座稱新產能到位需要時間， DRAM在2027維持從年初缺到年底態勢",
+          "url": "https://tw.stock.yahoo.com/news/%E5%A8%81%E5%89%9B%E8%91%A3%E5%BA%A7%E7%A8%B1%E6%96%B0%E7%94%A2%E8%83%BD%E5%88%B0%E4%BD%8D%E9%9C%80%E8%A6%81%E6%99%82%E9%96%93-dram%E5%9C%A82027%E7%B6%AD%E6%8C%81%E5%BE%9E%E5%B9%B4%E5%88%9D%E7%BC%BA%E5%88%B0%E5%B9%B4%E5%BA%95%E6%85%8B%E5%8B%A2-063832948.html",
+          "summary": "【財訊快報／記者李純君報導】記憶體模組廠威剛(3260)董座陳立白表示， DRAM與NAND進入長期性需求成長波段，但新產能到位需要時間，尤其DRAM在2027年全年仍將維持從年初缺貨到年底的態勢。在",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-11-06T06:38:32+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "Analog Devices完成對Alif Semiconductor的收購",
+          "url": "https://tw.stock.yahoo.com/news/analog-devices%E5%AE%8C%E6%88%90%E5%B0%8Dalif-semiconductor%E7%9A%84%E6%94%B6%E8%B3%BC-063700162.html",
+          "summary": "Analog Devices, Inc. (NASDAQ: ADI)宣佈已完成對Alif Semiconductor的收購。透過結合ADI在感測、訊號處理、電源、連接及應用軟體領域的領先優勢，以及 A",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-11-06T06:37:00+00:00",
           "market_classification": {
             "market_scope": "cross_market",
             "taiwan_matches": [
               "taiwan"
             ],
             "us_matches": [
-              "美國"
+              "nasdaq"
             ],
             "global_matches": [],
             "classification_status": "matched",
@@ -142,7 +354,7 @@
             "taiwan"
           ],
           "us_matches": [
-            "美國"
+            "nasdaq"
           ],
           "global_matches": [],
           "classification_status": "matched",
@@ -153,16 +365,16 @@
           }
         },
         {
-          "title": "研華10月營收113億元年增近9成 寫歷年單月新高",
-          "url": "https://tw.stock.yahoo.com/news/%E7%A0%94%E8%8F%AF10%E6%9C%88%E7%87%9F%E6%94%B6113%E5%84%84%E5%85%83%E5%B9%B4%E5%A2%9E%E8%BF%919%E6%88%90-%E5%AF%AB%E6%AD%B7%E5%B9%B4%E5%96%AE%E6%9C%88%E6%96%B0%E9%AB%98-062338377.html",
-          "summary": "工業電腦龍頭廠商研華（2395）今（6）日公布10月合併營收為113.36億元，較去年同期增加88.42%，創下歷年單月營收新高。",
+          "title": "IBM揭AI跨域應用潛力 模型助運動播報、量子電路設計",
+          "url": "https://tw.stock.yahoo.com/news/ibm%E6%8F%ADai%E8%B7%A8%E5%9F%9F%E6%87%89%E7%94%A8%E6%BD%9B%E5%8A%9B-%E6%A8%A1%E5%9E%8B%E5%8A%A9%E9%81%8B%E5%8B%95%E6%92%AD%E5%A0%B1-%E9%87%8F%E5%AD%90%E9%9B%BB%E8%B7%AF%E8%A8%AD%E8%A8%88-063628784.html",
+          "summary": "圖／示意圖商傳媒｜何映辰／台北報導IBM研究人員近期展示一款開發中的人工智慧（AI）模型「Granite Vision」，其能力橫跨運動賽事旁白與量子電路設計，展現AI在多領域應用的巨大潛力。這項研究",
           "source": "Yahoo Taiwan Finance",
           "provider": "yahoo_finance",
           "source_tier": "market",
           "authority_tier": "market",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-11-06T06:23:38+00:00",
+          "published_at": "2026-11-06T06:36:28+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -191,16 +403,58 @@
           }
         },
         {
-          "title": "國票金前10月EPS 1.03元，旗下國際票券、國票證券收益顯著成長",
-          "url": "https://tw.stock.yahoo.com/news/%E5%9C%8B%E7%A5%A8%E9%87%91%E5%89%8D10%E6%9C%88eps-1-03%E5%85%83-%E6%97%97%E4%B8%8B%E5%9C%8B%E9%9A%9B%E7%A5%A8%E5%88%B8-%E5%9C%8B%E7%A5%A8%E8%AD%89%E5%88%B8%E6%94%B6%E7%9B%8A%E9%A1%AF%E8%91%97%E6%88%90%E9%95%B7-061937659.html",
-          "summary": "【財訊快報／記者劉居全報導】國票金控(2889)10月自結稅後盈餘7,956萬元，累計1至10月稅後盈餘37億7,223萬元，較去年同期增加18億8,540萬元，年增99.92%；每股盈餘(EPS)1",
+          "title": "台股史詩級暴跌後拉升，聯發科、大立光率先展現抗跌力",
+          "url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E8%82%A1%E5%8F%B2%E8%A9%A9%E7%B4%9A%E6%9A%B4%E8%B7%8C%E5%BE%8C%E6%8B%89%E5%8D%87-%E8%81%AF%E7%99%BC%E7%A7%91-%E5%A4%A7%E7%AB%8B%E5%85%89%E7%8E%87%E5%85%88%E5%B1%95%E7%8F%BE%E6%8A%97%E8%B7%8C%E5%8A%9B-063457034.html",
+          "summary": "【財訊快報／黃啟乙】亞股陷入恐慌性殺盤，台股週五跳空暴跌，盤中摜破年線，最低下探37,837.05點，單日最大跌點達3,737.67點，改寫歷史紀錄。不過，隨後指數逐步收斂跌幅，並重新站回年線之上，終",
           "source": "Yahoo Taiwan Finance",
           "provider": "yahoo_finance",
           "source_tier": "market",
           "authority_tier": "market",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-11-06T06:19:37+00:00",
+          "published_at": "2026-11-06T06:34:57+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股",
+              "taiwan",
+              "聯發科"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 3,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股",
+            "taiwan",
+            "聯發科"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 3,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "ChatGPT顛覆手機使用習慣 行動數據揭AI時代消費新貌",
+          "url": "https://tw.stock.yahoo.com/news/chatgpt%E9%A1%9B%E8%A6%86%E6%89%8B%E6%A9%9F%E4%BD%BF%E7%94%A8%E7%BF%92%E6%85%A3-%E8%A1%8C%E5%8B%95%E6%95%B8%E6%93%9A%E6%8F%ADai%E6%99%82%E4%BB%A3%E6%B6%88%E8%B2%BB%E6%96%B0%E8%B2%8C-063336610.html",
+          "summary": "圖／示意圖商傳媒｜吳承岳／台北報導隨著人工智慧（AI）應用日益普及，消費者使用智慧型手機的習慣也正悄然改變。日本市場研究公司 Inteage 的一份最新分析指出，以 ChatGPT 為代表的生成式 A",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-11-06T06:33:36+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -229,16 +483,16 @@
           }
         },
         {
-          "title": "海外市場擴張，宏碁旗下海柏特營運成長，前三季EPS 1.37元",
-          "url": "https://tw.stock.yahoo.com/news/%E6%B5%B7%E5%A4%96%E5%B8%82%E5%A0%B4%E6%93%B4%E5%BC%B5-%E5%AE%8F%E7%A2%81%E6%97%97%E4%B8%8B%E6%B5%B7%E6%9F%8F%E7%89%B9%E7%87%9F%E9%81%8B%E6%88%90%E9%95%B7-%E5%89%8D%E4%B8%89%E5%AD%A3eps-1-37%E5%85%83-061614402.html",
-          "summary": "【財訊快報／記者王宜弘報導】宏碁(2353)旗下售服子公司海柏特(6884)公告財報，第三季營收5​.54億元​，年增98.8%，稅後盈餘915萬元，季增9.4%，年增3.2%，EPS 0.5元。累計",
+          "title": "【公告】櫻花 2026年10月合併營收8.17億元 年增-0.13%",
+          "url": "https://tw.stock.yahoo.com/news/%E5%85%AC%E5%91%8A-%E6%AB%BB%E8%8A%B1-2026%E5%B9%B410%E6%9C%88%E5%90%88%E4%BD%B5%E7%87%9F%E6%94%B68-17%E5%84%84%E5%85%83-%E5%B9%B4%E5%A2%9E-063312863.html",
+          "summary": "日期： 2026 年 11 月 06日上市公司：櫻花(9911)單位：仟元 【公告】櫻花 2026年10月合併營收 (單位：仟元)項目合併營業收入淨額本月817,313去年同期818,384增減金額-",
           "source": "Yahoo Taiwan Finance",
           "provider": "yahoo_finance",
           "source_tier": "market",
           "authority_tier": "market",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-11-06T06:16:14+00:00",
+          "published_at": "2026-11-06T06:33:12+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -267,19 +521,20 @@
           }
         },
         {
-          "title": "【公告】新台北 2026年10月合併營收3520.7萬元 年增-1.54%",
-          "url": "https://tw.stock.yahoo.com/news/%E5%85%AC%E5%91%8A-%E6%96%B0%E5%8F%B0%E5%8C%97-2026%E5%B9%B410%E6%9C%88%E5%90%88%E4%BD%B5%E7%87%9F%E6%94%B63520-7%E8%90%AC%E5%85%83-%E5%B9%B4%E5%A2%9E-061324189.html",
-          "summary": "日期： 2026 年 11 月 06日公開發行公司：新台北(8963)單位：仟元 【公告】新台北 2026年10月合併營收 (單位：仟元)項目合併營業收入淨額本月35,207去年同期35,757增減金",
+          "title": "【公告】旭源 2026年10月合併營收1.18億元 年增25.67%",
+          "url": "https://tw.stock.yahoo.com/news/%E5%85%AC%E5%91%8A-%E6%97%AD%E6%BA%90-2026%E5%B9%B410%E6%9C%88%E5%90%88%E4%BD%B5%E7%87%9F%E6%94%B61-18%E5%84%84%E5%85%83-%E5%B9%B4%E5%A2%9E25-063310108.html",
+          "summary": "日期： 2026 年 11 月 06日上櫃公司：旭源(8421)單位：仟元 【公告】旭源 2026年10月合併營收 (單位：仟元)項目合併營業收入淨額本月117,837去年同期93,765增減金額24",
           "source": "Yahoo Taiwan Finance",
           "provider": "yahoo_finance",
           "source_tier": "market",
           "authority_tier": "market",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-11-06T06:13:24+00:00",
+          "published_at": "2026-11-06T06:33:10+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
+              "上櫃",
               "taiwan"
             ],
             "us_matches": [],
@@ -287,12 +542,13 @@
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 1,
+              "matched_term_count": 2,
               "source_market_hint": "taiwan"
             }
           },
           "market_scope": "taiwan",
           "taiwan_matches": [
+            "上櫃",
             "taiwan"
           ],
           "us_matches": [],
@@ -300,159 +556,7 @@
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "【公告】緯來電視 2026年10月合併營收1.6億元 年增5%",
-          "url": "https://tw.stock.yahoo.com/news/%E5%85%AC%E5%91%8A-%E7%B7%AF%E4%BE%86%E9%9B%BB%E8%A6%96-2026%E5%B9%B410%E6%9C%88%E5%90%88%E4%BD%B5%E7%87%9F%E6%94%B61-6%E5%84%84%E5%85%83-%E5%B9%B4%E5%A2%9E5-061322344.html",
-          "summary": "日期： 2026 年 11 月 06日公開發行公司：緯來電視(8387)單位：仟元 【公告】緯來電視 2026年10月合併營收 (單位：仟元)項目合併營業收入淨額本月159,529去年同期151,92",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-11-06T06:13:22+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "【公告】欣湖公司 2026年10月合併營收9696.3萬元 年增11.29%",
-          "url": "https://tw.stock.yahoo.com/news/%E5%85%AC%E5%91%8A-%E6%AC%A3%E6%B9%96%E5%85%AC%E5%8F%B8-2026%E5%B9%B410%E6%9C%88%E5%90%88%E4%BD%B5%E7%87%9F%E6%94%B69696-3%E8%90%AC%E5%85%83-%E5%B9%B4%E5%A2%9E11-061320739.html",
-          "summary": "日期： 2026 年 11 月 06日公開發行公司：欣湖公司(8379)單位：仟元 【公告】欣湖公司 2026年10月合併營收 (單位：仟元)項目合併營業收入淨額本月96,963去年同期87,128增",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-11-06T06:13:20+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "【公告】松川精密 2026年10月合併營收8.49億元 年增53.62%",
-          "url": "https://tw.stock.yahoo.com/news/%E5%85%AC%E5%91%8A-%E6%9D%BE%E5%B7%9D%E7%B2%BE%E5%AF%86-2026%E5%B9%B410%E6%9C%88%E5%90%88%E4%BD%B5%E7%87%9F%E6%94%B68-49%E5%84%84%E5%85%83-%E5%B9%B4%E5%A2%9E53-061318535.html",
-          "summary": "日期： 2026 年 11 月 06日上市公司：松川精密(7788)單位：仟元 【公告】松川精密 2026年10月合併營收 (單位：仟元)項目合併營業收入淨額本月849,254去年同期552,829增",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-11-06T06:13:18+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "【公告】關貿 2026年10月合併營收2.27億元 年增6.87%",
-          "url": "https://tw.stock.yahoo.com/news/%E5%85%AC%E5%91%8A-%E9%97%9C%E8%B2%BF-2026%E5%B9%B410%E6%9C%88%E5%90%88%E4%BD%B5%E7%87%9F%E6%94%B62-27%E5%84%84%E5%85%83-%E5%B9%B4%E5%A2%9E6-061316653.html",
-          "summary": "日期： 2026 年 11 月 06日上市公司：關貿(6183)單位：仟元 【公告】關貿 2026年10月合併營收 (單位：仟元)項目合併營業收入淨額本月226,782去年同期212,198增減金額1",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-11-06T06:13:16+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
+            "matched_term_count": 2,
             "source_market_hint": "taiwan"
           }
         },
@@ -983,52 +1087,48 @@
           "ranking_score": 115
         },
         {
-          "title": "台股大跌，台灣AI供應鏈還有戲嗎？專家看好：500家台企市值上看5.5倍，下一波誰受惠？ - 數位時代",
-          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPbkNESWVFOUFpcDF0bDRwaVI0UkUtYTZRamduVWc0SjNOYzdwMXhuaVRMNzJyZG5PWWlIUTZONGJ4YVZCSjk0ZTdmcTZWQ0dReUcwaUpGMkQ4NlNaQXJPQTJuVklaLUJtWlVleXZ6TUtvbmROVVR5Vl9yUVlNMFltaEh3",
-          "summary": "台股大跌，台灣AI供應鏈還有戲嗎？專家看好：500家台企市值上看5.5倍，下一波誰受惠？ 數位時代",
+          "title": "AI供應鏈拉警報！謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 - 財訊",
+          "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE5GTFBVc2QwZGdCc0ZTSnV4OWdKblUyOE0tazR1M2tTc2lhNGN1T21DMGMwUlRXWXVOczZzNTZrSTY3NTRYYnpTdkZxM3J4UGlaSGcyeE01VWVTVFYxWklXUUU3ZWoyOUNiTTRPNlhyQlhnVkV4Z095Y1lVTQ",
+          "summary": "AI供應鏈拉警報！謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 財訊",
           "source": "Google News｜台股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "market": "cross_market",
+          "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-11-06T04:21:00+00:00",
+          "published_at": "2026-11-06T04:16:37+00:00",
           "market_classification": {
-            "market_scope": "cross_market",
+            "market_scope": "taiwan",
             "taiwan_matches": [
               "台股",
               "台灣"
             ],
-            "us_matches": [
-              "amd"
-            ],
+            "us_matches": [],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 3,
-              "source_market_hint": "cross_market"
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
             }
           },
-          "market_scope": "cross_market",
+          "market_scope": "taiwan",
           "taiwan_matches": [
             "台股",
             "台灣"
           ],
-          "us_matches": [
-            "amd"
-          ],
+          "us_matches": [],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 3,
-            "source_market_hint": "cross_market"
+            "matched_term_count": 2,
+            "source_market_hint": "taiwan"
           },
-          "story_id": "news-efe3c5715dfe52864c5d",
+          "story_id": "news-110ea9f789bdbae45118",
           "provider_name": "Google News",
-          "raw_title": "台股大跌，台灣AI供應鏈還有戲嗎？專家看好：500家台企市值上看5.5倍，下一波誰受惠？ - 數位時代",
-          "normalized_fact": "台股大跌，台灣AI供應鏈還有戲嗎？專家看好：500家台企市值上看5.5倍，下一波誰受惠？ 數位時代。",
+          "raw_title": "AI供應鏈拉警報！謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 - 財訊",
+          "normalized_fact": "AI供應鏈拉警報，謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 財訊。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -1038,18 +1138,16 @@
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPbkNESWVFOUFpcDF0bDRwaVI0UkUtYTZRamduVWc0SjNOYzdwMXhuaVRMNzJyZG5PWWlIUTZONGJ4YVZCSjk0ZTdmcTZWQ0dReUcwaUpGMkQ4NlNaQXJPQTJuVklaLUJtWlVleXZ6TUtvbmROVVR5Vl9yUVlNMFltaEh3",
+          "canonical_url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE5GTFBVc2QwZGdCc0ZTSnV4OWdKblUyOE0tazR1M2tTc2lhNGN1T21DMGMwUlRXWXVOczZzNTZrSTY3NTRYYnpTdkZxM3J4UGlaSGcyeE01VWVTVFYxWklXUUU3ZWoyOUNiTTRPNlhyQlhnVkV4Z095Y1lVTQ",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "",
+          "date_eligibility_status": "current",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": null,
-          "published_local_date": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-06",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "TAIEX"
-          ],
+          "entities": [],
           "sectors": [],
           "topics": [
             "ai"
@@ -1078,11 +1176,11 @@
             ]
           },
           "relevance_reasons": [
-            "market:cross_market"
+            "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "台股大跌台灣ai供應鏈還有戲嗎專家看好500家台企市值上看55倍下一波誰受惠數位時代",
-          "event_cluster_key": "event-174887b23173359ff3f1",
+          "dedupe_key": "ai供應鏈拉警報謝金河三個女州長掐住ai的咽喉台灣要戒慎恐懼財訊",
+          "event_cluster_key": "event-88cbc74a3cf68b261cc4",
           "published_time_bucket": "2026-11-06T04:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
@@ -1249,48 +1347,52 @@
           "ranking_score": 115
         },
         {
-          "title": "AI供應鏈拉警報！謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 - 財訊",
-          "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE5GTFBVc2QwZGdCc0ZTSnV4OWdKblUyOE0tazR1M2tTc2lhNGN1T21DMGMwUlRXWXVOczZzNTZrSTY3NTRYYnpTdkZxM3J4UGlaSGcyeE01VWVTVFYxWklXUUU3ZWoyOUNiTTRPNlhyQlhnVkV4Z095Y1lVTQ",
-          "summary": "AI供應鏈拉警報！謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 財訊",
+          "title": "台股大跌，台灣AI供應鏈還有戲嗎？專家看好：500家台企市值上看5.5倍，下一波誰受惠？ - 數位時代",
+          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPbkNESWVFOUFpcDF0bDRwaVI0UkUtYTZRamduVWc0SjNOYzdwMXhuaVRMNzJyZG5PWWlIUTZONGJ4YVZCSjk0ZTdmcTZWQ0dReUcwaUpGMkQ4NlNaQXJPQTJuVklaLUJtWlVleXZ6TUtvbmROVVR5Vl9yUVlNMFltaEh3",
+          "summary": "台股大跌，台灣AI供應鏈還有戲嗎？專家看好：500家台企市值上看5.5倍，下一波誰受惠？ 數位時代",
           "source": "Google News｜台股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "market": "taiwan",
+          "market": "cross_market",
           "relevance": "market",
-          "published_at": "2026-11-06T04:16:37+00:00",
+          "published_at": "2026-11-06T04:21:00+00:00",
           "market_classification": {
-            "market_scope": "taiwan",
+            "market_scope": "cross_market",
             "taiwan_matches": [
               "台股",
               "台灣"
             ],
-            "us_matches": [],
+            "us_matches": [
+              "amd"
+            ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
+              "matched_term_count": 3,
+              "source_market_hint": "cross_market"
             }
           },
-          "market_scope": "taiwan",
+          "market_scope": "cross_market",
           "taiwan_matches": [
             "台股",
             "台灣"
           ],
-          "us_matches": [],
+          "us_matches": [
+            "amd"
+          ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "taiwan"
+            "matched_term_count": 3,
+            "source_market_hint": "cross_market"
           },
-          "story_id": "news-110ea9f789bdbae45118",
+          "story_id": "news-efe3c5715dfe52864c5d",
           "provider_name": "Google News",
-          "raw_title": "AI供應鏈拉警報！謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 - 財訊",
-          "normalized_fact": "AI供應鏈拉警報，謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 財訊。",
+          "raw_title": "台股大跌，台灣AI供應鏈還有戲嗎？專家看好：500家台企市值上看5.5倍，下一波誰受惠？ - 數位時代",
+          "normalized_fact": "台股大跌，台灣AI供應鏈還有戲嗎？專家看好：500家台企市值上看5.5倍，下一波誰受惠？ 數位時代。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -1300,16 +1402,18 @@
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE5GTFBVc2QwZGdCc0ZTSnV4OWdKblUyOE0tazR1M2tTc2lhNGN1T21DMGMwUlRXWXVOczZzNTZrSTY3NTRYYnpTdkZxM3J4UGlaSGcyeE01VWVTVFYxWklXUUU3ZWoyOUNiTTRPNlhyQlhnVkV4Z095Y1lVTQ",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPbkNESWVFOUFpcDF0bDRwaVI0UkUtYTZRamduVWc0SjNOYzdwMXhuaVRMNzJyZG5PWWlIUTZONGJ4YVZCSjk0ZTdmcTZWQ0dReUcwaUpGMkQ4NlNaQXJPQTJuVklaLUJtWlVleXZ6TUtvbmROVVR5Vl9yUVlNMFltaEh3",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "current",
+          "date_eligibility_status": "",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-06",
+          "publication_age_trading_sessions": null,
+          "published_local_date": "",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "TAIEX"
+          ],
           "sectors": [],
           "topics": [
             "ai"
@@ -1338,11 +1442,11 @@
             ]
           },
           "relevance_reasons": [
-            "market:taiwan"
+            "market:cross_market"
           ],
           "freshness": "published",
-          "dedupe_key": "ai供應鏈拉警報謝金河三個女州長掐住ai的咽喉台灣要戒慎恐懼財訊",
-          "event_cluster_key": "event-88cbc74a3cf68b261cc4",
+          "dedupe_key": "台股大跌台灣ai供應鏈還有戲嗎專家看好500家台企市值上看55倍下一波誰受惠數位時代",
+          "event_cluster_key": "event-174887b23173359ff3f1",
           "published_time_bucket": "2026-11-06T04:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
@@ -1741,126 +1845,6 @@
           "ranking_score": 115
         },
         {
-          "title": "AI供應鏈首當其衝？美期中變天 謝金河示警最慘情況：戒慎恐懼 - TVBS",
-          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE50blFzeTR0UmxwV2N3eG5wUnFDdXhrMGxKRVV2LXNMU0w1Sm85czNuWHJlSGJtZG10RE5GUFJBWkVUX2V3bDR6eElUTEh6SkE",
-          "summary": "AI供應鏈首當其衝？美期中變天 謝金河示警最慘情況：戒慎恐懼 TVBS",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-11-06T00:14:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          },
-          "story_id": "news-255796b7016cf08e58f9",
-          "provider_name": "Google News",
-          "raw_title": "AI供應鏈首當其衝？美期中變天 謝金河示警最慘情況：戒慎恐懼 - TVBS",
-          "normalized_fact": "AI供應鏈首當其衝？美期中變天 謝金河示警最慘情況：戒慎恐懼 TVBS。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE50blFzeTR0UmxwV2N3eG5wUnFDdXhrMGxKRVV2LXNMU0w1Sm85czNuWHJlSGJtZG10RE5GUFJBWkVUX2V3bDR6eElUTEh6SkE",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-06",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "ai供應鏈首當其衝美期中變天謝金河示警最慘情況戒慎恐懼tvbs",
-          "event_cluster_key": "event-feff5e3c8149a6d5e0df",
-          "published_time_bucket": "2026-11-06T00:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
           "title": "先進封裝被AI逼著快速往前 聯發科侯上勇笑稱：做CoWoS從有趣變頭痛 - 鏡報",
           "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTFBmbFNwWnY0RTNJdExrZnd6OWZlUmVDalcwaS1TRlRTVEluVjNnSTNCU3BldGRWdGR6UVRZV2ZCem9DRDZFLWRxS3ZxQkUtdVpFZ3c?oc=5",
           "summary": "先進封裝被AI逼著快速往前 聯發科侯上勇笑稱：做CoWoS從有趣變頭痛 鏡報",
@@ -1937,6 +1921,128 @@
             "matched_term_count": 1,
             "source_market_hint": "taiwan"
           }
+        },
+        {
+          "title": "從股價剩8元到打入輝達供應鏈 一詮靠黑手功夫擠進AI散熱賽道｜熱門話題 - 網路溫度計 DailyView",
+          "url": "https://news.google.com/rss/articles/CBMiU0FVX3lxTE8tY1d0RncwOTNvV2FhYjRNRmg1eWJZQ3hFaWgzR2YtVXpHYkRNb1hyaktmZkZiQzh4aDFxaHhIUy04NG9UMlRlcjFRT2NaZFlJWVRv",
+          "summary": "從股價剩8元到打入輝達供應鏈 一詮靠黑手功夫擠進AI散熱賽道｜熱門話題 網路溫度計 DailyView",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-11-06T01:00:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          },
+          "story_id": "news-792e2bb819e9e2554d08",
+          "provider_name": "Google News",
+          "raw_title": "從股價剩8元到打入輝達供應鏈 一詮靠黑手功夫擠進AI散熱賽道｜熱門話題 - 網路溫度計 DailyView",
+          "normalized_fact": "從股價剩8元到打入輝達供應鏈 一詮靠黑手功夫擠進AI散熱賽道｜熱門話題 網路溫度計 DailyView。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiU0FVX3lxTE8tY1d0RncwOTNvV2FhYjRNRmg1eWJZQ3hFaWgzR2YtVXpHYkRNb1hyaktmZkZiQzh4aDFxaHhIUy04NG9UMlRlcjFRT2NaZFlJWVRv",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-06",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "從股價剩8元到打入輝達供應鏈一詮靠黑手功夫擠進ai散熱賽道熱門話題網路溫度計dailyview",
+          "event_cluster_key": "event-459f671df2e03f063940",
+          "published_time_bucket": "2026-11-06T01:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
         },
         {
           "title": "外資狂倒1499億誰接走？投信276億逆勢撐盤 台股41855點上演千點V轉 - 理財周刊",
@@ -2329,14 +2435,14 @@
       ],
       "eligible_inventory": [
         {
-          "story_id": "news-6447d484fbace444ca5e",
+          "story_id": "news-701677b040578b9abbaf",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "研華10月營收113億元年增近9成 寫歷年單月新高",
-          "raw_title": "研華10月營收113億元年增近9成 寫歷年單月新高",
-          "normalized_fact": "工業電腦龍頭廠商研華（2395）今（6）日公布10月合併營收為113.36億元，較去年同期增加88.42%，創下歷年單月營收新高。",
+          "title": "創見董座稱模組廠獲利將回歸常態，記憶體價格漲價有壓、下跌不易",
+          "raw_title": "創見董座稱模組廠獲利將回歸常態，記憶體價格漲價有壓、下跌不易",
+          "normalized_fact": "【財訊快報／記者李純君報導】記憶體模組廠創見(2451)董座束崇萬表示，業者的低價庫存紅利，應該都差不多吃完了，接下來模組廠的獲利將回歸常態，後續成長視價格與貨源而定。而就記憶體市況部分，他坦言現在價。",
           "market_topic": "company_industry",
           "actor_role": "",
           "actor_name": "",
@@ -2345,10 +2451,10 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "工業電腦龍頭廠商研華（2395）今（6）日公布10月合併營收為113.36億元，較去年同期增加88.42%，創下歷年單月營收新高。",
+          "summary": "【財訊快報／記者李純君報導】記憶體模組廠創見(2451)董座束崇萬表示，業者的低價庫存紅利，應該都差不多吃完了，接下來模組廠的獲利將回歸常態，後續成長視價格與貨源而定。而就記憶體市況部分，他坦言現在價",
           "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%A0%94%E8%8F%AF10%E6%9C%88%E7%87%9F%E6%94%B6113%E5%84%84%E5%85%83%E5%B9%B4%E5%A2%9E%E8%BF%919%E6%88%90-%E5%AF%AB%E6%AD%B7%E5%B9%B4%E5%96%AE%E6%9C%88%E6%96%B0%E9%AB%98-062338377.html",
-          "url": "https://tw.stock.yahoo.com/news/%E7%A0%94%E8%8F%AF10%E6%9C%88%E7%87%9F%E6%94%B6113%E5%84%84%E5%85%83%E5%B9%B4%E5%A2%9E%E8%BF%919%E6%88%90-%E5%AF%AB%E6%AD%B7%E5%B9%B4%E5%96%AE%E6%9C%88%E6%96%B0%E9%AB%98-062338377.html",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%89%B5%E8%A6%8B%E8%91%A3%E5%BA%A7%E7%A8%B1%E6%A8%A1%E7%B5%84%E5%BB%A0%E7%8D%B2%E5%88%A9%E5%B0%87%E5%9B%9E%E6%AD%B8%E5%B8%B8%E6%85%8B-%E8%A8%98%E6%86%B6%E9%AB%94%E5%83%B9%E6%A0%BC%E6%BC%B2%E5%83%B9%E6%9C%89%E5%A3%93-%E4%B8%8B%E8%B7%8C%E4%B8%8D%E6%98%93-064042146.html",
+          "url": "https://tw.stock.yahoo.com/news/%E5%89%B5%E8%A6%8B%E8%91%A3%E5%BA%A7%E7%A8%B1%E6%A8%A1%E7%B5%84%E5%BB%A0%E7%8D%B2%E5%88%A9%E5%B0%87%E5%9B%9E%E6%AD%B8%E5%B8%B8%E6%85%8B-%E8%A8%98%E6%86%B6%E9%AB%94%E5%83%B9%E6%A0%BC%E6%BC%B2%E5%83%B9%E6%9C%89%E5%A3%93-%E4%B8%8B%E8%B7%8C%E4%B8%8D%E6%98%93-064042146.html",
           "published_at": "2026-11-06T06:23:38+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
@@ -2382,11 +2488,11 @@
             ]
           },
           "relevance_reasons": [
-            "research_candidate:2395",
+            "research_candidate:2451",
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "工業電腦龍頭廠商研華2395今6日公布10月合併營收為11336億元較去年同期增加8842創下歷年單月營收新高",
+          "dedupe_key": "財訊快報記者李純君報導記憶體模組廠創見2451董座束崇萬表示業者的低價庫存紅利應該都差不多吃完了接下來模組廠的獲利將回歸常態後續成長視價格與貨源而定而就記憶體市況部分他坦言現在價",
           "event_cluster_key": "event-e352fff0eb8eb8baedaa",
           "published_time_bucket": "2026-11-06T06:00:00+00:00",
           "public_safe": true,
@@ -2894,6 +3000,102 @@
           "ranking_score": 115
         },
         {
+          "story_id": "news-792e2bb819e9e2554d08",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "從股價剩8元到打入輝達供應鏈 一詮靠黑手功夫擠進AI散熱賽道｜熱門話題 - 網路溫度計 DailyView",
+          "raw_title": "從股價剩8元到打入輝達供應鏈 一詮靠黑手功夫擠進AI散熱賽道｜熱門話題 - 網路溫度計 DailyView",
+          "normalized_fact": "從股價剩8元到打入輝達供應鏈 一詮靠黑手功夫擠進AI散熱賽道｜熱門話題 網路溫度計 DailyView。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "從股價剩8元到打入輝達供應鏈 一詮靠黑手功夫擠進AI散熱賽道｜熱門話題 網路溫度計 DailyView",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiU0FVX3lxTE8tY1d0RncwOTNvV2FhYjRNRmg1eWJZQ3hFaWgzR2YtVXpHYkRNb1hyaktmZkZiQzh4aDFxaHhIUy04NG9UMlRlcjFRT2NaZFlJWVRv",
+          "url": "https://news.google.com/rss/articles/CBMiU0FVX3lxTE8tY1d0RncwOTNvV2FhYjRNRmg1eWJZQ3hFaWgzR2YtVXpHYkRNb1hyaktmZkZiQzh4aDFxaHhIUy04NG9UMlRlcjFRT2NaZFlJWVRv",
+          "published_at": "2026-11-06T01:00:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-06",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan",
+            "tracked_ticker:NVDA"
+          ],
+          "freshness": "published",
+          "dedupe_key": "從股價剩8元到打入輝達供應鏈一詮靠黑手功夫擠進ai散熱賽道熱門話題網路溫度計dailyview",
+          "event_cluster_key": "event-459f671df2e03f063940",
+          "published_time_bucket": "2026-11-06T01:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜台股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-11-06T06:53:27.389358+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 120
+        },
+        {
           "story_id": "news-f59b396a281e3fe48ccc",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -3269,13 +3471,7 @@
           "inventory_saved_at": "2026-11-06T00:56:17.488566+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 115,
-          "supporting_sources": [
-            {
-              "provider": "google_news",
-              "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE50blFzeTR0UmxwV2N3eG5wUnFDdXhrMGxKRVV2LXNMU0w1Sm85czNuWHJlSGJtZG10RE5GUFJBWkVUX2V3bDR6eElUTEh6SkE"
-            }
-          ]
+          "ranking_score": 115
         },
         {
           "story_id": "news-0eda58397e3a7161d401",
@@ -7010,108 +7206,12 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
-        },
-        {
-          "story_id": "news-0ba5663d9f08aca627d2",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "AI伺服器供應鏈財報報喜！美大廠營收暴增近3倍，台股震盪下如何布局？-財經焦點情報站 - CMoney投資網誌",
-          "raw_title": "AI伺服器供應鏈財報報喜！美大廠營收暴增近3倍，台股震盪下如何布局？-財經焦點情報站 - CMoney投資網誌",
-          "normalized_fact": "AI伺服器供應鏈財報報喜，美大廠營收暴增近3倍，台股震盪下如何布局？-財經焦點情報站 CMoney投資網誌。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "AI伺服器供應鏈財報報喜！美大廠營收暴增近3倍，台股震盪下如何布局？-財經焦點情報站 CMoney投資網誌",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPUXRPbFVsa1lDaWlQV1ZBR2VSc0tsTzlQNFZ1RTRlMkxKRWl5cENxY1hmblVnNXJMUE85Vjk5dzlpUDNoTmRvYkFfLVpabktKTHByejdkbUh4N0tmdEFfOWl6OGNzSHliYzI2bU52b0tnSDlrZHdSVXNxbXBXdnRiVnRB",
-          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPUXRPbFVsa1lDaWlQV1ZBR2VSc0tsTzlQNFZ1RTRlMkxKRWl5cENxY1hmblVnNXJMUE85Vjk5dzlpUDNoTmRvYkFfLVpabktKTHByejdkbUh4N0tmdEFfOWl6OGNzSHliYzI2bU52b0tnSDlrZHdSVXNxbXBXdnRiVnRB",
-          "published_at": "2026-11-04T01:15:42+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-04",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "TAIEX"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "earnings"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "財報"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "財報"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "財報",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "ai伺服器供應鏈財報報喜美大廠營收暴增近3倍台股震盪下如何布局財經焦點情報站cmoney投資網誌",
-          "event_cluster_key": "event-06f151cfe124ffa761ab",
-          "published_time_bucket": "2026-11-04T01:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "財報"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "財報",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 3,
-          "inventory_saved_at": "2026-11-04T06:34:31.508719+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
         }
       ],
-      "inventory_saved_at": "2026-11-06T06:33:59.639008+00:00"
+      "inventory_saved_at": "2026-11-06T06:53:27.389358+00:00"
     },
     "us": {
-      "fetched_at": "2026-11-06T06:33:59.639008+00:00",
+      "fetched_at": "2026-11-06T06:53:27.389358+00:00",
       "stories": [
         {
           "title": "8-K - Leader's Advantage Acquisition Corp. (0002109823) (Filer)",
@@ -8435,16 +8535,16 @@
           }
         },
         {
-          "title": "How to get to 9,000 on the S&P 500 - J.P. Morgan Private Bank",
-          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxQZmFtSnBfRFR2NUdCSXZXdkQ2YnFNZk1RbkVtUE15SjVwVUxiX2RRLVlGX0t4aUg0WHUzQUhGWVJMS1M2R2lrUlFwWDM0bC1UNExIMFF6SlpmZlhkVUZPNUs5cWJOX3QtQW5kQ3gwdFR6V1N6bVhoVEQtZDBYVFQxZnFfUzd5QlFhWk1zU3EtR0hacXJ0UXpFVXNDN2R3QWMxMkoxUlZnMkFJblBEVlNPbWln?oc=5",
-          "summary": "How to get to 9,000 on the S&P 500 J.P. Morgan Private Bank",
+          "title": "Volatile Chipmaker Stocks Emerge as Key Driver of S&P 500 Rally - Bloomberg.com",
+          "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxNcWlSdUNhT1NOT0FhZGpUMjZabVlOUGZpNG5TQlRRdTNJMHJrVkd3a1JpQnNrWkhYdFB2YjdaeXJMZ1QtaWxoYzNxRG5NWFdOdGtWSWdEbTJYMGFJS1hyZ2pKZkFYRmdFUXNTcHpDeW9YOTZRZVpnNElnMnc4TVJwdUc1QmFjNXczT2JjV1RKN2J4ck14aFRXWWNKUkdiWmFJR2d2ZzFaZk5ycFdaY24zQUstczQ?oc=5",
+          "summary": "Volatile Chipmaker Stocks Emerge as Key Driver of S&P 500 Rally Bloomberg.com",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-05-20T07:00:00+00:00",
+          "published_at": "2026-05-17T07:00:00+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
@@ -8475,16 +8575,16 @@
           }
         },
         {
-          "title": "The 15 Stocks Driving the S&P 500's Gain in 2026 - ETF.com",
-          "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTFBFaG03bEgycVRQRWJLRkJIMXRFZnV5X0pLTGdTSjQxUFFKVXZJaU5CdkRJcUVtZFFQd0VxazhOS3prOU56eENpcVFidDdtT0xhOEZ2RmpMQmxJMW9JaFdxeWVTSFMzNzBBOWU0cURuVF92cFF3TkxpVEpfTHB1QQ?oc=5",
-          "summary": "The 15 Stocks Driving the S&P 500's Gain in 2026 ETF.com",
+          "title": "How to get to 9,000 on the S&P 500 - J.P. Morgan Private Bank",
+          "url": "https://news.google.com/rss/articles/CBMisgFBVV95cUxQZmFtSnBfRFR2NUdCSXZXdkQ2YnFNZk1RbkVtUE15SjVwVUxiX2RRLVlGX0t4aUg0WHUzQUhGWVJMS1M2R2lrUlFwWDM0bC1UNExIMFF6SlpmZlhkVUZPNUs5cWJOX3QtQW5kQ3gwdFR6V1N6bVhoVEQtZDBYVFQxZnFfUzd5QlFhWk1zU3EtR0hacXJ0UXpFVXNDN2R3QWMxMkoxUlZnMkFJblBEVlNPbWln?oc=5",
+          "summary": "How to get to 9,000 on the S&P 500 J.P. Morgan Private Bank",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-05-01T07:00:00+00:00",
+          "published_at": "2026-05-20T07:00:00+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
@@ -8751,128 +8851,6 @@
           "ranking_score": 115
         },
         {
-          "title": "The Fed Needs a Better Way to Talk About Interest Rates - Bloomberg.com",
-          "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxPSncyUnJBc25zajNQclpteVFGV3A0bGZtR3JwMEVnYUdOcXZ4eUkyZGNLdG1DcGlZeUJ2dV9ub3lFZDNjTkY3bjZCNkIxTDhtdTBLQTdOcDRQWFprbFp4aVQ3OU1JMWh5bENiMEk1d05DeG0yLWpSTHBSdUI1OW96UzRsekpIU09LVV9GX0tKWS01bWNicV9DYWhPVkZweWhBZWVETUFHbG9BQQ",
-          "summary": "The Fed Needs a Better Way to Talk About Interest Rates Bloomberg.com",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-11-05T11:00:21+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股",
-              "fed"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股",
-            "fed"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "us"
-          },
-          "story_id": "news-ab552161a5f985ae3b81",
-          "provider_name": "Google News",
-          "raw_title": "The Fed Needs a Better Way to Talk About Interest Rates - Bloomberg.com",
-          "normalized_fact": "The Fed Needs a Better Way to Talk About Interest Rates Bloomberg.com。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxPSncyUnJBc25zajNQclpteVFGV3A0bGZtR3JwMEVnYUdOcXZ4eUkyZGNLdG1DcGlZeUJ2dV9ub3lFZDNjTkY3bjZCNkIxTDhtdTBLQTdOcDRQWFprbFp4aVQ3OU1JMWh5bENiMEk1d05DeG0yLWpSTHBSdUI1OW96UzRsekpIU09LVV9GX0tKWS01bWNicV9DYWhPVkZweWhBZWVETUFHbG9BQQ",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-05",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "rates"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "rates"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "rates",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "thefedneedsabetterwaytotalkaboutinterestratesbloombergcom",
-          "event_cluster_key": "event-02328809c66c0271fe9f",
-          "published_time_bucket": "2026-11-05T11:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "rates"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "rates",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
           "title": "Dollar holds, yen gains as equity rout saps risk appetite ahead of payrolls - CNBC",
           "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxOX1h3cU1JT0lRTVBxRk1uaUF3YUNUa2ZNalEzNF9YYnU1blY4TVI1cGtEX2RUWmVNbnptalJoUU5veWNxcGdYUFpsTXFFT0tyQkNyMDJlN0liOEdVSHpXMm1XRW5WN2tCZG1MU1VSM3lmb0pxdHdSb2RDZU00SUVyZ1RiZHo1ZjZEei1TbkFuek01Nlp1WnVreXZ6VG1xUlRWY3ZHanoxRVNaanVPdVhiSdIBtgFBVV95cUxQZHFNaGItV1VwY2NqV1g4LTVFRmV5X2RiNXo5YWJoOThqamdINTNSamNZU1FQbU1CeGp4aTA1OThTeG5RM0p2cTljUi1Qb2VyX0pZV1VIb3ZFRnVMVnh0OGNWSGtYZVRBWHVYRjg3TmFITTgxeVhSdGxLcWd1Ym9NY2hTYXp4NFlySmROZTNfd0hMYVdrUE42R1FucDIyNzJrRmFZT2dwdURtTlF2OU1aTHQ4S1EtZw?oc=5",
           "summary": "Dollar holds, yen gains as equity rout saps risk appetite ahead of payrolls CNBC",
@@ -8905,6 +8883,48 @@
             "amd"
           ],
           "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "Gold Set for Biggest Weekly Gain Since August After US Midterms - Bloomberg.com",
+          "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxQX3hSNk9RRDhKMmNvdkhnQnN4VkVLaUgwUGJ1dGc5czdxeWI1cHBVNVIwSHlMUWZQekRtd3Q2S2NxVGxwWVU0RUhma1kzLVNoal9BeUllSzMwbUZqaklRRDdKZUd6Q0tVXzBTQ2Y4UEtyUGZodXZHYXBtS1hLYms0S28ycVBtWUpET0JXOHpRRVNmOUx4UXBjYWFSV1N3Y0xmUkRaQkRZV2VfRjFCNzFqdldFZHQ?oc=5",
+          "summary": "Gold Set for Biggest Weekly Gain Since August After US Midterms Bloomberg.com",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-11-06T02:45:00+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [
+              "gold"
+            ],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [
+            "gold"
+          ],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
@@ -9857,48 +9877,6 @@
           }
         },
         {
-          "title": "Understanding the Implications of the U.S.-Venezuela Oil Deal - CSIS | Center for Strategic and International Studies",
-          "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxQbWQ2SlFDRFhMMmZMNGRFejlYZW1vZlhGLWN1SHpuTldWcEZuZUFkdDRjbW5iNFIwLXRfdXV0YnFKcnlkZG9SSF9nXzJ2OGVLNVctWkN5Mk5KRTIyNG45bHdndW5GQVVINHhOX3R1N2pfT211M3BvS2ttR0pfX2NQV2FyNnE?oc=5",
-          "summary": "Understanding the Implications of the U.S.-Venezuela Oil Deal CSIS | Center for Strategic and International Studies",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-09-04T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股"
-            ],
-            "global_matches": [
-              "oil"
-            ],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股"
-          ],
-          "global_matches": [
-            "oil"
-          ],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "us"
-          }
-        },
-        {
           "title": "Iran response to more sanctions biggest oil market risk - Midland Reporter-Telegram",
           "url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxQVWlyd2t6YkJkMUN5d0ViTHFvNFNOOTNLMW44ZHpyRVRIOTQ0Tmo3cmJMN0dsN3BVVjZ0c2tzYXh4TzlKcEdEMjVobnJEaFdFOHowc2NkV0dWd3NMTFdZYWlRRWhwMUM1cmtLSkxLcHZFUjNPaFZOc3pIRWF6bzJaVGFiaERrckpyTVE?oc=5",
           "summary": "Iran response to more sanctions biggest oil market risk Midland Reporter-Telegram",
@@ -10031,6 +10009,48 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 3,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "From cheaper oil to FII flows: How US midterm results could help Dalal Street - India Today",
+          "url": "https://news.google.com/rss/articles/CBMi5gFBVV95cUxQejdCa3NsOUhJUDRfLUs4NjZlTFVkcnBkd0MteEp4T2U4MlVPODFFM0JWXzBLa2RmeTVBX05VSDM0bUdqSXJNeTlkblUzS3VERURrZzh6NDllU0VKUUJPaVgyWnNBdENROUY4MHEyQUxKMnpNbEVjQzl5WEkzc015OXFUTlRyQVVjYkZuZDFQR2VDcTlBT2NYNnFPUnoxNDIydVVDQ2lrakhvZk9KeVJyV0RhRTBGeU5sWlJMY25pX3BtNWRzSDE3eXpyemxBOWlKNjVBdTdKRXdqT0RhSkl2RUEtT2hFZ9IB6wFBVV95cUxQSlRLT1RsRDlkVFYxNXpqbkU0djgzeHFWZ3JiV2p2UjNveENIUWxJTzVCMTRPSnRxU000Q2FERFhlOUdfUEMyRGx0d3FydS0zSXcxYVdXTTlGWlZfUVdkc1FRWkpXVU5vSy1Eb1BFZ3I0ekdYZEd4OFdkajVLLXZEWVFsb08xTWlRekJ2VFIwUVZubjRRaUNlMUNRM2MzTE5uMFRiMnlSeXQ0czBPZkl0Ukx5dGVLNV9LYUQtUnNOLWJzNEZuTVRwTzVLcXptWFc1U3hCR3NXV0N4WHRGTU8xWUpkUkdLRFJleHhz?oc=5",
+          "summary": "From cheaper oil to FII flows: How US midterm results could help Dalal Street India Today",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-11-05T04:48:13+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [
+              "oil"
+            ],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [
+            "oil"
+          ],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
             "source_market_hint": "us"
           }
         }
@@ -14564,7 +14584,7 @@
           "ranking_score": 120
         }
       ],
-      "inventory_saved_at": "2026-11-06T06:33:59.639008+00:00"
+      "inventory_saved_at": "2026-11-06T06:53:27.389358+00:00"
     }
   }
 }
