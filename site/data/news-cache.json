@@ -2,7 +2,7 @@
   "schema": 2,
   "markets": {
     "taiwan": {
-      "fetched_at": "2026-11-07T22:42:15.057559+00:00",
+      "fetched_at": "2026-11-07T23:34:06.672408+00:00",
       "stories": [
         {
           "title": "〈台股盤前要聞〉大同華映案和解露曙光、勞動基金前9月賺2.44兆元、10月製造業PMI下滑",
@@ -41,24 +41,30 @@
           }
         },
         {
-          "title": "5. 〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
+          "title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
           "url": "https://news.cnyes.com/news/id/6644497",
           "provider": "anue",
           "source": "鉅亨網｜市場焦點",
           "relevance": "market",
+          "summary": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
+          "published_at": "2026-11-02T21:20:03+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6644497",
           "market_classification": {
             "market_scope": "global",
             "taiwan_matches": [],
             "us_matches": [],
             "global_matches": [
               "伊朗",
-              "brent"
+              "戰爭",
+              "原油",
+              "brent",
+              "wti"
             ],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": null
+              "matched_term_count": 5,
+              "source_market_hint": "global"
             }
           },
           "market_scope": "global",
@@ -66,13 +72,268 @@
           "us_matches": [],
           "global_matches": [
             "伊朗",
-            "brent"
+            "戰爭",
+            "原油",
+            "brent",
+            "wti"
           ],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
+            "matched_term_count": 5,
+            "source_market_hint": "global"
+          },
+          "story_id": "news-b83f2a8b286abee274ae",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "raw_title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
+          "normalized_fact": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
+          "market_topic": "energy_geopolitics",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": null,
+          "published_local_date": "",
+          "market": "global",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "energy"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "conflict",
+            "reason": "conflict_subject_action",
+            "matched_terms": [
+              "伊朗",
+              "戰爭"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "伊朗",
+              "戰爭"
+            ],
+            "matched_subject": "伊朗",
+            "matched_action": "戰爭",
+            "matched_market_object": "伊朗",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:global"
+          ],
+          "freshness": "published",
+          "dedupe_key": "伊朗示意願以對話解決戰爭市場對中東原油供應恢復期待升高布油挫逾7布油跌866美元至10477美元wti跌766美元至9646美元伊朗與卡達官員持續協商美伊協議仍受關注油市對中東消息高度敏感供應風險仍在高盛上調預測若波斯灣產量偏低布蘭特2027年恐升至140美元",
+          "event_cluster_key": "event-47cdd7b0f47f2961142e",
+          "published_time_bucket": "2026-11-02T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "伊朗",
+            "戰爭"
+          ],
+          "matched_subject": "伊朗",
+          "matched_action": "戰爭",
+          "matched_market_object": "伊朗",
+          "decision_value_class": "geopolitics_policy",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "title": "降雨減少氣溫回升 基隆北海岸、東台有長浪",
+          "url": "https://tw.news.yahoo.com/%E9%99%8D%E9%9B%A8%E6%B8%9B%E5%B0%91%E6%B0%A3%E6%BA%AB%E5%9B%9E%E5%8D%87-%E5%9F%BA%E9%9A%86%E5%8C%97%E6%B5%B7%E5%B2%B8-%E6%9D%B1%E5%8F%B0%E6%9C%89%E9%95%B7%E6%B5%AA-232053026.html",
+          "summary": "交通部中央氣象署指出，今天(8日)東北季風減弱，迎風面水氣減少，東半部的降雨會較為零星，各地大多為晴到多雲，午後屏東地區及嘉義至高雄山區有零星短暫陣雨，晚上開始東北季風增強，桃園以北雲量逐漸增多，開始",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-11-07T23:20:53+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "Fed升息打亂AI多頭？算力需求、缺料潮仍強 2專家拆解台股續航關鍵",
+          "url": "https://tw.news.yahoo.com/fed%E5%8D%87%E6%81%AF%E6%89%93%E4%BA%82ai%E5%A4%9A%E9%A0%AD-%E7%AE%97%E5%8A%9B%E9%9C%80%E6%B1%82-%E7%BC%BA%E6%96%99%E6%BD%AE%E4%BB%8D%E5%BC%B7-2%E5%B0%88%E5%AE%B6%E6%8B%86%E8%A7%A3%E5%8F%B0%E8%82%A1%E7%BA%8C%E8%88%AA%E9%97%9C%E9%8D%B5-231100134.html",
+          "summary": "雜誌官方line＠財經資訊不漏接 樂觀情境的基調是，即使聯準會（Fed）升息，只要AI趨勢的強度不轉弱，台股中長期多頭就會持續。因此，當最新Fed利率決議結果為升息1碼時，AI需求強度是否受到壓抑這件",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-11-07T23:11:00+00:00",
+          "market_classification": {
+            "market_scope": "cross_market",
+            "taiwan_matches": [
+              "台股",
+              "taiwan"
+            ],
+            "us_matches": [
+              "fed",
+              "聯準會"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 4,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "cross_market",
+          "taiwan_matches": [
+            "台股",
+            "taiwan"
+          ],
+          "us_matches": [
+            "fed",
+            "聯準會"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 4,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "美股科技股還會跌？下週2大考驗成關鍵",
+          "url": "https://tw.news.yahoo.com/%E7%BE%8E%E8%82%A1%E7%A7%91%E6%8A%80%E8%82%A1%E9%82%84%E6%9C%83%E8%B7%8C-%E4%B8%8B%E9%80%B12%E5%A4%A7%E8%80%83%E9%A9%97%E6%88%90%E9%97%9C%E9%8D%B5-230000912.html",
+          "summary": "[NOWNEWS今日新聞]美國期中選舉結果衝擊華爾街，民主黨成功奪回國會參眾兩院控制權，加上多個資料中心重鎮的州長選舉變天，市場擔憂人工智慧（AI）資料中心建設將面臨更嚴格監管，引發科技股大規模拋售。",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-11-07T23:00:00+00:00",
+          "market_classification": {
+            "market_scope": "cross_market",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [
+              "美股",
+              "美國"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 3,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "cross_market",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [
+            "美股",
+            "美國"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 3,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "政府救台股也沒用！大空頭警告後市 反彈即放空絕佳時機",
+          "url": "https://tw.stock.yahoo.com/news/%E6%94%BF%E5%BA%9C%E6%95%91%E5%8F%B0%E8%82%A1%E4%B9%9F%E6%B2%92%E7%94%A8-%E5%A4%A7%E7%A9%BA%E9%A0%AD%E8%AD%A6%E5%91%8A%E5%BE%8C%E5%B8%82-%E5%8F%8D%E5%BD%88%E5%8D%B3%E6%94%BE%E7%A9%BA%E7%B5%95%E4%BD%B3%E6%99%82%E6%A9%9F-223530670.html",
+          "summary": "台股周五（6日）一度下殺3737點創下史上最大跌點，摔破38K及年線，隨著金管會有意推出救市措施，跌勢大幅收斂，站回年線與39K。空頭分析師陳嘉偉反而認為，若下周出現反彈，將是很好的放空機會。",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-11-07T22:35:30+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股",
+              "taiwan"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股",
+            "taiwan"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
             "matched_term_count": 2,
-            "source_market_hint": null
+            "source_market_hint": "taiwan"
           }
         },
         {
@@ -162,6 +423,44 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 2,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "幃翔 115年10月營收7090萬、年增107.50%",
+          "url": "https://tw.stock.yahoo.com/news/%E5%B9%83%E7%BF%94-115%E5%B9%B410%E6%9C%88%E7%87%9F%E6%94%B67090%E8%90%AC-%E5%B9%B4%E5%A2%9E107-50-220300789.html",
+          "summary": "幃翔(6185)10月營收資料(單位千元) 當月本年累計 營收70,904620,363 去年同期34,170432,103 增減36,734188,260 增減百分比107.50%43.57% 備註",
+          "source": "Yahoo Taiwan Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-11-07T22:03:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "taiwan"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "taiwan"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
             "source_market_hint": "taiwan"
           }
         },
@@ -256,212 +555,16 @@
           }
         },
         {
-          "title": "國際油價跌破100美元　國內油價連8週不變",
-          "url": "https://tw.news.yahoo.com/%E5%9C%8B%E9%9A%9B%E6%B2%B9%E5%83%B9%E8%B7%8C%E7%A0%B4100%E7%BE%8E%E5%85%83-%E5%9C%8B%E5%85%A7%E6%B2%B9%E5%83%B9%E9%80%A38%E9%80%B1%E4%B8%8D%E8%AE%8A-174343546.html",
-          "summary": "國內價格連8週不調整，中油公司汽、柴油每公升各共吸收8.0元(圖/卡優新聞網)",
+          "title": "聯電閃見「8字頭」！回檔45％跌夠沒？不靠台積三星退場 法人揭另1成長引擎：目標價同步曝光",
+          "url": "https://tw.stock.yahoo.com/news/%E8%81%AF%E9%9B%BB%E9%96%83%E8%A6%8B-8%E5%AD%97%E9%A0%AD-%E5%9B%9E%E6%AA%9445-%E8%B7%8C%E5%A4%A0%E6%B2%92-%E4%B8%8D%E9%9D%A0%E5%8F%B0%E7%A9%8D%E4%B8%89%E6%98%9F%E9%80%80%E5%A0%B4-210130108.html",
+          "summary": "成熟與特殊製程需求暢旺，晶圓代工二哥聯電(2330)10月營收創下單月次高，加上三星擬關8吋廠，預計規劃2030年底前撤掉全數產線，雖潛在轉單效益受矚目，但近期股價持續崩跌，從波段高點165元下修至9",
           "source": "Yahoo Taiwan Finance",
           "provider": "yahoo_finance",
           "source_tier": "market",
           "authority_tier": "market",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-11-07T17:43:43+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "宏都拉斯白蝦賣中國踢鐵板！最新統計曝慘況",
-          "url": "https://tw.news.yahoo.com/%E5%AE%8F%E9%83%BD%E6%8B%89%E6%96%AF%E7%99%BD%E8%9D%A6%E8%B3%A3%E4%B8%AD%E5%9C%8B%E8%B8%A2%E9%90%B5%E6%9D%BF-%E6%9C%80%E6%96%B0%E7%B5%B1%E8%A8%88%E6%9B%9D%E6%85%98%E6%B3%81-151013586.html",
-          "summary": "[NOWNEWS今日新聞]根據宏都拉斯國家水產養殖協會（Andah）發布的最新報告，儘管中國曾簽署大筆採購合約，但中國至今仍未擠入宏都拉斯養殖蝦的前五大出口市場。截至2026年前三季度，宏都拉斯養殖蝦",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-11-07T15:10:13+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "德國逾40萬勞工上街頭　爭取加薪及改善勞動條件",
-          "url": "https://tw.stock.yahoo.com/news/%E5%BE%B7%E5%9C%8B%E9%80%BE40%E8%90%AC%E5%8B%9E%E5%B7%A5%E4%B8%8A%E8%A1%97%E9%A0%AD-%E7%88%AD%E5%8F%96%E5%8A%A0%E8%96%AA%E5%8F%8A%E6%94%B9%E5%96%84%E5%8B%9E%E5%8B%95%E6%A2%9D%E4%BB%B6-150402080.html",
-          "summary": "（中央社法蘭克福2026年11月6日綜合外電報導）德國工會今天表示，本週共有逾40萬名勞工參與罷工及集會，要求改善薪資與工作條件，這些勞工涵蓋汽車製造、機械工程等產業。法新社報導，德國金屬工業工會（I",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-11-07T15:04:02+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "碳化矽晶圓中國低價搶市  安森美取消655億捷克擴廠",
-          "url": "https://tw.stock.yahoo.com/news/%E7%A2%B3%E5%8C%96%E7%9F%BD%E6%99%B6%E5%9C%93%E4%B8%AD%E5%9C%8B%E4%BD%8E%E5%83%B9%E6%90%B6%E5%B8%82-%E5%AE%89%E6%A3%AE%E7%BE%8E%E5%8F%96%E6%B6%88655%E5%84%84%E6%8D%B7%E5%85%8B%E6%93%B4%E5%BB%A0-150300780.html",
-          "summary": "（中央社記者劉郁葶布拉格2026年11月7日專電）美國半導體製造商安森美宣布，取消原定在捷克東部地區羅茲諾夫投資20億美元（約新台幣655億）的擴廠計畫，理由是全球碳化矽晶圓市場發展變化。安森美強調，",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-11-07T15:03:00+00:00",
-          "market_classification": {
-            "market_scope": "cross_market",
-            "taiwan_matches": [
-              "taiwan"
-            ],
-            "us_matches": [
-              "美國"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "cross_market",
-          "taiwan_matches": [
-            "taiwan"
-          ],
-          "us_matches": [
-            "美國"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "門打開了！  經部修法開放火力CCS低碳電   台塑化、台電可直售台積電",
-          "url": "https://tw.stock.yahoo.com/news/%E9%96%80%E6%89%93%E9%96%8B%E4%BA%86-%E7%B6%93%E9%83%A8%E4%BF%AE%E6%B3%95%E9%96%8B%E6%94%BE%E7%81%AB%E5%8A%9Bccs%E4%BD%8E%E7%A2%B3%E9%9B%BB-%E5%8F%B0%E5%A1%91%E5%8C%96-%E5%8F%B0%E9%9B%BB%E5%8F%AF%E7%9B%B4%E5%94%AE%E5%8F%B0%E7%A9%8D%E9%9B%BB-144343758.html",
-          "summary": "護國神山缺綠電，台塑石化擬在麥寮燃氣機組加設「二氧化碳捕捉與封存(CCS)」設備，每度電加價1.5元販售低碳電，但法規不允許。經濟部近日修改《電業法》，正式「打開新路」，允許電業(火力電廠)結合CCS",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-11-07T14:43:43+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台積電",
-              "taiwan"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台積電",
-            "taiwan"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "taiwan"
-          }
-        },
-        {
-          "title": "1家9口漂流太平洋3個月！獲救時僅5人生還",
-          "url": "https://tw.news.yahoo.com/1%E5%AE%B69%E5%8F%A3%E6%BC%82%E6%B5%81%E5%A4%AA%E5%B9%B3%E6%B4%8B3%E5%80%8B%E6%9C%88-%E7%8D%B2%E6%95%91%E6%99%82%E5%83%855%E4%BA%BA%E7%94%9F%E9%82%84-142210494.html",
-          "summary": "[NOWNEWS今日新聞]來自西太平洋島國密克羅尼西亞的一家9口，日前搭乘20呎小艇出海，原本以為只是1小時的船程，結果卻在海上漂流長達三個月、跨越約5390公里，最終漂到南太平洋島國吉里巴斯（Kir",
-          "source": "Yahoo Taiwan Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-11-07T14:22:10+00:00",
+          "published_at": "2026-11-07T21:01:30+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -1271,7 +1374,7 @@
           "authority_tier": "discovery",
           "market": "taiwan",
           "relevance": "market",
-          "published_at": "2026-11-07T10:23:49+00:00",
+          "published_at": "2026-11-07T10:22:27+00:00",
           "market_classification": {
             "market_scope": "taiwan",
             "taiwan_matches": [
@@ -1384,44 +1487,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        },
-        {
-          "title": "AI股估值大修正　法人：緊盯雲端業者資本支出指引3大指標 - ETtoday財經雲",
-          "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTFA2REFyQ3J0aGNkOEtyNU1GVnY3S3pCdGFxQnR1QkFlbFEyZzNHRXEtRVlYc1J2dGthLVJiUWwweEozeWJjMUdEbDZrdUhfaERsbXfSAVBBVV95cUxNZnpTM1p1Z3VBN0hvTnBnMTVWZlk3dmh6N0l3QWZoYzZVWmRQWlMzd2JFTW8tcWZJbHFQQ3FVZ0dXYWF0b1BZeEVIRmZiaWFsaA?oc=5",
-          "summary": "AI股估值大修正 法人：緊盯雲端業者資本支出指引3大指標 ETtoday財經雲",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-11-07T22:05:00+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "taiwan"
-          }
         },
         {
           "title": "【AI股重新定價】獲利敘事改變台日韓供應鏈將成下修第一線| 財經焦點 - 太報 TaiSounds",
@@ -1791,6 +1856,84 @@
           "ranking_score": 115
         },
         {
+          "title": "AI股估值大修正　法人：緊盯雲端業者資本支出指引3大指標 - ETtoday財經雲",
+          "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTFA2REFyQ3J0aGNkOEtyNU1GVnY3S3pCdGFxQnR1QkFlbFEyZzNHRXEtRVlYc1J2dGthLVJiUWwweEozeWJjMUdEbDZrdUhfaERsbXfSAVBBVV95cUxNZnpTM1p1Z3VBN0hvTnBnMTVWZlk3dmh6N0l3QWZoYzZVWmRQWlMzd2JFTW8tcWZJbHFQQ3FVZ0dXYWF0b1BZeEVIRmZiaWFsaA?oc=5",
+          "summary": "AI股估值大修正 法人：緊盯雲端業者資本支出指引3大指標 ETtoday財經雲",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-11-07T22:05:00+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
+          "title": "先進記憶體成焦點！傳台積電研發3D DRAM，3檔記憶體概念股營運解析-財經焦點情報站 - CMoney投資網誌",
+          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxQdkd4WFQ4a1gzM1h0bk5GOFJoX0FiV0gteGp0MW84dk12YmRrSGFXclVadm9paFdDbHl1d1laUG1LMmM2OHV4ekdpX1B5aWRLYVhnRVVFTzBEdnlKeDdZODQ0X2k5SlprdWhOWkF0M29WRTQxeEsySm81Z1dnRlBNaE1R?oc=5",
+          "summary": "先進記憶體成焦點！傳台積電研發3D DRAM，3檔記憶體概念股營運解析-財經焦點情報站 CMoney投資網誌",
+          "source": "Google News｜台股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "taiwan",
+          "relevance": "market",
+          "published_at": "2026-11-07T23:17:54+00:00",
+          "market_classification": {
+            "market_scope": "taiwan",
+            "taiwan_matches": [
+              "台股",
+              "台積電"
+            ],
+            "us_matches": [],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "taiwan"
+            }
+          },
+          "market_scope": "taiwan",
+          "taiwan_matches": [
+            "台股",
+            "台積電"
+          ],
+          "us_matches": [],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "taiwan"
+          }
+        },
+        {
           "title": "台積電赴美擴產台灣如何守住優勢？專家點供應鏈不可取代的關鍵- 產業 - 工商時報",
           "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE9MdjVVUjBhZDdaX0E1Ui1zSkdjcU9aWkpYLTNMMDhZYm1HakVSQ3pHTXdlcGtLR3hEdU9ENHZJcnhabzZpaTRHUzc0bnZSWFc1eEd4anlyUWcyUTZ3b2kw",
           "summary": "台積電赴美擴產台灣如何守住優勢？專家點供應鏈不可取代的關鍵- 產業 工商時報",
@@ -1899,128 +2042,6 @@
           "matched_subject": "台積電",
           "matched_action": "供應",
           "matched_market_object": "台積電",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
-          "title": "AI供應鏈拉警報！謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 - 財訊",
-          "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE5GTFBVc2QwZGdCc0ZTSnV4OWdKblUyOE0tazR1M2tTc2lhNGN1T21DMGMwUlRXWXVOczZzNTZrSTY3NTRYYnpTdkZxM3J4UGlaSGcyeE01VWVTVFYxWklXUUU3ZWoyOUNiTTRPNlhyQlhnVkV4Z095Y1lVTQ",
-          "summary": "AI供應鏈拉警報！謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 財訊",
-          "source": "Google News｜台股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "taiwan",
-          "relevance": "market",
-          "published_at": "2026-11-06T04:16:37+00:00",
-          "market_classification": {
-            "market_scope": "taiwan",
-            "taiwan_matches": [
-              "台股",
-              "台灣"
-            ],
-            "us_matches": [],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "taiwan"
-            }
-          },
-          "market_scope": "taiwan",
-          "taiwan_matches": [
-            "台股",
-            "台灣"
-          ],
-          "us_matches": [],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "taiwan"
-          },
-          "story_id": "news-110ea9f789bdbae45118",
-          "provider_name": "Google News",
-          "raw_title": "AI供應鏈拉警報！謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 - 財訊",
-          "normalized_fact": "AI供應鏈拉警報，謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 財訊。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE5GTFBVc2QwZGdCc0ZTSnV4OWdKblUyOE0tazR1M2tTc2lhNGN1T21DMGMwUlRXWXVOczZzNTZrSTY3NTRYYnpTdkZxM3J4UGlaSGcyeE01VWVTVFYxWklXUUU3ZWoyOUNiTTRPNlhyQlhnVkV4Z095Y1lVTQ",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-06",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "ai供應鏈拉警報謝金河三個女州長掐住ai的咽喉台灣要戒慎恐懼財訊",
-          "event_cluster_key": "event-88cbc74a3cf68b261cc4",
-          "published_time_bucket": "2026-11-06T04:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
           "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
@@ -7168,10 +7189,10 @@
           "ranking_score": 130
         }
       ],
-      "inventory_saved_at": "2026-11-07T22:42:15.057559+00:00"
+      "inventory_saved_at": "2026-11-07T23:34:06.672408+00:00"
     },
     "us": {
-      "fetched_at": "2026-11-07T22:42:15.057559+00:00",
+      "fetched_at": "2026-11-07T23:34:06.672408+00:00",
       "stories": [
         {
           "title": "8-K - Pono Capital Four, Inc. (0002108164) (Filer)",
@@ -7554,19 +7575,19 @@
           }
         },
         {
-          "title": "1. 〈美股盤後〉川普稱不急於再打伊朗、鎧俠財測拖累記憶體股 費半11月首日挫逾3%",
-          "url": "https://news.cnyes.com/news/id/6644206",
+          "title": "美國擬將伊朗海上封鎖擴大至陸上！成立「鐵門特遣隊」鎖定武器運輸與非法收入",
+          "url": "https://news.cnyes.com/news/id/6652151",
           "provider": "anue",
           "source": "鉅亨網｜市場焦點",
           "relevance": "market",
+          "summary": "",
+          "published_at": "2026-11-07T16:06:11+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6652151",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
             "us_matches": [
-              "美股",
-              "費半",
-              "川普",
-              "川普"
+              "美國"
             ],
             "global_matches": [
               "伊朗"
@@ -7574,17 +7595,14 @@
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 5,
+              "matched_term_count": 2,
               "source_market_hint": null
             }
           },
           "market_scope": "us",
           "taiwan_matches": [],
           "us_matches": [
-            "美股",
-            "費半",
-            "川普",
-            "川普"
+            "美國"
           ],
           "global_matches": [
             "伊朗"
@@ -7592,24 +7610,24 @@
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 5,
+            "matched_term_count": 2,
             "source_market_hint": null
           }
         },
         {
-          "title": "美股這波快跌完了？大摩：這個指數六成股票已跌過兩成",
-          "url": "https://news.cnyes.com/news/id/6644459",
+          "title": "SpaceX董事會重大異動！Google高層哈里森任職逾10年請辭、馬斯克曝Alphabet利益衝突",
+          "url": "https://news.cnyes.com/news/id/6652013",
           "provider": "anue",
           "source": "鉅亨網｜市場焦點",
           "relevance": "market",
-          "summary": "大摩稱美股自6月修正近尾聲，羅素3000六成成分股曾回檔逾20%，標普500近期補跌。\nWilson指選後不確定性可望消退，若基本面佳的景氣循環股估值已下修，年底前可加碼布局2027年。\n科技股賣壓重，市場更看重持續獲利與現金轉化；大摩估選後大型股6個月平均漲約15%。",
-          "published_at": "2026-11-02T18:00:04+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6644459",
+          "summary": "SpaceX董事哈里森11月4日請辭即刻生效，監管文件稱與營運、政策無分歧。\n馬斯克稱哈里森因涉Alphabet利益衝突過多而離任，肯定其任內貢獻。\nAlphabet為SpaceX最大單一機構股東，持股增至約5.55億股。",
+          "published_at": "2026-11-07T14:10:03+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6652013",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
             "us_matches": [
-              "美股"
+              "alphabet"
             ],
             "global_matches": [],
             "classification_status": "matched",
@@ -7622,7 +7640,7 @@
           "market_scope": "us",
           "taiwan_matches": [],
           "us_matches": [
-            "美股"
+            "alphabet"
           ],
           "global_matches": [],
           "classification_status": "matched",
@@ -7633,55 +7651,51 @@
           }
         },
         {
-          "title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
-          "url": "https://news.cnyes.com/news/id/6644497",
+          "title": "美民主黨掌控國會難撼川普關稅政策！電動車補貼、AI監管成新焦點",
+          "url": "https://news.cnyes.com/news/id/6652060",
           "provider": "anue",
           "source": "鉅亨網｜市場焦點",
           "relevance": "market",
-          "summary": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
-          "published_at": "2026-11-02T21:20:03+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6644497",
+          "summary": "民主黨拿下美國國會參眾兩院，川普關稅與對中管制料續行，修法限縮總統權限恐遭否決 AI、半導體、關鍵礦物等國安政策方向不變，但資料中心電力成本與設置地點監管可能趨嚴 電動車補貼可能重回辯論焦點，日本車廠在美投資、產能與供應鏈布局須續按關稅前提調整",
+          "published_at": "2026-11-07T13:10:02+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6652060",
           "market_classification": {
-            "market_scope": "global",
+            "market_scope": "us",
             "taiwan_matches": [],
-            "us_matches": [],
-            "global_matches": [
-              "伊朗",
-              "戰爭",
-              "原油",
-              "brent",
-              "wti"
+            "us_matches": [
+              "美國",
+              "川普",
+              "川普"
             ],
+            "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 5,
-              "source_market_hint": "global"
+              "matched_term_count": 3,
+              "source_market_hint": "us"
             }
           },
-          "market_scope": "global",
+          "market_scope": "us",
           "taiwan_matches": [],
-          "us_matches": [],
-          "global_matches": [
-            "伊朗",
-            "戰爭",
-            "原油",
-            "brent",
-            "wti"
+          "us_matches": [
+            "美國",
+            "川普",
+            "川普"
           ],
+          "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 5,
-            "source_market_hint": "global"
+            "matched_term_count": 3,
+            "source_market_hint": "us"
           },
-          "story_id": "news-b83f2a8b286abee274ae",
+          "story_id": "news-c6d403ca81586fc3c09c",
           "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "raw_title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
-          "normalized_fact": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
-          "market_topic": "energy_geopolitics",
+          "raw_title": "美民主黨掌控國會難撼川普關稅政策！電動車補貼、AI監管成新焦點",
+          "normalized_fact": "民主黨拿下美國國會參眾兩院，川普關稅與對中管制料續行，修法限縮總統權限恐遭否決 AI、半導體、關鍵礦物等國安政策方向不變，但資料中心電力成本與設置地點監管可能趨嚴 電動車補貼可能重回辯論焦點，日本車廠在美投資、產能與供應鏈布局須續按關稅前提調整。",
+          "market_topic": "company_industry",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -7692,35 +7706,36 @@
           "description": "",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "",
+          "date_eligibility_status": "current",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": null,
-          "published_local_date": "",
-          "market": "global",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-07",
+          "market": "us",
           "market_compatible": true,
           "tickers": [],
           "entities": [],
           "sectors": [],
           "topics": [
-            "energy"
+            "ai",
+            "tariff"
           ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "conflict",
-            "reason": "conflict_subject_action",
+            "category": "policy",
+            "reason": "trump_policy_keyword",
             "matched_terms": [
-              "伊朗",
-              "戰爭"
+              "川普",
+              "關稅"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "伊朗",
-              "戰爭"
+              "川普",
+              "關稅"
             ],
-            "matched_subject": "伊朗",
-            "matched_action": "戰爭",
-            "matched_market_object": "伊朗",
+            "matched_subject": "川普",
+            "matched_action": "關稅",
+            "matched_market_object": "川普",
             "input_fields": [
               "description",
               "summary",
@@ -7728,22 +7743,22 @@
             ]
           },
           "relevance_reasons": [
-            "market:global"
+            "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "伊朗示意願以對話解決戰爭市場對中東原油供應恢復期待升高布油挫逾7布油跌866美元至10477美元wti跌766美元至9646美元伊朗與卡達官員持續協商美伊協議仍受關注油市對中東消息高度敏感供應風險仍在高盛上調預測若波斯灣產量偏低布蘭特2027年恐升至140美元",
-          "event_cluster_key": "event-47cdd7b0f47f2961142e",
-          "published_time_bucket": "2026-11-02T21:00:00+00:00",
+          "dedupe_key": "民主黨拿下美國國會參眾兩院川普關稅與對中管制料續行修法限縮總統權限恐遭否決ai半導體關鍵礦物等國安政策方向不變但資料中心電力成本與設置地點監管可能趨嚴電動車補貼可能重回辯論焦點日本車廠在美投資產能與供應鏈布局須續按關稅前提調整",
+          "event_cluster_key": "event-42d1f59c76439170e317",
+          "published_time_bucket": "2026-11-07T13:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "伊朗",
-            "戰爭"
+            "川普",
+            "關稅"
           ],
-          "matched_subject": "伊朗",
-          "matched_action": "戰爭",
-          "matched_market_object": "伊朗",
+          "matched_subject": "川普",
+          "matched_action": "關稅",
+          "matched_market_object": "川普",
           "decision_value_class": "geopolitics_policy",
           "quality_flags": [],
           "eligibility_reasons": [
@@ -9230,6 +9245,46 @@
           "ranking_score": 115
         },
         {
+          "title": "Treasury Yields Down Following Democrats Midterm Win - WSJ",
+          "url": "https://news.google.com/rss/articles/CBMiygFBVV95cUxQdkVMZXBIOElzYmpRaVNwbmNZOWxvT1ZsUWgwamhobmRBNklNOGZGSGNWNG5jZjZPTUtPT2c2V0ZTNmM0SU1MNGdhV2plaVZNbDVOclUzSXMxa3NGM3ZQMl9feDdEQWhramMzMnVycHpCTm1haEFhRFZnYnpNb0hJcjVOR3pTazJ5b1FXeHFkQWRNRUszNEZFVkpmYVNoOWJKclNnM3JYTnY4bWVrdEhkalNxMGIxR2ttRFI3czliVjVXaVh4SHpNSEVR?oc=5",
+          "summary": "Treasury Yields Down Following Democrats Midterm Win WSJ",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-11-04T20:18:00+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股",
+              "fed"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股",
+            "fed"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "us"
+          }
+        },
+        {
           "title": "Gold drops 1% as strong U.S. payrolls boost dollar, yields - CNBC",
           "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxORVdNVmUyT0ZSU0FWcFd6by11bjExUWl4SVp3M04ySXNJaElHLXEzbzBxbkY4cHlLbUxaNFFQenFaQWhDM1pkQm5iemlTejhkYWtRVEhmZm5SLWdlNHczMUs4TG1zbzJzUHhmRm9JNFBkd3J6UGpPTDg3UnlVRF9ldVZMT3hUeUI4eXA4OEs3ODRTUk41Qm1lSGRLU0dGWFhuaTBYX3B0Y3dteDJHNUFr0gG0AUFVX3lxTE5YYjlweVZndF95ZnBFbkw3b2pENzZjOVRPcVNyM1pleEt5czdSMXBRXzV3bXJZWmZEVkNqekltR0dvVEg2eXo3d2lOSjZFWU9mTzdCc3hiaHJvU0lyOUJiM2NRTVMtaTYxVGRPT0JCR01WVHZJeXRackVrTk9Ea0tPY25wTGVDc0duM3k4UHVGLU04ZW9qdXhRSy1lX3lxenpXcmk5NnZhbDRQVFAzV0pYVVlXaQ",
           "summary": "Gold drops 1% as strong U.S. payrolls boost dollar, yields CNBC",
@@ -9343,46 +9398,6 @@
           "ranking_score": 115
         },
         {
-          "title": "Treasury Yields Down Following Democrats Midterm Win - WSJ",
-          "url": "https://news.google.com/rss/articles/CBMiygFBVV95cUxQdkVMZXBIOElzYmpRaVNwbmNZOWxvT1ZsUWgwamhobmRBNklNOGZGSGNWNG5jZjZPTUtPT2c2V0ZTNmM0SU1MNGdhV2plaVZNbDVOclUzSXMxa3NGM3ZQMl9feDdEQWhramMzMnVycHpCTm1haEFhRFZnYnpNb0hJcjVOR3pTazJ5b1FXeHFkQWRNRUszNEZFVkpmYVNoOWJKclNnM3JYTnY4bWVrdEhkalNxMGIxR2ttRFI3czliVjVXaVh4SHpNSEVR?oc=5",
-          "summary": "Treasury Yields Down Following Democrats Midterm Win WSJ",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-11-04T20:18:00+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股",
-              "fed"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股",
-            "fed"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": "us"
-          }
-        },
-        {
           "title": "Nvidia’s AI Chip Exports Emerge as Target in Democratic Congress - Bloomberg.com",
           "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxPb1hFMFZLZ3NScUN5R1drUjBFWFZGSXA5a1JjYW9TTkp0UE5nYWNxekFRNlBQcG00X3NpRmZHVVJ4X25HM3pnaHYtMVgxSENsT0RrTmg4OURDNk12dmhyVDFZbHN6V2g3Y0hWY05HaWxKaVdoMXFxVlBEdUwteWEtVjB5YTdyNTBORnQ1azRXQnFFeVFWcFZfRzFpQTVVSkI3dXFUcFJYWjIwT3JRckcwRzVmdklOdw?oc=5",
           "summary": "Nvidia’s AI Chip Exports Emerge as Target in Democratic Congress Bloomberg.com",
@@ -9419,6 +9434,44 @@
           "routing_evidence": {
             "title_summary_scanned": true,
             "matched_term_count": 2,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "Coherent Moves Trade Compliance AI Agents To The Front Of The Process - Forbes",
+          "url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxOQnV1MEZuU1FHSjRncU5rcHRUYXlRMklQNzhPSmFSUUhieHZHMnI0cEdBSE9FZ3hYMFN4Tnp6b1YyRE1LeVdRaFFWX0ptcFd2WDBlMXl3TS1xV0FTMjVpZHBTVDFJZ2YzUmY4clpmd1pIZ3FXSy10d0ZVcm9kcm80ejZTLUp0X2VySE5JbXgtaUFmd1dLUnJmVGxPVE5haWNEdTJoMWFvRWdPZlkxN1djUzFsbTNXQXoyS0xOdDZLVQ?oc=5",
+          "summary": "Coherent Moves Trade Compliance AI Agents To The Front Of The Process Forbes",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-11-07T19:52:22+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
             "source_market_hint": "us"
           }
         },
@@ -9631,44 +9684,6 @@
           "market": "us",
           "relevance": "market",
           "published_at": "2026-10-16T07:00:00+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "Democrats weigh the future of the House China committee that drove chip export-control scrutiny - MLQ.ai",
-          "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxObDlUbElnbjhlQ0RQOWZrb2lHWE5EZVlMT19Hc00tNDFqNTM4ZUVjcDNmS3VqWS1YYUdWdmhSQ05aTW5aNkpFN2E0bmp0eEdxRTEwbldhX0k2Q1lwajVBeWJhX2VQS25kZHFvS01sUEp3LVJFUFNPaGRBekdQY2xlSEF4OGNCNWpTMFh0NHAyWGl5Y1M4NExLUjVWRGJHWUpRcFZxeXNuNUxKbWNJZ0NhY2Y1a3pTVTA?oc=5",
-          "summary": "Democrats weigh the future of the House China committee that drove chip export-control scrutiny MLQ.ai",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-11-07T14:02:34+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
@@ -9978,6 +9993,48 @@
           }
         },
         {
+          "title": "US Midterm Election results impact on oil and IT shares: Reliance, Indian Oil, TCS, Infosys - 10 stocks from experts - TradingView",
+          "url": "https://news.google.com/rss/articles/CBMi-wFBVV95cUxOQ1MwM1M3d1pkd3d4VnpMSWhlMF9wbWxScTFNMWFoTHB6ZU1NTmcya2xaNjRoV0FlQVdwRmpZQmJCWENWWDNJSEhsLTA3ekhPbFBVWWcxaE1XYWhGX0RnR1NqWFk4czdjRTIycFlOWmZqOFZVY1BubEdYTEYxR1lyOVFqVmpwTjRJN2hEcUc0MmUtSi05UDBYNWVheFBFYjZ1d1FJZFpsUDNMdVI2ejJheElNX2hkREU0eEl5RnlTZ0RQUXBHQUlLellzS1E3dEZMc2I3cXRZSl9VeWEzNmhBOGpReUhHQVRsUFdRa1lBaFN6cnI3QXFSRHlVaw?oc=5",
+          "summary": "US Midterm Election results impact on oil and IT shares: Reliance, Indian Oil, TCS, Infosys - 10 stocks from experts TradingView",
+          "source": "Google News｜美股線索",
+          "provider": "google_news",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-11-05T08:49:31+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股"
+            ],
+            "global_matches": [
+              "oil"
+            ],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股"
+          ],
+          "global_matches": [
+            "oil"
+          ],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "us"
+          }
+        },
+        {
           "title": "Oil settles down more than 3%; investors shrug off US sanctions on Iran - Reuters",
           "url": "https://news.google.com/rss/articles/CBMixgFBVV95cUxPeWVpMEdoenRuUHdzUlpxOG1xdVdSMTItdmhxNk5MUGc3YmdGLXl0S2EwYkNYVDV6LUJtaE96QkVuUFhqQzdORlVFdmRJTDRFaTVtSlNTZlh6OE9rQ0ZqdzJOWmQzbjVtWHJxZjFZNmo0VVlzRDRnYzJ1UklrQ0lNOHNCZWdZRVgtdXFZVnZGNXdlQVd2TlN0UjFhS2NNYjByTHBnZTY1NVpXNExJeGdObFllQ2lSYjNzRGw3aGh1ZFBuNmFnaUE?oc=5",
           "summary": "Oil settles down more than 3%; investors shrug off US sanctions on Iran Reuters",
@@ -10108,16 +10165,16 @@
           }
         },
         {
-          "title": "US Midterm Election results impact on oil and IT shares: Reliance, Indian Oil, TCS, Infosys - 10 stocks from experts - TradingView",
-          "url": "https://news.google.com/rss/articles/CBMi-wFBVV95cUxOQ1MwM1M3d1pkd3d4VnpMSWhlMF9wbWxScTFNMWFoTHB6ZU1NTmcya2xaNjRoV0FlQVdwRmpZQmJCWENWWDNJSEhsLTA3ekhPbFBVWWcxaE1XYWhGX0RnR1NqWFk4czdjRTIycFlOWmZqOFZVY1BubEdYTEYxR1lyOVFqVmpwTjRJN2hEcUc0MmUtSi05UDBYNWVheFBFYjZ1d1FJZFpsUDNMdVI2ejJheElNX2hkREU0eEl5RnlTZ0RQUXBHQUlLellzS1E3dEZMc2I3cXRZSl9VeWEzNmhBOGpReUhHQVRsUFdRa1lBaFN6cnI3QXFSRHlVaw?oc=5",
-          "summary": "US Midterm Election results impact on oil and IT shares: Reliance, Indian Oil, TCS, Infosys - 10 stocks from experts TradingView",
+          "title": "Brent oil price plunges 18% this week: Stock market impact, stocks to watch - Business Today",
+          "url": "https://news.google.com/rss/articles/CBMi1wFBVV95cUxPVVd1cG1xSm9ITzVXdnU5Vmk1RUhVUE53SExoNjZSQlZBSG1udWxvVDdYWnI3R3FPZEtEYWl2OFhjVEJmLWpiMklnR3lPWlZtNmJtRGpQajhGTmtiMmVkU2NMbnhyRnMybDJPbjhUdWVTQkgxOWZVc0hnSjRPM1NuZ2UzV0wxa1hGSHQyZFZEWnI0TEpVR3QwQ2Y0Wmh1QUJUcXMtNFlGUExpaGRHV21BX1JCanFRMWdta1BraDY4bFd2MnltT2NodWRsZzNKMUdRZEdweVM5SdIB3AFBVV95cUxPX3FMV1RBZjZrWGNZRDh4SGVQcjJnYjRJaVFKU0toUldDVTVHZDFjck5RX1ViaWdhckVmTndiUUs0dGVvS19jVjd1Yk1jWnhNOHRZc0Zlckp0MFZhMXFtaTNoeDFzOEZQdXB6U2QtQjNzeTdQanU3SjlDMnJqbk1uUXRUbU5NbnUtNUdzaEZzX1BSS21mM3pWaVA0Q1BMUm1OMkdCTlJ4c3NiR19LMVJ2TklQZFV6QlVmbC14UGFNNGtwMGU0bTktZGs1MXNidVBDdWllWC1OdFU4Qmto?oc=5",
+          "summary": "Brent oil price plunges 18% this week: Stock market impact, stocks to watch Business Today",
           "source": "Google News｜美股線索",
           "provider": "google_news",
           "source_tier": "discovery",
           "authority_tier": "discovery",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-11-05T08:49:31+00:00",
+          "published_at": "2026-11-05T02:42:26+00:00",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
@@ -10125,12 +10182,13 @@
               "美股"
             ],
             "global_matches": [
-              "oil"
+              "oil",
+              "brent"
             ],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 2,
+              "matched_term_count": 3,
               "source_market_hint": "us"
             }
           },
@@ -10140,12 +10198,13 @@
             "美股"
           ],
           "global_matches": [
-            "oil"
+            "oil",
+            "brent"
           ],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 2,
+            "matched_term_count": 3,
             "source_market_hint": "us"
           }
         },
@@ -10231,50 +10290,6 @@
           ],
           "global_matches": [
             "oil"
-          ],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 3,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "Brent oil price plunges 18% this week: Stock market impact, stocks to watch - Business Today",
-          "url": "https://news.google.com/rss/articles/CBMi1wFBVV95cUxPVVd1cG1xSm9ITzVXdnU5Vmk1RUhVUE53SExoNjZSQlZBSG1udWxvVDdYWnI3R3FPZEtEYWl2OFhjVEJmLWpiMklnR3lPWlZtNmJtRGpQajhGTmtiMmVkU2NMbnhyRnMybDJPbjhUdWVTQkgxOWZVc0hnSjRPM1NuZ2UzV0wxa1hGSHQyZFZEWnI0TEpVR3QwQ2Y0Wmh1QUJUcXMtNFlGUExpaGRHV21BX1JCanFRMWdta1BraDY4bFd2MnltT2NodWRsZzNKMUdRZEdweVM5SdIB3AFBVV95cUxPX3FMV1RBZjZrWGNZRDh4SGVQcjJnYjRJaVFKU0toUldDVTVHZDFjck5RX1ViaWdhckVmTndiUUs0dGVvS19jVjd1Yk1jWnhNOHRZc0Zlckp0MFZhMXFtaTNoeDFzOEZQdXB6U2QtQjNzeTdQanU3SjlDMnJqbk1uUXRUbU5NbnUtNUdzaEZzX1BSS21mM3pWaVA0Q1BMUm1OMkdCTlJ4c3NiR19LMVJ2TklQZFV6QlVmbC14UGFNNGtwMGU0bTktZGs1MXNidVBDdWllWC1OdFU4Qmto?oc=5",
-          "summary": "Brent oil price plunges 18% this week: Stock market impact, stocks to watch Business Today",
-          "source": "Google News｜美股線索",
-          "provider": "google_news",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-11-05T02:42:26+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美股"
-            ],
-            "global_matches": [
-              "oil",
-              "brent"
-            ],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 3,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美股"
-          ],
-          "global_matches": [
-            "oil",
-            "brent"
           ],
           "classification_status": "matched",
           "routing_evidence": {
@@ -10372,6 +10387,100 @@
           "inventory_used": true,
           "inventory_age_trading_sessions": 1,
           "inventory_saved_at": "2026-11-07T22:42:15.057559+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "story_id": "news-c6d403ca81586fc3c09c",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "美民主黨掌控國會難撼川普關稅政策！電動車補貼、AI監管成新焦點",
+          "raw_title": "美民主黨掌控國會難撼川普關稅政策！電動車補貼、AI監管成新焦點",
+          "normalized_fact": "民主黨拿下美國國會參眾兩院，川普關稅與對中管制料續行，修法限縮總統權限恐遭否決 AI、半導體、關鍵礦物等國安政策方向不變，但資料中心電力成本與設置地點監管可能趨嚴 電動車補貼可能重回辯論焦點，日本車廠在美投資、產能與供應鏈布局須續按關稅前提調整。",
+          "market_topic": "company_industry",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "民主黨拿下美國國會參眾兩院，川普關稅與對中管制料續行，修法限縮總統權限恐遭否決 AI、半導體、關鍵礦物等國安政策方向不變，但資料中心電力成本與設置地點監管可能趨嚴 電動車補貼可能重回辯論焦點，日本車廠在美投資、產能與供應鏈布局須續按關稅前提調整",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6652060",
+          "url": "https://news.cnyes.com/news/id/6652060",
+          "published_at": "2026-11-07T13:10:02+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-07",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai",
+            "tariff"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "policy",
+            "reason": "trump_policy_keyword",
+            "matched_terms": [
+              "川普",
+              "關稅"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "川普",
+              "關稅"
+            ],
+            "matched_subject": "川普",
+            "matched_action": "關稅",
+            "matched_market_object": "川普",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "民主黨拿下美國國會參眾兩院川普關稅與對中管制料續行修法限縮總統權限恐遭否決ai半導體關鍵礦物等國安政策方向不變但資料中心電力成本與設置地點監管可能趨嚴電動車補貼可能重回辯論焦點日本車廠在美投資產能與供應鏈布局須續按關稅前提調整",
+          "event_cluster_key": "event-42d1f59c76439170e317",
+          "published_time_bucket": "2026-11-07T13:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "川普",
+            "關稅"
+          ],
+          "matched_subject": "川普",
+          "matched_action": "關稅",
+          "matched_market_object": "川普",
+          "decision_value_class": "geopolitics_policy",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-11-07T23:34:06.672408+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 130
@@ -14745,102 +14854,9 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 120
-        },
-        {
-          "story_id": "news-8096e30cb8c67530aedc",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "China's curbs on tungsten used in drill bits squeeze AI supply chain - Nikkei Asia",
-          "raw_title": "China's curbs on tungsten used in drill bits squeeze AI supply chain - Nikkei Asia",
-          "normalized_fact": "China's curbs on tungsten used in drill bits squeeze AI supply chain Nikkei Asia。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "China's curbs on tungsten used in drill bits squeeze AI supply chain Nikkei Asia",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxPQnEyQk96aEtwdE9fVVhzYlJkWW1oU1VVbVdNRW5IWjY4YVdXRFFaR040dEh0ZjlqWWo3U2c0NTNyQ2RIRmhudkhUem1uVzRWT2Nqdk1WbmVNM05haGtjZk91UUhXclJiOVFLREJMWV9Tb2FfdUdHQU1MeG43NjdjTlAweENBOHN6SDg0T0NfTjJacnVFU1Rjcm1id0MxZW12RGtuS3ZYTHpoT0JmWHdsM0I2dTM1Zw",
-          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxPQnEyQk96aEtwdE9fVVhzYlJkWW1oU1VVbVdNRW5IWjY4YVdXRFFaR040dEh0ZjlqWWo3U2c0NTNyQ2RIRmhudkhUem1uVzRWT2Nqdk1WbmVNM05haGtjZk91UUhXclJiOVFLREJMWV9Tb2FfdUdHQU1MeG43NjdjTlAweENBOHN6SDg0T0NfTjJacnVFU1Rjcm1id0MxZW12RGtuS3ZYTHpoT0JmWHdsM0I2dTM1Zw",
-          "published_at": "2026-11-05T02:28:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-11-04",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "supply"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "supply"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "supply",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "chinascurbsontungstenusedindrillbitssqueezeaisupplychainnikkeiasia",
-          "event_cluster_key": "event-c13a028dd88716b6126e",
-          "published_time_bucket": "2026-11-05T02:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "supply"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "supply",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 3,
-          "inventory_saved_at": "2026-11-05T06:34:45.880761+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
         }
       ],
-      "inventory_saved_at": "2026-11-07T22:42:15.057559+00:00"
+      "inventory_saved_at": "2026-11-07T23:34:06.672408+00:00"
     }
   }
 }

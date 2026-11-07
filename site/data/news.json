@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "e96f3c463529af50",
-  "snapshot_id": "news-a285cd0d6038584b",
+  "market_snapshot_id": "108b85aae96b063d",
+  "snapshot_id": "news-958ee0dd4f419e00",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -531,6 +531,104 @@
           "ranking_score": 115
         },
         {
+          "story_id": "news-b83f2a8b286abee274ae",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
+          "raw_title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
+          "normalized_fact": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
+          "market_topic": "energy_geopolitics",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6644497",
+          "url": "https://news.cnyes.com/news/id/6644497",
+          "published_at": "2026-11-02T21:20:03+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 4,
+          "published_local_date": "2026-11-03",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "energy"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "conflict",
+            "reason": "conflict_subject_action",
+            "matched_terms": [
+              "伊朗",
+              "戰爭"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "伊朗",
+              "戰爭"
+            ],
+            "matched_subject": "伊朗",
+            "matched_action": "戰爭",
+            "matched_market_object": "伊朗",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:global",
+            "active_event:brent",
+            "active_event:wti",
+            "active_event:伊朗",
+            "active_event:原油",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "伊朗示意願以對話解決戰爭市場對中東原油供應恢復期待升高布油挫逾7布油跌866美元至10477美元wti跌766美元至9646美元伊朗與卡達官員持續協商美伊協議仍受關注油市對中東消息高度敏感供應風險仍在高盛上調預測若波斯灣產量偏低布蘭特2027年恐升至140美元",
+          "event_cluster_key": "event-47cdd7b0f47f2961142e",
+          "published_time_bucket": "2026-11-02T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "伊朗",
+            "戰爭"
+          ],
+          "matched_subject": "伊朗",
+          "matched_action": "戰爭",
+          "matched_market_object": "伊朗",
+          "decision_value_class": "geopolitics_policy",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 150
+        },
+        {
           "story_id": "news-86f5422386a4a46720b2",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -645,7 +743,7 @@
           "description": "",
           "canonical_url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTFBBUXVxeGl0SXJIVFU2dFR6MTI0OEcyMG5aMld2X3hVcENNRTVQSHlWX2pJX25zVjBtTnhoTjFhLWUzdGM0ZWJleDZOYkg5MFA3akFWcnhDN1U",
           "url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTFBBUXVxeGl0SXJIVFU2dFR6MTI0OEcyMG5aMld2X3hVcENNRTVQSHlWX2pJX25zVjBtTnhoTjFhLWUzdGM0ZWJleDZOYkg5MFA3akFWcnhDN1U",
-          "published_at": "2026-11-07T10:23:49+00:00",
+          "published_at": "2026-11-07T10:22:27+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "recent_reference",
@@ -819,102 +917,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 130
-        },
-        {
-          "story_id": "news-51d9f24b3c9c199b6ebc",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "整理包／台積電供應鏈全解析！護國神山法說會受惠股...先進製程 CoWoS、CoPoS 十大產業鏈一次看 - 經濟日報",
-          "raw_title": "整理包／台積電供應鏈全解析！護國神山法說會受惠股...先進製程 CoWoS、CoPoS 十大產業鏈一次看 - 經濟日報",
-          "normalized_fact": "整理包／台積電供應鏈全解析，護國神山法說會受惠股...先進製程 CoWoS、CoPoS 十大產業鏈一次看 經濟日報。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "整理包／台積電供應鏈全解析！護國神山法說會受惠股...先進製程 CoWoS、CoPoS 十大產業鏈一次看 經濟日報",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTE9ZLVp5RjlPenFrcTRSSnFmem04R1h0SVZPSzhaVjdZVkJ1UG5WMWl5Tm5Gc2J6Wjlia0g0R3NQa2JkekdsUnRudWNwQWtHcGRpaDNleE5iNEJNc3o4",
-          "url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTE9ZLVp5RjlPenFrcTRSSnFmem04R1h0SVZPSzhaVjdZVkJ1UG5WMWl5Tm5Gc2J6Wjlia0g0R3NQa2JkekdsUnRudWNwQWtHcGRpaDNleE5iNEJNc3o4",
-          "published_at": "2026-11-05T08:00:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-05",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "台積電",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "台積電",
-              "供應"
-            ],
-            "matched_subject": "台積電",
-            "matched_action": "供應",
-            "matched_market_object": "台積電",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM"
-          ],
-          "freshness": "published",
-          "dedupe_key": "整理包台積電供應鏈全解析護國神山法說會受惠股先進製程cowoscopos十大產業鏈一次看經濟日報",
-          "event_cluster_key": "event-4e1676de2ce070a3be99",
-          "published_time_bucket": "2026-11-05T08:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "台積電",
-            "供應"
-          ],
-          "matched_subject": "台積電",
-          "matched_action": "供應",
-          "matched_market_object": "台積電",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 125
         }
       ],
       "editorial_candidates": [
@@ -1011,6 +1013,104 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
+        },
+        {
+          "story_id": "news-b83f2a8b286abee274ae",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
+          "raw_title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
+          "normalized_fact": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
+          "market_topic": "energy_geopolitics",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6644497",
+          "url": "https://news.cnyes.com/news/id/6644497",
+          "published_at": "2026-11-02T21:20:03+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 4,
+          "published_local_date": "2026-11-03",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "energy"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "conflict",
+            "reason": "conflict_subject_action",
+            "matched_terms": [
+              "伊朗",
+              "戰爭"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "伊朗",
+              "戰爭"
+            ],
+            "matched_subject": "伊朗",
+            "matched_action": "戰爭",
+            "matched_market_object": "伊朗",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:global",
+            "active_event:brent",
+            "active_event:wti",
+            "active_event:伊朗",
+            "active_event:原油",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "伊朗示意願以對話解決戰爭市場對中東原油供應恢復期待升高布油挫逾7布油跌866美元至10477美元wti跌766美元至9646美元伊朗與卡達官員持續協商美伊協議仍受關注油市對中東消息高度敏感供應風險仍在高盛上調預測若波斯灣產量偏低布蘭特2027年恐升至140美元",
+          "event_cluster_key": "event-47cdd7b0f47f2961142e",
+          "published_time_bucket": "2026-11-02T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "伊朗",
+            "戰爭"
+          ],
+          "matched_subject": "伊朗",
+          "matched_action": "戰爭",
+          "matched_market_object": "伊朗",
+          "decision_value_class": "geopolitics_policy",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 150
         },
         {
           "story_id": "news-86f5422386a4a46720b2",
@@ -1127,7 +1227,7 @@
           "description": "",
           "canonical_url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTFBBUXVxeGl0SXJIVFU2dFR6MTI0OEcyMG5aMld2X3hVcENNRTVQSHlWX2pJX25zVjBtTnhoTjFhLWUzdGM0ZWJleDZOYkg5MFA3akFWcnhDN1U",
           "url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTFBBUXVxeGl0SXJIVFU2dFR6MTI0OEcyMG5aMld2X3hVcENNRTVQSHlWX2pJX25zVjBtTnhoTjFhLWUzdGM0ZWJleDZOYkg5MFA3akFWcnhDN1U",
-          "published_at": "2026-11-07T10:23:49+00:00",
+          "published_at": "2026-11-07T10:22:27+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "recent_reference",
@@ -1493,99 +1593,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
-        },
-        {
-          "story_id": "news-110ea9f789bdbae45118",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "AI供應鏈拉警報！謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 - 財訊",
-          "raw_title": "AI供應鏈拉警報！謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 - 財訊",
-          "normalized_fact": "AI供應鏈拉警報，謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 財訊。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "AI供應鏈拉警報！謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 財訊",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE5GTFBVc2QwZGdCc0ZTSnV4OWdKblUyOE0tazR1M2tTc2lhNGN1T21DMGMwUlRXWXVOczZzNTZrSTY3NTRYYnpTdkZxM3J4UGlaSGcyeE01VWVTVFYxWklXUUU3ZWoyOUNiTTRPNlhyQlhnVkV4Z095Y1lVTQ",
-          "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE5GTFBVc2QwZGdCc0ZTSnV4OWdKblUyOE0tazR1M2tTc2lhNGN1T21DMGMwUlRXWXVOczZzNTZrSTY3NTRYYnpTdkZxM3J4UGlaSGcyeE01VWVTVFYxWklXUUU3ZWoyOUNiTTRPNlhyQlhnVkV4Z095Y1lVTQ",
-          "published_at": "2026-11-06T04:16:37+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-06",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "ai供應鏈拉警報謝金河三個女州長掐住ai的咽喉台灣要戒慎恐懼財訊",
-          "event_cluster_key": "event-88cbc74a3cf68b261cc4",
-          "published_time_bucket": "2026-11-06T04:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
         },
         {
           "story_id": "news-cb328c712058814c39e1",
@@ -4617,14 +4624,14 @@
           "ranking_score": 15
         },
         {
-          "story_id": "news-18b2052fd7985c348c9f",
+          "story_id": "news-110ea9f789bdbae45118",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "瑞銀：AI資本支出續強 科技供應鏈基本面穩固 - 自由時報",
-          "raw_title": "瑞銀：AI資本支出續強 科技供應鏈基本面穩固 - 自由時報",
-          "normalized_fact": "瑞銀：AI資本支出續強 科技供應鏈基本面穩固 自由時報。",
+          "title": "AI供應鏈拉警報！謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 - 財訊",
+          "raw_title": "AI供應鏈拉警報！謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 - 財訊",
+          "normalized_fact": "AI供應鏈拉警報，謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 財訊。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -4633,11 +4640,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "瑞銀：AI資本支出續強 科技供應鏈基本面穩固 自由時報",
+          "summary": "AI供應鏈拉警報！謝金河：三個女州長掐住AI的咽喉 台灣要戒慎恐懼 財訊",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE5wQU5hUy1IT3BlN3JvLTd2dFEwMllXUVQ3bC1vUVZEVzAySUkxaDBTc3Rhd2Iyc3FvaERCaGNXMnRadFdmdjhrV3dIV3ZERVhfZ1ZKaEhmVFc",
-          "url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE5wQU5hUy1IT3BlN3JvLTd2dFEwMllXUVQ3bC1vUVZEVzAySUkxaDBTc3Rhd2Iyc3FvaERCaGNXMnRadFdmdjhrV3dIV3ZERVhfZ1ZKaEhmVFc",
-          "published_at": "2026-11-06T05:30:50+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE5GTFBVc2QwZGdCc0ZTSnV4OWdKblUyOE0tazR1M2tTc2lhNGN1T21DMGMwUlRXWXVOczZzNTZrSTY3NTRYYnpTdkZxM3J4UGlaSGcyeE01VWVTVFYxWklXUUU3ZWoyOUNiTTRPNlhyQlhnVkV4Z095Y1lVTQ",
+          "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE5GTFBVc2QwZGdCc0ZTSnV4OWdKblUyOE0tazR1M2tTc2lhNGN1T21DMGMwUlRXWXVOczZzNTZrSTY3NTRYYnpTdkZxM3J4UGlaSGcyeE01VWVTVFYxWklXUUU3ZWoyOUNiTTRPNlhyQlhnVkV4Z095Y1lVTQ",
+          "published_at": "2026-11-06T04:16:37+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "recent_reference",
@@ -4659,15 +4666,15 @@
             "reason": "semiconductor_subject_action",
             "matched_terms": [
               "ai",
-              "資本支出"
+              "供應"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
               "ai",
-              "資本支出"
+              "供應"
             ],
             "matched_subject": "ai",
-            "matched_action": "資本支出",
+            "matched_action": "供應",
             "matched_market_object": "ai",
             "input_fields": [
               "description",
@@ -4679,18 +4686,18 @@
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "瑞銀ai資本支出續強科技供應鏈基本面穩固自由時報",
-          "event_cluster_key": "event-e5d4060e6ce39b097d55",
-          "published_time_bucket": "2026-11-06T05:00:00+00:00",
+          "dedupe_key": "ai供應鏈拉警報謝金河三個女州長掐住ai的咽喉台灣要戒慎恐懼財訊",
+          "event_cluster_key": "event-88cbc74a3cf68b261cc4",
+          "published_time_bucket": "2026-11-06T04:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
             "ai",
-            "資本支出"
+            "供應"
           ],
           "matched_subject": "ai",
-          "matched_action": "資本支出",
+          "matched_action": "供應",
           "matched_market_object": "ai",
           "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
@@ -4712,15 +4719,17 @@
       ],
       "source_diversity": {
         "schema_version": "1.0",
-        "status": "single_source",
-        "cross_checked": false,
+        "status": "multi_source",
+        "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 1,
-        "provider_count": 1,
+        "independent_source_count": 2,
+        "provider_count": 2,
         "provider_ids": [
+          "anue",
           "google_news"
         ],
         "source_domains": [
+          "news.cnyes.com",
           "news.google.com"
         ],
         "supporting_source_count": 0,
@@ -4730,7 +4739,7 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 25,
+          "2330": 27,
           "AVGO": 2,
           "NVDA": 9,
           "TSM": 25,
@@ -4740,14 +4749,15 @@
         },
         "sector_interest": {},
         "topic_interest": {
-          "brent": 1,
-          "伊朗": 3,
+          "brent": 2,
+          "wti": 2,
+          "伊朗": 4,
+          "原油": 4,
           "oil": 1,
-          "石油": 2,
-          "原油": 2
+          "石油": 2
         },
         "market_interest": {
-          "taiwan": 111
+          "taiwan": 113
         },
         "context": {
           "tracked_tickers": [
@@ -4832,7 +4842,7 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 25,
+            "2330": 27,
             "NVDA": 9,
             "TSM": 25
           },
@@ -4844,11 +4854,12 @@
           },
           "tracked_sector": {},
           "active_event": {
-            "brent": 1,
-            "伊朗": 3,
+            "brent": 2,
+            "wti": 2,
+            "伊朗": 4,
+            "原油": 4,
             "oil": 1,
-            "石油": 2,
-            "原油": 2
+            "石油": 2
           },
           "creator_mentioned": {}
         }
@@ -4858,8 +4869,7 @@
         "incomplete_normalized_fact": 4,
         "insufficient_market_relevance": 26,
         "market_scope_mismatch": 6,
-        "missing_published_at": 1,
-        "non_investment_content": 2,
+        "non_investment_content": 4,
         "outside_calendar_window": 13
       },
       "status": "ready",
@@ -4874,21 +4884,20 @@
         "normalized": 42,
         "eligible": 9,
         "excluded": 33,
-        "date_eligible_current": 28,
-        "date_excluded_current": 14,
+        "date_eligible_current": 29,
+        "date_excluded_current": 13,
         "date_exclusion_reasons_current": {
-          "missing_published_at": 1,
           "outside_calendar_window": 13
         },
-        "date_eligible_inventory": 69,
+        "date_eligible_inventory": 71,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-11-07T22:42:15.057559+00:00",
+        "reference_time": "2026-11-07T23:34:06.672408+00:00",
         "deduped": 9,
         "publicly_ranked": 5,
         "current_eligible": 9,
-        "inventory_considered": 69,
-        "inventory_eligible": 50,
+        "inventory_considered": 71,
+        "inventory_eligible": 51,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
@@ -4905,8 +4914,8 @@
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 69,
-        "eligible": 50,
+        "considered": 71,
+        "eligible": 51,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -4919,7 +4928,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 42,
-          "checked_at": "2026-11-07T22:42:15.057598+00:00"
+          "checked_at": "2026-11-07T23:34:06.672450+00:00"
         },
         {
           "provider": "twse",
@@ -4930,10 +4939,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-11-07T22:42:15.057598+00:00",
+          "checked_at": "2026-11-07T23:34:06.672450+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+          "last_success_at": "2026-11-07T23:34:06.672450+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4958,10 +4967,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-11-07T22:42:15.057598+00:00",
+          "checked_at": "2026-11-07T23:34:06.672450+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+          "last_success_at": "2026-11-07T23:34:06.672450+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4982,18 +4991,18 @@
           "key": "news_taiwan_anue",
           "legacy_key": "official_news_taiwan_anue",
           "label": "anue market news",
-          "status": "no_event",
+          "status": "healthy",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 0,
-          "checked_at": "2026-11-07T22:42:15.057598+00:00",
+          "item_count": 1,
+          "checked_at": "2026-11-07T23:34:06.672450+00:00",
           "raw_item_count": 5,
-          "filtered_item_count": 0,
-          "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-11-07T23:34:06.672450+00:00",
           "last_failure_at": null,
           "stories_ingested": 2,
-          "stories_deduped": 0,
-          "ranked_count": 0,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
             "active_event": 1,
             "market": 2
@@ -5002,12 +5011,11 @@
             "fetched_count": 2,
             "normalized_count": 2,
             "market_compatible_count": 2,
-            "eligible_count": 0,
-            "excluded_count": 2,
-            "deduped_count": 0,
-            "ranked_count": 0
-          },
-          "data_gap": "filtered_no_market_match"
+            "eligible_count": 1,
+            "excluded_count": 1,
+            "deduped_count": 1,
+            "ranked_count": 1
+          }
         },
         {
           "provider": "yahoo_finance",
@@ -5018,10 +5026,10 @@
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
           "item_count": 0,
-          "checked_at": "2026-11-07T22:42:15.057598+00:00",
+          "checked_at": "2026-11-07T23:34:06.672450+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+          "last_success_at": "2026-11-07T23:34:06.672450+00:00",
           "last_failure_at": null,
           "stories_ingested": 7,
           "stories_deduped": 0,
@@ -5050,28 +5058,28 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
-          "item_count": 5,
-          "checked_at": "2026-11-07T22:42:15.057598+00:00",
+          "item_count": 4,
+          "checked_at": "2026-11-07T23:34:06.672450+00:00",
           "raw_item_count": 30,
-          "filtered_item_count": 5,
-          "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+          "filtered_item_count": 4,
+          "last_success_at": "2026-11-07T23:34:06.672450+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
-          "stories_deduped": 9,
-          "ranked_count": 5,
+          "stories_deduped": 8,
+          "ranked_count": 4,
           "relevance_distribution": {
             "market": 30,
             "research_candidate": 1,
-            "tracked_ticker": 5
+            "tracked_ticker": 6
           },
           "funnel": {
             "fetched_count": 30,
             "normalized_count": 30,
             "market_compatible_count": 30,
-            "eligible_count": 9,
-            "excluded_count": 21,
-            "deduped_count": 9,
-            "ranked_count": 5
+            "eligible_count": 8,
+            "excluded_count": 22,
+            "deduped_count": 8,
+            "ranked_count": 4
           }
         }
       ],
@@ -5083,17 +5091,17 @@
           "active_event": 1,
           "market": 42,
           "research_candidate": 2,
-          "tracked_ticker": 7
+          "tracked_ticker": 8
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+            "last_success_at": "2026-11-07T23:34:06.672450+00:00",
             "last_failure_at": null,
             "stories_ingested": 2,
-            "stories_deduped": 0,
-            "ranked_count": 0,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
               "active_event": 1,
               "market": 2
@@ -5102,39 +5110,39 @@
               "fetched_count": 2,
               "normalized_count": 2,
               "market_compatible_count": 2,
-              "eligible_count": 0,
-              "excluded_count": 2,
-              "deduped_count": 0,
-              "ranked_count": 0
+              "eligible_count": 1,
+              "excluded_count": 1,
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           },
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+            "last_success_at": "2026-11-07T23:34:06.672450+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
-            "stories_deduped": 9,
-            "ranked_count": 5,
+            "stories_deduped": 8,
+            "ranked_count": 4,
             "relevance_distribution": {
               "market": 30,
               "research_candidate": 1,
-              "tracked_ticker": 5
+              "tracked_ticker": 6
             },
             "funnel": {
               "fetched_count": 30,
               "normalized_count": 30,
               "market_compatible_count": 30,
-              "eligible_count": 9,
-              "excluded_count": 21,
-              "deduped_count": 9,
-              "ranked_count": 5
+              "eligible_count": 8,
+              "excluded_count": 22,
+              "deduped_count": 8,
+              "ranked_count": 4
             }
           },
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+            "last_success_at": "2026-11-07T23:34:06.672450+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5153,7 +5161,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+            "last_success_at": "2026-11-07T23:34:06.672450+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5193,7 +5201,7 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+            "last_success_at": "2026-11-07T23:34:06.672450+00:00",
             "last_failure_at": null,
             "stories_ingested": 7,
             "stories_deduped": 0,
@@ -5526,15 +5534,15 @@
           "ranking_score": 130
         },
         {
-          "story_id": "news-b83f2a8b286abee274ae",
+          "story_id": "news-c6d403ca81586fc3c09c",
           "provider": "anue",
           "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
-          "raw_title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
-          "normalized_fact": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
-          "market_topic": "energy_geopolitics",
+          "title": "美民主黨掌控國會難撼川普關稅政策！電動車補貼、AI監管成新焦點",
+          "raw_title": "美民主黨掌控國會難撼川普關稅政策！電動車補貼、AI監管成新焦點",
+          "normalized_fact": "民主黨拿下美國國會參眾兩院，川普關稅與對中管制料續行，修法限縮總統權限恐遭否決 AI、半導體、關鍵礦物等國安政策方向不變，但資料中心電力成本與設置地點監管可能趨嚴 電動車補貼可能重回辯論焦點，日本車廠在美投資、產能與供應鏈布局須續按關稅前提調整。",
+          "market_topic": "company_industry",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5542,42 +5550,43 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
+          "summary": "民主黨拿下美國國會參眾兩院，川普關稅與對中管制料續行，修法限縮總統權限恐遭否決 AI、半導體、關鍵礦物等國安政策方向不變，但資料中心電力成本與設置地點監管可能趨嚴 電動車補貼可能重回辯論焦點，日本車廠在美投資、產能與供應鏈布局須續按關稅前提調整",
           "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6644497",
-          "url": "https://news.cnyes.com/news/id/6644497",
-          "published_at": "2026-11-02T21:20:03+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6652060",
+          "url": "https://news.cnyes.com/news/id/6652060",
+          "published_at": "2026-11-07T13:10:02+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
+          "date_eligibility_status": "current",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 5,
-          "published_local_date": "2026-11-02",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-07",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
           "entities": [],
           "sectors": [],
           "topics": [
-            "energy"
+            "ai",
+            "tariff"
           ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "conflict",
-            "reason": "conflict_subject_action",
+            "category": "policy",
+            "reason": "trump_policy_keyword",
             "matched_terms": [
-              "伊朗",
-              "戰爭"
+              "川普",
+              "關稅"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "伊朗",
-              "戰爭"
+              "川普",
+              "關稅"
             ],
-            "matched_subject": "伊朗",
-            "matched_action": "戰爭",
-            "matched_market_object": "伊朗",
+            "matched_subject": "川普",
+            "matched_action": "關稅",
+            "matched_market_object": "川普",
             "input_fields": [
               "description",
               "summary",
@@ -5585,27 +5594,22 @@
             ]
           },
           "relevance_reasons": [
-            "market:global",
-            "active_event:brent",
-            "active_event:wti",
-            "active_event:伊朗",
-            "active_event:原油",
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "伊朗示意願以對話解決戰爭市場對中東原油供應恢復期待升高布油挫逾7布油跌866美元至10477美元wti跌766美元至9646美元伊朗與卡達官員持續協商美伊協議仍受關注油市對中東消息高度敏感供應風險仍在高盛上調預測若波斯灣產量偏低布蘭特2027年恐升至140美元",
-          "event_cluster_key": "event-47cdd7b0f47f2961142e",
-          "published_time_bucket": "2026-11-02T21:00:00+00:00",
+          "dedupe_key": "民主黨拿下美國國會參眾兩院川普關稅與對中管制料續行修法限縮總統權限恐遭否決ai半導體關鍵礦物等國安政策方向不變但資料中心電力成本與設置地點監管可能趨嚴電動車補貼可能重回辯論焦點日本車廠在美投資產能與供應鏈布局須續按關稅前提調整",
+          "event_cluster_key": "event-42d1f59c76439170e317",
+          "published_time_bucket": "2026-11-07T13:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "伊朗",
-            "戰爭"
+            "川普",
+            "關稅"
           ],
-          "matched_subject": "伊朗",
-          "matched_action": "戰爭",
-          "matched_market_object": "伊朗",
+          "matched_subject": "川普",
+          "matched_action": "關稅",
+          "matched_market_object": "川普",
           "decision_value_class": "geopolitics_policy",
           "quality_flags": [],
           "eligibility_reasons": [
@@ -5621,7 +5625,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 150
+          "ranking_score": 130
         },
         {
           "story_id": "news-38d691796cefbbcd40be",
@@ -5967,15 +5971,15 @@
           "ranking_score": 130
         },
         {
-          "story_id": "news-b83f2a8b286abee274ae",
+          "story_id": "news-c6d403ca81586fc3c09c",
           "provider": "anue",
           "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
-          "raw_title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
-          "normalized_fact": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
-          "market_topic": "energy_geopolitics",
+          "title": "美民主黨掌控國會難撼川普關稅政策！電動車補貼、AI監管成新焦點",
+          "raw_title": "美民主黨掌控國會難撼川普關稅政策！電動車補貼、AI監管成新焦點",
+          "normalized_fact": "民主黨拿下美國國會參眾兩院，川普關稅與對中管制料續行，修法限縮總統權限恐遭否決 AI、半導體、關鍵礦物等國安政策方向不變，但資料中心電力成本與設置地點監管可能趨嚴 電動車補貼可能重回辯論焦點，日本車廠在美投資、產能與供應鏈布局須續按關稅前提調整。",
+          "market_topic": "company_industry",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5983,42 +5987,43 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
+          "summary": "民主黨拿下美國國會參眾兩院，川普關稅與對中管制料續行，修法限縮總統權限恐遭否決 AI、半導體、關鍵礦物等國安政策方向不變，但資料中心電力成本與設置地點監管可能趨嚴 電動車補貼可能重回辯論焦點，日本車廠在美投資、產能與供應鏈布局須續按關稅前提調整",
           "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6644497",
-          "url": "https://news.cnyes.com/news/id/6644497",
-          "published_at": "2026-11-02T21:20:03+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6652060",
+          "url": "https://news.cnyes.com/news/id/6652060",
+          "published_at": "2026-11-07T13:10:02+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
+          "date_eligibility_status": "current",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 5,
-          "published_local_date": "2026-11-02",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-07",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
           "entities": [],
           "sectors": [],
           "topics": [
-            "energy"
+            "ai",
+            "tariff"
           ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "conflict",
-            "reason": "conflict_subject_action",
+            "category": "policy",
+            "reason": "trump_policy_keyword",
             "matched_terms": [
-              "伊朗",
-              "戰爭"
+              "川普",
+              "關稅"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "伊朗",
-              "戰爭"
+              "川普",
+              "關稅"
             ],
-            "matched_subject": "伊朗",
-            "matched_action": "戰爭",
-            "matched_market_object": "伊朗",
+            "matched_subject": "川普",
+            "matched_action": "關稅",
+            "matched_market_object": "川普",
             "input_fields": [
               "description",
               "summary",
@@ -6026,27 +6031,22 @@
             ]
           },
           "relevance_reasons": [
-            "market:global",
-            "active_event:brent",
-            "active_event:wti",
-            "active_event:伊朗",
-            "active_event:原油",
             "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "伊朗示意願以對話解決戰爭市場對中東原油供應恢復期待升高布油挫逾7布油跌866美元至10477美元wti跌766美元至9646美元伊朗與卡達官員持續協商美伊協議仍受關注油市對中東消息高度敏感供應風險仍在高盛上調預測若波斯灣產量偏低布蘭特2027年恐升至140美元",
-          "event_cluster_key": "event-47cdd7b0f47f2961142e",
-          "published_time_bucket": "2026-11-02T21:00:00+00:00",
+          "dedupe_key": "民主黨拿下美國國會參眾兩院川普關稅與對中管制料續行修法限縮總統權限恐遭否決ai半導體關鍵礦物等國安政策方向不變但資料中心電力成本與設置地點監管可能趨嚴電動車補貼可能重回辯論焦點日本車廠在美投資產能與供應鏈布局須續按關稅前提調整",
+          "event_cluster_key": "event-42d1f59c76439170e317",
+          "published_time_bucket": "2026-11-07T13:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "伊朗",
-            "戰爭"
+            "川普",
+            "關稅"
           ],
-          "matched_subject": "伊朗",
-          "matched_action": "戰爭",
-          "matched_market_object": "伊朗",
+          "matched_subject": "川普",
+          "matched_action": "關稅",
+          "matched_market_object": "川普",
           "decision_value_class": "geopolitics_policy",
           "quality_flags": [],
           "eligibility_reasons": [
@@ -6062,7 +6062,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 150
+          "ranking_score": 130
         },
         {
           "story_id": "news-38d691796cefbbcd40be",
@@ -6774,106 +6774,6 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-e36b2c36489afe2d57d4",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "〈美股盤後〉晶片股反彈！費半勁揚逾4.2% 台積電ADR升超6% 那指標普周線四連黑",
-          "raw_title": "〈美股盤後〉晶片股反彈！費半勁揚逾4.2% 台積電ADR升超6% 那指標普周線四連黑",
-          "normalized_fact": "美股週五反彈，那指漲1.09%、費半勁揚4.21%，AMD飆、美光回升，但道瓊跌237點 10月非農增16.5萬人、失業率降至4.1%，強化市場對Fed 12月升息押注，美債10年期殖利率升至4.86% 資料中心監管疑慮未退，民主黨選後加強AI限制風險；本週那指跌3.4%、標普跌2.7%，連4週收黑。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "美股週五反彈，那指漲1.09%、費半勁揚4.21%，AMD飆、美光回升，但道瓊跌237點 10月非農增16.5萬人、失業率降至4.1%，強化市場對Fed 12月升息押注，美債10年期殖利率升至4.86% 資料中心監管疑慮未退，民主黨選後加強AI限制風險；本週那指跌3.4%、標普跌2.7%，連4週收黑",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6651785",
-          "url": "https://news.cnyes.com/news/id/6651785",
-          "published_at": "2026-11-06T21:52:24+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-06",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "SOX",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "利率"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "利率"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "利率",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM",
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "美股週五反彈那指漲109費半勁揚421amd飆美光回升但道瓊跌237點10月非農增165萬人失業率降至41強化市場對fed12月升息押注美債10年期殖利率升至486資料中心監管疑慮未退民主黨選後加強ai限制風險本週那指跌34標普跌27連4週收黑",
-          "event_cluster_key": "event-33742cbc810079d7da35",
-          "published_time_bucket": "2026-11-06T21:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "利率"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "利率",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 1,
-          "inventory_saved_at": "2026-11-07T00:04:43.511605+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 40
-        },
-        {
           "story_id": "news-2364e20444f0312d6e08",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -7149,6 +7049,106 @@
           "inventory_used": true,
           "inventory_age_trading_sessions": 1,
           "inventory_saved_at": "2026-11-06T15:23:12.648098+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 40
+        },
+        {
+          "story_id": "news-e36b2c36489afe2d57d4",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈美股盤後〉晶片股反彈！費半勁揚逾4.2% 台積電ADR升超6% 那指標普周線四連黑",
+          "raw_title": "〈美股盤後〉晶片股反彈！費半勁揚逾4.2% 台積電ADR升超6% 那指標普周線四連黑",
+          "normalized_fact": "美股週五反彈，那指漲1.09%、費半勁揚4.21%，AMD飆、美光回升，但道瓊跌237點 10月非農增16.5萬人、失業率降至4.1%，強化市場對Fed 12月升息押注，美債10年期殖利率升至4.86% 資料中心監管疑慮未退，民主黨選後加強AI限制風險；本週那指跌3.4%、標普跌2.7%，連4週收黑。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "美股週五反彈，那指漲1.09%、費半勁揚4.21%，AMD飆、美光回升，但道瓊跌237點 10月非農增16.5萬人、失業率降至4.1%，強化市場對Fed 12月升息押注，美債10年期殖利率升至4.86% 資料中心監管疑慮未退，民主黨選後加強AI限制風險；本週那指跌3.4%、標普跌2.7%，連4週收黑",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6651785",
+          "url": "https://news.cnyes.com/news/id/6651785",
+          "published_at": "2026-11-06T21:52:24+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-06",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "2330",
+            "SOX",
+            "TSM"
+          ],
+          "sectors": [],
+          "topics": [
+            "semiconductor"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "美股週五反彈那指漲109費半勁揚421amd飆美光回升但道瓊跌237點10月非農增165萬人失業率降至41強化市場對fed12月升息押注美債10年期殖利率升至486資料中心監管疑慮未退民主黨選後加強ai限制風險本週那指跌34標普跌27連4週收黑",
+          "event_cluster_key": "event-33742cbc810079d7da35",
+          "published_time_bucket": "2026-11-06T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-11-07T00:04:43.511605+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 40
@@ -9180,102 +9180,6 @@
           "ranking_score": 27
         },
         {
-          "story_id": "news-474b9ae73bd53bf649dd",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Nasdaq futures slide over 1% as election rally gives way to weak chip earnings",
-          "raw_title": "Nasdaq futures slide over 1% as election rally gives way to weak chip earnings",
-          "normalized_fact": "Investing.com-- Nasdaq futures fell sharply early-Thursday after a rally on the midterm election results was cut short by more soft chipmaker earnings。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Investing.com-- Nasdaq futures fell sharply early-Thursday after a rally on the midterm election results was cut short by more soft chipmaker earnings.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/u-stock-index-futures-steady-011139159.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/u-stock-index-futures-steady-011139159.html?.tsrc=rss",
-          "published_at": "2026-11-05T01:11:39+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-11-04",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NASDAQ"
-          ],
-          "sectors": [],
-          "topics": [
-            "earnings",
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "chip",
-              "earnings"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "chip",
-              "earnings"
-            ],
-            "matched_subject": "chip",
-            "matched_action": "earnings",
-            "matched_market_object": "chip",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "investingcomnasdaqfuturesfellsharplyearlythursdayafterarallyonthemidtermelectionresultswascutshortbymoresoftchipmakerearnings",
-          "event_cluster_key": "event-36fb41e038d1938f5051",
-          "published_time_bucket": "2026-11-05T01:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "chip",
-            "earnings"
-          ],
-          "matched_subject": "chip",
-          "matched_action": "earnings",
-          "matched_market_object": "chip",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 3,
-          "inventory_saved_at": "2026-11-05T06:34:45.880761+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 24
-        },
-        {
           "story_id": "news-c282bee8402f37f6bde7",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -9526,6 +9430,88 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 17
+        },
+        {
+          "story_id": "news-2941fbe3c6f95c325a19",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Dollar Jumps After Strong US Payrolls Report - GV Wire",
+          "raw_title": "Dollar Jumps After Strong US Payrolls Report - GV Wire",
+          "normalized_fact": "Dollar Jumps After Strong US Payrolls Report GV Wire。",
+          "market_topic": "company_industry",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Dollar Jumps After Strong US Payrolls Report GV Wire",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxOQ2VXTkJYMUFwaUQzTnpfdXU1T19hZ1pWRy1mRnlCYzNyejJYa2oxVUhObXpCaEVBWWx1TkN4VUFwNy1sV1R0dWJmMUZSak00czlOSzg3Vk1MRVJYSVk3MG9YdURrTFc2UE9JYTlGc1BOM09oZ2dCT1RNQVQxRnZxcQ",
+          "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxOQ2VXTkJYMUFwaUQzTnpfdXU1T19hZ1pWRy1mRnlCYzNyejJYa2oxVUhObXpCaEVBWWx1TkN4VUFwNy1sV1R0dWJmMUZSak00czlOSzg3Vk1MRVJYSVk3MG9YdURrTFc2UE9JYTlGc1BOM09oZ2dCT1RNQVQxRnZxcQ",
+          "published_at": "2026-11-06T21:17:53+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-06",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "dollarjumpsafterstronguspayrollsreportgvwire",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-11-06T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-11-06T22:41:27.327204+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 15
         }
       ],
       "source_diversity": {
@@ -9558,14 +9544,12 @@
         },
         "sector_interest": {},
         "topic_interest": {
-          "伊朗": 3,
-          "brent": 4,
-          "wti": 2,
-          "原油": 2,
+          "伊朗": 2,
           "gold": 7,
           "sanctions": 2,
           "oil": 16,
           "iran": 2,
+          "brent": 2,
           "war": 2
         },
         "market_interest": {
@@ -9661,14 +9645,12 @@
           "research_candidate": {},
           "tracked_sector": {},
           "active_event": {
-            "伊朗": 3,
-            "brent": 4,
-            "wti": 2,
-            "原油": 2,
+            "伊朗": 2,
             "gold": 7,
             "sanctions": 2,
             "oil": 16,
             "iran": 2,
+            "brent": 2,
             "war": 2
           },
           "creator_mentioned": {}
@@ -9678,9 +9660,8 @@
       "exclusion_reasons": {
         "generic_official_filing": 20,
         "incomplete_normalized_fact": 14,
-        "insufficient_market_relevance": 20,
+        "insufficient_market_relevance": 22,
         "market_scope_mismatch": 8,
-        "missing_published_at": 1,
         "outside_calendar_window": 16
       },
       "status": "ready",
@@ -9695,21 +9676,20 @@
         "normalized": 58,
         "eligible": 10,
         "excluded": 48,
-        "date_eligible_current": 41,
-        "date_excluded_current": 17,
+        "date_eligible_current": 42,
+        "date_excluded_current": 16,
         "date_exclusion_reasons_current": {
-          "missing_published_at": 1,
           "outside_calendar_window": 16
         },
         "date_eligible_inventory": 85,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-11-07T22:42:15.057559+00:00",
+        "reference_time": "2026-11-07T23:34:06.672408+00:00",
         "deduped": 10,
         "publicly_ranked": 5,
         "current_eligible": 10,
         "inventory_considered": 85,
-        "inventory_eligible": 54,
+        "inventory_eligible": 53,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
@@ -9727,7 +9707,7 @@
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
         "considered": 85,
-        "eligible": 54,
+        "eligible": 53,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -9740,7 +9720,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 58,
-          "checked_at": "2026-11-07T22:42:15.057598+00:00"
+          "checked_at": "2026-11-07T23:34:06.672450+00:00"
         },
         {
           "provider": "sec",
@@ -9751,10 +9731,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-11-07T22:42:15.057598+00:00",
+          "checked_at": "2026-11-07T23:34:06.672450+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+          "last_success_at": "2026-11-07T23:34:06.672450+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9782,12 +9762,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-11-07T22:42:15.057598+00:00",
+          "checked_at": "2026-11-07T23:34:06.672450+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-11-07T22:42:15.057598+00:00",
+          "last_failure_at": "2026-11-07T23:34:06.672450+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9810,10 +9790,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-11-07T22:42:15.057598+00:00",
+          "checked_at": "2026-11-07T23:34:06.672450+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+          "last_success_at": "2026-11-07T23:34:06.672450+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9838,16 +9818,16 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 1,
-          "checked_at": "2026-11-07T22:42:15.057598+00:00",
+          "checked_at": "2026-11-07T23:34:06.672450+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 1,
-          "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+          "last_success_at": "2026-11-07T23:34:06.672450+00:00",
           "last_failure_at": null,
           "stories_ingested": 3,
           "stories_deduped": 1,
           "ranked_count": 1,
           "relevance_distribution": {
-            "active_event": 2,
+            "active_event": 1,
             "market": 3
           },
           "funnel": {
@@ -9869,10 +9849,10 @@
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
           "item_count": 1,
-          "checked_at": "2026-11-07T22:42:15.057598+00:00",
+          "checked_at": "2026-11-07T23:34:06.672450+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 1,
-          "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+          "last_success_at": "2026-11-07T23:34:06.672450+00:00",
           "last_failure_at": null,
           "stories_ingested": 1,
           "stories_deduped": 1,
@@ -9899,10 +9879,10 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
           "item_count": 3,
-          "checked_at": "2026-11-07T22:42:15.057598+00:00",
+          "checked_at": "2026-11-07T23:34:06.672450+00:00",
           "raw_item_count": 40,
           "filtered_item_count": 3,
-          "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+          "last_success_at": "2026-11-07T23:34:06.672450+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
           "stories_deduped": 8,
@@ -9928,7 +9908,7 @@
         "stories_deduped": 10,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 13,
+          "active_event": 12,
           "market": 58,
           "tracked_ticker": 3
         },
@@ -9936,13 +9916,13 @@
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+            "last_success_at": "2026-11-07T23:34:06.672450+00:00",
             "last_failure_at": null,
             "stories_ingested": 3,
             "stories_deduped": 1,
             "ranked_count": 1,
             "relevance_distribution": {
-              "active_event": 2,
+              "active_event": 1,
               "market": 3
             },
             "funnel": {
@@ -9959,7 +9939,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-11-07T22:42:15.057598+00:00",
+            "last_failure_at": "2026-11-07T23:34:06.672450+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9977,7 +9957,7 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+            "last_success_at": "2026-11-07T23:34:06.672450+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
             "stories_deduped": 8,
@@ -10000,7 +9980,7 @@
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+            "last_success_at": "2026-11-07T23:34:06.672450+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -10019,7 +9999,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+            "last_success_at": "2026-11-07T23:34:06.672450+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -10061,7 +10041,7 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-11-07T22:42:15.057598+00:00",
+            "last_success_at": "2026-11-07T23:34:06.672450+00:00",
             "last_failure_at": null,
             "stories_ingested": 1,
             "stories_deduped": 1,
