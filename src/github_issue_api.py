@@ -25,6 +25,7 @@ def _next_url(
     repository_id: int | None,
     expected_query: Mapping[str, list[str]],
     expected_page: int,
+    page_size: int = PAGE_SIZE,
 ) -> str | None:
     entries = re.findall(r"<([^<>]+)>\s*;\s*rel=\"([^\"]+)\"", link_header)
     next_urls = [url for url, relation in entries if "next" in relation.split()]
@@ -51,7 +52,7 @@ def _next_url(
         raise IssuePaginationError("issues_pagination_identity_invalid")
     query = parse_qs(parsed.query, keep_blank_values=True, strict_parsing=True)
     expected = {key: list(values) for key, values in expected_query.items()}
-    expected["per_page"] = [str(PAGE_SIZE)]
+    expected["per_page"] = [str(page_size)]
     if "after" in query:
         cursor = query["after"]
         if len(cursor) != 1 or not cursor[0] or len(cursor[0]) > 2048:
@@ -77,8 +78,10 @@ def read_open_issues(
     deadline_monotonic: float,
     repository_id: int | None = None,
     state: str = "open",
+    page_size: int = PAGE_SIZE,
+    max_pages: int = MAX_PAGES,
 ) -> list[dict[str, Any]]:
-    """Read all open issues under a single deadline and a 10-page/1MB bound.
+    """Read all issues under one deadline, bounded pages, and 1MB responses.
 
     ``fetch_json`` receives a full HTTPS URL and the same response-header and
     deadline arguments used by the repository's authenticated API reader.
@@ -88,18 +91,22 @@ def read_open_issues(
     """
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository):
         raise IssuePaginationError("issues_repository_identity_invalid")
+    if type(page_size) is not int or not 1 <= page_size <= 100:
+        raise IssuePaginationError("issues_page_size_invalid")
+    if type(max_pages) is not int or not 1 <= max_pages <= 100:
+        raise IssuePaginationError("issues_page_limit_invalid")
     if state not in {"open", "all"}:
         raise IssuePaginationError("issues_state_filter_invalid")
     api = urlsplit(api_url)
     if api.scheme.casefold() != "https" or not api.netloc:
         raise IssuePaginationError("issues_api_origin_invalid")
     filters = {"state": [state], "sort": ["created"], "direction": ["desc"]}
-    query = {**{key: value[0] for key, value in filters.items()}, "per_page": PAGE_SIZE, "page": 1}
+    query = {**{key: value[0] for key, value in filters.items()}, "per_page": page_size, "page": 1}
     current_url = f"issues?{urlencode(query)}"
     requested: set[str] = set()
     rows_by_number: dict[int, dict[str, Any]] = {}
     page = 1
-    while page <= MAX_PAGES:
+    while page <= max_pages:
         if time.monotonic() >= deadline_monotonic:
             raise IssuePaginationError("issues_pagination_deadline_exceeded")
         if current_url in requested:
@@ -137,24 +144,25 @@ def read_open_issues(
         next_page = _next_url(
             link_header, api_url=api_url, repository=repository,
             repository_id=repository_id, expected_query=filters, expected_page=page + 1,
+            page_size=page_size,
         )
         if next_page is not None:
-            if page == MAX_PAGES:
+            if page == max_pages:
                 raise IssuePaginationError("issues_pagination_limit_exceeded")
             current_url = next_page
             page += 1
             continue
-        if len(payload) < PAGE_SIZE:
+        if len(payload) < page_size:
             return list(rows_by_number.values())
 
         # A full page without Link is ambiguous. Probe one forward page with
         # canonical offset pagination; a short/empty page proves the end.
         page += 1
-        if page > MAX_PAGES:
+        if page > max_pages:
             raise IssuePaginationError("issues_pagination_coverage_incomplete")
         query = {
             **{key: value[0] for key, value in filters.items()},
-            "per_page": PAGE_SIZE,
+            "per_page": page_size,
             "page": page,
         }
         current_url = f"issues?{urlencode(query)}"

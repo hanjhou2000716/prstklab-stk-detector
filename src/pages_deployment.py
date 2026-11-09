@@ -497,7 +497,14 @@ def _extract_manifest_from_pages_tar(tar_path: Path) -> bytes:
             normalized: dict[str, tarfile.TarInfo] = {}
             total_member_bytes = 0
             for item in members:
-                name = _normalized_tar_path(item.name)
+                # upload-pages-artifact archives "." itself before its children.
+                # Only a zero-sized directory may represent that archive root.
+                if item.name in {".", "./"} and item.isdir():
+                    if item.size != 0:
+                        raise PagesDeploymentError("Pages artifact tar root directory has an invalid size")
+                    name = "."
+                else:
+                    name = _normalized_tar_path(item.name)
                 if name in normalized:
                     raise PagesDeploymentError("Pages artifact tar contains duplicate paths")
                 if not (item.isfile() or item.isdir()):
