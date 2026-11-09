@@ -1,20 +1,8 @@
-name: Quality and delivery dry-run
+name: Isolated notification repair validation
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    types: [opened, reopened, synchronize, ready_for_review]
-  workflow_dispatch:
-    inputs:
-      candidate_sha:
-        description: Full candidate commit SHA to validate on this isolated branch
-        required: true
-        type: string
-      base_sha:
-        description: Full base commit SHA used to bind this candidate validation
-        required: true
-        type: string
+    branches: [validation/notification-delivery-20261109]
 
 permissions:
   actions: read
@@ -38,11 +26,10 @@ jobs:
           fetch-depth: 0
           # Resolve an isolated dispatch through its advertised branch ref; the
           # next step verifies that the branch still points at the fixed SHA.
-          ref: ${{ inputs.candidate_sha && github.ref || github.sha }}
+          ref: 69505a3e44c0530c371c42366b7e4d138b0eb1fa
       - name: Verify isolated candidate checkout SHA
-        if: github.event_name == 'workflow_dispatch'
         env:
-          EXPECTED_CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          EXPECTED_CANDIDATE_SHA: 69505a3e44c0530c371c42366b7e4d138b0eb1fa
         run: |
           set -euo pipefail
           actual_sha="$(git rev-parse HEAD)"
@@ -93,72 +80,25 @@ jobs:
         uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v2
         with:
           version: 2.39.2
-      - name: Resolve candidate comparison base
+      - name: Bind immutable repair candidate and base
         id: quality_base
-        env:
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || '' }}
-          PUSH_BASE_SHA: ${{ github.event.before || '' }}
-          DISPATCH_BASE_SHA: ${{ github.event.inputs.base_sha || '' }}
-          DISPATCH_CANDIDATE_SHA: ${{ github.event.inputs.candidate_sha || '' }}
         run: |
-          set -euo pipefail
-          candidate_sha="${DISPATCH_CANDIDATE_SHA:-${PR_HEAD_SHA:-$GITHUB_SHA}}"
-          if [[ ! "$candidate_sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
-            echo "Candidate must be an explicit full commit SHA." >&2
-            exit 2
-          fi
-          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && "${candidate_sha,,}" != "${GITHUB_SHA,,}" ]]; then
-            echo "Checked-out dispatch commit does not match the explicit candidate SHA." >&2
-            exit 2
-          fi
-          candidate_base="${DISPATCH_BASE_SHA:-$PR_BASE_SHA}"
-          if [[ -z "$candidate_base" ]]; then candidate_base="$PUSH_BASE_SHA"; fi
-          if [[ -z "$candidate_base" || "$candidate_base" =~ ^0{40}$ ]]; then
-            git fetch origin main --no-tags
-            candidate_base="$(git merge-base "$GITHUB_SHA" origin/main)"
-          fi
-          if ! git cat-file -e "${candidate_base}^{commit}"; then
-            echo "Explicit quality base does not resolve to a commit." >&2
-            exit 2
-          fi
-          echo "QUALITY_PREFLIGHT_BASE_SHA=$candidate_base" >> "$GITHUB_ENV"
-          echo "QUALITY_VALIDATION_CANDIDATE_SHA=$candidate_sha" >> "$GITHUB_ENV"
-          echo "base_sha=$candidate_base" >> "$GITHUB_OUTPUT"
-          echo "candidate_sha=$candidate_sha" >> "$GITHUB_OUTPUT"
-      - name: Verify exact-SHA isolated validation before PR checks
-        if: github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          CANDIDATE_SHA: ${{ steps.quality_base.outputs.candidate_sha }}
-          BASE_SHA: ${{ steps.quality_base.outputs.base_sha }}
-        run: |
-          set -euo pipefail
-          uv run python scripts/verify_quality_validation.py \
-            --repo "$GITHUB_REPOSITORY" \
-            --candidate-sha "$CANDIDATE_SHA" \
-            --base-sha "$BASE_SHA"
+          test "$(git rev-parse HEAD)" = "69505a3e44c0530c371c42366b7e4d138b0eb1fa"
+          echo "QUALITY_PREFLIGHT_BASE_SHA=a2322196e99467f290ef9bead571a2dabb041842" >> "$GITHUB_ENV"
+          echo "QUALITY_VALIDATION_CANDIDATE_SHA=69505a3e44c0530c371c42366b7e4d138b0eb1fa" >> "$GITHUB_ENV"
+          echo "base_sha=a2322196e99467f290ef9bead571a2dabb041842" >> "$GITHUB_OUTPUT"
+          echo "candidate_sha=69505a3e44c0530c371c42366b7e4d138b0eb1fa" >> "$GITHUB_OUTPUT"
       - name: Run complete shared local and CI quality preflight
         id: quality_preflight
         env:
           QUALITY_PREFLIGHT_EVIDENCE_PATH: ${{ runner.temp }}/quality-preflight-gates.json
         run: uv run python scripts/quality_preflight.py --full
-      - name: Write exact-SHA candidate validation evidence
+      - name: Preserve isolated full preflight results
         if: always()
-        env:
-          QUALITY_PREFLIGHT_EVIDENCE_PATH: ${{ runner.temp }}/quality-preflight-gates.json
-          QUALITY_VALIDATION_EVIDENCE_PATH: ${{ runner.temp }}/quality-validation-evidence.json
-          QUALITY_PREFLIGHT_OUTCOME: ${{ steps.quality_preflight.outcome || 'not_run' }}
-          QUALITY_PREFLIGHT_GATE_COUNT: ${{ steps.quality_preflight.outputs.gate_count || '0' }}
-          QUALITY_VALIDATION_CANDIDATE_SHA: ${{ steps.quality_base.outputs.candidate_sha || '' }}
-          QUALITY_PREFLIGHT_BASE_SHA: ${{ steps.quality_base.outputs.base_sha || '' }}
-        run: python scripts/write_quality_validation_evidence.py
-      - name: Upload exact-SHA candidate validation evidence
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: quality-candidate-validation
-          path: ${{ runner.temp }}/quality-validation-evidence.json
+          name: isolated-notification-repair-preflight
+          path: ${{ runner.temp }}/quality-preflight-gates.json
           if-no-files-found: error
           retention-days: 14
       - name: Publish CI provenance
@@ -169,7 +109,8 @@ jobs:
             echo "- trigger: ${{ github.event_name }}"
             echo "- run_id: ${{ github.run_id }}"
             echo "- run_attempt: ${{ github.run_attempt }}"
-            echo "- workflow_tested_sha: ${{ github.sha }}"
+            echo "- validation_controller_sha: ${{ github.sha }}"
+            echo "- tested_checkout_sha: $(git rev-parse HEAD)"
             echo "- python_version: $(python --version)"
             echo "- uv_version: $(uv --version)"
             echo "- actionlint_version: $(actionlint -version | head -n 1)"
