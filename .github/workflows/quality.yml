@@ -26,10 +26,10 @@ jobs:
           fetch-depth: 0
           # Resolve an isolated dispatch through its advertised branch ref; the
           # next step verifies that the branch still points at the fixed SHA.
-          ref: 69505a3e44c0530c371c42366b7e4d138b0eb1fa
+          ref: 04dfc52c1e793295ae5baee654a0ec3ec2bd7b80
       - name: Verify isolated candidate checkout SHA
         env:
-          EXPECTED_CANDIDATE_SHA: 69505a3e44c0530c371c42366b7e4d138b0eb1fa
+          EXPECTED_CANDIDATE_SHA: 04dfc52c1e793295ae5baee654a0ec3ec2bd7b80
         run: |
           set -euo pipefail
           actual_sha="$(git rev-parse HEAD)"
@@ -83,11 +83,11 @@ jobs:
       - name: Bind immutable repair candidate and base
         id: quality_base
         run: |
-          test "$(git rev-parse HEAD)" = "69505a3e44c0530c371c42366b7e4d138b0eb1fa"
+          test "$(git rev-parse HEAD)" = "04dfc52c1e793295ae5baee654a0ec3ec2bd7b80"
           echo "QUALITY_PREFLIGHT_BASE_SHA=a2322196e99467f290ef9bead571a2dabb041842" >> "$GITHUB_ENV"
-          echo "QUALITY_VALIDATION_CANDIDATE_SHA=69505a3e44c0530c371c42366b7e4d138b0eb1fa" >> "$GITHUB_ENV"
+          echo "QUALITY_VALIDATION_CANDIDATE_SHA=04dfc52c1e793295ae5baee654a0ec3ec2bd7b80" >> "$GITHUB_ENV"
           echo "base_sha=a2322196e99467f290ef9bead571a2dabb041842" >> "$GITHUB_OUTPUT"
-          echo "candidate_sha=69505a3e44c0530c371c42366b7e4d138b0eb1fa" >> "$GITHUB_OUTPUT"
+          echo "candidate_sha=04dfc52c1e793295ae5baee654a0ec3ec2bd7b80" >> "$GITHUB_OUTPUT"
       - name: Run complete shared local and CI quality preflight
         id: quality_preflight
         env:
