@@ -1,4 +1,5 @@
 import json
+from datetime import UTC, datetime
 
 import pandas as pd
 import requests
@@ -194,7 +195,7 @@ def test_sec_fundamentals_uses_cached_cik_when_ticker_mapping_is_unavailable(tmp
         json.dumps({
             "AEP": {
                 "cik": 4904,
-                "fetched_at": "2026-08-08T12:00:00+00:00",
+                "fetched_at": datetime.now(UTC).isoformat(),
                 "metrics": {"years_available": 3},
             }
         }),

@@ -90,3 +90,53 @@ def test_link_filter_drift_is_rejected():
             api_url="https://api.github.com", repository="owner/repo", token="token",
             fetch_json=fetch, deadline_monotonic=time.monotonic() + 10, repository_id=1309835643,
         )
+
+
+def test_large_history_reads_every_page_and_probes_full_last_page():
+    calls = []
+
+    def fetch(_api, _repo, _token, method, url, *, response_headers=None, deadline_monotonic=None):
+        assert method == "GET"
+        query = parse_qs(urlsplit(url).query)
+        assert query["state"] == ["all"]
+        assert query["per_page"] == ["100"]
+        page = int(query["page"][0])
+        calls.append(page)
+        return [{"number": number} for number in range((page - 1) * 100 + 1, min(page * 100, 1200) + 1)]
+
+    rows = read_open_issues(
+        api_url="https://api.github.com", repository="owner/repo", token="token",
+        fetch_json=fetch, deadline_monotonic=time.monotonic() + 10,
+        state="all", page_size=100, max_pages=100,
+    )
+    assert len(rows) == 1200
+    assert calls == list(range(1, 14))
+
+
+def test_custom_page_size_rejects_link_page_size_drift():
+    def fetch(_api, _repo, _token, _method, _url, *, response_headers=None, deadline_monotonic=None):
+        response_headers["link"] = (
+            "<https://api.github.com/repos/owner/repo/issues?state=all&per_page=10"
+            "&sort=created&direction=desc&page=2>; rel=\"next\""
+        )
+        return [{"number": 1}]
+
+    with pytest.raises(IssuePaginationError, match="query_invalid"):
+        read_open_issues(
+            api_url="https://api.github.com", repository="owner/repo", token="token",
+            fetch_json=fetch, deadline_monotonic=time.monotonic() + 10,
+            state="all", page_size=100, max_pages=100,
+        )
+
+
+@pytest.mark.parametrize(("page_size", "max_pages"), [(0, 10), (101, 10), (10, 0), (10, 101)])
+def test_pagination_capacity_remains_bounded(page_size, max_pages):
+    def fetch(*_args, **_kwargs):
+        pytest.fail("invalid pagination bounds must stop before a request")
+
+    with pytest.raises(IssuePaginationError, match="issues_page_(size|limit)_invalid"):
+        read_open_issues(
+            api_url="https://api.github.com", repository="owner/repo", token="token",
+            fetch_json=fetch, deadline_monotonic=time.monotonic() + 10,
+            page_size=page_size, max_pages=max_pages,
+        )

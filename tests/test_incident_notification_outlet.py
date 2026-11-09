@@ -1,6 +1,7 @@
 import json
 from copy import deepcopy
 from datetime import UTC, datetime
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
@@ -324,4 +325,75 @@ def test_control_journal_create_is_read_back_and_closed_identity_is_not_recreate
     with pytest.raises(LivenessAuditError, match="control_identity_invalid"):
         outlet._load_control_journal(
             repository="owner/repo", api_url="https://api.github.com", token="x", deadline=10**20,
+        )
+
+
+@pytest.mark.parametrize("closed_duplicate", [False, True])
+def test_journal_lookup_scans_historical_pull_requests_without_losing_identity_checks(
+    monkeypatch, closed_duplicate,
+):
+    monkeypatch.setenv("GITHUB_REPOSITORY_ID", "1309835643")
+    journal = outlet._default_journal("owner/repo")
+    journal["generation"] = 50
+    control = {
+        "number": 1143, "title": outlet.CONTROL_ISSUE_TITLE, "state": "open",
+        "body": outlet._journal_body(journal),
+    }
+    history = [
+        {"number": number, "title": f"historical pull request {number}", "state": "closed", "pull_request": {}}
+        for number in range(1200, 0, -1) if number != 1143
+    ]
+    rows = [control, *history]
+    if closed_duplicate:
+        rows.append({**control, "number": 1201, "state": "closed"})
+    pages = []
+
+    def request(_api, _repo, _token, method, endpoint, *, response_headers=None, **_kwargs):
+        assert method == "GET", "journal lookup must not create or rewrite history"
+        query = parse_qs(urlsplit(endpoint).query)
+        assert query["state"] == ["all"]
+        assert query["per_page"] == ["100"]
+        page = int(query["page"][0])
+        pages.append(page)
+        batch = rows[(page - 1) * 100:page * 100]
+        if page * 100 < len(rows):
+            response_headers["link"] = (
+                "https://api.github.com/repositories/1309835643/issues?"
+                f"state=all&per_page=100&sort=created&direction=desc&page={page + 1}"
+            )
+            response_headers["link"] = f'<{response_headers["link"]}>; rel="next"'
+        return batch
+
+    monkeypatch.setattr(outlet, "_request_json", request)
+    if closed_duplicate:
+        with pytest.raises(LivenessAuditError, match="control_identity_ambiguous"):
+            outlet._load_control_journal(
+                repository="owner/repo", api_url="https://api.github.com", token="test", deadline=10**20,
+            )
+    else:
+        issue, result = outlet._load_control_journal(
+            repository="owner/repo", api_url="https://api.github.com", token="test", deadline=10**20,
+        )
+        assert issue["number"] == 1143
+        assert result["generation"] == 50
+    assert pages == list(range(1, 14))
+
+
+def test_incomplete_journal_history_never_creates_replacement_control(monkeypatch):
+    monkeypatch.setenv("GITHUB_REPOSITORY_ID", "1309835643")
+    monkeypatch.setattr(outlet, "JOURNAL_MAX_PAGES", 2)
+
+    def request(_api, _repo, _token, method, endpoint, *, response_headers=None, **_kwargs):
+        assert method == "GET"
+        page = int(parse_qs(urlsplit(endpoint).query)["page"][0])
+        response_headers["link"] = (
+            "<https://api.github.com/repositories/1309835643/issues?state=all&per_page=100"
+            f'&sort=created&direction=desc&page={page + 1}>; rel="next"'
+        )
+        return [{"number": number} for number in range((page - 1) * 100 + 1, page * 100 + 1)]
+
+    monkeypatch.setattr(outlet, "_request_json", request)
+    with pytest.raises(LivenessAuditError, match="pagination_limit_exceeded"):
+        outlet._load_control_journal(
+            repository="owner/repo", api_url="https://api.github.com", token="test", deadline=10**20,
         )

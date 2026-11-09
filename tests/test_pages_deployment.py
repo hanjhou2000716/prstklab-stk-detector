@@ -1,5 +1,7 @@
 import hashlib
 import json
+import shutil
+import subprocess
 import tarfile
 import zipfile
 from io import BytesIO
@@ -47,9 +49,13 @@ def _stub_downloaded_artifact_manifest(monkeypatch):
     )
 
 
-def _pages_artifact_archive(manifest_bytes: bytes) -> bytes:
+def _pages_artifact_archive(manifest_bytes: bytes, *, include_root: bool = True) -> bytes:
     tar_stream = BytesIO()
     with tarfile.open(fileobj=tar_stream, mode="w") as packed:
+        if include_root:
+            root = tarfile.TarInfo(".")
+            root.type = tarfile.DIRTYPE
+            packed.addfile(root)
         info = tarfile.TarInfo("./data/release-manifest.json")
         info.size = len(manifest_bytes)
         packed.addfile(info, BytesIO(manifest_bytes))
@@ -63,6 +69,83 @@ def test_pages_artifact_manifest_is_extracted_from_digest_bound_tarball():
     artifact = _pages_artifact_archive(MANIFEST_PATH.read_bytes())
     digest = "sha256:" + hashlib.sha256(artifact).hexdigest()
     assert pages_deployment._manifest_from_pages_artifact_archive(artifact, expected_digest=digest) == MANIFEST_PATH.read_bytes()
+
+
+@pytest.mark.parametrize("include_root", [True, False])
+def test_pages_artifact_accepts_root_directory_without_changing_manifest_bytes(include_root):
+    artifact = _pages_artifact_archive(MANIFEST_PATH.read_bytes(), include_root=include_root)
+    digest = "sha256:" + hashlib.sha256(artifact).hexdigest()
+    assert pages_deployment._manifest_from_pages_artifact_archive(
+        artifact, expected_digest=digest,
+    ) == MANIFEST_PATH.read_bytes()
+
+
+def test_pages_artifact_accepts_actual_gnu_tar_upload_format(tmp_path):
+    tar = shutil.which("tar")
+    if tar is None or "GNU tar" not in subprocess.run(
+        [tar, "--version"], check=True, capture_output=True, text=True,
+    ).stdout:
+        pytest.skip("the Linux Pages uploader uses GNU tar")
+    source = tmp_path / "payload"
+    (source / "data").mkdir(parents=True)
+    (source / "data" / "release-manifest.json").write_bytes(MANIFEST_PATH.read_bytes())
+    tar_path = tmp_path / "artifact.tar"
+    subprocess.run(
+        [tar, "--dereference", "--hard-dereference", "--directory", str(source),
+         "-cf", str(tar_path), "--exclude=.git", "--exclude=.github", "."],
+        check=True, capture_output=True,
+    )
+    with tarfile.open(tar_path) as packed:
+        assert packed.getmembers()[0].name == "."
+        assert packed.getmembers()[0].isdir()
+    archive_stream = BytesIO()
+    with zipfile.ZipFile(archive_stream, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("artifact.tar", tar_path.read_bytes())
+    artifact = archive_stream.getvalue()
+    assert pages_deployment._manifest_from_pages_artifact_archive(
+        artifact, expected_digest="sha256:" + hashlib.sha256(artifact).hexdigest(),
+    ) == MANIFEST_PATH.read_bytes()
+
+
+@pytest.mark.parametrize(
+    ("root_name", "root_type", "root_size", "duplicate_root"),
+    [
+        (".", tarfile.REGTYPE, 0, False),
+        ("./", tarfile.SYMTYPE, 0, False),
+        (".", tarfile.LNKTYPE, 0, False),
+        (".", tarfile.DIRTYPE, 1, False),
+        (".", tarfile.DIRTYPE, 0, True),
+        ("./../", tarfile.DIRTYPE, 0, False),
+        ("/", tarfile.DIRTYPE, 0, False),
+    ],
+)
+def test_pages_artifact_root_marker_does_not_allow_unsafe_or_duplicate_entries(
+    root_name, root_type, root_size, duplicate_root,
+):
+    tar_stream = BytesIO()
+    with tarfile.open(fileobj=tar_stream, mode="w") as packed:
+        root = tarfile.TarInfo(root_name)
+        root.type = root_type
+        root.size = root_size
+        if root_type in {tarfile.SYMTYPE, tarfile.LNKTYPE}:
+            root.linkname = "../outside"
+        packed.addfile(root)
+        if duplicate_root:
+            duplicate = tarfile.TarInfo("./")
+            duplicate.type = tarfile.DIRTYPE
+            packed.addfile(duplicate)
+        raw = MANIFEST_PATH.read_bytes()
+        manifest = tarfile.TarInfo("data/release-manifest.json")
+        manifest.size = len(raw)
+        packed.addfile(manifest, BytesIO(raw))
+    archive_stream = BytesIO()
+    with zipfile.ZipFile(archive_stream, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("artifact.tar", tar_stream.getvalue())
+    artifact = archive_stream.getvalue()
+    with pytest.raises(PagesDeploymentError):
+        pages_deployment._manifest_from_pages_artifact_archive(
+            artifact, expected_digest="sha256:" + hashlib.sha256(artifact).hexdigest(),
+        )
 
 
 def test_pages_artifact_manifest_rejects_digest_mismatch():

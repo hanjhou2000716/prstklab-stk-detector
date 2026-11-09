@@ -43,6 +43,10 @@ JOURNAL_CLOSE = "<!-- /prstk-incident-notification-journal-v1 -->"
 DECISION_ARTIFACT_MEMBER = "incident-notification-outlet.json"
 MAX_JOURNAL_DECISIONS = 96
 MAX_IMMEDIATE_FINGERPRINTS = 128
+# The all-state Issues API includes historical pull requests as well as issues.
+# Keep complete duplicate/closed-journal checks within the existing deadline.
+JOURNAL_PAGE_SIZE = 100
+JOURNAL_MAX_PAGES = 100
 ALLOWED_SOURCE_PATHS = {
     ".github/workflows/incident-reconciliation.yml",
     ".github/workflows/incident-reconciliation-health.yml",
@@ -183,6 +187,8 @@ def _read_journal_issues(
             deadline_monotonic=deadline,
             repository_id=_repo_id_from_env(),
             state="all",
+            page_size=JOURNAL_PAGE_SIZE,
+            max_pages=JOURNAL_MAX_PAGES,
         )
     except IssuePaginationError as exc:
         raise LivenessAuditError(f"incident_notification_issue_pagination_{exc}") from exc
