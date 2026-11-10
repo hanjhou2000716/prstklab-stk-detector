@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "d15f49c43b8b0838",
-  "snapshot_id": "news-b05870764276f5e0",
+  "market_snapshot_id": "3d941004b8dd3766",
+  "snapshot_id": "news-d6fb0007c34d2e24",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -437,6 +437,100 @@
       ],
       "stories": [
         {
+          "story_id": "news-8a445543494c1f589d8c",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "CNN探討輝達失去黃仁勳能否生存 專家評估仍具優勢",
+          "raw_title": "CNN探討輝達失去黃仁勳能否生存 專家評估仍具優勢",
+          "normalized_fact": "（中央社洛杉磯2026年11月10日綜合外電報導）CNN撰文探討，輝達若失去執行長黃仁勳能否生存。有專家指出，若黃仁勳遭撤職，市場對輝達晶片的需求也不會立即消失，該公司競爭優勢並非只建立在一個人身上。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "（中央社洛杉磯2026年11月10日綜合外電報導）CNN撰文探討，輝達若失去執行長黃仁勳能否生存。有專家指出，若黃仁勳遭撤職，市場對輝達晶片的需求也不會立即消失，該公司競爭優勢並非只建立在一個人身上。",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/cnn%E6%8E%A2%E8%A8%8E%E8%BC%9D%E9%81%94%E5%A4%B1%E5%8E%BB%E9%BB%83%E4%BB%81%E5%8B%B3%E8%83%BD%E5%90%A6%E7%94%9F%E5%AD%98-%E5%B0%88%E5%AE%B6%E8%A9%95%E4%BC%B0%E4%BB%8D%E5%85%B7%E5%84%AA%E5%8B%A2-134559825.html",
+          "url": "https://tw.stock.yahoo.com/news/cnn%E6%8E%A2%E8%A8%8E%E8%BC%9D%E9%81%94%E5%A4%B1%E5%8E%BB%E9%BB%83%E4%BB%81%E5%8B%B3%E8%83%BD%E5%90%A6%E7%94%9F%E5%AD%98-%E5%B0%88%E5%AE%B6%E8%A9%95%E4%BC%B0%E4%BB%8D%E5%85%B7%E5%84%AA%E5%8B%A2-134559825.html",
+          "published_at": "2026-11-10T13:45:59+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-10",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "輝達",
+              "需求"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "輝達",
+              "需求"
+            ],
+            "matched_subject": "輝達",
+            "matched_action": "需求",
+            "matched_market_object": "輝達",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan",
+            "tracked_ticker:NVDA"
+          ],
+          "freshness": "published",
+          "dedupe_key": "中央社洛杉磯2026年11月10日綜合外電報導cnn撰文探討輝達若失去執行長黃仁勳能否生存有專家指出若黃仁勳遭撤職市場對輝達晶片的需求也不會立即消失該公司競爭優勢並非只建立在一個人身上",
+          "event_cluster_key": "event-4ff55c124ac39d2a77b4",
+          "published_time_bucket": "2026-11-10T13:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "輝達",
+            "需求"
+          ],
+          "matched_subject": "輝達",
+          "matched_action": "需求",
+          "matched_market_object": "輝達",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 135
+        },
+        {
           "story_id": "news-7c1e7dfdf61c634cca81",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -823,16 +917,18 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        },
+        }
+      ],
+      "editorial_candidates": [
         {
-          "story_id": "news-40d89ae3cf0dda09a4d0",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "高科技半導體供應鏈合規實戰工作坊｜美商鄧白氏 - DIGITIMES",
-          "raw_title": "高科技半導體供應鏈合規實戰工作坊｜美商鄧白氏 - DIGITIMES",
-          "normalized_fact": "高科技半導體供應鏈合規實戰工作坊｜美商鄧白氏 DIGITIMES。",
+          "story_id": "news-8a445543494c1f589d8c",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "CNN探討輝達失去黃仁勳能否生存 專家評估仍具優勢",
+          "raw_title": "CNN探討輝達失去黃仁勳能否生存 專家評估仍具優勢",
+          "normalized_fact": "（中央社洛杉磯2026年11月10日綜合外電報導）CNN撰文探討，輝達若失去執行長黃仁勳能否生存。有專家指出，若黃仁勳遭撤職，市場對輝達晶片的需求也不會立即消失，該公司競爭優勢並非只建立在一個人身上。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -841,11 +937,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "高科技半導體供應鏈合規實戰工作坊｜美商鄧白氏 DIGITIMES",
+          "summary": "（中央社洛杉磯2026年11月10日綜合外電報導）CNN撰文探討，輝達若失去執行長黃仁勳能否生存。有專家指出，若黃仁勳遭撤職，市場對輝達晶片的需求也不會立即消失，該公司競爭優勢並非只建立在一個人身上。",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTE0wWmU5YVVvTXFDdjJFMG1ZYzQtSHFGdktoQlpzb09QM29XWkoxUklQVHhMQjJWTDF4bDFDZmpfNU1zdzlBUWpfS2t5TC1FaW9sSkxQbUpxQVEzOXNnQ2c",
-          "url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTE0wWmU5YVVvTXFDdjJFMG1ZYzQtSHFGdktoQlpzb09QM29XWkoxUklQVHhMQjJWTDF4bDFDZmpfNU1zdzlBUWpfS2t5TC1FaW9sSkxQbUpxQVEzOXNnQ2c",
-          "published_at": "2026-11-10T02:01:23+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/cnn%E6%8E%A2%E8%A8%8E%E8%BC%9D%E9%81%94%E5%A4%B1%E5%8E%BB%E9%BB%83%E4%BB%81%E5%8B%B3%E8%83%BD%E5%90%A6%E7%94%9F%E5%AD%98-%E5%B0%88%E5%AE%B6%E8%A9%95%E4%BC%B0%E4%BB%8D%E5%85%B7%E5%84%AA%E5%8B%A2-134559825.html",
+          "url": "https://tw.stock.yahoo.com/news/cnn%E6%8E%A2%E8%A8%8E%E8%BC%9D%E9%81%94%E5%A4%B1%E5%8E%BB%E9%BB%83%E4%BB%81%E5%8B%B3%E8%83%BD%E5%90%A6%E7%94%9F%E5%AD%98-%E5%B0%88%E5%AE%B6%E8%A9%95%E4%BC%B0%E4%BB%8D%E5%85%B7%E5%84%AA%E5%8B%A2-134559825.html",
+          "published_at": "2026-11-10T13:45:59+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -855,28 +951,28 @@
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "semiconductor"
+          "entities": [
+            "NVDA"
           ],
+          "sectors": [],
+          "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
             "category": "semiconductor",
             "reason": "semiconductor_subject_action",
             "matched_terms": [
-              "半導體",
-              "供應"
+              "輝達",
+              "需求"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "半導體",
-              "供應"
+              "輝達",
+              "需求"
             ],
-            "matched_subject": "半導體",
-            "matched_action": "供應",
-            "matched_market_object": "半導體",
+            "matched_subject": "輝達",
+            "matched_action": "需求",
+            "matched_market_object": "輝達",
             "input_fields": [
               "description",
               "summary",
@@ -884,29 +980,30 @@
             ]
           },
           "relevance_reasons": [
-            "market:taiwan"
+            "market:taiwan",
+            "tracked_ticker:NVDA"
           ],
           "freshness": "published",
-          "dedupe_key": "高科技半導體供應鏈合規實戰工作坊美商鄧白氏digitimes",
-          "event_cluster_key": "event-898728088c687ae1d1e8",
-          "published_time_bucket": "2026-11-10T02:00:00+00:00",
+          "dedupe_key": "中央社洛杉磯2026年11月10日綜合外電報導cnn撰文探討輝達若失去執行長黃仁勳能否生存有專家指出若黃仁勳遭撤職市場對輝達晶片的需求也不會立即消失該公司競爭優勢並非只建立在一個人身上",
+          "event_cluster_key": "event-4ff55c124ac39d2a77b4",
+          "published_time_bucket": "2026-11-10T13:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "半導體",
-            "供應"
+            "輝達",
+            "需求"
           ],
-          "matched_subject": "半導體",
-          "matched_action": "供應",
-          "matched_market_object": "半導體",
+          "matched_subject": "輝達",
+          "matched_action": "需求",
+          "matched_market_object": "輝達",
           "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Google News｜台股線索",
+          "source": "Yahoo Taiwan Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -915,10 +1012,8 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 115
-        }
-      ],
-      "editorial_candidates": [
+          "ranking_score": 135
+        },
         {
           "story_id": "news-7c1e7dfdf61c634cca81",
           "provider": "google_news",
@@ -1500,14 +1595,14 @@
           ]
         },
         {
-          "story_id": "news-9b7242418da0fc0c30ba",
+          "story_id": "news-9e66643bde8e9900f687",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "滙豐投信看好AI供應鏈 主動式ETF成布局新選擇 - 自由時報",
-          "raw_title": "滙豐投信看好AI供應鏈 主動式ETF成布局新選擇 - 自由時報",
-          "normalized_fact": "滙豐投信看好AI供應鏈 主動式ETF成布局新選擇 自由時報。",
+          "title": "滙豐投信參與台灣週看好AI供應鏈優勢支撐台股長線動能| 產業 - 太報 TaiSounds",
+          "raw_title": "滙豐投信參與台灣週看好AI供應鏈優勢支撐台股長線動能| 產業 - 太報 TaiSounds",
+          "normalized_fact": "滙豐投信參與台灣週看好AI供應鏈優勢支撐台股長線動能| 產業 太報 TaiSounds。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -1516,11 +1611,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "滙豐投信看好AI供應鏈 主動式ETF成布局新選擇 自由時報",
+          "summary": "滙豐投信參與台灣週看好AI供應鏈優勢支撐台股長線動能| 產業 太報 TaiSounds",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE5RVjVRc2EtQlQtOXhOd0o5RElLbVgtV2FPampHaVg5OXdRSF9jbDBSOTZfYUJRYUdaY2JYUno5Z044MzZTS2hkNG16X0o5MThmSWJCT2ZUd3A",
-          "url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE5RVjVRc2EtQlQtOXhOd0o5RElLbVgtV2FPampHaVg5OXdRSF9jbDBSOTZfYUJRYUdaY2JYUno5Z044MzZTS2hkNG16X0o5MThmSWJCT2ZUd3A",
-          "published_at": "2026-11-10T10:24:25+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTE8yc19VYXkteVh2dGRTT0FmZER4RG8wdFlSOXZSZDl4SEd5eEY0aWlneG1nNEZ6YzdpTHpyRldndGkwV2VpR0gtajJST2ZaTENQOWtXU1RqREQxQ3Q1",
+          "url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTE8yc19VYXkteVh2dGRTT0FmZER4RG8wdFlSOXZSZDl4SEd5eEY0aWlneG1nNEZ6YzdpTHpyRldndGkwV2VpR0gtajJST2ZaTENQOWtXU1RqREQxQ3Q1",
+          "published_at": "2026-11-10T09:32:30+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -1530,7 +1625,9 @@
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "TAIEX"
+          ],
           "sectors": [],
           "topics": [
             "ai"
@@ -1559,12 +1656,13 @@
             ]
           },
           "relevance_reasons": [
+            "market:cross_market",
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "滙豐投信看好ai供應鏈主動式etf成布局新選擇自由時報",
-          "event_cluster_key": "event-a4dc9c47ca76fad91e61",
-          "published_time_bucket": "2026-11-10T10:00:00+00:00",
+          "dedupe_key": "滙豐投信參與台灣週看好ai供應鏈優勢支撐台股長線動能產業太報taisounds",
+          "event_cluster_key": "event-2028b904ff26a8c4295e",
+          "published_time_bucket": "2026-11-10T09:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
@@ -1783,89 +1881,6 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-278f4d257aa9956b5dd9",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "美國公債週一報價走跌，市場關注油價及公債標售",
-          "raw_title": "美國公債週一報價走跌，市場關注油價及公債標售",
-          "normalized_fact": "【財訊快報／劉敏夫】美國公債價格週一走跌，引領殖利率走升，因市場權衡國際油價以及三年期債券標售情況。根據債券交易報價，2年期公債價格下跌，殖利率上揚4.99個基點，報4.5615%；5年期公債價格下滑。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "【財訊快報／劉敏夫】美國公債價格週一走跌，引領殖利率走升，因市場權衡國際油價以及三年期債券標售情況。根據債券交易報價，2年期公債價格下跌，殖利率上揚4.99個基點，報4.5615%；5年期公債價格下滑",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%9C%8B%E5%85%AC%E5%82%B5%E9%80%B1-%E5%A0%B1%E5%83%B9%E8%B5%B0%E8%B7%8C-%E5%B8%82%E5%A0%B4%E9%97%9C%E6%B3%A8%E6%B2%B9%E5%83%B9%E5%8F%8A%E5%85%AC%E5%82%B5%E6%A8%99%E5%94%AE-002728059.html",
-          "url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%9C%8B%E5%85%AC%E5%82%B5%E9%80%B1-%E5%A0%B1%E5%83%B9%E8%B5%B0%E8%B7%8C-%E5%B8%82%E5%A0%B4%E9%97%9C%E6%B3%A8%E6%B2%B9%E5%83%B9%E5%8F%8A%E5%85%AC%E5%82%B5%E6%A8%99%E5%94%AE-002728059.html",
-          "published_at": "2026-11-10T00:27:28+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-10",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "財訊快報劉敏夫美國公債價格週一走跌引領殖利率走升因市場權衡國際油價以及三年期債券標售情況根據債券交易報價2年期公債價格下跌殖利率上揚499個基點報456155年期公債價格下滑",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-11-10T00:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 1,
-          "inventory_saved_at": "2026-11-10T00:48:33.311533+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 30
-        },
-        {
           "story_id": "news-598313510a9955d1e9b9",
           "provider": "anue",
           "provider_name": "Anue",
@@ -1961,6 +1976,89 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 42
+        },
+        {
+          "story_id": "news-278f4d257aa9956b5dd9",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "美國公債週一報價走跌，市場關注油價及公債標售",
+          "raw_title": "美國公債週一報價走跌，市場關注油價及公債標售",
+          "normalized_fact": "【財訊快報／劉敏夫】美國公債價格週一走跌，引領殖利率走升，因市場權衡國際油價以及三年期債券標售情況。根據債券交易報價，2年期公債價格下跌，殖利率上揚4.99個基點，報4.5615%；5年期公債價格下滑。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "【財訊快報／劉敏夫】美國公債價格週一走跌，引領殖利率走升，因市場權衡國際油價以及三年期債券標售情況。根據債券交易報價，2年期公債價格下跌，殖利率上揚4.99個基點，報4.5615%；5年期公債價格下滑",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%9C%8B%E5%85%AC%E5%82%B5%E9%80%B1-%E5%A0%B1%E5%83%B9%E8%B5%B0%E8%B7%8C-%E5%B8%82%E5%A0%B4%E9%97%9C%E6%B3%A8%E6%B2%B9%E5%83%B9%E5%8F%8A%E5%85%AC%E5%82%B5%E6%A8%99%E5%94%AE-002728059.html",
+          "url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E5%9C%8B%E5%85%AC%E5%82%B5%E9%80%B1-%E5%A0%B1%E5%83%B9%E8%B5%B0%E8%B7%8C-%E5%B8%82%E5%A0%B4%E9%97%9C%E6%B3%A8%E6%B2%B9%E5%83%B9%E5%8F%8A%E5%85%AC%E5%82%B5%E6%A8%99%E5%94%AE-002728059.html",
+          "published_at": "2026-11-10T00:27:28+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-10",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "財訊快報劉敏夫美國公債價格週一走跌引領殖利率走升因市場權衡國際油價以及三年期債券標售情況根據債券交易報價2年期公債價格下跌殖利率上揚499個基點報456155年期公債價格下滑",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-11-10T00:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-11-10T00:48:33.311533+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 30
         },
         {
           "story_id": "news-3cc86471e6c7a6436768",
@@ -2779,6 +2877,99 @@
           "inventory_used": true,
           "inventory_age_trading_sessions": 1,
           "inventory_saved_at": "2026-11-10T06:41:24.632455+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 15
+        },
+        {
+          "story_id": "news-9b7242418da0fc0c30ba",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "滙豐投信看好AI供應鏈 主動式ETF成布局新選擇 - 自由時報",
+          "raw_title": "滙豐投信看好AI供應鏈 主動式ETF成布局新選擇 - 自由時報",
+          "normalized_fact": "滙豐投信看好AI供應鏈 主動式ETF成布局新選擇 自由時報。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "滙豐投信看好AI供應鏈 主動式ETF成布局新選擇 自由時報",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE5RVjVRc2EtQlQtOXhOd0o5RElLbVgtV2FPampHaVg5OXdRSF9jbDBSOTZfYUJRYUdaY2JYUno5Z044MzZTS2hkNG16X0o5MThmSWJCT2ZUd3A",
+          "url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE5RVjVRc2EtQlQtOXhOd0o5RElLbVgtV2FPampHaVg5OXdRSF9jbDBSOTZfYUJRYUdaY2JYUno5Z044MzZTS2hkNG16X0o5MThmSWJCT2ZUd3A",
+          "published_at": "2026-11-10T10:24:25+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-10",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "滙豐投信看好ai供應鏈主動式etf成布局新選擇自由時報",
+          "event_cluster_key": "event-a4dc9c47ca76fad91e61",
+          "published_time_bucket": "2026-11-10T10:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜台股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-11-10T13:36:47.725225+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 15
@@ -4488,214 +4679,22 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 19
-        },
-        {
-          "story_id": "news-3ccbec4f9a3686a59484",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "黃仁勳風暴燒向國安？輝達若遭嚴管 台股AI供應鏈恐迎重新洗牌 - 理財周刊",
-          "raw_title": "黃仁勳風暴燒向國安？輝達若遭嚴管 台股AI供應鏈恐迎重新洗牌 - 理財周刊",
-          "normalized_fact": "黃仁勳風暴燒向國安？輝達若遭嚴管 台股AI供應鏈恐迎重新洗牌 理財周刊。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "黃仁勳風暴燒向國安？輝達若遭嚴管 台股AI供應鏈恐迎重新洗牌 理財周刊",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMib0FVX3lxTE1BbkdLMXl2eWExZ1k1VnRHZXYwMmZUNzdxX1l0bExwQk9GRThtR0xmRnFweG9Vc1oyWGx4ZGd0MGx1ZXNxMHF0dDhqT3JraFdQTU9pVDNKNF9ROU5SZzFZNGt6QWtpYXpNSUV2X2lEbw",
-          "url": "https://news.google.com/rss/articles/CBMib0FVX3lxTE1BbkdLMXl2eWExZ1k1VnRHZXYwMmZUNzdxX1l0bExwQk9GRThtR0xmRnFweG9Vc1oyWGx4ZGd0MGx1ZXNxMHF0dDhqT3JraFdQTU9pVDNKNF9ROU5SZzFZNGt6QWtpYXpNSUV2X2lEbw",
-          "published_at": "2026-11-09T09:05:53+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-09",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA",
-            "TAIEX"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:NVDA"
-          ],
-          "freshness": "published",
-          "dedupe_key": "黃仁勳風暴燒向國安輝達若遭嚴管台股ai供應鏈恐迎重新洗牌理財周刊",
-          "event_cluster_key": "event-ded486352c37f3614aa1",
-          "published_time_bucket": "2026-11-09T09:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-11-10T00:48:33.311533+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 17
-        },
-        {
-          "story_id": "news-73aae0768d5bba92e8a4",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "NVIDIA 董事會啟動調查、華爾街憂經營風險，台經院張建一：AI 供應鏈影響有限 - TechOrange 科技報橘",
-          "raw_title": "NVIDIA 董事會啟動調查、華爾街憂經營風險，台經院張建一：AI 供應鏈影響有限 - TechOrange 科技報橘",
-          "normalized_fact": "NVIDIA 董事會啟動調查、華爾街憂經營風險，台經院張建一：AI 供應鏈影響有限 TechOrange 科技報橘。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "NVIDIA 董事會啟動調查、華爾街憂經營風險，台經院張建一：AI 供應鏈影響有限 TechOrange 科技報橘",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxQSmh1YzU2Qlh3Q2ZmYlpmYmptMWVOZHVHTWl4TkYxMjJMMm9sWGZHaVpJSTdKVVEyLXZUdTAtZHlKbHJ1aFNaeDZpTGprZUt5Q3ljOVhiMm41eTVidE55U3oybHUwMTgwNktiSUVWdm9KQk1Jei1OYTA5WThMVDJSNmJ5WQ",
-          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxQSmh1YzU2Qlh3Q2ZmYlpmYmptMWVOZHVHTWl4TkYxMjJMMm9sWGZHaVpJSTdKVVEyLXZUdTAtZHlKbHJ1aFNaeDZpTGprZUt5Q3ljOVhiMm41eTVidE55U3oybHUwMTgwNktiSUVWdm9KQk1Jei1OYTA5WThMVDJSNmJ5WQ",
-          "published_at": "2026-11-09T04:44:13+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-09",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "nvidia",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "nvidia",
-              "供應"
-            ],
-            "matched_subject": "nvidia",
-            "matched_action": "供應",
-            "matched_market_object": "nvidia",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:NVDA",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "nvidia董事會啟動調查華爾街憂經營風險台經院張建一ai供應鏈影響有限techorange科技報橘",
-          "event_cluster_key": "event-1e833d14d1257e2eace3",
-          "published_time_bucket": "2026-11-09T04:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "nvidia",
-            "供應"
-          ],
-          "matched_subject": "nvidia",
-          "matched_action": "供應",
-          "matched_market_object": "nvidia",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-11-09T06:33:52.709913+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 17
         }
       ],
       "source_diversity": {
         "schema_version": "1.0",
-        "status": "single_source",
-        "cross_checked": false,
+        "status": "multi_source",
+        "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 1,
-        "provider_count": 1,
+        "independent_source_count": 2,
+        "provider_count": 2,
         "provider_ids": [
-          "google_news"
+          "google_news",
+          "yahoo_finance"
         ],
         "source_domains": [
-          "news.google.com"
+          "news.google.com",
+          "tw.stock.yahoo.com"
         ],
         "supporting_source_count": 0,
         "inventory_only": false,
@@ -4704,8 +4703,8 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 24,
-          "TSM": 24,
+          "2330": 32,
+          "TSM": 32,
           "NVDA": 6,
           "2059": 1,
           "3260": 1
@@ -4719,7 +4718,7 @@
           "cpi": 1
         },
         "market_interest": {
-          "taiwan": 104
+          "taiwan": 105
         },
         "context": {
           "tracked_tickers": [
@@ -4793,6 +4792,7 @@
             "israel",
             "oil",
             "sanctions",
+            "semiconductor",
             "shipping",
             "war",
             "wti",
@@ -4809,8 +4809,8 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 24,
-            "TSM": 24,
+            "2330": 32,
+            "TSM": 32,
             "NVDA": 6
           },
           "research_candidate": {
@@ -4828,10 +4828,10 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 30,
+      "excluded_count": 29,
       "exclusion_reasons": {
         "incomplete_normalized_fact": 2,
-        "insufficient_market_relevance": 22,
+        "insufficient_market_relevance": 20,
         "market_scope_mismatch": 2,
         "outside_calendar_window": 15,
         "outside_trading_session_window": 2
@@ -4846,41 +4846,41 @@
         "disabled_provider_count": 0,
         "fetched": 40,
         "normalized": 40,
-        "eligible": 10,
-        "excluded": 30,
+        "eligible": 11,
+        "excluded": 29,
         "date_eligible_current": 23,
         "date_excluded_current": 17,
         "date_exclusion_reasons_current": {
           "outside_calendar_window": 15,
           "outside_trading_session_window": 2
         },
-        "date_eligible_inventory": 64,
+        "date_eligible_inventory": 65,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-11-10T14:14:38.107932+00:00",
-        "deduped": 9,
+        "reference_time": "2026-11-10T14:24:10.066548+00:00",
+        "deduped": 10,
         "publicly_ranked": 5,
-        "current_eligible": 10,
-        "inventory_considered": 64,
-        "inventory_eligible": 51,
+        "current_eligible": 11,
+        "inventory_considered": 65,
+        "inventory_eligible": 53,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 30,
+        "filtered_story_count": 29,
         "fetched_story_count": 40,
         "normalized_story_count": 40,
-        "eligible_story_count": 10,
-        "deduped_story_count": 9,
+        "eligible_story_count": 11,
+        "deduped_story_count": 10,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 64,
-        "eligible": 51,
+        "considered": 65,
+        "eligible": 53,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -4893,7 +4893,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 40,
-          "checked_at": "2026-11-10T14:14:38.107994+00:00"
+          "checked_at": "2026-11-10T14:24:10.066592+00:00"
         },
         {
           "provider": "twse",
@@ -4904,10 +4904,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-11-10T14:14:38.107994+00:00",
+          "checked_at": "2026-11-10T14:24:10.066592+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+          "last_success_at": "2026-11-10T14:24:10.066592+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4932,10 +4932,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-11-10T14:14:38.107994+00:00",
+          "checked_at": "2026-11-10T14:24:10.066592+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+          "last_success_at": "2026-11-10T14:24:10.066592+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4960,10 +4960,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 0,
-          "checked_at": "2026-11-10T14:14:38.107994+00:00",
+          "checked_at": "2026-11-10T14:24:10.066592+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+          "last_success_at": "2026-11-10T14:24:10.066592+00:00",
           "last_failure_at": null,
           "stories_ingested": 2,
           "stories_deduped": 0,
@@ -4988,32 +4988,31 @@
           "key": "news_taiwan_yahoo_finance",
           "legacy_key": "official_news_taiwan_yahoo_finance",
           "label": "yahoo_finance market news",
-          "status": "no_event",
+          "status": "healthy",
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
-          "item_count": 0,
-          "checked_at": "2026-11-10T14:14:38.107994+00:00",
+          "item_count": 1,
+          "checked_at": "2026-11-10T14:24:10.066592+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 0,
-          "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-11-10T14:24:10.066592+00:00",
           "last_failure_at": null,
           "stories_ingested": 9,
-          "stories_deduped": 0,
-          "ranked_count": 0,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
             "market": 9,
-            "tracked_ticker": 2
+            "tracked_ticker": 7
           },
           "funnel": {
             "fetched_count": 10,
             "normalized_count": 9,
             "market_compatible_count": 9,
-            "eligible_count": 0,
-            "excluded_count": 9,
-            "deduped_count": 0,
-            "ranked_count": 0
-          },
-          "data_gap": "filtered_no_market_match"
+            "eligible_count": 1,
+            "excluded_count": 8,
+            "deduped_count": 1,
+            "ranked_count": 1
+          }
         },
         {
           "provider": "google_news",
@@ -5023,15 +5022,15 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
-          "item_count": 5,
-          "checked_at": "2026-11-10T14:14:38.107994+00:00",
+          "item_count": 4,
+          "checked_at": "2026-11-10T14:24:10.066592+00:00",
           "raw_item_count": 28,
-          "filtered_item_count": 5,
-          "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+          "filtered_item_count": 4,
+          "last_success_at": "2026-11-10T14:24:10.066592+00:00",
           "last_failure_at": null,
           "stories_ingested": 28,
           "stories_deduped": 9,
-          "ranked_count": 5,
+          "ranked_count": 4,
           "relevance_distribution": {
             "market": 28,
             "research_candidate": 1,
@@ -5044,25 +5043,25 @@
             "eligible_count": 10,
             "excluded_count": 18,
             "deduped_count": 9,
-            "ranked_count": 5
+            "ranked_count": 4
           }
         }
       ],
       "observability": {
         "stories_ingested": 40,
-        "stories_deduped": 9,
+        "stories_deduped": 10,
         "ranked_count": 5,
         "relevance_distribution": {
           "active_event": 1,
           "market": 40,
           "research_candidate": 1,
-          "tracked_ticker": 8
+          "tracked_ticker": 12
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+            "last_success_at": "2026-11-10T14:24:10.066592+00:00",
             "last_failure_at": null,
             "stories_ingested": 2,
             "stories_deduped": 0,
@@ -5084,11 +5083,11 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+            "last_success_at": "2026-11-10T14:24:10.066592+00:00",
             "last_failure_at": null,
             "stories_ingested": 28,
             "stories_deduped": 9,
-            "ranked_count": 5,
+            "ranked_count": 4,
             "relevance_distribution": {
               "market": 28,
               "research_candidate": 1,
@@ -5101,13 +5100,13 @@
               "eligible_count": 10,
               "excluded_count": 18,
               "deduped_count": 9,
-              "ranked_count": 5
+              "ranked_count": 4
             }
           },
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+            "last_success_at": "2026-11-10T14:24:10.066592+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5126,7 +5125,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+            "last_success_at": "2026-11-10T14:24:10.066592+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5151,8 +5150,7 @@
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 1,
-              "tracked_ticker": 1
+              "market": 1
             },
             "funnel": {
               "fetched_count": 1,
@@ -5167,23 +5165,23 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+            "last_success_at": "2026-11-10T14:24:10.066592+00:00",
             "last_failure_at": null,
             "stories_ingested": 9,
-            "stories_deduped": 0,
-            "ranked_count": 0,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
               "market": 9,
-              "tracked_ticker": 2
+              "tracked_ticker": 7
             },
             "funnel": {
               "fetched_count": 10,
               "normalized_count": 9,
               "market_compatible_count": 9,
-              "eligible_count": 0,
-              "excluded_count": 9,
-              "deduped_count": 0,
-              "ranked_count": 0
+              "eligible_count": 1,
+              "excluded_count": 8,
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           }
         ]
@@ -5502,6 +5500,192 @@
           "ranking_score": 135
         },
         {
+          "story_id": "news-8f7983fc29afdb02220e",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "美10月CPI今夜揭曉：年增率罕見缺席 月增放緩能否撼動聯準會12月升息預期？",
+          "raw_title": "美10月CPI今夜揭曉：年增率罕見缺席 月增放緩能否撼動聯準會12月升息預期？",
+          "normalized_fact": "BLS今晚9:30公布10月CPI，因去年停擺缺失，罕見不發整體與核心CPI年增，只看月增與細項。 經濟學家估10月CPI月增0.3%、核心0.2%；高盛看0.16%，德銀0.2%，分歧大。 若核心CPI低於0.2%可緩和Fed緊縮押注；若反彈，美債殖利率、美元與風險資產恐受壓。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "BLS今晚9:30公布10月CPI，因去年停擺缺失，罕見不發整體與核心CPI年增，只看月增與細項。 經濟學家估10月CPI月增0.3%、核心0.2%；高盛看0.16%，德銀0.2%，分歧大。 若核心CPI低於0.2%可緩和Fed緊縮押注；若反彈，美債殖利率、美元與風險資產恐受壓。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6655333",
+          "url": "https://news.cnyes.com/news/id/6655333",
+          "published_at": "2026-11-10T12:30:03+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-10",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "active_event:cpi"
+          ],
+          "freshness": "published",
+          "dedupe_key": "bls今晚930公布10月cpi因去年停擺缺失罕見不發整體與核心cpi年增只看月增與細項經濟學家估10月cpi月增03核心02高盛看016德銀02分歧大若核心cpi低於02可緩和fed緊縮押注若反彈美債殖利率美元與風險資產恐受壓",
+          "event_cluster_key": "event-c51abb7ccfc920388fde",
+          "published_time_bucket": "2026-11-10T12:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 135
+        },
+        {
+          "story_id": "news-1a9e0169c11d0c075642",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Hot October CPI Report Clears the Way for a December Rate Hike - Kiplinger",
+          "raw_title": "Hot October CPI Report Clears the Way for a December Rate Hike - Kiplinger",
+          "normalized_fact": "Hot October CPI Report Clears the Way for a December Rate Hike Kiplinger。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Hot October CPI Report Clears the Way for a December Rate Hike Kiplinger",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxOVDFiV1RjWnozMXB5MC1HZ3d3d2dFSWFPaGdlUFM5ZjNtRElnU1Q5MDdVTXRNNW1kMzVlWVJVR2xRYnpBLUR2eHlhRmF3OUlFMm1ZU0JHamF4WkJDcjhpQXY1dmY2dGlhYk1QRV9haVdZVWljdGVvZlZ6OWdHX0djZFlqT3lMbmZMb1E",
+          "url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxOVDFiV1RjWnozMXB5MC1HZ3d3d2dFSWFPaGdlUFM5ZjNtRElnU1Q5MDdVTXRNNW1kMzVlWVJVR2xRYnpBLUR2eHlhRmF3OUlFMm1ZU0JHamF4WkJDcjhpQXY1dmY2dGlhYk1QRV9haVdZVWljdGVvZlZ6OWdHX0djZFlqT3lMbmZMb1E",
+          "published_at": "2026-11-10T14:00:50+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-10",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "macro",
+            "reason": "macro_subject_action",
+            "matched_terms": [
+              "cpi",
+              "report"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "cpi",
+              "report"
+            ],
+            "matched_subject": "cpi",
+            "matched_action": "report",
+            "matched_market_object": "cpi",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "active_event:cpi"
+          ],
+          "freshness": "published",
+          "dedupe_key": "hotoctobercpireportclearsthewayforadecemberratehikekiplinger",
+          "event_cluster_key": "event-a84cff8c414ffd2951bc",
+          "published_time_bucket": "2026-11-10T14:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "cpi",
+            "report"
+          ],
+          "matched_subject": "cpi",
+          "matched_action": "report",
+          "matched_market_object": "cpi",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 120
+        },
+        {
           "story_id": "news-34335f34a923606205e8",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -5581,89 +5765,6 @@
           "matched_action": "export control",
           "matched_market_object": "nvidia",
           "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 120
-        },
-        {
-          "story_id": "news-c18ec442501852c8f3d2",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "10-year Treasury yield jumps after hot CPI, Waller half-point hike comment - CNBC",
-          "raw_title": "10-year Treasury yield jumps after hot CPI, Waller half-point hike comment - CNBC",
-          "normalized_fact": "10-year Treasury yield jumps after hot CPI, Waller half-point hike comment CNBC。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "10-year Treasury yield jumps after hot CPI, Waller half-point hike comment CNBC",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMib0FVX3lxTE00TGg2Rk5HQzViV3NxTHZvREFib0dkOURuR3VIUHZJbjZHWTRzOERZelY0WVZlcVZSNGhCS094UTJDXzM2b3NLeVFSMG5jckhkMndFeG9pc0VvM0JnTUsxN2pTckFuQ3NTMTNZWnQ2MA",
-          "url": "https://news.google.com/rss/articles/CBMib0FVX3lxTE00TGg2Rk5HQzViV3NxTHZvREFib0dkOURuR3VIUHZJbjZHWTRzOERZelY0WVZlcVZSNGhCS094UTJDXzM2b3NLeVFSMG5jckhkMndFeG9pc0VvM0JnTUsxN2pTckFuQ3NTMTNZWnQ2MA",
-          "published_at": "2026-11-10T10:25:50+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-10",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "active_event:cpi"
-          ],
-          "freshness": "published",
-          "dedupe_key": "10yeartreasuryyieldjumpsafterhotcpiwallerhalfpointhikecommentcnbc",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-11-10T10:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -5773,99 +5874,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 120
-        },
-        {
-          "story_id": "news-5eed70bb19923a4681b9",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Fed's Waller plans to support at least a quarter-point rate hike in December - Reuters",
-          "raw_title": "Fed's Waller plans to support at least a quarter-point rate hike in December - Reuters",
-          "normalized_fact": "Fed's Waller plans to support at least a quarter-point rate hike in December Reuters。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Fed's Waller plans to support at least a quarter-point rate hike in December Reuters",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxNR3RjbDlfcXFBbHp0SVRSeHIzZHFTTnY5bjBuWGszTTMzUmxLUXNzRTFid29sbXV1emJSZWMwTEo4V2dWYjJ3TGlESmRlRzdFcDdQU3RxWi1QVEZrRlNBU0N3NG50WUNBWVdXbnZFS0RuVDNyRVdGWm1aRjFjWGRlRFRoTFhlbFMwQ1NjbTZMd2x0cnlHR0F4d2JNV3dKcHFOOE5TRFVsSlc5ekxoQ0E",
-          "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxNR3RjbDlfcXFBbHp0SVRSeHIzZHFTTnY5bjBuWGszTTMzUmxLUXNzRTFid29sbXV1emJSZWMwTEo4V2dWYjJ3TGlESmRlRzdFcDdQU3RxWi1QVEZrRlNBU0N3NG50WUNBWVdXbnZFS0RuVDNyRVdGWm1aRjFjWGRlRFRoTFhlbFMwQ1NjbTZMd2x0cnlHR0F4d2JNV3dKcHFOOE5TRFVsSlc5ekxoQ0E",
-          "published_at": "2026-11-10T11:37:57+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-10",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "rate"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "rate"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "rate",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "fedswallerplanstosupportatleastaquarterpointratehikeindecemberreuters",
-          "event_cluster_key": "event-ca7c1796e4e057cec239",
-          "published_time_bucket": "2026-11-10T11:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "rate"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "rate",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
         }
       ],
       "editorial_candidates": [
@@ -5964,6 +5972,192 @@
           "ranking_score": 135
         },
         {
+          "story_id": "news-8f7983fc29afdb02220e",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "美10月CPI今夜揭曉：年增率罕見缺席 月增放緩能否撼動聯準會12月升息預期？",
+          "raw_title": "美10月CPI今夜揭曉：年增率罕見缺席 月增放緩能否撼動聯準會12月升息預期？",
+          "normalized_fact": "BLS今晚9:30公布10月CPI，因去年停擺缺失，罕見不發整體與核心CPI年增，只看月增與細項。 經濟學家估10月CPI月增0.3%、核心0.2%；高盛看0.16%，德銀0.2%，分歧大。 若核心CPI低於0.2%可緩和Fed緊縮押注；若反彈，美債殖利率、美元與風險資產恐受壓。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "BLS今晚9:30公布10月CPI，因去年停擺缺失，罕見不發整體與核心CPI年增，只看月增與細項。 經濟學家估10月CPI月增0.3%、核心0.2%；高盛看0.16%，德銀0.2%，分歧大。 若核心CPI低於0.2%可緩和Fed緊縮押注；若反彈，美債殖利率、美元與風險資產恐受壓。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6655333",
+          "url": "https://news.cnyes.com/news/id/6655333",
+          "published_at": "2026-11-10T12:30:03+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-10",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "利率"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "利率"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "利率",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "active_event:cpi"
+          ],
+          "freshness": "published",
+          "dedupe_key": "bls今晚930公布10月cpi因去年停擺缺失罕見不發整體與核心cpi年增只看月增與細項經濟學家估10月cpi月增03核心02高盛看016德銀02分歧大若核心cpi低於02可緩和fed緊縮押注若反彈美債殖利率美元與風險資產恐受壓",
+          "event_cluster_key": "event-c51abb7ccfc920388fde",
+          "published_time_bucket": "2026-11-10T12:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "利率"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "利率",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 135
+        },
+        {
+          "story_id": "news-1a9e0169c11d0c075642",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Hot October CPI Report Clears the Way for a December Rate Hike - Kiplinger",
+          "raw_title": "Hot October CPI Report Clears the Way for a December Rate Hike - Kiplinger",
+          "normalized_fact": "Hot October CPI Report Clears the Way for a December Rate Hike Kiplinger。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Hot October CPI Report Clears the Way for a December Rate Hike Kiplinger",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxOVDFiV1RjWnozMXB5MC1HZ3d3d2dFSWFPaGdlUFM5ZjNtRElnU1Q5MDdVTXRNNW1kMzVlWVJVR2xRYnpBLUR2eHlhRmF3OUlFMm1ZU0JHamF4WkJDcjhpQXY1dmY2dGlhYk1QRV9haVdZVWljdGVvZlZ6OWdHX0djZFlqT3lMbmZMb1E",
+          "url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxOVDFiV1RjWnozMXB5MC1HZ3d3d2dFSWFPaGdlUFM5ZjNtRElnU1Q5MDdVTXRNNW1kMzVlWVJVR2xRYnpBLUR2eHlhRmF3OUlFMm1ZU0JHamF4WkJDcjhpQXY1dmY2dGlhYk1QRV9haVdZVWljdGVvZlZ6OWdHX0djZFlqT3lMbmZMb1E",
+          "published_at": "2026-11-10T14:00:50+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-10",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "macro",
+            "reason": "macro_subject_action",
+            "matched_terms": [
+              "cpi",
+              "report"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "cpi",
+              "report"
+            ],
+            "matched_subject": "cpi",
+            "matched_action": "report",
+            "matched_market_object": "cpi",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "active_event:cpi"
+          ],
+          "freshness": "published",
+          "dedupe_key": "hotoctobercpireportclearsthewayforadecemberratehikekiplinger",
+          "event_cluster_key": "event-a84cff8c414ffd2951bc",
+          "published_time_bucket": "2026-11-10T14:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "cpi",
+            "report"
+          ],
+          "matched_subject": "cpi",
+          "matched_action": "report",
+          "matched_market_object": "cpi",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 120
+        },
+        {
           "story_id": "news-34335f34a923606205e8",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -6043,89 +6237,6 @@
           "matched_action": "export control",
           "matched_market_object": "nvidia",
           "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 120
-        },
-        {
-          "story_id": "news-c18ec442501852c8f3d2",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "10-year Treasury yield jumps after hot CPI, Waller half-point hike comment - CNBC",
-          "raw_title": "10-year Treasury yield jumps after hot CPI, Waller half-point hike comment - CNBC",
-          "normalized_fact": "10-year Treasury yield jumps after hot CPI, Waller half-point hike comment CNBC。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "10-year Treasury yield jumps after hot CPI, Waller half-point hike comment CNBC",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMib0FVX3lxTE00TGg2Rk5HQzViV3NxTHZvREFib0dkOURuR3VIUHZJbjZHWTRzOERZelY0WVZlcVZSNGhCS094UTJDXzM2b3NLeVFSMG5jckhkMndFeG9pc0VvM0JnTUsxN2pTckFuQ3NTMTNZWnQ2MA",
-          "url": "https://news.google.com/rss/articles/CBMib0FVX3lxTE00TGg2Rk5HQzViV3NxTHZvREFib0dkOURuR3VIUHZJbjZHWTRzOERZelY0WVZlcVZSNGhCS094UTJDXzM2b3NLeVFSMG5jckhkMndFeG9pc0VvM0JnTUsxN2pTckFuQ3NTMTNZWnQ2MA",
-          "published_at": "2026-11-10T10:25:50+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-10",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "active_event:cpi"
-          ],
-          "freshness": "published",
-          "dedupe_key": "10yeartreasuryyieldjumpsafterhotcpiwallerhalfpointhikecommentcnbc",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-11-10T10:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -6434,7 +6545,7 @@
           "description": "",
           "canonical_url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxOM0tnS0Z3WEZsbnlFMG8xUXBhNlZjNllnVmhQTGRybWdQQThyMnk2b19EZlc0OWZXQjZjUl9XTlAxbmpSc2RCSG1zZzdIc0dIWUJ2TDBsQWZhTXNVd3JpY3BLSnFUdUc4VXBwZlVId0FIYVdIU2lBQ0tTRWtPX2ZpZjZ4U3kzM1FGQVUxV3RkbmM0Rm9mTFlfWVgwM1Jjd25sd0RBa0Npaw",
           "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxOM0tnS0Z3WEZsbnlFMG8xUXBhNlZjNllnVmhQTGRybWdQQThyMnk2b19EZlc0OWZXQjZjUl9XTlAxbmpSc2RCSG1zZzdIc0dIWUJ2TDBsQWZhTXNVd3JpY3BLSnFUdUc4VXBwZlVId0FIYVdIU2lBQ0tTRWtPX2ZpZjZ4U3kzM1FGQVUxV3RkbmM0Rm9mTFlfWVgwM1Jjd25sd0RBa0Npaw",
-          "published_at": "2026-11-10T10:40:11+00:00",
+          "published_at": "2026-11-10T10:30:00+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -6677,100 +6788,6 @@
           "ranking_score": 120
         },
         {
-          "story_id": "news-8f5f90c4628c7d33e5f2",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Treasury yields rise as CPI data tests mortgage rate outlook - Mortgage Professional America",
-          "raw_title": "Treasury yields rise as CPI data tests mortgage rate outlook - Mortgage Professional America",
-          "normalized_fact": "Treasury yields rise as CPI data tests mortgage rate outlook Mortgage Professional America。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Treasury yields rise as CPI data tests mortgage rate outlook Mortgage Professional America",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMixgFBVV95cUxPZ0ZnZGR1ZG5BS0NZS1ZCMEdkTEJSZGs0WWVPMG1sbjJ3QjZUdlhNQzFVRU5BMkU1Q29FMnhaMnM4WTBsMGt1UWhFWWh4UW5KZWZwYVZVSE5ZOFlaMU0taGNrMGtmRTBPVTFMTTMxMTlCQ0lVTl9ZaExfTEFsLUFHVzJyQ25Rdk96c1pHVDBIdkg0N3dfUlE5bVV0OUNSVWRZRlFpVzFDdmN6cmw3bjVOdlgyb1pGNURUYUtrektfTkZGa1Z5Vmc",
-          "url": "https://news.google.com/rss/articles/CBMixgFBVV95cUxPZ0ZnZGR1ZG5BS0NZS1ZCMEdkTEJSZGs0WWVPMG1sbjJ3QjZUdlhNQzFVRU5BMkU1Q29FMnhaMnM4WTBsMGt1UWhFWWh4UW5KZWZwYVZVSE5ZOFlaMU0taGNrMGtmRTBPVTFMTTMxMTlCQ0lVTl9ZaExfTEFsLUFHVzJyQ25Rdk96c1pHVDBIdkg0N3dfUlE5bVV0OUNSVWRZRlFpVzFDdmN6cmw3bjVOdlgyb1pGNURUYUtrektfTkZGa1Z5Vmc",
-          "published_at": "2026-11-09T17:58:27+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-09",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "macro",
-            "reason": "macro_subject_action",
-            "matched_terms": [
-              "cpi",
-              "data"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "cpi",
-              "data"
-            ],
-            "matched_subject": "cpi",
-            "matched_action": "data",
-            "matched_market_object": "cpi",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "active_event:cpi"
-          ],
-          "freshness": "published",
-          "dedupe_key": "treasuryyieldsriseascpidatatestsmortgagerateoutlookmortgageprofessionalamerica",
-          "event_cluster_key": "event-555ba8478701600f6dc9",
-          "published_time_bucket": "2026-11-09T17:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "cpi",
-            "data"
-          ],
-          "matched_subject": "cpi",
-          "matched_action": "data",
-          "matched_market_object": "cpi",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 120
-        },
-        {
           "story_id": "news-bdb18f28a7b4ab61b1b9",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -6952,98 +6969,6 @@
           "inventory_used": true,
           "inventory_age_trading_sessions": 1,
           "inventory_saved_at": "2026-11-10T13:43:55.053712+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 35
-        },
-        {
-          "story_id": "news-8f7983fc29afdb02220e",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "美10月CPI今夜揭曉：年增率罕見缺席 月增放緩能否撼動聯準會12月升息預期？",
-          "raw_title": "美10月CPI今夜揭曉：年增率罕見缺席 月增放緩能否撼動聯準會12月升息預期？",
-          "normalized_fact": "BLS今晚9:30公布10月CPI，因去年停擺缺失，罕見不發整體與核心CPI年增，只看月增與細項。 經濟學家估10月CPI月增0.3%、核心0.2%；高盛看0.16%，德銀0.2%，分歧大。 若核心CPI低於0.2%可緩和Fed緊縮押注；若反彈，美債殖利率、美元與風險資產恐受壓。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "BLS今晚9:30公布10月CPI，因去年停擺缺失，罕見不發整體與核心CPI年增，只看月增與細項。 經濟學家估10月CPI月增0.3%、核心0.2%；高盛看0.16%，德銀0.2%，分歧大。 若核心CPI低於0.2%可緩和Fed緊縮押注；若反彈，美債殖利率、美元與風險資產恐受壓。",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6655333",
-          "url": "https://news.cnyes.com/news/id/6655333",
-          "published_at": "2026-11-10T12:30:03+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-10",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "利率"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "利率"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "利率",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "active_event:cpi"
-          ],
-          "freshness": "published",
-          "dedupe_key": "bls今晚930公布10月cpi因去年停擺缺失罕見不發整體與核心cpi年增只看月增與細項經濟學家估10月cpi月增03核心02高盛看016德銀02分歧大若核心cpi低於02可緩和fed緊縮押注若反彈美債殖利率美元與風險資產恐受壓",
-          "event_cluster_key": "event-c51abb7ccfc920388fde",
-          "published_time_bucket": "2026-11-10T12:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "利率"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "利率",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 1,
-          "inventory_saved_at": "2026-11-10T14:09:05.907149+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 35
@@ -7659,6 +7584,89 @@
           "inventory_used": true,
           "inventory_age_trading_sessions": 1,
           "inventory_saved_at": "2026-11-10T13:36:47.725225+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 20
+        },
+        {
+          "story_id": "news-c18ec442501852c8f3d2",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "10-year Treasury yield jumps after hot CPI, Waller half-point hike comment - CNBC",
+          "raw_title": "10-year Treasury yield jumps after hot CPI, Waller half-point hike comment - CNBC",
+          "normalized_fact": "10-year Treasury yield jumps after hot CPI, Waller half-point hike comment CNBC。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "10-year Treasury yield jumps after hot CPI, Waller half-point hike comment CNBC",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMib0FVX3lxTE00TGg2Rk5HQzViV3NxTHZvREFib0dkOURuR3VIUHZJbjZHWTRzOERZelY0WVZlcVZSNGhCS094UTJDXzM2b3NLeVFSMG5jckhkMndFeG9pc0VvM0JnTUsxN2pTckFuQ3NTMTNZWnQ2MA",
+          "url": "https://news.google.com/rss/articles/CBMib0FVX3lxTE00TGg2Rk5HQzViV3NxTHZvREFib0dkOURuR3VIUHZJbjZHWTRzOERZelY0WVZlcVZSNGhCS094UTJDXzM2b3NLeVFSMG5jckhkMndFeG9pc0VvM0JnTUsxN2pTckFuQ3NTMTNZWnQ2MA",
+          "published_at": "2026-11-10T10:25:50+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-10",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "active_event:cpi"
+          ],
+          "freshness": "published",
+          "dedupe_key": "10yeartreasuryyieldjumpsafterhotcpiwallerhalfpointhikecommentcnbc",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-11-10T10:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-11-10T14:09:05.907149+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 20
@@ -8303,6 +8311,92 @@
           "ranking_score": 32
         },
         {
+          "story_id": "news-aa0d773b721311e49c87",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Quarterly Reports and an Independent Board Inquiry Frame the Chip Sector's Week",
+          "raw_title": "Quarterly Reports and an Independent Board Inquiry Frame the Chip Sector's Week",
+          "normalized_fact": "Fly On Wall Street News Commentary - Semiconductor shares opened the week pulling in different directions. As of 10:02 a.m. ET on Monday, the PHLX Semiconductor Sector Index was up 4.33% at 9,796.62, while shares of one chipmaker whose board said on Sunday that it is initiating an independent investigation were trading 4.77% lower. The four other chipmakers covered below, each of which reported quarterly results within the past two weeks, were all trading higher at the same time stamp. Active Co。",
+          "market_topic": "company_industry",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Fly On Wall Street News Commentary - Semiconductor shares opened the week pulling in different directions. As of 10:02 a.m. ET on Monday, the PHLX Semiconductor Sector Index was up 4.33% at 9,796.62, while shares of one chipmaker whose board said on Sunday that it is initiating an independent investigation were trading 4.77% lower. The four other chipmakers covered below, each of which reported quarterly results within the past two weeks, were all trading higher at the same time stamp. Active Co",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/quarterly-reports-independent-board-inquiry-170200762.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/quarterly-reports-independent-board-inquiry-170200762.html?.tsrc=rss",
+          "published_at": "2026-11-09T17:02:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-11-09",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "earnings",
+            "semiconductor"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "active_event:semiconductor"
+          ],
+          "freshness": "published",
+          "dedupe_key": "flyonwallstreetnewscommentarysemiconductorsharesopenedtheweekpullingindifferentdirectionsasof1002ametonmondaythephlxsemiconductorsectorindexwasup433at979662whilesharesofonechipmakerwhoseboardsaidonsundaythatitisinitiatinganindependentinvestigationweretrading477lowerthefourotherchipmakerscoveredbeloweachofwhichreportedquarterlyresultswithinthepasttwoweekswerealltradinghigheratthesametimestampactiveco",
+          "event_cluster_key": "event-0ca479fa5d47f34bfe63",
+          "published_time_bucket": "2026-11-09T17:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 2,
+          "inventory_saved_at": "2026-11-09T17:49:37.257763+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 32
+        },
+        {
           "story_id": "news-bdaa09ce362ba5c52d91",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -8832,91 +8926,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 29
-        },
-        {
-          "story_id": "news-aa0d773b721311e49c87",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Quarterly Reports and an Independent Board Inquiry Frame the Chip Sector's Week",
-          "raw_title": "Quarterly Reports and an Independent Board Inquiry Frame the Chip Sector's Week",
-          "normalized_fact": "Fly On Wall Street News Commentary - Semiconductor shares opened the week pulling in different directions. As of 10:02 a.m. ET on Monday, the PHLX Semiconductor Sector Index was up 4.33% at 9,796.62, while shares of one chipmaker whose board said on Sunday that it is initiating an independent investigation were trading 4.77% lower. The four other chipmakers covered below, each of which reported quarterly results within the past two weeks, were all trading higher at the same time stamp. Active Co。",
-          "market_topic": "company_industry",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Fly On Wall Street News Commentary - Semiconductor shares opened the week pulling in different directions. As of 10:02 a.m. ET on Monday, the PHLX Semiconductor Sector Index was up 4.33% at 9,796.62, while shares of one chipmaker whose board said on Sunday that it is initiating an independent investigation were trading 4.77% lower. The four other chipmakers covered below, each of which reported quarterly results within the past two weeks, were all trading higher at the same time stamp. Active Co",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/quarterly-reports-independent-board-inquiry-170200762.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/quarterly-reports-independent-board-inquiry-170200762.html?.tsrc=rss",
-          "published_at": "2026-11-09T17:02:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-09",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "earnings",
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "flyonwallstreetnewscommentarysemiconductorsharesopenedtheweekpullingindifferentdirectionsasof1002ametonmondaythephlxsemiconductorsectorindexwasup433at979662whilesharesofonechipmakerwhoseboardsaidonsundaythatitisinitiatinganindependentinvestigationweretrading477lowerthefourotherchipmakerscoveredbeloweachofwhichreportedquarterlyresultswithinthepasttwoweekswerealltradinghigheratthesametimestampactiveco",
-          "event_cluster_key": "event-0ca479fa5d47f34bfe63",
-          "published_time_bucket": "2026-11-09T17:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-11-09T17:49:37.257763+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 27
         },
         {
           "story_id": "news-0d94533bebfae075c298",
@@ -9481,14 +9490,16 @@
         "status": "multi_source",
         "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 2,
-        "provider_count": 2,
+        "independent_source_count": 3,
+        "provider_count": 3,
         "provider_ids": [
+          "anue",
           "google_news",
           "yahoo_finance"
         ],
         "source_domains": [
           "finance.yahoo.com",
+          "news.cnyes.com",
           "news.google.com"
         ],
         "supporting_source_count": 0,
@@ -9504,9 +9515,8 @@
         },
         "sector_interest": {},
         "topic_interest": {
-          "伊朗": 2,
-          "brent": 1,
-          "cpi": 20,
+          "cpi": 21,
+          "semiconductor": 5,
           "oil": 13,
           "iran": 4,
           "sanctions": 2,
@@ -9515,7 +9525,7 @@
           "gold": 4
         },
         "market_interest": {
-          "us": 140
+          "us": 144
         },
         "context": {
           "tracked_tickers": [
@@ -9589,6 +9599,7 @@
             "israel",
             "oil",
             "sanctions",
+            "semiconductor",
             "shipping",
             "war",
             "wti",
@@ -9612,9 +9623,8 @@
           "research_candidate": {},
           "tracked_sector": {},
           "active_event": {
-            "伊朗": 2,
-            "brent": 1,
-            "cpi": 20,
+            "cpi": 21,
+            "semiconductor": 5,
             "oil": 13,
             "iran": 4,
             "sanctions": 2,
@@ -9628,12 +9638,10 @@
       "excluded_count": 49,
       "exclusion_reasons": {
         "generic_official_filing": 20,
-        "incomplete_normalized_fact": 18,
-        "insufficient_market_relevance": 14,
+        "incomplete_normalized_fact": 22,
+        "insufficient_market_relevance": 16,
         "market_scope_mismatch": 8,
-        "missing_published_at": 2,
-        "outside_calendar_window": 16,
-        "outside_trading_session_window": 1
+        "outside_calendar_window": 16
       },
       "status": "ready",
       "collection_state": "degraded",
@@ -9647,22 +9655,20 @@
         "normalized": 60,
         "eligible": 11,
         "excluded": 49,
-        "date_eligible_current": 41,
-        "date_excluded_current": 19,
+        "date_eligible_current": 44,
+        "date_excluded_current": 16,
         "date_exclusion_reasons_current": {
-          "missing_published_at": 2,
-          "outside_calendar_window": 16,
-          "outside_trading_session_window": 1
+          "outside_calendar_window": 16
         },
-        "date_eligible_inventory": 80,
+        "date_eligible_inventory": 84,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-11-10T14:14:38.107932+00:00",
+        "reference_time": "2026-11-10T14:24:10.066548+00:00",
         "deduped": 11,
         "publicly_ranked": 5,
         "current_eligible": 11,
-        "inventory_considered": 80,
-        "inventory_eligible": 50,
+        "inventory_considered": 84,
+        "inventory_eligible": 51,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
@@ -9679,8 +9685,8 @@
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 80,
-        "eligible": 50,
+        "considered": 84,
+        "eligible": 51,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -9693,7 +9699,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 60,
-          "checked_at": "2026-11-10T14:14:38.107994+00:00"
+          "checked_at": "2026-11-10T14:24:10.066592+00:00"
         },
         {
           "provider": "sec",
@@ -9704,10 +9710,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-11-10T14:14:38.107994+00:00",
+          "checked_at": "2026-11-10T14:24:10.066592+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+          "last_success_at": "2026-11-10T14:24:10.066592+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9735,12 +9741,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-11-10T14:14:38.107994+00:00",
+          "checked_at": "2026-11-10T14:24:10.066592+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-11-10T14:14:38.107994+00:00",
+          "last_failure_at": "2026-11-10T14:24:10.066592+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9763,10 +9769,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-11-10T14:14:38.107994+00:00",
+          "checked_at": "2026-11-10T14:24:10.066592+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+          "last_success_at": "2026-11-10T14:24:10.066592+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9787,32 +9793,32 @@
           "key": "news_us_anue",
           "legacy_key": "official_news_us_anue",
           "label": "anue market news",
-          "status": "no_event",
+          "status": "healthy",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 0,
-          "checked_at": "2026-11-10T14:14:38.107994+00:00",
+          "item_count": 1,
+          "checked_at": "2026-11-10T14:24:10.066592+00:00",
           "raw_item_count": 5,
-          "filtered_item_count": 0,
-          "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-11-10T14:24:10.066592+00:00",
           "last_failure_at": null,
-          "stories_ingested": 3,
-          "stories_deduped": 0,
-          "ranked_count": 0,
+          "stories_ingested": 2,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
-            "active_event": 2,
-            "market": 3
+            "active_event": 1,
+            "market": 2,
+            "tracked_ticker": 1
           },
           "funnel": {
-            "fetched_count": 3,
-            "normalized_count": 3,
-            "market_compatible_count": 3,
-            "eligible_count": 0,
-            "excluded_count": 3,
-            "deduped_count": 0,
-            "ranked_count": 0
-          },
-          "data_gap": "filtered_no_market_match"
+            "fetched_count": 2,
+            "normalized_count": 2,
+            "market_compatible_count": 2,
+            "eligible_count": 1,
+            "excluded_count": 1,
+            "deduped_count": 1,
+            "ranked_count": 1
+          }
         },
         {
           "provider": "yahoo_finance",
@@ -9823,25 +9829,25 @@
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
           "item_count": 1,
-          "checked_at": "2026-11-10T14:14:38.107994+00:00",
+          "checked_at": "2026-11-10T14:24:10.066592+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 1,
-          "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+          "last_success_at": "2026-11-10T14:24:10.066592+00:00",
           "last_failure_at": null,
-          "stories_ingested": 3,
+          "stories_ingested": 4,
           "stories_deduped": 1,
           "ranked_count": 1,
           "relevance_distribution": {
             "active_event": 2,
-            "market": 3,
+            "market": 4,
             "tracked_ticker": 2
           },
           "funnel": {
-            "fetched_count": 7,
-            "normalized_count": 3,
-            "market_compatible_count": 3,
+            "fetched_count": 8,
+            "normalized_count": 4,
+            "market_compatible_count": 4,
             "eligible_count": 1,
-            "excluded_count": 2,
+            "excluded_count": 3,
             "deduped_count": 1,
             "ranked_count": 1
           }
@@ -9854,15 +9860,15 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
-          "item_count": 4,
-          "checked_at": "2026-11-10T14:14:38.107994+00:00",
+          "item_count": 3,
+          "checked_at": "2026-11-10T14:24:10.066592+00:00",
           "raw_item_count": 40,
-          "filtered_item_count": 4,
-          "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+          "filtered_item_count": 3,
+          "last_success_at": "2026-11-10T14:24:10.066592+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
-          "stories_deduped": 10,
-          "ranked_count": 4,
+          "stories_deduped": 9,
+          "ranked_count": 3,
           "relevance_distribution": {
             "active_event": 15,
             "market": 40,
@@ -9872,10 +9878,10 @@
             "fetched_count": 40,
             "normalized_count": 40,
             "market_compatible_count": 40,
-            "eligible_count": 10,
-            "excluded_count": 30,
-            "deduped_count": 10,
-            "ranked_count": 4
+            "eligible_count": 9,
+            "excluded_count": 31,
+            "deduped_count": 9,
+            "ranked_count": 3
           }
         }
       ],
@@ -9892,30 +9898,31 @@
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+            "last_success_at": "2026-11-10T14:24:10.066592+00:00",
             "last_failure_at": null,
-            "stories_ingested": 3,
-            "stories_deduped": 0,
-            "ranked_count": 0,
+            "stories_ingested": 2,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
-              "active_event": 2,
-              "market": 3
+              "active_event": 1,
+              "market": 2,
+              "tracked_ticker": 1
             },
             "funnel": {
-              "fetched_count": 3,
-              "normalized_count": 3,
-              "market_compatible_count": 3,
-              "eligible_count": 0,
-              "excluded_count": 3,
-              "deduped_count": 0,
-              "ranked_count": 0
+              "fetched_count": 2,
+              "normalized_count": 2,
+              "market_compatible_count": 2,
+              "eligible_count": 1,
+              "excluded_count": 1,
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           },
           {
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-11-10T14:14:38.107994+00:00",
+            "last_failure_at": "2026-11-10T14:24:10.066592+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9933,11 +9940,11 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+            "last_success_at": "2026-11-10T14:24:10.066592+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
-            "stories_deduped": 10,
-            "ranked_count": 4,
+            "stories_deduped": 9,
+            "ranked_count": 3,
             "relevance_distribution": {
               "active_event": 15,
               "market": 40,
@@ -9947,16 +9954,16 @@
               "fetched_count": 40,
               "normalized_count": 40,
               "market_compatible_count": 40,
-              "eligible_count": 10,
-              "excluded_count": 30,
-              "deduped_count": 10,
-              "ranked_count": 4
+              "eligible_count": 9,
+              "excluded_count": 31,
+              "deduped_count": 9,
+              "ranked_count": 3
             }
           },
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+            "last_success_at": "2026-11-10T14:24:10.066592+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9975,7 +9982,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+            "last_success_at": "2026-11-10T14:24:10.066592+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -10002,8 +10009,9 @@
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
+              "active_event": 1,
               "market": 4,
-              "tracked_ticker": 3
+              "tracked_ticker": 2
             },
             "funnel": {
               "fetched_count": 4,
@@ -10018,22 +10026,22 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-11-10T14:14:38.107994+00:00",
+            "last_success_at": "2026-11-10T14:24:10.066592+00:00",
             "last_failure_at": null,
-            "stories_ingested": 3,
+            "stories_ingested": 4,
             "stories_deduped": 1,
             "ranked_count": 1,
             "relevance_distribution": {
               "active_event": 2,
-              "market": 3,
+              "market": 4,
               "tracked_ticker": 2
             },
             "funnel": {
-              "fetched_count": 7,
-              "normalized_count": 3,
-              "market_compatible_count": 3,
+              "fetched_count": 8,
+              "normalized_count": 4,
+              "market_compatible_count": 4,
               "eligible_count": 1,
-              "excluded_count": 2,
+              "excluded_count": 3,
               "deduped_count": 1,
               "ranked_count": 1
             }
