@@ -274,6 +274,99 @@ def _request_json(
         raise PagesDeploymentError("GitHub Pages deployment response is invalid JSON") from exc
 
 
+def inspect_pages_site(
+    *,
+    api_url: str,
+    repository: str,
+    token: str,
+    timeout_seconds: float = 15.0,
+    request_json: Callable[..., Any] = _request_json,
+) -> dict[str, Any]:
+    """Read the effective Pages site configuration without changing it."""
+    try:
+        parsed_api_url = urlparse(str(api_url or "").strip())
+        api_has_userinfo = parsed_api_url.username is not None or parsed_api_url.password is not None
+    except ValueError:
+        parsed_api_url = urlparse("")
+        api_has_userinfo = True
+    if (
+        not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", str(repository or ""))
+        or not token
+        or timeout_seconds <= 0
+        or parsed_api_url.scheme != "https"
+        or not parsed_api_url.netloc
+        or api_has_userinfo
+        or parsed_api_url.query
+        or parsed_api_url.fragment
+    ):
+        raise PagesDeploymentError(
+            "repository, GitHub token, and positive timeout are required for Pages preflight",
+            error_code="pages_site_preflight_inputs_invalid",
+        )
+    site = request_json(
+        f"{api_url.rstrip('/')}/repos/{repository}/pages",
+        token=token,
+        timeout=timeout_seconds,
+    )
+    if not isinstance(site, dict):
+        raise PagesDeploymentError(
+            "GitHub Pages site configuration response is invalid",
+            error_code="pages_site_preflight_response_invalid",
+        )
+
+    def safe_value(value: Any, pattern: str, limit: int = 128) -> str:
+        text = str(value or "").strip()
+        return text if len(text) <= limit and re.fullmatch(pattern, text) else "unknown"
+
+    source_value = site.get("source")
+    source: dict[str, Any] = source_value if isinstance(source_value, dict) else {}
+    raw_html_url = str(site.get("html_url") or "").strip()
+    html_url = "unknown"
+    try:
+        parsed = urlparse(raw_html_url)
+        port = parsed.port
+        hostname = parsed.hostname or ""
+        safe_host = re.fullmatch(r"[A-Za-z0-9.-]{1,253}", hostname) is not None
+        safe_port = port is None or 1 <= port <= 65535
+        safe_path = re.fullmatch(r"/?[A-Za-z0-9._~/-]{0,240}", parsed.path) is not None
+        if (
+            parsed.scheme == "https"
+            and safe_host
+            and safe_port
+            and safe_path
+            and parsed.username is None
+            and parsed.password is None
+            and not parsed.query
+            and not parsed.fragment
+        ):
+            port_suffix = f":{port}" if port is not None else ""
+            html_url = f"https://{hostname}{port_suffix}{parsed.path}"
+    except ValueError:
+        pass
+    return {
+        "preflight_passed": True,
+        "preflight_http_status": "200",
+        "pages_status": safe_value(site.get("status"), r"[A-Za-z0-9._-]{1,32}"),
+        "pages_build_type": safe_value(site.get("build_type"), r"[A-Za-z0-9._-]{1,32}"),
+        "pages_source_branch": safe_value(source.get("branch"), r"[A-Za-z0-9._/-]{1,128}"),
+        "pages_source_path": safe_value(source.get("path"), r"[A-Za-z0-9._/-]{1,128}"),
+        "pages_html_url": html_url,
+    }
+
+
+def _manifest_match_status(manifest_sha256: str, artifact_manifest_sha256: str) -> str:
+    if not (
+        re.fullmatch(r"[0-9a-f]{64}", str(manifest_sha256 or "").lower())
+        and re.fullmatch(r"[0-9a-f]{64}", str(artifact_manifest_sha256 or "").lower())
+    ):
+        return "not_checked"
+    return (
+        "verified_match"
+        if manifest_sha256.lower() == artifact_manifest_sha256.lower()
+        else "verified_mismatch"
+    )
+
+
 def verify_deployment(
     *,
     api_url: str,
@@ -1028,7 +1121,7 @@ def finalize_binding_public_observation(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Create and verify an identity-bound GitHub Pages deployment")
-    parser.add_argument("--mode", choices=("derive-version", "deploy", "verify", "observe"), required=True)
+    parser.add_argument("--mode", choices=("derive-version", "deploy", "verify", "observe", "preflight"), required=True)
     parser.add_argument("--repository", default=os.getenv("GITHUB_REPOSITORY", ""))
     parser.add_argument("--api-url", default=os.getenv("GITHUB_API_URL", "https://api.github.com"))
     parser.add_argument("--token", default=os.getenv("GITHUB_TOKEN", ""))
@@ -1061,6 +1154,29 @@ def main() -> int:
     parser.add_argument("--gate-http-status", default=os.getenv("PAGES_GATE_HTTP_STATUS", ""))
     parser.add_argument("--gate-attempts", default=os.getenv("PAGES_GATE_ATTEMPTS", "[]"))
     args = parser.parse_args()
+    if args.mode == "preflight":
+        try:
+            pages_site = inspect_pages_site(
+                api_url=args.api_url,
+                repository=args.repository,
+                token=args.token,
+                timeout_seconds=args.timeout_seconds,
+            )
+        except PagesDeploymentError as exc:
+            status_match = re.search(r"pages_http_(\d{3})", exc.error_code)
+            _write_outputs({
+                "preflight_passed": False,
+                "preflight_http_status": status_match.group(1) if status_match else "unknown",
+                "preflight_error_code": exc.error_code,
+                "pages_status": "unknown",
+                "pages_build_type": "unknown",
+                "pages_source_branch": "unknown",
+                "pages_source_path": "unknown",
+                "pages_html_url": "unknown",
+            })
+            return 1
+        _write_outputs(pages_site)
+        return 0
     if args.mode == "observe":
         try:
             binding = finalize_binding_public_observation(
@@ -1154,7 +1270,12 @@ def main() -> int:
                 "artifact_digest": deployment.artifact_digest,
                 "manifest_sha256": deployment.manifest_sha256,
                 "artifact_manifest_sha256": deployment.artifact_manifest_sha256,
-                "artifact_manifest_matches_frozen": deployment.artifact_manifest_sha256 == deployment.manifest_sha256,
+                "artifact_manifest_match_status": _manifest_match_status(
+                    deployment.manifest_sha256, deployment.artifact_manifest_sha256,
+                ),
+                "artifact_manifest_matches_frozen": _manifest_match_status(
+                    deployment.manifest_sha256, deployment.artifact_manifest_sha256,
+                ) == "verified_match",
                 "release_id": deployment.release_id,
                 "snapshot_id": deployment.snapshot_id,
                 "deployment_phase": deployment.phase,
@@ -1175,6 +1296,9 @@ def main() -> int:
                 "artifact_digest": deployment.artifact_digest,
                 "manifest_sha256": deployment.manifest_sha256,
                 "artifact_manifest_sha256": deployment.artifact_manifest_sha256,
+                "artifact_manifest_match_status": _manifest_match_status(
+                    deployment.manifest_sha256, deployment.artifact_manifest_sha256,
+                ),
                 "release_id": deployment.release_id,
                 "snapshot_id": deployment.snapshot_id,
                 "pages_build_version": deployment.build_version,
@@ -1235,6 +1359,12 @@ def main() -> int:
             "artifact_digest": exc.artifact_digest,
             "manifest_sha256": exc.manifest_sha256,
             "artifact_manifest_sha256": exc.artifact_manifest_sha256,
+            "artifact_manifest_match_status": _manifest_match_status(
+                exc.manifest_sha256, exc.artifact_manifest_sha256,
+            ),
+            "artifact_manifest_matches_frozen": _manifest_match_status(
+                exc.manifest_sha256, exc.artifact_manifest_sha256,
+            ) == "verified_match",
             "release_id": exc.release_id,
             "snapshot_id": exc.snapshot_id,
             "deployment_phase": exc.phase or args.phase,
@@ -1259,6 +1389,9 @@ def main() -> int:
                 "artifact_digest": exc.artifact_digest,
                 "manifest_sha256": exc.manifest_sha256 or manifest_sha256,
                 "artifact_manifest_sha256": exc.artifact_manifest_sha256,
+                "artifact_manifest_match_status": _manifest_match_status(
+                    exc.manifest_sha256 or manifest_sha256, exc.artifact_manifest_sha256,
+                ),
                 "release_id": exc.release_id or release_id,
                 "snapshot_id": exc.snapshot_id or snapshot_id,
                 "pages_build_version": exc.build_version,

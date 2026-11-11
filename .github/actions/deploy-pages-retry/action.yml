@@ -75,6 +75,9 @@ outputs:
   artifact_manifest_matches_frozen:
     description: Whether the selected Pages artifact contains the exact frozen manifest.
     value: ${{ steps.select-url.outputs.artifact_manifest_matches_frozen }}
+  artifact_manifest_match_status:
+    description: Whether the artifact manifest match was checked and matched, mismatched, or not checked.
+    value: ${{ steps.select-url.outputs.artifact_manifest_match_status }}
   build_version:
     description: Pages build version sent to the GitHub Pages deployment API.
     value: ${{ steps.select-url.outputs.build_version }}
@@ -136,6 +139,7 @@ runs:
         DEPLOY_MANIFEST_SHA256: ${{ steps.deployment.outputs.manifest_sha256 || '' }}
         DEPLOY_ARTIFACT_MANIFEST_SHA256: ${{ steps.deployment.outputs.artifact_manifest_sha256 || '' }}
         DEPLOY_ARTIFACT_MANIFEST_MATCHES: ${{ steps.deployment.outputs.artifact_manifest_matches_frozen || 'false' }}
+        DEPLOY_ARTIFACT_MANIFEST_MATCH_STATUS: ${{ steps.deployment.outputs.artifact_manifest_match_status || 'not_checked' }}
         DEPLOY_BINDING_PATH: ${{ runner.temp }}/pages-deployment-binding-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.phase }}.json
         DEPLOY_BUILD_VERSION: ${{ steps.deployment.outputs.deployment_build_version || '' }}
         DEPLOY_SOURCE_REVISION: ${{ steps.deployment.outputs.source_revision || github.sha }}
@@ -168,6 +172,7 @@ runs:
         printf 'manifest_sha256=%s\n' "$DEPLOY_MANIFEST_SHA256" >> "$GITHUB_OUTPUT"
         printf 'artifact_manifest_sha256=%s\n' "$DEPLOY_ARTIFACT_MANIFEST_SHA256" >> "$GITHUB_OUTPUT"
         printf 'artifact_manifest_matches_frozen=%s\n' "$DEPLOY_ARTIFACT_MANIFEST_MATCHES" >> "$GITHUB_OUTPUT"
+        printf 'artifact_manifest_match_status=%s\n' "$DEPLOY_ARTIFACT_MANIFEST_MATCH_STATUS" >> "$GITHUB_OUTPUT"
         printf 'binding_path=%s\n' "$DEPLOY_BINDING_PATH" >> "$GITHUB_OUTPUT"
         printf 'build_version=%s\n' "$DEPLOY_BUILD_VERSION" >> "$GITHUB_OUTPUT"
         printf 'source_revision=%s\n' "$DEPLOY_SOURCE_REVISION" >> "$GITHUB_OUTPUT"

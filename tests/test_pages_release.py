@@ -1,7 +1,11 @@
 import hashlib
+import io
 import json
+import tarfile
 from pathlib import Path
+from types import SimpleNamespace
 
+import pytest
 import requests
 
 from src.pages_release import PagesReleaseError, _validate, restore_latest_valid, restore_public_release
@@ -58,6 +62,70 @@ def test_validate_rejects_candidate_when_delivery_gate_reports_stale_research(tm
     assert payload["validation_errors"] == ["production release research is older than 24 hours"]
 
 
+def test_candidate_manifest_reads_small_history_manifest_before_extracting_archive(monkeypatch):
+    from src.pages_release import _candidate_manifest
+
+    manifest = {
+        "status": "ready",
+        "market_snapshot_id": "snapshot-42",
+        "artifact_paths": {"market.json": "data/market.json"},
+    }
+    calls = []
+
+    def run_git(root, *args, **kwargs):
+        calls.append((args, kwargs))
+        return SimpleNamespace(returncode=0, stdout=json.dumps(manifest), stderr="")
+
+    monkeypatch.setattr("src.pages_release._run_git", run_git)
+    candidate, reason = _candidate_manifest(Path("."), "a" * 40, timeout_seconds=3)
+
+    assert candidate == manifest
+    assert reason == "candidate"
+    assert calls == [(("show", f"{'a' * 40}:site/data/release-manifest.json"), {"timeout_seconds": 3})]
+
+
+def test_history_scan_budget_expiry_is_not_reported_as_no_candidate(monkeypatch, tmp_path):
+    now = [100.0]
+    monkeypatch.setattr("src.pages_release.time.monotonic", lambda: now[0])
+    monkeypatch.setattr("src.pages_release._commits", lambda *args, **kwargs: ["old-commit"])
+
+    def slow_preflight(*_args, **_kwargs):
+        now[0] += 0.02
+        return None, "manifest_not_publishable"
+
+    monkeypatch.setattr("src.pages_release._candidate_manifest", slow_preflight)
+
+    with pytest.raises(PagesReleaseError, match="scan_budget_exceeded"):
+        restore_latest_valid(root=tmp_path, timeout_seconds=0.01)
+
+
+def test_restore_archive_checks_all_paths_before_replacing_existing_data(tmp_path, monkeypatch):
+    from src.pages_release import _restore_archive
+
+    data_root = tmp_path / "site" / "data"
+    data_root.mkdir(parents=True)
+    old_file = data_root / "last-good.json"
+    old_file.write_text("keep until archive validation succeeds", encoding="utf-8")
+    outside_body = b"must never be extracted"
+
+    def fake_archive(_command, **kwargs):
+        archive_bytes = io.BytesIO()
+        with tarfile.open(fileobj=archive_bytes, mode="w:") as archive:
+            unsafe = tarfile.TarInfo("site/data/../../outside.txt")
+            unsafe.size = len(outside_body)
+            archive.addfile(unsafe, io.BytesIO(outside_body))
+        kwargs["stdout"].write(archive_bytes.getvalue())
+        return SimpleNamespace(returncode=0, stderr=b"")
+
+    monkeypatch.setattr("src.pages_release.subprocess.run", fake_archive)
+
+    with pytest.raises(PagesReleaseError, match="unsafe member"):
+        _restore_archive(tmp_path, "a" * 40, timeout_seconds=5)
+
+    assert old_file.read_text(encoding="utf-8") == "keep until archive validation succeeds"
+    assert not (tmp_path / "outside.txt").exists()
+
+
 def test_pages_workflow_preserves_previous_release_when_no_candidate_is_valid():
     workflow = (
         Path(__file__).resolve().parents[1] / ".github" / "workflows" / "deploy-pages.yml"
@@ -67,6 +135,11 @@ def test_pages_workflow_preserves_previous_release_when_no_candidate_is_valid():
     assert "no_valid_production_release" in workflow
     assert "steps.release.outputs.preserved_public" in workflow
     assert "python -m src.release_gate --manifest site/data/release-manifest.json" in workflow
+    assert "DATA_RELEASE_BRANCH: data-release" in workflow
+    assert "--timeout-seconds 1200" in workflow
+    assert "ARCHIVE_SOURCE_COMMIT: ${{ steps.release.outputs.archive_source_commit || '' }}" in workflow
+    assert "refs/remotes/origin/${DATA_RELEASE_BRANCH}" in workflow
+    assert "data_release_sha=\"$(git rev-parse \"refs/remotes/origin/${DATA_RELEASE_BRANCH}\")\"" not in workflow
 
 
 def test_restore_public_release_verifies_hashes_before_replacing_data(tmp_path, monkeypatch):
@@ -278,8 +351,8 @@ def test_restore_public_release_keeps_verified_bundle_when_history_target_is_mis
 
 def test_restore_latest_valid_preserves_public_release_when_data_branch_has_no_valid_candidate(tmp_path, monkeypatch):
     monkeypatch.setattr("src.pages_release._commits", lambda *args, **kwargs: ["bad"])
-    monkeypatch.setattr("src.pages_release._restore_archive", lambda *args, **kwargs: True)
-    monkeypatch.setattr("src.pages_release._validate", lambda *args, **kwargs: (False, {"status": "invalid"}))
+    monkeypatch.setattr("src.pages_release._candidate_manifest", lambda *args, **kwargs: (None, "manifest_missing"))
+    monkeypatch.setattr("src.pages_release._restore_matching_data_release", lambda **kwargs: None)
     preserved = {"release_id": "release-last-good", "snapshot_id": "market-last-good", "artifact_count": 7}
     monkeypatch.setattr("src.pages_release.restore_public_release", lambda **kwargs: preserved)
 
@@ -309,6 +382,7 @@ def test_restore_latest_valid_reuses_exact_data_release_before_history_download(
         },
     }
     monkeypatch.setattr("src.pages_release._commits", lambda *args, **kwargs: ["latest"])
+    monkeypatch.setattr("src.pages_release._candidate_manifest", lambda *args, **kwargs: (manifest, "candidate"))
 
     def restore_archive(*args, **kwargs):
         for path, body in artifact_bodies.items():
@@ -353,6 +427,7 @@ def test_restore_latest_valid_restores_immutable_manifest_identity_after_validat
     manifest_path = data_root / "release-manifest.json"
 
     monkeypatch.setattr("src.pages_release._commits", lambda *args, **kwargs: ["good"])
+    monkeypatch.setattr("src.pages_release._candidate_manifest", lambda *args, **kwargs: (immutable, "candidate"))
 
     def restore_archive(*args, **kwargs):
         manifest_path.write_text(json.dumps(immutable), encoding="utf-8")
@@ -404,6 +479,7 @@ def test_restore_latest_valid_restores_alert_bytes_after_builder_validation(tmp_
     (data_root / "release-manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
 
     monkeypatch.setattr("src.pages_release._commits", lambda *args, **kwargs: ["good"])
+    monkeypatch.setattr("src.pages_release._candidate_manifest", lambda *args, **kwargs: (manifest, "candidate"))
 
     def restore_archive(*args, **kwargs):
         return True
@@ -435,8 +511,8 @@ def test_restore_latest_valid_restores_alert_bytes_after_builder_validation(tmp_
 
 def test_restore_latest_valid_remains_fail_closed_when_public_preservation_fails(tmp_path, monkeypatch):
     monkeypatch.setattr("src.pages_release._commits", lambda *args, **kwargs: ["bad"])
-    monkeypatch.setattr("src.pages_release._restore_archive", lambda *args, **kwargs: True)
-    monkeypatch.setattr("src.pages_release._validate", lambda *args, **kwargs: (False, {"status": "invalid"}))
+    monkeypatch.setattr("src.pages_release._candidate_manifest", lambda *args, **kwargs: (None, "manifest_not_publishable"))
+    monkeypatch.setattr("src.pages_release._restore_matching_data_release", lambda **kwargs: None)
     monkeypatch.setattr(
         "src.pages_release.restore_public_release",
         lambda **kwargs: (_ for _ in ()).throw(PagesReleaseError("unexpected")),

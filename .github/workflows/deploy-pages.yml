@@ -9,6 +9,7 @@ on:
       # Pages must redeploy when the last-good data restore logic changes;
       # otherwise a merged pages_release fix cannot reach the static app.
       - src/pages_release.py
+      - src/pages_budget.py
       - src/release_gate.py
       - src/pages_deployment.py
       - .github/actions/deploy-pages-retry/action.yml
@@ -36,6 +37,8 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    env:
+      DATA_RELEASE_BRANCH: data-release
     steps:
       - name: 取得程式碼
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -108,6 +111,7 @@ jobs:
           python -m src.pages_release \
             --branch data-release \
             --max-commits 100 \
+            --timeout-seconds 1200 \
             --require-production-research \
             --preserve-public-url "${{ vars.DASHBOARD_URL || 'https://hanjhou2000716.github.io/prstklab-stk-detector' }}"
       - name: Report preserved Pages release
@@ -150,6 +154,17 @@ jobs:
           else
             python -m src.runtime_audit --require-production
           fi
+      - name: Read Pages site configuration (diagnostic only)
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true'
+        id: pages_site_preflight
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          python -m src.pages_deployment
+          --mode preflight
+          --timeout-seconds 20
+          >> "$GITHUB_OUTPUT"
       - name: 設定 GitHub Pages
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true'
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
@@ -158,10 +173,24 @@ jobs:
       - name: Prepare bounded Pages payload
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true'
         id: stage_pages_payload
+        env:
+          ARCHIVE_SOURCE_COMMIT: ${{ steps.release.outputs.archive_source_commit || '' }}
         run: |
           git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
-          data_release_sha="$(git rev-parse "refs/remotes/origin/${DATA_RELEASE_BRANCH}")"
-          python -m src.pages_budget --stage --source-root site --output-root "$RUNNER_TEMP/prstk-pages" --source-commit "$data_release_sha"
+          # Supplied by this step's env mapping; ShellCheck does not infer GitHub Actions env.
+          # shellcheck disable=SC2153
+          archive_source_commit="$ARCHIVE_SOURCE_COMMIT"
+          if [ -n "$archive_source_commit" ]; then
+            if ! [[ "$archive_source_commit" =~ ^[0-9a-f]{40,64}$ ]]; then
+              echo "selected Pages archive source is not a full commit SHA" >&2
+              exit 1
+            fi
+            git cat-file -e "${archive_source_commit}^{commit}"
+            git merge-base --is-ancestor "$archive_source_commit" "refs/remotes/origin/${DATA_RELEASE_BRANCH}"
+          else
+            echo "No immutable data-release source commit was selected; preserving unpinned details in the bounded Pages bundle."
+          fi
+          python -m src.pages_budget --stage --source-root site --output-root "$RUNNER_TEMP/prstk-pages" --source-commit "$archive_source_commit"
           printf 'PAGES_MANIFEST_PATH=%s\n' "$RUNNER_TEMP/prstk-pages/data/release-manifest.json" >> "$GITHUB_ENV"
       - name: 上傳儀表板
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true' && steps.stage_pages_payload.outcome == 'success'
@@ -233,6 +262,17 @@ jobs:
           PUBLIC_GATE_MANIFEST_URL: ${{ steps.public_release_gate.outputs.manifest_url || '' }}
           PUBLIC_GATE_HTTP_STATUS: ${{ steps.public_release_gate.outputs.http_status || '' }}
           PUBLIC_GATE_ATTEMPTS: ${{ steps.public_release_gate.outputs.attempts || '[]' }}
+          PAGES_PREFLIGHT_OUTCOME: ${{ steps.pages_site_preflight.outcome || 'not_run' }}
+          PAGES_PREFLIGHT_PASSED: ${{ steps.pages_site_preflight.outputs.preflight_passed || 'false' }}
+          PAGES_PREFLIGHT_HTTP_STATUS: ${{ steps.pages_site_preflight.outputs.preflight_http_status || 'unknown' }}
+          PAGES_PREFLIGHT_ERROR_CODE: ${{ steps.pages_site_preflight.outputs.preflight_error_code || '' }}
+          PAGES_STATUS: ${{ steps.pages_site_preflight.outputs.pages_status || 'unknown' }}
+          PAGES_BUILD_TYPE: ${{ steps.pages_site_preflight.outputs.pages_build_type || 'unknown' }}
+          PAGES_SOURCE_BRANCH: ${{ steps.pages_site_preflight.outputs.pages_source_branch || 'unknown' }}
+          PAGES_SOURCE_PATH: ${{ steps.pages_site_preflight.outputs.pages_source_path || 'unknown' }}
+          PAGES_HTML_URL: ${{ steps.pages_site_preflight.outputs.pages_html_url || 'unknown' }}
+          ARTIFACT_MANIFEST_MATCH_STATUS: ${{ steps.deployment.outputs.artifact_manifest_match_status || 'not_checked' }}
+          ARCHIVE_SOURCE_COMMIT: ${{ steps.release.outputs.archive_source_commit || '' }}
           DEPLOYMENT_ERROR: ${{ steps.deployment_identity.outputs.error || steps.deployment.outputs.error || '' }}
           DEPLOYMENT_ERROR_CODE: ${{ steps.deployment.outputs.error_code || steps.deployment_identity.outputs.error_code || '' }}
           GITHUB_RUN_ID: ${{ github.run_id }}
@@ -240,8 +280,12 @@ jobs:
           {
             echo "## Pages release verification"
             echo "- workflow_run_id: ${GITHUB_RUN_ID}"
+            echo "- pages_site_preflight: ${PAGES_PREFLIGHT_OUTCOME} (passed=${PAGES_PREFLIGHT_PASSED}, http=${PAGES_PREFLIGHT_HTTP_STATUS}, error=${PAGES_PREFLIGHT_ERROR_CODE:-none})"
+            echo "- pages_site: status=${PAGES_STATUS}, build_type=${PAGES_BUILD_TYPE}, source=${PAGES_SOURCE_BRANCH}:${PAGES_SOURCE_PATH}, url=${PAGES_HTML_URL}"
+            echo "- archive_source_commit: ${ARCHIVE_SOURCE_COMMIT:-unpinned_public_fallback}"
             echo "- deployment_verified: ${DEPLOYMENT_VERIFIED}"
             echo "- pages_deployment_id: ${DEPLOYMENT_ID}"
+            echo "- artifact_manifest_match_status: ${ARTIFACT_MANIFEST_MATCH_STATUS}"
             echo "- gate_outcome: ${PUBLIC_GATE_OUTCOME}"
             echo "- gate_status: ${PUBLIC_GATE_STATUS}"
             echo "- gate_allowed: ${PUBLIC_GATE_ALLOWED}"
@@ -279,6 +323,17 @@ jobs:
           GATE_MANIFEST_URL: ${{ steps.public_release_gate.outputs.manifest_url || '' }}
           GATE_HTTP_STATUS: ${{ steps.public_release_gate.outputs.http_status || '' }}
           GATE_ATTEMPTS: ${{ steps.public_release_gate.outputs.attempts || '[]' }}
+          PAGES_PREFLIGHT_OUTCOME: ${{ steps.pages_site_preflight.outcome || 'not_run' }}
+          PAGES_PREFLIGHT_PASSED: ${{ steps.pages_site_preflight.outputs.preflight_passed || 'false' }}
+          PAGES_PREFLIGHT_HTTP_STATUS: ${{ steps.pages_site_preflight.outputs.preflight_http_status || 'unknown' }}
+          PAGES_PREFLIGHT_ERROR_CODE: ${{ steps.pages_site_preflight.outputs.preflight_error_code || '' }}
+          PAGES_STATUS: ${{ steps.pages_site_preflight.outputs.pages_status || 'unknown' }}
+          PAGES_BUILD_TYPE: ${{ steps.pages_site_preflight.outputs.pages_build_type || 'unknown' }}
+          PAGES_SOURCE_BRANCH: ${{ steps.pages_site_preflight.outputs.pages_source_branch || 'unknown' }}
+          PAGES_SOURCE_PATH: ${{ steps.pages_site_preflight.outputs.pages_source_path || 'unknown' }}
+          PAGES_HTML_URL: ${{ steps.pages_site_preflight.outputs.pages_html_url || 'unknown' }}
+          ARTIFACT_MANIFEST_MATCH_STATUS: ${{ steps.deployment.outputs.artifact_manifest_match_status || 'not_checked' }}
+          ARCHIVE_SOURCE_COMMIT: ${{ steps.release.outputs.archive_source_commit || '' }}
         run: |
           python - <<'PY'
           import json
@@ -290,6 +345,17 @@ jobs:
               "deployment_id": os.environ.get("DEPLOYMENT_ID", ""),
               "deployment_verified": os.environ.get("DEPLOYMENT_VERIFIED") == "true",
               "deployment_error": os.environ.get("DEPLOYMENT_ERROR", ""),
+              "pages_site_preflight_outcome": os.environ.get("PAGES_PREFLIGHT_OUTCOME", "not_run"),
+              "pages_site_preflight_passed": os.environ.get("PAGES_PREFLIGHT_PASSED") == "true",
+              "pages_site_preflight_http_status": os.environ.get("PAGES_PREFLIGHT_HTTP_STATUS", "unknown"),
+              "pages_site_preflight_error_code": os.environ.get("PAGES_PREFLIGHT_ERROR_CODE", ""),
+              "pages_status": os.environ.get("PAGES_STATUS", "unknown"),
+              "pages_build_type": os.environ.get("PAGES_BUILD_TYPE", "unknown"),
+              "pages_source_branch": os.environ.get("PAGES_SOURCE_BRANCH", "unknown"),
+              "pages_source_path": os.environ.get("PAGES_SOURCE_PATH", "unknown"),
+              "pages_html_url": os.environ.get("PAGES_HTML_URL", "unknown"),
+              "artifact_manifest_match_status": os.environ.get("ARTIFACT_MANIFEST_MATCH_STATUS", "not_checked"),
+              "archive_source_commit": os.environ.get("ARCHIVE_SOURCE_COMMIT", ""),
               "outcome": os.environ.get("GATE_OUTCOME", "not_run"),
               "allowed": os.environ.get("GATE_ALLOWED") == "true",
               "gate_status": os.environ.get("GATE_STATUS", "not_run"),
