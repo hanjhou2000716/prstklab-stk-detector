@@ -120,6 +120,79 @@ def test_pages_staging_pins_cold_history_and_keeps_source_immutable(tmp_path: Pa
     assert staged_manifest["artifact_hashes"]["bootstrap.json"] == hashlib.sha256((output / "data" / "bootstrap.json").read_bytes()).hexdigest()
 
 
+def test_pages_staging_preserves_existing_fixed_history_links(tmp_path: Path):
+    source = tmp_path / "site"
+    alerts = source / "data" / "alerts"
+    alerts.mkdir(parents=True)
+    bodies = {
+        "current": b'{"notification_id":"current"}',
+        "pending": b'{"notification_id":"pending"}',
+    }
+    rows = [
+        {
+            "notification_id": "current",
+            "release_id": "release-current",
+            "path": "alerts/current.json",
+            "sha256": hashlib.sha256(bodies["current"]).hexdigest(),
+            "source_commit": "a" * 40,
+        },
+        {
+            "notification_id": "cold",
+            "release_id": "release-old",
+            "path": "alerts/cold.json",
+            "sha256": "b" * 64,
+            "source_commit": "c" * 40,
+        },
+        {
+            "notification_id": "pending",
+            "release_id": "release-pending",
+            "path": "alerts/pending.json",
+            "sha256": hashlib.sha256(bodies["pending"]).hexdigest(),
+            "source_commit": "d" * 40,
+            "pending_receipt": True,
+        },
+    ]
+    for notification_id, body in bodies.items():
+        (alerts / f"{notification_id}.json").write_bytes(body)
+    index = {"coverage": "complete", "alerts": rows}
+    index_bytes = json.dumps(index, ensure_ascii=False, indent=2).encode()
+    (source / "data" / "alert-index.json").write_bytes(index_bytes)
+    manifest = {
+        "release_id": "release-current",
+        "artifact_paths": {
+            "alert-index.json": "data/alert-index.json",
+            "alerts/current.json": "data/alerts/current.json",
+            "alerts/cold.json": "data/alerts/cold.json",
+            "alerts/pending.json": "data/alerts/pending.json",
+        },
+        "artifact_hashes": {
+            "alert-index.json": hashlib.sha256(index_bytes).hexdigest(),
+            "alerts/current.json": rows[0]["sha256"],
+            "alerts/cold.json": rows[1]["sha256"],
+            "alerts/pending.json": rows[2]["sha256"],
+        },
+        "alert_index": {"coverage": "complete", "alerts": rows},
+    }
+    (source / "data" / "release-manifest.json").write_text(
+        json.dumps(manifest), encoding="utf-8"
+    )
+    output = tmp_path / "pages"
+
+    _total, _files, archived = stage_pages_payload(
+        source, output, source_commit="e" * 40,
+    )
+
+    staged = json.loads((output / "data" / "alert-index.json").read_text(encoding="utf-8"))
+    by_id = {row["notification_id"]: row for row in staged["alerts"]}
+    assert archived == 1
+    assert by_id["current"]["source_commit"] == "a" * 40
+    assert by_id["cold"]["source_commit"] == "c" * 40
+    assert by_id["pending"]["source_commit"] == "d" * 40
+    assert (output / "data" / "alerts" / "current.json").is_file()
+    assert not (output / "data" / "alerts" / "cold.json").exists()
+    assert (output / "data" / "alerts" / "pending.json").is_file()
+
+
 def test_pages_staging_rejects_index_hash_mismatch_without_touching_source(tmp_path: Path):
     source = tmp_path / "site"
     alerts = source / "data" / "alerts"

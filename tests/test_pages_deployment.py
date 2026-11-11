@@ -814,6 +814,8 @@ def test_deploy_cli_exports_only_the_trusted_identity_needed_for_recovery(tmp_pa
             status_url=STATUS_URL,
             page_url="https://dashboard.example.test",
             artifact_id="202",
+            manifest_sha256=MANIFEST_SHA256,
+            artifact_manifest_sha256=MANIFEST_SHA256,
             recoverable=True,
         )
 
@@ -830,6 +832,7 @@ def test_deploy_cli_exports_only_the_trusted_identity_needed_for_recovery(tmp_pa
     assert f"deployment_id={DEPLOYMENT_ID}" in result
     assert f"deployment_status_url={STATUS_URL}" in result
     assert "artifact_id=202" in result
+    assert "artifact_manifest_match_status=verified_match" in result
 
 
 def test_deploy_cli_writes_versioned_exact_artifact_binding(tmp_path, monkeypatch):
@@ -1053,6 +1056,76 @@ def test_pages_http_error_keeps_safe_diagnostic_without_secrets(monkeypatch):
     assert "[url]" in str(error)
 
 
+def test_pages_site_preflight_reads_configuration_without_mutation():
+    calls = []
+
+    def request_json(url, **kwargs):
+        calls.append((url, kwargs))
+        return {
+            "status": "built",
+            "build_type": "workflow",
+            "html_url": "https://owner.github.io/project/",
+            "source": {"branch": "main", "path": "/"},
+        }
+
+    result = pages_deployment.inspect_pages_site(
+        api_url="https://api.github.test",
+        repository="owner/repo",
+        token="read-write-token",
+        request_json=request_json,
+    )
+
+    assert calls == [(
+        "https://api.github.test/repos/owner/repo/pages",
+        {"token": "read-write-token", "timeout": 15.0},
+    )]
+    assert result == {
+        "preflight_passed": True,
+        "preflight_http_status": "200",
+        "pages_status": "built",
+        "pages_build_type": "workflow",
+        "pages_source_branch": "main",
+        "pages_source_path": "/",
+        "pages_html_url": "https://owner.github.io/project/",
+    }
+
+
+def test_pages_site_preflight_cli_records_not_found_without_guessing_cause(tmp_path, monkeypatch):
+    output = tmp_path / "github-output"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+    monkeypatch.setenv("GITHUB_TOKEN", "token")
+    monkeypatch.setattr(
+        pages_deployment,
+        "inspect_pages_site",
+        lambda **_kwargs: (_ for _ in ()).throw(PagesDeploymentError(
+            "GitHub Pages request returned HTTP 404",
+            error_code="pages_http_404",
+            request_outcome="rejected",
+        )),
+    )
+    monkeypatch.setattr("sys.argv", ["pages_deployment", "--mode", "preflight"])
+
+    assert pages_deployment.main() == 1
+    text = output.read_text(encoding="utf-8")
+    assert "preflight_passed=false" in text
+    assert "preflight_http_status=404" in text
+    assert "preflight_error_code=pages_http_404" in text
+    assert "pages_build_type=unknown" in text
+
+
+@pytest.mark.parametrize(
+    ("frozen", "downloaded", "expected"),
+    [
+        (MANIFEST_SHA256, MANIFEST_SHA256, "verified_match"),
+        (MANIFEST_SHA256, "0" * 64, "verified_mismatch"),
+        ("", MANIFEST_SHA256, "not_checked"),
+    ],
+)
+def test_artifact_manifest_match_status_is_tristate(frozen, downloaded, expected):
+    assert pages_deployment._manifest_match_status(frozen, downloaded) == expected
+
+
 def test_definitive_http_400_create_is_classified_as_rejected_without_retry():
     creates = []
 
@@ -1087,4 +1160,9 @@ def test_definitive_http_400_create_is_classified_as_rejected_without_retry():
 
     assert captured.value.error_code == "pages_http_400"
     assert captured.value.request_outcome == "rejected"
+    assert captured.value.manifest_sha256 == MANIFEST_SHA256
+    assert captured.value.artifact_manifest_sha256 == MANIFEST_SHA256
+    assert pages_deployment._manifest_match_status(
+        captured.value.manifest_sha256, captured.value.artifact_manifest_sha256,
+    ) == "verified_match"
     assert len(creates) == 1

@@ -14,16 +14,17 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tarfile
 import tempfile
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 import requests
@@ -37,11 +38,26 @@ class PagesReleaseError(RuntimeError):
     """Raised when the immutable release history cannot be inspected safely."""
 
 
-def _run_git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
+DEFAULT_SCAN_TIMEOUT_SECONDS = 20 * 60
+
+
+def _remaining(deadline: float) -> float:
+    seconds = deadline - time.monotonic()
+    if seconds <= 0:
+        raise PagesReleaseError("pages_release_scan_budget_exceeded")
+    return seconds
+
+
+def _run_git(
+    root: Path, *args: str, timeout_seconds: float | None = None
+) -> subprocess.CompletedProcess[str]:
     try:
         return subprocess.run(
-            ["git", *args], cwd=root, check=False, capture_output=True, text=True
+            ["git", *args], cwd=root, check=False, capture_output=True,
+            text=True, timeout=timeout_seconds,
         )
+    except subprocess.TimeoutExpired as exc:
+        raise PagesReleaseError("pages_release_git_command_timeout") from exc
     except OSError as exc:  # pragma: no cover - exercised by deployment runtime
         raise PagesReleaseError(f"git unavailable: {type(exc).__name__}") from exc
 
@@ -56,30 +72,73 @@ def _clear_data(root: Path) -> None:
             child.unlink()
 
 
-def _restore_archive(root: Path, commit: str) -> bool:
-    """Restore only ``site/data`` from *commit* without changing the index."""
+def _restore_archive(
+    root: Path, commit: str, *, timeout_seconds: float | None = None
+) -> bool:
+    """Restore only ``site/data`` from *commit* without buffering the archive."""
+    deadline = (
+        time.monotonic() + timeout_seconds if timeout_seconds is not None else None
+    )
+
+    def remaining() -> float | None:
+        if deadline is None:
+            return None
+        return _remaining(deadline)
+
     try:
-        result = subprocess.run(
-            ["git", "archive", commit, "site/data"],
-            cwd=root,
-            check=False,
-            capture_output=True,
-        )
-    except OSError as exc:  # pragma: no cover - deployment runtime
-        raise PagesReleaseError(f"git unavailable: {type(exc).__name__}") from exc
-    if result.returncode:
-        return False
-    _clear_data(root)
-    archive_bytes = bytes(result.stdout or b"")
-    try:
-        with tarfile.open(fileobj=io.BytesIO(archive_bytes), mode="r:") as archive:
-            root_resolved = root.resolve()
-            members = archive.getmembers()
-            for member in members:
-                target = (root / member.name).resolve()
-                if not target.is_relative_to(root_resolved):
-                    raise PagesReleaseError("data-release archive escapes checkout")
-            archive.extractall(root)
+        with tempfile.TemporaryFile() as archive_file:
+            result = subprocess.run(
+                ["git", "archive", commit, "site/data"],
+                cwd=root,
+                check=False,
+                stdout=archive_file,
+                stderr=subprocess.PIPE,
+                timeout=remaining(),
+            )
+            if result.returncode:
+                detail = (result.stderr or b"").decode("utf-8", errors="replace")
+                raise PagesReleaseError(
+                    "cannot create data-release archive: "
+                    + re.sub(r"\s+", " ", detail).strip()[:180]
+                )
+            archive_file.seek(0)
+            archive = tarfile.open(fileobj=archive_file, mode="r:")
+            with archive:
+                root_resolved = root.resolve()
+                members = archive.getmembers()
+                manifest_found = False
+                for member in members:
+                    remaining()
+                    member_path = PurePosixPath(member.name)
+                    if (
+                        member_path.is_absolute()
+                        or ".." in member_path.parts
+                        or "\\" in member.name
+                        or member_path.parts[:2] != ("site", "data")
+                        or not (member.isfile() or member.isdir())
+                    ):
+                        raise PagesReleaseError(
+                            "data-release archive contains an unsafe member"
+                        )
+                    target = (root / member.name).resolve()
+                    if not target.is_relative_to(root_resolved):
+                        raise PagesReleaseError(
+                            "data-release archive escapes checkout"
+                        )
+                    if member.name == "site/data/release-manifest.json" and member.isfile():
+                        manifest_found = True
+                if not manifest_found:
+                    return False
+                data_root = root / "site" / "data"
+                if data_root.is_symlink() or not data_root.resolve().is_relative_to(root_resolved):
+                    raise PagesReleaseError("Pages data directory escapes checkout")
+                _clear_data(root)
+                for member in members:
+                    remaining()
+                    archive.extract(member, root)
+                remaining()
+    except subprocess.TimeoutExpired as exc:
+        raise PagesReleaseError("pages_release_archive_timeout") from exc
     except (OSError, tarfile.TarError) as exc:
         raise PagesReleaseError(
             f"cannot restore data-release archive: {type(exc).__name__}"
@@ -87,18 +146,67 @@ def _restore_archive(root: Path, commit: str) -> bool:
     return True
 
 
-def _commits(root: Path, branch: str, max_commits: int) -> list[str]:
-    result = _run_git(root, "rev-list", f"--max-count={max_commits}", f"origin/{branch}")
+def _commits(
+    root: Path, branch: str, max_commits: int, *, timeout_seconds: float | None = None
+) -> list[str]:
+    if (
+        not re.fullmatch(r"[A-Za-z0-9._/-]{1,128}", branch)
+        or branch.startswith("-")
+        or ".." in branch
+        or branch.endswith("/")
+    ):
+        raise PagesReleaseError("data_release_branch_invalid")
+    result = _run_git(
+        root, "rev-list", f"--max-count={max_commits}", f"origin/{branch}",
+        timeout_seconds=timeout_seconds,
+    )
     if result.returncode:
         raise PagesReleaseError(result.stderr.strip() or f"cannot inspect origin/{branch}")
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
 
-def _validate(root: Path, *, require_production_research: bool) -> tuple[bool, dict[str, Any]]:
+def _candidate_manifest(
+    root: Path, commit: str, *, timeout_seconds: float
+) -> tuple[dict[str, Any] | None, str]:
+    """Read the small immutable manifest before extracting a candidate tree."""
+    result = _run_git(
+        root,
+        "show",
+        f"{commit}:site/data/release-manifest.json",
+        timeout_seconds=timeout_seconds,
+    )
+    if result.returncode:
+        detail = (result.stderr or "").casefold()
+        if "does not exist in" in detail or "exists on disk, but not in" in detail:
+            return None, "manifest_missing"
+        raise PagesReleaseError("cannot read immutable release manifest from history")
+    try:
+        value = json.loads(result.stdout)
+    except (TypeError, json.JSONDecodeError):
+        return None, "manifest_invalid_json"
+    if not isinstance(value, dict):
+        return None, "manifest_invalid_shape"
+    if value.get("status") not in PUBLISHABLE_RELEASE_STATUSES:
+        return None, "manifest_not_publishable"
+    if not str(value.get("market_snapshot_id") or "").strip():
+        return None, "manifest_snapshot_identity_missing"
+    return value, "candidate"
+
+
+def _validate(
+    root: Path, *, require_production_research: bool, timeout_seconds: float | None = None
+) -> tuple[bool, dict[str, Any]]:
+    validation_started = time.monotonic()
     command = [sys.executable, "-m", "src.release_manifest"]
     if require_production_research:
         command.append("--require-production-research")
-    result = subprocess.run(command, cwd=root, check=False, capture_output=True, text=True)
+    try:
+        result = subprocess.run(
+            command, cwd=root, check=False, capture_output=True, text=True,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise PagesReleaseError("pages_release_manifest_validation_timeout") from exc
     payload: dict[str, Any] = {}
     for line in reversed((result.stdout or "").splitlines()):
         try:
@@ -131,13 +239,22 @@ def _validate(root: Path, *, require_production_research: bool) -> tuple[bool, d
             "site/data/release-manifest.json",
             "--require-production-research",
         ]
-        gate = subprocess.run(
-            gate_command,
-            cwd=root,
-            check=False,
-            capture_output=True,
-            text=True,
-        )
+        gate_timeout = timeout_seconds
+        if gate_timeout is not None:
+            gate_timeout -= time.monotonic() - validation_started
+            if gate_timeout <= 0:
+                raise PagesReleaseError("pages_release_manifest_validation_timeout")
+        try:
+            gate = subprocess.run(
+                gate_command,
+                cwd=root,
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=gate_timeout,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise PagesReleaseError("pages_release_release_gate_timeout") from exc
         gate_lines = [line.strip() for line in (gate.stdout or "").splitlines() if line.strip()]
         gate_allowed = next(
             (line.split("=", 1)[1].strip().lower() for line in gate_lines if line.startswith("allowed=")),
@@ -187,7 +304,8 @@ def _fetch_public_manifest(*, public_url: str, timeout: float = 15.0) -> dict[st
 
 
 def _restore_matching_data_release(
-    *, root: Path, commit: str, public_url: str, timeout: float = 15.0
+    *, root: Path, commit: str, public_url: str, timeout: float = 15.0,
+    deadline_monotonic: float | None = None,
 ) -> dict[str, Any] | None:
     """Reuse an exact data-release copy instead of downloading its full history.
 
@@ -197,8 +315,12 @@ def _restore_matching_data_release(
     This preserves historical alert files without issuing thousands of Pages
     requests, while a mismatch still falls back to strict remote restoration.
     """
-    if not _restore_archive(root, commit):
+    if deadline_monotonic is not None:
+        timeout = min(timeout, _remaining(deadline_monotonic))
+    if not _restore_archive(root, commit, timeout_seconds=timeout):
         return None
+    if deadline_monotonic is not None:
+        _remaining(deadline_monotonic)
     manifest_path = root / "site" / "data" / "release-manifest.json"
     try:
         local_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -210,21 +332,27 @@ def _restore_matching_data_release(
         public_manifest = _fetch_public_manifest(public_url=public_url, timeout=timeout)
     except PagesReleaseError:
         return None
+    if deadline_monotonic is not None:
+        _remaining(deadline_monotonic)
     for key in ("release_id", "market_snapshot_id", "artifact_paths", "artifact_hashes"):
         if local_manifest.get(key) != public_manifest.get(key):
             return None
     errors = verify_release_files(local_manifest, root=root / "site")
     if errors:
         return None
+    if deadline_monotonic is not None:
+        _remaining(deadline_monotonic)
     return {
         "release_id": str(local_manifest.get("release_id") or ""),
         "snapshot_id": str(local_manifest.get("market_snapshot_id") or ""),
         "artifact_count": len(local_manifest.get("artifact_paths") or {}),
+        "archive_source_commit": commit,
     }
 
 
 def restore_public_release(
-    *, root: Path | str = Path("."), public_url: str, timeout: float = 15.0
+    *, root: Path | str = Path("."), public_url: str, timeout: float = 15.0,
+    deadline_monotonic: float | None = None,
 ) -> dict[str, Any]:
     """Restore the last-good immutable Pages bundle without trusting the checkout.
 
@@ -236,13 +364,18 @@ def restore_public_release(
     """
     root = Path(root).resolve()
     base = public_url.rstrip("/")
+    deadline = deadline_monotonic or (time.monotonic() + timeout)
+
+    def request_timeout() -> float:
+        return min(timeout, _remaining(deadline))
+
     headers = {
         "Accept": "application/json",
         "Cache-Control": "no-cache, no-store",
         "Pragma": "no-cache",
         "User-Agent": "PRStK-pages-release",
     }
-    manifest = _fetch_public_manifest(public_url=public_url, timeout=timeout)
+    manifest = _fetch_public_manifest(public_url=public_url, timeout=request_timeout())
     paths = manifest.get("artifact_paths")
     hashes = manifest.get("artifact_hashes")
     if not isinstance(paths, dict) or not isinstance(hashes, dict):
@@ -266,7 +399,7 @@ def restore_public_release(
                 raise PagesReleaseError(f"public artifact path escapes data root: {name}")
             url = f"{base}/{raw_path.lstrip('/')}"
             try:
-                artifact_response = requests.get(url, timeout=timeout, headers=headers)
+                artifact_response = requests.get(url, timeout=request_timeout(), headers=headers)
                 artifact_response.raise_for_status()
                 body = bytes(artifact_response.content)
             except (requests.RequestException, TypeError, ValueError) as exc:
@@ -334,7 +467,7 @@ def restore_public_release(
                 raw_path, expected_hash = spec
                 url = f"{base}/data/{raw_path.lstrip('/')}"
                 try:
-                    alert_response = requests.get(url, timeout=timeout, headers=headers)
+                    alert_response = requests.get(url, timeout=request_timeout(), headers=headers)
                     alert_response.raise_for_status()
                     body = bytes(alert_response.content)
                 except (requests.RequestException, TypeError, ValueError) as exc:
@@ -357,6 +490,7 @@ def restore_public_release(
                     try:
                         raw_path, body = future.result()
                     except PagesReleaseError:
+                        _remaining(deadline)
                         # The published index can outlive an individual
                         # immutable alert on a partially propagated Pages
                         # bundle.  Core release artifacts and the index are
@@ -370,6 +504,7 @@ def restore_public_release(
                     target.parent.mkdir(parents=True, exist_ok=True)
                     target.write_bytes(body)
                     historical_alert_paths.append((Path("data") / raw_path).as_posix())
+        _remaining(deadline)
         data_root = root / "site" / "data"
         data_root.mkdir(parents=True, exist_ok=True)
         for child in data_root.iterdir():
@@ -383,6 +518,7 @@ def restore_public_release(
                 shutil.copytree(child, destination)
             else:
                 shutil.copy2(child, destination)
+        _remaining(deadline)
     finally:
         if staging.exists():
             shutil.rmtree(staging)
@@ -405,7 +541,11 @@ def restore_public_release(
             raise PagesReleaseError("public artifact missing during validation restore")
         restored_bytes[raw_path] = target.read_bytes()
 
-    ready, validated = _validate(root, require_production_research=False)
+    ready, validated = _validate(
+        root,
+        require_production_research=False,
+        timeout_seconds=_remaining(deadline),
+    )
 
     _clear_data(root)
     for raw_path, body in restored_bytes.items():
@@ -431,6 +571,7 @@ def restore_public_release(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
+    _remaining(deadline)
     return {
         "release_id": str(manifest.get("release_id") or ""),
         "snapshot_id": str(manifest.get("market_snapshot_id") or ""),
@@ -446,6 +587,7 @@ def restore_latest_valid(
     max_commits: int = 100,
     require_production_research: bool = True,
     preserve_public_url: str | None = None,
+    timeout_seconds: float = DEFAULT_SCAN_TIMEOUT_SECONDS,
 ) -> dict[str, Any]:
     """Select the newest production-valid immutable release.
 
@@ -457,10 +599,26 @@ def restore_latest_valid(
     branch = branch.strip() or "data-release"
     if max_commits <= 0:
         raise PagesReleaseError("max_commits must be positive")
-    commits = _commits(root, branch, max_commits)
+    if not isinstance(timeout_seconds, (int, float)) or timeout_seconds <= 0:
+        raise PagesReleaseError("pages_release_timeout_invalid")
+    started = time.monotonic()
+    deadline = started + float(timeout_seconds)
+    commits = _commits(
+        root, branch, max_commits, timeout_seconds=_remaining(deadline)
+    )
+    _remaining(deadline)
     rejected: list[dict[str, Any]] = []
     for commit in commits:
-        if not _restore_archive(root, commit):
+        candidate_manifest, preflight = _candidate_manifest(
+            root, commit, timeout_seconds=_remaining(deadline)
+        )
+        _remaining(deadline)
+        if candidate_manifest is None:
+            rejected.append({"commit": commit, "reason": preflight})
+            continue
+        if not _restore_archive(
+            root, commit, timeout_seconds=_remaining(deadline)
+        ):
             rejected.append({"commit": commit, "reason": "missing_site_data"})
             continue
         # Keep the immutable manifest that was committed with the selected
@@ -478,6 +636,8 @@ def restore_latest_valid(
         except (OSError, UnicodeError, json.JSONDecodeError, TypeError):
             immutable_manifest_bytes = None
             immutable_manifest = None
+        if immutable_manifest != candidate_manifest:
+            raise PagesReleaseError("restored release manifest differs from its selected commit")
         # ``_validate`` runs the manifest builder.  The builder normalizes the
         # restored tree and rewrites derived alert artifacts, while the
         # immutable manifest still contains the hashes of the bytes committed
@@ -502,7 +662,11 @@ def restore_latest_valid(
             })
             continue
 
-        ready, manifest = _validate(root, require_production_research=require_production_research)
+        ready, manifest = _validate(
+            root,
+            require_production_research=require_production_research,
+            timeout_seconds=_remaining(deadline),
+        )
         if ready:
             try:
                 _clear_data(root)
@@ -511,6 +675,7 @@ def restore_latest_valid(
                     root / "site" / "data",
                     dirs_exist_ok=True,
                 )
+                _remaining(deadline)
             except OSError as exc:
                 ready = False
                 manifest = {
@@ -555,12 +720,16 @@ def restore_latest_valid(
                         "validation_errors": restored_errors[:5],
                     })
                     continue
+            _remaining(deadline)
             return {
                 "publish": True,
                 "selected_commit": commit,
+                "archive_source_commit": commit,
                 "release_id": str(selected_manifest.get("release_id") or ""),
                 "snapshot_id": str(selected_manifest.get("market_snapshot_id") or ""),
                 "rejected_count": len(rejected),
+                "history_scanned_count": len(rejected) + 1,
+                "elapsed_seconds": round(time.monotonic() - started, 3),
             }
         rejected.append({
             "commit": commit,
@@ -574,20 +743,32 @@ def restore_latest_valid(
             root=root,
             commit=commits[0],
             public_url=preserve_public_url,
+            timeout=min(15.0, _remaining(deadline)),
+            deadline_monotonic=deadline,
         )
         if local_preserved is not None:
+            _remaining(deadline)
             return {
                 "publish": True,
                 "preserved_public": True,
                 "reason": "preserved_matching_data_release",
                 **local_preserved,
                 "rejected_count": len(rejected),
+                "history_scanned_count": len(rejected),
+                "elapsed_seconds": round(time.monotonic() - started, 3),
             }
 
     if preserve_public_url:
         try:
-            preserved = restore_public_release(root=root, public_url=preserve_public_url)
+            preserved = restore_public_release(
+                root=root,
+                public_url=preserve_public_url,
+                timeout=min(15.0, _remaining(deadline)),
+                deadline_monotonic=deadline,
+            )
         except PagesReleaseError as exc:
+            if str(exc) == "pages_release_scan_budget_exceeded":
+                raise
             _clear_data(root)
             return {
                 "publish": False,
@@ -595,6 +776,8 @@ def restore_latest_valid(
                 "preserve_error": str(exc),
                 "rejected_count": len(rejected),
                 "latest_rejections": rejected[:5],
+                "history_scanned_count": len(rejected),
+                "elapsed_seconds": round(time.monotonic() - started, 3),
             }
         return {
             "publish": True,
@@ -602,7 +785,10 @@ def restore_latest_valid(
             "reason": "preserved_last_good_public_release",
             "release_id": preserved["release_id"],
             "snapshot_id": preserved["snapshot_id"],
+            "archive_source_commit": "",
             "rejected_count": len(rejected),
+            "history_scanned_count": len(rejected),
+            "elapsed_seconds": round(time.monotonic() - started, 3),
         }
 
     _clear_data(root)
@@ -610,6 +796,8 @@ def restore_latest_valid(
         "publish": False,
         "reason": "no_valid_production_release",
         "rejected_count": len(rejected),
+        "history_scanned_count": len(rejected),
+        "elapsed_seconds": round(time.monotonic() - started, 3),
         "latest_rejections": rejected[:5],
     }
 
@@ -632,6 +820,11 @@ def main() -> int:
     parser.add_argument("--root", type=Path, default=Path("."))
     parser.add_argument("--branch", default=os.getenv("DATA_RELEASE_BRANCH", "data-release"))
     parser.add_argument("--max-commits", type=int, default=100)
+    parser.add_argument(
+        "--timeout-seconds",
+        type=float,
+        default=float(os.getenv("PAGES_RELEASE_TIMEOUT_SECONDS", DEFAULT_SCAN_TIMEOUT_SECONDS)),
+    )
     parser.add_argument("--require-production-research", action="store_true")
     parser.add_argument(
         "--preserve-public-url",
@@ -646,6 +839,7 @@ def main() -> int:
             max_commits=args.max_commits,
             require_production_research=args.require_production_research,
             preserve_public_url=args.preserve_public_url,
+            timeout_seconds=args.timeout_seconds,
         )
     except PagesReleaseError as exc:
         print(json.dumps({"publish": False, "error": str(exc)}, ensure_ascii=False))

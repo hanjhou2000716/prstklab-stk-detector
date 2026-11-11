@@ -10,7 +10,12 @@ import shutil
 import sys
 from pathlib import Path
 
-from src.alert_archive import validate_alert_path, validate_alert_sha256, validate_source_commit
+from src.alert_archive import (
+    AlertArchiveError,
+    validate_alert_path,
+    validate_alert_sha256,
+    validate_source_commit,
+)
 
 DEFAULT_MAX_BYTES = 512 * 1024 * 1024
 MAX_FILES = 50_000
@@ -85,7 +90,7 @@ def stage_pages_payload(
     source_root: Path,
     output_root: Path,
     *,
-    source_commit: str,
+    source_commit: str = "",
     retain_notification_ids: set[str] | None = None,
     max_bytes: int = DEFAULT_MAX_BYTES,
 ) -> tuple[int, int, int]:
@@ -102,7 +107,7 @@ def stage_pages_payload(
         raise PagesBudgetError("Pages staging output must be separate from source")
     if output.exists():
         raise PagesBudgetError("Pages staging output already exists")
-    revision = validate_source_commit(source_commit)
+    revision = validate_source_commit(source_commit) if source_commit else ""
     retained = {str(item).strip() for item in (retain_notification_ids or set()) if str(item).strip()}
     manifest_path = source / MANIFEST_NAME
     index_path = source / ALERT_INDEX_NAME
@@ -128,31 +133,61 @@ def stage_pages_payload(
             row_release = str(row.get("release_id") or "").strip()
             if not notification_id or not row_release:
                 raise PagesBudgetError("Pages alert index identity is incomplete")
-            local_path = source / "data" / path
-            if not local_path.is_file() or local_path.is_symlink():
-                raise PagesBudgetError("indexed alert source is missing or unsafe")
             relative_path = (Path("data") / path).as_posix()
             is_current = row_release == release_id
             is_retained = notification_id in retained or row.get("pending_receipt") is True
+            existing_source_commit = str(row.get("source_commit") or "").strip()
+            if existing_source_commit:
+                try:
+                    existing_source_commit = validate_source_commit(existing_source_commit)
+                except AlertArchiveError as exc:
+                    raise PagesBudgetError("indexed alert source commit is invalid") from exc
             if not is_current and not is_retained:
-                # Cold details are pinned to this immutable source commit and
-                # verified on demand by the public gate/browser. Avoid reading
-                # gigabytes of data that will not be copied to Pages.
-                row["source_commit"] = revision
-                archived_count += 1
-                continue
+                if existing_source_commit:
+                    archived_count += 1
+                    continue
+                if revision:
+                    # Cold rows without a fixed source are bound to the exact
+                    # selected commit. Readers still verify the indexed hash,
+                    # so packaging need not read multi-GB detail files.
+                    row["source_commit"] = revision
+                    archived_count += 1
+                    continue
+
+            local_path = source / "data" / path
+            if not local_path.is_file() or local_path.is_symlink():
+                raise PagesBudgetError("indexed alert source is missing or unsafe")
             digest_builder = hashlib.sha256()
             with local_path.open("rb") as handle:
                 for chunk in iter(lambda: handle.read(1024 * 1024), b""):
                     digest_builder.update(chunk)
             if digest_builder.hexdigest() != digest:
                 raise PagesBudgetError("indexed alert source hash does not match its index")
-            if is_current:
-                row.pop("source_commit", None)
+            if is_current or is_retained:
+                # Existing fixed links are part of the immutable index. Keep
+                # them even when this detail must remain in Pages for the
+                # current release or a pending receipt.
+                if existing_source_commit:
+                    row["source_commit"] = existing_source_commit
+                elif revision and not is_current:
+                    # Pin newly archived receipt targets to the exact selected
+                    # history commit, but never rewrite an existing pin.
+                    row["source_commit"] = revision
+                else:
+                    row.pop("source_commit", None)
                 keep_alert_files.add(relative_path)
                 continue
-            row["source_commit"] = revision
-            keep_alert_files.add(relative_path)
+            if revision:
+                # No fixed source commit exists for this cold row and there is
+                # a selected immutable archive commit available.
+                row["source_commit"] = revision
+                archived_count += 1
+            else:
+                # A verified last-good public bundle may not correspond to a
+                # data-release commit. Preserve unpinned historical details in
+                # Pages instead of silently redirecting their fixed source.
+                row.pop("source_commit", None)
+                keep_alert_files.add(relative_path)
         for detail_path in (source / "data" / "alerts").glob("*.json"):
             relative_path = detail_path.relative_to(source).as_posix()
             if relative_path not in keep_alert_files:
