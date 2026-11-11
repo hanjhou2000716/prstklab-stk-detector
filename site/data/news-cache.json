@@ -2,7 +2,7 @@
   "schema": 2,
   "markets": {
     "taiwan": {
-      "fetched_at": "2026-11-11T17:38:37.955490+00:00",
+      "fetched_at": "2026-11-11T17:43:54.639570+00:00",
       "stories": [
         {
           "title": "〈台股盤前要聞〉大同華映案和解露曙光、勞動基金前9月賺2.44兆元、10月製造業PMI下滑",
@@ -41,24 +41,30 @@
           }
         },
         {
-          "title": "5. 〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
+          "title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
           "url": "https://news.cnyes.com/news/id/6644497",
           "provider": "anue",
           "source": "鉅亨網｜市場焦點",
           "relevance": "market",
+          "summary": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
+          "published_at": "2026-11-02T21:20:03+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6644497",
           "market_classification": {
             "market_scope": "global",
             "taiwan_matches": [],
             "us_matches": [],
             "global_matches": [
               "伊朗",
-              "brent"
+              "戰爭",
+              "原油",
+              "brent",
+              "wti"
             ],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 2,
-              "source_market_hint": null
+              "matched_term_count": 5,
+              "source_market_hint": "global"
             }
           },
           "market_scope": "global",
@@ -66,14 +72,101 @@
           "us_matches": [],
           "global_matches": [
             "伊朗",
-            "brent"
+            "戰爭",
+            "原油",
+            "brent",
+            "wti"
           ],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 2,
-            "source_market_hint": null
-          }
+            "matched_term_count": 5,
+            "source_market_hint": "global"
+          },
+          "story_id": "news-b83f2a8b286abee274ae",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "raw_title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
+          "normalized_fact": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
+          "market_topic": "energy_geopolitics",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": null,
+          "published_local_date": "",
+          "market": "global",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "energy"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "conflict",
+            "reason": "conflict_subject_action",
+            "matched_terms": [
+              "伊朗",
+              "戰爭"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "伊朗",
+              "戰爭"
+            ],
+            "matched_subject": "伊朗",
+            "matched_action": "戰爭",
+            "matched_market_object": "伊朗",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:global"
+          ],
+          "freshness": "published",
+          "dedupe_key": "伊朗示意願以對話解決戰爭市場對中東原油供應恢復期待升高布油挫逾7布油跌866美元至10477美元wti跌766美元至9646美元伊朗與卡達官員持續協商美伊協議仍受關注油市對中東消息高度敏感供應風險仍在高盛上調預測若波斯灣產量偏低布蘭特2027年恐升至140美元",
+          "event_cluster_key": "event-47cdd7b0f47f2961142e",
+          "published_time_bucket": "2026-11-02T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "伊朗",
+            "戰爭"
+          ],
+          "matched_subject": "伊朗",
+          "matched_action": "戰爭",
+          "matched_market_object": "伊朗",
+          "decision_value_class": "geopolitics_policy",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "title": "英美歐央行官員齊放鷹！華勒示警下月恐升2碼 智庫估英國利率升至5%",
@@ -7049,10 +7142,10 @@
           "ranking_score": 130
         }
       ],
-      "inventory_saved_at": "2026-11-11T17:38:37.955490+00:00"
+      "inventory_saved_at": "2026-11-11T17:43:54.639570+00:00"
     },
     "us": {
-      "fetched_at": "2026-11-11T17:38:37.955490+00:00",
+      "fetched_at": "2026-11-11T17:43:54.639570+00:00",
       "stories": [
         {
           "title": "8-K - Spero Therapeutics, Inc. (0001701108) (Filer)",
@@ -7437,19 +7530,69 @@
           }
         },
         {
-          "title": "未爆彈瞞一年？黃仁勳爆「聘性醜聞公關」後 輝達高層去年10月起套現逾21億美元",
-          "url": "https://news.cnyes.com/news/id/6658685",
+          "title": "〈美股盤後〉川普稱不急於再打伊朗、鎧俠財測拖累記憶體股 費半11月首日挫逾3%",
+          "url": "https://news.cnyes.com/news/id/6644206",
           "provider": "anue",
           "source": "鉅亨網｜市場焦點",
           "relevance": "market",
-          "summary": "黃仁勳坦承婚外情後，《WIRED》稱 Heller 自 2025 年 10 月起介入媒體應對。\nSEC申報：2025/10/1至2026/11/11，輝達8名董事與高層合計賣股約21.42億美元。\n史蒂文斯賣股約14.96億美元；黃仁勳10月分批賣股約2.65億美元，皆受關注。",
-          "published_at": "2026-11-11T11:13:19+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6658685",
+          "summary": "美股週一多收低，那指跌1.07%、費半跌3.37%，資金續撤科技股，標普與那指翻黑，道瓊漲213.67點\n美伊釋出重啟和平談判訊號，布蘭特與WTI原油期貨重挫逾7%，帶動市場風險情緒一度回升\n甲骨文啟動200億美元融資、AI支出疑慮升溫，Marvell收購Lumentum與蘋果財報也未能提振科技股",
+          "published_at": "2026-11-02T21:56:41+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6644206",
           "market_classification": {
             "market_scope": "us",
             "taiwan_matches": [],
             "us_matches": [
-              "sec"
+              "美股",
+              "費半",
+              "川普",
+              "川普"
+            ],
+            "global_matches": [
+              "伊朗",
+              "原油",
+              "wti"
+            ],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 7,
+              "source_market_hint": null
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "美股",
+            "費半",
+            "川普",
+            "川普"
+          ],
+          "global_matches": [
+            "伊朗",
+            "原油",
+            "wti"
+          ],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 7,
+            "source_market_hint": null
+          }
+        },
+        {
+          "title": "美股這波快跌完了？大摩：這個指數六成股票已跌過兩成",
+          "url": "https://news.cnyes.com/news/id/6644459",
+          "provider": "anue",
+          "source": "鉅亨網｜市場焦點",
+          "relevance": "market",
+          "summary": "大摩稱美股自6月修正近尾聲，羅素3000六成成分股曾回檔逾20%，標普500近期補跌。\nWilson指選後不確定性可望消退，若基本面佳的景氣循環股估值已下修，年底前可加碼布局2027年。\n科技股賣壓重，市場更看重持續獲利與現金轉化；大摩估選後大型股6個月平均漲約15%。",
+          "published_at": "2026-11-02T18:00:04+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6644459",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "美股"
             ],
             "global_matches": [],
             "classification_status": "matched",
@@ -7462,7 +7605,7 @@
           "market_scope": "us",
           "taiwan_matches": [],
           "us_matches": [
-            "sec"
+            "美股"
           ],
           "global_matches": [],
           "classification_status": "matched",
@@ -7473,53 +7616,55 @@
           }
         },
         {
-          "title": "〈美股早盤〉CoreWeave財報助攻！那指領漲 台積電ADR漲逾4%",
-          "url": "https://news.cnyes.com/news/id/6659120",
+          "title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
+          "url": "https://news.cnyes.com/news/id/6644497",
           "provider": "anue",
           "source": "鉅亨網｜市場焦點",
           "relevance": "market",
-          "summary": "CoreWeave強勁財報帶動AI需求信心回升，盤前大漲15%，輝達與AI概念股反彈。 OpenAI單季營收首破100億美元，Anthropic IPO認購倍數超額，資金重返AI題材。 升息預期與美元走強限制漲勢；美債殖利率升至5.0%，費半仍漲4.66%。",
-          "published_at": "2026-11-11T14:40:40+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6659120",
+          "summary": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
+          "published_at": "2026-11-02T21:20:03+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6644497",
           "market_classification": {
-            "market_scope": "cross_market",
-            "taiwan_matches": [
-              "台積電"
+            "market_scope": "global",
+            "taiwan_matches": [],
+            "us_matches": [],
+            "global_matches": [
+              "伊朗",
+              "戰爭",
+              "原油",
+              "brent",
+              "wti"
             ],
-            "us_matches": [
-              "美股",
-              "費半"
-            ],
-            "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 3,
-              "source_market_hint": "cross_market"
+              "matched_term_count": 5,
+              "source_market_hint": "global"
             }
           },
-          "market_scope": "cross_market",
-          "taiwan_matches": [
-            "台積電"
+          "market_scope": "global",
+          "taiwan_matches": [],
+          "us_matches": [],
+          "global_matches": [
+            "伊朗",
+            "戰爭",
+            "原油",
+            "brent",
+            "wti"
           ],
-          "us_matches": [
-            "美股",
-            "費半"
-          ],
-          "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 3,
-            "source_market_hint": "cross_market"
+            "matched_term_count": 5,
+            "source_market_hint": "global"
           },
-          "story_id": "news-7da0bff67a37325de227",
+          "story_id": "news-b83f2a8b286abee274ae",
           "provider_name": "Anue",
           "source_tier": "market",
           "authority_tier": "market",
-          "raw_title": "〈美股早盤〉CoreWeave財報助攻！那指領漲 台積電ADR漲逾4%",
-          "normalized_fact": "CoreWeave強勁財報帶動AI需求信心回升，盤前大漲15%，輝達與AI概念股反彈。 OpenAI單季營收首破100億美元，Anthropic IPO認購倍數超額，資金重返AI題材。 升息預期與美元走強限制漲勢；美債殖利率升至5.0%，費半仍漲4.66%。",
-          "market_topic": "semiconductor_ai",
+          "raw_title": "〈能源盤後〉伊朗釋出和平談判訊號 油價挫逾7% Brent跌破105美元",
+          "normalized_fact": "伊朗示意願以對話解決戰爭，市場對中東原油供應恢復期待升高，布油挫逾7%。 布油跌8.66美元至104.77美元，WTI跌7.66美元至96.46美元；伊朗與卡達官員持續協商，美伊協議仍受關注。 油市對中東消息高度敏感，供應風險仍在；高盛上調預測，若波斯灣產量偏低，布蘭特2027年恐升至140美元。",
+          "market_topic": "energy_geopolitics",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -7534,34 +7679,31 @@
           "date_eligibility_reason": "",
           "publication_age_trading_sessions": null,
           "published_local_date": "",
-          "market": "cross_market",
+          "market": "global",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
+          "entities": [],
           "sectors": [],
           "topics": [
-            "earnings"
+            "energy"
           ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
+            "category": "conflict",
+            "reason": "conflict_subject_action",
             "matched_terms": [
-              "ai",
-              "財報"
+              "伊朗",
+              "戰爭"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "ai",
-              "財報"
+              "伊朗",
+              "戰爭"
             ],
-            "matched_subject": "ai",
-            "matched_action": "財報",
-            "matched_market_object": "ai",
+            "matched_subject": "伊朗",
+            "matched_action": "戰爭",
+            "matched_market_object": "伊朗",
             "input_fields": [
               "description",
               "summary",
@@ -7569,22 +7711,188 @@
             ]
           },
           "relevance_reasons": [
-            "market:cross_market"
+            "market:global"
           ],
           "freshness": "published",
-          "dedupe_key": "coreweave強勁財報帶動ai需求信心回升盤前大漲15輝達與ai概念股反彈openai單季營收首破100億美元anthropicipo認購倍數超額資金重返ai題材升息預期與美元走強限制漲勢美債殖利率升至50費半仍漲466",
-          "event_cluster_key": "event-acac2df1fef66aafac92",
-          "published_time_bucket": "2026-11-11T14:00:00+00:00",
+          "dedupe_key": "伊朗示意願以對話解決戰爭市場對中東原油供應恢復期待升高布油挫逾7布油跌866美元至10477美元wti跌766美元至9646美元伊朗與卡達官員持續協商美伊協議仍受關注油市對中東消息高度敏感供應風險仍在高盛上調預測若波斯灣產量偏低布蘭特2027年恐升至140美元",
+          "event_cluster_key": "event-47cdd7b0f47f2961142e",
+          "published_time_bucket": "2026-11-02T21:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "ai",
-            "財報"
+            "伊朗",
+            "戰爭"
           ],
-          "matched_subject": "ai",
-          "matched_action": "財報",
-          "matched_market_object": "ai",
+          "matched_subject": "伊朗",
+          "matched_action": "戰爭",
+          "matched_market_object": "伊朗",
+          "decision_value_class": "geopolitics_policy",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
+        },
+        {
+          "title": "Jensen Huang espionage controversy will cast a long shadow over Nvidia, veteran tech strategist warns",
+          "url": "https://finance.yahoo.com/markets/article/jensen-huang-espionage-controversy-will-cast-a-long-shadow-over-nvidia-veteran-tech-strategist-warns-173844118.html?.tsrc=rss",
+          "summary": "The rough road for Nvidia and CEO Jensen Huang is only just beginning.",
+          "source": "Yahoo Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-11-11T17:38:44+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "nvidia"
+            ],
+            "global_matches": [
+              "war"
+            ],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "nvidia"
+          ],
+          "global_matches": [
+            "war"
+          ],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "Stock Market Today: Nasdaq Jumps As CoreWeave Results Fuel AI Stampede; Bloom Energy, Dell Soar (Live Coverage)",
+          "url": "https://finance.yahoo.com/m/2199baae-3d36-344b-b4d8-76ff24b7f5e9/stock-market-today%3A-nasdaq.html?.tsrc=rss",
+          "summary": "The tech-heavy Nasdaq jumps Wednesday as CoreWeave surges on earnings. Nvidia stock rebounds.",
+          "source": "Yahoo Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-11-11T17:29:06+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "nasdaq",
+              "nvidia"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 2,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "nasdaq",
+            "nvidia"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 2,
+            "source_market_hint": "us"
+          },
+          "story_id": "news-95584144b8eb571ff2cb",
+          "provider_name": "Yahoo Taiwan Finance",
+          "raw_title": "Stock Market Today: Nasdaq Jumps As CoreWeave Results Fuel AI Stampede; Bloom Energy, Dell Soar (Live Coverage)",
+          "normalized_fact": "The tech-heavy Nasdaq jumps Wednesday as CoreWeave surges on earnings. Nvidia stock rebounds。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/m/2199baae-3d36-344b-b4d8-76ff24b7f5e9/stock-market-today%3A-nasdaq.html?.tsrc=rss",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-11",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NASDAQ"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "nvidia",
+              "earnings"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "nvidia",
+              "earnings"
+            ],
+            "matched_subject": "nvidia",
+            "matched_action": "earnings",
+            "matched_market_object": "nvidia",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "thetechheavynasdaqjumpswednesdayascoreweavesurgesonearningsnvidiastockrebounds",
+          "event_cluster_key": "event-db16ba8dce8c613f6228",
+          "published_time_bucket": "2026-11-11T17:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "nvidia",
+            "earnings"
+          ],
+          "matched_subject": "nvidia",
+          "matched_action": "earnings",
+          "matched_market_object": "nvidia",
           "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
@@ -7602,80 +7910,78 @@
           "ranking_score": 130
         },
         {
-          "title": "最壞時刻過了？輝達大跌後盤前彈逾5% 大摩卻將其移出首選",
-          "url": "https://news.cnyes.com/news/id/6659123",
-          "provider": "anue",
-          "source": "鉅亨網｜市場焦點",
-          "relevance": "market",
-          "summary": "輝達股價連跌兩日後盤前反彈逾5%，但黃仁勳與涉中國間諜女子婚外情風波延燒，市場憂衝擊營運與美國晶片出口政策。\n輝達已聘Wachtell, Lipton, Rosen & Katz調查是否涉及機密外洩或國安疑慮，黃仁勳仍照常主持業務、準備11月17日財報。\n摩根士丹利將輝達移出首選股名單。",
-          "published_at": "2026-11-11T11:24:27+00:00",
-          "canonical_url": "https://news.cnyes.com/news/id/6659123",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "美國"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": null
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "美國"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": null
-          }
-        },
-        {
-          "title": "OKXICE targets Nov. 23 launch for tokenized securities trading",
-          "url": "https://finance.yahoo.com/video/okxice-targets-nov-23-launch-170000508.html?.tsrc=rss",
-          "summary": "Scott Melker breaks down OKXICE's planned November 23 launch of a tokenized securities trading platform under a proposed SEC innovation exemption. The platform has reportedly listed 70 tradable assets, including securities tied to BitGo (BTGO), Circle (CRCL), Coinbase (COIN), Robinhood (HOOD), Securitize (SECZ), and Strategy's STRC (STRC). \"The Daily Wolf with Scott Melker\" airs every day at 12:00 p.m. Tune in for your daily dose of all things crypto.",
+          "title": "AI Selloff Sends Berkshire to Its Biggest S&P 500 Lead Since 2010: Can It Last?",
+          "url": "https://beincrypto.com/ai-selloff-berkshire-sp-500-lead/?.tsrc=rss",
+          "summary": "Berkshire Hathaway beat the S&P 500 by 19.2 points as investors fled AI stocks. Here is what the rally rests on.",
           "source": "Yahoo Finance",
           "provider": "yahoo_finance",
           "source_tier": "market",
           "authority_tier": "market",
           "market": "us",
           "relevance": "market",
-          "published_at": "2026-11-11T17:00:00+00:00",
+          "published_at": "2026-11-11T17:22:36+00:00",
           "market_classification": {
-            "market_scope": "cross_market",
-            "taiwan_matches": [
-              "0050"
-            ],
+            "market_scope": "us",
+            "taiwan_matches": [],
             "us_matches": [
-              "sec"
+              "s&p 500"
             ],
             "global_matches": [],
             "classification_status": "matched",
             "routing_evidence": {
               "title_summary_scanned": true,
-              "matched_term_count": 2,
+              "matched_term_count": 1,
               "source_market_hint": "us"
             }
           },
-          "market_scope": "cross_market",
-          "taiwan_matches": [
-            "0050"
-          ],
+          "market_scope": "us",
+          "taiwan_matches": [],
           "us_matches": [
-            "sec"
+            "s&p 500"
           ],
           "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
-            "matched_term_count": 2,
+            "matched_term_count": 1,
+            "source_market_hint": "us"
+          }
+        },
+        {
+          "title": "Michael Burry Has a Urgent Message for Nvidia Stock Investors",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/michael-burry-urgent-message-nvidia-171038140.html?.tsrc=rss",
+          "summary": "Michael Burry Sees a Short-Term Opportunity in Nvidia but Questions Its Future",
+          "source": "Yahoo Finance",
+          "provider": "yahoo_finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "market": "us",
+          "relevance": "market",
+          "published_at": "2026-11-11T17:10:38+00:00",
+          "market_classification": {
+            "market_scope": "us",
+            "taiwan_matches": [],
+            "us_matches": [
+              "nvidia"
+            ],
+            "global_matches": [],
+            "classification_status": "matched",
+            "routing_evidence": {
+              "title_summary_scanned": true,
+              "matched_term_count": 1,
+              "source_market_hint": "us"
+            }
+          },
+          "market_scope": "us",
+          "taiwan_matches": [],
+          "us_matches": [
+            "nvidia"
+          ],
+          "global_matches": [],
+          "classification_status": "matched",
+          "routing_evidence": {
+            "title_summary_scanned": true,
+            "matched_term_count": 1,
             "source_market_hint": "us"
           }
         },
@@ -7908,166 +8214,6 @@
           "global_matches": [
             "war"
           ],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          }
-        },
-        {
-          "title": "TSMC Stocks Climb 3.37% After Record NT$586.9 Billion October Revenue",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/tsmc-stocks-climb-3-37-165536443.html?.tsrc=rss",
-          "summary": "October sales jumped 59.7% year over year, and TSMC's investment arm joins Anthropic's IPO placement with $500 million.",
-          "source": "Yahoo Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-11-11T16:55:36+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "tsm"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "tsm"
-          ],
-          "global_matches": [],
-          "classification_status": "matched",
-          "routing_evidence": {
-            "title_summary_scanned": true,
-            "matched_term_count": 1,
-            "source_market_hint": "us"
-          },
-          "story_id": "news-f793936a3196dd0f80bd",
-          "provider_name": "Yahoo Taiwan Finance",
-          "raw_title": "TSMC Stocks Climb 3.37% After Record NT$586.9 Billion October Revenue",
-          "normalized_fact": "October sales jumped 59.7% year over year, and TSMC's investment arm joins Anthropic's IPO placement with $500 million。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/tsmc-stocks-climb-3-37-165536443.html?.tsrc=rss",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-11",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [
-            "earnings"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "tsmc",
-              "revenue"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "tsmc",
-              "revenue"
-            ],
-            "matched_subject": "tsmc",
-            "matched_action": "revenue",
-            "matched_market_object": "tsmc",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "octobersalesjumped597yearoveryearandtsmcsinvestmentarmjoinsanthropicsipoplacementwith500million",
-          "event_cluster_key": "event-ee753be3cbb2ca584f46",
-          "published_time_bucket": "2026-11-11T16:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "tsmc",
-            "revenue"
-          ],
-          "matched_subject": "tsmc",
-          "matched_action": "revenue",
-          "matched_market_object": "tsmc",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
-          "title": "Alphabet Stocks Rise as Google Commits $10 Billion to Anthropic IPO",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/alphabet-stocks-rise-google-commits-170439616.html?.tsrc=rss",
-          "summary": "Anthropic's amended filing shows Google buying 135 million placement shares, partly settling obligations under an earlier 2026 agreement.",
-          "source": "Yahoo Finance",
-          "provider": "yahoo_finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "market": "us",
-          "relevance": "market",
-          "published_at": "2026-11-11T17:04:39+00:00",
-          "market_classification": {
-            "market_scope": "us",
-            "taiwan_matches": [],
-            "us_matches": [
-              "alphabet"
-            ],
-            "global_matches": [],
-            "classification_status": "matched",
-            "routing_evidence": {
-              "title_summary_scanned": true,
-              "matched_term_count": 1,
-              "source_market_hint": "us"
-            }
-          },
-          "market_scope": "us",
-          "taiwan_matches": [],
-          "us_matches": [
-            "alphabet"
-          ],
-          "global_matches": [],
           "classification_status": "matched",
           "routing_evidence": {
             "title_summary_scanned": true,
@@ -10798,13 +10944,13 @@
           "ranking_score": 130
         },
         {
-          "story_id": "news-44bd5a2458788bf4bd91",
+          "story_id": "news-95584144b8eb571ff2cb",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "Stock Market Today: Nasdaq Jumps As CoreWeave Surges On Earnings; Sandisk Soars (Live Coverage)",
-          "raw_title": "Stock Market Today: Nasdaq Jumps As CoreWeave Surges On Earnings; Sandisk Soars (Live Coverage)",
+          "title": "Stock Market Today: Nasdaq Jumps As CoreWeave Results Fuel AI Stampede; Bloom Energy, Dell Soar (Live Coverage)",
+          "raw_title": "Stock Market Today: Nasdaq Jumps As CoreWeave Results Fuel AI Stampede; Bloom Energy, Dell Soar (Live Coverage)",
           "normalized_fact": "The tech-heavy Nasdaq jumps Wednesday as CoreWeave surges on earnings. Nvidia stock rebounds。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
@@ -10833,7 +10979,7 @@
           ],
           "sectors": [],
           "topics": [
-            "earnings"
+            "ai"
           ],
           "event_classification": {
             "schema_version": "1.0",
@@ -10864,8 +11010,8 @@
           ],
           "freshness": "published",
           "dedupe_key": "thetechheavynasdaqjumpswednesdayascoreweavesurgesonearningsnvidiastockrebounds",
-          "event_cluster_key": "event-54fc53e5fc74fb074049",
-          "published_time_bucket": "2026-11-11T16:00:00+00:00",
+          "event_cluster_key": "event-db16ba8dce8c613f6228",
+          "published_time_bucket": "2026-11-11T17:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
@@ -15064,7 +15210,7 @@
           "ranking_score": 130
         }
       ],
-      "inventory_saved_at": "2026-11-11T17:38:37.955490+00:00"
+      "inventory_saved_at": "2026-11-11T17:43:54.639570+00:00"
     }
   }
 }
