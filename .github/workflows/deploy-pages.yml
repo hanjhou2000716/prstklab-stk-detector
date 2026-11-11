@@ -177,6 +177,8 @@ jobs:
           ARCHIVE_SOURCE_COMMIT: ${{ steps.release.outputs.archive_source_commit || '' }}
         run: |
           git fetch --no-tags origin "refs/heads/${DATA_RELEASE_BRANCH}:refs/remotes/origin/${DATA_RELEASE_BRANCH}"
+          # Supplied by this step's env mapping; ShellCheck does not infer GitHub Actions env.
+          # shellcheck disable=SC2153
           archive_source_commit="$ARCHIVE_SOURCE_COMMIT"
           if [ -n "$archive_source_commit" ]; then
             if ! [[ "$archive_source_commit" =~ ^[0-9a-f]{40,64}$ ]]; then
