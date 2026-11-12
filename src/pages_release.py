@@ -110,11 +110,15 @@ def _restore_archive(
                 for member in members:
                     remaining()
                     member_path = PurePosixPath(member.name)
+                    is_archive_parent = member.name in {"site", "site/"} and member.isdir()
                     if (
                         member_path.is_absolute()
                         or ".." in member_path.parts
                         or "\\" in member.name
-                        or member_path.parts[:2] != ("site", "data")
+                        or (
+                            member_path.parts[:2] != ("site", "data")
+                            and not is_archive_parent
+                        )
                         or not (member.isfile() or member.isdir())
                     ):
                         raise PagesReleaseError(
