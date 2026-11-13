@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "9b9f22773ff20086",
-  "snapshot_id": "news-905367868d0d8278",
+  "market_snapshot_id": "ceb5341515f427ad",
+  "snapshot_id": "news-1ab0f855d3e9c02b",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -437,15 +437,15 @@
       ],
       "stories": [
         {
-          "story_id": "news-0a2b2ffe03e81741138f",
+          "story_id": "news-f73e61f48f5caf57726b",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "單日賣超 3025 億、全年賣破 2 兆，外資賣超雙紀錄，卻把台股賣到漲逾四成？",
-          "raw_title": "單日賣超 3025 億、全年賣破 2 兆，外資賣超雙紀錄，卻把台股賣到漲逾四成？",
-          "normalized_fact": "外資今年賣超台股破2兆，單日3025億也創下紀錄，但台股今年仍上漲逾4成。首先賣超這項行為背後可能有各種不同的目的，再加上外資包含了各種目標不同的大型基金。再加上外資大賣也未必能預測未來的方向。與。",
-          "market_topic": "taiwan_market",
+          "title": "歐洲商業信心回溫 通膨與公債壓力仍威脅經濟復甦",
+          "raw_title": "歐洲商業信心回溫 通膨與公債壓力仍威脅經濟復甦",
+          "normalized_fact": "圖／本報資料庫商傳媒｜葉安庭／綜合外電報導歐洲商業信心自今年夏季以來有所改善，然而不斷上升的通膨（指物價普遍上漲的幅度）與政府債務，對歐洲經濟的復甦構成潛在威脅。 根據《路透社》報導，工業領域受訪者中。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -453,11 +453,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "外資今年賣超台股破2兆，單日3025億也創下紀錄，但台股今年仍上漲逾4成。首先賣超這項行為背後可能有各種不同的目的，再加上「外資」包含了各種目標不同的大型基金。再加上外資大賣也未必能預測未來的方向。與",
+          "summary": "圖／本報資料庫商傳媒｜葉安庭／綜合外電報導歐洲商業信心自今年夏季以來有所改善，然而不斷上升的通膨（指物價普遍上漲的幅度）與政府債務，對歐洲經濟的復甦構成潛在威脅。 根據《路透社》報導，工業領域受訪者中",
           "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%96%AE%E6%97%A5%E8%B3%A3%E8%B6%85-3025-%E5%84%84-%E5%85%A8%E5%B9%B4%E8%B3%A3%E7%A0%B4-2-063523739.html",
-          "url": "https://tw.stock.yahoo.com/news/%E5%96%AE%E6%97%A5%E8%B3%A3%E8%B6%85-3025-%E5%84%84-%E5%85%A8%E5%B9%B4%E8%B3%A3%E7%A0%B4-2-063523739.html",
-          "published_at": "2026-11-13T06:35:23+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E6%B4%B2%E5%95%86%E6%A5%AD%E4%BF%A1%E5%BF%83%E5%9B%9E%E6%BA%AB-%E9%80%9A%E8%86%A8%E8%88%87%E5%85%AC%E5%82%B5%E5%A3%93%E5%8A%9B%E4%BB%8D%E5%A8%81%E8%84%85%E7%B6%93%E6%BF%9F%E5%BE%A9%E7%94%A6-064845875.html",
+          "url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E6%B4%B2%E5%95%86%E6%A5%AD%E4%BF%A1%E5%BF%83%E5%9B%9E%E6%BA%AB-%E9%80%9A%E8%86%A8%E8%88%87%E5%85%AC%E5%82%B5%E5%A3%93%E5%8A%9B%E4%BB%8D%E5%A8%81%E8%84%85%E7%B6%93%E6%BF%9F%E5%BE%A9%E7%94%A6-064845875.html",
+          "published_at": "2026-11-13T06:48:45+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -467,22 +467,26 @@
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "TAIEX"
-          ],
+          "entities": [],
           "sectors": [],
           "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
+            "category": "macro",
+            "reason": "macro_subject_action",
+            "matched_terms": [
+              "通膨",
+              "上升"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "通膨",
+              "上升"
+            ],
+            "matched_subject": "通膨",
+            "matched_action": "上升",
+            "matched_market_object": "通膨",
             "input_fields": [
               "description",
               "summary",
@@ -493,17 +497,20 @@
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "外資今年賣超台股破2兆單日3025億也創下紀錄但台股今年仍上漲逾4成首先賣超這項行為背後可能有各種不同的目的再加上外資包含了各種目標不同的大型基金再加上外資大賣也未必能預測未來的方向與",
-          "event_cluster_key": "",
+          "dedupe_key": "圖本報資料庫商傳媒葉安庭綜合外電報導歐洲商業信心自今年夏季以來有所改善然而不斷上升的通膨指物價普遍上漲的幅度與政府債務對歐洲經濟的復甦構成潛在威脅根據路透社報導工業領域受訪者中",
+          "event_cluster_key": "event-c914778003edfe9a69b8",
           "published_time_bucket": "2026-11-13T06:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "company_event",
+          "classification_evidence": [
+            "通膨",
+            "上升"
+          ],
+          "matched_subject": "通膨",
+          "matched_action": "上升",
+          "matched_market_object": "通膨",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -618,97 +625,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
-        },
-        {
-          "story_id": "news-f73e61f48f5caf57726b",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "歐洲商業信心回溫 通膨與公債壓力仍威脅經濟復甦",
-          "raw_title": "歐洲商業信心回溫 通膨與公債壓力仍威脅經濟復甦",
-          "normalized_fact": "圖／本報資料庫商傳媒｜葉安庭／綜合外電報導歐洲商業信心自今年夏季以來有所改善，然而不斷上升的通膨（指物價普遍上漲的幅度）與政府債務，對歐洲經濟的復甦構成潛在威脅。 根據《路透社》報導，工業領域受訪者中。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "圖／本報資料庫商傳媒｜葉安庭／綜合外電報導歐洲商業信心自今年夏季以來有所改善，然而不斷上升的通膨（指物價普遍上漲的幅度）與政府債務，對歐洲經濟的復甦構成潛在威脅。 根據《路透社》報導，工業領域受訪者中",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E6%B4%B2%E5%95%86%E6%A5%AD%E4%BF%A1%E5%BF%83%E5%9B%9E%E6%BA%AB-%E9%80%9A%E8%86%A8%E8%88%87%E5%85%AC%E5%82%B5%E5%A3%93%E5%8A%9B%E4%BB%8D%E5%A8%81%E8%84%85%E7%B6%93%E6%BF%9F%E5%BE%A9%E7%94%A6-064845875.html",
-          "url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E6%B4%B2%E5%95%86%E6%A5%AD%E4%BF%A1%E5%BF%83%E5%9B%9E%E6%BA%AB-%E9%80%9A%E8%86%A8%E8%88%87%E5%85%AC%E5%82%B5%E5%A3%93%E5%8A%9B%E4%BB%8D%E5%A8%81%E8%84%85%E7%B6%93%E6%BF%9F%E5%BE%A9%E7%94%A6-064845875.html",
-          "published_at": "2026-11-13T06:48:45+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-13",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "macro",
-            "reason": "macro_subject_action",
-            "matched_terms": [
-              "通膨",
-              "上升"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "通膨",
-              "上升"
-            ],
-            "matched_subject": "通膨",
-            "matched_action": "上升",
-            "matched_market_object": "通膨",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "圖本報資料庫商傳媒葉安庭綜合外電報導歐洲商業信心自今年夏季以來有所改善然而不斷上升的通膨指物價普遍上漲的幅度與政府債務對歐洲經濟的復甦構成潛在威脅根據路透社報導工業領域受訪者中",
-          "event_cluster_key": "event-c914778003edfe9a69b8",
-          "published_time_bucket": "2026-11-13T06:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "通膨",
-            "上升"
-          ],
-          "matched_subject": "通膨",
-          "matched_action": "上升",
-          "matched_market_object": "通膨",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
         },
         {
           "story_id": "news-8fe22eaa0c25db8a6603",
@@ -903,19 +819,112 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 120
+        },
+        {
+          "story_id": "news-36fa1328556e26a2423c",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "AI供應鏈肉粽頭 黃仁勳下台後15檔訂單變化 - 三立新聞網SETN.com",
+          "raw_title": "AI供應鏈肉粽頭 黃仁勳下台後15檔訂單變化 - 三立新聞網SETN.com",
+          "normalized_fact": "AI供應鏈肉粽頭 黃仁勳下台後15檔訂單變化 三立新聞網SETN.com。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "AI供應鏈肉粽頭 黃仁勳下台後15檔訂單變化 三立新聞網SETN.com",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiS0FVX3lxTE5ucTFsSkdmQ3dyNDd3bXgyNE9xLTc1NkdFNWVrLXJidWxraXZnRHdqYVNnWUhCMTk1blRwcGRWVFZiYTg1QnFBOEh4SQ",
+          "url": "https://news.google.com/rss/articles/CBMiS0FVX3lxTE5ucTFsSkdmQ3dyNDd3bXgyNE9xLTc1NkdFNWVrLXJidWxraXZnRHdqYVNnWUhCMTk1blRwcGRWVFZiYTg1QnFBOEh4SQ",
+          "published_at": "2026-11-13T03:39:55+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-13",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "ai供應鏈肉粽頭黃仁勳下台後15檔訂單變化三立新聞網setncom",
+          "event_cluster_key": "event-ebc8ec0ad88d51d65a71",
+          "published_time_bucket": "2026-11-13T03:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜台股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
         }
       ],
       "editorial_candidates": [
         {
-          "story_id": "news-0a2b2ffe03e81741138f",
+          "story_id": "news-f73e61f48f5caf57726b",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "單日賣超 3025 億、全年賣破 2 兆，外資賣超雙紀錄，卻把台股賣到漲逾四成？",
-          "raw_title": "單日賣超 3025 億、全年賣破 2 兆，外資賣超雙紀錄，卻把台股賣到漲逾四成？",
-          "normalized_fact": "外資今年賣超台股破2兆，單日3025億也創下紀錄，但台股今年仍上漲逾4成。首先賣超這項行為背後可能有各種不同的目的，再加上外資包含了各種目標不同的大型基金。再加上外資大賣也未必能預測未來的方向。與。",
-          "market_topic": "taiwan_market",
+          "title": "歐洲商業信心回溫 通膨與公債壓力仍威脅經濟復甦",
+          "raw_title": "歐洲商業信心回溫 通膨與公債壓力仍威脅經濟復甦",
+          "normalized_fact": "圖／本報資料庫商傳媒｜葉安庭／綜合外電報導歐洲商業信心自今年夏季以來有所改善，然而不斷上升的通膨（指物價普遍上漲的幅度）與政府債務，對歐洲經濟的復甦構成潛在威脅。 根據《路透社》報導，工業領域受訪者中。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -923,11 +932,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "外資今年賣超台股破2兆，單日3025億也創下紀錄，但台股今年仍上漲逾4成。首先賣超這項行為背後可能有各種不同的目的，再加上「外資」包含了各種目標不同的大型基金。再加上外資大賣也未必能預測未來的方向。與",
+          "summary": "圖／本報資料庫商傳媒｜葉安庭／綜合外電報導歐洲商業信心自今年夏季以來有所改善，然而不斷上升的通膨（指物價普遍上漲的幅度）與政府債務，對歐洲經濟的復甦構成潛在威脅。 根據《路透社》報導，工業領域受訪者中",
           "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%96%AE%E6%97%A5%E8%B3%A3%E8%B6%85-3025-%E5%84%84-%E5%85%A8%E5%B9%B4%E8%B3%A3%E7%A0%B4-2-063523739.html",
-          "url": "https://tw.stock.yahoo.com/news/%E5%96%AE%E6%97%A5%E8%B3%A3%E8%B6%85-3025-%E5%84%84-%E5%85%A8%E5%B9%B4%E8%B3%A3%E7%A0%B4-2-063523739.html",
-          "published_at": "2026-11-13T06:35:23+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E6%B4%B2%E5%95%86%E6%A5%AD%E4%BF%A1%E5%BF%83%E5%9B%9E%E6%BA%AB-%E9%80%9A%E8%86%A8%E8%88%87%E5%85%AC%E5%82%B5%E5%A3%93%E5%8A%9B%E4%BB%8D%E5%A8%81%E8%84%85%E7%B6%93%E6%BF%9F%E5%BE%A9%E7%94%A6-064845875.html",
+          "url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E6%B4%B2%E5%95%86%E6%A5%AD%E4%BF%A1%E5%BF%83%E5%9B%9E%E6%BA%AB-%E9%80%9A%E8%86%A8%E8%88%87%E5%85%AC%E5%82%B5%E5%A3%93%E5%8A%9B%E4%BB%8D%E5%A8%81%E8%84%85%E7%B6%93%E6%BF%9F%E5%BE%A9%E7%94%A6-064845875.html",
+          "published_at": "2026-11-13T06:48:45+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -937,22 +946,26 @@
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "TAIEX"
-          ],
+          "entities": [],
           "sectors": [],
           "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
+            "category": "macro",
+            "reason": "macro_subject_action",
+            "matched_terms": [
+              "通膨",
+              "上升"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "通膨",
+              "上升"
+            ],
+            "matched_subject": "通膨",
+            "matched_action": "上升",
+            "matched_market_object": "通膨",
             "input_fields": [
               "description",
               "summary",
@@ -963,17 +976,20 @@
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "外資今年賣超台股破2兆單日3025億也創下紀錄但台股今年仍上漲逾4成首先賣超這項行為背後可能有各種不同的目的再加上外資包含了各種目標不同的大型基金再加上外資大賣也未必能預測未來的方向與",
-          "event_cluster_key": "",
+          "dedupe_key": "圖本報資料庫商傳媒葉安庭綜合外電報導歐洲商業信心自今年夏季以來有所改善然而不斷上升的通膨指物價普遍上漲的幅度與政府債務對歐洲經濟的復甦構成潛在威脅根據路透社報導工業領域受訪者中",
+          "event_cluster_key": "event-c914778003edfe9a69b8",
           "published_time_bucket": "2026-11-13T06:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "company_event",
+          "classification_evidence": [
+            "通膨",
+            "上升"
+          ],
+          "matched_subject": "通膨",
+          "matched_action": "上升",
+          "matched_market_object": "通膨",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -1088,97 +1104,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
-        },
-        {
-          "story_id": "news-f73e61f48f5caf57726b",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "歐洲商業信心回溫 通膨與公債壓力仍威脅經濟復甦",
-          "raw_title": "歐洲商業信心回溫 通膨與公債壓力仍威脅經濟復甦",
-          "normalized_fact": "圖／本報資料庫商傳媒｜葉安庭／綜合外電報導歐洲商業信心自今年夏季以來有所改善，然而不斷上升的通膨（指物價普遍上漲的幅度）與政府債務，對歐洲經濟的復甦構成潛在威脅。 根據《路透社》報導，工業領域受訪者中。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "圖／本報資料庫商傳媒｜葉安庭／綜合外電報導歐洲商業信心自今年夏季以來有所改善，然而不斷上升的通膨（指物價普遍上漲的幅度）與政府債務，對歐洲經濟的復甦構成潛在威脅。 根據《路透社》報導，工業領域受訪者中",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E6%B4%B2%E5%95%86%E6%A5%AD%E4%BF%A1%E5%BF%83%E5%9B%9E%E6%BA%AB-%E9%80%9A%E8%86%A8%E8%88%87%E5%85%AC%E5%82%B5%E5%A3%93%E5%8A%9B%E4%BB%8D%E5%A8%81%E8%84%85%E7%B6%93%E6%BF%9F%E5%BE%A9%E7%94%A6-064845875.html",
-          "url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E6%B4%B2%E5%95%86%E6%A5%AD%E4%BF%A1%E5%BF%83%E5%9B%9E%E6%BA%AB-%E9%80%9A%E8%86%A8%E8%88%87%E5%85%AC%E5%82%B5%E5%A3%93%E5%8A%9B%E4%BB%8D%E5%A8%81%E8%84%85%E7%B6%93%E6%BF%9F%E5%BE%A9%E7%94%A6-064845875.html",
-          "published_at": "2026-11-13T06:48:45+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-13",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "macro",
-            "reason": "macro_subject_action",
-            "matched_terms": [
-              "通膨",
-              "上升"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "通膨",
-              "上升"
-            ],
-            "matched_subject": "通膨",
-            "matched_action": "上升",
-            "matched_market_object": "通膨",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "圖本報資料庫商傳媒葉安庭綜合外電報導歐洲商業信心自今年夏季以來有所改善然而不斷上升的通膨指物價普遍上漲的幅度與政府債務對歐洲經濟的復甦構成潛在威脅根據路透社報導工業領域受訪者中",
-          "event_cluster_key": "event-c914778003edfe9a69b8",
-          "published_time_bucket": "2026-11-13T06:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "通膨",
-            "上升"
-          ],
-          "matched_subject": "通膨",
-          "matched_action": "上升",
-          "matched_market_object": "通膨",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 130
         },
         {
           "story_id": "news-8fe22eaa0c25db8a6603",
@@ -1347,103 +1272,6 @@
           "dedupe_key": "黃仁勳辭任輝達執行長牽動台灣ai供應鏈ettoday新聞雲",
           "event_cluster_key": "event-ffe687a881ee07717d49",
           "published_time_bucket": "2026-11-13T03:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 120
-        },
-        {
-          "story_id": "news-c27e3a9c4ff8aa5c666e",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "輝達換帥》林百里、劉揚偉避談黃仁勳 台灣AI供應鏈藏5大風險 - 民報",
-          "raw_title": "輝達換帥》林百里、劉揚偉避談黃仁勳 台灣AI供應鏈藏5大風險 - 民報",
-          "normalized_fact": "輝達換帥》林百里、劉揚偉避談黃仁勳 台灣AI供應鏈藏5大風險 民報。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "輝達換帥》林百里、劉揚偉避談黃仁勳 台灣AI供應鏈藏5大風險 民報",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFA0dTNPVkwtaGlCM1dCdWUtY0lUdW5DcGtsS1VXbUFqS1pZTW9lT2dBRHBJSGhOVlBzaHhIMUdCTUs5Tk8zMkcteVZoRDlXdUJwMHU0TFBwQ1htMnRmUENKWWtGSEc",
-          "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFA0dTNPVkwtaGlCM1dCdWUtY0lUdW5DcGtsS1VXbUFqS1pZTW9lT2dBRHBJSGhOVlBzaHhIMUdCTUs5Tk8zMkcteVZoRDlXdUJwMHU0TFBwQ1htMnRmUENKWWtGSEc",
-          "published_at": "2026-11-12T21:00:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-13",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:NVDA",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "輝達換帥林百里劉揚偉避談黃仁勳台灣ai供應鏈藏5大風險民報",
-          "event_cluster_key": "event-77997d0f62bf58534937",
-          "published_time_bucket": "2026-11-12T21:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
@@ -1724,6 +1552,99 @@
           "freshness": "published",
           "dedupe_key": "黃仁勳事件台灣ai供應鏈非訂單消失是規格升級放緩導致獲利增量縮水與遞延technews科技新報",
           "event_cluster_key": "event-5a79e44107c6577201cf",
+          "published_time_bucket": "2026-11-13T02:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜台股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
+          "story_id": "news-e4489da358cc557294e3",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "黃仁勳走下神殿！謝金河：美中AI管制升高，台灣供應鏈面臨新考驗 - 財訊",
+          "raw_title": "黃仁勳走下神殿！謝金河：美中AI管制升高，台灣供應鏈面臨新考驗 - 財訊",
+          "normalized_fact": "黃仁勳走下神殿，謝金河：美中AI管制升高，台灣供應鏈面臨新考驗 財訊。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "黃仁勳走下神殿！謝金河：美中AI管制升高，台灣供應鏈面臨新考驗 財訊",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMie0FVX3lxTFBEOGxscHpMb25iZmRDUW42bkFsU1d0anVaNENQOWRmZ0M0MWxJcTRnMTRjMXZsTUFSM2hSU3llNVVIajFCVVp1YXNGS3FsOE1MNE13ZUFtU1lLNE5jaW44REUzbkxBNC1xUUZpbElEellUZ09haEtZYzZiMA",
+          "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTFBEOGxscHpMb25iZmRDUW42bkFsU1d0anVaNENQOWRmZ0M0MWxJcTRnMTRjMXZsTUFSM2hSU3llNVVIajFCVVp1YXNGS3FsOE1MNE13ZUFtU1lLNE5jaW44REUzbkxBNC1xUUZpbElEellUZ09haEtZYzZiMA",
+          "published_at": "2026-11-13T02:42:56+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-13",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "黃仁勳走下神殿謝金河美中ai管制升高台灣供應鏈面臨新考驗財訊",
+          "event_cluster_key": "event-ecbf739ade783a5f34bd",
           "published_time_bucket": "2026-11-13T02:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
@@ -2605,6 +2526,90 @@
           "ranking_score": 35
         },
         {
+          "story_id": "news-0a2b2ffe03e81741138f",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "單日賣超 3025 億、全年賣破 2 兆，外資賣超雙紀錄，卻把台股賣到漲逾四成？",
+          "raw_title": "單日賣超 3025 億、全年賣破 2 兆，外資賣超雙紀錄，卻把台股賣到漲逾四成？",
+          "normalized_fact": "外資今年賣超台股破2兆，單日3025億也創下紀錄，但台股今年仍上漲逾4成。首先賣超這項行為背後可能有各種不同的目的，再加上外資包含了各種目標不同的大型基金。再加上外資大賣也未必能預測未來的方向。與。",
+          "market_topic": "taiwan_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "外資今年賣超台股破2兆，單日3025億也創下紀錄，但台股今年仍上漲逾4成。首先賣超這項行為背後可能有各種不同的目的，再加上「外資」包含了各種目標不同的大型基金。再加上外資大賣也未必能預測未來的方向。與",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%96%AE%E6%97%A5%E8%B3%A3%E8%B6%85-3025-%E5%84%84-%E5%85%A8%E5%B9%B4%E8%B3%A3%E7%A0%B4-2-063523739.html",
+          "url": "https://tw.stock.yahoo.com/news/%E5%96%AE%E6%97%A5%E8%B3%A3%E8%B6%85-3025-%E5%84%84-%E5%85%A8%E5%B9%B4%E8%B3%A3%E7%A0%B4-2-063523739.html",
+          "published_at": "2026-11-13T06:35:23+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-13",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "TAIEX"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "外資今年賣超台股破2兆單日3025億也創下紀錄但台股今年仍上漲逾4成首先賣超這項行為背後可能有各種不同的目的再加上外資包含了各種目標不同的大型基金再加上外資大賣也未必能預測未來的方向與",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-11-13T06:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "company_event",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-11-13T06:48:59.465679+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 30
+        },
+        {
           "story_id": "news-17c470dfb6e08fdfe354",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -3446,6 +3451,103 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 30
+        },
+        {
+          "story_id": "news-c27e3a9c4ff8aa5c666e",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "輝達換帥》林百里、劉揚偉避談黃仁勳 台灣AI供應鏈藏5大風險 - 民報",
+          "raw_title": "輝達換帥》林百里、劉揚偉避談黃仁勳 台灣AI供應鏈藏5大風險 - 民報",
+          "normalized_fact": "輝達換帥》林百里、劉揚偉避談黃仁勳 台灣AI供應鏈藏5大風險 民報。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "輝達換帥》林百里、劉揚偉避談黃仁勳 台灣AI供應鏈藏5大風險 民報",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFA0dTNPVkwtaGlCM1dCdWUtY0lUdW5DcGtsS1VXbUFqS1pZTW9lT2dBRHBJSGhOVlBzaHhIMUdCTUs5Tk8zMkcteVZoRDlXdUJwMHU0TFBwQ1htMnRmUENKWWtGSEc",
+          "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFA0dTNPVkwtaGlCM1dCdWUtY0lUdW5DcGtsS1VXbUFqS1pZTW9lT2dBRHBJSGhOVlBzaHhIMUdCTUs5Tk8zMkcteVZoRDlXdUJwMHU0TFBwQ1htMnRmUENKWWtGSEc",
+          "published_at": "2026-11-12T21:00:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-13",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:NVDA",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "輝達換帥林百里劉揚偉避談黃仁勳台灣ai供應鏈藏5大風險民報",
+          "event_cluster_key": "event-77997d0f62bf58534937",
+          "published_time_bucket": "2026-11-12T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜台股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-11-13T00:48:35.588762+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 20
         },
         {
           "story_id": "news-966ac942b23b2b4e22f9",
@@ -4585,100 +4687,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 27
-        },
-        {
-          "story_id": "news-fb62ec97f70e0e9108f8",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "英美歐央行官員齊放鷹！華勒示警下月恐升2碼 智庫估英國利率升至5%",
-          "raw_title": "英美歐央行官員齊放鷹！華勒示警下月恐升2碼 智庫估英國利率升至5%",
-          "normalized_fact": "BOE副總裁Lombardelli說若通膨未降，短期仍有理由再升息，且不排除12月連續升息 Fed理事華勒說12月可能一次升息2碼；ECB首席經濟學家Lane也表示12月前若數據不變，應提高借貸成本。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "BOE副總裁Lombardelli說若通膨未降，短期仍有理由再升息，且不排除12月連續升息 Fed理事華勒說12月可能一次升息2碼；ECB首席經濟學家Lane也表示12月前若數據不變，應提高借貸成本",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E8%8B%B1%E7%BE%8E%E6%AD%90%E5%A4%AE%E8%A1%8C%E5%AE%98%E5%93%A1%E9%BD%8A%E6%94%BE%E9%B7%B9-%E8%8F%AF%E5%8B%92%E7%A4%BA%E8%AD%A6%E4%B8%8B%E6%9C%88%E6%81%90%E5%8D%872%E7%A2%BC-%E6%99%BA%E5%BA%AB%E4%BC%B0%E8%8B%B1%E5%9C%8B%E5%88%A9%E7%8E%87%E5%8D%87%E8%87%B35-163010902.html",
-          "url": "https://tw.stock.yahoo.com/news/%E8%8B%B1%E7%BE%8E%E6%AD%90%E5%A4%AE%E8%A1%8C%E5%AE%98%E5%93%A1%E9%BD%8A%E6%94%BE%E9%B7%B9-%E8%8F%AF%E5%8B%92%E7%A4%BA%E8%AD%A6%E4%B8%8B%E6%9C%88%E6%81%90%E5%8D%872%E7%A2%BC-%E6%99%BA%E5%BA%AB%E4%BC%B0%E8%8B%B1%E5%9C%8B%E5%88%A9%E7%8E%87%E5%8D%87%E8%87%B35-163010902.html",
-          "published_at": "2026-11-11T16:30:10+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-12",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "利率"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "利率"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "利率",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "boe副總裁lombardelli說若通膨未降短期仍有理由再升息且不排除12月連續升息fed理事華勒說12月可能一次升息2碼ecb首席經濟學家lane也表示12月前若數據不變應提高借貸成本",
-          "event_cluster_key": "event-256a7431bb59098d1611",
-          "published_time_bucket": "2026-11-11T16:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "利率"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "利率",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-11-11T17:18:48.131112+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 27
         }
       ],
       "source_diversity": {
@@ -4703,9 +4711,9 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 15,
-          "TSM": 15,
-          "NVDA": 14,
+          "NVDA": 15,
+          "2330": 14,
+          "TSM": 14,
           "3017": 1
         },
         "sector_interest": {},
@@ -4717,7 +4725,7 @@
           "荷姆茲": 1
         },
         "market_interest": {
-          "taiwan": 104
+          "taiwan": 105
         },
         "context": {
           "tracked_tickers": [
@@ -4805,9 +4813,9 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 15,
-            "TSM": 15,
-            "NVDA": 14
+            "NVDA": 15,
+            "2330": 14,
+            "TSM": 14
           },
           "research_candidate": {
             "3017": 1
@@ -4823,9 +4831,10 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 28,
+      "excluded_count": 29,
       "exclusion_reasons": {
-        "insufficient_market_relevance": 24,
+        "insufficient_market_relevance": 22,
+        "market_scope_mismatch": 4,
         "outside_calendar_window": 16
       },
       "status": "ready",
@@ -4838,39 +4847,39 @@
         "disabled_provider_count": 0,
         "fetched": 40,
         "normalized": 40,
-        "eligible": 12,
-        "excluded": 28,
+        "eligible": 11,
+        "excluded": 29,
         "date_eligible_current": 24,
         "date_excluded_current": 16,
         "date_exclusion_reasons_current": {
           "outside_calendar_window": 16
         },
-        "date_eligible_inventory": 64,
+        "date_eligible_inventory": 65,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-11-13T06:59:09.558362+00:00",
-        "deduped": 12,
+        "reference_time": "2026-11-13T07:05:24.515153+00:00",
+        "deduped": 11,
         "publicly_ranked": 5,
-        "current_eligible": 12,
-        "inventory_considered": 64,
+        "current_eligible": 11,
+        "inventory_considered": 65,
         "inventory_eligible": 52,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 28,
+        "filtered_story_count": 29,
         "fetched_story_count": 40,
         "normalized_story_count": 40,
-        "eligible_story_count": 12,
-        "deduped_story_count": 12,
+        "eligible_story_count": 11,
+        "deduped_story_count": 11,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 64,
+        "considered": 65,
         "eligible": 52,
         "selected": 0,
         "target_count": 5,
@@ -4884,7 +4893,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 40,
-          "checked_at": "2026-11-13T06:59:09.558393+00:00"
+          "checked_at": "2026-11-13T07:05:24.515193+00:00"
         },
         {
           "provider": "twse",
@@ -4895,10 +4904,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-11-13T06:59:09.558393+00:00",
+          "checked_at": "2026-11-13T07:05:24.515193+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+          "last_success_at": "2026-11-13T07:05:24.515193+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4923,10 +4932,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-11-13T06:59:09.558393+00:00",
+          "checked_at": "2026-11-13T07:05:24.515193+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+          "last_success_at": "2026-11-13T07:05:24.515193+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4951,11 +4960,11 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
           "item_count": 0,
-          "checked_at": "2026-11-13T06:59:09.558393+00:00",
+          "checked_at": "2026-11-13T07:05:24.515193+00:00",
           "data_gap": "filtered_no_market_match",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+          "last_success_at": "2026-11-13T07:05:24.515193+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4979,26 +4988,26 @@
           "status": "healthy",
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
-          "item_count": 2,
-          "checked_at": "2026-11-13T06:59:09.558393+00:00",
+          "item_count": 1,
+          "checked_at": "2026-11-13T07:05:24.515193+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 2,
-          "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+          "filtered_item_count": 1,
+          "last_success_at": "2026-11-13T07:05:24.515193+00:00",
           "last_failure_at": null,
-          "stories_ingested": 10,
-          "stories_deduped": 2,
-          "ranked_count": 2,
+          "stories_ingested": 8,
+          "stories_deduped": 1,
+          "ranked_count": 1,
           "relevance_distribution": {
-            "market": 10
+            "market": 8
           },
           "funnel": {
             "fetched_count": 10,
-            "normalized_count": 10,
-            "market_compatible_count": 10,
-            "eligible_count": 2,
-            "excluded_count": 8,
-            "deduped_count": 2,
-            "ranked_count": 2
+            "normalized_count": 8,
+            "market_compatible_count": 8,
+            "eligible_count": 1,
+            "excluded_count": 7,
+            "deduped_count": 1,
+            "ranked_count": 1
           }
         },
         {
@@ -5009,19 +5018,19 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
-          "item_count": 3,
-          "checked_at": "2026-11-13T06:59:09.558393+00:00",
+          "item_count": 4,
+          "checked_at": "2026-11-13T07:05:24.515193+00:00",
           "raw_item_count": 30,
-          "filtered_item_count": 3,
-          "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+          "filtered_item_count": 4,
+          "last_success_at": "2026-11-13T07:05:24.515193+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
           "stories_deduped": 10,
-          "ranked_count": 3,
+          "ranked_count": 4,
           "relevance_distribution": {
             "market": 30,
             "research_candidate": 1,
-            "tracked_ticker": 8
+            "tracked_ticker": 7
           },
           "funnel": {
             "fetched_count": 30,
@@ -5030,13 +5039,13 @@
             "eligible_count": 10,
             "excluded_count": 20,
             "deduped_count": 10,
-            "ranked_count": 3
+            "ranked_count": 4
           }
         }
       ],
       "observability": {
         "stories_ingested": 40,
-        "stories_deduped": 12,
+        "stories_deduped": 11,
         "ranked_count": 5,
         "relevance_distribution": {
           "market": 40,
@@ -5047,7 +5056,7 @@
           {
             "provider": "anue",
             "status": "no_event",
-            "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+            "last_success_at": "2026-11-13T07:05:24.515193+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5066,15 +5075,15 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+            "last_success_at": "2026-11-13T07:05:24.515193+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
             "stories_deduped": 10,
-            "ranked_count": 3,
+            "ranked_count": 4,
             "relevance_distribution": {
               "market": 30,
               "research_candidate": 1,
-              "tracked_ticker": 8
+              "tracked_ticker": 7
             },
             "funnel": {
               "fetched_count": 30,
@@ -5083,13 +5092,13 @@
               "eligible_count": 10,
               "excluded_count": 20,
               "deduped_count": 10,
-              "ranked_count": 3
+              "ranked_count": 4
             }
           },
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+            "last_success_at": "2026-11-13T07:05:24.515193+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5108,7 +5117,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+            "last_success_at": "2026-11-13T07:05:24.515193+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5125,24 +5134,46 @@
             }
           },
           {
+            "provider": "unknown",
+            "status": "healthy",
+            "last_success_at": null,
+            "last_failure_at": null,
+            "stories_ingested": 2,
+            "stories_deduped": 0,
+            "ranked_count": 0,
+            "relevance_distribution": {
+              "market": 2,
+              "tracked_ticker": 1
+            },
+            "funnel": {
+              "fetched_count": 2,
+              "normalized_count": 2,
+              "market_compatible_count": 0,
+              "eligible_count": 0,
+              "excluded_count": 2,
+              "deduped_count": 0,
+              "ranked_count": 0
+            }
+          },
+          {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+            "last_success_at": "2026-11-13T07:05:24.515193+00:00",
             "last_failure_at": null,
-            "stories_ingested": 10,
-            "stories_deduped": 2,
-            "ranked_count": 2,
+            "stories_ingested": 8,
+            "stories_deduped": 1,
+            "ranked_count": 1,
             "relevance_distribution": {
-              "market": 10
+              "market": 8
             },
             "funnel": {
               "fetched_count": 10,
-              "normalized_count": 10,
-              "market_compatible_count": 10,
-              "eligible_count": 2,
-              "excluded_count": 8,
-              "deduped_count": 2,
-              "ranked_count": 2
+              "normalized_count": 8,
+              "market_compatible_count": 8,
+              "eligible_count": 1,
+              "excluded_count": 7,
+              "deduped_count": 1,
+              "ranked_count": 1
             }
           }
         ]
@@ -5547,103 +5578,6 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-cada13642e92faae8821",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "〈美股盤後〉黃仁勳閃辭後 輝達市值一夕蒸發超1800億美元 四大指數全黑",
-          "raw_title": "〈美股盤後〉黃仁勳閃辭後 輝達市值一夕蒸發超1800億美元 四大指數全黑",
-          "normalized_fact": "輝達宣布黃仁勳請辭，財務長克雷斯代理執行長，董事會啟動接班遴選，股價跌 4.34%。 美股週四全數收黑，AMD、博通各漲逾 5%，但輝達、應用材料走弱，費半跌 0.54%。 油價因川普稱不需與伊朗達成協議而上漲，WTI、布蘭特分別漲至 88.74、95.82 美元，通膨與升息疑慮升溫。",
-          "market_topic": "energy_geopolitics",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "輝達宣布黃仁勳請辭，財務長克雷斯代理執行長，董事會啟動接班遴選，股價跌 4.34%。 美股週四全數收黑，AMD、博通各漲逾 5%，但輝達、應用材料走弱，費半跌 0.54%。 油價因川普稱不需與伊朗達成協議而上漲，WTI、布蘭特分別漲至 88.74、95.82 美元，通膨與升息疑慮升溫。",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6660716",
-          "url": "https://news.cnyes.com/news/id/6660716",
-          "published_at": "2026-11-12T22:03:53+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-12",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "conflict",
-            "reason": "conflict_subject_action",
-            "matched_terms": [
-              "伊朗",
-              "協議"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "伊朗",
-              "協議"
-            ],
-            "matched_subject": "伊朗",
-            "matched_action": "協議",
-            "matched_market_object": "伊朗",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:NVDA",
-            "research_candidate:AMD",
-            "active_event:wti",
-            "active_event:伊朗"
-          ],
-          "freshness": "published",
-          "dedupe_key": "輝達宣布黃仁勳請辭財務長克雷斯代理執行長董事會啟動接班遴選股價跌434美股週四全數收黑amd博通各漲逾5但輝達應用材料走弱費半跌054油價因川普稱不需與伊朗達成協議而上漲wti布蘭特分別漲至88749582美元通膨與升息疑慮升溫",
-          "event_cluster_key": "event-79d0ee1c9a8e3faed92d",
-          "published_time_bucket": "2026-11-12T22:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "伊朗",
-            "協議"
-          ],
-          "matched_subject": "伊朗",
-          "matched_action": "協議",
-          "matched_market_object": "伊朗",
-          "decision_value_class": "geopolitics_policy",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 150
-        },
-        {
           "story_id": "news-cc709fa02843f1c09f0b",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -5822,6 +5756,99 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 120
+        },
+        {
+          "story_id": "news-071b3a28de54f8e321f0",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "The Fed Has to Raise Rates. How Fast to Go Has Officials Divided. - The New York Times",
+          "raw_title": "The Fed Has to Raise Rates. How Fast to Go Has Officials Divided. - The New York Times",
+          "normalized_fact": "The Fed Has to Raise Rates. How Fast to Go Has Officials Divided. The New York Times。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "The Fed Has to Raise Rates. How Fast to Go Has Officials Divided. The New York Times",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxNOWNqWFdDMHlSeUN3RHluTERFZlVwaVpqZ0ZEUzlURUkyeng1SjRQaG84V3ZnVURxdy1LdEp5RlpJeG5zQ25qQ1BXV05wU0lFRks2XzIyX1ZiS2tPVlZXbFVsTVFfUnpEUDVDeU9UczQ0aVZRYU85WkI0N0tGd1d6QTY1cw",
+          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxNOWNqWFdDMHlSeUN3RHluTERFZlVwaVpqZ0ZEUzlURUkyeng1SjRQaG84V3ZnVURxdy1LdEp5RlpJeG5zQ25qQ1BXV05wU0lFRks2XzIyX1ZiS2tPVlZXbFVsTVFfUnpEUDVDeU9UczQ0aVZRYU85WkI0N0tGd1d6QTY1cw",
+          "published_at": "2026-11-11T11:59:41+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 3,
+          "published_local_date": "2026-11-11",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "rates"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "rates"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "rates",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "thefedhastoraiserateshowfasttogohasofficialsdividedthenewyorktimes",
+          "event_cluster_key": "event-0ae8a31c140394b48a3a",
+          "published_time_bucket": "2026-11-11T11:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "rates"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "rates",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
         }
       ],
       "editorial_candidates": [
@@ -6004,103 +6031,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
-        },
-        {
-          "story_id": "news-cada13642e92faae8821",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "〈美股盤後〉黃仁勳閃辭後 輝達市值一夕蒸發超1800億美元 四大指數全黑",
-          "raw_title": "〈美股盤後〉黃仁勳閃辭後 輝達市值一夕蒸發超1800億美元 四大指數全黑",
-          "normalized_fact": "輝達宣布黃仁勳請辭，財務長克雷斯代理執行長，董事會啟動接班遴選，股價跌 4.34%。 美股週四全數收黑，AMD、博通各漲逾 5%，但輝達、應用材料走弱，費半跌 0.54%。 油價因川普稱不需與伊朗達成協議而上漲，WTI、布蘭特分別漲至 88.74、95.82 美元，通膨與升息疑慮升溫。",
-          "market_topic": "energy_geopolitics",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "輝達宣布黃仁勳請辭，財務長克雷斯代理執行長，董事會啟動接班遴選，股價跌 4.34%。 美股週四全數收黑，AMD、博通各漲逾 5%，但輝達、應用材料走弱，費半跌 0.54%。 油價因川普稱不需與伊朗達成協議而上漲，WTI、布蘭特分別漲至 88.74、95.82 美元，通膨與升息疑慮升溫。",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6660716",
-          "url": "https://news.cnyes.com/news/id/6660716",
-          "published_at": "2026-11-12T22:03:53+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-12",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "conflict",
-            "reason": "conflict_subject_action",
-            "matched_terms": [
-              "伊朗",
-              "協議"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "伊朗",
-              "協議"
-            ],
-            "matched_subject": "伊朗",
-            "matched_action": "協議",
-            "matched_market_object": "伊朗",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:NVDA",
-            "research_candidate:AMD",
-            "active_event:wti",
-            "active_event:伊朗"
-          ],
-          "freshness": "published",
-          "dedupe_key": "輝達宣布黃仁勳請辭財務長克雷斯代理執行長董事會啟動接班遴選股價跌434美股週四全數收黑amd博通各漲逾5但輝達應用材料走弱費半跌054油價因川普稱不需與伊朗達成協議而上漲wti布蘭特分別漲至88749582美元通膨與升息疑慮升溫",
-          "event_cluster_key": "event-79d0ee1c9a8e3faed92d",
-          "published_time_bucket": "2026-11-12T22:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "伊朗",
-            "協議"
-          ],
-          "matched_subject": "伊朗",
-          "matched_action": "協議",
-          "matched_market_object": "伊朗",
-          "decision_value_class": "geopolitics_policy",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 150
         },
         {
           "story_id": "news-cc709fa02843f1c09f0b",
@@ -6644,6 +6574,103 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
+        },
+        {
+          "story_id": "news-cada13642e92faae8821",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈美股盤後〉黃仁勳閃辭後 輝達市值一夕蒸發超1800億美元 四大指數全黑",
+          "raw_title": "〈美股盤後〉黃仁勳閃辭後 輝達市值一夕蒸發超1800億美元 四大指數全黑",
+          "normalized_fact": "輝達宣布黃仁勳請辭，財務長克雷斯代理執行長，董事會啟動接班遴選，股價跌 4.34%。 美股週四全數收黑，AMD、博通各漲逾 5%，但輝達、應用材料走弱，費半跌 0.54%。 油價因川普稱不需與伊朗達成協議而上漲，WTI、布蘭特分別漲至 88.74、95.82 美元，通膨與升息疑慮升溫。",
+          "market_topic": "energy_geopolitics",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "輝達宣布黃仁勳請辭，財務長克雷斯代理執行長，董事會啟動接班遴選，股價跌 4.34%。 美股週四全數收黑，AMD、博通各漲逾 5%，但輝達、應用材料走弱，費半跌 0.54%。 油價因川普稱不需與伊朗達成協議而上漲，WTI、布蘭特分別漲至 88.74、95.82 美元，通膨與升息疑慮升溫。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6660716",
+          "url": "https://news.cnyes.com/news/id/6660716",
+          "published_at": "2026-11-12T22:03:53+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-11-12",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "conflict",
+            "reason": "conflict_subject_action",
+            "matched_terms": [
+              "伊朗",
+              "協議"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "伊朗",
+              "協議"
+            ],
+            "matched_subject": "伊朗",
+            "matched_action": "協議",
+            "matched_market_object": "伊朗",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "tracked_ticker:NVDA",
+            "research_candidate:AMD",
+            "active_event:wti",
+            "active_event:伊朗"
+          ],
+          "freshness": "published",
+          "dedupe_key": "輝達宣布黃仁勳請辭財務長克雷斯代理執行長董事會啟動接班遴選股價跌434美股週四全數收黑amd博通各漲逾5但輝達應用材料走弱費半跌054油價因川普稱不需與伊朗達成協議而上漲wti布蘭特分別漲至88749582美元通膨與升息疑慮升溫",
+          "event_cluster_key": "event-79d0ee1c9a8e3faed92d",
+          "published_time_bucket": "2026-11-12T22:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "伊朗",
+            "協議"
+          ],
+          "matched_subject": "伊朗",
+          "matched_action": "協議",
+          "matched_market_object": "伊朗",
+          "decision_value_class": "geopolitics_policy",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 2,
+          "inventory_saved_at": "2026-11-13T00:48:35.588762+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 47
         },
         {
           "story_id": "news-e84e528fb390d9c3fa59",
@@ -9482,16 +9509,14 @@
         "status": "multi_source",
         "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 3,
-        "provider_count": 3,
+        "independent_source_count": 2,
+        "provider_count": 2,
         "provider_ids": [
-          "anue",
           "google_news",
           "yahoo_finance"
         ],
         "source_domains": [
           "finance.yahoo.com",
-          "news.cnyes.com",
           "news.google.com"
         ],
         "supporting_source_count": 0,
@@ -9501,26 +9526,26 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "NVDA": 53,
-          "AMD": 2,
+          "NVDA": 52,
+          "AMD": 1,
           "TSM": 2,
           "2330": 1,
           "PDD": 1
         },
         "sector_interest": {},
         "topic_interest": {
-          "wti": 2,
-          "伊朗": 2,
           "oil": 14,
           "gold": 5,
           "hormuz": 3,
           "iran": 4,
           "sanctions": 1,
           "israel": 1,
-          "war": 1
+          "war": 1,
+          "wti": 1,
+          "伊朗": 1
         },
         "market_interest": {
-          "us": 152
+          "us": 151
         },
         "context": {
           "tracked_tickers": [
@@ -9608,25 +9633,25 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "NVDA": 53,
+            "NVDA": 52,
             "TSM": 2,
             "2330": 1
           },
           "research_candidate": {
-            "AMD": 2,
+            "AMD": 1,
             "PDD": 1
           },
           "tracked_sector": {},
           "active_event": {
-            "wti": 2,
-            "伊朗": 2,
             "oil": 14,
             "gold": 5,
             "hormuz": 3,
             "iran": 4,
             "sanctions": 1,
             "israel": 1,
-            "war": 1
+            "war": 1,
+            "wti": 1,
+            "伊朗": 1
           },
           "creator_mentioned": {}
         }
@@ -9635,8 +9660,8 @@
       "exclusion_reasons": {
         "generic_official_filing": 20,
         "incomplete_normalized_fact": 18,
-        "insufficient_market_relevance": 26,
-        "market_scope_mismatch": 12,
+        "insufficient_market_relevance": 28,
+        "market_scope_mismatch": 10,
         "outside_calendar_window": 16
       },
       "status": "ready",
@@ -9647,11 +9672,11 @@
         "successful_provider_count": 4,
         "failed_provider_count": 1,
         "disabled_provider_count": 1,
-        "fetched": 63,
-        "normalized": 63,
-        "eligible": 9,
+        "fetched": 62,
+        "normalized": 62,
+        "eligible": 8,
         "excluded": 54,
-        "date_eligible_current": 47,
+        "date_eligible_current": 46,
         "date_excluded_current": 16,
         "date_exclusion_reasons_current": {
           "outside_calendar_window": 16
@@ -9659,10 +9684,10 @@
         "date_eligible_inventory": 89,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-11-13T06:59:09.558362+00:00",
-        "deduped": 9,
+        "reference_time": "2026-11-13T07:05:24.515153+00:00",
+        "deduped": 8,
         "publicly_ranked": 5,
-        "current_eligible": 9,
+        "current_eligible": 8,
         "inventory_considered": 89,
         "inventory_eligible": 51,
         "inventory_selected": 0,
@@ -9671,10 +9696,10 @@
         "shortfall_count": 0,
         "shortfall_reason": null,
         "filtered_story_count": 54,
-        "fetched_story_count": 63,
-        "normalized_story_count": 63,
-        "eligible_story_count": 9,
-        "deduped_story_count": 9,
+        "fetched_story_count": 62,
+        "normalized_story_count": 62,
+        "eligible_story_count": 8,
+        "deduped_story_count": 8,
         "ranked_story_count": 5
       },
       "inventory": {
@@ -9694,8 +9719,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 63,
-          "checked_at": "2026-11-13T06:59:09.558393+00:00"
+          "item_count": 62,
+          "checked_at": "2026-11-13T07:05:24.515193+00:00"
         },
         {
           "provider": "sec",
@@ -9706,10 +9731,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-11-13T06:59:09.558393+00:00",
+          "checked_at": "2026-11-13T07:05:24.515193+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+          "last_success_at": "2026-11-13T07:05:24.515193+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9737,12 +9762,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-11-13T06:59:09.558393+00:00",
+          "checked_at": "2026-11-13T07:05:24.515193+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-11-13T06:59:09.558393+00:00",
+          "last_failure_at": "2026-11-13T07:05:24.515193+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9765,10 +9790,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-11-13T06:59:09.558393+00:00",
+          "checked_at": "2026-11-13T07:05:24.515193+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+          "last_success_at": "2026-11-13T07:05:24.515193+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9789,33 +9814,32 @@
           "key": "news_us_anue",
           "legacy_key": "official_news_us_anue",
           "label": "anue market news",
-          "status": "healthy",
+          "status": "no_event",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 1,
-          "checked_at": "2026-11-13T06:59:09.558393+00:00",
+          "item_count": 0,
+          "checked_at": "2026-11-13T07:05:24.515193+00:00",
           "raw_item_count": 5,
-          "filtered_item_count": 1,
-          "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+          "filtered_item_count": 0,
+          "last_success_at": "2026-11-13T07:05:24.515193+00:00",
           "last_failure_at": null,
-          "stories_ingested": 3,
-          "stories_deduped": 1,
-          "ranked_count": 1,
+          "stories_ingested": 2,
+          "stories_deduped": 0,
+          "ranked_count": 0,
           "relevance_distribution": {
-            "active_event": 1,
-            "market": 3,
-            "research_candidate": 1,
-            "tracked_ticker": 3
+            "market": 2,
+            "tracked_ticker": 2
           },
           "funnel": {
-            "fetched_count": 3,
-            "normalized_count": 3,
-            "market_compatible_count": 3,
-            "eligible_count": 1,
+            "fetched_count": 2,
+            "normalized_count": 2,
+            "market_compatible_count": 2,
+            "eligible_count": 0,
             "excluded_count": 2,
-            "deduped_count": 1,
-            "ranked_count": 1
-          }
+            "deduped_count": 0,
+            "ranked_count": 0
+          },
+          "data_gap": "filtered_no_market_match"
         },
         {
           "provider": "yahoo_finance",
@@ -9826,24 +9850,24 @@
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
           "item_count": 1,
-          "checked_at": "2026-11-13T06:59:09.558393+00:00",
+          "checked_at": "2026-11-13T07:05:24.515193+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 1,
-          "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+          "last_success_at": "2026-11-13T07:05:24.515193+00:00",
           "last_failure_at": null,
-          "stories_ingested": 4,
+          "stories_ingested": 5,
           "stories_deduped": 1,
           "ranked_count": 1,
           "relevance_distribution": {
-            "market": 4,
-            "tracked_ticker": 3
+            "market": 5,
+            "tracked_ticker": 4
           },
           "funnel": {
             "fetched_count": 10,
-            "normalized_count": 4,
-            "market_compatible_count": 4,
+            "normalized_count": 5,
+            "market_compatible_count": 5,
             "eligible_count": 1,
-            "excluded_count": 3,
+            "excluded_count": 4,
             "deduped_count": 1,
             "ranked_count": 1
           }
@@ -9856,15 +9880,15 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
-          "item_count": 3,
-          "checked_at": "2026-11-13T06:59:09.558393+00:00",
+          "item_count": 4,
+          "checked_at": "2026-11-13T07:05:24.515193+00:00",
           "raw_item_count": 40,
-          "filtered_item_count": 3,
-          "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+          "filtered_item_count": 4,
+          "last_success_at": "2026-11-13T07:05:24.515193+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
           "stories_deduped": 7,
-          "ranked_count": 3,
+          "ranked_count": 4,
           "relevance_distribution": {
             "active_event": 12,
             "market": 40,
@@ -9877,50 +9901,47 @@
             "eligible_count": 7,
             "excluded_count": 33,
             "deduped_count": 7,
-            "ranked_count": 3
+            "ranked_count": 4
           }
         }
       ],
       "observability": {
-        "stories_ingested": 63,
-        "stories_deduped": 9,
+        "stories_ingested": 62,
+        "stories_deduped": 8,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 13,
-          "market": 63,
-          "research_candidate": 1,
-          "tracked_ticker": 18
+          "active_event": 12,
+          "market": 62,
+          "tracked_ticker": 17
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+            "last_success_at": "2026-11-13T07:05:24.515193+00:00",
             "last_failure_at": null,
-            "stories_ingested": 3,
-            "stories_deduped": 1,
-            "ranked_count": 1,
+            "stories_ingested": 2,
+            "stories_deduped": 0,
+            "ranked_count": 0,
             "relevance_distribution": {
-              "active_event": 1,
-              "market": 3,
-              "research_candidate": 1,
-              "tracked_ticker": 3
+              "market": 2,
+              "tracked_ticker": 2
             },
             "funnel": {
-              "fetched_count": 3,
-              "normalized_count": 3,
-              "market_compatible_count": 3,
-              "eligible_count": 1,
+              "fetched_count": 2,
+              "normalized_count": 2,
+              "market_compatible_count": 2,
+              "eligible_count": 0,
               "excluded_count": 2,
-              "deduped_count": 1,
-              "ranked_count": 1
+              "deduped_count": 0,
+              "ranked_count": 0
             }
           },
           {
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-11-13T06:59:09.558393+00:00",
+            "last_failure_at": "2026-11-13T07:05:24.515193+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9938,11 +9959,11 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+            "last_success_at": "2026-11-13T07:05:24.515193+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
             "stories_deduped": 7,
-            "ranked_count": 3,
+            "ranked_count": 4,
             "relevance_distribution": {
               "active_event": 12,
               "market": 40,
@@ -9955,13 +9976,13 @@
               "eligible_count": 7,
               "excluded_count": 33,
               "deduped_count": 7,
-              "ranked_count": 3
+              "ranked_count": 4
             }
           },
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+            "last_success_at": "2026-11-13T07:05:24.515193+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9980,7 +10001,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+            "last_success_at": "2026-11-13T07:05:24.515193+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -10003,19 +10024,19 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 6,
+            "stories_ingested": 5,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 6,
-              "tracked_ticker": 5
+              "market": 5,
+              "tracked_ticker": 4
             },
             "funnel": {
-              "fetched_count": 6,
-              "normalized_count": 6,
+              "fetched_count": 5,
+              "normalized_count": 5,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 6,
+              "excluded_count": 5,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -10023,21 +10044,21 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-11-13T06:59:09.558393+00:00",
+            "last_success_at": "2026-11-13T07:05:24.515193+00:00",
             "last_failure_at": null,
-            "stories_ingested": 4,
+            "stories_ingested": 5,
             "stories_deduped": 1,
             "ranked_count": 1,
             "relevance_distribution": {
-              "market": 4,
-              "tracked_ticker": 3
+              "market": 5,
+              "tracked_ticker": 4
             },
             "funnel": {
               "fetched_count": 10,
-              "normalized_count": 4,
-              "market_compatible_count": 4,
+              "normalized_count": 5,
+              "market_compatible_count": 5,
               "eligible_count": 1,
-              "excluded_count": 3,
+              "excluded_count": 4,
               "deduped_count": 1,
               "ranked_count": 1
             }
