@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "15e446c73f0408d4",
-  "snapshot_id": "news-7089e969751efdc2",
+  "market_snapshot_id": "e89baad1a5c9ebb8",
+  "snapshot_id": "news-ccc11445b6caf522",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -437,15 +437,15 @@
       ],
       "stories": [
         {
-          "story_id": "news-3ba94471a98082efcd27",
-          "provider": "anue",
-          "provider_name": "Anue",
+          "story_id": "news-0a2b2ffe03e81741138f",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "黃仁勳請辭輝達利空出盡？郭明錤點名Google TPU最大受惠 接班影響最快2028年浮現",
-          "raw_title": "黃仁勳請辭輝達利空出盡？郭明錤點名Google TPU最大受惠 接班影響最快2028年浮現",
-          "normalized_fact": "黃仁勳辭去輝達總裁、執行長及董事，克雷斯代理執行長；郭明錤稱短期股價利空可消化。 郭明錤指接班影響最快2028年浮現；新團隊若放慢產能預訂，台供應鏈擴產、先進封裝與液冷備料恐受影響。 Google TPU或成替代方案，博通、聯發科受關注；若美禁輝達H200出口中國，恐有約50億美元減記。",
-          "market_topic": "semiconductor_ai",
+          "title": "單日賣超 3025 億、全年賣破 2 兆，外資賣超雙紀錄，卻把台股賣到漲逾四成？",
+          "raw_title": "單日賣超 3025 億、全年賣破 2 兆，外資賣超雙紀錄，卻把台股賣到漲逾四成？",
+          "normalized_fact": "外資今年賣超台股破2兆，單日3025億也創下紀錄，但台股今年仍上漲逾4成。首先賣超這項行為背後可能有各種不同的目的，再加上外資包含了各種目標不同的大型基金。再加上外資大賣也未必能預測未來的方向。與。",
+          "market_topic": "taiwan_market",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -453,11 +453,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "黃仁勳辭去輝達總裁、執行長及董事，克雷斯代理執行長；郭明錤稱短期股價利空可消化。 郭明錤指接班影響最快2028年浮現；新團隊若放慢產能預訂，台供應鏈擴產、先進封裝與液冷備料恐受影響。 Google TPU或成替代方案，博通、聯發科受關注；若美禁輝達H200出口中國，恐有約50億美元減記。",
+          "summary": "外資今年賣超台股破2兆，單日3025億也創下紀錄，但台股今年仍上漲逾4成。首先賣超這項行為背後可能有各種不同的目的，再加上「外資」包含了各種目標不同的大型基金。再加上外資大賣也未必能預測未來的方向。與",
           "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6660721",
-          "url": "https://news.cnyes.com/news/id/6660721",
-          "published_at": "2026-11-12T20:10:03+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%96%AE%E6%97%A5%E8%B3%A3%E8%B6%85-3025-%E5%84%84-%E5%85%A8%E5%B9%B4%E8%B3%A3%E7%A0%B4-2-063523739.html",
+          "url": "https://tw.stock.yahoo.com/news/%E5%96%AE%E6%97%A5%E8%B3%A3%E8%B6%85-3025-%E5%84%84-%E5%85%A8%E5%B9%B4%E8%B3%A3%E7%A0%B4-2-063523739.html",
+          "published_at": "2026-11-13T06:35:23+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -468,119 +468,21 @@
           "market_compatible": true,
           "tickers": [],
           "entities": [
-            "NVDA"
+            "TAIEX"
           ],
           "sectors": [],
           "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "輝達",
-              "產能"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "輝達",
-              "產能"
-            ],
-            "matched_subject": "輝達",
-            "matched_action": "產能",
-            "matched_market_object": "輝達",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:NVDA"
-          ],
-          "freshness": "published",
-          "dedupe_key": "黃仁勳辭去輝達總裁執行長及董事克雷斯代理執行長郭明錤稱短期股價利空可消化郭明錤指接班影響最快2028年浮現新團隊若放慢產能預訂台供應鏈擴產先進封裝與液冷備料恐受影響googletpu或成替代方案博通聯發科受關注若美禁輝達h200出口中國恐有約50億美元減記",
-          "event_cluster_key": "event-aa02a2355dfcc7727e6c",
-          "published_time_bucket": "2026-11-12T20:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "輝達",
-            "產能"
-          ],
-          "matched_subject": "輝達",
-          "matched_action": "產能",
-          "matched_market_object": "輝達",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 135
-        },
-        {
-          "story_id": "news-f7213f1df0419382f463",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "萬海2030年前新船交畢邁向百萬TEU規模，Q4近洋價量動能具支撐",
-          "raw_title": "萬海2030年前新船交畢邁向百萬TEU規模，Q4近洋價量動能具支撐",
-          "normalized_fact": "【財訊快報／記者劉居全報導】萬海(2615)總經理謝福隆今(13)日表示，2026年航運市場受地緣政治衝突升溫、中東航道與巴拿馬運河通行限制、主要港口壅塞以及供應鏈重組等多重外在變數影響，有效運力供給。",
-          "market_topic": "energy_geopolitics",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "【財訊快報／記者劉居全報導】萬海(2615)總經理謝福隆今(13)日表示，2026年航運市場受地緣政治衝突升溫、中東航道與巴拿馬運河通行限制、主要港口壅塞以及供應鏈重組等多重外在變數影響，有效運力供給",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E8%90%AC%E6%B5%B72030%E5%B9%B4%E5%89%8D%E6%96%B0%E8%88%B9%E4%BA%A4%E7%95%A2%E9%82%81%E5%90%91%E7%99%BE%E8%90%ACteu%E8%A6%8F%E6%A8%A1-q4%E8%BF%91%E6%B4%8B%E5%83%B9%E9%87%8F%E5%8B%95%E8%83%BD%E5%85%B7%E6%94%AF%E6%92%90-061448338.html",
-          "url": "https://tw.stock.yahoo.com/news/%E8%90%AC%E6%B5%B72030%E5%B9%B4%E5%89%8D%E6%96%B0%E8%88%B9%E4%BA%A4%E7%95%A2%E9%82%81%E5%90%91%E7%99%BE%E8%90%ACteu%E8%A6%8F%E6%A8%A1-q4%E8%BF%91%E6%B4%8B%E5%83%B9%E9%87%8F%E5%8B%95%E8%83%BD%E5%85%B7%E6%94%AF%E6%92%90-061448338.html",
-          "published_at": "2026-11-13T06:14:48+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-13",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "conflict",
-            "reason": "conflict_subject_action",
-            "matched_terms": [
-              "中東",
-              "衝突"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "中東",
-              "衝突"
-            ],
-            "matched_subject": "中東",
-            "matched_action": "衝突",
-            "matched_market_object": "中東",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
             "input_fields": [
               "description",
               "summary",
@@ -591,20 +493,17 @@
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "財訊快報記者劉居全報導萬海2615總經理謝福隆今13日表示2026年航運市場受地緣政治衝突升溫中東航道與巴拿馬運河通行限制主要港口壅塞以及供應鏈重組等多重外在變數影響有效運力供給",
-          "event_cluster_key": "event-405556a448dce1174fab",
+          "dedupe_key": "外資今年賣超台股破2兆單日3025億也創下紀錄但台股今年仍上漲逾4成首先賣超這項行為背後可能有各種不同的目的再加上外資包含了各種目標不同的大型基金再加上外資大賣也未必能預測未來的方向與",
+          "event_cluster_key": "",
           "published_time_bucket": "2026-11-13T06:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [
-            "中東",
-            "衝突"
-          ],
-          "matched_subject": "中東",
-          "matched_action": "衝突",
-          "matched_market_object": "中東",
-          "decision_value_class": "geopolitics_policy",
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "company_event",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -819,7 +718,7 @@
           "ranking_score": 125
         },
         {
-          "story_id": "news-0b73adf522f526f218c5",
+          "story_id": "news-780b4b0876ccb10210fe",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
@@ -837,8 +736,8 @@
           "normalization_complete": true,
           "summary": "黃仁勳辭任輝達執行長 牽動台灣AI供應鏈 ETtoday新聞雲",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE00R1ZxTXV6THBrd0hoeUJabEtJQ0txdE9jSUpqVzZoRkN2Y1hXMzFnbkdZWndPQ2xTNEk1NnkxbVhxTnUzRXRRak9fX2pfY1E",
-          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE00R1ZxTXV6THBrd0hoeUJabEtJQ0txdE9jSUpqVzZoRkN2Y1hXMzFnbkdZWndPQ2xTNEk1NnkxbVhxTnUzRXRRak9fX2pfY1E",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE00R1ZxTXV6THBrd0hoeUJabEtJQ0txdE9jSUpqVzZoRkN2Y1hXMzFnbkdZWndPQ2xTNEk1NnkxbVhxTnUzRXRRak9fX2pfY1HSAU5BVV95cUxOVXFjTnlCTUdCUmRFYXB3aGRqRDcySlpTMDl4bEVfT3c3cVRWNnF1c0M3SnlGTTlVWllkeUQtOVkzZ0tHODhBeXB5TGpuelE",
+          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE00R1ZxTXV6THBrd0hoeUJabEtJQ0txdE9jSUpqVzZoRkN2Y1hXMzFnbkdZWndPQ2xTNEk1NnkxbVhxTnUzRXRRak9fX2pfY1HSAU5BVV95cUxOVXFjTnlCTUdCUmRFYXB3aGRqRDcySlpTMDl4bEVfT3c3cVRWNnF1c0M3SnlGTTlVWllkeUQtOVkzZ0tHODhBeXB5TGpuelE",
           "published_at": "2026-11-13T03:05:00+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
@@ -913,18 +812,16 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 120
-        }
-      ],
-      "editorial_candidates": [
+        },
         {
-          "story_id": "news-3ba94471a98082efcd27",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "黃仁勳請辭輝達利空出盡？郭明錤點名Google TPU最大受惠 接班影響最快2028年浮現",
-          "raw_title": "黃仁勳請辭輝達利空出盡？郭明錤點名Google TPU最大受惠 接班影響最快2028年浮現",
-          "normalized_fact": "黃仁勳辭去輝達總裁、執行長及董事，克雷斯代理執行長；郭明錤稱短期股價利空可消化。 郭明錤指接班影響最快2028年浮現；新團隊若放慢產能預訂，台供應鏈擴產、先進封裝與液冷備料恐受影響。 Google TPU或成替代方案，博通、聯發科受關注；若美禁輝達H200出口中國，恐有約50億美元減記。",
+          "story_id": "news-c27e3a9c4ff8aa5c666e",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "輝達換帥》林百里、劉揚偉避談黃仁勳 台灣AI供應鏈藏5大風險 - 民報",
+          "raw_title": "輝達換帥》林百里、劉揚偉避談黃仁勳 台灣AI供應鏈藏5大風險 - 民報",
+          "normalized_fact": "輝達換帥》林百里、劉揚偉避談黃仁勳 台灣AI供應鏈藏5大風險 民報。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -933,11 +830,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "黃仁勳辭去輝達總裁、執行長及董事，克雷斯代理執行長；郭明錤稱短期股價利空可消化。 郭明錤指接班影響最快2028年浮現；新團隊若放慢產能預訂，台供應鏈擴產、先進封裝與液冷備料恐受影響。 Google TPU或成替代方案，博通、聯發科受關注；若美禁輝達H200出口中國，恐有約50億美元減記。",
+          "summary": "輝達換帥》林百里、劉揚偉避談黃仁勳 台灣AI供應鏈藏5大風險 民報",
           "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6660721",
-          "url": "https://news.cnyes.com/news/id/6660721",
-          "published_at": "2026-11-12T20:10:03+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFA0dTNPVkwtaGlCM1dCdWUtY0lUdW5DcGtsS1VXbUFqS1pZTW9lT2dBRHBJSGhOVlBzaHhIMUdCTUs5Tk8zMkcteVZoRDlXdUJwMHU0TFBwQ1htMnRmUENKWWtGSEc",
+          "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFA0dTNPVkwtaGlCM1dCdWUtY0lUdW5DcGtsS1VXbUFqS1pZTW9lT2dBRHBJSGhOVlBzaHhIMUdCTUs5Tk8zMkcteVZoRDlXdUJwMHU0TFBwQ1htMnRmUENKWWtGSEc",
+          "published_at": "2026-11-12T21:00:00+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -951,24 +848,26 @@
             "NVDA"
           ],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "ai"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
             "category": "semiconductor",
             "reason": "semiconductor_subject_action",
             "matched_terms": [
-              "輝達",
-              "產能"
+              "ai",
+              "供應"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "輝達",
-              "產能"
+              "ai",
+              "供應"
             ],
-            "matched_subject": "輝達",
-            "matched_action": "產能",
-            "matched_market_object": "輝達",
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
             "input_fields": [
               "description",
               "summary",
@@ -976,30 +875,31 @@
             ]
           },
           "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:NVDA"
+            "market:cross_market",
+            "tracked_ticker:NVDA",
+            "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "黃仁勳辭去輝達總裁執行長及董事克雷斯代理執行長郭明錤稱短期股價利空可消化郭明錤指接班影響最快2028年浮現新團隊若放慢產能預訂台供應鏈擴產先進封裝與液冷備料恐受影響googletpu或成替代方案博通聯發科受關注若美禁輝達h200出口中國恐有約50億美元減記",
-          "event_cluster_key": "event-aa02a2355dfcc7727e6c",
-          "published_time_bucket": "2026-11-12T20:00:00+00:00",
+          "dedupe_key": "輝達換帥林百里劉揚偉避談黃仁勳台灣ai供應鏈藏5大風險民報",
+          "event_cluster_key": "event-77997d0f62bf58534937",
+          "published_time_bucket": "2026-11-12T21:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "輝達",
-            "產能"
+            "ai",
+            "供應"
           ],
-          "matched_subject": "輝達",
-          "matched_action": "產能",
-          "matched_market_object": "輝達",
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
           "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
+          "source": "Google News｜台股線索",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -1008,18 +908,20 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 135
-        },
+          "ranking_score": 120
+        }
+      ],
+      "editorial_candidates": [
         {
-          "story_id": "news-f7213f1df0419382f463",
+          "story_id": "news-0a2b2ffe03e81741138f",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "萬海2030年前新船交畢邁向百萬TEU規模，Q4近洋價量動能具支撐",
-          "raw_title": "萬海2030年前新船交畢邁向百萬TEU規模，Q4近洋價量動能具支撐",
-          "normalized_fact": "【財訊快報／記者劉居全報導】萬海(2615)總經理謝福隆今(13)日表示，2026年航運市場受地緣政治衝突升溫、中東航道與巴拿馬運河通行限制、主要港口壅塞以及供應鏈重組等多重外在變數影響，有效運力供給。",
-          "market_topic": "energy_geopolitics",
+          "title": "單日賣超 3025 億、全年賣破 2 兆，外資賣超雙紀錄，卻把台股賣到漲逾四成？",
+          "raw_title": "單日賣超 3025 億、全年賣破 2 兆，外資賣超雙紀錄，卻把台股賣到漲逾四成？",
+          "normalized_fact": "外資今年賣超台股破2兆，單日3025億也創下紀錄，但台股今年仍上漲逾4成。首先賣超這項行為背後可能有各種不同的目的，再加上外資包含了各種目標不同的大型基金。再加上外資大賣也未必能預測未來的方向。與。",
+          "market_topic": "taiwan_market",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -1027,11 +929,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "【財訊快報／記者劉居全報導】萬海(2615)總經理謝福隆今(13)日表示，2026年航運市場受地緣政治衝突升溫、中東航道與巴拿馬運河通行限制、主要港口壅塞以及供應鏈重組等多重外在變數影響，有效運力供給",
+          "summary": "外資今年賣超台股破2兆，單日3025億也創下紀錄，但台股今年仍上漲逾4成。首先賣超這項行為背後可能有各種不同的目的，再加上「外資」包含了各種目標不同的大型基金。再加上外資大賣也未必能預測未來的方向。與",
           "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E8%90%AC%E6%B5%B72030%E5%B9%B4%E5%89%8D%E6%96%B0%E8%88%B9%E4%BA%A4%E7%95%A2%E9%82%81%E5%90%91%E7%99%BE%E8%90%ACteu%E8%A6%8F%E6%A8%A1-q4%E8%BF%91%E6%B4%8B%E5%83%B9%E9%87%8F%E5%8B%95%E8%83%BD%E5%85%B7%E6%94%AF%E6%92%90-061448338.html",
-          "url": "https://tw.stock.yahoo.com/news/%E8%90%AC%E6%B5%B72030%E5%B9%B4%E5%89%8D%E6%96%B0%E8%88%B9%E4%BA%A4%E7%95%A2%E9%82%81%E5%90%91%E7%99%BE%E8%90%ACteu%E8%A6%8F%E6%A8%A1-q4%E8%BF%91%E6%B4%8B%E5%83%B9%E9%87%8F%E5%8B%95%E8%83%BD%E5%85%B7%E6%94%AF%E6%92%90-061448338.html",
-          "published_at": "2026-11-13T06:14:48+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%96%AE%E6%97%A5%E8%B3%A3%E8%B6%85-3025-%E5%84%84-%E5%85%A8%E5%B9%B4%E8%B3%A3%E7%A0%B4-2-063523739.html",
+          "url": "https://tw.stock.yahoo.com/news/%E5%96%AE%E6%97%A5%E8%B3%A3%E8%B6%85-3025-%E5%84%84-%E5%85%A8%E5%B9%B4%E8%B3%A3%E7%A0%B4-2-063523739.html",
+          "published_at": "2026-11-13T06:35:23+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -1041,26 +943,22 @@
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "TAIEX"
+          ],
           "sectors": [],
           "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "conflict",
-            "reason": "conflict_subject_action",
-            "matched_terms": [
-              "中東",
-              "衝突"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "中東",
-              "衝突"
-            ],
-            "matched_subject": "中東",
-            "matched_action": "衝突",
-            "matched_market_object": "中東",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
             "input_fields": [
               "description",
               "summary",
@@ -1071,20 +969,17 @@
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "財訊快報記者劉居全報導萬海2615總經理謝福隆今13日表示2026年航運市場受地緣政治衝突升溫中東航道與巴拿馬運河通行限制主要港口壅塞以及供應鏈重組等多重外在變數影響有效運力供給",
-          "event_cluster_key": "event-405556a448dce1174fab",
+          "dedupe_key": "外資今年賣超台股破2兆單日3025億也創下紀錄但台股今年仍上漲逾4成首先賣超這項行為背後可能有各種不同的目的再加上外資包含了各種目標不同的大型基金再加上外資大賣也未必能預測未來的方向與",
+          "event_cluster_key": "",
           "published_time_bucket": "2026-11-13T06:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [
-            "中東",
-            "衝突"
-          ],
-          "matched_subject": "中東",
-          "matched_action": "衝突",
-          "matched_market_object": "中東",
-          "decision_value_class": "geopolitics_policy",
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "company_event",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -1299,7 +1194,7 @@
           "ranking_score": 125
         },
         {
-          "story_id": "news-0b73adf522f526f218c5",
+          "story_id": "news-780b4b0876ccb10210fe",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
@@ -1317,8 +1212,8 @@
           "normalization_complete": true,
           "summary": "黃仁勳辭任輝達執行長 牽動台灣AI供應鏈 ETtoday新聞雲",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE00R1ZxTXV6THBrd0hoeUJabEtJQ0txdE9jSUpqVzZoRkN2Y1hXMzFnbkdZWndPQ2xTNEk1NnkxbVhxTnUzRXRRak9fX2pfY1E",
-          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE00R1ZxTXV6THBrd0hoeUJabEtJQ0txdE9jSUpqVzZoRkN2Y1hXMzFnbkdZWndPQ2xTNEk1NnkxbVhxTnUzRXRRak9fX2pfY1E",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE00R1ZxTXV6THBrd0hoeUJabEtJQ0txdE9jSUpqVzZoRkN2Y1hXMzFnbkdZWndPQ2xTNEk1NnkxbVhxTnUzRXRRak9fX2pfY1HSAU5BVV95cUxOVXFjTnlCTUdCUmRFYXB3aGRqRDcySlpTMDl4bEVfT3c3cVRWNnF1c0M3SnlGTTlVWllkeUQtOVkzZ0tHODhBeXB5TGpuelE",
+          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE00R1ZxTXV6THBrd0hoeUJabEtJQ0txdE9jSUpqVzZoRkN2Y1hXMzFnbkdZWndPQ2xTNEk1NnkxbVhxTnUzRXRRak9fX2pfY1HSAU5BVV95cUxOVXFjTnlCTUdCUmRFYXB3aGRqRDcySlpTMDl4bEVfT3c3cVRWNnF1c0M3SnlGTTlVWllkeUQtOVkzZ0tHODhBeXB5TGpuelE",
           "published_at": "2026-11-13T03:05:00+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
@@ -2155,6 +2050,100 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 45
+        },
+        {
+          "story_id": "news-3ba94471a98082efcd27",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "黃仁勳請辭輝達利空出盡？郭明錤點名Google TPU最大受惠 接班影響最快2028年浮現",
+          "raw_title": "黃仁勳請辭輝達利空出盡？郭明錤點名Google TPU最大受惠 接班影響最快2028年浮現",
+          "normalized_fact": "黃仁勳辭去輝達總裁、執行長及董事，克雷斯代理執行長；郭明錤稱短期股價利空可消化。 郭明錤指接班影響最快2028年浮現；新團隊若放慢產能預訂，台供應鏈擴產、先進封裝與液冷備料恐受影響。 Google TPU或成替代方案，博通、聯發科受關注；若美禁輝達H200出口中國，恐有約50億美元減記。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "黃仁勳辭去輝達總裁、執行長及董事，克雷斯代理執行長；郭明錤稱短期股價利空可消化。 郭明錤指接班影響最快2028年浮現；新團隊若放慢產能預訂，台供應鏈擴產、先進封裝與液冷備料恐受影響。 Google TPU或成替代方案，博通、聯發科受關注；若美禁輝達H200出口中國，恐有約50億美元減記。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6660721",
+          "url": "https://news.cnyes.com/news/id/6660721",
+          "published_at": "2026-11-12T20:10:03+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-13",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "輝達",
+              "產能"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "輝達",
+              "產能"
+            ],
+            "matched_subject": "輝達",
+            "matched_action": "產能",
+            "matched_market_object": "輝達",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan",
+            "tracked_ticker:NVDA"
+          ],
+          "freshness": "published",
+          "dedupe_key": "黃仁勳辭去輝達總裁執行長及董事克雷斯代理執行長郭明錤稱短期股價利空可消化郭明錤指接班影響最快2028年浮現新團隊若放慢產能預訂台供應鏈擴產先進封裝與液冷備料恐受影響googletpu或成替代方案博通聯發科受關注若美禁輝達h200出口中國恐有約50億美元減記",
+          "event_cluster_key": "event-aa02a2355dfcc7727e6c",
+          "published_time_bucket": "2026-11-12T20:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "輝達",
+            "產能"
+          ],
+          "matched_subject": "輝達",
+          "matched_action": "產能",
+          "matched_market_object": "輝達",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-11-13T06:34:18.666853+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 35
         },
         {
           "story_id": "news-3fe31765d198ccf48085",
@@ -3283,6 +3272,97 @@
           "ranking_score": 30
         },
         {
+          "story_id": "news-f7213f1df0419382f463",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "萬海2030年前新船交畢邁向百萬TEU規模，Q4近洋價量動能具支撐",
+          "raw_title": "萬海2030年前新船交畢邁向百萬TEU規模，Q4近洋價量動能具支撐",
+          "normalized_fact": "【財訊快報／記者劉居全報導】萬海(2615)總經理謝福隆今(13)日表示，2026年航運市場受地緣政治衝突升溫、中東航道與巴拿馬運河通行限制、主要港口壅塞以及供應鏈重組等多重外在變數影響，有效運力供給。",
+          "market_topic": "energy_geopolitics",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "【財訊快報／記者劉居全報導】萬海(2615)總經理謝福隆今(13)日表示，2026年航運市場受地緣政治衝突升溫、中東航道與巴拿馬運河通行限制、主要港口壅塞以及供應鏈重組等多重外在變數影響，有效運力供給",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E8%90%AC%E6%B5%B72030%E5%B9%B4%E5%89%8D%E6%96%B0%E8%88%B9%E4%BA%A4%E7%95%A2%E9%82%81%E5%90%91%E7%99%BE%E8%90%ACteu%E8%A6%8F%E6%A8%A1-q4%E8%BF%91%E6%B4%8B%E5%83%B9%E9%87%8F%E5%8B%95%E8%83%BD%E5%85%B7%E6%94%AF%E6%92%90-061448338.html",
+          "url": "https://tw.stock.yahoo.com/news/%E8%90%AC%E6%B5%B72030%E5%B9%B4%E5%89%8D%E6%96%B0%E8%88%B9%E4%BA%A4%E7%95%A2%E9%82%81%E5%90%91%E7%99%BE%E8%90%ACteu%E8%A6%8F%E6%A8%A1-q4%E8%BF%91%E6%B4%8B%E5%83%B9%E9%87%8F%E5%8B%95%E8%83%BD%E5%85%B7%E6%94%AF%E6%92%90-061448338.html",
+          "published_at": "2026-11-13T06:14:48+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-13",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "conflict",
+            "reason": "conflict_subject_action",
+            "matched_terms": [
+              "中東",
+              "衝突"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "中東",
+              "衝突"
+            ],
+            "matched_subject": "中東",
+            "matched_action": "衝突",
+            "matched_market_object": "中東",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "財訊快報記者劉居全報導萬海2615總經理謝福隆今13日表示2026年航運市場受地緣政治衝突升溫中東航道與巴拿馬運河通行限制主要港口壅塞以及供應鏈重組等多重外在變數影響有效運力供給",
+          "event_cluster_key": "event-405556a448dce1174fab",
+          "published_time_bucket": "2026-11-13T06:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "中東",
+            "衝突"
+          ],
+          "matched_subject": "中東",
+          "matched_action": "衝突",
+          "matched_market_object": "中東",
+          "decision_value_class": "geopolitics_policy",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-11-13T06:34:18.666853+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 30
+        },
+        {
           "story_id": "news-966ac942b23b2b4e22f9",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -3575,96 +3655,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 42
-        },
-        {
-          "story_id": "news-0f674dd09603f35b8f97",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "外資專挑尾盤出手？台積電最後5分鐘被搶買155億元 分析師：別被他們牽著走",
-          "raw_title": "外資專挑尾盤出手？台積電最後5分鐘被搶買155億元 分析師：別被他們牽著走",
-          "normalized_fact": "晶圓代工龍頭台積電（2330）10 月營收震撼改寫歷史新高，強烈基本面成功抵禦美股降息預期放緩的陰霾。台積電今（11）日尾盤突遭 6,503 張大筆買單強勢敲進，一口氣拉升15元，終場以全場最高價2。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": true,
-          "publisher_removed": true,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "晶圓代工龍頭台積電（2330）10 月營收震撼改寫歷史新高，強烈基本面成功抵禦美股降息預期放緩的陰霾。台積電今（11）日尾盤突遭 6,503 張大筆買單強勢敲進，一口氣拉升15元，終場以全場最高價2,",
-          "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%A4%96%E8%B3%87%E5%B0%88%E6%8C%91%E5%B0%BE%E7%9B%A4%E5%87%BA%E6%89%8B%EF%BC%9F%E5%8F%B0%E7%A9%8D%E9%9B%BB%E6%9C%80%E5%BE%8C5%E5%88%86%E9%90%98%E8%A2%AB%E6%90%B6%E8%B2%B7155%E5%84%84%E5%85%83-%E5%88%86%E6%9E%90%E5%B8%AB%EF%BC%9A%E5%88%A5%E8%A2%AB%E4%BB%96%E5%80%91%E7%89%BD%E8%91%97%E8%B5%B0-063507989.html",
-          "url": "https://tw.stock.yahoo.com/news/%E5%A4%96%E8%B3%87%E5%B0%88%E6%8C%91%E5%B0%BE%E7%9B%A4%E5%87%BA%E6%89%8B%EF%BC%9F%E5%8F%B0%E7%A9%8D%E9%9B%BB%E6%9C%80%E5%BE%8C5%E5%88%86%E9%90%98%E8%A2%AB%E6%90%B6%E8%B2%B7155%E5%84%84%E5%85%83-%E5%88%86%E6%9E%90%E5%B8%AB%EF%BC%9A%E5%88%A5%E8%A2%AB%E4%BB%96%E5%80%91%E7%89%BD%E8%91%97%E8%B5%B0-063507989.html",
-          "published_at": "2026-11-11T06:35:07+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 3,
-          "published_local_date": "2026-11-11",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "material_positive",
-            "reason": "material_positive_keyword",
-            "matched_terms": [
-              "降息"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "晶圓代工龍頭台積電233010月營收震撼改寫歷史新高強烈基本面成功抵禦美股降息預期放緩的陰霾台積電今11日尾盤突遭6503張大筆買單強勢敲進一口氣拉升15元終場以全場最高價2",
-          "event_cluster_key": "event-2d144e3737e431b365d3",
-          "published_time_bucket": "2026-11-11T06:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "company_event",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 3,
-          "inventory_saved_at": "2026-11-11T06:41:30.016723+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 34
         },
         {
           "story_id": "news-d5be475e4367d34d0b8a",
@@ -4606,15 +4596,15 @@
           "ranking_score": 27
         },
         {
-          "story_id": "news-32431658b945620f8a31",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "美通膨超預期引發升息疑慮，日債殖利率急彈，10年期升破2.79%",
-          "raw_title": "美通膨超預期引發升息疑慮，日債殖利率急彈，10年期升破2.79%",
-          "normalized_fact": "【財訊快報／劉敏夫】外電報導指出，日本國債價格週三下跌，隨美國公債週二下滑跌勢起舞。美國通膨高於預期，促使市場押注聯準會可能需要更積極升息。基準10年期日本國債價格下跌，殖利率大漲10.5個基點至2。",
-          "market_topic": "rates_fx",
+          "story_id": "news-d64595f1346e09d57613",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "TWA00 加權指數- 台積電先進製程領軍，半導體供應鏈營運報喜- 股市爆料同學會 - CMoney",
+          "raw_title": "TWA00 加權指數- 台積電先進製程領軍，半導體供應鏈營運報喜- 股市爆料同學會 - CMoney",
+          "normalized_fact": "TWA00 加權指數- 台積電先進製程領軍，半導體供應鏈營運報喜- 股市爆料同學會 CMoney。",
+          "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -4622,11 +4612,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "【財訊快報／劉敏夫】外電報導指出，日本國債價格週三下跌，隨美國公債週二下滑跌勢起舞。美國通膨高於預期，促使市場押注聯準會可能需要更積極升息。基準10年期日本國債價格下跌，殖利率大漲10.5個基點至2.",
+          "summary": "TWA00 加權指數- 台積電先進製程領軍，半導體供應鏈營運報喜- 股市爆料同學會 CMoney",
           "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E9%80%9A%E8%86%A8%E8%B6%85%E9%A0%90%E6%9C%9F%E5%BC%95%E7%99%BC%E5%8D%87%E6%81%AF%E7%96%91%E6%85%AE-%E6%97%A5%E5%82%B5%E6%AE%96%E5%88%A9%E7%8E%87%E6%80%A5%E5%BD%88-10%E5%B9%B4%E6%9C%9F%E5%8D%87%E7%A0%B42-79-062807039.html",
-          "url": "https://tw.stock.yahoo.com/news/%E7%BE%8E%E9%80%9A%E8%86%A8%E8%B6%85%E9%A0%90%E6%9C%9F%E5%BC%95%E7%99%BC%E5%8D%87%E6%81%AF%E7%96%91%E6%85%AE-%E6%97%A5%E5%82%B5%E6%AE%96%E5%88%A9%E7%8E%87%E6%80%A5%E5%BD%88-10%E5%B9%B4%E6%9C%9F%E5%8D%87%E7%A0%B42-79-062807039.html",
-          "published_at": "2026-11-11T06:28:07+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE14UnFyS0Q1UktJTXgxWndUQWw1MmtrLWY1SXF3czZnWHc2MURIanJKQ3RpRFZ5aVdhYmRkRmFObzY5aERvS09uWGdIYUNkRzdna2NmcldIQkk",
+          "url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE14UnFyS0Q1UktJTXgxWndUQWw1MmtrLWY1SXF3czZnWHc2MURIanJKQ3RpRFZ5aVdhYmRkRmFObzY5aERvS09uWGdIYUNkRzdna2NmcldIQkk",
+          "published_at": "2026-11-11T14:32:43+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "recent_reference",
@@ -4636,28 +4626,32 @@
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "2330",
+            "TAIEX",
+            "TSM"
+          ],
           "sectors": [],
           "topics": [
-            "rates"
+            "semiconductor"
           ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
             "matched_terms": [
-              "聯準會",
-              "利率"
+              "台積電",
+              "供應"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "聯準會",
-              "利率"
+              "台積電",
+              "供應"
             ],
-            "matched_subject": "聯準會",
-            "matched_action": "利率",
-            "matched_market_object": "聯準會",
+            "matched_subject": "台積電",
+            "matched_action": "供應",
+            "matched_market_object": "台積電",
             "input_fields": [
               "description",
               "summary",
@@ -4665,36 +4659,38 @@
             ]
           },
           "relevance_reasons": [
-            "market:cross_market",
-            "market:taiwan"
+            "market:taiwan",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
+            "research_candidate:TSM"
           ],
           "freshness": "published",
-          "dedupe_key": "財訊快報劉敏夫外電報導指出日本國債價格週三下跌隨美國公債週二下滑跌勢起舞美國通膨高於預期促使市場押注聯準會可能需要更積極升息基準10年期日本國債價格下跌殖利率大漲105個基點至2",
-          "event_cluster_key": "event-5dd62133ad4d1448048b",
-          "published_time_bucket": "2026-11-11T06:00:00+00:00",
+          "dedupe_key": "twa00加權指數台積電先進製程領軍半導體供應鏈營運報喜股市爆料同學會cmoney",
+          "event_cluster_key": "event-3b6920c669e250e3c956",
+          "published_time_bucket": "2026-11-11T14:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "聯準會",
-            "利率"
+            "台積電",
+            "供應"
           ],
-          "matched_subject": "聯準會",
-          "matched_action": "利率",
-          "matched_market_object": "聯準會",
-          "decision_value_class": "macro",
+          "matched_subject": "台積電",
+          "matched_action": "供應",
+          "matched_market_object": "台積電",
+          "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Yahoo Taiwan Finance",
+          "source": "Google News｜台股線索",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "inventory",
           "inventory_used": true,
           "inventory_age_trading_sessions": 3,
-          "inventory_saved_at": "2026-11-11T06:41:30.016723+00:00",
+          "inventory_saved_at": "2026-11-11T15:40:24.178836+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 24
@@ -4705,15 +4701,13 @@
         "status": "multi_source",
         "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 3,
-        "provider_count": 3,
+        "independent_source_count": 2,
+        "provider_count": 2,
         "provider_ids": [
-          "anue",
           "google_news",
           "yahoo_finance"
         ],
         "source_domains": [
-          "news.cnyes.com",
           "news.google.com",
           "tw.stock.yahoo.com"
         ],
@@ -4725,20 +4719,20 @@
       "interest_graph": {
         "ticker_interest": {
           "NVDA": 16,
-          "2330": 18,
-          "TSM": 18,
+          "2330": 16,
+          "TSM": 16,
           "3017": 1
         },
         "sector_interest": {},
         "topic_interest": {
-          "黃金": 3,
+          "黃金": 1,
           "原油": 3,
           "石油": 3,
           "伊朗": 2,
           "荷姆茲": 1
         },
         "market_interest": {
-          "taiwan": 113
+          "taiwan": 105
         },
         "context": {
           "tracked_tickers": [
@@ -4827,15 +4821,15 @@
         "source_interest": {
           "tracked_ticker": {
             "NVDA": 16,
-            "2330": 18,
-            "TSM": 18
+            "2330": 16,
+            "TSM": 16
           },
           "research_candidate": {
             "3017": 1
           },
           "tracked_sector": {},
           "active_event": {
-            "黃金": 3,
+            "黃金": 1,
             "原油": 3,
             "石油": 3,
             "伊朗": 2,
@@ -4847,8 +4841,7 @@
       "excluded_count": 29,
       "exclusion_reasons": {
         "incomplete_normalized_fact": 2,
-        "insufficient_market_relevance": 22,
-        "market_scope_mismatch": 2,
+        "insufficient_market_relevance": 24,
         "outside_calendar_window": 16
       },
       "status": "ready",
@@ -4859,42 +4852,42 @@
         "successful_provider_count": 5,
         "failed_provider_count": 0,
         "disabled_provider_count": 0,
-        "fetched": 41,
-        "normalized": 41,
-        "eligible": 12,
+        "fetched": 40,
+        "normalized": 40,
+        "eligible": 11,
         "excluded": 29,
-        "date_eligible_current": 25,
+        "date_eligible_current": 24,
         "date_excluded_current": 16,
         "date_exclusion_reasons_current": {
           "outside_calendar_window": 16
         },
-        "date_eligible_inventory": 72,
+        "date_eligible_inventory": 65,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-11-13T06:34:18.666853+00:00",
-        "deduped": 12,
+        "reference_time": "2026-11-13T06:48:59.465679+00:00",
+        "deduped": 11,
         "publicly_ranked": 5,
-        "current_eligible": 12,
-        "inventory_considered": 72,
-        "inventory_eligible": 59,
+        "current_eligible": 11,
+        "inventory_considered": 65,
+        "inventory_eligible": 52,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
         "filtered_story_count": 29,
-        "fetched_story_count": 41,
-        "normalized_story_count": 41,
-        "eligible_story_count": 12,
-        "deduped_story_count": 12,
+        "fetched_story_count": 40,
+        "normalized_story_count": 40,
+        "eligible_story_count": 11,
+        "deduped_story_count": 11,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 72,
-        "eligible": 59,
+        "considered": 65,
+        "eligible": 52,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -4906,8 +4899,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 41,
-          "checked_at": "2026-11-13T06:34:18.666894+00:00"
+          "item_count": 40,
+          "checked_at": "2026-11-13T06:48:59.465723+00:00"
         },
         {
           "provider": "twse",
@@ -4918,10 +4911,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-11-13T06:34:18.666894+00:00",
+          "checked_at": "2026-11-13T06:48:59.465723+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+          "last_success_at": "2026-11-13T06:48:59.465723+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4946,10 +4939,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-11-13T06:34:18.666894+00:00",
+          "checked_at": "2026-11-13T06:48:59.465723+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+          "last_success_at": "2026-11-13T06:48:59.465723+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4970,30 +4963,28 @@
           "key": "news_taiwan_anue",
           "legacy_key": "official_news_taiwan_anue",
           "label": "anue market news",
-          "status": "healthy",
+          "status": "no_event",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 1,
-          "checked_at": "2026-11-13T06:34:18.666894+00:00",
+          "item_count": 0,
+          "checked_at": "2026-11-13T06:48:59.465723+00:00",
+          "data_gap": "filtered_no_market_match",
           "raw_item_count": 5,
-          "filtered_item_count": 1,
-          "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+          "filtered_item_count": 0,
+          "last_success_at": "2026-11-13T06:48:59.465723+00:00",
           "last_failure_at": null,
-          "stories_ingested": 1,
-          "stories_deduped": 1,
-          "ranked_count": 1,
-          "relevance_distribution": {
-            "market": 1,
-            "tracked_ticker": 1
-          },
+          "stories_ingested": 0,
+          "stories_deduped": 0,
+          "ranked_count": 0,
+          "relevance_distribution": {},
           "funnel": {
-            "fetched_count": 1,
-            "normalized_count": 1,
-            "market_compatible_count": 1,
-            "eligible_count": 1,
+            "fetched_count": 0,
+            "normalized_count": 0,
+            "market_compatible_count": 0,
+            "eligible_count": 0,
             "excluded_count": 0,
-            "deduped_count": 1,
-            "ranked_count": 1
+            "deduped_count": 0,
+            "ranked_count": 0
           }
         },
         {
@@ -5005,24 +4996,24 @@
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
           "item_count": 1,
-          "checked_at": "2026-11-13T06:34:18.666894+00:00",
+          "checked_at": "2026-11-13T06:48:59.465723+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 1,
-          "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+          "last_success_at": "2026-11-13T06:48:59.465723+00:00",
           "last_failure_at": null,
-          "stories_ingested": 9,
+          "stories_ingested": 10,
           "stories_deduped": 1,
           "ranked_count": 1,
           "relevance_distribution": {
-            "active_event": 1,
-            "market": 9
+            "market": 10,
+            "tracked_ticker": 1
           },
           "funnel": {
             "fetched_count": 10,
-            "normalized_count": 9,
-            "market_compatible_count": 9,
+            "normalized_count": 10,
+            "market_compatible_count": 10,
             "eligible_count": 1,
-            "excluded_count": 8,
+            "excluded_count": 9,
             "deduped_count": 1,
             "ranked_count": 1
           }
@@ -5035,15 +5026,15 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
-          "item_count": 3,
-          "checked_at": "2026-11-13T06:34:18.666894+00:00",
+          "item_count": 4,
+          "checked_at": "2026-11-13T06:48:59.465723+00:00",
           "raw_item_count": 30,
-          "filtered_item_count": 3,
-          "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+          "filtered_item_count": 4,
+          "last_success_at": "2026-11-13T06:48:59.465723+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
           "stories_deduped": 10,
-          "ranked_count": 3,
+          "ranked_count": 4,
           "relevance_distribution": {
             "market": 30,
             "research_candidate": 1,
@@ -5056,51 +5047,47 @@
             "eligible_count": 10,
             "excluded_count": 20,
             "deduped_count": 10,
-            "ranked_count": 3
+            "ranked_count": 4
           }
         }
       ],
       "observability": {
-        "stories_ingested": 41,
-        "stories_deduped": 12,
+        "stories_ingested": 40,
+        "stories_deduped": 11,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 1,
-          "market": 41,
+          "market": 40,
           "research_candidate": 1,
           "tracked_ticker": 9
         },
         "providers": [
           {
             "provider": "anue",
-            "status": "healthy",
-            "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+            "status": "no_event",
+            "last_success_at": "2026-11-13T06:48:59.465723+00:00",
             "last_failure_at": null,
-            "stories_ingested": 1,
-            "stories_deduped": 1,
-            "ranked_count": 1,
-            "relevance_distribution": {
-              "market": 1,
-              "tracked_ticker": 1
-            },
+            "stories_ingested": 0,
+            "stories_deduped": 0,
+            "ranked_count": 0,
+            "relevance_distribution": {},
             "funnel": {
-              "fetched_count": 1,
-              "normalized_count": 1,
-              "market_compatible_count": 1,
-              "eligible_count": 1,
+              "fetched_count": 0,
+              "normalized_count": 0,
+              "market_compatible_count": 0,
+              "eligible_count": 0,
               "excluded_count": 0,
-              "deduped_count": 1,
-              "ranked_count": 1
+              "deduped_count": 0,
+              "ranked_count": 0
             }
           },
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+            "last_success_at": "2026-11-13T06:48:59.465723+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
             "stories_deduped": 10,
-            "ranked_count": 3,
+            "ranked_count": 4,
             "relevance_distribution": {
               "market": 30,
               "research_candidate": 1,
@@ -5113,13 +5100,13 @@
               "eligible_count": 10,
               "excluded_count": 20,
               "deduped_count": 10,
-              "ranked_count": 3
+              "ranked_count": 4
             }
           },
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+            "last_success_at": "2026-11-13T06:48:59.465723+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5138,7 +5125,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+            "last_success_at": "2026-11-13T06:48:59.465723+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5155,44 +5142,23 @@
             }
           },
           {
-            "provider": "unknown",
-            "status": "healthy",
-            "last_success_at": null,
-            "last_failure_at": null,
-            "stories_ingested": 1,
-            "stories_deduped": 0,
-            "ranked_count": 0,
-            "relevance_distribution": {
-              "market": 1
-            },
-            "funnel": {
-              "fetched_count": 1,
-              "normalized_count": 1,
-              "market_compatible_count": 0,
-              "eligible_count": 0,
-              "excluded_count": 1,
-              "deduped_count": 0,
-              "ranked_count": 0
-            }
-          },
-          {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+            "last_success_at": "2026-11-13T06:48:59.465723+00:00",
             "last_failure_at": null,
-            "stories_ingested": 9,
+            "stories_ingested": 10,
             "stories_deduped": 1,
             "ranked_count": 1,
             "relevance_distribution": {
-              "active_event": 1,
-              "market": 9
+              "market": 10,
+              "tracked_ticker": 1
             },
             "funnel": {
               "fetched_count": 10,
-              "normalized_count": 9,
-              "market_compatible_count": 9,
+              "normalized_count": 10,
+              "market_compatible_count": 10,
               "eligible_count": 1,
-              "excluded_count": 8,
+              "excluded_count": 9,
               "deduped_count": 1,
               "ranked_count": 1
             }
@@ -5506,15 +5472,15 @@
           "ranking_score": 135
         },
         {
-          "story_id": "news-cada13642e92faae8821",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "〈美股盤後〉黃仁勳閃辭後 輝達市值一夕蒸發超1800億美元 四大指數全黑",
-          "raw_title": "〈美股盤後〉黃仁勳閃辭後 輝達市值一夕蒸發超1800億美元 四大指數全黑",
-          "normalized_fact": "輝達宣布黃仁勳請辭，財務長克雷斯代理執行長，董事會啟動接班遴選，股價跌 4.34%。 美股週四全數收黑，AMD、博通各漲逾 5%，但輝達、應用材料走弱，費半跌 0.54%。 油價因川普稱不需與伊朗達成協議而上漲，WTI、布蘭特分別漲至 88.74、95.82 美元，通膨與升息疑慮升溫。",
-          "market_topic": "energy_geopolitics",
+          "story_id": "news-2867cbe3a4de7dac162b",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Federal Reserve to Forgo Rate Decision at October 2027 Meeting - WSJ",
+          "raw_title": "Federal Reserve to Forgo Rate Decision at October 2027 Meeting - WSJ",
+          "normalized_fact": "Federal Reserve to Forgo Rate Decision at October 2027 Meeting WSJ。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5522,42 +5488,42 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "輝達宣布黃仁勳請辭，財務長克雷斯代理執行長，董事會啟動接班遴選，股價跌 4.34%。 美股週四全數收黑，AMD、博通各漲逾 5%，但輝達、應用材料走弱，費半跌 0.54%。 油價因川普稱不需與伊朗達成協議而上漲，WTI、布蘭特分別漲至 88.74、95.82 美元，通膨與升息疑慮升溫。",
+          "summary": "Federal Reserve to Forgo Rate Decision at October 2027 Meeting WSJ",
           "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6660716",
-          "url": "https://news.cnyes.com/news/id/6660716",
-          "published_at": "2026-11-12T22:03:53+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxPWkZiVk1uU2k5a1RQRGUxdFBJMEcxSVhtWEJfR0s3Q3E3T185OXRrZHRZMDVsQlhTdVpIbVlfQnNPem4zbGlTMDR6elFDRlM3RzhETUhCVzlTTDJvWmtfQzctcUFhRXZsVmxpVjBQUXpXTkRUTThQNVJwQV9YX19qaTZGVGswRGF1N2d0dktsZW5DVHlFWVNENmtQaERZYm5ZTmREdm8tMzVjX3ZCQUdqbTFCbWktdw",
+          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxPWkZiVk1uU2k5a1RQRGUxdFBJMEcxSVhtWEJfR0s3Q3E3T185OXRrZHRZMDVsQlhTdVpIbVlfQnNPem4zbGlTMDR6elFDRlM3RzhETUhCVzlTTDJvWmtfQzctcUFhRXZsVmxpVjBQUXpXTkRUTThQNVJwQV9YX19qaTZGVGswRGF1N2d0dktsZW5DVHlFWVNENmtQaERZYm5ZTmREdm8tMzVjX3ZCQUdqbTFCbWktdw",
+          "published_at": "2026-11-13T06:27:25+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
+          "date_eligibility_status": "current",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-12",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-13",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
+          "entities": [],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "rates"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "conflict",
-            "reason": "conflict_subject_action",
+            "category": "fed",
+            "reason": "fed_subject_action",
             "matched_terms": [
-              "伊朗",
-              "協議"
+              "federal reserve",
+              "rate"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "伊朗",
-              "協議"
+              "federal reserve",
+              "rate"
             ],
-            "matched_subject": "伊朗",
-            "matched_action": "協議",
-            "matched_market_object": "伊朗",
+            "matched_subject": "federal reserve",
+            "matched_action": "rate",
+            "matched_market_object": "federal reserve",
             "input_fields": [
               "description",
               "summary",
@@ -5565,33 +5531,29 @@
             ]
           },
           "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:NVDA",
-            "research_candidate:AMD",
-            "active_event:wti",
-            "active_event:伊朗"
+            "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "輝達宣布黃仁勳請辭財務長克雷斯代理執行長董事會啟動接班遴選股價跌434美股週四全數收黑amd博通各漲逾5但輝達應用材料走弱費半跌054油價因川普稱不需與伊朗達成協議而上漲wti布蘭特分別漲至88749582美元通膨與升息疑慮升溫",
-          "event_cluster_key": "event-79d0ee1c9a8e3faed92d",
-          "published_time_bucket": "2026-11-12T22:00:00+00:00",
+          "dedupe_key": "federalreservetoforgoratedecisionatoctober2027meetingwsj",
+          "event_cluster_key": "event-19ec9c6230b465bbf9ef",
+          "published_time_bucket": "2026-11-13T06:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "伊朗",
-            "協議"
+            "federal reserve",
+            "rate"
           ],
-          "matched_subject": "伊朗",
-          "matched_action": "協議",
-          "matched_market_object": "伊朗",
-          "decision_value_class": "geopolitics_policy",
+          "matched_subject": "federal reserve",
+          "matched_action": "rate",
+          "matched_market_object": "federal reserve",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
+          "source": "Google News｜美股線索",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -5600,7 +5562,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 150
+          "ranking_score": 115
         },
         {
           "story_id": "news-cc709fa02843f1c09f0b",
@@ -5965,15 +5927,15 @@
           "ranking_score": 135
         },
         {
-          "story_id": "news-cada13642e92faae8821",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "〈美股盤後〉黃仁勳閃辭後 輝達市值一夕蒸發超1800億美元 四大指數全黑",
-          "raw_title": "〈美股盤後〉黃仁勳閃辭後 輝達市值一夕蒸發超1800億美元 四大指數全黑",
-          "normalized_fact": "輝達宣布黃仁勳請辭，財務長克雷斯代理執行長，董事會啟動接班遴選，股價跌 4.34%。 美股週四全數收黑，AMD、博通各漲逾 5%，但輝達、應用材料走弱，費半跌 0.54%。 油價因川普稱不需與伊朗達成協議而上漲，WTI、布蘭特分別漲至 88.74、95.82 美元，通膨與升息疑慮升溫。",
-          "market_topic": "energy_geopolitics",
+          "story_id": "news-2867cbe3a4de7dac162b",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Federal Reserve to Forgo Rate Decision at October 2027 Meeting - WSJ",
+          "raw_title": "Federal Reserve to Forgo Rate Decision at October 2027 Meeting - WSJ",
+          "normalized_fact": "Federal Reserve to Forgo Rate Decision at October 2027 Meeting WSJ。",
+          "market_topic": "rates_fx",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5981,42 +5943,42 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "輝達宣布黃仁勳請辭，財務長克雷斯代理執行長，董事會啟動接班遴選，股價跌 4.34%。 美股週四全數收黑，AMD、博通各漲逾 5%，但輝達、應用材料走弱，費半跌 0.54%。 油價因川普稱不需與伊朗達成協議而上漲，WTI、布蘭特分別漲至 88.74、95.82 美元，通膨與升息疑慮升溫。",
+          "summary": "Federal Reserve to Forgo Rate Decision at October 2027 Meeting WSJ",
           "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6660716",
-          "url": "https://news.cnyes.com/news/id/6660716",
-          "published_at": "2026-11-12T22:03:53+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxPWkZiVk1uU2k5a1RQRGUxdFBJMEcxSVhtWEJfR0s3Q3E3T185OXRrZHRZMDVsQlhTdVpIbVlfQnNPem4zbGlTMDR6elFDRlM3RzhETUhCVzlTTDJvWmtfQzctcUFhRXZsVmxpVjBQUXpXTkRUTThQNVJwQV9YX19qaTZGVGswRGF1N2d0dktsZW5DVHlFWVNENmtQaERZYm5ZTmREdm8tMzVjX3ZCQUdqbTFCbWktdw",
+          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxPWkZiVk1uU2k5a1RQRGUxdFBJMEcxSVhtWEJfR0s3Q3E3T185OXRrZHRZMDVsQlhTdVpIbVlfQnNPem4zbGlTMDR6elFDRlM3RzhETUhCVzlTTDJvWmtfQzctcUFhRXZsVmxpVjBQUXpXTkRUTThQNVJwQV9YX19qaTZGVGswRGF1N2d0dktsZW5DVHlFWVNENmtQaERZYm5ZTmREdm8tMzVjX3ZCQUdqbTFCbWktdw",
+          "published_at": "2026-11-13T06:27:25+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
+          "date_eligibility_status": "current",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-12",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-13",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
+          "entities": [],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "rates"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "conflict",
-            "reason": "conflict_subject_action",
+            "category": "fed",
+            "reason": "fed_subject_action",
             "matched_terms": [
-              "伊朗",
-              "協議"
+              "federal reserve",
+              "rate"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "伊朗",
-              "協議"
+              "federal reserve",
+              "rate"
             ],
-            "matched_subject": "伊朗",
-            "matched_action": "協議",
-            "matched_market_object": "伊朗",
+            "matched_subject": "federal reserve",
+            "matched_action": "rate",
+            "matched_market_object": "federal reserve",
             "input_fields": [
               "description",
               "summary",
@@ -6024,33 +5986,29 @@
             ]
           },
           "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:NVDA",
-            "research_candidate:AMD",
-            "active_event:wti",
-            "active_event:伊朗"
+            "market:us"
           ],
           "freshness": "published",
-          "dedupe_key": "輝達宣布黃仁勳請辭財務長克雷斯代理執行長董事會啟動接班遴選股價跌434美股週四全數收黑amd博通各漲逾5但輝達應用材料走弱費半跌054油價因川普稱不需與伊朗達成協議而上漲wti布蘭特分別漲至88749582美元通膨與升息疑慮升溫",
-          "event_cluster_key": "event-79d0ee1c9a8e3faed92d",
-          "published_time_bucket": "2026-11-12T22:00:00+00:00",
+          "dedupe_key": "federalreservetoforgoratedecisionatoctober2027meetingwsj",
+          "event_cluster_key": "event-19ec9c6230b465bbf9ef",
+          "published_time_bucket": "2026-11-13T06:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "伊朗",
-            "協議"
+            "federal reserve",
+            "rate"
           ],
-          "matched_subject": "伊朗",
-          "matched_action": "協議",
-          "matched_market_object": "伊朗",
-          "decision_value_class": "geopolitics_policy",
+          "matched_subject": "federal reserve",
+          "matched_action": "rate",
+          "matched_market_object": "federal reserve",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
+          "source": "Google News｜美股線索",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -6059,7 +6017,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 150
+          "ranking_score": 115
         },
         {
           "story_id": "news-cc709fa02843f1c09f0b",
@@ -6512,99 +6470,6 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-2867cbe3a4de7dac162b",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Federal Reserve to Forgo Rate Decision at October 2027 Meeting - WSJ",
-          "raw_title": "Federal Reserve to Forgo Rate Decision at October 2027 Meeting - WSJ",
-          "normalized_fact": "Federal Reserve to Forgo Rate Decision at October 2027 Meeting WSJ。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Federal Reserve to Forgo Rate Decision at October 2027 Meeting WSJ",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxPWkZiVk1uU2k5a1RQRGUxdFBJMEcxSVhtWEJfR0s3Q3E3T185OXRrZHRZMDVsQlhTdVpIbVlfQnNPem4zbGlTMDR6elFDRlM3RzhETUhCVzlTTDJvWmtfQzctcUFhRXZsVmxpVjBQUXpXTkRUTThQNVJwQV9YX19qaTZGVGswRGF1N2d0dktsZW5DVHlFWVNENmtQaERZYm5ZTmREdm8tMzVjX3ZCQUdqbTFCbWktdw",
-          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxPWkZiVk1uU2k5a1RQRGUxdFBJMEcxSVhtWEJfR0s3Q3E3T185OXRrZHRZMDVsQlhTdVpIbVlfQnNPem4zbGlTMDR6elFDRlM3RzhETUhCVzlTTDJvWmtfQzctcUFhRXZsVmxpVjBQUXpXTkRUTThQNVJwQV9YX19qaTZGVGswRGF1N2d0dktsZW5DVHlFWVNENmtQaERZYm5ZTmREdm8tMzVjX3ZCQUdqbTFCbWktdw",
-          "published_at": "2026-11-13T04:57:25+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-12",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "federal reserve",
-              "rate"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "federal reserve",
-              "rate"
-            ],
-            "matched_subject": "federal reserve",
-            "matched_action": "rate",
-            "matched_market_object": "federal reserve",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "federalreservetoforgoratedecisionatoctober2027meetingwsj",
-          "event_cluster_key": "event-2dfbf7668c500baa4827",
-          "published_time_bucket": "2026-11-13T04:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "federal reserve",
-            "rate"
-          ],
-          "matched_subject": "federal reserve",
-          "matched_action": "rate",
-          "matched_market_object": "federal reserve",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 115
-        },
-        {
           "story_id": "news-d46fc992704896d4e3d2",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -6696,6 +6561,103 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
+        },
+        {
+          "story_id": "news-cada13642e92faae8821",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈美股盤後〉黃仁勳閃辭後 輝達市值一夕蒸發超1800億美元 四大指數全黑",
+          "raw_title": "〈美股盤後〉黃仁勳閃辭後 輝達市值一夕蒸發超1800億美元 四大指數全黑",
+          "normalized_fact": "輝達宣布黃仁勳請辭，財務長克雷斯代理執行長，董事會啟動接班遴選，股價跌 4.34%。 美股週四全數收黑，AMD、博通各漲逾 5%，但輝達、應用材料走弱，費半跌 0.54%。 油價因川普稱不需與伊朗達成協議而上漲，WTI、布蘭特分別漲至 88.74、95.82 美元，通膨與升息疑慮升溫。",
+          "market_topic": "energy_geopolitics",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "輝達宣布黃仁勳請辭，財務長克雷斯代理執行長，董事會啟動接班遴選，股價跌 4.34%。 美股週四全數收黑，AMD、博通各漲逾 5%，但輝達、應用材料走弱，費半跌 0.54%。 油價因川普稱不需與伊朗達成協議而上漲，WTI、布蘭特分別漲至 88.74、95.82 美元，通膨與升息疑慮升溫。",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6660716",
+          "url": "https://news.cnyes.com/news/id/6660716",
+          "published_at": "2026-11-12T22:03:53+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-11-12",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "conflict",
+            "reason": "conflict_subject_action",
+            "matched_terms": [
+              "伊朗",
+              "協議"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "伊朗",
+              "協議"
+            ],
+            "matched_subject": "伊朗",
+            "matched_action": "協議",
+            "matched_market_object": "伊朗",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "tracked_ticker:NVDA",
+            "research_candidate:AMD",
+            "active_event:wti",
+            "active_event:伊朗"
+          ],
+          "freshness": "published",
+          "dedupe_key": "輝達宣布黃仁勳請辭財務長克雷斯代理執行長董事會啟動接班遴選股價跌434美股週四全數收黑amd博通各漲逾5但輝達應用材料走弱費半跌054油價因川普稱不需與伊朗達成協議而上漲wti布蘭特分別漲至88749582美元通膨與升息疑慮升溫",
+          "event_cluster_key": "event-79d0ee1c9a8e3faed92d",
+          "published_time_bucket": "2026-11-12T22:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "伊朗",
+            "協議"
+          ],
+          "matched_subject": "伊朗",
+          "matched_action": "協議",
+          "matched_market_object": "伊朗",
+          "decision_value_class": "geopolitics_policy",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 2,
+          "inventory_saved_at": "2026-11-13T00:48:35.588762+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 47
         },
         {
           "story_id": "news-e84e528fb390d9c3fa59",
@@ -8268,102 +8230,6 @@
           "ranking_score": 26
         },
         {
-          "story_id": "news-ab04fec88d91fcbc31ba",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Chip stocks' slide nears $5 trillion as Nvidia hits most extreme selling level since 2019",
-          "raw_title": "Chip stocks' slide nears $5 trillion as Nvidia hits most extreme selling level since 2019",
-          "normalized_fact": "Nvidia and memory stocks are dragging chips lower again after a hot inflation report, even as most S&P 500 stocks hold up。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Nvidia and memory stocks are dragging chips lower again after a hot inflation report, even as most S&P 500 stocks hold up.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/article/chip-stocks-slide-nears-5-trillion-as-nvidia-hits-most-extreme-selling-level-since-2019-191532559.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/article/chip-stocks-slide-nears-5-trillion-as-nvidia-hits-most-extreme-selling-level-since-2019-191532559.html?.tsrc=rss",
-          "published_at": "2026-11-10T19:15:32+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 4,
-          "published_local_date": "2026-11-10",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "macro",
-            "reason": "macro_subject_action",
-            "matched_terms": [
-              "inflation",
-              "report"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "inflation",
-              "report"
-            ],
-            "matched_subject": "inflation",
-            "matched_action": "report",
-            "matched_market_object": "inflation",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:NVDA"
-          ],
-          "freshness": "published",
-          "dedupe_key": "nvidiaandmemorystocksaredraggingchipsloweragainafterahotinflationreportevenasmostsp500stocksholdup",
-          "event_cluster_key": "event-22fd1f1df47ea3002723",
-          "published_time_bucket": "2026-11-10T19:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "inflation",
-            "report"
-          ],
-          "matched_subject": "inflation",
-          "matched_action": "report",
-          "matched_market_object": "inflation",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 4,
-          "inventory_saved_at": "2026-11-10T19:23:31.252118+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 26
-        },
-        {
           "story_id": "news-ad85f7cffde0fea98742",
           "provider": "anue",
           "provider_name": "Anue",
@@ -8734,88 +8600,6 @@
           "ranking_score": 24
         },
         {
-          "story_id": "news-355ce5a7a9f705a2ccff",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Insiders Are Eyeing HF Sinclair (DINO) After The Stock’s Recent Sell-Off",
-          "raw_title": "Insiders Are Eyeing HF Sinclair (DINO) After The Stock’s Recent Sell-Off",
-          "normalized_fact": "We just published a list of 10 Buy the Dip Stocks Insiders Are Loading Up On After the Recent Market Sell-Off, and HF Sinclair Corp. (NYSE:DINO) ranked 6th on this list. Thursday, November 5 represented the worst trading session for the U.S. market in over a year. the Nasdaq Composite dropped 5.52%, the S&P 500 […]。",
-          "market_topic": "global_market",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "We just published a list of 10 Buy the Dip Stocks Insiders Are Loading Up On After the Recent Market Sell-Off, and HF Sinclair Corp. (NYSE:DINO) ranked 6th on this list. Thursday, November 5 represented the worst trading session for the U.S. market in over a year. the Nasdaq Composite dropped 5.52%, the S&P 500 […]",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/insiders-eyeing-hf-sinclair-dino-191659419.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/insiders-eyeing-hf-sinclair-dino-191659419.html?.tsrc=rss",
-          "published_at": "2026-11-10T19:16:59+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 4,
-          "published_local_date": "2026-11-10",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "wejustpublishedalistof10buythedipstocksinsidersareloadinguponaftertherecentmarketselloffandhfsinclaircorpnysedinoranked6thonthislistthursdaynovember5representedtheworsttradingsessionfortheusmarketinoverayearthenasdaqcompositedropped552thesp500",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-11-10T19:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 4,
-          "inventory_saved_at": "2026-11-10T19:34:21.692846+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 21
-        },
-        {
           "story_id": "news-47fa416ca94e3fa98c7e",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -8883,97 +8667,6 @@
           "matched_action": "",
           "matched_market_object": "",
           "decision_value_class": "company_event",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 4,
-          "inventory_saved_at": "2026-11-10T22:04:21.513547+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 21
-        },
-        {
-          "story_id": "news-655a7800c06a92e72713",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "How major US stock indexes fared Tuesday 11/10/2026",
-          "raw_title": "How major US stock indexes fared Tuesday 11/10/2026",
-          "normalized_fact": "stocks fell after a report showed inflation was worse across the country last month than economists expected. The Dow Jones Industrial Average dropped 0。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "stocks fell after a report showed inflation was worse across the country last month than economists expected. The Dow Jones Industrial Average dropped 0.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/major-us-stock-indexes-fared-212030229.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/major-us-stock-indexes-fared-212030229.html?.tsrc=rss",
-          "published_at": "2026-11-10T21:20:30+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 4,
-          "published_local_date": "2026-11-10",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "macro",
-            "reason": "macro_subject_action",
-            "matched_terms": [
-              "inflation",
-              "report"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "inflation",
-              "report"
-            ],
-            "matched_subject": "inflation",
-            "matched_action": "report",
-            "matched_market_object": "inflation",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "stocksfellafterareportshowedinflationwasworseacrossthecountrylastmonththaneconomistsexpectedthedowjonesindustrialaveragedropped0",
-          "event_cluster_key": "event-415d8eab1f95c102fc6c",
-          "published_time_bucket": "2026-11-10T21:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "inflation",
-            "report"
-          ],
-          "matched_subject": "inflation",
-          "matched_action": "report",
-          "matched_market_object": "inflation",
-          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -9528,6 +9221,274 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 12
+        },
+        {
+          "story_id": "news-05d417abe8e5d42b1644",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "US inflation rises more than expected, raising likelihood of Fed rate hike - Scripps News",
+          "raw_title": "US inflation rises more than expected, raising likelihood of Fed rate hike - Scripps News",
+          "normalized_fact": "US inflation rises more than expected, raising likelihood of Fed rate hike Scripps News。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "US inflation rises more than expected, raising likelihood of Fed rate hike Scripps News",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiugFBVV95cUxQc2ltTTNtR1hCQS1BYVgyckdzb3JURm5uV19xMU90b2I3V25YRGN5ZThOQzlEbERCNWlVV3RNcU1UTnBzWmNzemFOLXEwMlQ3Ni0xbGd1LUpCcktOcHNVZEFfLUJRMEQzMHQzeUx6VlVyRldyVjJTUFZCOFhtcmtzUzNsOEhkUXh0V1FMR2hwVFE1LTFVS0xheHIzbDNJQmY5QVBNYmJVeDlzYVhUNWFCd0Z3VVhDdzN6Z2c",
+          "url": "https://news.google.com/rss/articles/CBMiugFBVV95cUxQc2ltTTNtR1hCQS1BYVgyckdzb3JURm5uV19xMU90b2I3V25YRGN5ZThOQzlEbERCNWlVV3RNcU1UTnBzWmNzemFOLXEwMlQ3Ni0xbGd1LUpCcktOcHNVZEFfLUJRMEQzMHQzeUx6VlVyRldyVjJTUFZCOFhtcmtzUzNsOEhkUXh0V1FMR2hwVFE1LTFVS0xheHIzbDNJQmY5QVBNYmJVeDlzYVhUNWFCd0Z3VVhDdzN6Z2c",
+          "published_at": "2026-11-11T07:05:47+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 3,
+          "published_local_date": "2026-11-11",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "rate"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "rate"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "rate",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "usinflationrisesmorethanexpectedraisinglikelihoodoffedratehikescrippsnews",
+          "event_cluster_key": "event-fbb51593ebb7eea8cc85",
+          "published_time_bucket": "2026-11-11T07:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "rate"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "rate",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 3,
+          "inventory_saved_at": "2026-11-11T19:13:54.445222+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 9
+        },
+        {
+          "story_id": "news-12e929214ea43516f1d4",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Japan Government Bond Yields Jump, Tracking Treasury Selloff - Bloomberg.com",
+          "raw_title": "Japan Government Bond Yields Jump, Tracking Treasury Selloff - Bloomberg.com",
+          "normalized_fact": "Japan Government Bond Yields Jump, Tracking Treasury Selloff Bloomberg.com。",
+          "market_topic": "company_industry",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Japan Government Bond Yields Jump, Tracking Treasury Selloff Bloomberg.com",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxQTy1Ca0R2cXFUQ202eVNOa1hNc21JQkRraWRXc3RMNzdrUUMtVDJKNUdKVjZPN2NiZ1h4TVB5S09QU1cyWkk5bkNpSDhBOWJtbGVhOVZGYU5aSEFuWU9jMUxBVnd1NUpfR1RaQ0QwWEpub3BudU1uUmlWbEFZV2RQMEVNMXA3bVlKMVYweEhOaGZuWG0zeG9Xalp6ZHo2UHRfak1OeGpLMnBTY0YtdW1F",
+          "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxQTy1Ca0R2cXFUQ202eVNOa1hNc21JQkRraWRXc3RMNzdrUUMtVDJKNUdKVjZPN2NiZ1h4TVB5S09QU1cyWkk5bkNpSDhBOWJtbGVhOVZGYU5aSEFuWU9jMUxBVnd1NUpfR1RaQ0QwWEpub3BudU1uUmlWbEFZV2RQMEVNMXA3bVlKMVYweEhOaGZuWG0zeG9Xalp6ZHo2UHRfak1OeGpLMnBTY0YtdW1F",
+          "published_at": "2026-11-11T05:33:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 3,
+          "published_local_date": "2026-11-11",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "japangovernmentbondyieldsjumptrackingtreasuryselloffbloombergcom",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-11-11T05:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 3,
+          "inventory_saved_at": "2026-11-11T06:41:30.016723+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 9
+        },
+        {
+          "story_id": "news-24fc4705743363c95dcc",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "COMMENTARY: A 50 bps rate hike? Warsh's Fed has a comms problem - Reuters",
+          "raw_title": "COMMENTARY: A 50 bps rate hike? Warsh's Fed has a comms problem - Reuters",
+          "normalized_fact": "COMMENTARY: A 50 bps rate hike? Warsh's Fed has a comms problem Reuters。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "COMMENTARY: A 50 bps rate hike? Warsh's Fed has a comms problem Reuters",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxOVmdEZENBbDFmNjBmQ1lkUUdxbTUwZlZCZDF0MUo5cXZCTzMxNmdORWpkWl9WX1RucHdsR0VuSWhLOXhSYjZTYUstRFl6WWJ6V3JYallmel9vc0xhS2VGa0EwVGRkdE95MEVlU3RLb3owb0cweERFQUxXaFRqNXJiYURqN2F0WEVWSVY1SzkxbzVqN2V1NlMyMUxXTG1SQ0VEZUZZQm43SUxlbWpRSG15TVhRdUJDdXF5Q1laUmV1MGg",
+          "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxOVmdEZENBbDFmNjBmQ1lkUUdxbTUwZlZCZDF0MUo5cXZCTzMxNmdORWpkWl9WX1RucHdsR0VuSWhLOXhSYjZTYUstRFl6WWJ6V3JYallmel9vc0xhS2VGa0EwVGRkdE95MEVlU3RLb3owb0cweERFQUxXaFRqNXJiYURqN2F0WEVWSVY1SzkxbzVqN2V1NlMyMUxXTG1SQ0VEZUZZQm43SUxlbWpRSG15TVhRdUJDdXF5Q1laUmV1MGg",
+          "published_at": "2026-11-11T14:02:23+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 3,
+          "published_local_date": "2026-11-11",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "rate"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "rate"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "rate",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "commentarya50bpsratehikewarshsfedhasacommsproblemreuters",
+          "event_cluster_key": "event-6d511a813cdb11137a5b",
+          "published_time_bucket": "2026-11-11T14:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "rate"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "rate",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 3,
+          "inventory_saved_at": "2026-11-11T15:40:24.178836+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 9
         }
       ],
       "source_diversity": {
@@ -9535,16 +9496,14 @@
         "status": "multi_source",
         "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 3,
-        "provider_count": 3,
+        "independent_source_count": 2,
+        "provider_count": 2,
         "provider_ids": [
-          "anue",
           "google_news",
           "yahoo_finance"
         ],
         "source_domains": [
           "finance.yahoo.com",
-          "news.cnyes.com",
           "news.google.com"
         ],
         "supporting_source_count": 0,
@@ -9554,26 +9513,26 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "AMD": 2,
-          "NVDA": 50,
+          "NVDA": 52,
+          "AMD": 1,
           "TSM": 2,
           "2330": 1,
           "PDD": 1
         },
         "sector_interest": {},
         "topic_interest": {
-          "wti": 2,
-          "伊朗": 2,
           "oil": 14,
           "gold": 5,
           "hormuz": 3,
           "iran": 4,
           "sanctions": 1,
           "israel": 1,
-          "war": 1
+          "war": 1,
+          "wti": 1,
+          "伊朗": 1
         },
         "market_interest": {
-          "us": 153
+          "us": 151
         },
         "context": {
           "tracked_tickers": [
@@ -9661,33 +9620,33 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "NVDA": 50,
+            "NVDA": 52,
             "TSM": 2,
             "2330": 1
           },
           "research_candidate": {
-            "AMD": 2,
+            "AMD": 1,
             "PDD": 1
           },
           "tracked_sector": {},
           "active_event": {
-            "wti": 2,
-            "伊朗": 2,
             "oil": 14,
             "gold": 5,
             "hormuz": 3,
             "iran": 4,
             "sanctions": 1,
             "israel": 1,
-            "war": 1
+            "war": 1,
+            "wti": 1,
+            "伊朗": 1
           },
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 53,
+      "excluded_count": 54,
       "exclusion_reasons": {
         "generic_official_filing": 20,
-        "incomplete_normalized_fact": 18,
+        "incomplete_normalized_fact": 20,
         "insufficient_market_relevance": 24,
         "market_scope_mismatch": 12,
         "outside_calendar_window": 16
@@ -9702,40 +9661,40 @@
         "disabled_provider_count": 1,
         "fetched": 62,
         "normalized": 62,
-        "eligible": 9,
-        "excluded": 53,
+        "eligible": 8,
+        "excluded": 54,
         "date_eligible_current": 46,
         "date_excluded_current": 16,
         "date_exclusion_reasons_current": {
           "outside_calendar_window": 16
         },
-        "date_eligible_inventory": 91,
+        "date_eligible_inventory": 89,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-11-13T06:34:18.666853+00:00",
-        "deduped": 9,
+        "reference_time": "2026-11-13T06:48:59.465679+00:00",
+        "deduped": 8,
         "publicly_ranked": 5,
-        "current_eligible": 9,
-        "inventory_considered": 91,
-        "inventory_eligible": 54,
+        "current_eligible": 8,
+        "inventory_considered": 89,
+        "inventory_eligible": 51,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 53,
+        "filtered_story_count": 54,
         "fetched_story_count": 62,
         "normalized_story_count": 62,
-        "eligible_story_count": 9,
-        "deduped_story_count": 9,
+        "eligible_story_count": 8,
+        "deduped_story_count": 8,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 91,
-        "eligible": 54,
+        "considered": 89,
+        "eligible": 51,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -9748,7 +9707,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 62,
-          "checked_at": "2026-11-13T06:34:18.666894+00:00"
+          "checked_at": "2026-11-13T06:48:59.465723+00:00"
         },
         {
           "provider": "sec",
@@ -9759,10 +9718,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-11-13T06:34:18.666894+00:00",
+          "checked_at": "2026-11-13T06:48:59.465723+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+          "last_success_at": "2026-11-13T06:48:59.465723+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9790,12 +9749,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-11-13T06:34:18.666894+00:00",
+          "checked_at": "2026-11-13T06:48:59.465723+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-11-13T06:34:18.666894+00:00",
+          "last_failure_at": "2026-11-13T06:48:59.465723+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9818,10 +9777,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-11-13T06:34:18.666894+00:00",
+          "checked_at": "2026-11-13T06:48:59.465723+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+          "last_success_at": "2026-11-13T06:48:59.465723+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9842,33 +9801,32 @@
           "key": "news_us_anue",
           "legacy_key": "official_news_us_anue",
           "label": "anue market news",
-          "status": "healthy",
+          "status": "no_event",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 1,
-          "checked_at": "2026-11-13T06:34:18.666894+00:00",
+          "item_count": 0,
+          "checked_at": "2026-11-13T06:48:59.465723+00:00",
           "raw_item_count": 5,
-          "filtered_item_count": 1,
-          "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+          "filtered_item_count": 0,
+          "last_success_at": "2026-11-13T06:48:59.465723+00:00",
           "last_failure_at": null,
           "stories_ingested": 2,
-          "stories_deduped": 1,
-          "ranked_count": 1,
+          "stories_deduped": 0,
+          "ranked_count": 0,
           "relevance_distribution": {
-            "active_event": 1,
             "market": 2,
-            "research_candidate": 1,
-            "tracked_ticker": 1
+            "tracked_ticker": 2
           },
           "funnel": {
             "fetched_count": 2,
             "normalized_count": 2,
             "market_compatible_count": 2,
-            "eligible_count": 1,
-            "excluded_count": 1,
-            "deduped_count": 1,
-            "ranked_count": 1
-          }
+            "eligible_count": 0,
+            "excluded_count": 2,
+            "deduped_count": 0,
+            "ranked_count": 0
+          },
+          "data_gap": "filtered_no_market_match"
         },
         {
           "provider": "yahoo_finance",
@@ -9879,10 +9837,10 @@
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
           "item_count": 1,
-          "checked_at": "2026-11-13T06:34:18.666894+00:00",
+          "checked_at": "2026-11-13T06:48:59.465723+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 1,
-          "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+          "last_success_at": "2026-11-13T06:48:59.465723+00:00",
           "last_failure_at": null,
           "stories_ingested": 4,
           "stories_deduped": 1,
@@ -9909,15 +9867,15 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
-          "item_count": 3,
-          "checked_at": "2026-11-13T06:34:18.666894+00:00",
+          "item_count": 4,
+          "checked_at": "2026-11-13T06:48:59.465723+00:00",
           "raw_item_count": 40,
-          "filtered_item_count": 3,
-          "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+          "filtered_item_count": 4,
+          "last_success_at": "2026-11-13T06:48:59.465723+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
           "stories_deduped": 7,
-          "ranked_count": 3,
+          "ranked_count": 4,
           "relevance_distribution": {
             "active_event": 12,
             "market": 40,
@@ -9930,50 +9888,47 @@
             "eligible_count": 7,
             "excluded_count": 33,
             "deduped_count": 7,
-            "ranked_count": 3
+            "ranked_count": 4
           }
         }
       ],
       "observability": {
         "stories_ingested": 62,
-        "stories_deduped": 9,
+        "stories_deduped": 8,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 13,
+          "active_event": 12,
           "market": 62,
-          "research_candidate": 1,
-          "tracked_ticker": 16
+          "tracked_ticker": 17
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+            "last_success_at": "2026-11-13T06:48:59.465723+00:00",
             "last_failure_at": null,
             "stories_ingested": 2,
-            "stories_deduped": 1,
-            "ranked_count": 1,
+            "stories_deduped": 0,
+            "ranked_count": 0,
             "relevance_distribution": {
-              "active_event": 1,
               "market": 2,
-              "research_candidate": 1,
-              "tracked_ticker": 1
+              "tracked_ticker": 2
             },
             "funnel": {
               "fetched_count": 2,
               "normalized_count": 2,
               "market_compatible_count": 2,
-              "eligible_count": 1,
-              "excluded_count": 1,
-              "deduped_count": 1,
-              "ranked_count": 1
+              "eligible_count": 0,
+              "excluded_count": 2,
+              "deduped_count": 0,
+              "ranked_count": 0
             }
           },
           {
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-11-13T06:34:18.666894+00:00",
+            "last_failure_at": "2026-11-13T06:48:59.465723+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9991,11 +9946,11 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+            "last_success_at": "2026-11-13T06:48:59.465723+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
             "stories_deduped": 7,
-            "ranked_count": 3,
+            "ranked_count": 4,
             "relevance_distribution": {
               "active_event": 12,
               "market": 40,
@@ -10008,13 +9963,13 @@
               "eligible_count": 7,
               "excluded_count": 33,
               "deduped_count": 7,
-              "ranked_count": 3
+              "ranked_count": 4
             }
           },
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+            "last_success_at": "2026-11-13T06:48:59.465723+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -10033,7 +9988,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+            "last_success_at": "2026-11-13T06:48:59.465723+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -10076,7 +10031,7 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-11-13T06:34:18.666894+00:00",
+            "last_success_at": "2026-11-13T06:48:59.465723+00:00",
             "last_failure_at": null,
             "stories_ingested": 4,
             "stories_deduped": 1,
