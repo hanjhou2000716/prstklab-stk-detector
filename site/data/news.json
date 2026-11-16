@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "64e9d54461b92f93",
-  "snapshot_id": "news-c4d08ccec4660d37",
+  "market_snapshot_id": "a0c5c5b41834093f",
+  "snapshot_id": "news-1d062aa2a2e595c3",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -437,14 +437,14 @@
       ],
       "stories": [
         {
-          "story_id": "news-22a3a2101d61667a57fa",
-          "provider": "anue",
-          "provider_name": "Anue",
+          "story_id": "news-12faa22742ae28ce75b4",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "馬斯克一席話點出黃仁勳「王牌」 輝達產能優勢不只靠合約",
-          "raw_title": "馬斯克一席話點出黃仁勳「王牌」 輝達產能優勢不只靠合約",
-          "normalized_fact": "馬斯克稱黃仁勳口頭承諾供應算力、加急零組件與調整排程後都會履行，凸顯其在供應鏈協調的個人信用 輝達取得台積電、三星電子、SK海力士大量產能，除長約與供應鏈布局外，互信關係也被視為關鍵助力 若黃仁勳離開管理職，接班團隊能否延續對供應商的優先供應與緊急交付安排，將考驗供應鏈管理能力。",
+          "title": "輝達財報前AI疑慮升溫，日經指數週一大跌2.42%，科技股表現欠佳",
+          "raw_title": "輝達財報前AI疑慮升溫，日經指數週一大跌2.42%，科技股表現欠佳",
+          "normalized_fact": "【財訊快報／劉敏夫】日本股市週一走跌，在市場靜待輝達本週稍晚發布財報之際，市場對人工智能交易仍持謹慎態度，影響了科技股表現。收盤時，東證第一部指數下跌40.20點或1.02%，報3,901.37點；日。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -453,11 +453,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "馬斯克稱黃仁勳口頭承諾供應算力、加急零組件與調整排程後都會履行，凸顯其在供應鏈協調的個人信用 輝達取得台積電、三星電子、SK海力士大量產能，除長約與供應鏈布局外，互信關係也被視為關鍵助力 若黃仁勳離開管理職，接班團隊能否延續對供應商的優先供應與緊急交付安排，將考驗供應鏈管理能力",
+          "summary": "【財訊快報／劉敏夫】日本股市週一走跌，在市場靜待輝達本週稍晚發布財報之際，市場對人工智能交易仍持謹慎態度，影響了科技股表現。收盤時，東證第一部指數下跌40.20點或1.02%，報3,901.37點；日",
           "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6663492",
-          "url": "https://news.cnyes.com/news/id/6663492",
-          "published_at": "2026-11-16T03:10:05+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E8%BC%9D%E9%81%94%E8%B2%A1%E5%A0%B1%E5%89%8Dai%E7%96%91%E6%85%AE%E5%8D%87%E6%BA%AB-%E6%97%A5%E7%B6%93%E6%8C%87%E6%95%B8%E9%80%B1-%E5%A4%A7%E8%B7%8C2-42-%E7%A7%91%E6%8A%80%E8%82%A1%E8%A1%A8%E7%8F%BE%E6%AC%A0%E4%BD%B3-065645591.html",
+          "url": "https://tw.stock.yahoo.com/news/%E8%BC%9D%E9%81%94%E8%B2%A1%E5%A0%B1%E5%89%8Dai%E7%96%91%E6%85%AE%E5%8D%87%E6%BA%AB-%E6%97%A5%E7%B6%93%E6%8C%87%E6%95%B8%E9%80%B1-%E5%A4%A7%E8%B7%8C2-42-%E7%A7%91%E6%8A%80%E8%82%A1%E8%A1%A8%E7%8F%BE%E6%AC%A0%E4%BD%B3-065645591.html",
+          "published_at": "2026-11-16T06:56:45+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -471,24 +471,27 @@
             "NVDA"
           ],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "ai",
+            "earnings"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
             "category": "semiconductor",
             "reason": "semiconductor_subject_action",
             "matched_terms": [
-              "輝達",
-              "產能"
+              "ai",
+              "財報"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
-              "輝達",
-              "產能"
+              "ai",
+              "財報"
             ],
-            "matched_subject": "輝達",
-            "matched_action": "產能",
-            "matched_market_object": "輝達",
+            "matched_subject": "ai",
+            "matched_action": "財報",
+            "matched_market_object": "ai",
             "input_fields": [
               "description",
               "summary",
@@ -497,31 +500,29 @@
           },
           "relevance_reasons": [
             "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:NVDA",
-            "tracked_ticker:TSM"
+            "tracked_ticker:NVDA"
           ],
           "freshness": "published",
-          "dedupe_key": "馬斯克稱黃仁勳口頭承諾供應算力加急零組件與調整排程後都會履行凸顯其在供應鏈協調的個人信用輝達取得台積電三星電子sk海力士大量產能除長約與供應鏈布局外互信關係也被視為關鍵助力若黃仁勳離開管理職接班團隊能否延續對供應商的優先供應與緊急交付安排將考驗供應鏈管理能力",
-          "event_cluster_key": "event-e3dba4730ac1f8c51153",
-          "published_time_bucket": "2026-11-16T03:00:00+00:00",
+          "dedupe_key": "財訊快報劉敏夫日本股市週一走跌在市場靜待輝達本週稍晚發布財報之際市場對人工智能交易仍持謹慎態度影響了科技股表現收盤時東證第一部指數下跌4020點或102報390137點日",
+          "event_cluster_key": "event-c39c111949b0e8dea56a",
+          "published_time_bucket": "2026-11-16T06:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
-            "輝達",
-            "產能"
+            "ai",
+            "財報"
           ],
-          "matched_subject": "輝達",
-          "matched_action": "產能",
-          "matched_market_object": "輝達",
+          "matched_subject": "ai",
+          "matched_action": "財報",
+          "matched_market_object": "ai",
           "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
+          "source": "Yahoo Taiwan Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -530,7 +531,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 145
+          "ranking_score": 135
         },
         {
           "story_id": "news-adb495e0fa531f201de4",
@@ -630,6 +631,100 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
+        },
+        {
+          "story_id": "news-71835e0db5e5b24b73d1",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Fed鷹派預期、降評陰霾籠罩，印尼盾兌美元盤中跌至歷史新低",
+          "raw_title": "Fed鷹派預期、降評陰霾籠罩，印尼盾兌美元盤中跌至歷史新低",
+          "normalized_fact": "【財訊快報／劉敏夫】外電報導指出，週一印尼盾兌美元匯價跌至歷年新低。美元上漲之際，印尼盾跌破上週觸及的紀錄低點，有關聯準會的鷹派預期以及印尼市場潛在評級下調令印尼盾承壓。週一盤中，印尼盾兌美元匯價貶值。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "【財訊快報／劉敏夫】外電報導指出，週一印尼盾兌美元匯價跌至歷年新低。美元上漲之際，印尼盾跌破上週觸及的紀錄低點，有關聯準會的鷹派預期以及印尼市場潛在評級下調令印尼盾承壓。週一盤中，印尼盾兌美元匯價貶值",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/fed%E9%B7%B9%E6%B4%BE%E9%A0%90%E6%9C%9F-%E9%99%8D%E8%A9%95%E9%99%B0%E9%9C%BE%E7%B1%A0%E7%BD%A9-%E5%8D%B0%E5%B0%BC%E7%9B%BE%E5%85%8C%E7%BE%8E%E5%85%83%E7%9B%A4%E4%B8%AD%E8%B7%8C%E8%87%B3%E6%AD%B7%E5%8F%B2%E6%96%B0%E4%BD%8E-065408197.html",
+          "url": "https://tw.stock.yahoo.com/news/fed%E9%B7%B9%E6%B4%BE%E9%A0%90%E6%9C%9F-%E9%99%8D%E8%A9%95%E9%99%B0%E9%9C%BE%E7%B1%A0%E7%BD%A9-%E5%8D%B0%E5%B0%BC%E7%9B%BE%E5%85%8C%E7%BE%8E%E5%85%83%E7%9B%A4%E4%B8%AD%E8%B7%8C%E8%87%B3%E6%AD%B7%E5%8F%B2%E6%96%B0%E4%BD%8E-065408197.html",
+          "published_at": "2026-11-16T06:54:08+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-16",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "預期"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "預期"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "預期",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "財訊快報劉敏夫外電報導指出週一印尼盾兌美元匯價跌至歷年新低美元上漲之際印尼盾跌破上週觸及的紀錄低點有關聯準會的鷹派預期以及印尼市場潛在評級下調令印尼盾承壓週一盤中印尼盾兌美元匯價貶值",
+          "event_cluster_key": "event-031d0e73e46174bca74a",
+          "published_time_bucket": "2026-11-16T06:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "預期"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "預期",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "story_id": "news-d31cb5bc14b184d6de9b",
@@ -827,16 +922,18 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
-        },
+        }
+      ],
+      "editorial_candidates": [
         {
-          "story_id": "news-639d0f50b58b51419758",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "AI伺服器供應鏈震撼！輝達高層異動恐波及千億訂單，資金轉向ASIC族群-財經焦點情報站 - CMoney投資網誌",
-          "raw_title": "AI伺服器供應鏈震撼！輝達高層異動恐波及千億訂單，資金轉向ASIC族群-財經焦點情報站 - CMoney投資網誌",
-          "normalized_fact": "AI伺服器供應鏈震撼，輝達高層異動恐波及千億訂單，資金轉向ASIC族群-財經焦點情報站 CMoney投資網誌。",
+          "story_id": "news-12faa22742ae28ce75b4",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "輝達財報前AI疑慮升溫，日經指數週一大跌2.42%，科技股表現欠佳",
+          "raw_title": "輝達財報前AI疑慮升溫，日經指數週一大跌2.42%，科技股表現欠佳",
+          "normalized_fact": "【財訊快報／劉敏夫】日本股市週一走跌，在市場靜待輝達本週稍晚發布財報之際，市場對人工智能交易仍持謹慎態度，影響了科技股表現。收盤時，東證第一部指數下跌40.20點或1.02%，報3,901.37點；日。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -845,11 +942,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "AI伺服器供應鏈震撼！輝達高層異動恐波及千億訂單，資金轉向ASIC族群-財經焦點情報站 CMoney投資網誌",
+          "summary": "【財訊快報／劉敏夫】日本股市週一走跌，在市場靜待輝達本週稍晚發布財報之際，市場對人工智能交易仍持謹慎態度，影響了科技股表現。收盤時，東證第一部指數下跌40.20點或1.02%，報3,901.37點；日",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxOTEdUaUd0X0pIdmxIWU1WbXo3c1hWVkVxVzJ3SldOUVRaS3A3WkNTc3ZKU2JUVURlWXROa3RyN0NQenVNNUNRUmFsRFRLeFlRQVJQMEhBNlBfbzJFcHBUa2piWnZmelg2eHA3TlVaUkNMQ0JXLVBhZ2h5WWxudjZPQUhB",
-          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxOTEdUaUd0X0pIdmxIWU1WbXo3c1hWVkVxVzJ3SldOUVRaS3A3WkNTc3ZKU2JUVURlWXROa3RyN0NQenVNNUNRUmFsRFRLeFlRQVJQMEhBNlBfbzJFcHBUa2piWnZmelg2eHA3TlVaUkNMQ0JXLVBhZ2h5WWxudjZPQUhB",
-          "published_at": "2026-11-15T23:54:02+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E8%BC%9D%E9%81%94%E8%B2%A1%E5%A0%B1%E5%89%8Dai%E7%96%91%E6%85%AE%E5%8D%87%E6%BA%AB-%E6%97%A5%E7%B6%93%E6%8C%87%E6%95%B8%E9%80%B1-%E5%A4%A7%E8%B7%8C2-42-%E7%A7%91%E6%8A%80%E8%82%A1%E8%A1%A8%E7%8F%BE%E6%AC%A0%E4%BD%B3-065645591.html",
+          "url": "https://tw.stock.yahoo.com/news/%E8%BC%9D%E9%81%94%E8%B2%A1%E5%A0%B1%E5%89%8Dai%E7%96%91%E6%85%AE%E5%8D%87%E6%BA%AB-%E6%97%A5%E7%B6%93%E6%8C%87%E6%95%B8%E9%80%B1-%E5%A4%A7%E8%B7%8C2-42-%E7%A7%91%E6%8A%80%E8%82%A1%E8%A1%A8%E7%8F%BE%E6%AC%A0%E4%BD%B3-065645591.html",
+          "published_at": "2026-11-16T06:56:45+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -864,7 +961,8 @@
           ],
           "sectors": [],
           "topics": [
-            "ai"
+            "ai",
+            "earnings"
           ],
           "event_classification": {
             "schema_version": "1.0",
@@ -873,15 +971,15 @@
             "reason": "semiconductor_subject_action",
             "matched_terms": [
               "ai",
-              "供應"
+              "財報"
             ],
             "decision_value_eligible": true,
             "classification_evidence": [
               "ai",
-              "供應"
+              "財報"
             ],
             "matched_subject": "ai",
-            "matched_action": "供應",
+            "matched_action": "財報",
             "matched_market_object": "ai",
             "input_fields": [
               "description",
@@ -894,18 +992,18 @@
             "tracked_ticker:NVDA"
           ],
           "freshness": "published",
-          "dedupe_key": "ai伺服器供應鏈震撼輝達高層異動恐波及千億訂單資金轉向asic族群財經焦點情報站cmoney投資網誌",
-          "event_cluster_key": "event-e6f42937a020ea442d1c",
-          "published_time_bucket": "2026-11-15T23:00:00+00:00",
+          "dedupe_key": "財訊快報劉敏夫日本股市週一走跌在市場靜待輝達本週稍晚發布財報之際市場對人工智能交易仍持謹慎態度影響了科技股表現收盤時東證第一部指數下跌4020點或102報390137點日",
+          "event_cluster_key": "event-c39c111949b0e8dea56a",
+          "published_time_bucket": "2026-11-16T06:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
           "classification_evidence": [
             "ai",
-            "供應"
+            "財報"
           ],
           "matched_subject": "ai",
-          "matched_action": "供應",
+          "matched_action": "財報",
           "matched_market_object": "ai",
           "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
@@ -913,7 +1011,7 @@
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Google News｜台股線索",
+          "source": "Yahoo Taiwan Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -922,105 +1020,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 120
-        }
-      ],
-      "editorial_candidates": [
-        {
-          "story_id": "news-22a3a2101d61667a57fa",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "馬斯克一席話點出黃仁勳「王牌」 輝達產能優勢不只靠合約",
-          "raw_title": "馬斯克一席話點出黃仁勳「王牌」 輝達產能優勢不只靠合約",
-          "normalized_fact": "馬斯克稱黃仁勳口頭承諾供應算力、加急零組件與調整排程後都會履行，凸顯其在供應鏈協調的個人信用 輝達取得台積電、三星電子、SK海力士大量產能，除長約與供應鏈布局外，互信關係也被視為關鍵助力 若黃仁勳離開管理職，接班團隊能否延續對供應商的優先供應與緊急交付安排，將考驗供應鏈管理能力。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "馬斯克稱黃仁勳口頭承諾供應算力、加急零組件與調整排程後都會履行，凸顯其在供應鏈協調的個人信用 輝達取得台積電、三星電子、SK海力士大量產能，除長約與供應鏈布局外，互信關係也被視為關鍵助力 若黃仁勳離開管理職，接班團隊能否延續對供應商的優先供應與緊急交付安排，將考驗供應鏈管理能力",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6663492",
-          "url": "https://news.cnyes.com/news/id/6663492",
-          "published_at": "2026-11-16T03:10:05+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-16",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "輝達",
-              "產能"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "輝達",
-              "產能"
-            ],
-            "matched_subject": "輝達",
-            "matched_action": "產能",
-            "matched_market_object": "輝達",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:NVDA",
-            "tracked_ticker:TSM"
-          ],
-          "freshness": "published",
-          "dedupe_key": "馬斯克稱黃仁勳口頭承諾供應算力加急零組件與調整排程後都會履行凸顯其在供應鏈協調的個人信用輝達取得台積電三星電子sk海力士大量產能除長約與供應鏈布局外互信關係也被視為關鍵助力若黃仁勳離開管理職接班團隊能否延續對供應商的優先供應與緊急交付安排將考驗供應鏈管理能力",
-          "event_cluster_key": "event-e3dba4730ac1f8c51153",
-          "published_time_bucket": "2026-11-16T03:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "輝達",
-            "產能"
-          ],
-          "matched_subject": "輝達",
-          "matched_action": "產能",
-          "matched_market_object": "輝達",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜市場焦點",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 145
+          "ranking_score": 135
         },
         {
           "story_id": "news-adb495e0fa531f201de4",
@@ -1120,6 +1120,100 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
+        },
+        {
+          "story_id": "news-71835e0db5e5b24b73d1",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Fed鷹派預期、降評陰霾籠罩，印尼盾兌美元盤中跌至歷史新低",
+          "raw_title": "Fed鷹派預期、降評陰霾籠罩，印尼盾兌美元盤中跌至歷史新低",
+          "normalized_fact": "【財訊快報／劉敏夫】外電報導指出，週一印尼盾兌美元匯價跌至歷年新低。美元上漲之際，印尼盾跌破上週觸及的紀錄低點，有關聯準會的鷹派預期以及印尼市場潛在評級下調令印尼盾承壓。週一盤中，印尼盾兌美元匯價貶值。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "【財訊快報／劉敏夫】外電報導指出，週一印尼盾兌美元匯價跌至歷年新低。美元上漲之際，印尼盾跌破上週觸及的紀錄低點，有關聯準會的鷹派預期以及印尼市場潛在評級下調令印尼盾承壓。週一盤中，印尼盾兌美元匯價貶值",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/fed%E9%B7%B9%E6%B4%BE%E9%A0%90%E6%9C%9F-%E9%99%8D%E8%A9%95%E9%99%B0%E9%9C%BE%E7%B1%A0%E7%BD%A9-%E5%8D%B0%E5%B0%BC%E7%9B%BE%E5%85%8C%E7%BE%8E%E5%85%83%E7%9B%A4%E4%B8%AD%E8%B7%8C%E8%87%B3%E6%AD%B7%E5%8F%B2%E6%96%B0%E4%BD%8E-065408197.html",
+          "url": "https://tw.stock.yahoo.com/news/fed%E9%B7%B9%E6%B4%BE%E9%A0%90%E6%9C%9F-%E9%99%8D%E8%A9%95%E9%99%B0%E9%9C%BE%E7%B1%A0%E7%BD%A9-%E5%8D%B0%E5%B0%BC%E7%9B%BE%E5%85%8C%E7%BE%8E%E5%85%83%E7%9B%A4%E4%B8%AD%E8%B7%8C%E8%87%B3%E6%AD%B7%E5%8F%B2%E6%96%B0%E4%BD%8E-065408197.html",
+          "published_at": "2026-11-16T06:54:08+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-16",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "預期"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "預期"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "預期",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "財訊快報劉敏夫外電報導指出週一印尼盾兌美元匯價跌至歷年新低美元上漲之際印尼盾跌破上週觸及的紀錄低點有關聯準會的鷹派預期以及印尼市場潛在評級下調令印尼盾承壓週一盤中印尼盾兌美元匯價貶值",
+          "event_cluster_key": "event-031d0e73e46174bca74a",
+          "published_time_bucket": "2026-11-16T06:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "預期"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "預期",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "story_id": "news-d31cb5bc14b184d6de9b",
@@ -1988,6 +2082,102 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
+        },
+        {
+          "story_id": "news-22a3a2101d61667a57fa",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "馬斯克一席話點出黃仁勳「王牌」 輝達產能優勢不只靠合約",
+          "raw_title": "馬斯克一席話點出黃仁勳「王牌」 輝達產能優勢不只靠合約",
+          "normalized_fact": "馬斯克稱黃仁勳口頭承諾供應算力、加急零組件與調整排程後都會履行，凸顯其在供應鏈協調的個人信用 輝達取得台積電、三星電子、SK海力士大量產能，除長約與供應鏈布局外，互信關係也被視為關鍵助力 若黃仁勳離開管理職，接班團隊能否延續對供應商的優先供應與緊急交付安排，將考驗供應鏈管理能力。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "馬斯克稱黃仁勳口頭承諾供應算力、加急零組件與調整排程後都會履行，凸顯其在供應鏈協調的個人信用 輝達取得台積電、三星電子、SK海力士大量產能，除長約與供應鏈布局外，互信關係也被視為關鍵助力 若黃仁勳離開管理職，接班團隊能否延續對供應商的優先供應與緊急交付安排，將考驗供應鏈管理能力",
+          "description": "",
+          "canonical_url": "https://news.cnyes.com/news/id/6663492",
+          "url": "https://news.cnyes.com/news/id/6663492",
+          "published_at": "2026-11-16T03:10:05+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-16",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "輝達",
+              "產能"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "輝達",
+              "產能"
+            ],
+            "matched_subject": "輝達",
+            "matched_action": "產能",
+            "matched_market_object": "輝達",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan",
+            "tracked_ticker:2330",
+            "tracked_ticker:NVDA",
+            "tracked_ticker:TSM"
+          ],
+          "freshness": "published",
+          "dedupe_key": "馬斯克稱黃仁勳口頭承諾供應算力加急零組件與調整排程後都會履行凸顯其在供應鏈協調的個人信用輝達取得台積電三星電子sk海力士大量產能除長約與供應鏈布局外互信關係也被視為關鍵助力若黃仁勳離開管理職接班團隊能否延續對供應商的優先供應與緊急交付安排將考驗供應鏈管理能力",
+          "event_cluster_key": "event-e3dba4730ac1f8c51153",
+          "published_time_bucket": "2026-11-16T03:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "輝達",
+            "產能"
+          ],
+          "matched_subject": "輝達",
+          "matched_action": "產能",
+          "matched_market_object": "輝達",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "鉅亨網｜市場焦點",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-11-16T06:34:28.375965+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 45
         },
         {
           "story_id": "news-1f4e6c68523fce874063",
@@ -4522,198 +4712,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 22
-        },
-        {
-          "story_id": "news-0f0c21b86c145d719f86",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "黃仁勳請辭輝達執行長 對台灣供應鏈與全球AI產業影響一次看 - 公視新聞",
-          "raw_title": "黃仁勳請辭輝達執行長 對台灣供應鏈與全球AI產業影響一次看 - 公視新聞",
-          "normalized_fact": "黃仁勳請辭輝達執行長 對台灣供應鏈與全球AI產業影響一次看 公視。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": true,
-          "publisher_removed": true,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "黃仁勳請辭輝達執行長 對台灣供應鏈與全球AI產業影響一次看 公視新聞",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE1Rb1dPSlJSY05vZWtMZnlCbl9ud0VMdFhQTUUydTJqd2NpNmx5SGZKaUVjM0F0TmhzcTcwaHlIaExfVkY4YVpPb3NLYjN5UWM",
-          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE1Rb1dPSlJSY05vZWtMZnlCbl9ud0VMdFhQTUUydTJqd2NpNmx5SGZKaUVjM0F0TmhzcTcwaHlIaExfVkY4YVpPb3NLYjN5UWM",
-          "published_at": "2026-11-13T09:34:10+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-13",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:NVDA"
-          ],
-          "freshness": "published",
-          "dedupe_key": "黃仁勳請辭輝達執行長對台灣供應鏈與全球ai產業影響一次看公視",
-          "event_cluster_key": "event-2fcee90534fb836185e7",
-          "published_time_bucket": "2026-11-13T09:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-11-13T13:39:15.158592+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 17
-        },
-        {
-          "story_id": "news-780b4b0876ccb10210fe",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "黃仁勳辭任輝達執行長 牽動台灣AI供應鏈 - ETtoday新聞雲",
-          "raw_title": "黃仁勳辭任輝達執行長 牽動台灣AI供應鏈 - ETtoday新聞雲",
-          "normalized_fact": "黃仁勳辭任輝達執行長 牽動台灣AI供應鏈 ETtoday新聞雲。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "黃仁勳辭任輝達執行長 牽動台灣AI供應鏈 ETtoday新聞雲",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE00R1ZxTXV6THBrd0hoeUJabEtJQ0txdE9jSUpqVzZoRkN2Y1hXMzFnbkdZWndPQ2xTNEk1NnkxbVhxTnUzRXRRak9fX2pfY1HSAU5BVV95cUxOVXFjTnlCTUdCUmRFYXB3aGRqRDcySlpTMDl4bEVfT3c3cVRWNnF1c0M3SnlGTTlVWllkeUQtOVkzZ0tHODhBeXB5TGpuelE",
-          "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE00R1ZxTXV6THBrd0hoeUJabEtJQ0txdE9jSUpqVzZoRkN2Y1hXMzFnbkdZWndPQ2xTNEk1NnkxbVhxTnUzRXRRak9fX2pfY1HSAU5BVV95cUxOVXFjTnlCTUdCUmRFYXB3aGRqRDcySlpTMDl4bEVfT3c3cVRWNnF1c0M3SnlGTTlVWllkeUQtOVkzZ0tHODhBeXB5TGpuelE",
-          "published_at": "2026-11-13T03:05:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-13",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:NVDA"
-          ],
-          "freshness": "published",
-          "dedupe_key": "黃仁勳辭任輝達執行長牽動台灣ai供應鏈ettoday新聞雲",
-          "event_cluster_key": "event-ffe687a881ee07717d49",
-          "published_time_bucket": "2026-11-13T03:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-11-13T06:34:18.666853+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 17
         }
       ],
       "source_diversity": {
@@ -4724,12 +4722,12 @@
         "independent_source_count": 2,
         "provider_count": 2,
         "provider_ids": [
-          "anue",
-          "google_news"
+          "google_news",
+          "yahoo_finance"
         ],
         "source_domains": [
-          "news.cnyes.com",
-          "news.google.com"
+          "news.google.com",
+          "tw.stock.yahoo.com"
         ],
         "supporting_source_count": 0,
         "inventory_only": false,
@@ -4738,21 +4736,20 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "2330": 24,
-          "NVDA": 19,
-          "TSM": 24,
-          "A": 2,
+          "NVDA": 18,
+          "APP": 2,
+          "2330": 21,
+          "TSM": 21,
           "3017": 1
         },
         "sector_interest": {},
         "topic_interest": {
-          "黃金": 2,
           "地震": 1,
           "oil": 1,
           "原油": 1
         },
         "market_interest": {
-          "taiwan": 109
+          "taiwan": 104
         },
         "context": {
           "tracked_tickers": [
@@ -4841,17 +4838,16 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "2330": 24,
-            "NVDA": 19,
-            "TSM": 24
+            "NVDA": 18,
+            "2330": 21,
+            "TSM": 21
           },
           "research_candidate": {
-            "A": 2,
+            "APP": 2,
             "3017": 1
           },
           "tracked_sector": {},
           "active_event": {
-            "黃金": 2,
             "地震": 1,
             "oil": 1,
             "原油": 1
@@ -4859,11 +4855,10 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 31,
+      "excluded_count": 27,
       "exclusion_reasons": {
         "incomplete_normalized_fact": 4,
-        "insufficient_market_relevance": 26,
-        "non_investment_content": 2,
+        "insufficient_market_relevance": 20,
         "outside_calendar_window": 15
       },
       "status": "ready",
@@ -4874,42 +4869,42 @@
         "successful_provider_count": 5,
         "failed_provider_count": 0,
         "disabled_provider_count": 0,
-        "fetched": 42,
-        "normalized": 42,
-        "eligible": 11,
-        "excluded": 31,
-        "date_eligible_current": 27,
+        "fetched": 39,
+        "normalized": 39,
+        "eligible": 12,
+        "excluded": 27,
+        "date_eligible_current": 24,
         "date_excluded_current": 15,
         "date_exclusion_reasons_current": {
           "outside_calendar_window": 15
         },
-        "date_eligible_inventory": 67,
+        "date_eligible_inventory": 65,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-11-16T06:49:04.355781+00:00",
-        "deduped": 11,
+        "reference_time": "2026-11-16T07:05:31.924803+00:00",
+        "deduped": 12,
         "publicly_ranked": 5,
-        "current_eligible": 11,
-        "inventory_considered": 67,
-        "inventory_eligible": 51,
+        "current_eligible": 12,
+        "inventory_considered": 65,
+        "inventory_eligible": 53,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 31,
-        "fetched_story_count": 42,
-        "normalized_story_count": 42,
-        "eligible_story_count": 11,
-        "deduped_story_count": 11,
+        "filtered_story_count": 27,
+        "fetched_story_count": 39,
+        "normalized_story_count": 39,
+        "eligible_story_count": 12,
+        "deduped_story_count": 12,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 67,
-        "eligible": 51,
+        "considered": 65,
+        "eligible": 53,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -4921,8 +4916,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 42,
-          "checked_at": "2026-11-16T06:49:04.355820+00:00"
+          "item_count": 39,
+          "checked_at": "2026-11-16T07:05:31.924842+00:00"
         },
         {
           "provider": "twse",
@@ -4933,10 +4928,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-11-16T06:49:04.355820+00:00",
+          "checked_at": "2026-11-16T07:05:31.924842+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+          "last_success_at": "2026-11-16T07:05:31.924842+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4961,10 +4956,10 @@
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-11-16T06:49:04.355820+00:00",
+          "checked_at": "2026-11-16T07:05:31.924842+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+          "last_success_at": "2026-11-16T07:05:31.924842+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4985,31 +4980,28 @@
           "key": "news_taiwan_anue",
           "legacy_key": "official_news_taiwan_anue",
           "label": "anue market news",
-          "status": "healthy",
+          "status": "no_event",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 1,
-          "checked_at": "2026-11-16T06:49:04.355820+00:00",
+          "item_count": 0,
+          "checked_at": "2026-11-16T07:05:31.924842+00:00",
+          "data_gap": "filtered_no_market_match",
           "raw_item_count": 5,
-          "filtered_item_count": 1,
-          "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+          "filtered_item_count": 0,
+          "last_success_at": "2026-11-16T07:05:31.924842+00:00",
           "last_failure_at": null,
-          "stories_ingested": 3,
-          "stories_deduped": 1,
-          "ranked_count": 1,
-          "relevance_distribution": {
-            "market": 3,
-            "research_candidate": 1,
-            "tracked_ticker": 2
-          },
+          "stories_ingested": 0,
+          "stories_deduped": 0,
+          "ranked_count": 0,
+          "relevance_distribution": {},
           "funnel": {
-            "fetched_count": 3,
-            "normalized_count": 3,
-            "market_compatible_count": 3,
-            "eligible_count": 1,
-            "excluded_count": 2,
-            "deduped_count": 1,
-            "ranked_count": 1
+            "fetched_count": 0,
+            "normalized_count": 0,
+            "market_compatible_count": 0,
+            "eligible_count": 0,
+            "excluded_count": 0,
+            "deduped_count": 0,
+            "ranked_count": 0
           }
         },
         {
@@ -5017,32 +5009,32 @@
           "key": "news_taiwan_yahoo_finance",
           "legacy_key": "official_news_taiwan_yahoo_finance",
           "label": "yahoo_finance market news",
-          "status": "no_event",
+          "status": "healthy",
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
-          "item_count": 0,
-          "checked_at": "2026-11-16T06:49:04.355820+00:00",
+          "item_count": 2,
+          "checked_at": "2026-11-16T07:05:31.924842+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 0,
-          "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+          "filtered_item_count": 2,
+          "last_success_at": "2026-11-16T07:05:31.924842+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
-          "stories_deduped": 0,
-          "ranked_count": 0,
+          "stories_deduped": 2,
+          "ranked_count": 2,
           "relevance_distribution": {
-            "active_event": 1,
-            "market": 10
+            "market": 10,
+            "research_candidate": 1,
+            "tracked_ticker": 1
           },
           "funnel": {
             "fetched_count": 10,
             "normalized_count": 10,
             "market_compatible_count": 10,
-            "eligible_count": 0,
-            "excluded_count": 10,
-            "deduped_count": 0,
-            "ranked_count": 0
-          },
-          "data_gap": "filtered_no_market_match"
+            "eligible_count": 2,
+            "excluded_count": 8,
+            "deduped_count": 2,
+            "ranked_count": 2
+          }
         },
         {
           "provider": "google_news",
@@ -5052,15 +5044,15 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
-          "item_count": 4,
-          "checked_at": "2026-11-16T06:49:04.355820+00:00",
+          "item_count": 3,
+          "checked_at": "2026-11-16T07:05:31.924842+00:00",
           "raw_item_count": 29,
-          "filtered_item_count": 4,
-          "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+          "filtered_item_count": 3,
+          "last_success_at": "2026-11-16T07:05:31.924842+00:00",
           "last_failure_at": null,
           "stories_ingested": 29,
           "stories_deduped": 10,
-          "ranked_count": 4,
+          "ranked_count": 3,
           "relevance_distribution": {
             "market": 29,
             "research_candidate": 1,
@@ -5073,52 +5065,47 @@
             "eligible_count": 10,
             "excluded_count": 19,
             "deduped_count": 10,
-            "ranked_count": 4
+            "ranked_count": 3
           }
         }
       ],
       "observability": {
-        "stories_ingested": 42,
-        "stories_deduped": 11,
+        "stories_ingested": 39,
+        "stories_deduped": 12,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 1,
-          "market": 42,
+          "market": 39,
           "research_candidate": 2,
-          "tracked_ticker": 11
+          "tracked_ticker": 10
         },
         "providers": [
           {
             "provider": "anue",
-            "status": "healthy",
-            "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+            "status": "no_event",
+            "last_success_at": "2026-11-16T07:05:31.924842+00:00",
             "last_failure_at": null,
-            "stories_ingested": 3,
-            "stories_deduped": 1,
-            "ranked_count": 1,
-            "relevance_distribution": {
-              "market": 3,
-              "research_candidate": 1,
-              "tracked_ticker": 2
-            },
+            "stories_ingested": 0,
+            "stories_deduped": 0,
+            "ranked_count": 0,
+            "relevance_distribution": {},
             "funnel": {
-              "fetched_count": 3,
-              "normalized_count": 3,
-              "market_compatible_count": 3,
-              "eligible_count": 1,
-              "excluded_count": 2,
-              "deduped_count": 1,
-              "ranked_count": 1
+              "fetched_count": 0,
+              "normalized_count": 0,
+              "market_compatible_count": 0,
+              "eligible_count": 0,
+              "excluded_count": 0,
+              "deduped_count": 0,
+              "ranked_count": 0
             }
           },
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+            "last_success_at": "2026-11-16T07:05:31.924842+00:00",
             "last_failure_at": null,
             "stories_ingested": 29,
             "stories_deduped": 10,
-            "ranked_count": 4,
+            "ranked_count": 3,
             "relevance_distribution": {
               "market": 29,
               "research_candidate": 1,
@@ -5131,13 +5118,13 @@
               "eligible_count": 10,
               "excluded_count": 19,
               "deduped_count": 10,
-              "ranked_count": 4
+              "ranked_count": 3
             }
           },
           {
             "provider": "mops",
             "status": "no_event",
-            "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+            "last_success_at": "2026-11-16T07:05:31.924842+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5156,7 +5143,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+            "last_success_at": "2026-11-16T07:05:31.924842+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5175,23 +5162,24 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+            "last_success_at": "2026-11-16T07:05:31.924842+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
-            "stories_deduped": 0,
-            "ranked_count": 0,
+            "stories_deduped": 2,
+            "ranked_count": 2,
             "relevance_distribution": {
-              "active_event": 1,
-              "market": 10
+              "market": 10,
+              "research_candidate": 1,
+              "tracked_ticker": 1
             },
             "funnel": {
               "fetched_count": 10,
               "normalized_count": 10,
               "market_compatible_count": 10,
-              "eligible_count": 0,
-              "excluded_count": 10,
-              "deduped_count": 0,
-              "ranked_count": 0
+              "eligible_count": 2,
+              "excluded_count": 8,
+              "deduped_count": 2,
+              "ranked_count": 2
             }
           }
         ]
@@ -5588,551 +5576,6 @@
           "ranking_score": 120
         },
         {
-          "story_id": "news-d91a50da92b2e5776403",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Dow Jones Futures: Techs Fall As Jensen Huang Mulls Nvidia Return; Anthropic IPO Looms",
-          "raw_title": "Dow Jones Futures: Techs Fall As Jensen Huang Mulls Nvidia Return; Anthropic IPO Looms",
-          "normalized_fact": "Nvidia earnings are due as Jensen Huang reportedly mulls a return. The Anthropic IPO is ahead。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Nvidia earnings are due as Jensen Huang reportedly mulls a return. The Anthropic IPO is ahead.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/m/53e50dc8-f137-3f6c-bfd6-912334fef9f1/dow-jones-futures%3A-techs-fall.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/m/53e50dc8-f137-3f6c-bfd6-912334fef9f1/dow-jones-futures%3A-techs-fall.html?.tsrc=rss",
-          "published_at": "2026-11-16T04:08:09+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-15",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "nvidia",
-              "earnings"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "nvidia",
-              "earnings"
-            ],
-            "matched_subject": "nvidia",
-            "matched_action": "earnings",
-            "matched_market_object": "nvidia",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:NVDA",
-            "research_candidate:A"
-          ],
-          "freshness": "published",
-          "dedupe_key": "nvidiaearningsaredueasjensenhuangreportedlymullsareturntheanthropicipoisahead",
-          "event_cluster_key": "event-472afe6eeb0c30d47e00",
-          "published_time_bucket": "2026-11-16T04:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "nvidia",
-            "earnings"
-          ],
-          "matched_subject": "nvidia",
-          "matched_action": "earnings",
-          "matched_market_object": "nvidia",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 140
-        },
-        {
-          "story_id": "news-83db51c6f10709b40c6d",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Chinese AI labs are training models on Nvidia's Blackwell despite export controls, says ex-OpenAI engineer - The Register",
-          "raw_title": "Chinese AI labs are training models on Nvidia's Blackwell despite export controls, says ex-OpenAI engineer - The Register",
-          "normalized_fact": "Chinese AI labs are training models on Nvidia's Blackwell despite export controls, says ex-OpenAI engineer The Register。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Chinese AI labs are training models on Nvidia's Blackwell despite export controls, says ex-OpenAI engineer The Register",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMi8wFBVV95cUxOc2d0VmU0UHVrQlVvWElsNFVGTlhKcDc2YVR0SGxqM2dBUXlvSGpLZTNrbUhDTVhiLU0yU1lUamJ2MFpNc3V0SUxlY2xkc3dKemkxel9zbEVXaTVoVHhMdUliUERkZUNKQ2pvSnNKeUh3WDBXdkw1dVBQM09pMjBlSXdoc3JUOVpxZTZYZkphSVFzeDV5MkN5SGpLN0E3bmZVcnJtRThzNDJYSGNzSi1qUEdXUDZWYzRrbHY1RkVqeTA5WWxadzdTcE9USjMxVkZLU3p2cGZMODJpU1V5SDlBTDFyWUNnWXZpbGF1aEotVlFsMkU",
-          "url": "https://news.google.com/rss/articles/CBMi8wFBVV95cUxOc2d0VmU0UHVrQlVvWElsNFVGTlhKcDc2YVR0SGxqM2dBUXlvSGpLZTNrbUhDTVhiLU0yU1lUamJ2MFpNc3V0SUxlY2xkc3dKemkxel9zbEVXaTVoVHhMdUliUERkZUNKQ2pvSnNKeUh3WDBXdkw1dVBQM09pMjBlSXdoc3JUOVpxZTZYZkphSVFzeDV5MkN5SGpLN0E3bmZVcnJtRThzNDJYSGNzSi1qUEdXUDZWYzRrbHY1RkVqeTA5WWxadzdTcE9USjMxVkZLU3p2cGZMODJpU1V5SDlBTDFyWUNnWXZpbGF1aEotVlFsMkU",
-          "published_at": "2026-11-13T21:16:22+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-13",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "nvidia",
-              "export control"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "nvidia",
-              "export control"
-            ],
-            "matched_subject": "nvidia",
-            "matched_action": "export control",
-            "matched_market_object": "nvidia",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:NVDA"
-          ],
-          "freshness": "published",
-          "dedupe_key": "chineseailabsaretrainingmodelsonnvidiasblackwelldespiteexportcontrolssaysexopenaiengineertheregister",
-          "event_cluster_key": "event-a2f5ed13d79a45ac074c",
-          "published_time_bucket": "2026-11-13T21:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "nvidia",
-            "export control"
-          ],
-          "matched_subject": "nvidia",
-          "matched_action": "export control",
-          "matched_market_object": "nvidia",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 120
-        },
-        {
-          "story_id": "news-a921e75417bfecafe731",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Stocks decline in Asia as investor concerns over Nvidia fallout extend into another week",
-          "raw_title": "Stocks decline in Asia as investor concerns over Nvidia fallout extend into another week",
-          "normalized_fact": "HONG KONG (AP) — Asian shares mostly declined Monday as investors’ worries over the future of the artificial intelligence trade extended into another week following Nvidia’s fallout. equity futures were trading lower。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "HONG KONG (AP) — Asian shares mostly declined Monday as investors’ worries over the future of the artificial intelligence trade extended into another week following Nvidia’s fallout. equity futures were trading lower.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/stocks-decline-asia-investor-concerns-045636045.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/stocks-decline-asia-investor-concerns-045636045.html?.tsrc=rss",
-          "published_at": "2026-11-16T04:56:36+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-15",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:NVDA"
-          ],
-          "freshness": "published",
-          "dedupe_key": "hongkongapasiansharesmostlydeclinedmondayasinvestorsworriesoverthefutureoftheartificialintelligencetradeextendedintoanotherweekfollowingnvidiasfalloutequityfuturesweretradinglower",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-11-16T04:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 135
-        }
-      ],
-      "editorial_candidates": [
-        {
-          "story_id": "news-7564078fa271eb707ebb",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "U.S. plans to name Nvidia among AI ‘national champions’, WSJ reports",
-          "raw_title": "U.S. plans to name Nvidia among AI ‘national champions’, WSJ reports",
-          "normalized_fact": "Investing.com-- The Trump administration plans to designate more than two dozen companies, including Nvidia (NASDAQ:NVDA), Amazon (NASDAQ:AMZN), Microsoft (NASDAQ:MSFT), OpenAI and Anthropic, as artificial intelligence \"national champions\" to help them expand overseas and compete with Chinese technology firms, the Wall Street Journal reported on Sunday。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Investing.com-- The Trump administration plans to designate more than two dozen companies, including Nvidia (NASDAQ:NVDA), Amazon (NASDAQ:AMZN), Microsoft (NASDAQ:MSFT), OpenAI and Anthropic, as artificial intelligence \"national champions\" to help them expand overseas and compete with Chinese technology firms, the Wall Street Journal reported on Sunday.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/technology/ai/articles/u-plans-name-nvidia-among-053052700.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/technology/ai/articles/u-plans-name-nvidia-among-053052700.html?.tsrc=rss",
-          "published_at": "2026-11-16T05:30:52+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-16",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:NVDA"
-          ],
-          "freshness": "published",
-          "dedupe_key": "investingcomthetrumpadministrationplanstodesignatemorethantwodozencompaniesincludingnvidianasdaqnvdaamazonnasdaqamznmicrosoftnasdaqmsftopenaiandanthropicasartificialintelligencenationalchampionstohelpthemexpandoverseasandcompetewithchinesetechnologyfirmsthewallstreetjournalreportedonsunday",
-          "event_cluster_key": "event-f43127cd9599c8cdc772",
-          "published_time_bucket": "2026-11-16T05:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "company_event",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 135
-        },
-        {
-          "story_id": "news-73f3db780cc937e7afab",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "Palm Oil Market Outlook: Indonesia’s 2027 Export Shift and B50 Impact - CMB News",
-          "raw_title": "Palm Oil Market Outlook: Indonesia’s 2027 Export Shift and B50 Impact - CMB News",
-          "normalized_fact": "Palm Oil Market Outlook: Indonesia’s 2027 Export Shift and B50 Impact CMB News。",
-          "market_topic": "company_industry",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Palm Oil Market Outlook: Indonesia’s 2027 Export Shift and B50 Impact CMB News",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxOcXllTEtPX2g2eVl2QUlSZElmMy1kUDJRcWktODFfUkVwckZCeVpjbU8yc1lVRHhCZnJzSFkzRi0tckEtc1Q5c3ZzRnNNeVhpS05XLWZLZGtaeklLSWs2cDE0U2prRlZOQno5VVpzbU4yeWo5emhmZWo4MDdmQkY3a1U3dFNwOUNZUUdfcVpGZGNseFhXcFh3NEhvNTJXcklEQ3lB",
-          "url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxOcXllTEtPX2g2eVl2QUlSZElmMy1kUDJRcWktODFfUkVwckZCeVpjbU8yc1lVRHhCZnJzSFkzRi0tckEtc1Q5c3ZzRnNNeVhpS05XLWZLZGtaeklLSWs2cDE0U2prRlZOQno5VVpzbU4yeWo5emhmZWo4MDdmQkY3a1U3dFNwOUNZUUdfcVpGZGNseFhXcFh3NEhvNTJXcklEQ3lB",
-          "published_at": "2026-11-16T06:07:22+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "current",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-16",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "energy"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "active_event:oil"
-          ],
-          "freshness": "published",
-          "dedupe_key": "palmoilmarketoutlookindonesias2027exportshiftandb50impactcmbnews",
-          "event_cluster_key": "event-5f8760ec6fe209d3a576",
-          "published_time_bucket": "2026-11-16T06:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 120
-        },
-        {
-          "story_id": "news-d91a50da92b2e5776403",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Dow Jones Futures: Techs Fall As Jensen Huang Mulls Nvidia Return; Anthropic IPO Looms",
-          "raw_title": "Dow Jones Futures: Techs Fall As Jensen Huang Mulls Nvidia Return; Anthropic IPO Looms",
-          "normalized_fact": "Nvidia earnings are due as Jensen Huang reportedly mulls a return. The Anthropic IPO is ahead。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Nvidia earnings are due as Jensen Huang reportedly mulls a return. The Anthropic IPO is ahead.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/m/53e50dc8-f137-3f6c-bfd6-912334fef9f1/dow-jones-futures%3A-techs-fall.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/m/53e50dc8-f137-3f6c-bfd6-912334fef9f1/dow-jones-futures%3A-techs-fall.html?.tsrc=rss",
-          "published_at": "2026-11-16T04:08:09+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-15",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "nvidia",
-              "earnings"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "nvidia",
-              "earnings"
-            ],
-            "matched_subject": "nvidia",
-            "matched_action": "earnings",
-            "matched_market_object": "nvidia",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:NVDA",
-            "research_candidate:A"
-          ],
-          "freshness": "published",
-          "dedupe_key": "nvidiaearningsaredueasjensenhuangreportedlymullsareturntheanthropicipoisahead",
-          "event_cluster_key": "event-472afe6eeb0c30d47e00",
-          "published_time_bucket": "2026-11-16T04:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "nvidia",
-            "earnings"
-          ],
-          "matched_subject": "nvidia",
-          "matched_action": "earnings",
-          "matched_market_object": "nvidia",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 140
-        },
-        {
           "story_id": "news-a921e75417bfecafe731",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -6406,16 +5849,105 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 120
+        }
+      ],
+      "editorial_candidates": [
+        {
+          "story_id": "news-7564078fa271eb707ebb",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "U.S. plans to name Nvidia among AI ‘national champions’, WSJ reports",
+          "raw_title": "U.S. plans to name Nvidia among AI ‘national champions’, WSJ reports",
+          "normalized_fact": "Investing.com-- The Trump administration plans to designate more than two dozen companies, including Nvidia (NASDAQ:NVDA), Amazon (NASDAQ:AMZN), Microsoft (NASDAQ:MSFT), OpenAI and Anthropic, as artificial intelligence \"national champions\" to help them expand overseas and compete with Chinese technology firms, the Wall Street Journal reported on Sunday。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Investing.com-- The Trump administration plans to designate more than two dozen companies, including Nvidia (NASDAQ:NVDA), Amazon (NASDAQ:AMZN), Microsoft (NASDAQ:MSFT), OpenAI and Anthropic, as artificial intelligence \"national champions\" to help them expand overseas and compete with Chinese technology firms, the Wall Street Journal reported on Sunday.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/technology/ai/articles/u-plans-name-nvidia-among-053052700.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/technology/ai/articles/u-plans-name-nvidia-among-053052700.html?.tsrc=rss",
+          "published_at": "2026-11-16T05:30:52+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-16",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "tracked_ticker:NVDA"
+          ],
+          "freshness": "published",
+          "dedupe_key": "investingcomthetrumpadministrationplanstodesignatemorethantwodozencompaniesincludingnvidianasdaqnvdaamazonnasdaqamznmicrosoftnasdaqmsftopenaiandanthropicasartificialintelligencenationalchampionstohelpthemexpandoverseasandcompetewithchinesetechnologyfirmsthewallstreetjournalreportedonsunday",
+          "event_cluster_key": "event-f43127cd9599c8cdc772",
+          "published_time_bucket": "2026-11-16T05:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "company_event",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 135
         },
         {
-          "story_id": "news-d019c4defe40efc00941",
+          "story_id": "news-73f3db780cc937e7afab",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "Indonesia’s palm oil policy shift may raise costs for India’s edible oil industry in 2027 - SME Futures",
-          "raw_title": "Indonesia’s palm oil policy shift may raise costs for India’s edible oil industry in 2027 - SME Futures",
-          "normalized_fact": "Indonesia’s palm oil policy shift may raise costs for India’s edible oil industry in 2027 SME Futures。",
+          "title": "Palm Oil Market Outlook: Indonesia’s 2027 Export Shift and B50 Impact - CMB News",
+          "raw_title": "Palm Oil Market Outlook: Indonesia’s 2027 Export Shift and B50 Impact - CMB News",
+          "normalized_fact": "Palm Oil Market Outlook: Indonesia’s 2027 Export Shift and B50 Impact CMB News。",
           "market_topic": "company_industry",
           "actor_role": "",
           "actor_name": "",
@@ -6424,17 +5956,17 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "Indonesia’s palm oil policy shift may raise costs for India’s edible oil industry in 2027 SME Futures",
+          "summary": "Palm Oil Market Outlook: Indonesia’s 2027 Export Shift and B50 Impact CMB News",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxQUnNwUm0zSWZoR2d5VzZXelRtUXRCRmd0TjJIbE56WWV2QzVwaV9wd0dyQjBiTEZJZklHektWc2c5Tl93MXFmZXZ4QkR4OWMtNGJ5TlBZN2lpRWhvRXZwbDlrWnFzYy1MMUhQMjlvaFpDckNQQmN6QVhfaGxiSF85REZhZ2hkVnprUTBkNzJYR1NSOTdmVGtESy1XampUbHhhbi1mN3RBRXplSC1TTE5WNQ",
-          "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxQUnNwUm0zSWZoR2d5VzZXelRtUXRCRmd0TjJIbE56WWV2QzVwaV9wd0dyQjBiTEZJZklHektWc2c5Tl93MXFmZXZ4QkR4OWMtNGJ5TlBZN2lpRWhvRXZwbDlrWnFzYy1MMUhQMjlvaFpDckNQQmN6QVhfaGxiSF85REZhZ2hkVnprUTBkNzJYR1NSOTdmVGtESy1XampUbHhhbi1mN3RBRXplSC1TTE5WNQ",
-          "published_at": "2026-11-14T11:08:15+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxOcXllTEtPX2g2eVl2QUlSZElmMy1kUDJRcWktODFfUkVwckZCeVpjbU8yc1lVRHhCZnJzSFkzRi0tckEtc1Q5c3ZzRnNNeVhpS05XLWZLZGtaeklLSWs2cDE0U2prRlZOQno5VVpzbU4yeWo5emhmZWo4MDdmQkY3a1U3dFNwOUNZUUdfcVpGZGNseFhXcFh3NEhvNTJXcklEQ3lB",
+          "url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxOcXllTEtPX2g2eVl2QUlSZElmMy1kUDJRcWktODFfUkVwckZCeVpjbU8yc1lVRHhCZnJzSFkzRi0tckEtc1Q5c3ZzRnNNeVhpS05XLWZLZGtaeklLSWs2cDE0U2prRlZOQno5VVpzbU4yeWo5emhmZWo4MDdmQkY3a1U3dFNwOUNZUUdfcVpGZGNseFhXcFh3NEhvNTJXcklEQ3lB",
+          "published_at": "2026-11-16T06:07:22+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
+          "date_eligibility_status": "current",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-14",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-16",
           "market": "us",
           "market_compatible": true,
           "tickers": [],
@@ -6465,9 +5997,9 @@
             "active_event:oil"
           ],
           "freshness": "published",
-          "dedupe_key": "indonesiaspalmoilpolicyshiftmayraisecostsforindiasedibleoilindustryin2027smefutures",
-          "event_cluster_key": "event-6f0ad6f0a3d2f1703ead",
-          "published_time_bucket": "2026-11-14T11:00:00+00:00",
+          "dedupe_key": "palmoilmarketoutlookindonesias2027exportshiftandb50impactcmbnews",
+          "event_cluster_key": "event-5f8760ec6fe209d3a576",
+          "published_time_bucket": "2026-11-16T06:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
@@ -6476,6 +6008,281 @@
           "matched_action": "",
           "matched_market_object": "",
           "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 120
+        },
+        {
+          "story_id": "news-a921e75417bfecafe731",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Stocks decline in Asia as investor concerns over Nvidia fallout extend into another week",
+          "raw_title": "Stocks decline in Asia as investor concerns over Nvidia fallout extend into another week",
+          "normalized_fact": "HONG KONG (AP) — Asian shares mostly declined Monday as investors’ worries over the future of the artificial intelligence trade extended into another week following Nvidia’s fallout. equity futures were trading lower。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "HONG KONG (AP) — Asian shares mostly declined Monday as investors’ worries over the future of the artificial intelligence trade extended into another week following Nvidia’s fallout. equity futures were trading lower.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/stocks-decline-asia-investor-concerns-045636045.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/stocks-decline-asia-investor-concerns-045636045.html?.tsrc=rss",
+          "published_at": "2026-11-16T04:56:36+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-11-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "tracked_ticker:NVDA"
+          ],
+          "freshness": "published",
+          "dedupe_key": "hongkongapasiansharesmostlydeclinedmondayasinvestorsworriesoverthefutureoftheartificialintelligencetradeextendedintoanotherweekfollowingnvidiasfalloutequityfuturesweretradinglower",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-11-16T04:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 135
+        },
+        {
+          "story_id": "news-83db51c6f10709b40c6d",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Chinese AI labs are training models on Nvidia's Blackwell despite export controls, says ex-OpenAI engineer - The Register",
+          "raw_title": "Chinese AI labs are training models on Nvidia's Blackwell despite export controls, says ex-OpenAI engineer - The Register",
+          "normalized_fact": "Chinese AI labs are training models on Nvidia's Blackwell despite export controls, says ex-OpenAI engineer The Register。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Chinese AI labs are training models on Nvidia's Blackwell despite export controls, says ex-OpenAI engineer The Register",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMi8wFBVV95cUxOc2d0VmU0UHVrQlVvWElsNFVGTlhKcDc2YVR0SGxqM2dBUXlvSGpLZTNrbUhDTVhiLU0yU1lUamJ2MFpNc3V0SUxlY2xkc3dKemkxel9zbEVXaTVoVHhMdUliUERkZUNKQ2pvSnNKeUh3WDBXdkw1dVBQM09pMjBlSXdoc3JUOVpxZTZYZkphSVFzeDV5MkN5SGpLN0E3bmZVcnJtRThzNDJYSGNzSi1qUEdXUDZWYzRrbHY1RkVqeTA5WWxadzdTcE9USjMxVkZLU3p2cGZMODJpU1V5SDlBTDFyWUNnWXZpbGF1aEotVlFsMkU",
+          "url": "https://news.google.com/rss/articles/CBMi8wFBVV95cUxOc2d0VmU0UHVrQlVvWElsNFVGTlhKcDc2YVR0SGxqM2dBUXlvSGpLZTNrbUhDTVhiLU0yU1lUamJ2MFpNc3V0SUxlY2xkc3dKemkxel9zbEVXaTVoVHhMdUliUERkZUNKQ2pvSnNKeUh3WDBXdkw1dVBQM09pMjBlSXdoc3JUOVpxZTZYZkphSVFzeDV5MkN5SGpLN0E3bmZVcnJtRThzNDJYSGNzSi1qUEdXUDZWYzRrbHY1RkVqeTA5WWxadzdTcE9USjMxVkZLU3p2cGZMODJpU1V5SDlBTDFyWUNnWXZpbGF1aEotVlFsMkU",
+          "published_at": "2026-11-13T21:16:22+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-11-13",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "nvidia",
+              "export control"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "nvidia",
+              "export control"
+            ],
+            "matched_subject": "nvidia",
+            "matched_action": "export control",
+            "matched_market_object": "nvidia",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "tracked_ticker:NVDA"
+          ],
+          "freshness": "published",
+          "dedupe_key": "chineseailabsaretrainingmodelsonnvidiasblackwelldespiteexportcontrolssaysexopenaiengineertheregister",
+          "event_cluster_key": "event-a2f5ed13d79a45ac074c",
+          "published_time_bucket": "2026-11-13T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "nvidia",
+            "export control"
+          ],
+          "matched_subject": "nvidia",
+          "matched_action": "export control",
+          "matched_market_object": "nvidia",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 120
+        },
+        {
+          "story_id": "news-c0abb2bfab1f52987f16",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "How Will the Market React to a Potential Fed Rate Hike in December? Here's What History Suggests. - Yahoo Finance",
+          "raw_title": "How Will the Market React to a Potential Fed Rate Hike in December? Here's What History Suggests. - Yahoo Finance",
+          "normalized_fact": "How Will the Market React to a Potential Fed Rate Hike in December? Here's What History Suggests. Yahoo Finance。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "How Will the Market React to a Potential Fed Rate Hike in December? Here's What History Suggests. Yahoo Finance",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxQQ3daeDNPVnBBam5nRFZiZEltR3lUUU1iUGFLakhvVmJoLVBEbWhiUHRRcnlLcnFjMGtqWEdoOWVEd21QNlpfdzdGc0dhczNQcENxbnNpeHNyMTZtR1FkaEx6aG1RYVNuWGhKSHpFa0Z0R2RYbVNxWlhjbzNmN1RNNDE4d2hCS1h2YWtuWFhrRTJiSzhlNWUtMXZLVGg",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxQQ3daeDNPVnBBam5nRFZiZEltR3lUUU1iUGFLakhvVmJoLVBEbWhiUHRRcnlLcnFjMGtqWEdoOWVEd21QNlpfdzdGc0dhczNQcENxbnNpeHNyMTZtR1FkaEx6aG1RYVNuWGhKSHpFa0Z0R2RYbVNxWlhjbzNmN1RNNDE4d2hCS1h2YWtuWFhrRTJiSzhlNWUtMXZLVGg",
+          "published_at": "2026-11-15T12:22:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-11-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "rate"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "rate"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "rate",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "research_candidate:A"
+          ],
+          "freshness": "published",
+          "dedupe_key": "howwillthemarketreacttoapotentialfedratehikeindecemberhereswhathistorysuggestsyahoofinance",
+          "event_cluster_key": "event-af8c5fdafea940be6e6c",
+          "published_time_bucket": "2026-11-15T12:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "rate"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "rate",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -7424,6 +7231,101 @@
           "inventory_used": true,
           "inventory_age_trading_sessions": 2,
           "inventory_saved_at": "2026-11-13T13:39:15.158592+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 37
+        },
+        {
+          "story_id": "news-d91a50da92b2e5776403",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "Dow Jones Futures: Techs Fall As Jensen Huang Mulls Nvidia Return; Anthropic IPO Looms",
+          "raw_title": "Dow Jones Futures: Techs Fall As Jensen Huang Mulls Nvidia Return; Anthropic IPO Looms",
+          "normalized_fact": "Nvidia earnings are due as Jensen Huang reportedly mulls a return. The Anthropic IPO is ahead。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Nvidia earnings are due as Jensen Huang reportedly mulls a return. The Anthropic IPO is ahead.",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/m/53e50dc8-f137-3f6c-bfd6-912334fef9f1/dow-jones-futures%3A-techs-fall.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/m/53e50dc8-f137-3f6c-bfd6-912334fef9f1/dow-jones-futures%3A-techs-fall.html?.tsrc=rss",
+          "published_at": "2026-11-15T21:50:32+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-11-15",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "nvidia",
+              "earnings"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "nvidia",
+              "earnings"
+            ],
+            "matched_subject": "nvidia",
+            "matched_action": "earnings",
+            "matched_market_object": "nvidia",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "tracked_ticker:NVDA",
+            "research_candidate:A"
+          ],
+          "freshness": "published",
+          "dedupe_key": "nvidiaearningsaredueasjensenhuangreportedlymullsareturntheanthropicipoisahead",
+          "event_cluster_key": "event-853a7becffc01ff48a33",
+          "published_time_bucket": "2026-11-15T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "nvidia",
+            "earnings"
+          ],
+          "matched_subject": "nvidia",
+          "matched_action": "earnings",
+          "matched_market_object": "nvidia",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 2,
+          "inventory_saved_at": "2026-11-15T22:03:45.375470+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 37
@@ -9217,6 +9119,91 @@
           "ranking_score": 17
         },
         {
+          "story_id": "news-d019c4defe40efc00941",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "Indonesia’s palm oil policy shift may raise costs for India’s edible oil industry in 2027 - SME Futures",
+          "raw_title": "Indonesia’s palm oil policy shift may raise costs for India’s edible oil industry in 2027 - SME Futures",
+          "normalized_fact": "Indonesia’s palm oil policy shift may raise costs for India’s edible oil industry in 2027 SME Futures。",
+          "market_topic": "company_industry",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Indonesia’s palm oil policy shift may raise costs for India’s edible oil industry in 2027 SME Futures",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxQUnNwUm0zSWZoR2d5VzZXelRtUXRCRmd0TjJIbE56WWV2QzVwaV9wd0dyQjBiTEZJZklHektWc2c5Tl93MXFmZXZ4QkR4OWMtNGJ5TlBZN2lpRWhvRXZwbDlrWnFzYy1MMUhQMjlvaFpDckNQQmN6QVhfaGxiSF85REZhZ2hkVnprUTBkNzJYR1NSOTdmVGtESy1XampUbHhhbi1mN3RBRXplSC1TTE5WNQ",
+          "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxQUnNwUm0zSWZoR2d5VzZXelRtUXRCRmd0TjJIbE56WWV2QzVwaV9wd0dyQjBiTEZJZklHektWc2c5Tl93MXFmZXZ4QkR4OWMtNGJ5TlBZN2lpRWhvRXZwbDlrWnFzYy1MMUhQMjlvaFpDckNQQmN6QVhfaGxiSF85REZhZ2hkVnprUTBkNzJYR1NSOTdmVGtESy1XampUbHhhbi1mN3RBRXplSC1TTE5WNQ",
+          "published_at": "2026-11-14T11:08:15+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-11-14",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "energy"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "active_event:oil"
+          ],
+          "freshness": "published",
+          "dedupe_key": "indonesiaspalmoilpolicyshiftmayraisecostsforindiasedibleoilindustryin2027smefutures",
+          "event_cluster_key": "event-6f0ad6f0a3d2f1703ead",
+          "published_time_bucket": "2026-11-14T11:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 2,
+          "inventory_saved_at": "2026-11-14T21:58:15.217809+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 17
+        },
+        {
           "story_id": "news-a1802df23ad2d258c3a7",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -9604,24 +9591,24 @@
       },
       "interest_graph": {
         "ticker_interest": {
-          "A": 30,
-          "NVDA": 62,
-          "2330": 1,
-          "TSM": 1
+          "A": 31,
+          "2330": 3,
+          "NVDA": 63,
+          "TSM": 3
         },
         "sector_interest": {},
         "topic_interest": {
           "gold": 6,
-          "oil": 17,
-          "iran": 2,
+          "oil": 14,
+          "iran": 3,
+          "israel": 1,
           "sanctions": 1,
-          "war": 1,
-          "brent": 2,
-          "wti": 3,
+          "hormuz": 1,
+          "wti": 1,
           "伊朗": 1
         },
         "market_interest": {
-          "us": 149
+          "us": 148
         },
         "context": {
           "tracked_tickers": [
@@ -9710,35 +9697,35 @@
         },
         "source_interest": {
           "tracked_ticker": {
-            "NVDA": 62,
-            "2330": 1,
-            "TSM": 1
+            "2330": 3,
+            "NVDA": 63,
+            "TSM": 3
           },
           "research_candidate": {
-            "A": 30
+            "A": 31
           },
           "tracked_sector": {},
           "active_event": {
             "gold": 6,
-            "oil": 17,
-            "iran": 2,
+            "oil": 14,
+            "iran": 3,
+            "israel": 1,
             "sanctions": 1,
-            "war": 1,
-            "brent": 2,
-            "wti": 3,
+            "hormuz": 1,
+            "wti": 1,
             "伊朗": 1
           },
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 52,
+      "excluded_count": 54,
       "exclusion_reasons": {
         "generic_official_filing": 20,
-        "incomplete_normalized_fact": 24,
-        "insufficient_market_relevance": 24,
+        "incomplete_normalized_fact": 20,
+        "insufficient_market_relevance": 22,
         "listicle_or_selection": 2,
-        "market_scope_mismatch": 4,
-        "outside_calendar_window": 14,
+        "market_scope_mismatch": 8,
+        "outside_calendar_window": 17,
         "outside_trading_session_window": 1
       },
       "status": "ready",
@@ -9751,40 +9738,40 @@
         "disabled_provider_count": 1,
         "fetched": 62,
         "normalized": 62,
-        "eligible": 10,
-        "excluded": 52,
-        "date_eligible_current": 47,
-        "date_excluded_current": 15,
+        "eligible": 8,
+        "excluded": 54,
+        "date_eligible_current": 44,
+        "date_excluded_current": 18,
         "date_exclusion_reasons_current": {
-          "outside_calendar_window": 14,
+          "outside_calendar_window": 17,
           "outside_trading_session_window": 1
         },
-        "date_eligible_inventory": 87,
+        "date_eligible_inventory": 86,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-11-16T06:49:04.355781+00:00",
-        "deduped": 10,
+        "reference_time": "2026-11-16T07:05:31.924803+00:00",
+        "deduped": 8,
         "publicly_ranked": 5,
-        "current_eligible": 10,
-        "inventory_considered": 87,
+        "current_eligible": 8,
+        "inventory_considered": 86,
         "inventory_eligible": 50,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 52,
+        "filtered_story_count": 54,
         "fetched_story_count": 62,
         "normalized_story_count": 62,
-        "eligible_story_count": 10,
-        "deduped_story_count": 10,
+        "eligible_story_count": 8,
+        "deduped_story_count": 8,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 87,
+        "considered": 86,
         "eligible": 50,
         "selected": 0,
         "target_count": 5,
@@ -9798,7 +9785,7 @@
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 62,
-          "checked_at": "2026-11-16T06:49:04.355820+00:00"
+          "checked_at": "2026-11-16T07:05:31.924842+00:00"
         },
         {
           "provider": "sec",
@@ -9809,10 +9796,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-11-16T06:49:04.355820+00:00",
+          "checked_at": "2026-11-16T07:05:31.924842+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+          "last_success_at": "2026-11-16T07:05:31.924842+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9841,12 +9828,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-11-16T06:49:04.355820+00:00",
+          "checked_at": "2026-11-16T07:05:31.924842+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-11-16T06:49:04.355820+00:00",
+          "last_failure_at": "2026-11-16T07:05:31.924842+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9869,10 +9856,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-11-16T06:49:04.355820+00:00",
+          "checked_at": "2026-11-16T07:05:31.924842+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+          "last_success_at": "2026-11-16T07:05:31.924842+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9897,10 +9884,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 0,
-          "checked_at": "2026-11-16T06:49:04.355820+00:00",
+          "checked_at": "2026-11-16T07:05:31.924842+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+          "last_success_at": "2026-11-16T07:05:31.924842+00:00",
           "last_failure_at": null,
           "stories_ingested": 2,
           "stories_deduped": 0,
@@ -9928,28 +9915,28 @@
           "status": "healthy",
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
-          "item_count": 3,
-          "checked_at": "2026-11-16T06:49:04.355820+00:00",
+          "item_count": 2,
+          "checked_at": "2026-11-16T07:05:31.924842+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 3,
-          "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+          "filtered_item_count": 2,
+          "last_success_at": "2026-11-16T07:05:31.924842+00:00",
           "last_failure_at": null,
-          "stories_ingested": 8,
-          "stories_deduped": 3,
-          "ranked_count": 3,
+          "stories_ingested": 6,
+          "stories_deduped": 2,
+          "ranked_count": 2,
           "relevance_distribution": {
-            "market": 8,
-            "research_candidate": 4,
-            "tracked_ticker": 8
+            "market": 6,
+            "research_candidate": 3,
+            "tracked_ticker": 6
           },
           "funnel": {
             "fetched_count": 10,
-            "normalized_count": 8,
-            "market_compatible_count": 8,
-            "eligible_count": 3,
-            "excluded_count": 5,
-            "deduped_count": 3,
-            "ranked_count": 3
+            "normalized_count": 6,
+            "market_compatible_count": 6,
+            "eligible_count": 2,
+            "excluded_count": 4,
+            "deduped_count": 2,
+            "ranked_count": 2
           }
         },
         {
@@ -9960,15 +9947,15 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
-          "item_count": 2,
-          "checked_at": "2026-11-16T06:49:04.355820+00:00",
+          "item_count": 3,
+          "checked_at": "2026-11-16T07:05:31.924842+00:00",
           "raw_item_count": 40,
-          "filtered_item_count": 2,
-          "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+          "filtered_item_count": 3,
+          "last_success_at": "2026-11-16T07:05:31.924842+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
-          "stories_deduped": 7,
-          "ranked_count": 2,
+          "stories_deduped": 6,
+          "ranked_count": 3,
           "relevance_distribution": {
             "active_event": 11,
             "market": 40,
@@ -9979,16 +9966,16 @@
             "fetched_count": 40,
             "normalized_count": 40,
             "market_compatible_count": 40,
-            "eligible_count": 7,
-            "excluded_count": 33,
-            "deduped_count": 7,
-            "ranked_count": 2
+            "eligible_count": 6,
+            "excluded_count": 34,
+            "deduped_count": 6,
+            "ranked_count": 3
           }
         }
       ],
       "observability": {
         "stories_ingested": 62,
-        "stories_deduped": 10,
+        "stories_deduped": 8,
         "ranked_count": 5,
         "relevance_distribution": {
           "active_event": 11,
@@ -10000,7 +9987,7 @@
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+            "last_success_at": "2026-11-16T07:05:31.924842+00:00",
             "last_failure_at": null,
             "stories_ingested": 2,
             "stories_deduped": 0,
@@ -10023,7 +10010,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-11-16T06:49:04.355820+00:00",
+            "last_failure_at": "2026-11-16T07:05:31.924842+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -10041,11 +10028,11 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+            "last_success_at": "2026-11-16T07:05:31.924842+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
-            "stories_deduped": 7,
-            "ranked_count": 2,
+            "stories_deduped": 6,
+            "ranked_count": 3,
             "relevance_distribution": {
               "active_event": 11,
               "market": 40,
@@ -10056,16 +10043,16 @@
               "fetched_count": 40,
               "normalized_count": 40,
               "market_compatible_count": 40,
-              "eligible_count": 7,
-              "excluded_count": 33,
-              "deduped_count": 7,
-              "ranked_count": 2
+              "eligible_count": 6,
+              "excluded_count": 34,
+              "deduped_count": 6,
+              "ranked_count": 3
             }
           },
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+            "last_success_at": "2026-11-16T07:05:31.924842+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -10084,7 +10071,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+            "last_success_at": "2026-11-16T07:05:31.924842+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -10108,19 +10095,20 @@
             "status": "healthy",
             "last_success_at": null,
             "last_failure_at": null,
-            "stories_ingested": 2,
+            "stories_ingested": 4,
             "stories_deduped": 0,
             "ranked_count": 0,
             "relevance_distribution": {
-              "market": 2,
-              "tracked_ticker": 2
+              "market": 4,
+              "research_candidate": 1,
+              "tracked_ticker": 4
             },
             "funnel": {
-              "fetched_count": 2,
-              "normalized_count": 2,
+              "fetched_count": 4,
+              "normalized_count": 4,
               "market_compatible_count": 0,
               "eligible_count": 0,
-              "excluded_count": 2,
+              "excluded_count": 4,
               "deduped_count": 0,
               "ranked_count": 0
             }
@@ -10128,24 +10116,24 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-11-16T06:49:04.355820+00:00",
+            "last_success_at": "2026-11-16T07:05:31.924842+00:00",
             "last_failure_at": null,
-            "stories_ingested": 8,
-            "stories_deduped": 3,
-            "ranked_count": 3,
+            "stories_ingested": 6,
+            "stories_deduped": 2,
+            "ranked_count": 2,
             "relevance_distribution": {
-              "market": 8,
-              "research_candidate": 4,
-              "tracked_ticker": 8
+              "market": 6,
+              "research_candidate": 3,
+              "tracked_ticker": 6
             },
             "funnel": {
               "fetched_count": 10,
-              "normalized_count": 8,
-              "market_compatible_count": 8,
-              "eligible_count": 3,
-              "excluded_count": 5,
-              "deduped_count": 3,
-              "ranked_count": 3
+              "normalized_count": 6,
+              "market_compatible_count": 6,
+              "eligible_count": 2,
+              "excluded_count": 4,
+              "deduped_count": 2,
+              "ranked_count": 2
             }
           }
         ]
