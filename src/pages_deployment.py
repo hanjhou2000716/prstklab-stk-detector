@@ -105,6 +105,7 @@ def _safe_github_request_id(value: Any) -> str:
     text = str(value or "").strip()
     return text if len(text) <= 128 and re.fullmatch(r"[A-Za-z0-9:._-]{1,128}", text) else ""
 
+
 def _safe_status_url_shape(
     value: str, *, api_url: str, repository: str, deployment_id: str,
 ) -> str:
