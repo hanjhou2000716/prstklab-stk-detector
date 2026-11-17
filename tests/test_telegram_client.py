@@ -956,3 +956,299 @@ def test_photo_delivery_handles_retry_after_json_failure_and_summary(monkeypatch
     ])
     assert (summary.delivered_count, summary.failed_count) == (1, 1)
     assert summary.any_delivered
+
+
+@pytest.mark.parametrize(
+    ("guard_status", "message_id", "expected_status", "expected_error"),
+    [
+        ("delivered", 91, "delivered", None),
+        ("sending", None, "delivery_unknown", "delivery_guard_sending"),
+        ("delivery_unknown", None, "delivery_unknown", "delivery_guard_delivery_unknown"),
+        ("blocked", None, "failed", "delivery_guard_blocked"),
+    ],
+)
+def test_guarded_text_respects_existing_recipient_state(
+    monkeypatch, guard_status, message_id, expected_status, expected_error,
+):
+    from src.telegram_delivery_guard import GuardReservation
+
+    monkeypatch.setattr(
+        "src.telegram_delivery_guard.reserve_and_start",
+        lambda **_kwargs: GuardReservation(False, guard_status, message_id=message_id),
+    )
+    telegram_calls = []
+    monkeypatch.setattr(
+        "src.telegram_client.requests.post",
+        lambda *args, **kwargs: telegram_calls.append(args),
+    )
+
+    receipt, = send_text_briefs_audited(
+        token="token", chat_ids=("1001",), text="市場事件已確認。",
+        dashboard_url="https://example.test/app", alert_id="alert",
+        release_id="release", snapshot_id="snapshot", notification_key="event-key",
+    )
+
+    assert telegram_calls == []
+    assert receipt.status == expected_status
+    assert receipt.error_class == expected_error
+    assert receipt.message_id == message_id
+
+
+@pytest.mark.parametrize(
+    ("status_code", "ok", "payload", "json_error", "expected_status", "expected_error"),
+    [
+        (200, True, None, True, "delivery_unknown", "delivery_unknown"),
+        (429, False, {"ok": False, "error_code": 429}, False, "failed", "terminal_failed"),
+        (503, False, {"ok": False}, False, "delivery_unknown", "delivery_unknown"),
+        (400, False, {"ok": False}, False, "failed", "terminal_failed"),
+        (200, True, {"ok": True, "result": {}}, False, "delivery_unknown", "delivery_unknown"),
+    ],
+)
+def test_guarded_text_classifies_telegram_uncertainty_without_replay(
+    monkeypatch, status_code, ok, payload, json_error, expected_status, expected_error,
+):
+    from src.telegram_delivery_guard import GuardReservation
+
+    monkeypatch.setattr(
+        "src.telegram_delivery_guard.reserve_and_start",
+        lambda **_kwargs: GuardReservation(True, "sending", "attempt-1"),
+    )
+    recorded = []
+    monkeypatch.setattr(
+        "src.telegram_delivery_guard.record_result",
+        lambda **kwargs: recorded.append(kwargs) or kwargs["status"],
+    )
+
+    class Response:
+        def __init__(self):
+            self.status_code = status_code
+            self.ok = ok
+
+        def json(self):
+            if json_error:
+                raise ValueError("invalid Telegram JSON")
+            return payload
+
+    telegram_calls = []
+    monkeypatch.setattr(
+        "src.telegram_client.requests.post",
+        lambda *args, **kwargs: telegram_calls.append(args) or Response(),
+    )
+    receipt, = send_text_briefs_audited(
+        token="token", chat_ids=("1001",), text="市場事件已確認。",
+        dashboard_url="https://example.test/app", alert_id="alert",
+        release_id="release", snapshot_id="snapshot", notification_key="event-key",
+    )
+
+    assert len(telegram_calls) == 1
+    assert len(recorded) == 1
+    assert recorded[0]["status"] == expected_error
+    assert receipt.status == expected_status
+    assert receipt.error_class == expected_error
+
+
+@pytest.mark.parametrize("persistence_mode", ["exception", "unconfirmed"])
+def test_guarded_text_success_without_durable_receipt_is_unknown_and_not_retried(
+    monkeypatch, persistence_mode,
+):
+    from src.telegram_delivery_guard import DeliveryGuardError, GuardReservation
+
+    monkeypatch.setattr(
+        "src.telegram_delivery_guard.reserve_and_start",
+        lambda **_kwargs: GuardReservation(True, "sending", "attempt-1"),
+    )
+    if persistence_mode == "exception":
+        def fail_record(**_kwargs):
+            raise DeliveryGuardError("delivery_guard_transport_unknown")
+
+        monkeypatch.setattr("src.telegram_delivery_guard.record_result", fail_record)
+    else:
+        monkeypatch.setattr("src.telegram_delivery_guard.record_result", lambda **_kwargs: "sending")
+
+    class Accepted:
+        status_code = 200
+        ok = True
+
+        @staticmethod
+        def json():
+            return {"ok": True, "result": {"message_id": 42}}
+
+    telegram_calls = []
+    monkeypatch.setattr(
+        "src.telegram_client.requests.post",
+        lambda *args, **kwargs: telegram_calls.append(args) or Accepted(),
+    )
+    receipt, = send_text_briefs_audited(
+        token="token", chat_ids=("1001",), text="市場事件已確認。",
+        dashboard_url="https://example.test/app", alert_id="alert",
+        release_id="release", snapshot_id="snapshot", notification_key="event-key",
+    )
+
+    assert len(telegram_calls) == 1
+    assert receipt.status == "delivery_unknown"
+    assert receipt.error_class == "delivery_result_persistence_unknown"
+
+
+def test_guarded_text_does_not_retry_rate_limit_after_deadline(monkeypatch):
+    from datetime import UTC, datetime, timedelta
+
+    from src.telegram_delivery_guard import GuardReservation
+
+    monkeypatch.setattr(
+        "src.telegram_delivery_guard.reserve_and_start",
+        lambda **_kwargs: GuardReservation(True, "sending", "attempt-1"),
+    )
+    recorded = []
+    monkeypatch.setattr(
+        "src.telegram_delivery_guard.record_result",
+        lambda **kwargs: recorded.append(kwargs) or kwargs["status"],
+    )
+
+    class RateLimited:
+        status_code = 429
+        ok = False
+
+        @staticmethod
+        def json():
+            return {"ok": False, "error_code": 429, "parameters": {"retry_after": 60}}
+
+    telegram_calls = []
+    monkeypatch.setattr(
+        "src.telegram_client.requests.post",
+        lambda *args, **kwargs: telegram_calls.append(args) or RateLimited(),
+    )
+    delays = []
+    monkeypatch.setattr("src.telegram_client.sleep", delays.append)
+    receipt, = send_text_briefs_audited(
+        token="token", chat_ids=("1001",), text="市場事件已確認。",
+        dashboard_url="https://example.test/app", alert_id="alert",
+        release_id="release", snapshot_id="snapshot", notification_key="event-key",
+        delivery_deadline=datetime.now(UTC) + timedelta(seconds=5),
+    )
+
+    assert len(telegram_calls) == 1
+    assert delays == []
+    assert recorded[0]["status"] == "retryable_failed"
+    assert receipt.status == "failed"
+
+
+@pytest.mark.parametrize(
+    ("guard_status", "expected_status"),
+    [("delivered", "delivered"), ("delivery_unknown", "delivery_unknown"), ("blocked", "failed")],
+)
+def test_guarded_photo_respects_existing_recipient_state(
+    monkeypatch, tmp_path, guard_status, expected_status,
+):
+    from src.telegram_delivery_guard import GuardReservation
+
+    image = tmp_path / "image.png"
+    image.write_bytes(b"png")
+    monkeypatch.setattr(
+        "src.telegram_delivery_guard.reserve_and_start",
+        lambda **_kwargs: GuardReservation(False, guard_status, message_id=92),
+    )
+    telegram_calls = []
+    monkeypatch.setattr(
+        "src.telegram_client.requests.post",
+        lambda *args, **kwargs: telegram_calls.append(args),
+    )
+
+    receipt = send_photo_brief(
+        token="token", chat_id="1001", caption="事件已確認", photo_path=image,
+        mini_app_url="https://example.test/app", alert_id="alert",
+        release_id="release", snapshot_id="snapshot", notification_key="photo-event",
+    )
+
+    assert telegram_calls == []
+    assert receipt.status == expected_status
+    assert receipt.message_id == 92
+
+
+@pytest.mark.parametrize(
+    ("status_code", "ok", "payload", "json_error", "expected_status", "expected_error"),
+    [
+        (200, True, None, True, "delivery_unknown", "delivery_unknown"),
+        (429, False, {"ok": False, "error_code": 429}, False, "failed", "terminal_failed"),
+        (503, False, {"ok": False}, False, "delivery_unknown", "delivery_unknown"),
+        (400, False, {"ok": False}, False, "failed", "terminal_failed"),
+        (200, True, {"ok": True, "result": {}}, False, "delivery_unknown", "delivery_unknown"),
+    ],
+)
+def test_guarded_photo_classifies_telegram_uncertainty_without_replay(
+    monkeypatch, tmp_path, status_code, ok, payload, json_error, expected_status, expected_error,
+):
+    from src.telegram_delivery_guard import GuardReservation
+
+    image = tmp_path / "image.png"
+    image.write_bytes(b"png")
+    monkeypatch.setattr(
+        "src.telegram_delivery_guard.reserve_and_start",
+        lambda **_kwargs: GuardReservation(True, "sending", "attempt-1"),
+    )
+    recorded = []
+    monkeypatch.setattr(
+        "src.telegram_delivery_guard.record_result",
+        lambda **kwargs: recorded.append(kwargs) or kwargs["status"],
+    )
+
+    class Response:
+        def __init__(self):
+            self.status_code = status_code
+            self.ok = ok
+
+        def json(self):
+            if json_error:
+                raise ValueError("invalid Telegram JSON")
+            return payload
+
+    telegram_calls = []
+    monkeypatch.setattr(
+        "src.telegram_client.requests.post",
+        lambda *args, **kwargs: telegram_calls.append(args) or Response(),
+    )
+    receipt = send_photo_brief(
+        token="token", chat_id="1001", caption="事件已確認", photo_path=image,
+        mini_app_url="https://example.test/app", alert_id="alert",
+        release_id="release", snapshot_id="snapshot", notification_key="photo-event",
+    )
+
+    assert len(telegram_calls) == 1
+    assert len(recorded) == 1
+    assert recorded[0]["status"] == expected_error
+    assert receipt.status == expected_status
+    assert receipt.error_class == expected_error
+
+
+def test_guarded_photo_success_with_unconfirmed_receipt_is_unknown_and_not_retried(monkeypatch, tmp_path):
+    from src.telegram_delivery_guard import GuardReservation
+
+    image = tmp_path / "image.png"
+    image.write_bytes(b"png")
+    monkeypatch.setattr(
+        "src.telegram_delivery_guard.reserve_and_start",
+        lambda **_kwargs: GuardReservation(True, "sending", "attempt-1"),
+    )
+    monkeypatch.setattr("src.telegram_delivery_guard.record_result", lambda **_kwargs: "sending")
+
+    class Accepted:
+        status_code = 200
+        ok = True
+
+        @staticmethod
+        def json():
+            return {"ok": True, "result": {"message_id": 43}}
+
+    telegram_calls = []
+    monkeypatch.setattr(
+        "src.telegram_client.requests.post",
+        lambda *args, **kwargs: telegram_calls.append(args) or Accepted(),
+    )
+    receipt = send_photo_brief(
+        token="token", chat_id="1001", caption="事件已確認", photo_path=image,
+        mini_app_url="https://example.test/app", alert_id="alert",
+        release_id="release", snapshot_id="snapshot", notification_key="photo-event",
+    )
+
+    assert len(telegram_calls) == 1
+    assert receipt.status == "delivery_unknown"
+    assert receipt.error_class == "delivery_result_persistence_unknown"
