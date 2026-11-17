@@ -171,6 +171,25 @@ def test_deployment_recovery_budget_is_clamped_to_the_original_market_window():
     ) == 0
 
 
+def test_durable_telegram_guard_keeps_the_original_slot_deadline():
+    taiwan = {
+        "effective_slot": "post_close",
+        "slot_date": "2026-09-25",
+        "scheduled_for_at": "2026-09-25T14:20:00+08:00",
+    }
+    assert scheduled_delivery.scheduled_delivery_deadline("post_close", taiwan) == datetime.fromisoformat(
+        "2026-09-25T06:50:00+00:00",
+    )
+    us = {
+        "effective_slot": "us_premarket",
+        "slot_date": "2026-09-25",
+        "scheduled_for_at": "2026-09-25T09:00:00-04:00",
+    }
+    assert scheduled_delivery.scheduled_delivery_deadline("us_premarket", us) == datetime.fromisoformat(
+        "2026-09-25T13:30:00+00:00",
+    )
+
+
 def test_routine_market_report_does_not_require_an_event_candidate():
     assert scheduled_delivery._is_routine_market_report({
         "scheduled_report": True,

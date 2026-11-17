@@ -275,6 +275,8 @@ jobs:
           ARCHIVE_SOURCE_COMMIT: ${{ steps.release.outputs.archive_source_commit || '' }}
           DEPLOYMENT_ERROR: ${{ steps.deployment_identity.outputs.error || steps.deployment.outputs.error || '' }}
           DEPLOYMENT_ERROR_CODE: ${{ steps.deployment.outputs.error_code || steps.deployment_identity.outputs.error_code || '' }}
+          DEPLOYMENT_REQUEST_ID: ${{ steps.deployment.outputs.request_id || steps.deployment_identity.outputs.request_id || '' }}
+          RELEASE_BINDING_ID: ${{ steps.deployment.outputs.release_binding_id || steps.deployment_identity.outputs.release_binding_id || '' }}
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: |
           {
@@ -297,6 +299,8 @@ jobs:
             echo "- attempts: ${PUBLIC_GATE_ATTEMPTS}"
             echo "- deployment_error: ${DEPLOYMENT_ERROR:-none}"
             echo "- deployment_error_code: ${DEPLOYMENT_ERROR_CODE:-none}"
+            echo "- deployment_request_id: ${DEPLOYMENT_REQUEST_ID:-unknown}"
+            echo "- release_binding_id: ${RELEASE_BINDING_ID:-unknown}"
             if [ "${DEPLOYMENT_VERIFIED}" = "true" ] && [ "${PUBLIC_GATE_ALLOWED}" = "true" ]; then
               echo "- pages_publication_status: published_and_verified"
             else

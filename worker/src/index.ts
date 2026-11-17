@@ -634,7 +634,7 @@ async function sendTelegram(env: Env, report: string, provenance: { traceId: str
 
 async function handle(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
-  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: { ...cors(request, env), "access-control-allow-methods": "GET,POST,OPTIONS", "access-control-allow-headers": "content-type,authorization,x-admin-key,x-telegram-init-data,x-telegram-bot-api-secret-token" } });
+  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: { ...cors(request, env), "access-control-allow-methods": "GET,POST,OPTIONS", "access-control-allow-headers": "content-type,authorization,x-admin-key,x-telegram-init-data,x-telegram-bot-api-secret-token,x-prstk-signature" } });
   if (url.pathname === "/public/ops/liveness" && request.method === "GET") {
     if (!env.INCIDENT_COORDINATOR || !env.INCIDENT_REPOSITORY_ID) {
       return json({ ok: false, component: "incident-coordinator", error: "not_configured" }, 503, { "x-robots-tag": "noindex, nofollow" });
@@ -749,6 +749,89 @@ async function handle(request: Request, env: Env): Promise<Response> {
   }
   if (url.pathname === "/api/telegram-webhook" && request.method === "POST") {
     return handleTelegramWebhook(request, env);
+  }
+  if (url.pathname === "/api/delivery-attempts" && request.method === "POST") {
+    const secret = String(env.DELIVERY_RECEIPT_SHARED_SECRET || "").trim();
+    if (!secret) return json({ ok: false, error: "DELIVERY_GUARD_NOT_CONFIGURED" }, 503);
+    const body = await request.text();
+    if (new TextEncoder().encode(body).byteLength > 8192) return json({ ok: false, error: "PAYLOAD_TOO_LARGE" }, 413);
+    if (!await verifyReceiptSignature(request, body, secret)) return json({ ok: false, error: "INVALID_SIGNATURE" }, 401);
+    let input: unknown;
+    try { input = JSON.parse(body); } catch (_) { return json({ ok: false, error: "INVALID_JSON" }, 400); }
+    if (!input || typeof input !== "object" || Array.isArray(input)) return json({ ok: false, error: "INVALID_ATTEMPT" }, 400);
+    const value = input as Record<string, unknown>;
+    const notificationHash = boundedString(value.notification_hash, 64);
+    const recipientHash = boundedString(value.recipient_hash, 64);
+    const attemptId = boundedString(value.attempt_id, 36);
+    const operation = boundedString(value.operation, 16);
+    const fieldsByOperation: Record<string, Set<string>> = {
+      reserve: new Set(["notification_hash", "recipient_hash", "attempt_id", "operation", "deadline_at", "lease_seconds"]),
+      start: new Set(["notification_hash", "recipient_hash", "attempt_id", "operation"]),
+      result: new Set(["notification_hash", "recipient_hash", "attempt_id", "operation", "retry_after_at", "result", "message_id"]),
+    };
+    const operationFields = fieldsByOperation[operation];
+    if (!operationFields || Object.keys(value).some((key) => !operationFields.has(key))) {
+      return json({ ok: false, error: "INVALID_ATTEMPT_FIELDS" }, 400);
+    }
+    const requiredFields: Record<string, string[]> = {
+      reserve: ["deadline_at"],
+      start: [],
+      result: ["result"],
+    };
+    if (requiredFields[operation].some((key) => value[key] === undefined)) {
+      return json({ ok: false, error: "INVALID_ATTEMPT_FIELDS" }, 400);
+    }
+    if (!/^[0-9a-f]{64}$/.test(notificationHash) || !/^[0-9a-f]{64}$/.test(recipientHash)
+        || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(attemptId)
+        || !["reserve", "start", "result"].includes(operation)) {
+      return json({ ok: false, error: "INVALID_ATTEMPT_IDENTITY" }, 400);
+    }
+    const timestamp = (candidate: unknown): string | null => {
+      if (typeof candidate !== "string" || candidate.length > 64 || !Number.isFinite(Date.parse(candidate))) return null;
+      return new Date(candidate).toISOString();
+    };
+    const deadlineAt = value.deadline_at === undefined ? null : timestamp(value.deadline_at);
+    const retryAfterAt = value.retry_after_at === undefined || value.retry_after_at === null ? null : timestamp(value.retry_after_at);
+    if ((operation === "reserve" && !deadlineAt) || (value.retry_after_at != null && !retryAfterAt)) {
+      return json({ ok: false, error: "INVALID_ATTEMPT_TIME" }, 400);
+    }
+    const result = value.result === undefined ? null : boundedString(value.result, 32);
+    const messageId = value.message_id === undefined || value.message_id === null ? null : value.message_id;
+    const leaseSeconds = value.lease_seconds === undefined ? 60 : value.lease_seconds;
+    if ((operation === "result" && !["delivered", "retryable_failed", "terminal_failed", "delivery_unknown"].includes(String(result)))
+        || (messageId !== null && (typeof messageId !== "number" || !Number.isSafeInteger(messageId) || messageId <= 0))
+        || typeof leaseSeconds !== "number" || !Number.isInteger(leaseSeconds) || leaseSeconds < 10 || leaseSeconds > 120
+        || (operation === "result" && result === "delivered" && messageId === null)
+        || (operation === "result" && result !== "delivered" && messageId !== null)
+        || (operation === "result" && result === "retryable_failed" && retryAfterAt === null)
+        || (operation === "result" && result !== "retryable_failed" && retryAfterAt !== null)) {
+      return json({ ok: false, error: "INVALID_ATTEMPT_RESULT" }, 400);
+    }
+    try {
+      const rows = await supabaseRpc(env, "transition_telegram_delivery_attempt", {
+        p_notification_hash: notificationHash,
+        p_recipient_hash: recipientHash,
+        p_operation: operation,
+        p_attempt_id: attemptId,
+        p_deadline_at: deadlineAt,
+        p_retry_after_at: retryAfterAt,
+        p_result: result,
+        p_message_id: messageId,
+        p_lease_seconds: leaseSeconds,
+      });
+      const state = rows[0];
+      if (!state || typeof state !== "object" || typeof state.status !== "string") {
+        return json({ ok: false, error: "DELIVERY_GUARD_RESPONSE_INVALID" }, 503);
+      }
+      return json({
+        ok: true,
+        status: state.status,
+        message_id: typeof state.message_id === "number" && Number.isSafeInteger(state.message_id) ? state.message_id : null,
+        retry_after_at: typeof state.retry_after_at === "string" ? state.retry_after_at : null,
+      });
+    } catch (_) {
+      return json({ ok: false, error: "DELIVERY_GUARD_PERSISTENCE_FAILED" }, 503);
+    }
   }
   if (url.pathname === "/api/delivery-receipt" && request.method === "POST") {
     const secret = String(env.DELIVERY_RECEIPT_SHARED_SECRET || "").trim();

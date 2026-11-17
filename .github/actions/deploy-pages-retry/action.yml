@@ -81,6 +81,12 @@ outputs:
   build_version:
     description: Pages build version sent to the GitHub Pages deployment API.
     value: ${{ steps.select-url.outputs.build_version }}
+  release_binding_id:
+    description: Artifact/run identity kept separate from the official Git SHA build version.
+    value: ${{ steps.select-url.outputs.release_binding_id }}
+  request_id:
+    description: Sanitized GitHub request ID for support diagnostics.
+    value: ${{ steps.select-url.outputs.request_id }}
   source_revision:
     description: Source commit used to build the Pages artifact.
     value: ${{ steps.select-url.outputs.source_revision }}
@@ -142,6 +148,8 @@ runs:
         DEPLOY_ARTIFACT_MANIFEST_MATCH_STATUS: ${{ steps.deployment.outputs.artifact_manifest_match_status || 'not_checked' }}
         DEPLOY_BINDING_PATH: ${{ runner.temp }}/pages-deployment-binding-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.phase }}.json
         DEPLOY_BUILD_VERSION: ${{ steps.deployment.outputs.deployment_build_version || '' }}
+        DEPLOY_RELEASE_BINDING_ID: ${{ steps.deployment.outputs.release_binding_id || '' }}
+        DEPLOY_REQUEST_ID: ${{ steps.deployment.outputs.request_id || '' }}
         DEPLOY_SOURCE_REVISION: ${{ steps.deployment.outputs.source_revision || github.sha }}
         DEPLOY_ERROR: ${{ steps.deployment.outputs.error || '' }}
         DEPLOY_ERROR_CODE: ${{ steps.deployment.outputs.error_code || '' }}
@@ -175,10 +183,14 @@ runs:
         printf 'artifact_manifest_match_status=%s\n' "$DEPLOY_ARTIFACT_MANIFEST_MATCH_STATUS" >> "$GITHUB_OUTPUT"
         printf 'binding_path=%s\n' "$DEPLOY_BINDING_PATH" >> "$GITHUB_OUTPUT"
         printf 'build_version=%s\n' "$DEPLOY_BUILD_VERSION" >> "$GITHUB_OUTPUT"
+        printf 'release_binding_id=%s\n' "$DEPLOY_RELEASE_BINDING_ID" >> "$GITHUB_OUTPUT"
+        printf 'request_id=%s\n' "$DEPLOY_REQUEST_ID" >> "$GITHUB_OUTPUT"
         printf 'source_revision=%s\n' "$DEPLOY_SOURCE_REVISION" >> "$GITHUB_OUTPUT"
         echo "pages_deploy_outcome=${DEPLOY_OUTCOME:-unknown}"
         echo "pages_deploy_available=$([ -n "$deployed_url" ] && echo true || echo false)"
         echo "pages_deployment_status_url_shape=${DEPLOY_STATUS_URL_SHAPE:-unknown}"
+        echo "pages_release_binding_id=${DEPLOY_RELEASE_BINDING_ID:-unknown}"
+        echo "pages_request_id=${DEPLOY_REQUEST_ID:-unknown}"
 
     - name: Record degraded Pages status
       if: steps.select-url.outputs.available != 'true'

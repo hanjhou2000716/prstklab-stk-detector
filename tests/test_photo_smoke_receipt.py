@@ -11,8 +11,9 @@ def test_photo_smoke_exports_delivery_receipt_fields():
 
 
 def test_photo_smoke_persists_scoped_receipt_without_broadcasting():
-    assert "inputs.photo_test == true" in WORKFLOW
+    assert "steps.text_acceptance.outputs.sent == 'true'" in WORKFLOW
+    assert "TELEGRAM_NOTIFICATION_KEY" in WORKFLOW
     assert "RAILWAY_STATUS_SHARED_SECRET" in WORKFLOW
     assert "DELIVERY_RECEIPT_KIND: production" in WORKFLOW
-    callback = WORKFLOW.split("Persist text acceptance delivery receipt to Railway", 1)[1]
+    callback = WORKFLOW.split("Persist controlled Telegram delivery receipt", 1)[1]
     assert "continue-on-error: true" not in callback.split("run: python -m src.delivery_callback", 1)[0]

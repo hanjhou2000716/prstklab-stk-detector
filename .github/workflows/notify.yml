@@ -39,6 +39,10 @@ jobs:
           # broadcast. Keep every test message on the fixed editor channel.
           TELEGRAM_CHAT_IDS: "8869592162"
           DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+          TELEGRAM_NOTIFICATION_KEY: manual-notify:${{ github.repository }}:${{ github.run_id }}
+          TELEGRAM_DELIVERY_GUARD_REQUIRED: "true"
+          RECEIPT_CALLBACK_URL: ${{ vars.RECEIPT_CALLBACK_URL }}
+          DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
           TEST_MESSAGE: ${{ inputs.message }}
         run: |
           if [ "${{ inputs.photo_test }}" = "true" ]; then
@@ -48,8 +52,8 @@ jobs:
           else
             python -m src.main --send
           fi
-      - name: Persist text acceptance delivery receipt to Railway/Worker
-        if: always() && inputs.photo_test == true && steps.text_acceptance.outputs.sent == 'true'
+      - name: Persist controlled Telegram delivery receipt
+        if: always() && steps.text_acceptance.outputs.sent == 'true'
         env:
           # Prefer the zero-cost Cloudflare Worker; Railway remains an optional rollback.
           RECEIPT_CALLBACK_URL: ${{ vars.RECEIPT_CALLBACK_URL }}
@@ -69,4 +73,5 @@ jobs:
           FAILED_COUNT: ${{ steps.text_acceptance.outputs.failed_count }}
           RENDERER_ERROR_TYPE: not_applicable
           FAILED_RECIPIENT_HASHES: ""
+          NOTIFICATION_KEYS: ${{ steps.text_acceptance.outputs.notification_keys }}
         run: python -m src.delivery_callback

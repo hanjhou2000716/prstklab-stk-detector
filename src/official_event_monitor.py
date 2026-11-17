@@ -1911,6 +1911,8 @@ def send_current_event(
             observation_id=observation_id,
             target_url=target_url,
             prstk_risk_level=canonical_prstk_risk_level(event),
+            notification_key=actual_claim_key,
+            delivery_deadline=event.get("delivery_deadline_at") or event.get("expires_at"),
         )
     except (OSError, ValueError) as exc:
         if hasattr(ledger, "complete_notification_claim") and actual_claim_key:

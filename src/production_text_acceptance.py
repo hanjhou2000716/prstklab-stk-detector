@@ -8,6 +8,7 @@ privacy-safe receipt lineage.  Renderer artifacts remain CI-only.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import uuid
 from collections.abc import Callable
@@ -44,6 +45,7 @@ def _single_recipient(value: str) -> tuple[str, ...]:
 
 def run(
     *, manifest: Path | str, public_url: str, token: str, chat_id: str,
+    notification_key: str,
     verifier: Callable[..., ReleaseGateResult] = verify_release_for_delivery,
     sender: Callable[..., tuple[TextDeliveryReceipt, ...]] = send_text_briefs_audited,
 ) -> dict[str, Any]:
@@ -68,26 +70,32 @@ def run(
     snapshot_id = str(manifest_value.get("market_snapshot_id") or gate.snapshot_id)
     if not release_id or not snapshot_id:
         raise ValueError("release gate did not return release and snapshot identity")
+    if not notification_key.strip():
+        raise ValueError("durable Telegram notification identity is required for acceptance")
     alert_id = f"{ALERT_ID_PREFIX}-{release_id}"
     observation_id = f"{alert_id}-{uuid.uuid4().hex[:12]}"
     receipts = sender(
         token=token, chat_ids=recipients, text=CAPTION, dashboard_url=public_url,
         alert_id=alert_id, release_id=release_id, snapshot_id=snapshot_id,
         observation_id=observation_id, prstk_risk_level=canonical_prstk_risk_level({"prstk_risk_level": "R2"}),
+        notification_key=notification_key.strip(),
     )
     delivered = sum(item.status == "delivered" for item in receipts)
     failed = len(receipts) - delivered
     status = "delivered" if delivered == 1 and failed == 0 else "failed"
     trace_id = f"{alert_id}-{uuid.uuid4().hex[:16]}"
+    notification_key_hash = hashlib.sha256(notification_key.strip().encode("utf-8")).hexdigest()
     report = {"ok": status == "delivered", "status": status, "release_id": release_id,
               "snapshot_id": snapshot_id, "alert_id": alert_id, "observation_id": observation_id,
               "trace_id": trace_id, "recipient_count": 1, "delivered_count": delivered,
-              "failed_count": failed, "delivery_performed": True, "delivery_mode": "text"}
+              "failed_count": failed, "delivery_performed": True, "delivery_mode": "text",
+              "notification_key_hash": notification_key_hash}
     _write_outputs({"sent": "true", "trace_id": trace_id, "alert_id": alert_id,
                     "release_id": release_id, "snapshot_id": snapshot_id,
                     "observation_id": observation_id, "delivery_mode": "text",
                     "delivery_status": status, "delivered_count": delivered,
-                    "failed_count": failed, "renderer_error_type": "not_applicable"})
+                    "failed_count": failed, "renderer_error_type": "not_applicable",
+                    "notification_keys": notification_key_hash})
     return report
 
 
@@ -98,7 +106,8 @@ def main() -> int:
     parser.add_argument("--chat-id", default=os.environ.get("TELEGRAM_CHAT_IDS", ""))
     args = parser.parse_args()
     report = run(manifest=args.manifest, public_url=args.public_url,
-                 token=os.environ.get("TELEGRAM_BOT_TOKEN", ""), chat_id=args.chat_id)
+                 token=os.environ.get("TELEGRAM_BOT_TOKEN", ""), chat_id=args.chat_id,
+                 notification_key=os.environ.get("TELEGRAM_NOTIFICATION_KEY", ""))
     print(report)
     return 0 if report["ok"] else 1
 

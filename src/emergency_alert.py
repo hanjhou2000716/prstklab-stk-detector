@@ -6,7 +6,7 @@ import argparse
 import os
 from datetime import UTC, datetime
 
-from src.alert_budget import decide_alert_budget
+from src.alert_budget import decide_alert_budget, notification_identity
 from src.config import get_settings
 from src.event_ledger import EventLedger
 from src.telegram_client import (
@@ -149,6 +149,7 @@ def main() -> None:
             observation_id=trace_id,
             target_url=target_url,
             prstk_risk_level=prstk_level,
+            notification_key=notification_identity(event),
         )
     except (OSError, ValueError) as exc:
         print(f"text_delivery_failed={type(exc).__name__}")

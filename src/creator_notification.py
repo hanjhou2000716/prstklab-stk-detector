@@ -176,6 +176,8 @@ def deliver_creator_morning_digest(
         text=text,
         dashboard_url=mini_app_url,
         target_url=target,
+        notification_key=notification_key,
+        delivery_deadline=batch.get("delivery_deadline_at") or batch.get("expires_at"),
     )
     synthetic = {
         "episode_key": batch_key,
@@ -271,12 +273,14 @@ def deliver_creator_episode(
                 release_id=release_id,
                 snapshot_id=creator_snapshot_id,
                 observation_id=episode_key,
+                notification_key=f"{plan['notification_key']}:photo",
+                delivery_deadline=insight.get("delivery_deadline_at") or insight.get("expires_at"),
             )
         except Exception:
             # A renderer/media adapter failure is a delivery degradation, not
             # a reason to crash the whole scheduled market brief.
             photo_receipts = ()
-        if _photo_delivered(photo_receipts):
+        if _photo_delivered(photo_receipts) or any(item.status == "delivery_unknown" for item in photo_receipts):
             receipts = [
                 build_creator_receipt(
                     insight,
@@ -293,11 +297,11 @@ def deliver_creator_episode(
             ]
             return {
                 "allowed": True,
-                "status": "delivered",
+                "status": "delivered" if _photo_delivered(photo_receipts) else "delivery_unknown",
                 "notification_key": plan["notification_key"],
                 "media_mode": "photo",
                 "receipts": receipts,
-                "reasons": [],
+                "reasons": [] if _photo_delivered(photo_receipts) else ["photo_delivery_outcome_unknown"],
             }
 
     # Missing media or an all-recipient renderer/API failure is explicitly
@@ -308,6 +312,7 @@ def deliver_creator_episode(
         text=creator_text_caption(insight),
         dashboard_url=mini_app_url,
         target_url=plan["mini_app_url"],
+        notification_key=f"{plan['notification_key']}:text-fallback",
     )
     receipts = [
         build_creator_receipt(

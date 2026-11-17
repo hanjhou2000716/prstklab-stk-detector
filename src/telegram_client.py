@@ -7,6 +7,7 @@ import json
 import os
 import re
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from time import sleep, time
 from urllib.parse import urlencode
@@ -22,8 +23,19 @@ class TelegramTransientError(TelegramError):
     """Raised after retrying a temporary Telegram transport/API failure."""
 
 
+class TelegramAttemptError(TelegramError):
+    """One non-retried API attempt with an explicit durable-guard outcome."""
+
+    def __init__(self, message: str, *, outcome: str, retry_after_at: datetime | None = None) -> None:
+        super().__init__(message)
+        self.outcome = outcome
+        self.retry_after_at = retry_after_at
+
+
 SEND_ATTEMPTS = 3
 RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
+MAX_GUARDED_ATTEMPTS = 3
+MAX_INLINE_RETRY_DELAY_SECONDS = 30
 FAILED_RECIPIENT_RETRIES = 1
 MAX_FAILED_RECIPIENT_RETRIES = 3
 # Public text has enough room for one complete evidence sentence.  Photo
@@ -190,6 +202,20 @@ def validate_brief(text: str) -> None:
         raise ValueError("快報內容不可空白。")
     if len(text) > PUBLIC_TEXT_MAX_CHARS:
         raise ValueError(f"快報超過 {PUBLIC_TEXT_MAX_CHARS} 字，目前為 {len(text)} 字：{text}")
+
+
+def _guarded_retry_delay(retry_after_at: datetime | None, deadline: datetime) -> float | None:
+    """Honor Telegram's explicit retry time only when it fits the live deadline."""
+    if retry_after_at is None:
+        return None
+    now = datetime.now(UTC)
+    retry_at = retry_after_at.astimezone(UTC)
+    deadline_at = deadline.astimezone(UTC)
+    delay = max(0.0, (retry_at - now).total_seconds())
+    remaining = (deadline_at - now).total_seconds()
+    if delay > MAX_INLINE_RETRY_DELAY_SECONDS or remaining <= 0 or delay >= remaining:
+        return None
+    return delay
 
 
 def _clean_public_fragment(value: object) -> str:
@@ -848,6 +874,7 @@ def send_briefs(
     *, token: str, chat_ids: tuple[str, ...], text: str, dashboard_url: str,
     target_url: str | None = None, prstk_risk_level: str = "R2",
     message_kind: str = "risk_alert", label: str | None = None,
+    notification_key: str = "", delivery_deadline=None,
 ) -> tuple[TelegramDelivery, ...]:
     """Send one identical brief to every reachable configured recipient.
 
@@ -858,6 +885,26 @@ def send_briefs(
     """
     if not chat_ids:
         raise ValueError("至少需要一個 Telegram 收件人。")
+    guard_required = os.environ.get("TELEGRAM_DELIVERY_GUARD_REQUIRED", "").strip().casefold() in {"1", "true", "yes", "on"}
+    if guard_required and not notification_key.strip():
+        return tuple(
+            TelegramDelivery(chat_id=chat_id, error="delivery guard notification key is missing")
+            for chat_id in chat_ids
+        )
+    if notification_key:
+        receipts = send_text_briefs_audited(
+            token=token, chat_ids=chat_ids, text=text, dashboard_url=dashboard_url,
+            alert_id=notification_key, release_id="scheduled-brief", snapshot_id="scheduled-brief",
+            target_url=target_url, prstk_risk_level=prstk_risk_level,
+            message_kind=message_kind, label=label, notification_key=notification_key,
+            delivery_deadline=delivery_deadline,
+        )
+        return tuple(
+            TelegramDelivery(chat_id=chat_id, result=TelegramResult(item.message_id or 0)
+                             if item.status == "delivered" else None,
+                             error=None if item.status == "delivered" else item.error_class or item.status)
+            for chat_id, item in zip(chat_ids, receipts, strict=False)
+        )
     # FJ producers persist one already-selected semantic summary.  Re-running
     # the generic formatter here used to select a shorter first clause and
     # erase the event's subject/object.  The sender is a transport boundary:
@@ -917,7 +964,8 @@ def send_text_briefs_audited(
     alert_id: str, release_id: str, snapshot_id: str,
     observation_id: str = "", target_url: str | None = None,
     prstk_risk_level: str = "R2", message_kind: str = "risk_alert",
-    label: str | None = None,
+    label: str | None = None, notification_key: str = "",
+    delivery_deadline=None,
 ) -> tuple[TextDeliveryReceipt, ...]:
     """Send one text-only Mini App message per recipient with bounded receipts."""
     if not chat_ids:
@@ -933,8 +981,39 @@ def send_text_briefs_audited(
     if not is_valid_public_summary(text, source=message_kind):
         raise ValueError("公開訊息內容不完整，已停止發送。")
     receipts: list[TextDeliveryReceipt] = []
+    guard_required = os.environ.get("TELEGRAM_DELIVERY_GUARD_REQUIRED", "").strip().casefold() in {"1", "true", "yes", "on"}
+    if guard_required and not notification_key.strip():
+        return tuple(
+            TextDeliveryReceipt(
+                alert_id, release_id, snapshot_id,
+                hashlib.sha256(chat_id.encode("utf-8")).hexdigest()[:12],
+                "failed", error_class="delivery_guard_notification_key_missing",
+                observation_id=observation_id, prstk_risk_level=prstk_risk_level,
+            )
+            for chat_id in chat_ids
+        )
     for chat_id in chat_ids:
         recipient_hash = hashlib.sha256(chat_id.encode("utf-8")).hexdigest()[:12]
+        if notification_key:
+            try:
+                from src.telegram_delivery_guard import DeliveryGuardError, resolve_deadline
+
+                deadline = resolve_deadline(delivery_deadline)
+            except DeliveryGuardError as exc:
+                receipts.append(TextDeliveryReceipt(
+                    alert_id, release_id, snapshot_id, recipient_hash, "failed",
+                    error_class=str(exc), observation_id=observation_id,
+                    prstk_risk_level=prstk_risk_level,
+                ))
+                continue
+            receipts.append(_send_guarded_text_delivery(
+                token=token, chat_id=chat_id, text=text, dashboard_url=dashboard_url,
+                target_url=target_url, alert_id=alert_id, release_id=release_id,
+                snapshot_id=snapshot_id, observation_id=observation_id,
+                prstk_risk_level=prstk_risk_level, notification_key=notification_key,
+                deadline=deadline,
+            ))
+            continue
         try:
             result = send_brief(
                 token=token, chat_id=chat_id, text=text,
@@ -955,11 +1034,149 @@ def send_text_briefs_audited(
     return tuple(receipts)
 
 
+def _send_guarded_text_delivery(
+    *, token: str, chat_id: str, text: str, dashboard_url: str,
+    target_url: str | None, alert_id: str, release_id: str, snapshot_id: str,
+    observation_id: str, prstk_risk_level: str, notification_key: str,
+    deadline: datetime,
+) -> TextDeliveryReceipt:
+    """Perform at most three durably reserved sends, retrying only explicit 429s."""
+    from src.telegram_delivery_guard import DeliveryGuardError, record_result, reserve_and_start
+
+    recipient_hash = hashlib.sha256(chat_id.encode("utf-8")).hexdigest()[:12]
+    for guarded_attempt in range(MAX_GUARDED_ATTEMPTS):
+        try:
+            reservation = reserve_and_start(
+                notification_key=notification_key, chat_id=chat_id, deadline_at=deadline,
+            )
+        except DeliveryGuardError as exc:
+            return TextDeliveryReceipt(
+                alert_id, release_id, snapshot_id, recipient_hash, "failed",
+                error_class=str(exc), observation_id=observation_id,
+                prstk_risk_level=prstk_risk_level,
+            )
+        if not reservation.allowed:
+            retry_delay = (
+                _guarded_retry_delay(reservation.retry_after_at, deadline)
+                if reservation.status == "retry_wait" else None
+            )
+            if retry_delay is not None and guarded_attempt + 1 < MAX_GUARDED_ATTEMPTS:
+                sleep(retry_delay)
+                continue
+            status = "delivered" if reservation.status == "delivered" else (
+                "delivery_unknown" if reservation.status in {"sending", "delivery_unknown"} else "failed"
+            )
+            return TextDeliveryReceipt(
+                alert_id, release_id, snapshot_id, recipient_hash, status,
+                message_id=reservation.message_id,
+                error_class=None if status == "delivered" else f"delivery_guard_{reservation.status}",
+                observation_id=observation_id, prstk_risk_level=prstk_risk_level,
+            )
+        try:
+            result = _send_brief_once(
+                token=token, chat_id=chat_id, text=text,
+                dashboard_url=dashboard_url, target_url=target_url,
+            )
+        except TelegramAttemptError as exc:
+            outcome = exc.outcome
+            try:
+                persisted = record_result(
+                    notification_key=notification_key, chat_id=chat_id,
+                    attempt_id=reservation.attempt_id, status=outcome,
+                    retry_after_at=exc.retry_after_at,
+                )
+            except DeliveryGuardError:
+                persisted = "delivery_unknown"
+                outcome = "delivery_unknown"
+            retry_delay = (
+                _guarded_retry_delay(exc.retry_after_at, deadline)
+                if outcome == "retryable_failed" and persisted == "retryable_failed" else None
+            )
+            if retry_delay is not None and guarded_attempt + 1 < MAX_GUARDED_ATTEMPTS:
+                sleep(retry_delay)
+                continue
+            return TextDeliveryReceipt(
+                alert_id, release_id, snapshot_id, recipient_hash,
+                "delivery_unknown" if persisted == "delivery_unknown" else "failed",
+                error_class=outcome, observation_id=observation_id,
+                prstk_risk_level=prstk_risk_level,
+            )
+        try:
+            persisted = record_result(
+                notification_key=notification_key, chat_id=chat_id,
+                attempt_id=reservation.attempt_id, status="delivered",
+                message_id=result.message_id,
+            )
+        except DeliveryGuardError:
+            persisted = "delivery_unknown"
+        if persisted != "delivered":
+            return TextDeliveryReceipt(
+                alert_id, release_id, snapshot_id, recipient_hash,
+                "delivery_unknown", error_class="delivery_result_persistence_unknown",
+                observation_id=observation_id, prstk_risk_level=prstk_risk_level,
+            )
+        return TextDeliveryReceipt(
+            alert_id, release_id, snapshot_id, recipient_hash, "delivered",
+            message_id=result.message_id, observation_id=observation_id,
+            prstk_risk_level=prstk_risk_level,
+        )
+    return TextDeliveryReceipt(
+        alert_id, release_id, snapshot_id, recipient_hash, "failed",
+        error_class="delivery_guard_attempt_limit", observation_id=observation_id,
+        prstk_risk_level=prstk_risk_level,
+    )
+
+
+def _send_brief_once(
+    *, token: str, chat_id: str, text: str, dashboard_url: str,
+    target_url: str | None = None,
+) -> TelegramResult:
+    """Make exactly one Telegram request; classify uncertainty for the guard."""
+    validate_brief(text)
+    if not is_valid_public_summary(text):
+        raise ValueError("公開訊息內容不完整，已停止發送。")
+    payload_to_send = {
+        "chat_id": chat_id,
+        "text": text,
+        "disable_web_page_preview": True,
+        "reply_markup": {"inline_keyboard": [[mini_app_button(versioned_mini_app_url(target_url or dashboard_url))]]},
+    }
+    endpoint = f"https://api.telegram.org/bot{token}/sendMessage"
+    try:
+        response = requests.post(endpoint, json=payload_to_send, timeout=20)
+    except requests.RequestException as exc:
+        raise TelegramAttemptError("telegram response is ambiguous", outcome="delivery_unknown") from exc
+
+    status_code = int(getattr(response, "status_code", 200))
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        raise TelegramAttemptError("telegram response is invalid", outcome="delivery_unknown") from exc
+    if status_code == 429 or (isinstance(payload, dict) and payload.get("error_code") == 429):
+        parameters = payload.get("parameters") if isinstance(payload, dict) else None
+        retry_after = parameters.get("retry_after") if isinstance(parameters, dict) else None
+        if isinstance(retry_after, int) and 0 <= retry_after <= 31_536_000:
+            retry_at = datetime.now(UTC) + timedelta(seconds=max(1, retry_after))
+            raise TelegramAttemptError("telegram rate limited", outcome="retryable_failed", retry_after_at=retry_at)
+        raise TelegramAttemptError("telegram rate limit lacks a valid retry window", outcome="terminal_failed")
+    if status_code >= 500:
+        raise TelegramAttemptError("telegram server response is ambiguous", outcome="delivery_unknown")
+    if not bool(getattr(response, "ok", 200 <= status_code < 300)) or not isinstance(payload, dict) or not payload.get("ok"):
+        raise TelegramAttemptError("telegram rejected the message", outcome="terminal_failed")
+    result_payload = payload.get("result")
+    message_id = result_payload.get("message_id") if isinstance(result_payload, dict) else None
+    if not isinstance(message_id, int) or message_id <= 0:
+        raise TelegramAttemptError("telegram success identity is missing", outcome="delivery_unknown")
+    return TelegramResult(message_id=message_id)
+
+
 def send_photo_brief(
     *, token: str, chat_id: str, caption: str, photo_path: str | Path,
     mini_app_url: str, alert_id: str, release_id: str, snapshot_id: str,
     telegram_file_id: str | None = None,
     observation_id: str = "",
+    notification_key: str = "",
+    delivery_deadline=None,
 ) -> PhotoDeliveryReceipt:
     """Send one caption-above-photo message with an alert-specific Mini App URL.
 
@@ -985,6 +1202,29 @@ def send_photo_brief(
     )
     endpoint = f"https://api.telegram.org/bot{token}/sendPhoto"
     recipient_hash = hashlib.sha256(chat_id.encode("utf-8")).hexdigest()[:12]
+    guard_required = os.environ.get("TELEGRAM_DELIVERY_GUARD_REQUIRED", "").strip().casefold() in {"1", "true", "yes", "on"}
+    if guard_required and not notification_key.strip():
+        return PhotoDeliveryReceipt(
+            alert_id, release_id, snapshot_id, recipient_hash, "failed",
+            error_class="delivery_guard_notification_key_missing", observation_id=observation_id,
+        )
+    if notification_key:
+        from src.telegram_delivery_guard import DeliveryGuardError, resolve_deadline
+
+        try:
+            deadline = resolve_deadline(delivery_deadline)
+        except DeliveryGuardError as exc:
+            return PhotoDeliveryReceipt(
+                alert_id, release_id, snapshot_id, recipient_hash, "failed",
+                error_class=str(exc), observation_id=observation_id,
+            )
+        return _send_guarded_photo_delivery(
+            token=token, chat_id=chat_id, caption=caption, photo_path=path,
+            endpoint=endpoint, target=target, alert_id=alert_id, release_id=release_id,
+            snapshot_id=snapshot_id, observation_id=observation_id,
+            telegram_file_id=telegram_file_id, notification_key=notification_key,
+            deadline=deadline,
+        )
     response = None
     last_error: Exception | None = None
     for attempt in range(SEND_ATTEMPTS):
@@ -1042,10 +1282,10 @@ def send_photo_brief(
             error_class=error_class, observation_id=observation_id,
         )
     raw_result = payload.get("result")
-    result: dict[str, object] = raw_result if isinstance(raw_result, dict) else {}
+    result_payload: dict[str, object] = raw_result if isinstance(raw_result, dict) else {}
     file_id = None
     if not telegram_file_id:
-        photos = result.get("photo")
+        photos = result_payload.get("photo")
         if isinstance(photos, list) and photos:
             last_photo = photos[-1]
             if isinstance(last_photo, dict):
@@ -1053,7 +1293,7 @@ def send_photo_brief(
                 if isinstance(candidate, str) and candidate:
                     file_id = candidate
     file_id = telegram_file_id or file_id
-    raw_message_id = result.get("message_id")
+    raw_message_id = result_payload.get("message_id")
     message_id = raw_message_id if isinstance(raw_message_id, int) else None
     return PhotoDeliveryReceipt(
         alert_id, release_id, snapshot_id, recipient_hash, "delivered",
@@ -1061,6 +1301,144 @@ def send_photo_brief(
         telegram_file_id=file_id,
         telegram_file_id_hash=hashlib.sha256(file_id.encode("utf-8")).hexdigest()[:12] if file_id else None,
         observation_id=observation_id,
+    )
+
+
+def _send_photo_brief_once(
+    *, token: str, chat_id: str, caption: str, photo_path: Path,
+    endpoint: str, payload_to_send: dict[str, str], telegram_file_id: str | None,
+) -> tuple[TelegramResult, str | None]:
+    """Make one sendPhoto request and classify ambiguous outcomes for the guard."""
+    try:
+        if telegram_file_id:
+            response = requests.post(endpoint, data={**payload_to_send, "photo": telegram_file_id}, timeout=30)
+        else:
+            with photo_path.open("rb") as photo:
+                response = requests.post(endpoint, data=payload_to_send, files={"photo": photo}, timeout=30)
+    except (requests.RequestException, OSError) as exc:
+        raise TelegramAttemptError("telegram photo response is ambiguous", outcome="delivery_unknown") from exc
+    status_code = int(getattr(response, "status_code", 200))
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        raise TelegramAttemptError("telegram photo response is invalid", outcome="delivery_unknown") from exc
+    if status_code == 429 or (isinstance(payload, dict) and payload.get("error_code") == 429):
+        parameters = payload.get("parameters") if isinstance(payload, dict) else None
+        retry_after = parameters.get("retry_after") if isinstance(parameters, dict) else None
+        if isinstance(retry_after, int) and 0 <= retry_after <= 31_536_000:
+            retry_at = datetime.now(UTC) + timedelta(seconds=max(1, retry_after))
+            raise TelegramAttemptError("telegram photo rate limited", outcome="retryable_failed", retry_after_at=retry_at)
+        raise TelegramAttemptError("telegram photo rate limit lacks a retry window", outcome="terminal_failed")
+    if status_code >= 500:
+        raise TelegramAttemptError("telegram photo server response is ambiguous", outcome="delivery_unknown")
+    if not bool(getattr(response, "ok", 200 <= status_code < 300)) or not isinstance(payload, dict) or not payload.get("ok"):
+        raise TelegramAttemptError("telegram rejected the photo", outcome="terminal_failed")
+    raw_result = payload.get("result")
+    result = raw_result if isinstance(raw_result, dict) else {}
+    message_id = result.get("message_id")
+    if not isinstance(message_id, int) or message_id <= 0:
+        raise TelegramAttemptError("telegram photo success identity is missing", outcome="delivery_unknown")
+    file_id = telegram_file_id
+    if not file_id:
+        photos = result.get("photo")
+        if isinstance(photos, list) and photos and isinstance(photos[-1], dict):
+            candidate = photos[-1].get("file_id")
+            file_id = candidate if isinstance(candidate, str) and candidate else None
+    return TelegramResult(message_id=message_id), file_id
+
+
+def _send_guarded_photo_delivery(
+    *, token: str, chat_id: str, caption: str, photo_path: Path,
+    endpoint: str, target: str, alert_id: str, release_id: str, snapshot_id: str,
+    observation_id: str, telegram_file_id: str | None,
+    notification_key: str, deadline: datetime,
+) -> PhotoDeliveryReceipt:
+    """Perform at most three durably reserved photo sends, retrying explicit 429s only."""
+    from src.telegram_delivery_guard import DeliveryGuardError, record_result, reserve_and_start
+
+    recipient_hash = hashlib.sha256(chat_id.encode("utf-8")).hexdigest()[:12]
+    payload_to_send = {
+        "chat_id": chat_id,
+        "caption": caption,
+        "parse_mode": "HTML",
+        "show_caption_above_media": "true",
+        "reply_markup": json.dumps({"inline_keyboard": [[mini_app_button(target)]]}),
+    }
+    for guarded_attempt in range(MAX_GUARDED_ATTEMPTS):
+        try:
+            reservation = reserve_and_start(
+                notification_key=notification_key, chat_id=chat_id, deadline_at=deadline,
+            )
+        except DeliveryGuardError as exc:
+            return PhotoDeliveryReceipt(
+                alert_id, release_id, snapshot_id, recipient_hash, "failed",
+                error_class=str(exc), observation_id=observation_id,
+            )
+        if not reservation.allowed:
+            retry_delay = (
+                _guarded_retry_delay(reservation.retry_after_at, deadline)
+                if reservation.status == "retry_wait" else None
+            )
+            if retry_delay is not None and guarded_attempt + 1 < MAX_GUARDED_ATTEMPTS:
+                sleep(retry_delay)
+                continue
+            status = "delivered" if reservation.status == "delivered" else (
+                "delivery_unknown" if reservation.status in {"sending", "delivery_unknown"} else "failed"
+            )
+            return PhotoDeliveryReceipt(
+                alert_id, release_id, snapshot_id, recipient_hash, status,
+                message_id=reservation.message_id,
+                error_class=None if status == "delivered" else f"delivery_guard_{reservation.status}",
+                observation_id=observation_id,
+            )
+        try:
+            result, file_id = _send_photo_brief_once(
+                token=token, chat_id=chat_id, caption=caption, photo_path=photo_path,
+                endpoint=endpoint, payload_to_send=payload_to_send,
+                telegram_file_id=telegram_file_id,
+            )
+        except TelegramAttemptError as exc:
+            try:
+                persisted = record_result(
+                    notification_key=notification_key, chat_id=chat_id,
+                    attempt_id=reservation.attempt_id, status=exc.outcome,
+                    retry_after_at=exc.retry_after_at,
+                )
+            except DeliveryGuardError:
+                persisted = "delivery_unknown"
+            retry_delay = (
+                _guarded_retry_delay(exc.retry_after_at, deadline)
+                if exc.outcome == "retryable_failed" and persisted == "retryable_failed" else None
+            )
+            if retry_delay is not None and guarded_attempt + 1 < MAX_GUARDED_ATTEMPTS:
+                sleep(retry_delay)
+                continue
+            return PhotoDeliveryReceipt(
+                alert_id, release_id, snapshot_id, recipient_hash,
+                "delivery_unknown" if persisted == "delivery_unknown" else "failed",
+                error_class=exc.outcome, observation_id=observation_id,
+            )
+        try:
+            persisted = record_result(
+                notification_key=notification_key, chat_id=chat_id,
+                attempt_id=reservation.attempt_id, status="delivered", message_id=result.message_id,
+            )
+        except DeliveryGuardError:
+            persisted = "delivery_unknown"
+        if persisted != "delivered":
+            return PhotoDeliveryReceipt(
+                alert_id, release_id, snapshot_id, recipient_hash, "delivery_unknown",
+                error_class="delivery_result_persistence_unknown", observation_id=observation_id,
+            )
+        return PhotoDeliveryReceipt(
+            alert_id, release_id, snapshot_id, recipient_hash, "delivered",
+            message_id=result.message_id, telegram_file_id=file_id,
+            telegram_file_id_hash=hashlib.sha256(file_id.encode("utf-8")).hexdigest()[:12] if file_id else None,
+            observation_id=observation_id,
+        )
+    return PhotoDeliveryReceipt(
+        alert_id, release_id, snapshot_id, recipient_hash, "failed",
+        error_class="delivery_guard_attempt_limit", observation_id=observation_id,
     )
 
 
@@ -1077,7 +1455,8 @@ def summarize_photo_deliveries(deliveries: tuple[PhotoDeliveryReceipt, ...] | li
 def send_photo_briefs(
     *, token: str, chat_ids: tuple[str, ...], caption: str, photo_path: str | Path,
     mini_app_url: str, alert_id: str, release_id: str, snapshot_id: str,
-    observation_id: str = "",
+    observation_id: str = "", notification_key: str = "",
+    delivery_deadline=None,
 ) -> tuple[PhotoDeliveryReceipt, ...]:
     """Deliver one identical photo message per recipient without fail-fast.
 
@@ -1104,6 +1483,8 @@ def send_photo_briefs(
                 snapshot_id=snapshot_id,
                 telegram_file_id=shared_file_id,
                 observation_id=observation_id,
+                notification_key=notification_key,
+                delivery_deadline=delivery_deadline,
             )
         except (TelegramError, OSError, requests.RequestException) as exc:
             receipt = PhotoDeliveryReceipt(

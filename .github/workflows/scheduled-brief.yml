@@ -863,6 +863,9 @@ jobs:
           TELEGRAM_SUBSCRIPTIONS_ENABLED: "true"
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TELEGRAM_DELIVERY_GUARD_REQUIRED: "true"
+          RECEIPT_CALLBACK_URL: ${{ vars.RECEIPT_CALLBACK_URL }}
+          DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
         run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --send-only --slot-key "${{ steps.window.outputs.key }}" --snapshot "$SNAPSHOT_PATH" --manifest "$PAGES_MANIFEST_PATH" --public-url "${{ steps.deployment.outputs.page_url }}"
       - name: Publish scheduled notification decision
         if: always() && steps.late_expiry.outputs.expired != 'true'
@@ -914,6 +917,8 @@ jobs:
           PAGES_DEPLOYMENT_RUN_ID: ${{ steps.deployment_identity.outputs.workflow_run_id || github.run_id }}
           PAGES_DEPLOYMENT_ERROR: ${{ steps.deployment_identity.outputs.error || steps.deployment.outputs.error || '' }}
           PAGES_DEPLOYMENT_ERROR_CODE: ${{ steps.deployment.outputs.error_code || steps.deployment_identity.outputs.error_code || '' }}
+          PAGES_DEPLOYMENT_REQUEST_ID: ${{ steps.deployment.outputs.request_id || steps.deployment_identity.outputs.request_id || '' }}
+          PAGES_RELEASE_BINDING_ID: ${{ steps.deployment.outputs.release_binding_id || steps.deployment_identity.outputs.release_binding_id || '' }}
           PAGES_DEPLOYMENT_STATUS_URL_SHAPE: ${{ steps.deployment.outputs.deployment_status_url_shape || steps.deployment_identity.outputs.deployment_status_url_shape || 'unknown' }}
           PAGES_DEPLOYMENT_REQUEST_OUTCOME: ${{ steps.deployment.outputs.request_outcome || steps.deployment_identity.outputs.request_outcome || 'unknown' }}
           RELEASE_GATE_OUTCOME: ${{ steps.release_gate.outcome || 'not_run' }}
@@ -1123,6 +1128,8 @@ jobs:
             echo "- pages_deployment_run_id: ${PAGES_DEPLOYMENT_RUN_ID:-unknown}"
             echo "- pages_deployment_status_url_shape: ${PAGES_DEPLOYMENT_STATUS_URL_SHAPE:-unknown}"
             echo "- pages_deployment_request_outcome: ${PAGES_DEPLOYMENT_REQUEST_OUTCOME:-unknown}"
+            echo "- pages_deployment_request_id: ${PAGES_DEPLOYMENT_REQUEST_ID:-unknown}"
+            echo "- pages_release_binding_id: ${PAGES_RELEASE_BINDING_ID:-unknown}"
             echo "- pages_deployment_error: ${PAGES_DEPLOYMENT_ERROR:-none}"
             echo "- pages_deployment_error_code: ${PAGES_DEPLOYMENT_ERROR_CODE:-none}"
             echo "- pages_publication_status: ${pages_publication_status}"
@@ -1331,6 +1338,7 @@ jobs:
           TELEGRAM_SUBSCRIPTIONS_ENABLED: "true"
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TELEGRAM_DELIVERY_GUARD_REQUIRED: "true"
           DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
           RAILWAY_STATUS_URL: ${{ vars.RAILWAY_STATUS_URL }}
           RAILWAY_STATUS_SHARED_SECRET: ${{ secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}

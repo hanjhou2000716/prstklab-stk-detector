@@ -79,6 +79,7 @@ def test_controlled_photo_input_is_text_only_and_fixed_to_editor():
     workflow = _workflow("notify.yml")
     assert 'TELEGRAM_CHAT_IDS: "8869592162"' in workflow
     assert "test_chat_id" not in workflow
-    assert "inputs.photo_test == true" in workflow
+    assert "steps.text_acceptance.outputs.sent == 'true'" in workflow
+    assert "Persist controlled Telegram delivery receipt" in workflow
     assert "DELIVERY_RECEIPT_KIND: production" in workflow
     assert "sendPhoto" not in workflow

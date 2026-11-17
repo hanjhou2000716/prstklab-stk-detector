@@ -209,6 +209,9 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           TELEGRAM_SUBSCRIPTIONS_ENABLED: "true"
+          TELEGRAM_DELIVERY_GUARD_REQUIRED: "true"
+          RECEIPT_CALLBACK_URL: ${{ vars.RECEIPT_CALLBACK_URL }}
+          DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
         run: python -m src.emergency_alert --category "$CATEGORY" --summary "$SUMMARY"
       - name: Report Telegram delivery outcome
         if: always() && steps.writer_queue.outputs.should_continue == 'true' && (github.event_name == 'workflow_dispatch' || steps.idempotency.outputs.cache-hit != 'true')

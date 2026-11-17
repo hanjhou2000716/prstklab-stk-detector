@@ -107,20 +107,25 @@ def _restore_archive(
                 root_resolved = root.resolve()
                 members = archive.getmembers()
                 manifest_found = False
+                seen_members: set[str] = set()
                 for member in members:
                     remaining()
                     member_path = PurePosixPath(member.name)
+                    normalized_name = member.name.rstrip("/")
+                    archive_parent = normalized_name == "site" and member.isdir() and member.size == 0
                     if (
                         member_path.is_absolute()
                         or ".." in member_path.parts
                         or "\\" in member.name
-                        or member_path.parts[:2] != ("site", "data")
+                        or (member_path.parts[:2] != ("site", "data") and not archive_parent)
                         or not (member.isfile() or member.isdir())
+                        or normalized_name in seen_members
                     ):
                         raise PagesReleaseError(
                             "data-release archive contains an unsafe member"
                         )
-                    target = (root / member.name).resolve()
+                    seen_members.add(normalized_name)
+                    target = (root / normalized_name).resolve()
                     if not target.is_relative_to(root_resolved):
                         raise PagesReleaseError(
                             "data-release archive escapes checkout"
