@@ -86,6 +86,21 @@ describe("signed Telegram delivery attempt endpoint", () => {
     assert.equal(databaseCalls, 0);
   });
 
+  it("rejects unknown operations before indexing the transition contract", async () => {
+    let databaseCalls = 0;
+    globalThis.fetch = async () => {
+      databaseCalls += 1;
+      return new Response(JSON.stringify({ status: "reserved" }), { status: 200 });
+    };
+    const response = await postAttempt({
+      notification_hash: "a".repeat(64), recipient_hash: "b".repeat(64),
+      attempt_id: "2c1a7c50-8015-4c59-b0ac-0f1c1234ab56", operation: "unknown",
+    });
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { ok: false, error: "INVALID_ATTEMPT_FIELDS" });
+    assert.equal(databaseCalls, 0);
+  });
+
   it("requires outcome-specific evidence before recording a result", async () => {
     let databaseCalls = 0;
     globalThis.fetch = async () => {

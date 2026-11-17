@@ -763,8 +763,13 @@ async function handle(request: Request, env: Env): Promise<Response> {
     const notificationHash = boundedString(value.notification_hash, 64);
     const recipientHash = boundedString(value.recipient_hash, 64);
     const attemptId = boundedString(value.attempt_id, 36);
-    const operation = boundedString(value.operation, 16);
-    const fieldsByOperation: Record<string, Set<string>> = {
+    const operationValue = boundedString(value.operation, 16);
+    if (operationValue !== "reserve" && operationValue !== "start" && operationValue !== "result") {
+      return json({ ok: false, error: "INVALID_ATTEMPT_FIELDS" }, 400);
+    }
+    type DeliveryAttemptOperation = "reserve" | "start" | "result";
+    const operation: DeliveryAttemptOperation = operationValue;
+    const fieldsByOperation: Record<DeliveryAttemptOperation, Set<string>> = {
       reserve: new Set(["notification_hash", "recipient_hash", "attempt_id", "operation", "deadline_at", "lease_seconds"]),
       start: new Set(["notification_hash", "recipient_hash", "attempt_id", "operation"]),
       result: new Set(["notification_hash", "recipient_hash", "attempt_id", "operation", "retry_after_at", "result", "message_id"]),
@@ -773,7 +778,7 @@ async function handle(request: Request, env: Env): Promise<Response> {
     if (!operationFields || Object.keys(value).some((key) => !operationFields.has(key))) {
       return json({ ok: false, error: "INVALID_ATTEMPT_FIELDS" }, 400);
     }
-    const requiredFields: Record<string, string[]> = {
+    const requiredFields: Record<DeliveryAttemptOperation, string[]> = {
       reserve: ["deadline_at"],
       start: [],
       result: ["result"],
