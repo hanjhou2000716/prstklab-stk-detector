@@ -140,7 +140,26 @@ def _restore_archive(
                 _clear_data(root)
                 for member in members:
                     remaining()
-                    archive.extract(member, root)
+                    target = root / member.name.rstrip("/")
+                    if member.isdir():
+                        # Git archives may encode an empty parent directory with
+                        # mode 0644.  Applying that mode prevents extraction of
+                        # its children; archive permissions are not needed for
+                        # public JSON data, so restore directories as traversable.
+                        target.mkdir(parents=True, exist_ok=True)
+                        target.chmod(0o755)
+                        continue
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    source = archive.extractfile(member)
+                    if source is None:
+                        raise PagesReleaseError(
+                            "data-release archive file content is unavailable"
+                        )
+                    with source, target.open("wb") as restored:
+                        shutil.copyfileobj(source, restored)
+                    # The immutable data release contains public data files,
+                    # never executables. Do not honor archive special bits.
+                    target.chmod(0o644)
                 remaining()
     except subprocess.TimeoutExpired as exc:
         raise PagesReleaseError("pages_release_archive_timeout") from exc
