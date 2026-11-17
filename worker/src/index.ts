@@ -786,7 +786,8 @@ async function handle(request: Request, env: Env): Promise<Response> {
     if (requiredFields[operation].some((key) => value[key] === undefined)) {
       return json({ ok: false, error: "INVALID_ATTEMPT_FIELDS" }, 400);
     }
-    if (!/^[0-9a-f]{64}$/.test(notificationHash) || !/^[0-9a-f]{64}$/.test(recipientHash)
+    if (notificationHash === null || recipientHash === null || attemptId === null
+        || !/^[0-9a-f]{64}$/.test(notificationHash) || !/^[0-9a-f]{64}$/.test(recipientHash)
         || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(attemptId)
         || !["reserve", "start", "result"].includes(operation)) {
       return json({ ok: false, error: "INVALID_ATTEMPT_IDENTITY" }, 400);
