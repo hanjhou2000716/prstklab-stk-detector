@@ -92,6 +92,8 @@ def _safe_endpoint_class(url: str, *, api_url: str, repository: str) -> str:
         return re.sub(r"/attempts/\d+/jobs$", "/attempts/{attempt}/jobs", relative)
     if re.fullmatch(r"actions/artifacts/\d+/zip", relative):
         return "actions/artifacts/{artifact_id}/zip"
+    if relative == "search/issues":
+        return "search/issues"
     if re.fullmatch(r"issues(?:/\d+(?:/comments)?)?", relative):
         return re.sub(r"issues/\d+", "issues/{issue_number}", relative)
     return "unclassified"
