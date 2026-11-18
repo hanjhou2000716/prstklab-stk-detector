@@ -5,6 +5,7 @@ import json
 import time
 import zipfile
 from datetime import UTC, datetime, timedelta
+from urllib.error import HTTPError
 from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlsplit
 
@@ -1628,6 +1629,77 @@ def test_download_artifact_verifies_run_sha_and_bounded_zip_member(monkeypatch):
         deadline=incidents.time.monotonic() + 10,
     )
     assert json.loads(data)["schema_version"] == "notification-terminal-v2"
+
+
+def test_download_artifact_retries_transient_http_status_and_preserves_archive_checks(monkeypatch):
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("scheduled-terminal-77-attempt-3.json", b'{"schema_version":"notification-terminal-v2"}')
+
+    def fake_request(_api, _repo, _token, _method, _path, **_kwargs):
+        return {
+            "total_count": 1,
+            "artifacts": [{
+                "id": 999,
+                "name": "scheduled-terminal-77-attempt-3",
+                "expired": False,
+                "workflow_run": {"id": 77, "head_sha": "b" * 40},
+            }],
+        }
+
+    calls = 0
+
+    def open_artifact(*_args, **_kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise HTTPError("https://api.github.com/artifact.zip", 404, "Not Found", {}, None)
+        return io.BytesIO(buffer.getvalue())
+
+    monkeypatch.setattr(incidents, "_request_json", fake_request)
+    monkeypatch.setattr(incidents, "_open_artifact_url", open_artifact)
+    monkeypatch.setattr(incidents.time, "sleep", lambda _seconds: None)
+    data = incidents._download_artifact_json(
+        run={"id": 77, "run_attempt": 3, "head_sha": "b" * 40},
+        expected_artifact_name="scheduled-terminal-77-attempt-3",
+        expected_member="scheduled-terminal-77-attempt-3.json",
+        repository="owner/repo", api_url="https://api.github.com", token="secret",
+        deadline=incidents.time.monotonic() + 10,
+    )
+    assert calls == 2
+    assert json.loads(data)["schema_version"] == "notification-terminal-v2"
+
+
+def test_download_artifact_exposes_safe_terminal_http_status_without_retry(monkeypatch):
+    def fake_request(_api, _repo, _token, _method, _path, **_kwargs):
+        return {
+            "total_count": 1,
+            "artifacts": [{
+                "id": 999,
+                "name": "scheduled-terminal-77-attempt-3",
+                "expired": False,
+                "workflow_run": {"id": 77, "head_sha": "b" * 40},
+            }],
+        }
+
+    calls = 0
+
+    def open_artifact(*_args, **_kwargs):
+        nonlocal calls
+        calls += 1
+        raise HTTPError("https://api.github.com/artifact.zip", 403, "Forbidden", {}, None)
+
+    monkeypatch.setattr(incidents, "_request_json", fake_request)
+    monkeypatch.setattr(incidents, "_open_artifact_url", open_artifact)
+    with pytest.raises(LivenessAuditError, match="incident_artifact_download_http_403"):
+        incidents._download_artifact_json(
+            run={"id": 77, "run_attempt": 3, "head_sha": "b" * 40},
+            expected_artifact_name="scheduled-terminal-77-attempt-3",
+            expected_member="scheduled-terminal-77-attempt-3.json",
+            repository="owner/repo", api_url="https://api.github.com", token="secret",
+            deadline=incidents.time.monotonic() + 10,
+        )
+    assert calls == 1
 
 
 def test_research_incident_uses_open_reminder_and_recovery_policy(monkeypatch):
