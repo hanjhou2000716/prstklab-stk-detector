@@ -1,7 +1,7 @@
 from scripts.official_monitor_dispatch import candidate_ready, resolve_dispatch
 
 
-def test_scheduled_sync_without_candidate_requests_one_monitor_poll() -> None:
+def test_scheduled_sync_without_candidate_relies_on_monitor_schedule() -> None:
     decision = resolve_dispatch(
         event_name="schedule",
         notify=True,
@@ -10,12 +10,11 @@ def test_scheduled_sync_without_candidate_requests_one_monitor_poll() -> None:
         has_candidate=False,
     )
 
-    assert decision.should_dispatch is True
-    assert decision.reason == "scheduled_monitor_poll"
-    assert decision.payload_reason == "gmail-scheduled-monitor-poll"
+    assert decision.should_dispatch is False
+    assert decision.reason == "monitor_schedule_covers_poll"
 
 
-def test_repository_dispatch_without_candidate_requests_monitor_poll() -> None:
+def test_repository_dispatch_without_candidate_does_not_create_an_extra_wakeup() -> None:
     decision = resolve_dispatch(
         event_name="repository_dispatch",
         notify=True,
@@ -24,8 +23,23 @@ def test_repository_dispatch_without_candidate_requests_monitor_poll() -> None:
         has_candidate=False,
     )
 
+    assert decision.should_dispatch is False
+    assert decision.reason == "monitor_schedule_covers_poll"
+
+
+def test_durable_recovery_still_gets_an_immediate_wakeup() -> None:
+    decision = resolve_dispatch(
+        event_name="schedule",
+        notify=True,
+        latest_financialjuice=False,
+        manual_replay_count=0,
+        has_candidate=False,
+        has_durable_recovery=True,
+    )
+
     assert decision.should_dispatch is True
-    assert decision.reason == "repository_dispatch_monitor_poll"
+    assert decision.reason == "durable_recovery_pending"
+    assert decision.payload_reason == "gmail-durable-recovery-pending"
 
 
 def test_candidate_uses_one_candidate_dispatch_instead_of_additional_poll() -> None:
@@ -98,12 +112,18 @@ def test_manual_replay_marker_never_triggers_monitor() -> None:
     assert decision.reason == "manual_replay_suppressed"
 
 
-def test_durable_pending_refs_and_counts_are_candidates() -> None:
-    assert candidate_ready({
+def test_durable_pending_refs_and_counts_are_recovery_work() -> None:
+    from scripts.official_monitor_dispatch import durable_recovery_pending
+
+    assert not candidate_ready({
         "priority_pending_count": 1,
         "candidate_diagnostics": {"counts": {}},
     })
-    assert candidate_ready({
+    assert durable_recovery_pending({
+        "priority_pending_count": 1,
+        "candidate_diagnostics": {"counts": {}},
+    })
+    assert durable_recovery_pending({
         "candidate_diagnostics": {
             "counts": {},
             "priority_pending_refs": ["pending-1"],

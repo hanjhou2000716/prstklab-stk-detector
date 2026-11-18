@@ -110,7 +110,7 @@ jobs:
           retention-days: 90
       - name: Hand off verified evidence to the durable incident coordinator
         id: incident_coordinator
-        if: always() && steps.upload_result.outcome == 'success'
+        if: always() && steps.upload_result.outcome == 'success' && vars.INCIDENT_OPS_MODE == 'live'
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -125,3 +125,21 @@ jobs:
           INCIDENT_OPS_AUDIENCE: https://prstk-incident-ops
           INCIDENT_OPS_MODE: ${{ vars.INCIDENT_OPS_MODE || 'shadow' }}
         run: python -m scripts.incident_ops_sync
+      - name: Record shadow mode without claiming notification delivery
+        if: >-
+          always() && steps.upload_result.outcome == 'success' &&
+          (vars.INCIDENT_OPS_MODE == '' || vars.INCIDENT_OPS_MODE == 'shadow')
+        run: |
+          {
+            echo "## Incident coordinator"
+            echo "Shadow mode: evidence preserved; no notification sent or delivery claimed."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Reject an unsupported incident coordinator mode
+        if: >-
+          always() && steps.upload_result.outcome == 'success' &&
+          vars.INCIDENT_OPS_MODE != '' &&
+          vars.INCIDENT_OPS_MODE != 'live' &&
+          vars.INCIDENT_OPS_MODE != 'shadow'
+        run: |
+          echo "INCIDENT_OPS_MODE must be empty, shadow, or live."
+          exit 1

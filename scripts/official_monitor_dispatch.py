@@ -39,7 +39,7 @@ def candidate_ready(result: dict[str, Any]) -> bool:
 
     if any(
         _positive_integer(result.get(key))
-        for key in ("material_candidate_count", "priority_candidate_count", "priority_pending_count")
+        for key in ("material_candidate_count", "priority_candidate_count")
     ):
         return True
     if _positive_integer(counts.get("priority_candidate_detected")):
@@ -48,12 +48,33 @@ def candidate_ready(result: dict[str, Any]) -> bool:
     return any(
         _has_refs(value)
         for value in (
-            result.get("priority_pending_refs"),
             result.get("priority_event_refs"),
-            diagnostics.get("priority_pending_refs"),
             diagnostics.get("priority_event_refs"),
         )
     )
+
+
+def durable_recovery_pending(result: dict[str, Any]) -> bool:
+    """Return whether durable delivery work needs an immediate monitor wakeup."""
+    diagnostics = result.get("candidate_diagnostics")
+    if not isinstance(diagnostics, dict):
+        diagnostics = {}
+
+    if _positive_integer(result.get("priority_pending_count")):
+        return True
+    if any(
+        _has_refs(value)
+        for value in (
+            result.get("priority_pending_refs"),
+            diagnostics.get("priority_pending_refs"),
+        )
+    ):
+        return True
+    return str(result.get("priority_recovery_status") or "").strip().casefold() in {
+        "retry_pending",
+        "pending",
+        "recovery_pending",
+    } or str(result.get("recovery_status") or "").strip().casefold() == "retry_pending"
 
 
 def resolve_dispatch(
@@ -63,8 +84,9 @@ def resolve_dispatch(
     latest_financialjuice: bool,
     manual_replay_count: int,
     has_candidate: bool,
+    has_durable_recovery: bool = False,
 ) -> DispatchDecision:
-    """Return at most one dispatch; manual replays never wake the delivery monitor."""
+    """Return one wakeup for new work; periodic polls use the monitor's own schedule."""
     if latest_financialjuice or manual_replay_count > 0:
         return DispatchDecision(False, "manual_replay_suppressed", "")
     if not notify:
@@ -75,18 +97,14 @@ def resolve_dispatch(
             "reviewed_candidate",
             "gmail-reviewed-observation-or-recovery",
         )
-    if event_name == "schedule":
+    if has_durable_recovery:
         return DispatchDecision(
             True,
-            "scheduled_monitor_poll",
-            "gmail-scheduled-monitor-poll",
+            "durable_recovery_pending",
+            "gmail-durable-recovery-pending",
         )
-    if event_name == "repository_dispatch":
-        return DispatchDecision(
-            True,
-            "repository_dispatch_monitor_poll",
-            "gmail-repository-dispatch-monitor-poll",
-        )
+    if event_name in {"schedule", "repository_dispatch"}:
+        return DispatchDecision(False, "monitor_schedule_covers_poll", "")
     return DispatchDecision(False, "manual_run_without_candidate", "")
 
 
@@ -129,6 +147,7 @@ def main() -> int:
         latest_financialjuice=_event_latest_replay(event),
         manual_replay_count=_manual_replay_count(result),
         has_candidate=candidate_ready(result),
+        has_durable_recovery=durable_recovery_pending(result),
     )
     print(json.dumps(asdict(decision), separators=(",", ":")))
     return 0

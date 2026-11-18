@@ -455,6 +455,16 @@ def test_health_workflow_delegates_notifications_to_single_outlet():
     assert "TRIGGERED_CENTRAL_RUN_SHA" in workflow
 
 
+def test_central_workflow_gates_handoff_on_live_mode_and_records_shadow():
+    from pathlib import Path
+
+    root = Path(__file__).parents[1]
+    workflow = (root / ".github/workflows/incident-reconciliation.yml").read_text(encoding="utf-8")
+    assert "steps.upload_result.outcome == 'success' && vars.INCIDENT_OPS_MODE == 'live'" in workflow
+    assert "Shadow mode: evidence preserved; no notification sent or delivery claimed." in workflow
+    assert "Reject an unsupported incident coordinator mode" in workflow
+
+
 def test_health_marker_is_accepted_by_shared_cadence_contract():
     assert reconciliation._cadence_marker_valid(health._marker("central_reconciliation_stalled"))
     assert not reconciliation._cadence_marker_valid(f"{reconciliation.CENTRAL_HEALTH_MARKER}not-a-digest")
