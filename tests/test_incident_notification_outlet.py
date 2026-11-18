@@ -296,36 +296,26 @@ def test_alert_terminal_requires_exact_completed_attempt_and_artifact(monkeypatc
     ) == "confirmed"
 
 
-def test_control_journal_create_is_read_back_and_closed_identity_is_not_recreated(monkeypatch):
-    created = {
-        "number": 900, "title": outlet.CONTROL_ISSUE_TITLE, "state": "open",
+def test_closed_control_journal_is_not_recreated(monkeypatch):
+    closed = {
+        "number": 900, "title": outlet.CONTROL_ISSUE_TITLE, "state": "closed",
         "body": outlet._journal_body(outlet._default_journal("owner/repo")),
     }
     calls = []
-    monkeypatch.setattr(outlet, "_read_journal_issues", lambda **_k: [])
+    monkeypatch.setattr(outlet, "_read_journal_issues", lambda **_k: [closed])
 
-    def request(_api, _repo, _token, method, endpoint, payload=None, **_kwargs):
+    def request(_api, _repo, _token, method, endpoint, *_args, **_kwargs):
         calls.append((method, endpoint))
-        if method == "POST":
-            assert endpoint == "issues"
-            assert payload["title"] == outlet.CONTROL_ISSUE_TITLE
-            return {"number": 900, "title": outlet.CONTROL_ISSUE_TITLE}
-        assert method == "GET" and endpoint == "issues/900"
-        return created
+        pytest.fail("a closed journal must fail closed, never create a replacement")
 
     monkeypatch.setattr(outlet, "_request_json", request)
-    issue, journal = outlet._load_control_journal(
-        repository="owner/repo", api_url="https://api.github.com", token="x", deadline=10**20,
-    )
-    assert issue["number"] == 900
-    assert journal["schema_version"] == outlet.JOURNAL_SCHEMA
-    assert calls == [("POST", "issues"), ("GET", "issues/900")]
-
-    monkeypatch.setattr(outlet, "_read_journal_issues", lambda **_k: [{**created, "state": "closed"}])
     with pytest.raises(LivenessAuditError, match="control_identity_invalid"):
         outlet._load_control_journal(
-            repository="owner/repo", api_url="https://api.github.com", token="x", deadline=10**20,
+            repository="owner/repo", api_url="https://api.github.com", token="test", deadline=10**20,
         )
+    assert calls == []
+
+
 
 
 def test_journal_lookup_uses_one_targeted_identity_search(monkeypatch):
@@ -335,6 +325,8 @@ def test_journal_lookup_uses_one_targeted_identity_search(monkeypatch):
     control = {
         "number": 1143, "title": outlet.CONTROL_ISSUE_TITLE, "state": "open",
         "body": outlet._journal_body(journal),
+        "repository_url": "https://api.github.com/repos/owner/repo",
+        "url": "https://api.github.com/repos/owner/repo/issues/1143",
     }
     calls = []
 
