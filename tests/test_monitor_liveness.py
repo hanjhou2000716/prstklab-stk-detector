@@ -528,7 +528,7 @@ def test_liveness_audit_error_is_deduplicated_in_issue_without_failing_the_workf
     def request(_api, _repo, _token, method, path, payload=None, *, response_headers=None, deadline_monotonic=None):
         calls.append((method, path, payload))
         if "/search/issues?" in path:
-            return []
+            return _issue_search_response([])
         if method == "POST" and path == "issues":
             return {"number": 91, "title": f"{monitor_liveness.AUDIT_ISSUE_TITLE_PREFIX} / main"}
         raise AssertionError((method, path, payload))
@@ -581,7 +581,7 @@ def test_repeated_liveness_audit_error_respects_thirty_minute_reminder(monkeypat
     assert result["reminder_sent"] is False
     assert len(calls) == 1
     assert calls[0][0] == "GET"
-    assert calls[0][1].startswith("issues?")
+    assert "/search/issues?" in calls[0][1]
 
 
 def test_central_audit_failure_keeps_reminder_due_until_alert_terminal(monkeypatch):
