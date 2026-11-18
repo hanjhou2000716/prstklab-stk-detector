@@ -110,6 +110,102 @@ def test_github_non_get_404_is_not_retried_or_handed_off(monkeypatch):
     assert captured.value.handoff_to_health is False
 
 
+
+def test_github_get_504_retries_with_short_bounded_backoff(monkeypatch):
+    calls = 0
+    delays: list[float] = []
+
+    class Response:
+        headers = {}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self, _limit):
+            return b'{"ok":true}'
+
+    def open_url(request, *, timeout):
+        nonlocal calls
+        calls += 1
+        assert timeout > 0
+        if calls == 1:
+            raise HTTPError(request.full_url, 504, "gateway timeout", {}, io.BytesIO())
+        return Response()
+
+    monkeypatch.setattr(monitor_liveness, "urlopen", open_url)
+    monkeypatch.setattr(monitor_liveness.time, "sleep", delays.append)
+    result = monitor_liveness._request_json(
+        "https://api.github.com", "owner/repo", "secret", "GET",
+        "actions/runs/123/jobs",
+    )
+    assert result == {"ok": True}
+    assert calls == 2
+    assert delays == [0.25]
+
+
+def test_github_get_timeout_retries_once_then_succeeds(monkeypatch):
+    calls = 0
+    delays: list[float] = []
+
+    class Response:
+        headers = {}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self, _limit):
+            return b'{"ok":true}'
+
+    def open_url(_request, *, timeout):
+        nonlocal calls
+        calls += 1
+        assert timeout > 0
+        if calls == 1:
+            raise TimeoutError("private transport detail")
+        return Response()
+
+    monkeypatch.setattr(monitor_liveness, "urlopen", open_url)
+    monkeypatch.setattr(monitor_liveness.time, "sleep", delays.append)
+    assert monitor_liveness._request_json(
+        "https://api.github.com", "owner/repo", "secret", "GET", "issues?state=open",
+    ) == {"ok": True}
+    assert calls == 2
+    assert delays == [0.25]
+
+
+def test_github_get_403_is_not_retried_and_diagnostic_is_sanitized(monkeypatch):
+    calls = 0
+
+    def open_url(request, *, timeout):
+        nonlocal calls
+        calls += 1
+        raise HTTPError(
+            request.full_url, 403, "private response body",
+            {"X-GitHub-Request-Id": "ABC:123"}, io.BytesIO(b"secret body"),
+        )
+
+    monkeypatch.setattr(monitor_liveness, "urlopen", open_url)
+    with pytest.raises(monitor_liveness.GitHubAPIHttpError) as captured:
+        monitor_liveness._request_json(
+            "https://api.github.com", "owner/repo", "secret", "GET",
+            "search/issues?q=private-query",
+        )
+    assert calls == 1
+    diagnostic = captured.value.diagnostic()
+    assert diagnostic["http_status"] == 403
+    assert diagnostic["request_id"] == "ABC:123"
+    assert diagnostic["endpoint_class"] == "search/issues"
+    assert "private-query" not in repr(diagnostic)
+    assert "secret" not in repr(diagnostic)
+    assert "private response body" not in repr(diagnostic)
+
+
 def test_unstarted_job_with_populated_started_at_opens_one_incident(monkeypatch):
     now = datetime(2026, 10, 13, 5, 0, tzinfo=UTC)
     run = _run(1234, now - timedelta(minutes=16))
@@ -567,7 +663,7 @@ def test_open_incidents_includes_central_reconciliation_degraded_issue(monkeypat
         "body": "central-incident-health=c97f7498d72d4cd0e1a434bf3e43c8b5",
     }
     monkeypatch.setenv("GITHUB_REPOSITORY_ID", "1309835643")
-    monkeypatch.setattr(monitor_liveness, "read_open_issues", lambda **_kwargs: [issue])
+    monkeypatch.setattr(monitor_liveness, "read_open_issues_by_title_prefixes", lambda **_kwargs: [issue])
 
     rows = monitor_liveness._open_incidents(
         "https://api.github.com",

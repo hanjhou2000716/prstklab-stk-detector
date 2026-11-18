@@ -10,11 +10,11 @@ import time
 from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
 from typing import Any
-from urllib.error import HTTPError, URLError
+from urllib.error import HTTPError
 from urllib.parse import parse_qs, urlencode, urlsplit
 from urllib.request import Request, urlopen
 
-from src.github_issue_api import IssuePaginationError, read_open_issues
+from src.github_issue_api import IssuePaginationError, read_open_issues_by_title_prefixes
 from src.incident_cadence import can_emit_pending_alert, mark_pending_alert
 
 REPOSITORY_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
@@ -25,6 +25,14 @@ AUDIT_ISSUE_TITLE_PREFIX = "Official monitor liveness audit degraded"
 AUDIT_INCIDENT_MARKER = "official-monitor-audit-incident="
 EVENT_ISSUE_TITLE_PREFIX = "Official event delivery degraded"
 EVENT_INCIDENT_MARKER = "official-event-incident="
+INCIDENT_ISSUE_TITLE_PREFIXES = (
+    ISSUE_TITLE_PREFIX,
+    AUDIT_ISSUE_TITLE_PREFIX,
+    EVENT_ISSUE_TITLE_PREFIX,
+    "Scheduled market brief delivery degraded",
+    "Unified research report degraded",
+    "Central incident reconciliation degraded",
+)
 STALE_AFTER = timedelta(minutes=10)
 LOOKBACK = timedelta(minutes=20)
 PAGE_SIZE = 10
@@ -119,6 +127,13 @@ def _request_json(
         else f"{api_url.rstrip('/')}/repos/{repository}/{path.lstrip('/')}"
     )
     endpoint_class = _safe_endpoint_class(request_url, api_url=api_url, repository=repository)
+    is_read = method.upper() == "GET"
+    effective_deadline = (
+        deadline_monotonic
+        if deadline_monotonic is not None
+        else time.monotonic() + 15.0
+    )
+    retryable_statuses = {408, 425, 429, 500, 502, 503, 504}
     for attempt in range(3):
         request = Request(
             request_url,
@@ -133,7 +148,7 @@ def _request_json(
             },
         )
         try:
-            remaining = 15.0 if deadline_monotonic is None else deadline_monotonic - time.monotonic()
+            remaining = effective_deadline - time.monotonic()
             if remaining <= 0:
                 raise LivenessAuditError("monitor_liveness_audit_deadline_exceeded")
             with urlopen(request, timeout=min(15.0, remaining)) as response:
@@ -146,11 +161,23 @@ def _request_json(
                     return None
                 return json.loads(raw.decode("utf-8"))
         except HTTPError as exc:
-            if exc.code == 404 and method.upper() == "GET" and attempt < 2:
-                remaining = 15.0 if deadline_monotonic is None else deadline_monotonic - time.monotonic()
-                delay = min(float(2 ** attempt), max(0.0, remaining))
+            can_retry = is_read and attempt < 2 and (
+                exc.code == 404 or exc.code in retryable_statuses
+            )
+            if can_retry:
+                remaining = effective_deadline - time.monotonic()
+                default_delay = (
+                    float(2 ** attempt) if exc.code == 404
+                    else (0.25 if attempt == 0 else 0.75)
+                )
+                retry_after = None
+                if exc.code in retryable_statuses and exc.headers:
+                    raw_retry_after = str(exc.headers.get("Retry-After") or "").strip()
+                    if re.fullmatch(r"\d+(?:\.\d+)?", raw_retry_after):
+                        retry_after = float(raw_retry_after)
+                delay = max(default_delay, retry_after or 0.0)
                 exc.close()
-                if delay > 0:
+                if remaining > delay:
                     time.sleep(delay)
                     continue
             raw_request_id = str(exc.headers.get("X-GitHub-Request-Id") or "") if exc.headers else ""
@@ -162,10 +189,17 @@ def _request_json(
                 request_id=request_id,
                 retry_count=attempt + 1,
             ) from exc
-        except (URLError, TimeoutError, UnicodeError, json.JSONDecodeError) as exc:
+        except OSError as exc:
+            if is_read and attempt < 2:
+                remaining = effective_deadline - time.monotonic()
+                delay = 0.25 if attempt == 0 else 0.75
+                if remaining > delay:
+                    time.sleep(delay)
+                    continue
+            raise LivenessAuditError(f"monitor_liveness_api_{type(exc).__name__}") from exc
+        except (UnicodeError, json.JSONDecodeError) as exc:
             raise LivenessAuditError(f"monitor_liveness_api_{type(exc).__name__}") from exc
     raise LivenessAuditError("monitor_liveness_api_retry_exhausted")
-
 
 def _next_link(
     link_header: str,
@@ -381,40 +415,18 @@ def _mark_alert_pending(body: str, consumer: str, now: datetime) -> str:
 
 def _open_incidents(api_url: str, repository: str, token: str, *, deadline_monotonic: float) -> list[dict[str, Any]]:
     try:
-        rows = read_open_issues(
+        return read_open_issues_by_title_prefixes(
             api_url=api_url,
             repository=repository,
             token=token,
             fetch_json=_request_json,
             deadline_monotonic=deadline_monotonic,
-            repository_id=_positive_repo_id(os.environ.get("GITHUB_REPOSITORY_ID")),
+            title_prefixes=INCIDENT_ISSUE_TITLE_PREFIXES,
         )
     except IssuePaginationError as exc:
         raise LivenessAuditError(
-            f"monitor_liveness_{str(exc).replace('issues_', 'issues_')}"
+            f"monitor_liveness_{exc}"
         ) from exc
-    result = []
-    for row in rows:
-        if row.get("pull_request"):
-            continue
-        if str(row.get("title") or "").startswith((
-            ISSUE_TITLE_PREFIX, AUDIT_ISSUE_TITLE_PREFIX, EVENT_ISSUE_TITLE_PREFIX,
-            "Scheduled market brief delivery degraded",
-            "Unified research report degraded",
-            "Central incident reconciliation degraded",
-        )):
-            if not isinstance(row.get("number"), int):
-                raise LivenessAuditError("monitor_liveness_issue_identity_invalid")
-            result.append(row)
-    return result
-
-
-def _positive_repo_id(value: object) -> int | None:
-    try:
-        parsed = int(str(value or ""))
-    except (TypeError, ValueError):
-        return None
-    return parsed if parsed > 0 else None
 
 
 def audit_liveness(
@@ -747,6 +759,12 @@ def main() -> int:
         publish_result(result)
         return 0
     except LivenessAuditError as exc:
+        if isinstance(exc, GitHubAPIHttpError):
+            print(
+                "monitor_liveness_api_diagnostic:"
+                + json.dumps(exc.diagnostic(), separators=(",", ":"), sort_keys=True),
+                file=sys.stderr,
+            )
         try:
             result = record_audit_failure(str(exc))
         except LivenessAuditError as incident_exc:

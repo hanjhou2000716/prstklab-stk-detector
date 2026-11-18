@@ -317,6 +317,50 @@ def _read_issue_search(
         return list(rows_by_number.values())
     raise IssuePaginationError("issue_search_pagination_limit_exceeded")
 
+def read_open_issues_by_title_prefixes(
+    *,
+    api_url: str,
+    repository: str,
+    token: str,
+    fetch_json: Callable[..., Any],
+    deadline_monotonic: float,
+    title_prefixes: tuple[str, ...],
+) -> list[dict[str, Any]]:
+    """Find open repository issues by a bounded set of known title prefixes.
+
+    The search is scoped to known operational issue families so callers do not
+    paginate the repository's full historical issue collection.
+    """
+    phrase_pattern = r"[A-Za-z0-9][A-Za-z0-9 _=:-]{0,199}"
+    if (
+        not isinstance(title_prefixes, tuple)
+        or not 1 <= len(title_prefixes) <= 12
+        or any(
+            not isinstance(prefix, str)
+            or not re.fullmatch(phrase_pattern, prefix)
+            for prefix in title_prefixes
+        )
+        or len(set(title_prefixes)) != len(title_prefixes)
+    ):
+        raise IssuePaginationError("issue_search_title_prefixes_invalid")
+    clauses = " OR ".join(f'"{prefix}" in:title' for prefix in title_prefixes)
+    query_text = f"repo:{repository} is:issue is:open ({clauses})"
+    rows = _read_issue_search(
+        api_url=api_url, repository=repository, token=token,
+        fetch_json=fetch_json, deadline_monotonic=deadline_monotonic,
+        query_text=query_text,
+    )
+    folded_prefixes = tuple(prefix.casefold() for prefix in title_prefixes)
+    return sorted(
+        (
+            row for row in rows
+            if row.get("state") == "open"
+            and str(row.get("title") or "").casefold().startswith(folded_prefixes)
+        ),
+        key=lambda row: row["number"],
+    )
+
+
 def read_issues_by_identity(
     *,
     api_url: str,

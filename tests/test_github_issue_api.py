@@ -9,6 +9,7 @@ from src.github_issue_api import (
     IssuePaginationError,
     read_issues_by_identity,
     read_open_issues,
+    read_open_issues_by_title_prefixes,
 )
 
 
@@ -238,3 +239,70 @@ def test_identity_search_rejects_incomplete_results_and_cross_repository_rows():
             fetch_json=wrong_repo, deadline_monotonic=time.monotonic() + 10,
             title="PRStK incident notification control", marker=marker,
         )
+
+
+def test_open_issue_title_prefix_search_is_scoped_and_filters_exact_prefixes():
+    prefixes = ("Official event monitor stalled", "Official event delivery degraded")
+    expected_query = (
+        "repo:owner/repo is:issue is:open "
+        '("Official event monitor stalled" in:title OR '
+        '"Official event delivery degraded" in:title)'
+    )
+    items = [
+        _search_row(8, title="Official event delivery degraded / main", state="open"),
+        _search_row(9, title="Official event monitor stalled / main", state="open"),
+        _search_row(10, title="Older note: Official event monitor stalled", state="open"),
+        _search_row(11, title="Official event monitor stalled / closed", state="closed"),
+    ]
+    observed_queries = []
+
+    def fetch(_api, _repo, _token, method, url, *, response_headers=None, deadline_monotonic=None):
+        assert method == "GET"
+        query = parse_qs(urlsplit(url).query)
+        observed_queries.append(query["q"][0])
+        response_headers["link"] = ""
+        return {"total_count": len(items), "incomplete_results": False, "items": items}
+
+    rows = read_open_issues_by_title_prefixes(
+        api_url="https://api.github.com",
+        repository="owner/repo",
+        token="token",
+        fetch_json=fetch,
+        deadline_monotonic=time.monotonic() + 10,
+        title_prefixes=prefixes,
+    )
+
+    assert [row["number"] for row in rows] == [8, 9]
+    assert observed_queries == [expected_query]
+
+
+def test_open_issue_title_prefix_search_paginates_complete_results():
+    prefixes = ("Official event monitor stalled",)
+    rows = [
+        _search_row(n, title="Official event monitor stalled / main", state="open")
+        for n in range(1, 102)
+    ]
+    pages = []
+
+    def fetch(_api, _repo, _token, method, url, *, response_headers=None, deadline_monotonic=None):
+        assert method == "GET"
+        parsed = urlsplit(url)
+        query = parse_qs(parsed.query)
+        page = int(query["page"][0])
+        pages.append(page)
+        if page == 1:
+            response_headers["link"] = (
+                "<https://api.github.com/search/issues?"
+                + urlencode({"q": query["q"][0], "per_page": 100, "page": 2})
+                + '>; rel="next"'
+            )
+            return {"total_count": 101, "incomplete_results": False, "items": rows[:100]}
+        response_headers["link"] = ""
+        return {"total_count": 101, "incomplete_results": False, "items": rows[100:]}
+
+    found = read_open_issues_by_title_prefixes(
+        api_url="https://api.github.com", repository="owner/repo", token="token",
+        fetch_json=fetch, deadline_monotonic=time.monotonic() + 10, title_prefixes=prefixes,
+    )
+    assert [row["number"] for row in found] == list(range(1, 102))
+    assert pages == [1, 2]
