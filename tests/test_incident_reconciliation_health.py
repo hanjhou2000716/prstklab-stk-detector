@@ -434,13 +434,15 @@ def test_health_workflow_delegates_notifications_to_single_outlet():
 
     root = Path(__file__).parents[1]
     workflow = (root / ".github/workflows/incident-reconciliation-health.yml").read_text(encoding="utf-8")
-    assert 'cron: "*/5 * * * *"' in workflow
+    assert 'cron: "*/5 * * * *"' not in workflow
     assert "Central incident reconciliation" in workflow
     assert "prstk-central-incident-health" in workflow
     assert "steps.inspect.outputs.notification_due == 'true'" not in workflow
     assert "native_alert" not in workflow
     outlet = (root / ".github/workflows/incident-notification-outlet.yml").read_text(encoding="utf-8")
-    assert "Central incident reconciliation health" in outlet
+    assert 'cron: "0,30 * * * *"' in outlet
+    assert "Central incident reconciliation health" not in outlet
+    assert "Central incident reconciliation" in outlet
     assert "steps.prepare.outputs.notification_due == 'true'" in outlet
     assert "Record due notification without manufacturing a failed run" in outlet
     assert "did not send or confirm email" in outlet

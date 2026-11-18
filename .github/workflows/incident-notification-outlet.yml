@@ -4,7 +4,6 @@ on:
   workflow_run:
     workflows:
       - Central incident reconciliation
-      - Central incident reconciliation health
     types: [completed]
   schedule:
     - cron: "0,30 * * * *"

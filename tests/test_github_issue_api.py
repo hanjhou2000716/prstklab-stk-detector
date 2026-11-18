@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import time
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, urlencode, urlsplit
 
 import pytest
 
-from src.github_issue_api import IssuePaginationError, read_open_issues
+from src.github_issue_api import (
+    IssuePaginationError,
+    read_issues_by_identity,
+    read_open_issues,
+)
 
 
 def test_reads_numeric_repository_link_and_opaque_cursor_after_verifying_id():
@@ -139,4 +143,98 @@ def test_pagination_capacity_remains_bounded(page_size, max_pages):
             api_url="https://api.github.com", repository="owner/repo", token="token",
             fetch_json=fetch, deadline_monotonic=time.monotonic() + 10,
             page_size=page_size, max_pages=max_pages,
+        )
+
+
+def _search_row(number, *, title="filler issue", body="", state="closed"):
+    return {
+        "number": number,
+        "title": title,
+        "body": body,
+        "state": state,
+        "url": f"https://api.github.com/repos/owner/repo/issues/{number}",
+        "repository_url": "https://api.github.com/repos/owner/repo",
+    }
+
+
+def test_identity_search_is_repo_scoped_complete_and_finds_exact_control_issue():
+    marker = "incident-notification-control=incident-notification-journal-v1"
+    issue = _search_row(1143, title="PRStK incident notification control", body=f"{marker}\n{{}}", state="open")
+    queries = []
+
+    def fetch(_api, _repo, token, method, url, *, response_headers=None, deadline_monotonic=None):
+        assert token == "token" and method == "GET"
+        parsed = urlsplit(url)
+        assert parsed.path == "/search/issues"
+        query = parse_qs(parsed.query)
+        queries.append(query["q"][0])
+        response_headers["link"] = ""
+        return {"total_count": 1, "incomplete_results": False, "items": [issue]}
+
+    rows = read_issues_by_identity(
+        api_url="https://api.github.com", repository="owner/repo", token="token",
+        fetch_json=fetch, deadline_monotonic=time.monotonic() + 10,
+        title="PRStK incident notification control", marker=marker,
+    )
+    assert rows == [issue]
+    assert queries == [
+        'repo:owner/repo is:issue ("PRStK incident notification control" in:title OR '
+        '"incident-notification-control=incident-notification-journal-v1" in:body)'
+    ]
+
+
+def test_identity_search_paginates_and_checks_exact_coverage():
+    marker = "incident-notification-control=incident-notification-journal-v1"
+    title = "PRStK incident notification control"
+    rows = [_search_row(n) for n in range(1, 101)]
+    rows.append(_search_row(101, title=title, body=marker, state="open"))
+    calls = []
+
+    def fetch(_api, _repo, _token, method, url, *, response_headers=None, deadline_monotonic=None):
+        assert method == "GET"
+        parsed = urlsplit(url)
+        query = parse_qs(parsed.query)
+        calls.append((query["q"][0], int(query["page"][0])))
+        page = int(query["page"][0])
+        if page == 1:
+            next_query = urlencode({"q": query["q"][0], "per_page": 100, "page": 2})
+            response_headers["link"] = f'<https://api.github.com/search/issues?{next_query}>; rel="next"'
+            return {"total_count": 101, "incomplete_results": False, "items": rows[:100]}
+        response_headers["link"] = ""
+        return {"total_count": 101, "incomplete_results": False, "items": rows[100:]}
+
+    found = read_issues_by_identity(
+        api_url="https://api.github.com", repository="owner/repo", token="token",
+        fetch_json=fetch, deadline_monotonic=time.monotonic() + 10, title=title, marker=marker,
+    )
+    assert [row["number"] for row in found] == [101]
+    assert len(calls) == 2
+    assert [page for _query, page in calls] == [1, 2]
+
+
+def test_identity_search_rejects_incomplete_results_and_cross_repository_rows():
+    marker = "incident-notification-control=incident-notification-journal-v1"
+    valid = _search_row(1143, title="PRStK incident notification control", body=marker, state="open")
+
+    def incomplete(_api, _repo, _token, _method, _url, *, response_headers=None, **_kwargs):
+        response_headers["link"] = ""
+        return {"total_count": 1, "incomplete_results": True, "items": [valid]}
+
+    with pytest.raises(IssuePaginationError, match="response_incomplete"):
+        read_issues_by_identity(
+            api_url="https://api.github.com", repository="owner/repo", token="token",
+            fetch_json=incomplete, deadline_monotonic=time.monotonic() + 10,
+            title="PRStK incident notification control", marker=marker,
+        )
+
+    cross_repo = {**valid, "repository_url": "https://api.github.com/repos/other/repo"}
+    def wrong_repo(_api, _repo, _token, _method, _url, *, response_headers=None, **_kwargs):
+        response_headers["link"] = ""
+        return {"total_count": 1, "incomplete_results": False, "items": [cross_repo]}
+
+    with pytest.raises(IssuePaginationError, match="row_identity_invalid"):
+        read_issues_by_identity(
+            api_url="https://api.github.com", repository="owner/repo", token="token",
+            fetch_json=wrong_repo, deadline_monotonic=time.monotonic() + 10,
+            title="PRStK incident notification control", marker=marker,
         )

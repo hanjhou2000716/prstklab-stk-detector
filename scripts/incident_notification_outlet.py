@@ -30,7 +30,7 @@ from scripts.monitor_liveness import (
 )
 from scripts.monitor_liveness import ISSUE_TITLE_PREFIX as MONITOR_ISSUE_TITLE_PREFIX
 from scripts.scheduled_brief_incidents import ISSUE_TITLE_PREFIX as SCHEDULED_ISSUE_TITLE_PREFIX
-from src.github_issue_api import IssuePaginationError, read_open_issues
+from src.github_issue_api import IssuePaginationError, read_issues_by_identity
 
 OUTLET_SCHEMA = "incident-notification-outlet-v1"
 JOURNAL_SCHEMA = "incident-notification-journal-v1"
@@ -43,10 +43,6 @@ JOURNAL_CLOSE = "<!-- /prstk-incident-notification-journal-v1 -->"
 DECISION_ARTIFACT_MEMBER = "incident-notification-outlet.json"
 MAX_JOURNAL_DECISIONS = 96
 MAX_IMMEDIATE_FINGERPRINTS = 128
-# The all-state Issues API includes historical pull requests as well as issues.
-# Keep complete duplicate/closed-journal checks within the existing deadline.
-JOURNAL_PAGE_SIZE = 100
-JOURNAL_MAX_PAGES = 100
 ALLOWED_SOURCE_PATHS = {
     ".github/workflows/incident-reconciliation.yml",
     ".github/workflows/incident-reconciliation-health.yml",
@@ -104,11 +100,6 @@ def _next_reminder_at(now: datetime, *, immediate: bool) -> str:
     # reminder still returns to the shared :00/:30 cadence.
     boundary = current.replace(minute=0 if current.minute < 30 else 30, second=0, microsecond=0)
     return (boundary + REMINDER_INTERVAL).isoformat()
-
-
-def _repo_id_from_env() -> int | None:
-    raw = str(os.environ.get("GITHUB_REPOSITORY_ID") or "").strip()
-    return _safe_int(raw)
 
 
 def _default_journal(repository: str) -> dict[str, Any]:
@@ -179,19 +170,17 @@ def _read_journal_issues(
     *, repository: str, api_url: str, token: str, deadline: float,
 ) -> list[dict[str, Any]]:
     try:
-        return read_open_issues(
+        return read_issues_by_identity(
             api_url=api_url,
             repository=repository,
             token=token,
             fetch_json=_request_json,
             deadline_monotonic=deadline,
-            repository_id=_repo_id_from_env(),
-            state="all",
-            page_size=JOURNAL_PAGE_SIZE,
-            max_pages=JOURNAL_MAX_PAGES,
+            title=CONTROL_ISSUE_TITLE,
+            marker=CONTROL_MARKER,
         )
     except IssuePaginationError as exc:
-        raise LivenessAuditError(f"incident_notification_issue_pagination_{exc}") from exc
+        raise LivenessAuditError(f"incident_notification_issue_search_{exc}") from exc
 
 
 def _load_control_journal(
@@ -207,54 +196,18 @@ def _load_control_journal(
     ]
     if len(matches) > 1:
         raise LivenessAuditError("incident_notification_control_identity_ambiguous")
-    if matches:
-        issue = matches[0]
-        if (
-            _safe_int(issue.get("number")) is None
-            or str(issue.get("title") or "") != CONTROL_ISSUE_TITLE
-            or str(issue.get("state") or "").casefold() != "open"
-        ):
-            raise LivenessAuditError("incident_notification_control_identity_invalid")
-        return issue, _parse_journal_body(issue.get("body"), repository=repository)
-
-    journal = _default_journal(repository)
-    body = _journal_body(journal)
-    try:
-        created = _request_json(
-            api_url, repository, token, "POST", "issues",
-            {"title": CONTROL_ISSUE_TITLE, "body": body}, deadline_monotonic=deadline,
-        )
-    except LivenessAuditError:
-        # A timed-out create may have succeeded; re-read by exact marker before
-        # deciding that the checkpoint itself is unavailable.
-        created = None
-    if isinstance(created, dict) and _safe_int(created.get("number")) is not None:
-        issue_number = _safe_int(created.get("number"))
-        issue = _request_json(
-            api_url, repository, token, "GET", f"issues/{issue_number}",
-            deadline_monotonic=deadline,
-        )
-        if (
-            not isinstance(issue, dict)
-            or _safe_int(issue.get("number")) != issue_number
-            or str(issue.get("title") or "") != CONTROL_ISSUE_TITLE
-            or str(issue.get("state") or "").casefold() != "open"
-        ):
-            raise LivenessAuditError("incident_notification_control_create_readback_invalid")
-        journal = _parse_journal_body(issue.get("body"), repository=repository)
-    else:
-        refreshed = _read_journal_issues(
-            repository=repository, api_url=api_url, token=token, deadline=deadline,
-        )
-        found = [row for row in refreshed if CONTROL_MARKER in str(row.get("body") or "").splitlines()]
-        if len(found) != 1:
-            raise LivenessAuditError("incident_notification_control_create_unconfirmed")
-        issue = found[0]
-        journal = _parse_journal_body(issue.get("body"), repository=repository)
-    if str(issue.get("title") or "") != CONTROL_ISSUE_TITLE:
+    if not matches:
+        # Never create a replacement journal automatically. Search indexing,
+        # API truncation, or a moved/closed identity must not fork dedupe state.
+        raise LivenessAuditError("incident_notification_control_missing")
+    issue = matches[0]
+    if (
+        _safe_int(issue.get("number")) is None
+        or str(issue.get("title") or "") != CONTROL_ISSUE_TITLE
+        or str(issue.get("state") or "").casefold() != "open"
+    ):
         raise LivenessAuditError("incident_notification_control_identity_invalid")
-    return issue, journal
-
+    return issue, _parse_journal_body(issue.get("body"), repository=repository)
 
 def _save_control_journal(
     *, issue_number: int, journal: dict[str, Any], expected_generation: int,
