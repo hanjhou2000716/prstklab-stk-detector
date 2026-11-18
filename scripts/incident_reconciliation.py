@@ -1613,11 +1613,30 @@ def _download_artifact_json(
         "X-GitHub-Api-Version": "2022-11-28",
         "User-Agent": "PRStK-incident-reconciliation",
     })
-    try:
-        with _open_artifact_url(request, timeout=max(1, int(min(15, remaining)))) as response:
-            archive_bytes = response.read(STATE_ARTIFACT_LIMIT + 1)
-    except (HTTPError, URLError, TimeoutError, OSError) as exc:
-        raise LivenessAuditError(f"incident_artifact_download_{type(exc).__name__}") from exc
+    archive_bytes: bytes | None = None
+    retryable_statuses = {404, 408, 425, 429, 500, 502, 503, 504}
+    backoff_seconds = (0.25, 0.75)
+    for attempt_index in range(3):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise LivenessAuditError("incident_artifact_download_deadline_exceeded")
+        try:
+            with _open_artifact_url(request, timeout=max(1, int(min(15, remaining)))) as response:
+                archive_bytes = response.read(STATE_ARTIFACT_LIMIT + 1)
+            break
+        except HTTPError as exc:
+            status_code = exc.code if isinstance(exc.code, int) and 100 <= exc.code <= 599 else None
+            if status_code not in retryable_statuses or attempt_index >= len(backoff_seconds):
+                safe_status = str(status_code) if status_code is not None else "unknown"
+                raise LivenessAuditError(f"incident_artifact_download_http_{safe_status}") from exc
+            delay = backoff_seconds[attempt_index]
+            if deadline - time.monotonic() <= delay:
+                raise LivenessAuditError("incident_artifact_download_deadline_exceeded") from exc
+            time.sleep(delay)
+        except (URLError, TimeoutError, OSError) as exc:
+            raise LivenessAuditError(f"incident_artifact_download_{type(exc).__name__}") from exc
+    if archive_bytes is None:
+        raise LivenessAuditError("incident_artifact_download_unavailable")
     if len(archive_bytes) > STATE_ARTIFACT_LIMIT:
         raise LivenessAuditError("incident_artifact_archive_too_large")
     try:
