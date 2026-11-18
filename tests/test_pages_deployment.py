@@ -16,6 +16,7 @@ from src.pages_deployment import (
     _request_json,
     create_deployment,
     derive_build_version,
+    derive_release_binding_id,
     verify_deployment,
 )
 
@@ -319,12 +320,14 @@ def test_pages_identity_keeps_source_revision_separate_from_content_release():
         "run_id": "17", "run_attempt": 1, "phase": "release", "manifest_sha256": MANIFEST_SHA256,
         "artifact_id": "202", "artifact_digest": ARTIFACT_DIGEST,
     }
-    first = derive_build_version(**base)
-    assert first.startswith("prstk-v1-")
-    assert first != derive_build_version(**{**base, "source_revision": "b" * 40})
-    assert first != derive_build_version(**{**base, "release_id": "release-two"})
-    assert first != derive_build_version(**{**base, "artifact_digest": "sha256:" + "d" * 64})
-    assert first != derive_build_version(**{**base, "phase": "receipt_reconciliation"})
+    assert derive_build_version(**base) == SOURCE_REVISION
+    assert derive_build_version(**{**base, "release_id": "release-two"}) == SOURCE_REVISION
+    binding = derive_release_binding_id(**base)
+    assert binding.startswith("prstk-v1-")
+    assert binding != derive_release_binding_id(**{**base, "source_revision": "b" * 40})
+    assert binding != derive_release_binding_id(**{**base, "release_id": "release-two"})
+    assert binding != derive_release_binding_id(**{**base, "artifact_digest": "sha256:" + "d" * 64})
+    assert binding != derive_release_binding_id(**{**base, "phase": "receipt_reconciliation"})
 
 
 def test_derived_pages_identity_rejects_missing_or_malformed_inputs():
@@ -629,7 +632,7 @@ def test_create_refuses_stale_supplied_build_identity_before_post():
         create_deployment(
             api_url="https://api.github.test", repository="owner/repo", token="token",
             run_id="17", artifact_name="github-pages", source_revision=SOURCE_REVISION,
-            build_version="a" * 40, oidc_request_url="https://oidc.actions.test/token",
+            build_version="b" * 40, oidc_request_url="https://oidc.actions.test/token",
             oidc_request_token="request-token", request_json=request_json,
         )
     assert len(calls) == 1
@@ -1036,7 +1039,10 @@ def test_pages_http_error_keeps_safe_diagnostic_without_secrets(monkeypatch):
     }).encode("utf-8")
 
     def fail_request(_request, timeout):
-        raise HTTPError("https://api.github.test/pages/deployments", 400, "Bad Request", {}, BytesIO(body))
+        raise HTTPError(
+            "https://api.github.test/pages/deployments", 400, "Bad Request",
+            {"X-GitHub-Request-Id": "REQ12345"}, BytesIO(body),
+        )
 
     monkeypatch.setattr("src.pages_deployment.urlopen", fail_request)
     with pytest.raises(PagesDeploymentError) as captured:
@@ -1050,6 +1056,7 @@ def test_pages_http_error_keeps_safe_diagnostic_without_secrets(monkeypatch):
     error = captured.value
     assert error.error_code == "pages_http_400"
     assert error.request_outcome == "rejected"
+    assert error.request_id == "REQ12345"
     assert "Invalid audience" in str(error)
     assert "PagesDeployment/oidc_token/invalid" in str(error)
     assert "secret-token" not in str(error)

@@ -80,6 +80,32 @@ def test_oidc_request_rejects_untrusted_host(monkeypatch) -> None:
         }, audience="https://prstk-incident-ops")
 
 
+@pytest.mark.parametrize("host", [
+    "pipelines.actions.githubusercontent.com",
+    "eastus.actions.githubusercontent.com",
+    "actions.githubusercontent.com",
+])
+def test_oidc_environment_accepts_github_actions_host_family(host: str) -> None:
+    diagnostics = auth.oidc_environment_diagnostics({
+        "ACTIONS_ID_TOKEN_REQUEST_URL": f"https://{host}/token",
+        "ACTIONS_ID_TOKEN_REQUEST_TOKEN": "request-token",
+    }, audience="https://prstk-incident-ops")
+    assert "request_url_host_untrusted" not in diagnostics
+
+
+@pytest.mark.parametrize("host", [
+    "actions.githubusercontent.com.evil.example",
+    "evilactions.githubusercontent.com",
+    "actions-githubusercontent.com",
+])
+def test_oidc_environment_rejects_github_host_suffix_spoofing(host: str) -> None:
+    diagnostics = auth.oidc_environment_diagnostics({
+        "ACTIONS_ID_TOKEN_REQUEST_URL": f"https://{host}/token",
+        "ACTIONS_ID_TOKEN_REQUEST_TOKEN": "request-token",
+    }, audience="https://prstk-incident-ops")
+    assert "request_url_host_untrusted" in diagnostics
+
+
 def test_oidc_environment_diagnostic_classifies_missing_and_untrusted_inputs_without_values():
     environment = {
         "ACTIONS_ID_TOKEN_REQUEST_URL": "https://evil.example/sensitive-path?secret=do-not-log",

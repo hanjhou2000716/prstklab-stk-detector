@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -20,6 +21,7 @@ from src.schedule_contract import (
     NEW_YORK,
     SCHEDULE_CONTRACT_VERSION,
     SCHEDULE_TIMEZONE,
+    fixed_scheduled_for,
     scheduled_anchor_key,
     timezone_for_slot,
     us_premarket_anchor,
@@ -122,6 +124,21 @@ def anchor_market(slot: str) -> str:
 def anchor_key(slot: str, slot_date: str) -> str:
     """Build the stable market/date/anchor identity for a scheduled brief."""
     return scheduled_anchor_key(slot, slot_date)
+
+
+def _durable_delivery_identity(slot: str, context: Mapping[str, object] | None) -> tuple[str, datetime]:
+    """Bind the legacy sender to the original slot anchor and its deadline."""
+    slot_context = context if isinstance(context, Mapping) else {}
+    slot_name = str(slot_context.get("scheduled_slot") or slot or "").strip()
+    slot_date = str(slot_context.get("slot_date") or "").strip()
+    if not slot_name or not slot_date:
+        raise ValueError("scheduled Telegram delivery requires its original slot anchor")
+    anchor = fixed_scheduled_for(slot_name, slot_date)
+    if slot_name == "us_premarket":
+        deadline, _market_close = us_session_bounds(anchor.astimezone(NEW_YORK).date())
+    else:
+        deadline = anchor + timedelta(minutes=30)
+    return anchor_key(slot_name, slot_date), deadline.astimezone(UTC)
 
 
 def _scheduled_time_for_cron(local_now: datetime, cron: str, run_created_at: str | None = None) -> datetime | None:
@@ -900,6 +917,7 @@ def main() -> None:
             })
             return
         write_event_lock_key(event_for_delivery)
+    durable_notification_key, durable_deadline = _durable_delivery_identity(slot, context)
     results = send_briefs(
         token=settings.telegram_bot_token or "",
         chat_ids=settings.telegram_chat_ids,
@@ -907,6 +925,8 @@ def main() -> None:
         dashboard_url=settings.dashboard_url,
         target_url=target_url,
         message_kind="scheduled_brief",
+        notification_key=durable_notification_key,
+        delivery_deadline=durable_deadline,
     )
     summary = {
         "delivered": sum(result.delivered for result in results),

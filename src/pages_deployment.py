@@ -47,6 +47,8 @@ class PagesDeploymentError(RuntimeError):
         recoverable: bool = False,
         status_url_shape: str = "",
         artifact_manifest_sha256: str = "",
+        release_binding_id: str = "",
+        request_id: str = "",
     ) -> None:
         super().__init__(message)
         self.retryable = retryable
@@ -65,6 +67,8 @@ class PagesDeploymentError(RuntimeError):
         self.recoverable = recoverable
         self.status_url_shape = status_url_shape
         self.artifact_manifest_sha256 = artifact_manifest_sha256
+        self.release_binding_id = release_binding_id
+        self.request_id = request_id
 
 
 def _safe_error_detail(raw: bytes, secrets: tuple[str, ...] = ()) -> str:
@@ -180,14 +184,15 @@ class PagesDeployment:
     run_attempt: int = 0
     phase: str = ""
     artifact_manifest_sha256: str = ""
+    release_binding_id: str = ""
 
 
-def derive_build_version(
+def derive_release_binding_id(
     *, source_revision: str, release_id: str, snapshot_id: str,
     run_id: str, run_attempt: int, phase: str, manifest_sha256: str,
     artifact_id: str, artifact_digest: str,
 ) -> str:
-    """Build a unique, bounded Pages identity from the exact deployed bundle."""
+    """Build a unique local identity for the exact Pages artifact and run."""
     revision = str(source_revision or "").strip().lower()
     release = str(release_id or "").strip()
     snapshot = str(snapshot_id or "").strip()
@@ -226,6 +231,21 @@ def derive_build_version(
     return f"prstk-v1-{digest[:48]}"
 
 
+def derive_build_version(
+    *, source_revision: str, release_id: str, snapshot_id: str,
+    run_id: str, run_attempt: int, phase: str, manifest_sha256: str,
+    artifact_id: str, artifact_digest: str,
+) -> str:
+    """Return the checked-out Git SHA used by GitHub Pages build creation."""
+    derive_release_binding_id(
+        source_revision=source_revision, release_id=release_id,
+        snapshot_id=snapshot_id, run_id=run_id, run_attempt=run_attempt,
+        phase=phase, manifest_sha256=manifest_sha256, artifact_id=artifact_id,
+        artifact_digest=artifact_digest,
+    )
+    return str(source_revision).strip().lower()
+
+
 def _request_json(
     url: str,
     *,
@@ -254,6 +274,8 @@ def _request_json(
         detail = _safe_error_detail(exc.read(8192), request_secrets)
         request_outcome = "rejected" if 400 <= status < 500 and status not in {408, 425, 429} else "unknown"
         error_code = f"pages_http_{status}"
+        raw_request_id = str(exc.headers.get("X-GitHub-Request-Id") or "").strip()
+        request_id = raw_request_id if re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", raw_request_id) else ""
         message = f"GitHub Pages request returned HTTP {status}"
         if detail:
             message = f"{message}: {detail}"
@@ -262,6 +284,7 @@ def _request_json(
             retryable=retryable,
             error_code=error_code,
             request_outcome=request_outcome,
+            request_id=request_id,
         ) from exc
     except (URLError, TimeoutError, OSError) as exc:
         raise PagesDeploymentError(
@@ -827,6 +850,17 @@ def create_deployment(
         artifact_id=artifact_id,
         artifact_digest=artifact_digest,
     )
+    release_binding_id = derive_release_binding_id(
+        source_revision=revision,
+        release_id=release_id,
+        snapshot_id=snapshot_id,
+        run_id=run_id,
+        run_attempt=run_attempt,
+        phase=phase,
+        manifest_sha256=manifest_sha256,
+        artifact_id=artifact_id,
+        artifact_digest=artifact_digest,
+    )
     if build_version and build_version != bound_build_version:
         raise PagesDeploymentError("requested Pages build version does not match the frozen deployment identity")
     try:
@@ -843,6 +877,7 @@ def create_deployment(
             artifact_manifest_sha256=artifact_manifest_sha256,
             build_version=bound_build_version, release_id=release_id,
             snapshot_id=snapshot_id, phase=phase,
+            release_binding_id=release_binding_id, request_id=exc.request_id,
         ) from exc
     deployment_url = f"{api_url.rstrip('/')}/repos/{repository}/pages/deployments"
     try:
@@ -871,6 +906,8 @@ def create_deployment(
                 release_id=release_id,
                 snapshot_id=snapshot_id,
                 phase=phase,
+                release_binding_id=release_binding_id,
+                request_id=exc.request_id,
             ) from exc
         raise PagesDeploymentError(
             f"Pages deployment create result is unknown; refusing a duplicate create ({exc})",
@@ -884,6 +921,8 @@ def create_deployment(
             release_id=release_id,
             snapshot_id=snapshot_id,
             phase=phase,
+            release_binding_id=release_binding_id,
+            request_id=exc.request_id,
         ) from exc
     if not isinstance(created, dict):
         raise PagesDeploymentError("Pages deployment create response is invalid")
@@ -898,6 +937,7 @@ def create_deployment(
             manifest_sha256=manifest_sha256, artifact_manifest_sha256=artifact_manifest_sha256,
             build_version=bound_build_version,
             release_id=release_id, snapshot_id=snapshot_id, phase=phase,
+            release_binding_id=release_binding_id,
         )
     if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", deployment_id):
         raise PagesDeploymentError(
@@ -907,6 +947,7 @@ def create_deployment(
             manifest_sha256=manifest_sha256, artifact_manifest_sha256=artifact_manifest_sha256,
             build_version=bound_build_version,
             release_id=release_id, snapshot_id=snapshot_id, phase=phase,
+            release_binding_id=release_binding_id,
         )
     if not _status_url_route(
         status_url,
@@ -932,6 +973,7 @@ def create_deployment(
             snapshot_id=snapshot_id,
             phase=phase,
             status_url_shape=shape,
+            release_binding_id=release_binding_id,
         )
     parsed_page = urlparse(page_url if "://" in page_url else f"https://{page_url}")
     if (
@@ -948,6 +990,7 @@ def create_deployment(
             manifest_sha256=manifest_sha256, artifact_manifest_sha256=artifact_manifest_sha256,
             build_version=bound_build_version,
             release_id=release_id, snapshot_id=snapshot_id, phase=phase,
+            release_binding_id=release_binding_id,
         )
     page_url = parsed_page.geturl()
     try:
@@ -982,6 +1025,8 @@ def create_deployment(
             snapshot_id=snapshot_id,
             phase=phase,
             recoverable=exc.recoverable or exc.retryable,
+            release_binding_id=release_binding_id,
+            request_id=exc.request_id,
         ) from exc
     return PagesDeployment(
         verified.deployment_id,
@@ -998,6 +1043,7 @@ def create_deployment(
         run_attempt,
         phase,
         artifact_manifest_sha256,
+        release_binding_id,
     )
 
 
@@ -1218,12 +1264,24 @@ def main() -> int:
                 artifact_id=artifact_id,
                 artifact_digest=artifact_digest,
             )
+            release_binding_id = derive_release_binding_id(
+                source_revision=args.source_revision,
+                release_id=release_id,
+                snapshot_id=str(manifest.get("market_snapshot_id") or ""),
+                run_id=args.run_id,
+                run_attempt=args.run_attempt,
+                phase=args.phase,
+                manifest_sha256=manifest_sha256,
+                artifact_id=artifact_id,
+                artifact_digest=artifact_digest,
+            )
         except PagesDeploymentError as exc:
             _write_outputs({"derived": False, "error": str(exc)})
             return 1
         _write_outputs({
             "derived": True,
             "pages_build_version": build_version,
+            "release_binding_id": release_binding_id,
             "source_revision": args.source_revision.strip().lower(),
             "release_id": release_id,
             "snapshot_id": str(manifest.get("market_snapshot_id") or ""),
@@ -1266,6 +1324,7 @@ def main() -> int:
                 ),
                 "deployment_status": deployment.status,
                 "deployment_build_version": deployment.build_version,
+                "release_binding_id": deployment.release_binding_id,
                 "artifact_id": deployment.artifact_id,
                 "artifact_digest": deployment.artifact_digest,
                 "manifest_sha256": deployment.manifest_sha256,
@@ -1302,6 +1361,7 @@ def main() -> int:
                 "release_id": deployment.release_id,
                 "snapshot_id": deployment.snapshot_id,
                 "pages_build_version": deployment.build_version,
+                "release_binding_id": deployment.release_binding_id,
                 "request_outcome": "created",
                 "deployment_id": deployment.deployment_id,
                 "deployment_status": deployment.status,
@@ -1356,6 +1416,8 @@ def main() -> int:
             "artifact_id": exc.artifact_id,
             "deployment_status": "unknown",
             "deployment_build_version": exc.build_version,
+            "release_binding_id": exc.release_binding_id,
+            "request_id": exc.request_id,
             "artifact_digest": exc.artifact_digest,
             "manifest_sha256": exc.manifest_sha256,
             "artifact_manifest_sha256": exc.artifact_manifest_sha256,
@@ -1395,6 +1457,8 @@ def main() -> int:
                 "release_id": exc.release_id or release_id,
                 "snapshot_id": exc.snapshot_id or snapshot_id,
                 "pages_build_version": exc.build_version,
+                "release_binding_id": exc.release_binding_id,
+                "request_id": exc.request_id,
                 "request_outcome": exc.request_outcome,
                 "deployment_id": deployment_id,
                 "deployment_status": "unknown",

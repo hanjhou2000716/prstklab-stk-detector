@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -207,6 +208,25 @@ def scheduled_send_window_remaining_seconds(
         deadline = expected + timedelta(minutes=30)
     remaining = (deadline.astimezone(UTC) - now.astimezone(UTC)).total_seconds()
     return max(0, int(remaining))
+
+
+def scheduled_delivery_deadline(
+    slot: str, context: dict[str, Any], *, slot_key: str = "",
+) -> datetime:
+    """Return the immutable UTC deadline for the original scheduled anchor."""
+    slot_name = str(context.get("effective_slot") or context.get("scheduled_slot") or slot or "").strip()
+    slot_date = str(context.get("slot_date") or "").strip()
+    if not slot_date:
+        match = re.search(r"(?<!\d)(\d{4}-\d{2}-\d{2})(?!\d)", slot_key)
+        slot_date = match.group(1) if match else ""
+    if not slot_date:
+        raise ValueError("scheduled notification has no immutable slot date")
+    expected = fixed_scheduled_for(slot_name, slot_date)
+    if slot_name == "us_premarket":
+        deadline, _market_close = us_session_bounds(expected.astimezone(NEW_YORK).date())
+    else:
+        deadline = expected + timedelta(minutes=30)
+    return deadline.astimezone(UTC)
 
 
 def _briefing_delivery_event(snapshot: dict[str, Any], slot: str) -> dict[str, Any] | None:
@@ -1807,6 +1827,8 @@ def send(
                 run_id=effective_run_id,
             )
         else:
+            slot_context_value = briefing.get("slot_context")
+            slot_context = slot_context_value if isinstance(slot_context_value, dict) else {}
             deliveries = send_text_briefs_audited(
                 token=settings.telegram_bot_token or "",
                 chat_ids=send_chat_ids,
@@ -1819,6 +1841,10 @@ def send(
                 target_url=target_url,
                 prstk_risk_level=canonical_prstk_risk_level(event),
                 message_kind="scheduled_brief",
+                notification_key=delivery_claim_key,
+                delivery_deadline=scheduled_delivery_deadline(
+                    slot, slot_context, slot_key=delivery_claim_key or effective_slot_key,
+                ),
             )
     except (OSError, ValueError) as exc:
         if event is None or str(event.get("source_key") or event.get("source") or "").strip().casefold() != "financialjuice":

@@ -796,6 +796,8 @@ def deliver_financialjuice_event(
             target_url=target_url,
             prstk_risk_level=canonical_prstk_risk_level(event),
             message_kind="financialjuice",
+            notification_key=actual_notification_key,
+            delivery_deadline=event.get("delivery_deadline_at") or event.get("expires_at"),
         )
     except Exception as exc:  # transport adapters must fail closed
         if ledger is not None and hasattr(ledger, "complete_notification_claim"):

@@ -26,7 +26,8 @@ def test_retired_photo_entrypoint_sends_one_release_bound_text(tmp_path: Path) -
         return (TextDeliveryReceipt("a", "release-acceptance", "market-acceptance", "hash", "delivered", message_id=1),)
 
     report = run(manifest=tmp_path / "manifest.json", public_url="https://example.test/prstk/",
-                 token="token", chat_id="test-chat", verifier=lambda **_: _gate(), sender=sender)
+                 token="token", chat_id="test-chat", notification_key="test-acceptance-run",
+                 verifier=lambda **_: _gate(), sender=sender)
     assert report["ok"] is True
     assert report["delivery_mode"] == "text"
     assert report["recipient_count"] == 1
@@ -43,7 +44,8 @@ def test_text_acceptance_never_sends_when_public_release_is_blocked() -> None:
         raise AssertionError("sender must not run")
 
     report = run(manifest="site/data/release-manifest.json", public_url="https://example.test/prstk/",
-                 token="token", chat_id="test-chat", verifier=lambda **_: _gate(allowed=False), sender=sender)
+                 token="token", chat_id="test-chat", notification_key="test-acceptance-run",
+                 verifier=lambda **_: _gate(allowed=False), sender=sender)
     assert report["ok"] is False
     assert report["status"] == "release_blocked"
     assert report["delivery_performed"] is False
@@ -54,4 +56,5 @@ def test_text_acceptance_never_sends_when_public_release_is_blocked() -> None:
 def test_text_acceptance_rejects_broadcast_recipient(value: str) -> None:
     with pytest.raises(ValueError, match="exactly one"):
         run(manifest="site/data/release-manifest.json", public_url="https://example.test/prstk/",
-            token="token", chat_id=value, verifier=lambda **_: _gate())
+            token="token", chat_id=value, notification_key="test-acceptance-run",
+            verifier=lambda **_: _gate())

@@ -20,7 +20,13 @@ _ALLOWED_PATHS = {
     ("POST", "/ops/mail/verify"),
     ("POST", "/ops/mail/receipt"),
 }
-_OIDC_HOSTS = {"pipelines.actions.githubusercontent.com", "actions.githubusercontent.com"}
+_OIDC_HOSTS = {"actions.githubusercontent.com"}
+
+
+def _trusted_oidc_host(hostname: str) -> bool:
+    """Accept GitHub's OIDC host family with a DNS-label boundary check."""
+    normalized = hostname.casefold().rstrip(".")
+    return normalized in _OIDC_HOSTS or normalized.endswith(".actions.githubusercontent.com")
 
 
 class _NoRedirect(HTTPRedirectHandler):
@@ -74,7 +80,7 @@ def oidc_environment_diagnostics(environment: dict[str, str], *, audience: str) 
             reasons.append("request_url_scheme_invalid")
         if not hostname:
             reasons.append("request_url_host_missing")
-        elif hostname not in _OIDC_HOSTS:
+        elif not _trusted_oidc_host(hostname):
             reasons.append("request_url_host_untrusted")
         if parsed.username is not None or parsed.password is not None:
             reasons.append("request_url_userinfo_present")

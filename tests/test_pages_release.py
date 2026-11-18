@@ -126,6 +126,36 @@ def test_restore_archive_checks_all_paths_before_replacing_existing_data(tmp_pat
     assert not (tmp_path / "outside.txt").exists()
 
 
+def test_restore_archive_accepts_only_git_archive_site_parent_directory(tmp_path, monkeypatch):
+    from src.pages_release import _restore_archive
+
+    data_root = tmp_path / "site" / "data"
+    data_root.mkdir(parents=True)
+    (data_root / "old.json").write_text("old", encoding="utf-8")
+    manifest_bytes = b'{"status":"ready","release_id":"release-current"}'
+
+    def fake_archive(_command, **kwargs):
+        archive_bytes = io.BytesIO()
+        with tarfile.open(fileobj=archive_bytes, mode="w:") as archive:
+            parent = tarfile.TarInfo("site/")
+            parent.type = tarfile.DIRTYPE
+            archive.addfile(parent)
+            data = tarfile.TarInfo("site/data/")
+            data.type = tarfile.DIRTYPE
+            archive.addfile(data)
+            manifest = tarfile.TarInfo("site/data/release-manifest.json")
+            manifest.size = len(manifest_bytes)
+            archive.addfile(manifest, io.BytesIO(manifest_bytes))
+        kwargs["stdout"].write(archive_bytes.getvalue())
+        return SimpleNamespace(returncode=0, stderr=b"")
+
+    monkeypatch.setattr("src.pages_release.subprocess.run", fake_archive)
+
+    assert _restore_archive(tmp_path, "a" * 40, timeout_seconds=5) is True
+    assert (data_root / "release-manifest.json").read_bytes() == manifest_bytes
+    assert not (data_root / "old.json").exists()
+
+
 def test_pages_workflow_preserves_previous_release_when_no_candidate_is_valid():
     workflow = (
         Path(__file__).resolve().parents[1] / ".github" / "workflows" / "deploy-pages.yml"

@@ -107,20 +107,25 @@ def _restore_archive(
                 root_resolved = root.resolve()
                 members = archive.getmembers()
                 manifest_found = False
+                seen_members: set[str] = set()
                 for member in members:
                     remaining()
                     member_path = PurePosixPath(member.name)
+                    normalized_name = member.name.rstrip("/")
+                    archive_parent = normalized_name == "site" and member.isdir() and member.size == 0
                     if (
                         member_path.is_absolute()
                         or ".." in member_path.parts
                         or "\\" in member.name
-                        or member_path.parts[:2] != ("site", "data")
+                        or (member_path.parts[:2] != ("site", "data") and not archive_parent)
                         or not (member.isfile() or member.isdir())
+                        or normalized_name in seen_members
                     ):
                         raise PagesReleaseError(
                             "data-release archive contains an unsafe member"
                         )
-                    target = (root / member.name).resolve()
+                    seen_members.add(normalized_name)
+                    target = (root / normalized_name).resolve()
                     if not target.is_relative_to(root_resolved):
                         raise PagesReleaseError(
                             "data-release archive escapes checkout"
@@ -135,7 +140,26 @@ def _restore_archive(
                 _clear_data(root)
                 for member in members:
                     remaining()
-                    archive.extract(member, root)
+                    target = root / member.name.rstrip("/")
+                    if member.isdir():
+                        # Git archives may encode an empty parent directory with
+                        # mode 0644.  Applying that mode prevents extraction of
+                        # its children; archive permissions are not needed for
+                        # public JSON data, so restore directories as traversable.
+                        target.mkdir(parents=True, exist_ok=True)
+                        target.chmod(0o755)
+                        continue
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    source = archive.extractfile(member)
+                    if source is None:
+                        raise PagesReleaseError(
+                            "data-release archive file content is unavailable"
+                        )
+                    with source, target.open("wb") as restored:
+                        shutil.copyfileobj(source, restored)
+                    # The immutable data release contains public data files,
+                    # never executables. Do not honor archive special bits.
+                    target.chmod(0o644)
                 remaining()
     except subprocess.TimeoutExpired as exc:
         raise PagesReleaseError("pages_release_archive_timeout") from exc

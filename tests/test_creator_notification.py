@@ -80,6 +80,41 @@ def test_creator_photo_success_returns_lineage_receipt(tmp_path: Path, monkeypat
     assert result["receipts"][0]["recipient_hash"] == "7a30574fc065a0a7"
 
 
+def test_creator_ambiguous_photo_result_never_falls_back_to_text(tmp_path: Path, monkeypatch) -> None:
+    _enable_test_creator_lane(monkeypatch)
+    image = tmp_path / "summary.png"
+    image.write_bytes(b"png")
+    text_calls: list[dict] = []
+
+    def fake_photo(**_kwargs):
+        return (type("Receipt", (), {
+            "status": "delivery_unknown", "message_id": None,
+            "telegram_file_id_hash": None, "error_class": "delivery_unknown",
+        })(),)
+
+    def fake_text(**kwargs):
+        text_calls.append(kwargs)
+        return (TelegramDelivery("8869592162", TelegramResult(45)),)
+
+    result = deliver_creator_episode(
+        INSIGHT,
+        release_id="release-1",
+        creator_snapshot_id="creator-1",
+        mini_app_url="https://example.test/app",
+        release_ready=True,
+        token="token",
+        chat_ids=("8869592162",),
+        media_path=image,
+        photo_sender=fake_photo,
+        text_sender=fake_text,
+    )
+
+    assert result["status"] == "delivery_unknown"
+    assert result["receipts"][0]["delivery_status"] == "failed"
+    assert result["receipts"][0]["error_class"] == "delivery_unknown"
+    assert text_calls == []
+
+
 def test_creator_delivery_is_idempotent_across_delivery_status(monkeypatch) -> None:
     _enable_test_creator_lane(monkeypatch)
     result = deliver_creator_episode(

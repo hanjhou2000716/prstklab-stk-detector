@@ -38,6 +38,8 @@ def test_notify_workflow_uses_the_fixed_editor_for_controlled_smoke_test():
     assert "secrets.TELEGRAM_CHAT_IDS" not in workflow
     assert "photo_test:" in workflow
     assert "fixed editor channel" in workflow
+    assert "TELEGRAM_DELIVERY_GUARD_REQUIRED: \"true\"" in workflow
+    assert "Persist controlled Telegram delivery receipt" in workflow
 
 
 def test_scheduled_production_workflow_installs_renderer_browser():
@@ -59,6 +61,7 @@ def test_manual_scheduled_delivery_uses_subscription_source():
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scheduled-brief.yml").read_text(encoding="utf-8")
     assert "test_chat_id:" not in workflow
     assert 'TELEGRAM_SUBSCRIPTIONS_ENABLED: "true"' in workflow
+    assert 'TELEGRAM_DELIVERY_GUARD_REQUIRED: "true"' in workflow
     assert "FAILED_RECIPIENT_HASHES: ${{ steps.send_brief.outputs.failed_recipient_hashes }}" in workflow
     assert "FAILED_COUNT: ${{ steps.send_brief.outputs.failed_count || '0' }}" in workflow
 
