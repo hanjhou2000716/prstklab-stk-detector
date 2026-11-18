@@ -5,8 +5,8 @@ import json
 import time
 import zipfile
 from datetime import UTC, datetime, timedelta
-from urllib.error import HTTPError
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.parse import parse_qs, urlencode, urlsplit
 
 import pytest
