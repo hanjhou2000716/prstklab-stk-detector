@@ -1,10 +1,7 @@
 name: Incident notification outlet
 
 on:
-  workflow_run:
-    workflows:
-      - Central incident reconciliation
-    types: [completed]
+  # One check per Taipei half-hour window; central polling owns source discovery.
   schedule:
     - cron: "0,30 * * * *"
   workflow_dispatch:
@@ -20,11 +17,7 @@ concurrency:
 
 jobs:
   notify:
-    if: >-
-      vars.INCIDENT_OPS_MODE != 'live' &&
-      (github.event_name != 'workflow_run' ||
-      (github.event.workflow_run.head_branch == 'main' &&
-      github.event.workflow_run.head_repository.full_name == github.repository))
+    if: vars.INCIDENT_OPS_MODE != 'live'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

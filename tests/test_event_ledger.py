@@ -162,17 +162,19 @@ def test_legacy_invalid_provenance_is_quarantined_without_losing_event_or_claim_
         "source_url": "https://trusted.example/item",
     }
     event_key = canonical_event_key(valid_event)
+    observed_at = datetime.now(UTC).replace(microsecond=0)
+    earlier_at = observed_at - timedelta(minutes=5)
     record = {
         "canonical_key": event_key,
         "event_type": "official",
         "source_url": "FinancialJuice",
         "source_domain": "FinancialJuice",
         "verified_sources": ["FinancialJuice", "http://unsafe.example/item"],
-        "first_discovered_at": "2026-10-20T10:00:00+00:00",
-        "last_reminded_at": "2026-10-20T10:05:00+00:00",
-        "updated_at": "2026-10-20T10:05:00+00:00",
+        "first_discovered_at": earlier_at.isoformat(),
+        "last_reminded_at": observed_at.isoformat(),
+        "updated_at": observed_at.isoformat(),
         "last_title": "Persisted event",
-        "delivery_history": [{"trace_id": "receipt-1", "sent_at": "2026-10-20T10:05:00+00:00"}],
+        "delivery_history": [{"trace_id": "receipt-1", "sent_at": observed_at.isoformat()}],
     }
     claim = {
         "notification_key": "notification-1",

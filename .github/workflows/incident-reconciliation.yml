@@ -1,17 +1,8 @@
 name: Central incident reconciliation
 
 on:
-  workflow_run:
-    workflows:
-      - Scheduled market brief
-      - Scheduled brief slot receipt audit
-      - Official macro and price monitor
-      - Unified Taiwan-US research report
-      # Gmail sync starts the official monitor with GITHUB_TOKEN. Waking on
-      # sync completion lets the reconciler observe that child run even when
-      # its workflow_run event is suppressed by GitHub's token rules.
-      - Gmail history sync (Supabase)
-    types: [completed]
+  # Poll all supported sources on a fixed cadence instead of waking once for
+  # every upstream completion (which creates duplicate failure-mail fanout).
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:
@@ -28,10 +19,6 @@ concurrency:
 
 jobs:
   reconcile:
-    if: >-
-      github.event_name != 'workflow_run' ||
-      (github.event.workflow_run.head_branch == 'main' &&
-      github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
