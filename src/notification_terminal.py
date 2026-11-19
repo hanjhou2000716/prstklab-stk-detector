@@ -188,6 +188,9 @@ def _result(
         "failure": failure,
         "no_resend": no_resend,
         "durable_receipt_verified": _flag(values, "DURABLE_RECEIPT_VERIFIED"),
+        "delivery_mode": _text(values, "DELIVERY_MODE", "text") or "text",
+        "public_release_verified": _flag(values, "PUBLIC_RELEASE_VERIFIED"),
+        "unknown_count": _count(values, "UNKNOWN_COUNT"),
         "reconciliation": _reconciliation_evidence(values),
         "release_evidence": {
             "build": _release_result_evidence(
@@ -643,6 +646,45 @@ def evaluate_scheduled_terminal(values: Mapping[str, str]) -> dict[str, Any]:
             values, "scheduled", status="failed", reason="prepared_release_not_current",
             expected=True, failure=True,
         )
+    if _text(values, "DELIVERY_MODE") == "local_prepared_snapshot_no_pages":
+        delivered = _count(values, "DELIVERED_COUNT") or 0
+        failed = _count(values, "FAILED_COUNT")
+        unknown = _count(values, "UNKNOWN_COUNT") or 0
+        no_resend = _flag(values, "SEND_SENT") or delivered > 0 or unknown > 0
+        local_receipt_ok = (
+            _text(values, "SEND_OUTCOME") == "success"
+            and send_status == "ready"
+            and _text(values, "DELIVERY_STATUS") == "delivered"
+            and delivered >= 1
+            and failed == 0
+            and _flag(values, "DURABLE_RECEIPT_VERIFIED")
+            and not _flag(values, "PUBLIC_RELEASE_VERIFIED")
+            and (
+                not _flag(values, "RECEIPT_ENDPOINT_CONFIGURED")
+                or _text(values, "RECEIPT_CALLBACK_OUTCOME") == "success"
+            )
+        )
+        if not local_receipt_ok:
+            callback_missing = (
+                _flag(values, "RECEIPT_ENDPOINT_CONFIGURED")
+                and _text(values, "RECEIPT_CALLBACK_OUTCOME") != "success"
+            )
+            return _result(
+                values, "scheduled",
+                status="delivered_reconciliation_incomplete" if no_resend else "failed",
+                reason=(
+                    "local_snapshot_receipt_callback_failed_do_not_resend"
+                    if callback_missing else
+                    "local_snapshot_delivery_or_durable_receipt_unverified_do_not_resend"
+                    if no_resend else "local_snapshot_delivery_failed"
+                ),
+                expected=True, failure=True, no_resend=no_resend,
+            )
+        return _result(
+            values, "scheduled", status="delivered_local_snapshot_pages_pending",
+            reason="telegram_recipients_and_durable_receipts_verified_pages_pending",
+            expected=True, failure=False, no_resend=True,
+        )
     if _text(values, "PAGES_DEPLOYMENT_AVAILABLE") != "true":
         return _result(
             values, "scheduled", status="failed",
@@ -787,6 +829,7 @@ def append_summary(path: str, terminal: Mapping[str, Any]) -> None:
         f"- delivered / failed recipients: {terminal.get('delivered_count', 'unknown')} / {terminal.get('failed_count', 'unknown')}\n",
         f"- no_resend: {str(bool(terminal.get('no_resend'))).lower()}\n",
         f"- durable_receipt_verified: {str(bool(terminal.get('durable_receipt_verified'))).lower()}\n",
+        f"- delivery_mode / public_release_verified / unknown_count: {terminal.get('delivery_mode', 'text')} / {str(bool(terminal.get('public_release_verified'))).lower()} / {terminal.get('unknown_count') if terminal.get('unknown_count') is not None else 'unknown'}\n",
         f"- release build / pre-delivery gate / post-delivery gate evidence: "
         f"{terminal.get('release_evidence', {}).get('build', {}).get('status', 'unknown')} / "
         f"{terminal.get('release_evidence', {}).get('pre_delivery_gate', {}).get('status', 'unknown')} / "

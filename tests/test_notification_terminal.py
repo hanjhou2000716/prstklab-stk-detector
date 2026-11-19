@@ -319,6 +319,73 @@ def test_scheduled_delivery_requires_receipt_and_public_reconciliation() -> None
     assert partial["no_resend"] is True
 
 
+
+
+def test_scheduled_local_snapshot_delivery_is_accepted_only_with_durable_receipts() -> None:
+    result = evaluate_scheduled_terminal(scheduled(
+        DELIVERY_MODE="local_prepared_snapshot_no_pages",
+        PUBLIC_RELEASE_VERIFIED="false",
+        PAGES_DEPLOYMENT_AVAILABLE="false",
+        GATE_ALLOWED="false",
+        SEND_SENT="true",
+        DELIVERY_STATUS="delivered",
+        DELIVERED_COUNT="2",
+        FAILED_COUNT="0",
+        DURABLE_RECEIPT_VERIFIED="true",
+        LEDGER_PERSIST_OUTCOME="skipped",
+        RECONCILED_DEPLOYMENT_VERIFIED="false",
+        RECONCILED_GATE_ALLOWED="false",
+        RECEIPT_CALLBACK_OUTCOME="success",
+    ))
+
+    assert result["status"] == "delivered_local_snapshot_pages_pending"
+    assert result["expected"] is True
+    assert result["failure"] is False
+    assert result["no_resend"] is True
+    assert result["delivery_mode"] == "local_prepared_snapshot_no_pages"
+    assert result["public_release_verified"] is False
+
+
+def test_scheduled_local_snapshot_uncertainty_is_never_blindly_retried() -> None:
+    result = evaluate_scheduled_terminal(scheduled(
+        DELIVERY_MODE="local_prepared_snapshot_no_pages",
+        PUBLIC_RELEASE_VERIFIED="false",
+        PAGES_DEPLOYMENT_AVAILABLE="false",
+        GATE_ALLOWED="false",
+        SEND_SENT="false",
+        DELIVERY_STATUS="delivery_unknown",
+        DELIVERED_COUNT="0",
+        FAILED_COUNT="1",
+        UNKNOWN_COUNT="1",
+        DURABLE_RECEIPT_VERIFIED="false",
+        LEDGER_PERSIST_OUTCOME="skipped",
+    ))
+
+    assert result["status"] == "delivered_reconciliation_incomplete"
+    assert result["failure"] is True
+    assert result["no_resend"] is True
+    assert result["unknown_count"] == 1
+
+
+def test_scheduled_local_snapshot_requires_receipt_callback_when_configured() -> None:
+    result = evaluate_scheduled_terminal(scheduled(
+        DELIVERY_MODE="local_prepared_snapshot_no_pages",
+        PUBLIC_RELEASE_VERIFIED="false",
+        PAGES_DEPLOYMENT_AVAILABLE="false",
+        GATE_ALLOWED="false",
+        SEND_SENT="true",
+        DELIVERY_STATUS="delivered",
+        DELIVERED_COUNT="2",
+        FAILED_COUNT="0",
+        DURABLE_RECEIPT_VERIFIED="true",
+        RECEIPT_ENDPOINT_CONFIGURED="true",
+        RECEIPT_CALLBACK_OUTCOME="failure",
+    ))
+
+    assert result["status"] == "delivered_reconciliation_incomplete"
+    assert result["failure"] is True
+    assert result["no_resend"] is True
+
 def test_scheduled_verified_original_release_keeps_delivery_success_while_sync_is_pending() -> None:
     result = evaluate_scheduled_terminal(scheduled(
         RECONCILED_GATE_PUBLIC_SYNC_PENDING="true",

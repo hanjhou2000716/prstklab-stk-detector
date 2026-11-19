@@ -1494,6 +1494,165 @@ def test_prepare_keeps_local_fallback_when_railway_export_fails(tmp_path, monkey
 
 
 
+
+def _routine_report_briefing():
+    return {
+        "scheduled_report": True,
+        "notification_eligible": False,
+        "market_scope_key": "taiwan",
+        "digest_status": "ready",
+        "data_gap_status": "partial",
+        "public_short_message": "📊 台股盤前｜加權指數收盤走低",
+        "briefing_id": "routine-brief-1",
+        "schedule_decision": {
+            "delivery_obligation": "report_required",
+            "notification_requested": False,
+        },
+        "slot_context": {
+            "scheduled_slot": "morning",
+            "effective_slot": "pre_open",
+            "slot_date": "2026-11-19",
+            "scheduled_for_at": "2026-11-19T08:45:00+08:00",
+            "delivery_intent": "routine_report",
+        },
+        "market_assessment": {
+            "market_scope_key": "taiwan",
+            "market_scope": "taiwan",
+        },
+        "primary_theme": {},
+    }
+
+
+def test_mandatory_routine_report_is_projected_without_a_breaking_alert():
+    event = _briefing_delivery_event({"briefing": _routine_report_briefing()}, "pre_open")
+
+    assert event is not None
+    assert event["routine_report"] is True
+    assert event["notification_status"] == "routine_report"
+
+
+def test_routine_report_uses_local_snapshot_when_pages_is_unavailable(
+    tmp_path, monkeypatch,
+):
+    snapshot_path = tmp_path / "market.json"
+    manifest_path = tmp_path / "release-manifest.json"
+    output = tmp_path / "output"
+    _patch_ready(monkeypatch, output)
+    snapshot_path.write_text(json.dumps({
+        "snapshot_id": "market-12345678",
+        "quotes": [],
+        "indices": [],
+        "briefing": _routine_report_briefing(),
+    }), encoding="utf-8")
+    manifest_path.write_text("{}", encoding="utf-8")
+    monkeypatch.setenv("TELEGRAM_DELIVERY_GUARD_REQUIRED", "true")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "hanjhou2000716/prstklab-stk-detector")
+    monkeypatch.setenv("GITHUB_RUN_ID", "12345")
+    monkeypatch.setattr(
+        scheduled_delivery, "_scheduled_send_window",
+        lambda *_args: (True, "within_delivery_window"),
+    )
+    monkeypatch.setattr(
+        scheduled_delivery, "event_source_url",
+        lambda _event: "https://example.test/original",
+    )
+    monkeypatch.setattr(scheduled_delivery, "write_event_lock_key", lambda *_args: None)
+
+    gate_calls = []
+    def gate(**kwargs):
+        gate_calls.append(kwargs)
+        if kwargs.get("public_url"):
+            return ReleaseGateResult(
+                False, release_id="release-local", snapshot_id="market-12345678",
+                errors=("Pages is temporarily unavailable",), error_category="pages_unavailable",
+            )
+        return ReleaseGateResult(
+            True, release_id="release-local", snapshot_id="market-12345678",
+            manifest={"release_id": "release-local"},
+        )
+    monkeypatch.setattr(scheduled_delivery, "verify_release_for_delivery", gate)
+
+    class FakeLedger:
+        def delivery_history(self):
+            return []
+        def claim_scheduled_brief(self, *_args, **_kwargs):
+            return {
+                "status": "claimed",
+                "notification_key": "scheduled-anchor:taiwan:2026-11-19:morning",
+                "pending_recipient_hashes": [],
+            }
+        def complete_notification_claim(self, *_args, **_kwargs):
+            return None
+        def record_delivery(self, payload, **_kwargs):
+            return payload
+        def save(self):
+            return None
+    monkeypatch.setattr(scheduled_delivery, "EventLedger", FakeLedger)
+
+    captured = {}
+    def sender(**kwargs):
+        captured.update(kwargs)
+        return (TextDeliveryReceipt(
+            kwargs["alert_id"], kwargs["release_id"], kwargs["snapshot_id"],
+            "recipient-hash", "delivered", message_id=9,
+            observation_id=kwargs.get("observation_id", ""),
+        ),)
+    monkeypatch.setattr(scheduled_delivery, "send_text_briefs_audited", sender)
+
+    scheduled_delivery.send(
+        snapshot_path, "pre_open", manifest_path,
+        public_url="https://example.test/pages",
+        allow_local_snapshot_fallback=True,
+        deployment_identity_verified=False,
+    )
+
+    text = output.read_text(encoding="utf-8")
+    assert len(gate_calls) == 2
+    assert gate_calls[1]["public_url"] is None
+    assert captured["target_url"] is None
+    assert captured["include_dashboard_button"] is False
+    assert "sent=true" in text
+    assert "delivery_mode=local_prepared_snapshot_no_pages" in text
+    assert "public_release_verified=false" in text
+    assert "durable_receipt_verified=true" in text
+
+
+def test_local_snapshot_fallback_fails_closed_on_identity_mismatch(
+    tmp_path, monkeypatch,
+):
+    snapshot_path = tmp_path / "market.json"
+    manifest_path = tmp_path / "release-manifest.json"
+    output = tmp_path / "output"
+    _patch_ready(monkeypatch, output)
+    snapshot_path.write_text(json.dumps({
+        "snapshot_id": "market-12345678", "quotes": [], "indices": [],
+        "briefing": _routine_report_briefing(),
+    }), encoding="utf-8")
+    manifest_path.write_text("{}", encoding="utf-8")
+    gate_calls = []
+    monkeypatch.setattr(
+        scheduled_delivery, "_scheduled_send_window",
+        lambda *_args: (True, "within_delivery_window"),
+    )
+    monkeypatch.setattr(scheduled_delivery, "verify_release_for_delivery", lambda **kwargs: (
+        gate_calls.append(kwargs) or ReleaseGateResult(
+            False, release_id="release-other", snapshot_id="market-12345678",
+            errors=("release identity mismatch",), error_category="contract_mismatch",
+        )
+    ))
+    monkeypatch.setattr(
+        scheduled_delivery, "send_text_briefs_audited",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("must fail closed")),
+    )
+
+    scheduled_delivery.send(
+        snapshot_path, "pre_open", manifest_path,
+        public_url="https://example.test/pages", allow_local_snapshot_fallback=True,
+    )
+
+    assert len(gate_calls) == 1
+    assert "sent=false" in output.read_text(encoding="utf-8")
+
 def test_delayed_brief_event_anchor_keeps_the_original_scheduled_slot():
     event = scheduled_delivery._briefing_delivery_event(
         {
