@@ -17,6 +17,20 @@ def _run(run_id: int, created_at: datetime, *, status: str = "queued") -> dict[s
     }
 
 
+def _issue_search_response(rows: list[dict[str, object]]) -> dict[str, object]:
+    items = []
+    for row in rows:
+        item: dict[str, object] = {
+            "repository_url": "https://api.github.com/repos/owner/repo",
+            "url": f"https://api.github.com/repos/owner/repo/issues/{row['number']}",
+            "state": "open",
+            "body": None,
+        }
+        item.update(row)
+        items.append(item)
+    return {"total_count": len(items), "incomplete_results": False, "items": items}
+
+
 def test_github_get_404_retries_within_bound_then_succeeds(monkeypatch):
     calls = 0
     delays: list[float] = []
@@ -110,6 +124,102 @@ def test_github_non_get_404_is_not_retried_or_handed_off(monkeypatch):
     assert captured.value.handoff_to_health is False
 
 
+
+def test_github_get_504_retries_with_short_bounded_backoff(monkeypatch):
+    calls = 0
+    delays: list[float] = []
+
+    class Response:
+        headers = {}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self, _limit):
+            return b'{"ok":true}'
+
+    def open_url(request, *, timeout):
+        nonlocal calls
+        calls += 1
+        assert timeout > 0
+        if calls == 1:
+            raise HTTPError(request.full_url, 504, "gateway timeout", {}, io.BytesIO())
+        return Response()
+
+    monkeypatch.setattr(monitor_liveness, "urlopen", open_url)
+    monkeypatch.setattr(monitor_liveness.time, "sleep", delays.append)
+    result = monitor_liveness._request_json(
+        "https://api.github.com", "owner/repo", "secret", "GET",
+        "actions/runs/123/jobs",
+    )
+    assert result == {"ok": True}
+    assert calls == 2
+    assert delays == [0.25]
+
+
+def test_github_get_timeout_retries_once_then_succeeds(monkeypatch):
+    calls = 0
+    delays: list[float] = []
+
+    class Response:
+        headers = {}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self, _limit):
+            return b'{"ok":true}'
+
+    def open_url(_request, *, timeout):
+        nonlocal calls
+        calls += 1
+        assert timeout > 0
+        if calls == 1:
+            raise TimeoutError("private transport detail")
+        return Response()
+
+    monkeypatch.setattr(monitor_liveness, "urlopen", open_url)
+    monkeypatch.setattr(monitor_liveness.time, "sleep", delays.append)
+    assert monitor_liveness._request_json(
+        "https://api.github.com", "owner/repo", "secret", "GET", "issues?state=open",
+    ) == {"ok": True}
+    assert calls == 2
+    assert delays == [0.25]
+
+
+def test_github_get_403_is_not_retried_and_diagnostic_is_sanitized(monkeypatch):
+    calls = 0
+
+    def open_url(request, *, timeout):
+        nonlocal calls
+        calls += 1
+        raise HTTPError(
+            request.full_url, 403, "private response body",
+            {"X-GitHub-Request-Id": "ABC:123"}, io.BytesIO(b"secret body"),
+        )
+
+    monkeypatch.setattr(monitor_liveness, "urlopen", open_url)
+    with pytest.raises(monitor_liveness.GitHubAPIHttpError) as captured:
+        monitor_liveness._request_json(
+            "https://api.github.com", "owner/repo", "secret", "GET",
+            "search/issues?q=private-query",
+        )
+    assert calls == 1
+    diagnostic = captured.value.diagnostic()
+    assert diagnostic["http_status"] == 403
+    assert diagnostic["request_id"] == "ABC:123"
+    assert diagnostic["endpoint_class"] == "search/issues"
+    assert "private-query" not in repr(diagnostic)
+    assert "secret" not in repr(diagnostic)
+    assert "private response body" not in repr(diagnostic)
+
+
 def test_unstarted_job_with_populated_started_at_opens_one_incident(monkeypatch):
     now = datetime(2026, 10, 13, 5, 0, tzinfo=UTC)
     run = _run(1234, now - timedelta(minutes=16))
@@ -130,8 +240,8 @@ def test_unstarted_job_with_populated_started_at_opens_one_incident(monkeypatch)
                     "steps": [],
                 }],
             }
-        if path.startswith("issues?"):
-            return []
+        if "/search/issues?" in path:
+            return _issue_search_response([])
         if path == "issues":
             return {"number": 77, "title": f"{monitor_liveness.ISSUE_TITLE_PREFIX} / main"}
         raise AssertionError(path)
@@ -166,8 +276,8 @@ def test_existing_incident_is_not_reopened_or_duplicated(monkeypatch):
             return {"workflow_runs": [run]}
         if path.startswith("actions/runs/5678/jobs?"):
             return {"total_count": 1, "jobs": [{"name": "monitor-send-deploy", "steps": []}]}
-        if path.startswith("issues?"):
-            return [opened_issue]
+        if "/search/issues?" in path:
+            return _issue_search_response([opened_issue])
         raise AssertionError((method, path, payload))
 
     monkeypatch.setattr(monitor_liveness, "_request_json", request)
@@ -179,7 +289,7 @@ def test_existing_incident_is_not_reopened_or_duplicated(monkeypatch):
     assert result["incident_opened"] is False
     assert result["incident_key"] == monitor_liveness.INCIDENT_KEY
     assert result["stalled_run_id"] == 5678
-    assert "issues" not in called_paths
+    assert not any(path.endswith("/issues?state=open") for path in called_paths)
 
 
 def test_real_monitor_step_start_closes_open_incident(monkeypatch):
@@ -205,8 +315,8 @@ def test_real_monitor_step_start_closes_open_incident(monkeypatch):
                     "steps": [{"name": "Checkout", "started_at": (now - timedelta(minutes=2)).isoformat()}],
                 }],
             }
-        if path.startswith("issues?"):
-            return [open_issue]
+        if "/search/issues?" in path:
+            return _issue_search_response([open_issue])
         if path == "issues/77":
             return {"number": 77, "state": "closed"}
         if path == "issues/77/comments":
@@ -299,8 +409,8 @@ def test_liveness_inspects_all_recent_runs_across_more_than_two_pages(monkeypatc
                 "name": "monitor-send-deploy", "status": "in_progress", "runner_id": 7,
                 "steps": [{"name": "Checkout", "started_at": reference.isoformat()}],
             }]}
-        if path.startswith("issues?"):
-            return []
+        if "/search/issues?" in path:
+            return _issue_search_response([])
         raise AssertionError((method, path, payload))
 
     monkeypatch.setattr(monitor_liveness, "_request_json", request)
@@ -381,8 +491,8 @@ def test_existing_incident_is_reminded_after_thirty_minutes(monkeypatch):
             return {"workflow_runs": [run]}
         if path.startswith("actions/runs/5678/jobs?"):
             return {"total_count": 1, "jobs": [{"name": "monitor-send-deploy", "steps": []}]}
-        if path.startswith("issues?"):
-            return [issue]
+        if "/search/issues?" in path:
+            return _issue_search_response([issue])
         if method == "PATCH" and path == "issues/77":
             updates.append(payload)
             return {"number": 77}
@@ -417,8 +527,8 @@ def test_liveness_audit_error_is_deduplicated_in_issue_without_failing_the_workf
 
     def request(_api, _repo, _token, method, path, payload=None, *, response_headers=None, deadline_monotonic=None):
         calls.append((method, path, payload))
-        if path.startswith("issues?"):
-            return []
+        if "/search/issues?" in path:
+            return _issue_search_response([])
         if method == "POST" and path == "issues":
             return {"number": 91, "title": f"{monitor_liveness.AUDIT_ISSUE_TITLE_PREFIX} / main"}
         raise AssertionError((method, path, payload))
@@ -458,8 +568,8 @@ def test_repeated_liveness_audit_error_respects_thirty_minute_reminder(monkeypat
 
     def request(_api, _repo, _token, method, path, payload=None, *, response_headers=None, deadline_monotonic=None):
         calls.append((method, path))
-        if path.startswith("issues?"):
-            return [issue]
+        if "/search/issues?" in path:
+            return _issue_search_response([issue])
         raise AssertionError((method, path, payload))
 
     monkeypatch.setattr(monitor_liveness, "_request_json", request)
@@ -471,7 +581,7 @@ def test_repeated_liveness_audit_error_respects_thirty_minute_reminder(monkeypat
     assert result["reminder_sent"] is False
     assert len(calls) == 1
     assert calls[0][0] == "GET"
-    assert calls[0][1].startswith("issues?")
+    assert "/search/issues?" in calls[0][1]
 
 
 def test_central_audit_failure_keeps_reminder_due_until_alert_terminal(monkeypatch):
@@ -567,7 +677,7 @@ def test_open_incidents_includes_central_reconciliation_degraded_issue(monkeypat
         "body": "central-incident-health=c97f7498d72d4cd0e1a434bf3e43c8b5",
     }
     monkeypatch.setenv("GITHUB_REPOSITORY_ID", "1309835643")
-    monkeypatch.setattr(monitor_liveness, "read_open_issues", lambda **_kwargs: [issue])
+    monkeypatch.setattr(monitor_liveness, "read_open_issues_by_title_prefixes", lambda **_kwargs: [issue])
 
     rows = monitor_liveness._open_incidents(
         "https://api.github.com",

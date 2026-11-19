@@ -104,8 +104,11 @@ def test_gmail_history_dispatches_realtime_monitor_after_new_reviewed_rows():
     dispatcher = (root / "scripts" / "official_monitor_dispatch.py").read_text(encoding="utf-8")
     assert "scripts/official_monitor_dispatch.py" in workflow
     assert "gmail-reviewed-observation-or-recovery" in dispatcher
-    assert "scheduled_monitor_poll" in dispatcher
-    assert "repository_dispatch_monitor_poll" in dispatcher
+    assert "gmail-reviewed-observation-or-recovery" in dispatcher
+    assert "gmail-durable-recovery-pending" in dispatcher
+    assert "monitor_schedule_covers_poll" in dispatcher
+    assert "scheduled_monitor_poll" not in dispatcher
+    assert "repository_dispatch_monitor_poll" not in dispatcher
 
 
 def test_worker_deploy_publishes_revision_for_health_reconciliation():

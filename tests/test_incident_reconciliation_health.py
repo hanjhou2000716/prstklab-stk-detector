@@ -434,13 +434,15 @@ def test_health_workflow_delegates_notifications_to_single_outlet():
 
     root = Path(__file__).parents[1]
     workflow = (root / ".github/workflows/incident-reconciliation-health.yml").read_text(encoding="utf-8")
-    assert 'cron: "*/5 * * * *"' in workflow
+    assert 'cron: "*/5 * * * *"' not in workflow
     assert "Central incident reconciliation" in workflow
     assert "prstk-central-incident-health" in workflow
     assert "steps.inspect.outputs.notification_due == 'true'" not in workflow
     assert "native_alert" not in workflow
     outlet = (root / ".github/workflows/incident-notification-outlet.yml").read_text(encoding="utf-8")
-    assert "Central incident reconciliation health" in outlet
+    assert 'cron: "0,30 * * * *"' in outlet
+    assert "Central incident reconciliation health" not in outlet
+    assert "Central incident reconciliation" in outlet
     assert "steps.prepare.outputs.notification_due == 'true'" in outlet
     assert "Record due notification without manufacturing a failed run" in outlet
     assert "did not send or confirm email" in outlet
@@ -451,6 +453,16 @@ def test_health_workflow_delegates_notifications_to_single_outlet():
     assert "TRIGGERED_CENTRAL_RUN_ID" in workflow
     assert "TRIGGERED_CENTRAL_RUN_ATTEMPT" in workflow
     assert "TRIGGERED_CENTRAL_RUN_SHA" in workflow
+
+
+def test_central_workflow_gates_handoff_on_live_mode_and_records_shadow():
+    from pathlib import Path
+
+    root = Path(__file__).parents[1]
+    workflow = (root / ".github/workflows/incident-reconciliation.yml").read_text(encoding="utf-8")
+    assert "steps.upload_result.outcome == 'success' && vars.INCIDENT_OPS_MODE == 'live'" in workflow
+    assert "Shadow mode: evidence preserved; no notification sent or delivery claimed." in workflow
+    assert "Reject an unsupported incident coordinator mode" in workflow
 
 
 def test_health_marker_is_accepted_by_shared_cadence_contract():
