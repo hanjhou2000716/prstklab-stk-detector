@@ -1342,7 +1342,17 @@ class EventLedger:
             claim = dict(claims.get(claim_key) or {})
 
             if str(claim.get("status") or "") == "delivered":
-                return {"status": "already_delivered", "notification_key": claim_key, "pending_recipient_hashes": []}
+                delivered = {
+                    str(item) for item in claim.get("delivered_recipient_hashes") or [] if str(item)
+                }
+                if set(recipients).issubset(delivered):
+                    return {
+                        "status": "already_delivered",
+                        "notification_key": claim_key,
+                        "pending_recipient_hashes": [],
+                        "recipient_hashes": list(claim.get("recipient_hashes") or []),
+                        "delivered_recipient_hashes": sorted(delivered),
+                    }
             lease_until = self._timestamp(claim.get("lease_until"))
             if str(claim.get("status") or "") == "uncertain":
                 return {"status": "uncertain", "notification_key": claim_key, "pending_recipient_hashes": []}
@@ -1359,8 +1369,36 @@ class EventLedger:
                 item for item in claims.values()
                 if isinstance(item, dict) and str(item.get("slot_key") or "") in legacy_aliases
             ]
-            if any(str(item.get("status") or "") == "delivered" for item in legacy_claims):
-                return {"status": "already_delivered", "notification_key": claim_key, "pending_recipient_hashes": []}
+            legacy_delivered_claims = [
+                item for item in legacy_claims if str(item.get("status") or "") == "delivered"
+            ]
+            legacy_delivered = {
+                str(recipient)
+                for item in legacy_delivered_claims
+                for recipient in item.get("delivered_recipient_hashes") or []
+                if str(recipient)
+            }
+            legacy_configured = {
+                str(recipient)
+                for item in legacy_delivered_claims
+                for recipient in item.get("recipient_hashes") or []
+                if str(recipient)
+            }
+            if legacy_delivered_claims and set(recipients).issubset(legacy_delivered):
+                return {
+                    "status": "already_delivered",
+                    "notification_key": claim_key,
+                    "pending_recipient_hashes": [],
+                    "recipient_hashes": sorted(legacy_configured),
+                    "delivered_recipient_hashes": sorted(legacy_delivered),
+                }
+            if legacy_delivered:
+                claim["recipient_hashes"] = sorted(
+                    set(claim.get("recipient_hashes") or []) | legacy_configured | set(recipients)
+                )
+                claim["delivered_recipient_hashes"] = sorted(
+                    set(claim.get("delivered_recipient_hashes") or []) | legacy_delivered
+                )
 
             latest_key, latest = self._latest_scheduled_claim(claims, market, exclude=claim_key)
             if latest is not None:
@@ -1388,7 +1426,13 @@ class EventLedger:
                     }
 
             delivered = set(str(item) for item in claim.get("delivered_recipient_hashes") or [] if str(item))
-            configured = tuple(dict.fromkeys(str(item) for item in (claim.get("recipient_hashes") or []) + list(recipients) if str(item)))
+            configured = tuple(
+                dict.fromkeys(
+                    str(item)
+                    for item in (claim.get("recipient_hashes") or []) + list(recipients)
+                    if str(item)
+                )
+            )
             pending = [item for item in configured if item not in delivered]
             if not configured:
                 configured = recipients
@@ -1402,7 +1446,9 @@ class EventLedger:
                 "decision_fingerprint": fingerprint,
                 "evidence_fingerprint": str(evidence_fingerprint or "").strip(),
                 "delivery_policy": policy,
-                "material_changes": list(dict.fromkeys(str(item) for item in material_changes if str(item).strip())),
+                "material_changes": list(
+                    dict.fromkeys(str(item) for item in material_changes if str(item).strip())
+                ),
                 "delivery_eligible": True,
                 "suppression_reason": "",
                 "status": "in_flight",
@@ -1414,14 +1460,26 @@ class EventLedger:
                 "run_id_hash": hashlib.sha256(str(run_id).encode("utf-8")).hexdigest()[:12] if run_id else "",
                 "updated_at": now_iso,
             }
-            self._write_payload_locked({**self._payload_metadata(payload), "schema_version": 1, "events": records, "delivery_claims": claims})
+            self._write_payload_locked({
+                **self._payload_metadata(payload),
+                "schema_version": 1,
+                "events": records,
+                "delivery_claims": claims,
+            })
             self.delivery_claims = claims
             self.records = records
             return {
                 "status": "claimed",
                 "notification_key": claim_key,
                 "comparison_notification_key": latest_key or "",
-                "material_changes": list(dict.fromkeys(str(item) for item in material_changes if str(item).strip())) or (["decision_fingerprint_changed"] if latest is not None else ["initial_market_decision"]),
+                "material_changes": (
+                    list(dict.fromkeys(str(item) for item in material_changes if str(item).strip()))
+                    or (
+                        ["decision_fingerprint_changed"]
+                        if latest is not None
+                        else ["initial_market_decision"]
+                    )
+                ),
                 "delivery_eligible": True,
                 "suppression_reason": "",
                 "pending_recipient_hashes": pending,

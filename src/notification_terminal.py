@@ -621,7 +621,7 @@ def evaluate_scheduled_terminal(values: Mapping[str, str]) -> dict[str, Any]:
             )
         return _result(
             values, "scheduled", status="already_delivered",
-            reason="durable_recipient_receipt_verified", expected=False,
+            reason="durable_recipient_receipt_verified", expected=False, no_resend=True,
         )
     if not expected:
         return _result(
@@ -829,7 +829,10 @@ def append_summary(path: str, terminal: Mapping[str, Any]) -> None:
         f"- delivered / failed recipients: {terminal.get('delivered_count', 'unknown')} / {terminal.get('failed_count', 'unknown')}\n",
         f"- no_resend: {str(bool(terminal.get('no_resend'))).lower()}\n",
         f"- durable_receipt_verified: {str(bool(terminal.get('durable_receipt_verified'))).lower()}\n",
-        f"- delivery_mode / public_release_verified / unknown_count: {terminal.get('delivery_mode', 'text')} / {str(bool(terminal.get('public_release_verified'))).lower()} / {terminal.get('unknown_count') if terminal.get('unknown_count') is not None else 'unknown'}\n",
+        f"- delivery_mode / public_release_verified / unknown_count: "
+        f"{terminal.get('delivery_mode', 'text')} / "
+        f"{str(bool(terminal.get('public_release_verified'))).lower()} / "
+        f"{terminal.get('unknown_count') if terminal.get('unknown_count') is not None else 'unknown'}\n",
         f"- release build / pre-delivery gate / post-delivery gate evidence: "
         f"{terminal.get('release_evidence', {}).get('build', {}).get('status', 'unknown')} / "
         f"{terminal.get('release_evidence', {}).get('pre_delivery_gate', {}).get('status', 'unknown')} / "

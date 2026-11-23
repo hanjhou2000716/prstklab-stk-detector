@@ -821,14 +821,16 @@ def send_brief(
     validate_brief(text)
     if not is_valid_public_summary(text):
         raise ValueError("公開訊息內容不完整，已停止發送。")
-    payload_to_send = {
+    payload_to_send: dict[str, object] = {
         "chat_id": chat_id,
         "text": text,
         "disable_web_page_preview": True,
     }
     if include_dashboard_button:
         payload_to_send["reply_markup"] = {
-            "inline_keyboard": [[mini_app_button(versioned_mini_app_url(target_url or dashboard_url))]]
+            "inline_keyboard": [
+                [mini_app_button(versioned_mini_app_url(target_url or dashboard_url))]
+            ]
         }
     endpoint = f"https://api.telegram.org/bot{token}/sendMessage"
     response = None
@@ -925,7 +927,14 @@ def send_briefs(
     deliveries: list[TelegramDelivery] = []
     for chat_id in chat_ids:
         try:
-            result = send_brief(token=token, chat_id=chat_id, text=text, dashboard_url=dashboard_url, target_url=target_url, include_dashboard_button=include_dashboard_button)
+            result = send_brief(
+                token=token,
+                chat_id=chat_id,
+                text=text,
+                dashboard_url=dashboard_url,
+                target_url=target_url,
+                include_dashboard_button=include_dashboard_button,
+            )
         except TelegramError as exc:
             if not (_recipient_unavailable(exc) or isinstance(exc, TelegramTransientError)):
                 raise
@@ -1144,14 +1153,16 @@ def _send_brief_once(
     validate_brief(text)
     if not is_valid_public_summary(text):
         raise ValueError("公開訊息內容不完整，已停止發送。")
-    payload_to_send = {
+    payload_to_send: dict[str, object] = {
         "chat_id": chat_id,
         "text": text,
         "disable_web_page_preview": True,
     }
     if include_dashboard_button:
         payload_to_send["reply_markup"] = {
-            "inline_keyboard": [[mini_app_button(versioned_mini_app_url(target_url or dashboard_url))]]
+            "inline_keyboard": [
+                [mini_app_button(versioned_mini_app_url(target_url or dashboard_url))]
+            ]
         }
     endpoint = f"https://api.telegram.org/bot{token}/sendMessage"
     try:

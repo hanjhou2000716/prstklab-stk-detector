@@ -1823,25 +1823,58 @@ def send(
             # The production EventLedger must always return its persisted key.
             delivery_claim_key = notification_key
         if claim.get("status") != "claimed":
-            already_delivered = str(claim.get("status") or "") == "already_delivered"
+            claim_status = str(claim.get("status") or "blocked")
+            already_delivered = claim_status == "already_delivered"
+            delivered_hashes = {
+                str(item) for item in claim.get("delivered_recipient_hashes") or []
+            }
+            required_hashes = set(recipient_hashes)
+            durable_receipt_verified = (
+                already_delivered
+                and bool(delivery_claim_key)
+                and bool(required_hashes)
+                and required_hashes.issubset(delivered_hashes)
+            )
+            public_release_verified = bool(
+                not local_snapshot_fallback
+                and public_url
+                and deployment_identity_verified
+                and gate.allowed
+            )
+            claim_reason = (
+                "already_delivered"
+                if already_delivered
+                else f"notification_{claim_status}"
+            )
+            receipt_status = "already_delivered" if already_delivered else claim_status
             _write_decision_output(
                 {
                     "sent": "false",
-                    "delivery_status": "already_delivered" if already_delivered else "suppressed",
-                    "reason": "already_delivered" if already_delivered else f"notification_{claim.get('status', 'blocked')}",
+                    "delivery_status": (
+                        "already_delivered" if already_delivered else "suppressed"
+                    ),
+                    "reason": claim_reason,
+                    "delivery_mode": (
+                        "local_prepared_snapshot_no_pages"
+                        if local_snapshot_fallback else "text"
+                    ),
+                    "public_release_verified": str(public_release_verified).lower(),
+                    "durable_receipt_verified": str(durable_receipt_verified).lower(),
                     "notification_key": delivery_claim_key,
                     "comparison_notification_key": claim.get("comparison_notification_key") or "",
                     "material_changes": claim.get("material_changes") or [],
                     "delivery_eligible": False,
-                    "suppression_reason": claim.get("suppression_reason") or f"notification_{claim.get('status', 'blocked')}",
-                    "notification_expected": "true" if already_delivered else "false",
-                    "last_receipt_status": "already_delivered" if already_delivered else str(claim.get("status") or "blocked"),
+                    "suppression_reason": (
+                        claim.get("suppression_reason") or f"notification_{claim_status}"
+                    ),
+                    "notification_expected": str(already_delivered).lower(),
+                    "last_receipt_status": receipt_status,
                 },
                 event=event,
-                notification_status="already_delivered" if already_delivered else "suppressed",
-                notification_reason="already_delivered" if already_delivered else f"notification_{claim.get('status', 'blocked')}",
+                notification_status=claim_status if already_delivered else "suppressed",
+                notification_reason=claim_reason,
                 notification_expected=already_delivered,
-                last_receipt_status="already_delivered" if already_delivered else str(claim.get("status") or "blocked"),
+                last_receipt_status=receipt_status,
             )
             return
         if not delivery_claim_key:
