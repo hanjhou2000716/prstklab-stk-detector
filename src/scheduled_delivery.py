@@ -1664,6 +1664,7 @@ def send(
             last_receipt_status="not_attempted",
         )
         return
+    budget: dict[str, Any]
     briefing_event = _briefing_delivery_event(snapshot, slot)
     if briefing_event is not None:
         briefing_id = str(briefing_event.get("notification_id") or "")

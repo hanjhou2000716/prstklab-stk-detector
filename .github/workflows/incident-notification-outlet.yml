@@ -58,7 +58,7 @@ jobs:
               path.write_text(json.dumps({
                   "schema_version": "incident-notification-outlet-v1",
                   "status": "failed_before_decision",
-                  "notification_due": False,
+                  "notification_due": None,
                   "failure_reason": "incident_outlet_prepare_failed" if os.environ.get("PREPARE_OUTCOME") == "failure" else "incident_outlet_result_missing",
                   "outlet_run_id": os.environ["OUTLET_RUN_ID"],
                   "outlet_attempt": int(os.environ["OUTLET_ATTEMPT"]),

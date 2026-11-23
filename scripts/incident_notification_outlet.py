@@ -8,6 +8,7 @@ import re
 import sys
 import tempfile
 import time
+from concurrent.futures import FIRST_EXCEPTION, ThreadPoolExecutor, wait
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -23,6 +24,8 @@ from scripts.incident_reconciliation_health import ISSUE_TITLE_PREFIX as HEALTH_
 from scripts.monitor_liveness import (
     AUDIT_ISSUE_TITLE_PREFIX,
     EVENT_ISSUE_TITLE_PREFIX,
+    GitHubAPIHttpError,
+    GitHubAPITransportError,
     LivenessAuditError,
     _open_incidents,
     _parse_time,
@@ -30,7 +33,7 @@ from scripts.monitor_liveness import (
 )
 from scripts.monitor_liveness import ISSUE_TITLE_PREFIX as MONITOR_ISSUE_TITLE_PREFIX
 from scripts.scheduled_brief_incidents import ISSUE_TITLE_PREFIX as SCHEDULED_ISSUE_TITLE_PREFIX
-from src.github_issue_api import IssuePaginationError, read_issues_by_identity
+from src.github_issue_api import IssuePaginationError, read_issues_by_identity, read_open_issues
 
 OUTLET_SCHEMA = "incident-notification-outlet-v1"
 JOURNAL_SCHEMA = "incident-notification-journal-v1"
@@ -56,6 +59,9 @@ ALLOWED_TITLE_PREFIXES = (
     HEALTH_ISSUE_TITLE_PREFIX,
 )
 REMINDER_INTERVAL = timedelta(minutes=30)
+INCIDENT_SEARCH_BUDGET_SECONDS = 35
+INCIDENT_LIST_MAX_PAGES = 20
+CONSUMER_VERIFICATION_WORKERS = 4
 
 
 def _atomic_json(path: Path, value: dict[str, Any]) -> None:
@@ -573,6 +579,65 @@ def _resolve_pending_decision(
     )
 
 
+def _discover_open_incidents(
+    api_url: str, repository: str, token: str, *, deadline: float,
+) -> list[dict[str, Any]]:
+    search_deadline = min(deadline, time.monotonic() + INCIDENT_SEARCH_BUDGET_SECONDS)
+    try:
+        return _open_incidents(api_url, repository, token, deadline_monotonic=search_deadline)
+    except GitHubAPITransportError as exc:
+        if exc.method != "GET" or exc.endpoint_class != "search/issues" or not exc.timed_out:
+            raise
+    except GitHubAPIHttpError as exc:
+        if exc.method != "GET" or exc.endpoint_class != "search/issues" or exc.status_code not in {408, 504}:
+            raise
+
+    # Search timeout may be isolated to its index. A complete repository list
+    # is acceptable for incident discovery. Journal identity and source
+    # artifacts still need their own verification before any new decision.
+    print("incident_outlet_search_timeout: using bounded open-issue listing", file=sys.stderr)
+    try:
+        issues = read_open_issues(
+            api_url=api_url, repository=repository, token=token, fetch_json=_request_json,
+            deadline_monotonic=deadline, max_pages=INCIDENT_LIST_MAX_PAGES,
+        )
+    except IssuePaginationError as exc:
+        raise LivenessAuditError(f"incident_outlet_fallback_{exc}") from exc
+    return [
+        issue for issue in issues
+        if issue.get("state") == "open"
+        and "pull_request" not in issue
+        and str(issue.get("title") or "").startswith(ALLOWED_TITLE_PREFIXES)
+    ]
+
+
+def _verify_consumer_sources(
+    groups: list[tuple[str, int]], *, repository: str, api_url: str, token: str, deadline: float,
+) -> dict[tuple[str, int], tuple[dict[str, Any], dict[str, Any]]]:
+    def load(group: tuple[str, int]) -> tuple[dict[str, Any], dict[str, Any]]:
+        run_id, attempt = group
+        return _load_verified_consumer(
+            run_id=run_id, attempt=attempt, repository=repository, api_url=api_url,
+            token=token, deadline=deadline,
+        )
+
+    if len(groups) < 2:
+        return {group: load(group) for group in groups}
+
+    # Independent, read-only requests share one run deadline. A stale or
+    # unavailable source still prevents the decision for the whole window.
+    pool = ThreadPoolExecutor(max_workers=CONSUMER_VERIFICATION_WORKERS)
+    try:
+        futures = {group: pool.submit(load, group) for group in groups}
+        done, _ = wait(futures.values(), return_when=FIRST_EXCEPTION)
+        for future in futures.values():
+            if future in done:
+                future.result()
+        return {group: future.result() for group, future in futures.items()}
+    finally:
+        pool.shutdown(cancel_futures=True)
+
+
 def prepare_outlet(
     *, repository: str, api_url: str, token: str, now: datetime | None = None,
     deadline_monotonic: float | None = None, record_native_delivery: bool = False,
@@ -581,7 +646,7 @@ def prepare_outlet(
         raise LivenessAuditError("incident_outlet_configuration_invalid")
     current = (now or datetime.now(UTC)).astimezone(UTC)
     deadline = deadline_monotonic or time.monotonic() + 90
-    issues = _open_incidents(api_url, repository, token, deadline_monotonic=deadline)
+    issues = _discover_open_incidents(api_url, repository, token, deadline=deadline)
     control_issue, journal = _load_control_journal(
         repository=repository, api_url=api_url, token=token, deadline=deadline,
     )
@@ -643,16 +708,17 @@ def prepare_outlet(
     for row in candidates:
         groups.setdefault((row["consumer_run_id"], row["consumer_attempt"]), []).append(row)
     verified_consumers: list[dict[str, Any]] = []
-    for (run_id, attempt), selected_rows in sorted(groups.items()):
-        run, source_result = _load_verified_consumer(
-            run_id=run_id, attempt=attempt, repository=repository, api_url=api_url,
-            token=token, deadline=deadline,
-        )
+    consumers = _verify_consumer_sources(
+        sorted(groups), repository=repository, api_url=api_url, token=token, deadline=deadline,
+    )
+    issues_by_number = {issue.get("number"): issue for issue in issues if type(issue.get("number")) is int}
+    for (run_id, attempt), (run, source_result) in consumers.items():
+        selected_rows = groups[run_id, attempt]
         source_confirmations = source_result["notification_cadence_confirmations"]
         matched: list[dict[str, Any]] = []
         for row in selected_rows:
-            issue = next((item for item in issues if _safe_int(item.get("number")) == row["issue_number"]), None)
-            body = str((issue or {}).get("body") or "")
+            selected_issue = issues_by_number.get(row["issue_number"])
+            body = str((selected_issue or {}).get("body") or "")
             if body.splitlines().count(row["marker"]) != 1 or body.splitlines().count(f"Alert pending consumer: {run_id}/{attempt}") != 1:
                 raise LivenessAuditError("incident_outlet_issue_reservation_mismatch")
             matches = [
@@ -832,7 +898,29 @@ def main() -> int:
             print(json.dumps(result, sort_keys=True, separators=(",", ":")))
             return 0
     except (LivenessAuditError, OSError, ValueError, KeyError, TypeError) as exc:
-        print(f"incident_notification_outlet_failed:{str(exc)[:180]}", file=sys.stderr)
+        reason = str(exc) if isinstance(exc, LivenessAuditError) else ""
+        if not re.fullmatch(r"[A-Za-z0-9_]{1,120}", reason):
+            reason = "incident_outlet_prepare_failed" if action == ["prepare"] else "incident_outlet_finalize_failed"
+        if action == ["prepare"]:
+            observed = datetime.now(UTC)
+            failure: dict[str, Any] = {
+                "schema_version": OUTLET_SCHEMA,
+                "status": "failed_before_decision",
+                "notification_due": None,
+                "failure_reason": reason,
+                "window_key": _window_key(observed),
+                "outlet_run_id": os.environ.get("GITHUB_RUN_ID", "")[:32],
+                "outlet_attempt": _safe_int(os.environ.get("GITHUB_RUN_ATTEMPT")),
+                "outlet_sha": os.environ.get("GITHUB_SHA", "")[:40],
+                "observed_at": observed.isoformat(),
+            }
+            if isinstance(exc, (GitHubAPITransportError, GitHubAPIHttpError)):
+                failure["github_api"] = exc.diagnostic()
+            try:
+                _atomic_json(path, failure)
+            except OSError:
+                print("incident_outlet_failure_artifact_write_failed", file=sys.stderr)
+        print(f"incident_notification_outlet_failed:{reason}", file=sys.stderr)
         return 1
     print("incident_notification_outlet_arguments_invalid", file=sys.stderr)
     return 2

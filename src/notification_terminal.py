@@ -647,16 +647,17 @@ def evaluate_scheduled_terminal(values: Mapping[str, str]) -> dict[str, Any]:
             expected=True, failure=True,
         )
     if _text(values, "DELIVERY_MODE") == "local_prepared_snapshot_no_pages":
-        delivered = _count(values, "DELIVERED_COUNT") or 0
-        failed = _count(values, "FAILED_COUNT")
+        local_delivered = _count(values, "DELIVERED_COUNT") or 0
+        local_failed = _count(values, "FAILED_COUNT")
         unknown = _count(values, "UNKNOWN_COUNT") or 0
-        no_resend = _flag(values, "SEND_SENT") or delivered > 0 or unknown > 0
+        no_resend = _flag(values, "SEND_SENT") or local_delivered > 0 or unknown > 0
         local_receipt_ok = (
             _text(values, "SEND_OUTCOME") == "success"
             and send_status == "ready"
             and _text(values, "DELIVERY_STATUS") == "delivered"
-            and delivered >= 1
-            and failed == 0
+            and local_delivered >= 1
+            and local_failed == 0
+            and unknown == 0
             and _flag(values, "DURABLE_RECEIPT_VERIFIED")
             and not _flag(values, "PUBLIC_RELEASE_VERIFIED")
             and (
