@@ -815,18 +815,23 @@ def configure_mini_app_menus(*, token: str, chat_ids: tuple[str, ...], mini_app_
 
 def send_brief(
     *, token: str, chat_id: str, text: str, dashboard_url: str,
-    target_url: str | None = None,
+    target_url: str | None = None, include_dashboard_button: bool = True,
 ) -> TelegramResult:
-    """Send a brief with one dashboard button through Telegram Bot API."""
+    """Send a text brief, optionally with its verified dashboard button."""
     validate_brief(text)
     if not is_valid_public_summary(text):
         raise ValueError("公開訊息內容不完整，已停止發送。")
-    payload_to_send = {
+    payload_to_send: dict[str, object] = {
         "chat_id": chat_id,
         "text": text,
         "disable_web_page_preview": True,
-        "reply_markup": {"inline_keyboard": [[mini_app_button(versioned_mini_app_url(target_url or dashboard_url))]]},
     }
+    if include_dashboard_button:
+        payload_to_send["reply_markup"] = {
+            "inline_keyboard": [
+                [mini_app_button(versioned_mini_app_url(target_url or dashboard_url))]
+            ]
+        }
     endpoint = f"https://api.telegram.org/bot{token}/sendMessage"
     response = None
     last_error: Exception | None = None
@@ -875,6 +880,7 @@ def send_briefs(
     target_url: str | None = None, prstk_risk_level: str = "R2",
     message_kind: str = "risk_alert", label: str | None = None,
     notification_key: str = "", delivery_deadline=None,
+    include_dashboard_button: bool = True,
 ) -> tuple[TelegramDelivery, ...]:
     """Send one identical brief to every reachable configured recipient.
 
@@ -898,6 +904,7 @@ def send_briefs(
             target_url=target_url, prstk_risk_level=prstk_risk_level,
             message_kind=message_kind, label=label, notification_key=notification_key,
             delivery_deadline=delivery_deadline,
+            include_dashboard_button=include_dashboard_button,
         )
         return tuple(
             TelegramDelivery(chat_id=chat_id, result=TelegramResult(item.message_id or 0)
@@ -920,7 +927,14 @@ def send_briefs(
     deliveries: list[TelegramDelivery] = []
     for chat_id in chat_ids:
         try:
-            result = send_brief(token=token, chat_id=chat_id, text=text, dashboard_url=dashboard_url, target_url=target_url)
+            result = send_brief(
+                token=token,
+                chat_id=chat_id,
+                text=text,
+                dashboard_url=dashboard_url,
+                target_url=target_url,
+                include_dashboard_button=include_dashboard_button,
+            )
         except TelegramError as exc:
             if not (_recipient_unavailable(exc) or isinstance(exc, TelegramTransientError)):
                 raise
@@ -948,6 +962,7 @@ def send_briefs(
                     text=text,
                     dashboard_url=dashboard_url,
                     target_url=target_url,
+                    include_dashboard_button=include_dashboard_button,
                 )
             except TelegramError as exc:
                 deliveries[index] = TelegramDelivery(chat_id=delivery.chat_id, error=str(exc))
@@ -965,7 +980,7 @@ def send_text_briefs_audited(
     observation_id: str = "", target_url: str | None = None,
     prstk_risk_level: str = "R2", message_kind: str = "risk_alert",
     label: str | None = None, notification_key: str = "",
-    delivery_deadline=None,
+    delivery_deadline=None, include_dashboard_button: bool = True,
 ) -> tuple[TextDeliveryReceipt, ...]:
     """Send one text-only Mini App message per recipient with bounded receipts."""
     if not chat_ids:
@@ -1012,12 +1027,14 @@ def send_text_briefs_audited(
                 snapshot_id=snapshot_id, observation_id=observation_id,
                 prstk_risk_level=prstk_risk_level, notification_key=notification_key,
                 deadline=deadline,
+                include_dashboard_button=include_dashboard_button,
             ))
             continue
         try:
             result = send_brief(
                 token=token, chat_id=chat_id, text=text,
                 dashboard_url=dashboard_url, target_url=target_url,
+                include_dashboard_button=include_dashboard_button,
             )
         except (TelegramError, OSError, requests.RequestException) as exc:
             receipts.append(TextDeliveryReceipt(
@@ -1038,7 +1055,7 @@ def _send_guarded_text_delivery(
     *, token: str, chat_id: str, text: str, dashboard_url: str,
     target_url: str | None, alert_id: str, release_id: str, snapshot_id: str,
     observation_id: str, prstk_risk_level: str, notification_key: str,
-    deadline: datetime,
+    deadline: datetime, include_dashboard_button: bool = True,
 ) -> TextDeliveryReceipt:
     """Perform at most three durably reserved sends, retrying only explicit 429s."""
     from src.telegram_delivery_guard import DeliveryGuardError, record_result, reserve_and_start
@@ -1076,6 +1093,7 @@ def _send_guarded_text_delivery(
             result = _send_brief_once(
                 token=token, chat_id=chat_id, text=text,
                 dashboard_url=dashboard_url, target_url=target_url,
+                include_dashboard_button=include_dashboard_button,
             )
         except TelegramAttemptError as exc:
             outcome = exc.outcome
@@ -1129,18 +1147,23 @@ def _send_guarded_text_delivery(
 
 def _send_brief_once(
     *, token: str, chat_id: str, text: str, dashboard_url: str,
-    target_url: str | None = None,
+    target_url: str | None = None, include_dashboard_button: bool = True,
 ) -> TelegramResult:
-    """Make exactly one Telegram request; classify uncertainty for the guard."""
+    """Make one Telegram request; classify uncertainty for the recipient guard."""
     validate_brief(text)
     if not is_valid_public_summary(text):
         raise ValueError("公開訊息內容不完整，已停止發送。")
-    payload_to_send = {
+    payload_to_send: dict[str, object] = {
         "chat_id": chat_id,
         "text": text,
         "disable_web_page_preview": True,
-        "reply_markup": {"inline_keyboard": [[mini_app_button(versioned_mini_app_url(target_url or dashboard_url))]]},
     }
+    if include_dashboard_button:
+        payload_to_send["reply_markup"] = {
+            "inline_keyboard": [
+                [mini_app_button(versioned_mini_app_url(target_url or dashboard_url))]
+            ]
+        }
     endpoint = f"https://api.telegram.org/bot{token}/sendMessage"
     try:
         response = requests.post(endpoint, json=payload_to_send, timeout=20)

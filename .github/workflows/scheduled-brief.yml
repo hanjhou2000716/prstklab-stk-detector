@@ -696,6 +696,9 @@ jobs:
       - name: Verify deployed release before delivery
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.deployment_identity.outputs.verified == 'true'
         id: release_gate
+        # The terminal classifier decides whether a Pages outage can use the
+        # verified local snapshot; permanent identity/content failures remain blocked.
+        continue-on-error: true
         run: |
           arguments=(--manifest "$PAGES_MANIFEST_PATH" --expected-release-id "${{ steps.release_manifest.outputs.release_id }}" --expected-snapshot-id "${{ steps.prepare.outputs.snapshot_id }}" --public-url "${{ steps.deployment.outputs.page_url }}" --deployment-id "${{ steps.deployment_identity.outputs.deployment_id }}" --phase pre_delivery --result-output "/tmp/prstk-release-gate-pre-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json" --public-timeout-seconds 180 --public-delay 2 --public-max-delay 20)
           if [ -f "/tmp/prstk-alert-targets-${GITHUB_RUN_ID}.json" ]; then
@@ -850,11 +853,11 @@ jobs:
           path: release-gate-diagnostics.json
           if-no-files-found: warn
           retention-days: 14
-      - name: Record delivery gate when Pages is unavailable
-        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && (steps.release_policy.outputs.publish != 'true' || steps.deployment_identity.outputs.verified != 'true')
-        run: echo "Release is not fresh or Pages is unavailable; Telegram delivery intentionally skipped (fail closed)."
-      - name: Send Telegram brief after successful publication
-        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && env.NOTIFY == 'true' && steps.prepare.outputs.notification_expected == 'true'
+      - name: Record Pages status before scheduled delivery
+        if: always() && !cancelled() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && (steps.release_policy.outputs.publish != 'true' || steps.deployment_identity.outputs.verified != 'true' || steps.release_gate.outputs.allowed != 'true')
+        run: echo "Pages is unavailable or unverified; the sender will allow only a locally verified mandatory scheduled report, without a Pages button."
+      - name: Send scheduled Telegram report or eligible alert
+        if: always() && !cancelled() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && env.NOTIFY == 'true' && steps.prepare.outputs.notification_expected == 'true'
         id: send_brief
         env:
           # Notification credentials are scoped to this step; collection and
@@ -866,7 +869,21 @@ jobs:
           TELEGRAM_DELIVERY_GUARD_REQUIRED: "true"
           RECEIPT_CALLBACK_URL: ${{ vars.RECEIPT_CALLBACK_URL }}
           DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
-        run: python -m src.scheduled_delivery --slot "${{ steps.window.outputs.slot }}" --send-only --slot-key "${{ steps.window.outputs.key }}" --snapshot "$SNAPSHOT_PATH" --manifest "$PAGES_MANIFEST_PATH" --public-url "${{ steps.deployment.outputs.page_url }}"
+          DEPLOYMENT_IDENTITY_VERIFIED: ${{ steps.deployment_identity.outputs.verified || 'false' }}
+        run: |
+          arguments=(
+            --slot "${{ steps.window.outputs.slot }}"
+            --send-only
+            --slot-key "${{ steps.window.outputs.key }}"
+            --snapshot "$SNAPSHOT_PATH"
+            --manifest "$PAGES_MANIFEST_PATH"
+            --public-url "${{ steps.deployment.outputs.page_url }}"
+            --allow-local-snapshot-fallback
+          )
+          if [ "$DEPLOYMENT_IDENTITY_VERIFIED" = "true" ]; then
+            arguments+=(--deployment-identity-verified)
+          fi
+          python -m src.scheduled_delivery "${arguments[@]}"
       - name: Publish scheduled notification decision
         if: always() && steps.late_expiry.outputs.expired != 'true'
         env:
@@ -1148,7 +1165,7 @@ jobs:
         # no trace to persist.  Attempted deliveries always emit trace_id,
         # including failed attempts, so the receipt callback remains durable
         # without producing a false callback failure on dedup suppression.
-        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped' && steps.send_brief.outputs.trace_id != ''
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.send_brief.outcome != 'skipped' && steps.send_brief.outputs.trace_id != ''
         continue-on-error: true
         env:
           DELIVERY_RECEIPT_SHARED_SECRET: ${{ secrets.DELIVERY_RECEIPT_SHARED_SECRET || secrets.RAILWAY_STATUS_SHARED_SECRET || secrets.DELIVERY_STATUS_SHARED_SECRET }}
@@ -1456,8 +1473,12 @@ jobs:
           SEND_STATUS: ${{ steps.send_brief.outputs.notification_status || '' }}
           SEND_REASON: ${{ steps.send_brief.outputs.reason || '' }}
           DELIVERY_STATUS: ${{ steps.send_brief.outputs.delivery_status || '' }}
+          DELIVERY_MODE: ${{ steps.send_brief.outputs.delivery_mode || '' }}
+          PUBLIC_RELEASE_VERIFIED: ${{ steps.send_brief.outputs.public_release_verified || 'false' }}
+          DURABLE_RECEIPT_VERIFIED: ${{ steps.send_brief.outputs.durable_receipt_verified || steps.durable_receipt.outputs.verified || 'false' }}
           DELIVERED_COUNT: ${{ steps.send_brief.outputs.delivered_count || '0' }}
           FAILED_COUNT: ${{ steps.send_brief.outputs.failed_count || '0' }}
+          UNKNOWN_COUNT: ${{ steps.send_brief.outputs.unknown_count || '0' }}
           PREPARED_CURRENT: ${{ steps.prepared_release.outputs.current || 'false' }}
           GATE_ALLOWED: ${{ steps.release_gate.outputs.allowed || 'false' }}
           RELEASE_GATE_OUTCOME: ${{ steps.release_gate.outcome || 'skipped' }}
@@ -1466,7 +1487,6 @@ jobs:
           RECEIPT_CALLBACK_OUTCOME: ${{ steps.persist_scheduled_receipt.outcome || 'skipped' }}
           RECEIPT_ENDPOINT_CONFIGURED: ${{ (vars.RECEIPT_CALLBACK_URL != '' || vars.RAILWAY_STATUS_URL != '') && 'true' || 'false' }}
           LEDGER_PERSIST_OUTCOME: ${{ steps.persist_notification_ledger.outcome || 'skipped' }}
-          DURABLE_RECEIPT_VERIFIED: ${{ steps.durable_receipt.outputs.verified || 'false' }}
           RECEIPT_VERIFICATION_REASON: ${{ steps.durable_receipt.outputs.reason || 'not_run' }}
           RECEIPT_LEDGER_COMMIT: ${{ steps.durable_receipt.outputs.ledger_commit || '' }}
           RECEIPT_RECIPIENT_SET_VERSION: ${{ steps.durable_receipt.outputs.recipient_set_version || '' }}

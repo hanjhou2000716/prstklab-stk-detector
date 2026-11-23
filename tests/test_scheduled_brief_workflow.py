@@ -219,10 +219,27 @@ def test_scheduled_release_gate_is_identity_bound_bounded_and_fail_closed():
     assert "steps.reconciled_deployment.outputs.build_version" in workflow
     assert "reconciled_data_release_sha" in workflow
     assert "--manifest \"$MANIFEST_PATH\"" in workflow
-    sender = workflow.split("- name: Send Telegram brief after successful publication", 1)[1].split(
+    sender = workflow.split(
+        "- name: Send scheduled Telegram report or eligible alert", 1
+    )[1].split(
         "- name: Publish scheduled notification decision", 1
     )[0]
-    assert "steps.release_gate.outputs.allowed == 'true'" in sender
+    assert "if: always() && !cancelled()" in sender
+    assert "steps.release_gate.outputs.allowed == 'true'" not in sender
+    assert "--allow-local-snapshot-fallback" in sender
+    assert "DEPLOYMENT_IDENTITY_VERIFIED" in sender
+    assert "--deployment-identity-verified" in sender
+    release_gate_step = workflow.split(
+        "- name: Verify deployed release before delivery", 1
+    )[1].split(
+        "- name: Record release gate diagnostics", 1
+    )[0]
+    assert "continue-on-error: true" in release_gate_step
+    callback = workflow.split("- name: Persist scheduled receipt", 1)[1].split(
+        "- name:", 1
+    )[0]
+    assert "steps.release_gate.outputs.allowed" not in callback
+    assert workflow.count("DURABLE_RECEIPT_VERIFIED:") == 1
     assert "release_superseded_by_newer_valid_version" in workflow
     assert "release_gate_error_category" in workflow
     assert "pages_deployment_run_id" in workflow

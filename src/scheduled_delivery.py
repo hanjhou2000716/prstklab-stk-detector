@@ -229,14 +229,27 @@ def scheduled_delivery_deadline(
     return deadline.astimezone(UTC)
 
 
+def _routine_report_required(briefing: dict[str, Any], obligation: str) -> bool:
+    return (
+        obligation in {"report_required", "holiday_notice_required"}
+        and _is_routine_market_report(briefing)
+        and _briefing_evidence_ready(briefing)
+    )
+
+
 def _briefing_delivery_event(snapshot: dict[str, Any], slot: str) -> dict[str, Any] | None:
-    """Project the shared digest into the existing notification contract."""
-    briefing = snapshot.get("briefing")
-    if (
-        not isinstance(briefing, dict)
-        or briefing.get("notification_eligible") is not True
-        or not _briefing_evidence_ready(briefing)
-    ):
+    """Project either an eligible alert or the mandatory scheduled report."""
+    briefing_value = snapshot.get("briefing")
+    if not isinstance(briefing_value, dict):
+        return None
+    briefing = briefing_value
+    decision_value = briefing.get("schedule_decision")
+    decision = decision_value if isinstance(decision_value, dict) else {}
+    routine_report = _routine_report_required(
+        briefing, str(decision.get("delivery_obligation") or ""),
+    )
+    alert_eligible = briefing.get("notification_eligible") is True
+    if (not alert_eligible and not routine_report) or not _briefing_evidence_ready(briefing):
         return None
     public_message = str(briefing.get("public_short_message") or "").strip()
     briefing_id = str(briefing.get("briefing_id") or "").strip()
@@ -267,8 +280,9 @@ def _briefing_delivery_event(snapshot: dict[str, Any], slot: str) -> dict[str, A
         "source_evidence": primary.get("source_evidence") or briefing.get("source_evidence") or [],
         "canonical_event_key": primary.get("canonical_event_key"),
         "briefing": briefing,
-        "notification_status": "eligible",
-        "alert_eligible": True,
+        "notification_status": "eligible" if alert_eligible else "routine_report",
+        "alert_eligible": alert_eligible,
+        "routine_report": routine_report,
         "slot": slot,
         "alert_lane": "scheduled_brief",
         "anchor_key": anchor_key(
@@ -1470,8 +1484,10 @@ def send(
     require_production_research: bool = False,
     slot_key: str | None = None,
     run_id: str | None = None,
+    allow_local_snapshot_fallback: bool = False,
+    deployment_identity_verified: bool = True,
 ) -> None:
-    """Send only after local and deployed release manifests agree."""
+    """Send after release verification, or use a verified local report on Pages outage."""
     try:
         snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
@@ -1540,12 +1556,31 @@ def send(
             last_receipt_status="not_attempted",
         )
         return
+    routine_report_required = _routine_report_required(briefing, delivery_obligation)
     gate = verify_release_for_delivery(
         manifest_path=manifest_path,
         expected_snapshot_id=snapshot_id,
         public_url=public_url,
         require_production_research=require_production_research,
     )
+    local_snapshot_fallback = False
+    if allow_local_snapshot_fallback and routine_report_required and not gate.superseded:
+        window_open, _window_reason = _scheduled_send_window(slot, slot_context, datetime.now(UTC))
+        fallback_candidate = (
+            (not public_url and gate.allowed)
+            or gate.error_category == "pages_unavailable"
+            or (not deployment_identity_verified and gate.allowed)
+        )
+        if window_open and fallback_candidate:
+            local_gate = verify_release_for_delivery(
+                manifest_path=manifest_path,
+                expected_snapshot_id=snapshot_id,
+                public_url=None,
+                require_production_research=require_production_research,
+            )
+            if local_gate.allowed:
+                gate = local_gate
+                local_snapshot_fallback = True
     if not gate.allowed:
         _write_decision_output({
             "sent": "false",
@@ -1557,6 +1592,7 @@ def send(
             "notification_expected": "true" if notification_expected else "false",
             "notification_status": "failed" if notification_expected else "blocked",
             "notification_reason": "release_gate_blocked",
+            "public_release_verified": "false",
         }, notification_status="failed" if notification_expected else "blocked",
             notification_reason="release_gate_blocked",
             notification_expected=notification_expected,
@@ -1569,7 +1605,7 @@ def send(
     history = ledger.delivery_history()
     release_alert_ids = _release_alert_ids(manifest_path, gate.manifest)
     delivery_intent = str(slot_context.get("delivery_intent") or "").strip()
-    if delivery_intent and delivery_intent != "notify_candidate":
+    if delivery_intent and delivery_intent != "notify_candidate" and not routine_report_required:
         reason = str(slot_context.get("resolution_reason") or "delivery_intent_not_notify")
         _write_decision_output(
             {
@@ -1587,7 +1623,7 @@ def send(
             last_receipt_status="not_attempted",
         )
         return
-    if delivery_intent == "notify_candidate":
+    if delivery_intent == "notify_candidate" or routine_report_required:
         window_open, window_reason = _scheduled_send_window(slot, slot_context, datetime.now(UTC))
         if not window_open:
             _write_decision_output(
@@ -1606,7 +1642,11 @@ def send(
                 last_receipt_status="not_attempted",
             )
             return
-    if briefing.get("briefing_id") and briefing.get("notification_eligible") is not True:
+    if (
+        briefing.get("briefing_id")
+        and briefing.get("notification_eligible") is not True
+        and not routine_report_required
+    ):
         reason = str(briefing.get("notification_reason") or "briefing_not_eligible")
         _write_decision_output(
             {
@@ -1627,11 +1667,15 @@ def send(
     briefing_event = _briefing_delivery_event(snapshot, slot)
     if briefing_event is not None:
         briefing_id = str(briefing_event.get("notification_id") or "")
-        if release_alert_ids is not None and briefing_id not in release_alert_ids:
+        routine_report = briefing_event.get("routine_report") is True
+        if not routine_report and release_alert_ids is not None and briefing_id not in release_alert_ids:
             event, budget, selection_reason = None, {"allowed": False}, "briefing_alert_artifact_missing"
         else:
             event = briefing_event
-            budget = decide_alert_budget(event, history)
+            if routine_report:
+                budget = {"allowed": True, "reason": "mandatory_scheduled_report"}
+            else:
+                budget = decide_alert_budget(event, history)
             selection_reason = "candidate_ready" if budget.get("allowed", False) else str(budget.get("reason") or "alert_budget_suppressed")
             if not budget.get("allowed", False):
                 event = None
@@ -1693,19 +1737,35 @@ def send(
         or notification_key
         or trace_id
     )
-    target_url = alert_mini_app_url(
+    target_url = None if local_snapshot_fallback else alert_mini_app_url(
         settings.dashboard_url,
         alert_id=alert_id,
         release_id=gate.release_id or "",
         snapshot_id=snapshot_id,
         observation_id=observation_id,
     )
-    # A scheduled briefing is itself the report source.  Bind that internal
-    # HTTPS deep link before any claim or Telegram attempt so its delivery can
-    # be persisted and replayed without inventing an external news URL.
+    # A local-only fallback must not point recipients at a stale Pages build.
+    # Keep a verifiable internal workflow trace for the ledger when the event
+    # has no independent source URL.
     if briefing_event is not None:
-        event["source_url"] = target_url
-        event["source_domain"] = urlsplit(target_url).hostname or ""
+        if local_snapshot_fallback:
+            trace_url = event_source_url(event)
+            if not trace_url:
+                server_url = os.environ.get("GITHUB_SERVER_URL", "https://github.com").rstrip("/")
+                repository = os.environ.get("GITHUB_REPOSITORY", "").strip()
+                current_run_id = os.environ.get("GITHUB_RUN_ID", "").strip()
+                if repository and current_run_id:
+                    trace_url = f"{server_url}/{repository}/actions/runs/{current_run_id}"
+            if trace_url:
+                event["source_url"] = trace_url
+                event["source_domain"] = urlsplit(trace_url).hostname or ""
+                event["source_trace"] = {
+                    "kind": "github_actions_run",
+                    "source_url": trace_url,
+                }
+        else:
+            event["source_url"] = target_url
+            event["source_domain"] = urlsplit(target_url).hostname or ""
     preflight = (
         ledger.preflight_delivery(event)
         if hasattr(ledger, "preflight_delivery")
@@ -1763,25 +1823,58 @@ def send(
             # The production EventLedger must always return its persisted key.
             delivery_claim_key = notification_key
         if claim.get("status") != "claimed":
-            already_delivered = str(claim.get("status") or "") == "already_delivered"
+            claim_status = str(claim.get("status") or "blocked")
+            already_delivered = claim_status == "already_delivered"
+            delivered_hashes = {
+                str(item) for item in claim.get("delivered_recipient_hashes") or []
+            }
+            required_hashes = set(recipient_hashes)
+            durable_receipt_verified = (
+                already_delivered
+                and bool(delivery_claim_key)
+                and bool(required_hashes)
+                and required_hashes.issubset(delivered_hashes)
+            )
+            public_release_verified = bool(
+                not local_snapshot_fallback
+                and public_url
+                and deployment_identity_verified
+                and gate.allowed
+            )
+            claim_reason = (
+                "already_delivered"
+                if already_delivered
+                else f"notification_{claim_status}"
+            )
+            receipt_status = "already_delivered" if already_delivered else claim_status
             _write_decision_output(
                 {
                     "sent": "false",
-                    "delivery_status": "already_delivered" if already_delivered else "suppressed",
-                    "reason": "already_delivered" if already_delivered else f"notification_{claim.get('status', 'blocked')}",
+                    "delivery_status": (
+                        "already_delivered" if already_delivered else "suppressed"
+                    ),
+                    "reason": claim_reason,
+                    "delivery_mode": (
+                        "local_prepared_snapshot_no_pages"
+                        if local_snapshot_fallback else "text"
+                    ),
+                    "public_release_verified": str(public_release_verified).lower(),
+                    "durable_receipt_verified": str(durable_receipt_verified).lower(),
                     "notification_key": delivery_claim_key,
                     "comparison_notification_key": claim.get("comparison_notification_key") or "",
                     "material_changes": claim.get("material_changes") or [],
                     "delivery_eligible": False,
-                    "suppression_reason": claim.get("suppression_reason") or f"notification_{claim.get('status', 'blocked')}",
-                    "notification_expected": "true" if already_delivered else "false",
-                    "last_receipt_status": "already_delivered" if already_delivered else str(claim.get("status") or "blocked"),
+                    "suppression_reason": (
+                        claim.get("suppression_reason") or f"notification_{claim_status}"
+                    ),
+                    "notification_expected": str(already_delivered).lower(),
+                    "last_receipt_status": receipt_status,
                 },
                 event=event,
-                notification_status="already_delivered" if already_delivered else "suppressed",
-                notification_reason="already_delivered" if already_delivered else f"notification_{claim.get('status', 'blocked')}",
+                notification_status=claim_status if already_delivered else "suppressed",
+                notification_reason=claim_reason,
                 notification_expected=already_delivered,
-                last_receipt_status="already_delivered" if already_delivered else str(claim.get("status") or "blocked"),
+                last_receipt_status=receipt_status,
             )
             return
         if not delivery_claim_key:
@@ -1845,6 +1938,7 @@ def send(
                 delivery_deadline=scheduled_delivery_deadline(
                     slot, slot_context, slot_key=delivery_claim_key or effective_slot_key,
                 ),
+                include_dashboard_button=not local_snapshot_fallback,
             )
     except (OSError, ValueError) as exc:
         if event is None or str(event.get("source_key") or event.get("source") or "").strip().casefold() != "financialjuice":
@@ -1857,6 +1951,7 @@ def send(
             event=event, notification_status="failed", notification_reason="text_delivery_failed",
         )
         return
+    claim_completion: dict[str, Any] | None = None
     if fj_delivery is not None:
         fj_receipts = [row for row in fj_delivery.get("receipts", []) if isinstance(row, dict)]
         delivered = sum(str(row.get("delivery_status") or "") == "delivered" for row in fj_receipts)
@@ -1937,25 +2032,76 @@ def send(
     else:
         delivered = sum(delivery.status == "delivered" for delivery in deliveries)
         failed = len(deliveries) - delivered
-        delivery_status = "delivered" if not failed else "partial" if delivered else "failed"
+        unknown = sum(delivery.status == "delivery_unknown" for delivery in deliveries)
+        delivery_status = (
+            "delivered" if len(deliveries) > 0 and not failed
+            else "delivery_unknown" if unknown and not delivered
+            else "partial" if delivered else "failed"
+        )
         failed_recipient_hashes = [delivery.chat_id_hash for delivery in deliveries if delivery.status != "delivered"]
         if hasattr(ledger, "complete_notification_claim"):
-            ledger.complete_notification_claim(
+            completed = ledger.complete_notification_claim(
                 delivery_claim_key,
                 delivered_recipient_hashes=tuple(delivery.chat_id_hash for delivery in deliveries if delivery.status == "delivered"),
                 failed_recipient_hashes=tuple(delivery.chat_id_hash for delivery in deliveries if delivery.status != "delivered"),
             )
+            claim_completion = completed if isinstance(completed, dict) else None
+    if fj_delivery is not None:
+        all_recipients_delivered = (
+            bool(delivered) and failed == 0 and delivery_status == "delivered"
+        )
+    elif claim_completion is not None:
+        configured_hashes = {
+            str(item)
+            for item in (
+                claim_completion.get("recipient_hashes")
+                or claim.get("recipient_hashes")
+                or []
+            )
+        }
+        delivered_hashes = {
+            str(item) for item in claim_completion.get("delivered_recipient_hashes") or []
+        }
+        all_recipients_delivered = (
+            bool(configured_hashes)
+            and claim_completion.get("status") == "delivered"
+            and configured_hashes.issubset(delivered_hashes)
+        )
+        if all_recipients_delivered:
+            delivered = len(configured_hashes)
+            failed = 0
+            unknown = 0
+            failed_recipient_hashes = []
+            delivery_status = "delivered"
+    else:
+        all_recipients_delivered = (
+            bool(deliveries)
+            and len(deliveries) == len(settings.telegram_chat_ids)
+            and delivered == len(settings.telegram_chat_ids)
+            and failed == 0
+        )
+    guard_required = os.environ.get("TELEGRAM_DELIVERY_GUARD_REQUIRED", "").strip().casefold() in {"1", "true", "yes", "on"}
+    public_release_verified = bool(not local_snapshot_fallback and public_url and deployment_identity_verified)
     output: dict[str, Any] = {
-        "sent": "true",
-        "reason": "sent_partial" if failed else "sent",
+        "sent": "true" if all_recipients_delivered else "false",
+        "reason": (
+            "sent" if all_recipients_delivered
+            else "sent_partial" if delivered
+            else "all_recipients_failed"
+        ),
         "release_id": gate.release_id,
         "trace_id": trace_id,
         "snapshot_id": snapshot_id,
         "observation_id": observation_id,
         "delivery_status": delivery_status,
+        "delivery_mode": "local_prepared_snapshot_no_pages" if local_snapshot_fallback else "text",
+        "public_release_verified": "true" if public_release_verified else "false",
+        "durable_receipt_verified": (
+            "true" if guard_required and all_recipients_delivered else "false"
+        ),
+        "unknown_count": unknown if fj_delivery is None else 0,
         "delivered_count": delivered,
         "failed_count": failed,
-        "delivery_mode": "text",
         "alert_id": alert_id,
         "alert_budget": budget,
         # Keep the workflow output comma-delimited; the callback turns it
@@ -1963,7 +2109,7 @@ def send(
         # list for delivered=1/failed=0 receipts.
         "failed_recipient_hashes": ",".join(failed_recipient_hashes),
         "notification_expected": "true",
-        "notification_status": ("ready" if delivery_status == "delivered" else delivery_status),
+        "notification_status": ("ready" if all_recipients_delivered else delivery_status),
         "notification_reason": ("sent" if delivery_status == "delivered" else "recipient_delivery_partial" if delivery_status == "partial" else "recipient_delivery_failed") if event else "no_trigger",
         "comparison_notification_key": claim.get("comparison_notification_key") if isinstance(claim, dict) else "",
         "material_changes": claim.get("material_changes") if isinstance(claim, dict) else [],
@@ -2039,6 +2185,16 @@ def main() -> int:
         help="record whether this run was explicitly allowed to notify",
     )
     parser.add_argument(
+        "--allow-local-snapshot-fallback",
+        action="store_true",
+        help="allow only a mandatory, evidence-complete scheduled report after local artifacts pass the release gate",
+    )
+    parser.add_argument(
+        "--deployment-identity-verified",
+        action="store_true",
+        help="assert that this Pages deployment identity was verified by the workflow",
+    )
+    parser.add_argument(
         "--require-production-research",
         action="store_true",
         help="require a fresh production research artifact for research-only delivery",
@@ -2077,6 +2233,8 @@ def main() -> int:
             args.public_url,
             require_production_research=args.require_production_research,
             slot_key=args.slot_key,
+            allow_local_snapshot_fallback=args.allow_local_snapshot_fallback,
+            deployment_identity_verified=args.deployment_identity_verified,
         )
     return 0
 

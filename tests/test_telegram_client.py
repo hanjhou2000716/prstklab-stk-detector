@@ -294,6 +294,29 @@ def test_send_brief_uses_alert_deep_link_when_provided(monkeypatch):
     )
 
 
+def test_send_brief_can_omit_dashboard_button_for_local_only_report(monkeypatch):
+    captured = {}
+
+    class Response:
+        ok = True
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"ok": True, "result": {"message_id": 1}}
+
+    monkeypatch.setattr(
+        "src.telegram_client.requests.post",
+        lambda url, json, timeout: (captured.update(json) or Response()),
+    )
+    send_brief(
+        token="t", chat_id="1", text="ok", dashboard_url="https://example.test/app",
+        include_dashboard_button=False,
+    )
+
+    assert "reply_markup" not in captured
+
+
 def test_send_briefs_delivers_to_each_configured_recipient(monkeypatch):
     calls = []
 

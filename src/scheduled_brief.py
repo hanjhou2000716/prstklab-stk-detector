@@ -932,15 +932,34 @@ def main() -> None:
         "delivered": sum(result.delivered for result in results),
         "failed": sum(not result.delivered for result in results),
     }
+    delivered_all = (
+        bool(results)
+        and summary["delivered"] == len(settings.telegram_chat_ids)
+        and len(results) == len(settings.telegram_chat_ids)
+        and summary["failed"] == 0
+    )
+    unknown = sum("delivery_unknown" in str(result.error or "") for result in results)
     _write_output({
-        "sent": "true",
-        "reason": "sent_partial" if summary["failed"] else "sent",
+        "sent": "true" if delivered_all else "false",
+        "reason": (
+            "sent" if delivered_all
+            else "delivery_unknown" if unknown and not summary["delivered"]
+            else "sent_partial" if summary["delivered"]
+            else "all_recipients_failed"
+        ),
         "trace_id": trace_id,
         "snapshot_id": snapshot_id,
         "observation_id": observation_id,
-        "delivery_status": "delivered" if not summary["failed"] else "partial" if summary["delivered"] else "failed",
+        "delivery_status": (
+            "delivered" if delivered_all
+            else "delivery_unknown" if unknown and not summary["delivered"]
+            else "partial" if summary["delivered"]
+            else "failed"
+        ),
         "delivered_count": summary["delivered"],
         "failed_count": summary["failed"],
+        "unknown_count": unknown,
+        "no_resend": "true" if summary["delivered"] or unknown else "false",
         "alert_budget_allowed": "true",
         "alert_budget_reason": budget.get("reason", "budget_available"),
     })
