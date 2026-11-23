@@ -224,8 +224,9 @@ def test_scheduled_release_gate_is_identity_bound_bounded_and_fail_closed():
     )[1].split(
         "- name: Publish scheduled notification decision", 1
     )[0]
-    assert "if: always() && !cancelled()" in sender
-    assert "steps.release_gate.outputs.allowed == 'true'" not in sender
+    assert "always() && !cancelled()" in sender
+    assert "steps.release_gate.outputs.allowed == 'true' ||" in sender
+    assert "steps.release_gate.outputs.error_category == 'pages_unavailable'" in sender
     assert "--allow-local-snapshot-fallback" in sender
     assert "DEPLOYMENT_IDENTITY_VERIFIED" in sender
     assert "--deployment-identity-verified" in sender

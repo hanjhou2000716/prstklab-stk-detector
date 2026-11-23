@@ -1581,24 +1581,29 @@ def send(
             if local_gate.allowed:
                 gate = local_gate
                 local_snapshot_fallback = True
-    if not gate.allowed:
+    public_proof_missing = (
+        allow_local_snapshot_fallback and not local_snapshot_fallback
+        and (not public_url or not deployment_identity_verified)
+    )
+    if not gate.allowed or public_proof_missing:
+        reason = "release_gate_blocked" if not gate.allowed else "public_release_identity_unverified"
         _write_decision_output({
             "sent": "false",
             "delivery_status": "blocked",
-            "reason": "release_gate_blocked",
+            "reason": reason,
             "release_id": gate.release_id,
             "snapshot_id": snapshot_id,
             "release_gate_errors": ";".join(gate.errors),
             "notification_expected": "true" if notification_expected else "false",
             "notification_status": "failed" if notification_expected else "blocked",
-            "notification_reason": "release_gate_blocked",
+            "notification_reason": reason,
             "public_release_verified": "false",
         }, notification_status="failed" if notification_expected else "blocked",
-            notification_reason="release_gate_blocked",
+            notification_reason=reason,
             notification_expected=notification_expected,
             last_receipt_status="not_attempted",
         )
-        print("Release gate blocked Telegram delivery: " + "; ".join(gate.errors))
+        print("Scheduled Telegram delivery blocked: " + ("; ".join(gate.errors) or reason))
         return
 
     ledger = EventLedger()

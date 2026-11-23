@@ -37,6 +37,20 @@ def test_migration_validator_reads_only_remote_column_from_cli_table():
     assert result["remote_count"] == 1
 
 
+def test_migration_validator_preserves_full_supabase_timestamp(tmp_path):
+    migrations = tmp_path / "supabase" / "migrations"
+    migrations.mkdir(parents=True)
+    version = "20261119123830"
+    (migrations / f"{version}_example.sql").write_text("select 1;", encoding="utf-8")
+    result = compare(
+        tmp_path,
+        f"Local | Remote | Time (UTC)\n{version} | {version} | 2026-11-19 12:38:30\n",
+    )
+    assert result["status"] == "ready"
+    assert result["pending_local_versions"] == []
+    assert result["remote_count"] == 1
+
+
 def test_migration_validator_blocks_duplicate_local_versions(tmp_path):
     migrations = tmp_path / "supabase" / "migrations"
     migrations.mkdir(parents=True)

@@ -7,7 +7,8 @@ import json
 import re
 from pathlib import Path
 
-VERSION_RE = re.compile(r"20\d{10}")
+# Keep the repository's legacy 12-digit versions and Supabase CLI timestamps.
+VERSION_RE = re.compile(r"(?<!\d)20[0-9]{10}(?:[0-9]{2})?(?!\d)")
 
 
 def local_versions(root: Path) -> set[str]:

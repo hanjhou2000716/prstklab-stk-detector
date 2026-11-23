@@ -24,7 +24,7 @@ from typing import Any
 
 import requests
 
-from scripts.validate_supabase_migrations import compare
+from scripts.validate_supabase_migrations import VERSION_RE, compare, local_versions
 from src.market_backup_verification import (
     VerificationError,
     verify_market_backup,
@@ -109,7 +109,7 @@ def project_ref_fingerprint(project_ref: str) -> str:
 def _safe_versions(value: Any) -> list[str]:
     if not isinstance(value, (list, tuple, set)):
         return []
-    return sorted({str(item) for item in value if re.fullmatch(r"20\d{10}", str(item))})
+    return sorted({str(item) for item in value if VERSION_RE.fullmatch(str(item))})
 
 
 def _base_diagnostic(*, mode: str, head_sha: str, project_ref: str, run_id: str) -> dict[str, Any]:
@@ -169,21 +169,13 @@ class MigrationRunner:
         self.command_runner = command_runner
         self.session = session or requests.Session()
         self.current_time = now or _now()
-        self.local_versions = self._local_versions()
+        self.local_versions = tuple(sorted(local_versions(self.repo_root)))
         self.diagnostic = _base_diagnostic(
             mode=mode,
             head_sha=head_sha,
             project_ref=self.env.get("SUPABASE_PROJECT_ID", ""),
             run_id=run_id,
         )
-
-    def _local_versions(self) -> tuple[str, ...]:
-        versions = {
-            path.name.split("_", 1)[0]
-            for path in (self.repo_root / "supabase" / "migrations").glob("*.sql")
-            if re.fullmatch(r"20\d{10}", path.name.split("_", 1)[0])
-        }
-        return tuple(sorted(versions))
 
     def _write(self) -> None:
         self.artifact_dir.mkdir(parents=True, exist_ok=True)

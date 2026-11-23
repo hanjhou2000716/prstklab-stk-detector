@@ -15,11 +15,16 @@ def _send_block(workflow: str, marker: str) -> str:
     return workflow[start:] if end < 0 else workflow[start:end]
 
 
-def test_scheduled_notification_requires_public_release_gate_but_not_research_gate():
+def test_scheduled_notification_passes_public_release_and_original_slot_to_sender():
     workflow = _workflow("scheduled-brief.yml")
-    block = _send_block(workflow, "- name: Send Telegram brief after successful publication")
+    block = _send_block(workflow, "- name: Send scheduled Telegram report or eligible alert")
+    assert "steps.late_expiry.outputs.expired != 'true'" in block
+    assert "steps.writer_queue.outputs.should_continue == 'true'" in block
+    assert "steps.prepared_release.outputs.current == 'true'" in block
     assert "steps.release_gate.outputs.allowed == 'true'" in block
-    assert "steps.research_policy.outputs.allow_telegram" not in block
+    assert "steps.release_gate.outputs.error_category == 'pages_unavailable'" in block
+    assert "--allow-local-snapshot-fallback" in block
+    assert "--slot-key" in block
     assert "--send-only" in block
 
 
