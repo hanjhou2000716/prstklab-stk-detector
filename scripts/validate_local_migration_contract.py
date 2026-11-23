@@ -13,7 +13,7 @@ import json
 import re
 from pathlib import Path
 
-VERSION_RE = re.compile(r"^20\d{10}$")
+VERSION_RE = re.compile(r"20[0-9]{10}(?:[0-9]{2})?")
 FORBIDDEN = ("migration repair", "db reset", "db seed")
 
 

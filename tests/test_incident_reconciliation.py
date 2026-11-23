@@ -69,13 +69,12 @@ def _legacy_audit_log(*, run_id=39828958057, status="missing_receipt", trigger="
     return "\n".join(lines).encode("utf-8"), result, created_at, started_at, printed_at, ledger_sha
 
 
-def test_central_reconciliation_wakes_on_gmail_sync_completion():
+def test_central_reconciliation_polls_without_gmail_sync_fanout():
     workflow = Path(__file__).parents[1] / ".github" / "workflows" / "incident-reconciliation.yml"
     text = workflow.read_text(encoding="utf-8")
-    workflow_run = text.split("  workflow_run:", 1)[1].split("  schedule:", 1)[0]
 
-    assert "Gmail history sync (Supabase)" in workflow_run
-    assert "types: [completed]" in workflow_run
+    assert 'cron: "*/5 * * * *"' in text
+    assert "workflow_run:" not in text
 
 
 @pytest.mark.parametrize(

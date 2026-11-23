@@ -441,8 +441,8 @@ def test_health_workflow_delegates_notifications_to_single_outlet():
     assert "native_alert" not in workflow
     outlet = (root / ".github/workflows/incident-notification-outlet.yml").read_text(encoding="utf-8")
     assert 'cron: "0,30 * * * *"' in outlet
-    assert "Central incident reconciliation health" not in outlet
-    assert "Central incident reconciliation" in outlet
+    assert "workflow_run:" not in outlet
+    assert "python -m scripts.incident_notification_outlet prepare" in outlet
     assert "steps.prepare.outputs.notification_due == 'true'" in outlet
     assert "Record due notification without manufacturing a failed run" in outlet
     assert "did not send or confirm email" in outlet

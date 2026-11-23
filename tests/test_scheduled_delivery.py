@@ -1617,6 +1617,34 @@ def test_routine_report_uses_local_snapshot_when_pages_is_unavailable(
     assert "durable_receipt_verified=true" in text
 
 
+def test_non_routine_alert_does_not_use_unverified_public_release(tmp_path, monkeypatch):
+    snapshot_path = tmp_path / "market.json"
+    manifest_path = tmp_path / "release-manifest.json"
+    output = tmp_path / "output"
+    _patch_ready(monkeypatch, output)
+    snapshot_path.write_text(json.dumps({
+        "snapshot_id": "market-12345678",
+        "briefing": {
+            "notification_eligible": True,
+            "slot_context": {"delivery_intent": "notify_candidate"},
+        },
+    }), encoding="utf-8")
+    manifest_path.write_text("{}", encoding="utf-8")
+
+    def fail_if_claimed():
+        pytest.fail("an alert without verified deployment reached the delivery ledger")
+
+    monkeypatch.setattr(scheduled_delivery, "EventLedger", fail_if_claimed)
+    scheduled_delivery.send(
+        snapshot_path, "pre_open", manifest_path, public_url="https://example.test/pages",
+        allow_local_snapshot_fallback=True, deployment_identity_verified=False,
+    )
+
+    result = output.read_text(encoding="utf-8")
+    assert "sent=false" in result
+    assert "reason=public_release_identity_unverified" in result
+
+
 def test_local_snapshot_fallback_fails_closed_on_identity_mismatch(
     tmp_path, monkeypatch,
 ):

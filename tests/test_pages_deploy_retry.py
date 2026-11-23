@@ -63,8 +63,8 @@ def test_pages_workflows_do_not_mask_release_contract_failures():
         assert "continue-on-error: true" not in section, name
 
 
-def test_delivery_workflows_skip_notifications_when_pages_is_unavailable():
-    for name in ("emergency-alert.yml", "official-event-monitor.yml", "scheduled-brief.yml"):
+def test_alert_workflows_skip_notifications_when_pages_is_unavailable():
+    for name in ("emergency-alert.yml", "official-event-monitor.yml"):
         workflow = (WORKFLOWS / name).read_text(encoding="utf-8")
         assert "steps.deployment.outputs.available == 'true'" in workflow
         assert "Telegram delivery intentionally skipped (fail closed)." in workflow

@@ -224,8 +224,9 @@ def test_scheduled_release_gate_is_identity_bound_bounded_and_fail_closed():
     )[1].split(
         "- name: Publish scheduled notification decision", 1
     )[0]
-    assert "if: always() && !cancelled()" in sender
-    assert "steps.release_gate.outputs.allowed == 'true'" not in sender
+    assert "always() && !cancelled()" in sender
+    assert "steps.release_gate.outputs.allowed == 'true' ||" in sender
+    assert "steps.release_gate.outputs.error_category == 'pages_unavailable'" in sender
     assert "--allow-local-snapshot-fallback" in sender
     assert "DEPLOYMENT_IDENTITY_VERIFIED" in sender
     assert "--deployment-identity-verified" in sender
@@ -235,7 +236,7 @@ def test_scheduled_release_gate_is_identity_bound_bounded_and_fail_closed():
         "- name: Record release gate diagnostics", 1
     )[0]
     assert "continue-on-error: true" in release_gate_step
-    callback = workflow.split("- name: Persist scheduled receipt", 1)[1].split(
+    callback = workflow.split("id: persist_scheduled_receipt", 1)[1].split(
         "- name:", 1
     )[0]
     assert "steps.release_gate.outputs.allowed" not in callback
@@ -358,11 +359,10 @@ def test_release_build_failure_annotation_is_not_written_as_a_github_output():
 
 def test_scheduled_incident_handoff_produces_an_attempt_bound_artifact():
     root = Path(__file__).resolve().parents[1]
-    workflow = (root / ".github" / "workflows" / "incident-reconciliation.yml").read_text(encoding="utf-8")
     script = (root / "scripts" / "scheduled_brief_incidents.py").read_text(encoding="utf-8")
     coordinator = (root / "scripts" / "incident_reconciliation.py").read_text(encoding="utf-8")
-    assert "Scheduled market brief" in workflow
-    assert "Scheduled brief slot receipt audit" in workflow
+    assert '".github/workflows/scheduled-brief.yml": "Scheduled market brief"' in coordinator
+    assert '".github/workflows/scheduled-brief-slot-audit.yml": "Scheduled brief slot receipt audit"' in coordinator
     assert "scheduled-terminal-{run_id}-attempt-{attempt}" in coordinator
     assert "scheduled-slot-audit-{run_id}-attempt-{attempt}" in coordinator
     assert "reconcile_scheduled_brief" in coordinator

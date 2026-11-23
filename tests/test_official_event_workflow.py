@@ -97,7 +97,8 @@ def test_gmail_history_dispatches_realtime_monitor_after_new_reviewed_rows():
     incident_script = (root / "scripts" / "incident_reconciliation.py").read_text(encoding="utf-8")
     assert "Central incident reconciliation" in incident_workflow
     assert 'cron: "*/5 * * * *"' in incident_workflow
-    assert "Official macro and price monitor" in incident_workflow
+    assert "workflow_run:" not in incident_workflow
+    assert '".github/workflows/official-event-monitor.yml": "Official event monitor"' in incident_script
     assert "result = audit_liveness(" in incident_script
     assert "defer_notification_cadence=True" in incident_script
     assert "priority_recovery_scan_status" in workflow

@@ -854,10 +854,17 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Record Pages status before scheduled delivery
-        if: always() && !cancelled() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && (steps.release_policy.outputs.publish != 'true' || steps.deployment_identity.outputs.verified != 'true' || steps.release_gate.outputs.allowed != 'true')
+        if: always() && !cancelled() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && (steps.release_policy.outputs.publish != 'true' || steps.deployment_identity.outputs.verified != 'true' || steps.release_gate.outputs.allowed != 'true')
         run: echo "Pages is unavailable or unverified; the sender will allow only a locally verified mandatory scheduled report, without a Pages button."
       - name: Send scheduled Telegram report or eligible alert
-        if: always() && !cancelled() && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && env.NOTIFY == 'true' && steps.prepare.outputs.notification_expected == 'true'
+        if: >-
+          always() && !cancelled() && steps.late_expiry.outputs.expired != 'true' &&
+          steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' &&
+          steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' &&
+          env.NOTIFY == 'true' && steps.prepare.outputs.notification_expected == 'true' &&
+          (steps.release_gate.outputs.allowed == 'true' ||
+          steps.release_gate.outputs.error_category == 'pages_unavailable' ||
+          (steps.release_gate.outcome == 'skipped' && steps.deployment_identity.outputs.verified != 'true'))
         id: send_brief
         env:
           # Notification credentials are scoped to this step; collection and

@@ -10,7 +10,7 @@ import time
 from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
 from typing import Any
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlencode, urlsplit
 from urllib.request import Request, urlopen
 
@@ -73,6 +73,28 @@ class GitHubAPIHttpError(LivenessAuditError):
             "http_status": self.status_code,
             "request_id": self.request_id or "unavailable",
             "retry_count": self.retry_count,
+        }
+
+
+class GitHubAPITransportError(LivenessAuditError):
+    """Bounded API transport failure without request URLs or payloads."""
+
+    def __init__(
+        self, reason: str, *, method: str, endpoint_class: str,
+        retry_count: int, timed_out: bool,
+    ) -> None:
+        super().__init__(reason)
+        self.method = method.upper()
+        self.endpoint_class = endpoint_class
+        self.retry_count = retry_count
+        self.timed_out = timed_out
+
+    def diagnostic(self) -> dict[str, Any]:
+        return {
+            "method": self.method,
+            "endpoint_class": self.endpoint_class,
+            "retry_count": self.retry_count,
+            "timed_out": self.timed_out,
         }
 
 
@@ -152,7 +174,10 @@ def _request_json(
         try:
             remaining = effective_deadline - time.monotonic()
             if remaining <= 0:
-                raise LivenessAuditError("monitor_liveness_audit_deadline_exceeded")
+                raise GitHubAPITransportError(
+                    "monitor_liveness_audit_deadline_exceeded",
+                    method=method, endpoint_class=endpoint_class, retry_count=attempt, timed_out=True,
+                )
             with urlopen(request, timeout=min(15.0, remaining)) as response:
                 if response_headers is not None:
                     response_headers["link"] = str(response.headers.get("Link") or "")
@@ -198,7 +223,14 @@ def _request_json(
                 if remaining > delay:
                     time.sleep(delay)
                     continue
-            raise LivenessAuditError(f"monitor_liveness_api_{type(exc).__name__}") from exc
+            raise GitHubAPITransportError(
+                f"monitor_liveness_api_{type(exc).__name__}",
+                method=method, endpoint_class=endpoint_class, retry_count=attempt + 1,
+                timed_out=(
+                    isinstance(exc, TimeoutError)
+                    or (isinstance(exc, URLError) and isinstance(exc.reason, TimeoutError))
+                ),
+            ) from exc
         except (UnicodeError, json.JSONDecodeError) as exc:
             raise LivenessAuditError(f"monitor_liveness_api_{type(exc).__name__}") from exc
     raise LivenessAuditError("monitor_liveness_api_retry_exhausted")

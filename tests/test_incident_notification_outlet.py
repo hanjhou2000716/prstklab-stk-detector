@@ -1,6 +1,7 @@
 import json
 from copy import deepcopy
 from datetime import UTC, datetime
+from threading import Barrier
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
@@ -380,3 +381,91 @@ def test_missing_control_journal_is_not_automatically_recreated(monkeypatch):
             repository="owner/repo", api_url="https://api.github.com", token="test", deadline=10**20,
         )
     assert calls == []
+
+
+def test_consumer_sources_overlap_and_keep_decision_order(monkeypatch):
+    deadline = outlet.time.monotonic() + 90
+    barrier = Barrier(2)
+
+    def verify(*, run_id, attempt, deadline, **_kwargs):
+        assert deadline == expected_deadline
+        barrier.wait(timeout=5)
+        return {"id": run_id, "attempt": attempt}, {"notification_due": True}
+
+    expected_deadline = deadline
+    monkeypatch.setattr(outlet, "_load_verified_consumer", verify)
+    groups = [("456", 1), ("789", 2)]
+    verified = outlet._verify_consumer_sources(
+        groups, repository="owner/repo", api_url="https://api.github.com",
+        token="x", deadline=deadline,
+    )
+    assert list(verified) == groups
+    assert [source["id"] for source, _ in verified.values()] == ["456", "789"]
+
+
+def test_search_timeout_uses_complete_repository_listing_before_decision(monkeypatch):
+    issue = _issue()
+    journal = _stub_journal(monkeypatch)
+    _stub_verified_consumer(monkeypatch)
+    deadline = outlet.time.monotonic() + 90
+
+    def search(*_args, deadline_monotonic):
+        assert deadline_monotonic < deadline
+        raise outlet.GitHubAPITransportError(
+            "monitor_liveness_api_TimeoutError", method="GET",
+            endpoint_class="search/issues", retry_count=3, timed_out=True,
+        )
+
+    def request(_api_url, _repository, _token, method, path, **kwargs):
+        assert kwargs["deadline_monotonic"] == deadline
+        assert method == "GET"
+        assert path.startswith("issues?")
+        assert parse_qs(urlsplit(path).query)["state"] == ["open"]
+        return [issue, {**issue, "number": 124, "pull_request": {}}]
+
+    monkeypatch.setattr(outlet, "_open_incidents", search)
+    monkeypatch.setattr(outlet, "_request_json", request)
+    result = outlet.prepare_outlet(
+        repository="owner/repo", api_url="https://api.github.com", token="x",
+        now=datetime(2026, 10, 28, 10, 1, tzinfo=UTC), deadline_monotonic=deadline,
+    )
+    assert result["notification_due"] is True
+    assert result["issue_numbers"] == [123]
+    assert result["status"] == "notification_due_delivery_not_attempted"
+    assert journal["pending_decision"] is None
+
+
+def test_search_timeout_with_incomplete_fallback_preserves_failure_artifact(monkeypatch, tmp_path):
+    path = tmp_path / "result.json"
+    monkeypatch.setenv("INCIDENT_OUTLET_RESULT_PATH", str(path))
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+    monkeypatch.setenv("GITHUB_TOKEN", "test-token")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "2")
+    monkeypatch.setattr(outlet.sys, "argv", ["outlet", "prepare"])
+
+    def search(*_args, **_kwargs):
+        raise outlet.GitHubAPITransportError(
+            "monitor_liveness_api_TimeoutError", method="GET",
+            endpoint_class="search/issues", retry_count=3, timed_out=True,
+        )
+
+    def request(_api_url, _repository, _token, method, endpoint, **_kwargs):
+        assert method == "GET"
+        assert endpoint.startswith("issues?")
+        raise outlet.GitHubAPITransportError(
+            "monitor_liveness_api_TimeoutError", method="GET", endpoint_class="issues",
+            retry_count=3, timed_out=True,
+        ) from TimeoutError("private transport detail")
+
+    monkeypatch.setattr(outlet, "_open_incidents", search)
+    monkeypatch.setattr(outlet, "_request_json", request)
+    assert outlet.main() == 1
+    result = json.loads(path.read_text(encoding="utf-8"))
+    assert result["status"] == "failed_before_decision"
+    assert result["notification_due"] is None
+    assert result["failure_reason"] == "monitor_liveness_api_TimeoutError"
+    assert result["github_api"] == {
+        "method": "GET", "endpoint_class": "issues", "retry_count": 3, "timed_out": True,
+    }
+    assert result["outlet_attempt"] == 2
+    assert "private transport detail" not in path.read_text(encoding="utf-8")
