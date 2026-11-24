@@ -123,6 +123,7 @@ def test_artifact_download_retries_transient_404_for_the_same_exact_artifact(mon
     assert [url for url, _timeout in calls] == [
         "https://api.github.com/repos/owner/repo/actions/artifacts/202/zip",
     ] * 2
+    assert all(isinstance(timeout, int) and timeout <= 30 for _url, timeout in calls)
     assert delays == [1.0]
     assert diagnostics == {
         "artifact_read_attempts": 2,
@@ -281,6 +282,24 @@ def test_artifact_download_deadline_prevents_any_read_attempt(monkeypatch):
             api_url="https://api.github.com", repository="owner/repo", token="secret",
             artifact_id="202", artifact_digest=ARTIFACT_DIGEST,
             deadline_epoch=99, wall_clock=lambda: 100,
+        )
+    assert captured.value.error_code == "pages_artifact_download_deadline_exhausted"
+    assert captured.value.artifact_read_attempts == 0
+    assert calls == []
+
+
+def test_artifact_download_does_not_round_subsecond_budget_past_deadline(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        pages_deployment, "_open_artifact_url",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+    monkeypatch.setattr(pages_deployment, "_download_pages_artifact_manifest", _REAL_ARTIFACT_DOWNLOADER)
+    with pytest.raises(PagesDeploymentError) as captured:
+        pages_deployment._download_pages_artifact_manifest(
+            api_url="https://api.github.com", repository="owner/repo", token="secret",
+            artifact_id="202", artifact_digest=ARTIFACT_DIGEST,
+            timeout=0.5, sleeper=lambda _delay: None, monotonic=lambda: 0.0,
         )
     assert captured.value.error_code == "pages_artifact_download_deadline_exhausted"
     assert captured.value.artifact_read_attempts == 0

@@ -832,6 +832,13 @@ def _download_pages_artifact_manifest(
         budget = remaining_budget()
         if budget <= 0:
             break
+        # urllib's typed API accepts integer seconds. Floor rather than round
+        # so an individual blocking read never receives more time than the
+        # remaining original-slot budget. If less than one second remains,
+        # stop instead of extending the delivery window.
+        request_timeout = math.floor(budget)
+        if request_timeout < 1:
+            break
         attempts_made = attempt
         request = Request(endpoint, headers={
             "Accept": "application/vnd.github+json",
@@ -840,7 +847,7 @@ def _download_pages_artifact_manifest(
             "User-Agent": "PRStK-pages-deployment-verifier",
         })
         try:
-            with _open_artifact_url(request, timeout=budget) as response:
+            with _open_artifact_url(request, timeout=request_timeout) as response:
                 response_url = str(response.geturl() if hasattr(response, "geturl") else endpoint)
                 host_class = _artifact_response_host_class(response_url)
                 status = int(response.getcode() or 200) if hasattr(response, "getcode") else 200
