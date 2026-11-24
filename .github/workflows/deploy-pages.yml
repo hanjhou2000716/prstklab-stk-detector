@@ -194,6 +194,7 @@ jobs:
           printf 'PAGES_MANIFEST_PATH=%s\n' "$RUNNER_TEMP/prstk-pages/data/release-manifest.json" >> "$GITHUB_ENV"
       - name: 上傳儀表板
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.release.outputs.publish == 'true' && steps.stage_pages_payload.outcome == 'success'
+        id: upload_pages_artifact
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           path: ${{ runner.temp }}/prstk-pages
@@ -203,6 +204,7 @@ jobs:
         uses: ./.github/actions/deploy-pages-retry
         with:
           manifest_path: ${{ runner.temp }}/prstk-pages/data/release-manifest.json
+          uploaded_artifact_id: ${{ steps.upload_pages_artifact.outputs.artifact_id }}
           phase: dashboard_release
           fallback_url: ${{ vars.DASHBOARD_URL }}
       - name: Verify completed Pages deployment identity

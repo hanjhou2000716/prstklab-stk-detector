@@ -5,8 +5,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
+import sys
 import tarfile
 import tempfile
 import time
@@ -49,6 +51,10 @@ class PagesDeploymentError(RuntimeError):
         artifact_manifest_sha256: str = "",
         release_binding_id: str = "",
         request_id: str = "",
+        artifact_read_attempts: int = 0,
+        artifact_read_http_status: int = 0,
+        artifact_read_response_host: str = "",
+        artifact_read_request_id: str = "",
     ) -> None:
         super().__init__(message)
         self.retryable = retryable
@@ -69,6 +75,10 @@ class PagesDeploymentError(RuntimeError):
         self.artifact_manifest_sha256 = artifact_manifest_sha256
         self.release_binding_id = release_binding_id
         self.request_id = request_id
+        self.artifact_read_attempts = artifact_read_attempts
+        self.artifact_read_http_status = artifact_read_http_status
+        self.artifact_read_response_host = artifact_read_response_host
+        self.artifact_read_request_id = artifact_read_request_id
 
 
 def _safe_error_detail(raw: bytes, secrets: tuple[str, ...] = ()) -> str:
@@ -185,6 +195,10 @@ class PagesDeployment:
     phase: str = ""
     artifact_manifest_sha256: str = ""
     release_binding_id: str = ""
+    artifact_read_attempts: int = 0
+    artifact_read_http_status: int = 0
+    artifact_read_response_host: str = ""
+    artifact_read_request_id: str = ""
 
 
 def derive_release_binding_id(
@@ -524,9 +538,13 @@ def _select_run_artifact_binding(
     artifact_name: str,
     request_json: Callable[..., Any],
     expected_source_revision: str = "",
+    expected_artifact_id: str = "",
 ) -> tuple[str, str]:
     if not run_id or not artifact_name:
         raise PagesDeploymentError("workflow run ID and Pages artifact name are required")
+    expected_id = str(expected_artifact_id or "").strip()
+    if expected_id and not expected_id.isdigit():
+        raise PagesDeploymentError("uploaded Pages artifact ID is invalid")
     artifacts: list[dict[str, Any]] = []
     for page in range(1, 11):
         payload = request_json(
@@ -548,6 +566,8 @@ def _select_run_artifact_binding(
     artifact_id = str(artifact.get("id") or "").strip()
     if not artifact_id.isdigit() or artifact.get("expired") is True:
         raise PagesDeploymentError("the matching Pages artifact has no valid ID or has expired")
+    if expected_id and artifact_id != expected_id:
+        raise PagesDeploymentError("the listed Pages artifact ID differs from the upload step output")
     artifact_digest = str(artifact.get("digest") or "").strip().lower()
     if not re.fullmatch(r"sha256:[0-9a-f]{64}", artifact_digest):
         raise PagesDeploymentError("the matching Pages artifact has no verified SHA-256 digest")
@@ -567,6 +587,10 @@ MAX_PAGES_ARTIFACT_TAR_BYTES = DEFAULT_MAX_BYTES
 MAX_PAGES_ARTIFACT_TAR_MEMBERS = MAX_FILES
 MAX_PAGES_MANIFEST_BYTES = 1_000_000
 PAGES_ARTIFACT_READ_CHUNK_BYTES = 1024 * 1024
+PAGES_ARTIFACT_READ_MAX_ATTEMPTS = 3
+PAGES_ARTIFACT_READ_BACKOFF_SECONDS = (1.0, 2.0)
+PAGES_ARTIFACT_READ_RETRYABLE_HTTP_STATUSES = frozenset({404, 408, 429, 500, 502, 503, 504})
+PAGES_ARTIFACT_READ_MAX_TIMEOUT_SECONDS = 30.0
 PAGES_MANIFEST_MEMBER = "data/release-manifest.json"
 
 
@@ -714,53 +738,242 @@ def _manifest_from_pages_artifact_archive(archive_bytes: bytes, *, expected_dige
         return _manifest_from_pages_artifact_archive_file(archive_path, expected_digest=expected_digest)
 
 
+def _artifact_response_host_class(value: str) -> str:
+    host = (urlparse(value).hostname or "").casefold()
+    if host == "api.github.com":
+        return "github_api"
+    if re.fullmatch(r"productionresultssa\d+\.blob\.core\.windows\.net", host):
+        return "github_artifact_blob"
+    return "other"
+
+
+def _safe_artifact_request_id(headers: Any, host_class: str) -> str:
+    if headers is None:
+        return ""
+    candidates = (
+        ("X-GitHub-Request-Id",) if host_class == "github_api"
+        else ("x-ms-request-id",) if host_class == "github_artifact_blob"
+        else ()
+    )
+    for header in candidates:
+        value = str(headers.get(header, "") or "").strip()
+        if re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", value):
+            return value
+    return ""
+
+
 def _download_pages_artifact_manifest(
-    *, api_url: str, repository: str, token: str, artifact_id: str,
-    artifact_digest: str, timeout: float = 30.0,
+    *,
+    api_url: str,
+    repository: str,
+    token: str,
+    artifact_id: str,
+    artifact_digest: str,
+    timeout: float = PAGES_ARTIFACT_READ_MAX_TIMEOUT_SECONDS,
+    deadline_epoch: float | None = None,
+    sleeper: Callable[[float], None] = time.sleep,
+    monotonic: Callable[[], float] = time.monotonic,
+    wall_clock: Callable[[], float] = time.time,
+    diagnostics: dict[str, Any] | None = None,
 ) -> bytes:
+    """Read one exact artifact with bounded transient-GET retries.
+
+    Retrying this idempotent GET never retries the later Pages deployment POST.
+    Every attempt uses the same artifact ID and retains all digest/manifest checks.
+    """
     endpoint = f"{api_url.rstrip('/')}/repos/{repository}/actions/artifacts/{artifact_id}/zip"
-    request = Request(endpoint, headers={
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {token}",
-        "X-GitHub-Api-Version": "2022-11-28",
-        "User-Agent": "PRStK-pages-deployment-verifier",
-    })
     try:
-        with _open_artifact_url(request, timeout=max(1, int(timeout))) as response:
-            with tempfile.TemporaryDirectory(prefix="prstk-pages-download-") as temp_dir:
-                archive_path = Path(temp_dir) / "artifact.zip"
-                total = 0
-                digest = hashlib.sha256()
-                with archive_path.open("wb") as handle:
-                    while True:
-                        chunk = response.read(PAGES_ARTIFACT_READ_CHUNK_BYTES)
-                        if not chunk:
-                            break
-                        total += len(chunk)
-                        if total > MAX_PAGES_ARTIFACT_ARCHIVE_BYTES:
-                            raise PagesDeploymentError("Pages artifact archive exceeds the verification size limit")
-                        digest.update(chunk)
-                        handle.write(chunk)
-                    handle.flush()
-                    os.fsync(handle.fileno())
-                if "sha256:" + digest.hexdigest() != artifact_digest:
-                    raise PagesDeploymentError(
-                        "downloaded Pages artifact digest does not match GitHub metadata",
-                        error_code="pages_artifact_digest_mismatch",
+        timeout_value = float(timeout)
+        deadline_value = float(deadline_epoch) if deadline_epoch is not None else None
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise PagesDeploymentError(
+            "Pages artifact read budget is invalid",
+            error_code="pages_artifact_read_budget_invalid",
+        ) from exc
+    if (
+        not math.isfinite(timeout_value)
+        or timeout_value < 0
+        or (deadline_value is not None and not math.isfinite(deadline_value))
+    ):
+        raise PagesDeploymentError(
+            "Pages artifact read budget is invalid",
+            error_code="pages_artifact_read_budget_invalid",
+        )
+    total_budget = min(PAGES_ARTIFACT_READ_MAX_TIMEOUT_SECONDS, timeout_value)
+    started = monotonic()
+    result = diagnostics if diagnostics is not None else {}
+
+    def remaining_budget() -> float:
+        remaining = total_budget - max(0.0, monotonic() - started)
+        if deadline_value is not None:
+            remaining = min(remaining, deadline_value - wall_clock())
+        return max(0.0, remaining)
+
+    def set_diagnostics(attempts: int, status: int, host_class: str, request_id: str) -> None:
+        result.update({
+            "artifact_read_attempts": attempts,
+            "artifact_read_http_status": status,
+            "artifact_read_response_host": host_class,
+            "artifact_read_request_id": request_id,
+        })
+
+    if remaining_budget() <= 0:
+        set_diagnostics(0, 0, "unknown", "")
+        raise PagesDeploymentError(
+            "Pages artifact read window expired before download began",
+            error_code="pages_artifact_download_deadline_exhausted",
+        )
+
+    last_http_error: HTTPError | None = None
+    last_host_class = "unknown"
+    last_request_id = ""
+    attempts_made = 0
+    for attempt in range(1, PAGES_ARTIFACT_READ_MAX_ATTEMPTS + 1):
+        budget = remaining_budget()
+        if budget <= 0:
+            break
+        # urllib's typed API accepts integer seconds. Floor rather than round
+        # so an individual blocking read never receives more time than the
+        # remaining original-slot budget. If less than one second remains,
+        # stop instead of extending the delivery window.
+        request_timeout = math.floor(budget)
+        if request_timeout < 1:
+            break
+        attempts_made = attempt
+        request = Request(endpoint, headers={
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {token}",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "PRStK-pages-deployment-verifier",
+        })
+        try:
+            with _open_artifact_url(request, timeout=request_timeout) as response:
+                response_url = str(response.geturl() if hasattr(response, "geturl") else endpoint)
+                host_class = _artifact_response_host_class(response_url)
+                status = int(response.getcode() or 200) if hasattr(response, "getcode") else 200
+                request_id = _safe_artifact_request_id(
+                    getattr(response, "headers", None), host_class,
+                )
+                set_diagnostics(attempt, status, host_class, request_id)
+                with tempfile.TemporaryDirectory(prefix="prstk-pages-download-") as temp_dir:
+                    archive_path = Path(temp_dir) / "artifact.zip"
+                    total = 0
+                    digest = hashlib.sha256()
+                    with archive_path.open("wb") as handle:
+                        while True:
+                            if remaining_budget() <= 0:
+                                raise PagesDeploymentError(
+                                    "Pages artifact read exceeded its bounded deadline",
+                                    error_code="pages_artifact_download_deadline_exhausted",
+                                )
+                            chunk = response.read(PAGES_ARTIFACT_READ_CHUNK_BYTES)
+                            if not chunk:
+                                break
+                            total += len(chunk)
+                            if total > MAX_PAGES_ARTIFACT_ARCHIVE_BYTES:
+                                raise PagesDeploymentError(
+                                    "Pages artifact archive exceeds the verification size limit",
+                                )
+                            digest.update(chunk)
+                            handle.write(chunk)
+                        handle.flush()
+                        os.fsync(handle.fileno())
+                    if "sha256:" + digest.hexdigest() != artifact_digest:
+                        raise PagesDeploymentError(
+                            "downloaded Pages artifact digest does not match GitHub metadata",
+                            error_code="pages_artifact_digest_mismatch",
+                        )
+                    manifest_bytes = _manifest_from_pages_artifact_archive_file(
+                        archive_path, expected_digest=artifact_digest,
                     )
-                return _manifest_from_pages_artifact_archive_file(archive_path, expected_digest=artifact_digest)
-    except HTTPError as exc:
-        raise PagesDeploymentError(
-            f"Pages artifact download returned HTTP {int(exc.code)}",
-            error_code=f"pages_artifact_download_http_{int(exc.code)}",
-            request_outcome="not_started",
-        ) from exc
-    except (URLError, TimeoutError, OSError) as exc:
-        raise PagesDeploymentError(
-            f"Pages artifact download failed: {type(exc).__name__}",
-            error_code="pages_artifact_download_failed",
-            request_outcome="not_started",
-        ) from exc
+                set_diagnostics(attempt, status, host_class, request_id)
+                print(
+                    f"pages_artifact_read attempt={attempt} status={status} "
+                    f"response_host={host_class} request_id={request_id or 'unknown'} outcome=verified",
+                    file=sys.stderr,
+                )
+                return manifest_bytes
+        except HTTPError as exc:
+            last_http_error = exc
+            last_host_class = _artifact_response_host_class(str(getattr(exc, "url", "") or endpoint))
+            last_request_id = _safe_artifact_request_id(
+                getattr(exc, "headers", None), last_host_class,
+            )
+            status = int(exc.code)
+            set_diagnostics(attempt, status, last_host_class, last_request_id)
+            retryable = status in PAGES_ARTIFACT_READ_RETRYABLE_HTTP_STATUSES
+            print(
+                f"pages_artifact_read attempt={attempt} status={status} "
+                f"response_host={last_host_class} request_id={last_request_id or 'unknown'} "
+                f"outcome={'retry' if retryable and attempt < PAGES_ARTIFACT_READ_MAX_ATTEMPTS else 'stop'}",
+                file=sys.stderr,
+            )
+            try:
+                exc.close()
+            except OSError:
+                pass
+            if not retryable or attempt >= PAGES_ARTIFACT_READ_MAX_ATTEMPTS:
+                break
+            delay = PAGES_ARTIFACT_READ_BACKOFF_SECONDS[attempt - 1]
+            if remaining_budget() <= delay:
+                break
+            sleeper(delay)
+        except PagesDeploymentError as exc:
+            exc.artifact_read_attempts = attempt
+            exc.artifact_read_http_status = int(result.get("artifact_read_http_status") or 200)
+            exc.artifact_read_response_host = str(result.get("artifact_read_response_host") or "unknown")
+            exc.artifact_read_request_id = str(result.get("artifact_read_request_id") or "")
+            raise
+        except (URLError, TimeoutError, ConnectionError) as exc:
+            set_diagnostics(attempt, 0, "unknown", "")
+            retry = attempt < PAGES_ARTIFACT_READ_MAX_ATTEMPTS
+            delay = PAGES_ARTIFACT_READ_BACKOFF_SECONDS[attempt - 1] if retry else 0
+            if retry and remaining_budget() > delay:
+                print(
+                    f"pages_artifact_read attempt={attempt} status=0 response_host=unknown "
+                    f"request_id=unknown outcome=retry transport={type(exc).__name__}",
+                    file=sys.stderr,
+                )
+                sleeper(delay)
+                continue
+            print(
+                f"pages_artifact_read attempt={attempt} status=0 response_host=unknown "
+                f"request_id=unknown outcome=stop transport={type(exc).__name__}",
+                file=sys.stderr,
+            )
+            raise PagesDeploymentError(
+                f"Pages artifact download failed: {type(exc).__name__}",
+                error_code="pages_artifact_download_failed",
+                artifact_read_attempts=attempt,
+            ) from exc
+
+    if remaining_budget() <= 0:
+        error_code = "pages_artifact_download_deadline_exhausted"
+        message = "Pages artifact read window expired before a verified artifact was available"
+        status = int(last_http_error.code) if last_http_error is not None else 0
+    elif last_http_error is not None:
+        status = int(last_http_error.code)
+        error_code = f"pages_artifact_download_http_{status}"
+        message = (
+            f"Pages artifact download returned HTTP {status} after {attempts_made} attempt(s) "
+            f"(response_host={last_host_class})"
+        )
+    else:
+        status = 0
+        error_code = "pages_artifact_download_deadline_exhausted"
+        message = "Pages artifact read window expired before download completed"
+    set_diagnostics(attempts_made, status, last_host_class, last_request_id)
+    raise PagesDeploymentError(
+        message,
+        error_code=error_code,
+        request_outcome="not_started",
+        artifact_read_attempts=attempts_made,
+        artifact_read_http_status=status,
+        artifact_read_response_host=last_host_class,
+        artifact_read_request_id=last_request_id,
+    ) from last_http_error
+
+
 def create_deployment(
     *,
     api_url: str,
@@ -777,9 +990,13 @@ def create_deployment(
     oidc_request_token: str,
     timeout_seconds: float = 180.0,
     poll_seconds: float = 2.0,
+    expected_artifact_id: str = "",
+    artifact_read_timeout_seconds: float = PAGES_ARTIFACT_READ_MAX_TIMEOUT_SECONDS,
+    artifact_read_deadline_epoch: float | None = None,
     request_json: Callable[..., Any] = _request_json,
     sleeper: Callable[[float], None] = time.sleep,
     monotonic: Callable[[], float] = time.monotonic,
+    wall_clock: Callable[[], float] = time.time,
 ) -> PagesDeployment:
     """Create one Pages deployment using this run's artifact and real API response.
 
@@ -797,12 +1014,20 @@ def create_deployment(
         artifact_name=artifact_name,
         request_json=request_json,
         expected_source_revision=revision,
+        expected_artifact_id=expected_artifact_id,
     )
+    artifact_read_diagnostics: dict[str, Any] = {}
     try:
         manifest, manifest_sha256 = _read_manifest_identity(manifest_path)
         deployed_manifest_bytes = _download_pages_artifact_manifest(
             api_url=api_url, repository=repository, token=token,
             artifact_id=artifact_id, artifact_digest=artifact_digest,
+            timeout=artifact_read_timeout_seconds,
+            deadline_epoch=artifact_read_deadline_epoch,
+            sleeper=sleeper,
+            monotonic=monotonic,
+            wall_clock=wall_clock,
+            diagnostics=artifact_read_diagnostics,
         )
         deployed_manifest, artifact_manifest_sha256 = _manifest_identity_from_bytes(deployed_manifest_bytes)
     except PagesDeploymentError as exc:
@@ -813,6 +1038,18 @@ def create_deployment(
             artifact_manifest_sha256=locals().get("artifact_manifest_sha256", ""),
             release_id=str(locals().get("manifest", {}).get("release_id") or ""),
             snapshot_id=str(locals().get("manifest", {}).get("market_snapshot_id") or ""),
+            artifact_read_attempts=exc.artifact_read_attempts or int(
+                artifact_read_diagnostics.get("artifact_read_attempts") or 0
+            ),
+            artifact_read_http_status=exc.artifact_read_http_status or int(
+                artifact_read_diagnostics.get("artifact_read_http_status") or 0
+            ),
+            artifact_read_response_host=exc.artifact_read_response_host or str(
+                artifact_read_diagnostics.get("artifact_read_response_host") or ""
+            ),
+            artifact_read_request_id=exc.artifact_read_request_id or str(
+                artifact_read_diagnostics.get("artifact_read_request_id") or ""
+            ),
         ) from exc
     if artifact_manifest_sha256 != manifest_sha256:
         raise PagesDeploymentError(
@@ -861,6 +1098,38 @@ def create_deployment(
         artifact_id=artifact_id,
         artifact_digest=artifact_digest,
     )
+    def require_open_delivery_window() -> None:
+        if artifact_read_deadline_epoch is None:
+            return
+        try:
+            deadline = float(artifact_read_deadline_epoch)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise PagesDeploymentError(
+                "scheduled Pages release deadline is invalid",
+                error_code="pages_artifact_read_budget_invalid",
+                request_outcome="not_started",
+            ) from exc
+        if not math.isfinite(deadline) or wall_clock() >= deadline:
+            raise PagesDeploymentError(
+                "scheduled Pages release window expired before deployment creation",
+                error_code="pages_artifact_download_deadline_exhausted",
+                request_outcome="not_started",
+                artifact_id=artifact_id,
+                artifact_digest=artifact_digest,
+                manifest_sha256=manifest_sha256,
+                artifact_manifest_sha256=artifact_manifest_sha256,
+                build_version=bound_build_version,
+                release_id=release_id,
+                snapshot_id=snapshot_id,
+                phase=phase,
+                release_binding_id=release_binding_id,
+                artifact_read_attempts=int(artifact_read_diagnostics.get("artifact_read_attempts") or 0),
+                artifact_read_http_status=int(artifact_read_diagnostics.get("artifact_read_http_status") or 0),
+                artifact_read_response_host=str(artifact_read_diagnostics.get("artifact_read_response_host") or ""),
+                artifact_read_request_id=str(artifact_read_diagnostics.get("artifact_read_request_id") or ""),
+            )
+
+    require_open_delivery_window()
     if build_version and build_version != bound_build_version:
         raise PagesDeploymentError("requested Pages build version does not match the frozen deployment identity")
     try:
@@ -879,6 +1148,7 @@ def create_deployment(
             snapshot_id=snapshot_id, phase=phase,
             release_binding_id=release_binding_id, request_id=exc.request_id,
         ) from exc
+    require_open_delivery_window()
     deployment_url = f"{api_url.rstrip('/')}/repos/{repository}/pages/deployments"
     try:
         created = request_json(
@@ -1044,6 +1314,10 @@ def create_deployment(
         phase,
         artifact_manifest_sha256,
         release_binding_id,
+        int(artifact_read_diagnostics.get("artifact_read_attempts") or 0),
+        int(artifact_read_diagnostics.get("artifact_read_http_status") or 0),
+        str(artifact_read_diagnostics.get("artifact_read_response_host") or ""),
+        str(artifact_read_diagnostics.get("artifact_read_request_id") or ""),
     )
 
 
@@ -1188,6 +1462,17 @@ def main() -> int:
     parser.add_argument("--deployment-id", default=os.getenv("PAGES_DEPLOYMENT_ID", ""))
     parser.add_argument("--status-url", default=os.getenv("PAGES_DEPLOYMENT_STATUS_URL", ""))
     parser.add_argument("--artifact-name", default=os.getenv("PAGES_ARTIFACT_NAME", "github-pages"))
+    parser.add_argument("--expected-artifact-id", default=os.getenv("PAGES_ARTIFACT_ID", ""))
+    parser.add_argument(
+        "--artifact-read-timeout-seconds",
+        type=float,
+        default=float(os.getenv("PAGES_ARTIFACT_READ_TIMEOUT_SECONDS", "30") or "30"),
+    )
+    parser.add_argument(
+        "--artifact-read-deadline-epoch",
+        type=float,
+        default=float(os.getenv("PAGES_ARTIFACT_READ_DEADLINE_EPOCH", "0") or "0"),
+    )
     parser.add_argument("--run-id", default=os.getenv("GITHUB_RUN_ID", ""))
     parser.add_argument("--timeout-seconds", type=float, default=180.0)
     parser.add_argument("--gate-outcome", default=os.getenv("PAGES_GATE_OUTCOME", "not_run"))
@@ -1302,6 +1587,9 @@ def main() -> int:
                 artifact_name=args.artifact_name,
                 source_revision=args.source_revision,
                 build_version=args.expected_build_version,
+                expected_artifact_id=args.expected_artifact_id,
+                artifact_read_timeout_seconds=args.artifact_read_timeout_seconds,
+                artifact_read_deadline_epoch=(args.artifact_read_deadline_epoch or None),
                 manifest_path=args.manifest,
                 run_attempt=args.run_attempt,
                 phase=args.phase,
@@ -1327,6 +1615,10 @@ def main() -> int:
                 "release_binding_id": deployment.release_binding_id,
                 "artifact_id": deployment.artifact_id,
                 "artifact_digest": deployment.artifact_digest,
+                "artifact_read_attempts": deployment.artifact_read_attempts,
+                "artifact_read_http_status": deployment.artifact_read_http_status,
+                "artifact_read_response_host": deployment.artifact_read_response_host or "unknown",
+                "artifact_read_request_id": deployment.artifact_read_request_id,
                 "manifest_sha256": deployment.manifest_sha256,
                 "artifact_manifest_sha256": deployment.artifact_manifest_sha256,
                 "artifact_manifest_match_status": _manifest_match_status(
@@ -1366,6 +1658,10 @@ def main() -> int:
                 "deployment_id": deployment.deployment_id,
                 "deployment_status": deployment.status,
                 "public_observation": "pages_deployment_status_succeeded; content_release_gate_pending",
+                "artifact_read_attempts": deployment.artifact_read_attempts,
+                "artifact_read_http_status": deployment.artifact_read_http_status,
+                "artifact_read_response_host": deployment.artifact_read_response_host,
+                "artifact_read_request_id": deployment.artifact_read_request_id,
             })
             return 0
         deployment = verify_deployment(
@@ -1418,6 +1714,10 @@ def main() -> int:
             "deployment_build_version": exc.build_version,
             "release_binding_id": exc.release_binding_id,
             "request_id": exc.request_id,
+            "artifact_read_attempts": exc.artifact_read_attempts,
+            "artifact_read_http_status": exc.artifact_read_http_status,
+            "artifact_read_response_host": exc.artifact_read_response_host or "unknown",
+            "artifact_read_request_id": exc.artifact_read_request_id,
             "artifact_digest": exc.artifact_digest,
             "manifest_sha256": exc.manifest_sha256,
             "artifact_manifest_sha256": exc.artifact_manifest_sha256,
@@ -1459,6 +1759,10 @@ def main() -> int:
                 "pages_build_version": exc.build_version,
                 "release_binding_id": exc.release_binding_id,
                 "request_id": exc.request_id,
+                "artifact_read_attempts": exc.artifact_read_attempts,
+                "artifact_read_http_status": exc.artifact_read_http_status,
+                "artifact_read_response_host": exc.artifact_read_response_host or "unknown",
+                "artifact_read_request_id": exc.artifact_read_request_id,
                 "request_outcome": exc.request_outcome,
                 "deployment_id": deployment_id,
                 "deployment_status": "unknown",
