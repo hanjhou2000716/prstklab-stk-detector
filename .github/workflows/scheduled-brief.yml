@@ -618,15 +618,50 @@ jobs:
           printf 'PAGES_MANIFEST_PATH=%s\n' "$RUNNER_TEMP/prstk-pages/data/release-manifest.json" >> "$GITHUB_ENV"
       - name: Upload Pages artifact
         if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.stage_pages_payload.outcome == 'success'
+        id: upload_pages_artifact
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           path: ${{ runner.temp }}/prstk-pages
+      - name: Bound artifact read to the original delivery window
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.stage_pages_payload.outcome == 'success' && steps.upload_pages_artifact.outputs.artifact_id != ''
+        id: artifact_read_window
+        env:
+          SLOT: ${{ steps.window.outputs.effective_slot }}
+          SLOT_DATE: ${{ steps.window.outputs.slot_date }}
+          SCHEDULED_FOR_AT: ${{ steps.window.outputs.scheduled_for_at }}
+        run: |
+          python - <<'PY'
+          import os
+          from datetime import UTC, datetime
+          from pathlib import Path
+
+          from src.scheduled_delivery import scheduled_delivery_deadline, scheduled_send_window_remaining_seconds
+
+          context = {
+              "effective_slot": os.environ["SLOT"],
+              "slot_date": os.environ["SLOT_DATE"],
+              "scheduled_for_at": os.environ["SCHEDULED_FOR_AT"],
+          }
+          now = datetime.now(UTC)
+          remaining = scheduled_send_window_remaining_seconds(os.environ["SLOT"], context, now)
+          deadline = scheduled_delivery_deadline(os.environ["SLOT"], context)
+          timeout = min(30, remaining)
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write(f"allowed={'true' if timeout > 0 else 'false'}\n")
+              output.write(f"deadline_epoch={deadline.timestamp():.6f}\n")
+              output.write(f"timeout_seconds={timeout}\n")
+          print(f"artifact_read_allowed={'true' if timeout > 0 else 'false'}")
+          print(f"artifact_read_timeout_seconds={timeout}")
+          PY
       - name: Deploy Pages
-        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.stage_pages_payload.outcome == 'success'
+        if: steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.prepare.outputs.prepared == 'true' && steps.release_policy.outputs.publish == 'true' && steps.stage_pages_payload.outcome == 'success' && steps.artifact_read_window.outputs.allowed == 'true'
         id: deployment
         uses: ./.github/actions/deploy-pages-retry
         with:
           manifest_path: ${{ runner.temp }}/prstk-pages/data/release-manifest.json
+          uploaded_artifact_id: ${{ steps.upload_pages_artifact.outputs.artifact_id }}
+          artifact_read_deadline_epoch: ${{ steps.artifact_read_window.outputs.deadline_epoch }}
+          artifact_read_timeout_seconds: ${{ steps.artifact_read_window.outputs.timeout_seconds }}
           phase: scheduled_release
           fallback_url: ${{ env.DASHBOARD_URL }}
       - name: Bound deployment recovery to the original delivery window
@@ -1267,17 +1302,52 @@ jobs:
           printf 'PAGES_RECONCILED_MANIFEST_PATH=%s\n' "$RUNNER_TEMP/prstk-pages-reconciled/data/release-manifest.json" >> "$GITHUB_ENV"
       - name: Upload reconciled Pages artifact
         if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success' && steps.stage_reconciled_pages.outcome == 'success'
+        id: upload_reconciled_pages_artifact
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           name: github-pages-reconciled
           path: ${{ runner.temp }}/prstk-pages-reconciled
+      - name: Bound reconciled artifact read to the original delivery window
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outputs.sent == 'true' && steps.persist_notification_ledger.outcome == 'success' && steps.stage_reconciled_pages.outcome == 'success' && steps.upload_reconciled_pages_artifact.outputs.artifact_id != ''
+        id: reconciled_artifact_read_window
+        env:
+          SLOT: ${{ steps.window.outputs.effective_slot }}
+          SLOT_DATE: ${{ steps.window.outputs.slot_date }}
+          SCHEDULED_FOR_AT: ${{ steps.window.outputs.scheduled_for_at }}
+        run: |
+          python - <<'PY'
+          import os
+          from datetime import UTC, datetime
+          from pathlib import Path
+
+          from src.scheduled_delivery import scheduled_delivery_deadline, scheduled_send_window_remaining_seconds
+
+          context = {
+              "effective_slot": os.environ["SLOT"],
+              "slot_date": os.environ["SLOT_DATE"],
+              "scheduled_for_at": os.environ["SCHEDULED_FOR_AT"],
+          }
+          now = datetime.now(UTC)
+          remaining = scheduled_send_window_remaining_seconds(os.environ["SLOT"], context, now)
+          deadline = scheduled_delivery_deadline(os.environ["SLOT"], context)
+          timeout = min(30, remaining)
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write(f"allowed={'true' if timeout > 0 else 'false'}\n")
+              output.write(f"deadline_epoch={deadline.timestamp():.6f}\n")
+              output.write(f"timeout_seconds={timeout}\n")
+          print(f"artifact_read_allowed={'true' if timeout > 0 else 'false'}")
+          print(f"artifact_read_timeout_seconds={timeout}")
+          PY
       - name: Deploy reconciled Pages release
-        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success' && steps.stage_reconciled_pages.outcome == 'success'
+        if: always() && steps.late_expiry.outputs.expired != 'true' && steps.writer_queue.outputs.should_continue == 'true' && steps.prepared_release.outputs.current == 'true' && steps.release_gate.outputs.allowed == 'true' && steps.send_brief.outcome != 'skipped' && steps.persist_notification_ledger.outcome == 'success' && steps.stage_reconciled_pages.outcome == 'success' && steps.reconciled_artifact_read_window.outputs.allowed == 'true'
         id: reconciled_deployment
         uses: ./.github/actions/deploy-pages-retry
         with:
           manifest_path: ${{ runner.temp }}/prstk-pages-reconciled/data/release-manifest.json
           artifact_name: github-pages-reconciled
+          uploaded_artifact_id: ${{ steps.upload_reconciled_pages_artifact.outputs.artifact_id }}
+          artifact_read_deadline_epoch: ${{ steps.reconciled_artifact_read_window.outputs.deadline_epoch }}
+          artifact_read_timeout_seconds: ${{ steps.reconciled_artifact_read_window.outputs.timeout_seconds }}
           phase: receipt_reconciliation
           fallback_url: ${{ env.DASHBOARD_URL }}
       - name: Verify reconciled Pages deployment identity

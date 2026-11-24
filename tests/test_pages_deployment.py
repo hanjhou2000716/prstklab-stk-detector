@@ -6,7 +6,7 @@ import tarfile
 import zipfile
 from io import BytesIO
 from pathlib import Path
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 
 import pytest
 
@@ -19,6 +19,8 @@ from src.pages_deployment import (
     derive_release_binding_id,
     verify_deployment,
 )
+
+_REAL_ARTIFACT_DOWNLOADER = pages_deployment._download_pages_artifact_manifest
 
 SOURCE_REVISION = "a" * 40
 MANIFEST_PATH = Path(__file__).resolve().parents[1] / "site" / "data" / "release-manifest.json"
@@ -70,6 +72,219 @@ def test_pages_artifact_manifest_is_extracted_from_digest_bound_tarball():
     artifact = _pages_artifact_archive(MANIFEST_PATH.read_bytes())
     digest = "sha256:" + hashlib.sha256(artifact).hexdigest()
     assert pages_deployment._manifest_from_pages_artifact_archive(artifact, expected_digest=digest) == MANIFEST_PATH.read_bytes()
+
+
+def test_artifact_download_retries_transient_404_for_the_same_exact_artifact(monkeypatch):
+    artifact = _pages_artifact_archive(MANIFEST_PATH.read_bytes())
+    digest = "sha256:" + hashlib.sha256(artifact).hexdigest()
+    calls = []
+    delays = []
+
+    class Response:
+        headers = {"x-ms-request-id": "blob-request-123"}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def geturl(self):
+            return "https://productionresultssa1.blob.core.windows.net/signed-path"
+
+        def getcode(self):
+            return 200
+
+        def read(self, _size):
+            nonlocal artifact
+            if artifact:
+                body, artifact = artifact, b""
+                return body
+            return b""
+
+    def open_artifact(request, *, timeout):
+        calls.append((request.full_url, timeout))
+        if len(calls) == 1:
+            raise HTTPError(
+                request.full_url, 404, "not ready", {"X-GitHub-Request-Id": "gh-req-123"}, BytesIO(),
+            )
+        return Response()
+
+    monkeypatch.setattr(pages_deployment, "_open_artifact_url", open_artifact)
+    monkeypatch.setattr(pages_deployment, "_download_pages_artifact_manifest", _REAL_ARTIFACT_DOWNLOADER)
+    diagnostics = {}
+    manifest = pages_deployment._download_pages_artifact_manifest(
+        api_url="https://api.github.com", repository="owner/repo", token="secret",
+        artifact_id="202", artifact_digest=digest, sleeper=delays.append,
+        diagnostics=diagnostics,
+    )
+
+    assert manifest == MANIFEST_PATH.read_bytes()
+    assert [url for url, _timeout in calls] == [
+        "https://api.github.com/repos/owner/repo/actions/artifacts/202/zip",
+    ] * 2
+    assert delays == [1.0]
+    assert diagnostics == {
+        "artifact_read_attempts": 2,
+        "artifact_read_http_status": 200,
+        "artifact_read_response_host": "github_artifact_blob",
+        "artifact_read_request_id": "blob-request-123",
+    }
+
+
+def test_artifact_download_stops_after_three_transient_failures(monkeypatch):
+    calls = []
+    delays = []
+
+    def unavailable(request, *, timeout):
+        calls.append(request.full_url)
+        raise HTTPError(
+            request.full_url, 404, "not ready", {"X-GitHub-Request-Id": "gh-req-456"}, BytesIO(),
+        )
+
+    monkeypatch.setattr(pages_deployment, "_open_artifact_url", unavailable)
+    monkeypatch.setattr(pages_deployment, "_download_pages_artifact_manifest", _REAL_ARTIFACT_DOWNLOADER)
+    with pytest.raises(PagesDeploymentError, match="after 3 attempt") as captured:
+        pages_deployment._download_pages_artifact_manifest(
+            api_url="https://api.github.com", repository="owner/repo", token="secret",
+            artifact_id="202", artifact_digest=ARTIFACT_DIGEST,
+            sleeper=delays.append, monotonic=lambda: 0.0,
+        )
+
+    assert calls == ["https://api.github.com/repos/owner/repo/actions/artifacts/202/zip"] * 3
+    assert delays == [1.0, 2.0]
+    assert captured.value.error_code == "pages_artifact_download_http_404"
+    assert captured.value.request_outcome == "not_started"
+    assert captured.value.artifact_read_attempts == 3
+    assert captured.value.artifact_read_http_status == 404
+    assert captured.value.artifact_read_response_host == "github_api"
+    assert captured.value.artifact_read_request_id == "gh-req-456"
+
+
+def test_redirected_blob_404_is_distinguished_without_logging_signed_url(monkeypatch, capsys):
+    calls = []
+    blob_url = "https://productionresultssa1.blob.core.windows.net/private?sig=do-not-log"
+
+    def unavailable(request, *, timeout):
+        calls.append(request.full_url)
+        raise HTTPError(
+            blob_url, 404, "not ready", {"x-ms-request-id": "storage-req-789"}, BytesIO(),
+        )
+
+    monkeypatch.setattr(pages_deployment, "_open_artifact_url", unavailable)
+    monkeypatch.setattr(pages_deployment, "_download_pages_artifact_manifest", _REAL_ARTIFACT_DOWNLOADER)
+    with pytest.raises(PagesDeploymentError) as captured:
+        pages_deployment._download_pages_artifact_manifest(
+            api_url="https://api.github.com", repository="owner/repo", token="github-secret",
+            artifact_id="202", artifact_digest=ARTIFACT_DIGEST,
+            sleeper=lambda _delay: None, monotonic=lambda: 0.0,
+        )
+
+    assert len(calls) == 3
+    assert all(url.endswith("/actions/artifacts/202/zip") for url in calls)
+    assert captured.value.artifact_read_response_host == "github_artifact_blob"
+    assert captured.value.artifact_read_request_id == "storage-req-789"
+    logged = capsys.readouterr().err
+    assert "github-secret" not in logged
+    assert "do-not-log" not in logged
+    assert "private?" not in logged
+
+
+def test_artifact_download_retries_transient_transport_timeout(monkeypatch):
+    archive = _pages_artifact_archive(MANIFEST_PATH.read_bytes())
+    calls = []
+    delays = []
+
+    def timeout_once_then_succeed(request, *, timeout):
+        calls.append(request.full_url)
+        if len(calls) == 1:
+            raise URLError(TimeoutError("timed out"))
+        return _BytesResponse(archive)
+
+    monkeypatch.setattr(pages_deployment, "_open_artifact_url", timeout_once_then_succeed)
+    monkeypatch.setattr(pages_deployment, "_download_pages_artifact_manifest", _REAL_ARTIFACT_DOWNLOADER)
+    manifest = pages_deployment._download_pages_artifact_manifest(
+        api_url="https://api.github.com", repository="owner/repo", token="secret",
+        artifact_id="202", artifact_digest="sha256:" + hashlib.sha256(archive).hexdigest(),
+        sleeper=delays.append, monotonic=lambda: 0.0,
+    )
+
+    assert manifest == MANIFEST_PATH.read_bytes()
+    assert calls == ["https://api.github.com/repos/owner/repo/actions/artifacts/202/zip"] * 2
+    assert delays == [1.0]
+
+
+def test_artifact_download_does_not_retry_authorization_or_digest_failures(monkeypatch):
+    calls = []
+
+    def forbidden(request, *, timeout):
+        calls.append(request.full_url)
+        raise HTTPError(request.full_url, 403, "forbidden", {}, BytesIO())
+
+    monkeypatch.setattr(pages_deployment, "_open_artifact_url", forbidden)
+    monkeypatch.setattr(pages_deployment, "_download_pages_artifact_manifest", _REAL_ARTIFACT_DOWNLOADER)
+    with pytest.raises(PagesDeploymentError) as forbidden_error:
+        pages_deployment._download_pages_artifact_manifest(
+            api_url="https://api.github.com", repository="owner/repo", token="secret",
+            artifact_id="202", artifact_digest=ARTIFACT_DIGEST,
+            sleeper=lambda _delay: pytest.fail("403 must not be retried"),
+        )
+    assert forbidden_error.value.error_code == "pages_artifact_download_http_403"
+    assert len(calls) == 1
+
+    archive = _pages_artifact_archive(MANIFEST_PATH.read_bytes())
+    monkeypatch.setattr(
+        pages_deployment, "_open_artifact_url",
+        lambda *_args, **_kwargs: _BytesResponse(archive),
+    )
+    calls.clear()
+    with pytest.raises(PagesDeploymentError) as digest_error:
+        pages_deployment._download_pages_artifact_manifest(
+            api_url="https://api.github.com", repository="owner/repo", token="secret",
+            artifact_id="202", artifact_digest="sha256:" + "0" * 64,
+            sleeper=lambda _delay: pytest.fail("digest mismatch must not be retried"),
+        )
+    assert digest_error.value.error_code == "pages_artifact_digest_mismatch"
+
+
+class _BytesResponse:
+    def __init__(self, body):
+        self.body = body
+        self.headers = {}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+    def geturl(self):
+        return "https://productionresultssa1.blob.core.windows.net/signed-path"
+
+    def getcode(self):
+        return 200
+
+    def read(self, _size):
+        body, self.body = self.body, b""
+        return body
+
+
+def test_artifact_download_deadline_prevents_any_read_attempt(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        pages_deployment, "_open_artifact_url",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+    monkeypatch.setattr(pages_deployment, "_download_pages_artifact_manifest", _REAL_ARTIFACT_DOWNLOADER)
+    with pytest.raises(PagesDeploymentError) as captured:
+        pages_deployment._download_pages_artifact_manifest(
+            api_url="https://api.github.com", repository="owner/repo", token="secret",
+            artifact_id="202", artifact_digest=ARTIFACT_DIGEST,
+            deadline_epoch=99, wall_clock=lambda: 100,
+        )
+    assert captured.value.error_code == "pages_artifact_download_deadline_exhausted"
+    assert captured.value.artifact_read_attempts == 0
+    assert calls == []
 
 
 @pytest.mark.parametrize("include_root", [True, False])
@@ -230,6 +445,101 @@ def test_pages_artifact_zip_rejects_extra_entries(monkeypatch):
 
     with pytest.raises(PagesDeploymentError, match="exactly one artifact.tar"):
         pages_deployment._manifest_from_pages_artifact_archive(extra.getvalue(), expected_digest="sha256:" + hashlib.sha256(extra.getvalue()).hexdigest())
+
+
+def test_create_rejects_artifact_listing_that_differs_from_upload_output_before_download():
+    requested = []
+
+    def request_json(url, **_kwargs):
+        requested.append(url)
+        return {"artifacts": [{
+            "id": 202, "name": "github-pages", "expired": False,
+            "digest": ARTIFACT_DIGEST,
+            "workflow_run": {"id": 17, "head_sha": SOURCE_REVISION},
+        }]}
+
+    with pytest.raises(PagesDeploymentError, match="differs from the upload step output"):
+        create_deployment(
+            api_url="https://api.github.test", repository="owner/repo", token="token",
+            run_id="17", artifact_name="github-pages", source_revision=SOURCE_REVISION,
+            expected_artifact_id="203",
+            oidc_request_url="https://oidc.actions.test/token", oidc_request_token="request-token",
+            request_json=request_json,
+        )
+    assert len(requested) == 1
+    assert "actions/runs/17/artifacts" in requested[0]
+
+
+def test_create_download_exhaustion_never_starts_pages_deployment(monkeypatch):
+    requests = []
+
+    def request_json(url, **_kwargs):
+        requests.append(url)
+        return {"artifacts": [{
+            "id": 202, "name": "github-pages", "expired": False,
+            "digest": ARTIFACT_DIGEST,
+            "workflow_run": {"id": 17, "head_sha": SOURCE_REVISION},
+        }]}
+
+    def unavailable(request, *, timeout):
+        raise HTTPError(request.full_url, 404, "not ready", {}, BytesIO())
+
+    monkeypatch.setattr(pages_deployment, "_open_artifact_url", unavailable)
+    monkeypatch.setattr(pages_deployment, "_download_pages_artifact_manifest", _REAL_ARTIFACT_DOWNLOADER)
+    with pytest.raises(PagesDeploymentError) as captured:
+        create_deployment(
+            api_url="https://api.github.test", repository="owner/repo", token="token",
+            run_id="17", artifact_name="github-pages", source_revision=SOURCE_REVISION,
+            expected_artifact_id="202",
+            oidc_request_url="https://oidc.actions.test/token", oidc_request_token="request-token",
+            request_json=request_json, sleeper=lambda _delay: None, monotonic=lambda: 0.0,
+        )
+
+    assert captured.value.error_code == "pages_artifact_download_http_404"
+    assert captured.value.artifact_id == "202"
+    assert captured.value.artifact_read_attempts == 3
+    assert captured.value.request_outcome == "not_started"
+    assert len(requests) == 1
+    assert "actions/runs/17/artifacts" in requests[0]
+    assert not any(url.endswith("/pages/deployments") for url in requests)
+
+
+def test_create_rechecks_original_deadline_after_oidc_before_pages_post(monkeypatch):
+    requests = []
+    observed_times = iter([100.0, 200.0])
+
+    def request_json(url, **_kwargs):
+        requests.append(url)
+        if "actions/runs/17/artifacts" in url:
+            return {"artifacts": [{
+                "id": 202, "name": "github-pages", "expired": False,
+                "digest": ARTIFACT_DIGEST,
+                "workflow_run": {"id": 17, "head_sha": SOURCE_REVISION},
+            }]}
+        if "oidc.actions.test" in url:
+            return {"value": "oidc"}
+        raise AssertionError(url)
+
+    monkeypatch.setattr(
+        pages_deployment, "_download_pages_artifact_manifest",
+        lambda **_kwargs: MANIFEST_PATH.read_bytes(),
+    )
+    monkeypatch.setattr(pages_deployment, "_read_manifest_identity", lambda _path: (MANIFEST, MANIFEST_SHA256))
+    with pytest.raises(PagesDeploymentError) as captured:
+        create_deployment(
+            api_url="https://api.github.test", repository="owner/repo", token="token",
+            run_id="17", artifact_name="github-pages", source_revision=SOURCE_REVISION,
+            expected_artifact_id="202", artifact_read_deadline_epoch=150,
+            oidc_request_url="https://oidc.actions.test/token", oidc_request_token="request-token",
+            request_json=request_json, wall_clock=lambda: next(observed_times),
+        )
+
+    assert captured.value.error_code == "pages_artifact_download_deadline_exhausted"
+    assert captured.value.request_outcome == "not_started"
+    assert requests == [
+        "https://api.github.test/repos/owner/repo/actions/runs/17/artifacts?per_page=100&page=1",
+        "https://oidc.actions.test/token",
+    ]
 
 
 def test_create_rejects_pages_artifact_manifest_mismatch_before_deployment(monkeypatch):

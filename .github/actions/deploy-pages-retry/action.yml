@@ -29,6 +29,18 @@ inputs:
     description: Pages artifact name to deploy.
     required: false
     default: "github-pages"
+  uploaded_artifact_id:
+    description: Exact artifact ID emitted by this run's upload-pages-artifact step.
+    required: false
+    default: ""
+  artifact_read_deadline_epoch:
+    description: Optional immutable Unix deadline for the artifact GET; no reads continue after it.
+    required: false
+    default: ""
+  artifact_read_timeout_seconds:
+    description: Total artifact GET budget, capped by the verifier at 30 seconds.
+    required: false
+    default: "30"
 outputs:
   page_url:
     description: URL returned by the successful Pages deployment.
@@ -66,6 +78,18 @@ outputs:
   artifact_digest:
     description: SHA-256 digest of the selected Pages artifact.
     value: ${{ steps.select-url.outputs.artifact_digest }}
+  artifact_read_attempts:
+    description: Number of bounded GET attempts made for the exact uploaded artifact.
+    value: ${{ steps.select-url.outputs.artifact_read_attempts }}
+  artifact_read_http_status:
+    description: Final HTTP status from the artifact read, if available.
+    value: ${{ steps.select-url.outputs.artifact_read_http_status }}
+  artifact_read_response_host:
+    description: Sanitized response host class for artifact-read diagnostics.
+    value: ${{ steps.select-url.outputs.artifact_read_response_host }}
+  artifact_read_request_id:
+    description: Sanitized GitHub or blob request ID for the artifact read.
+    value: ${{ steps.select-url.outputs.artifact_read_request_id }}
   manifest_sha256:
     description: SHA-256 of the exact manifest used to derive the build identity.
     value: ${{ steps.select-url.outputs.manifest_sha256 }}
@@ -107,6 +131,9 @@ runs:
         PAGES_DEPLOYMENT_PHASE: ${{ inputs.phase }}
         PAGES_MANIFEST_PATH: ${{ inputs.manifest_path }}
         PAGES_DEPLOYMENT_BINDING_PATH: ${{ runner.temp }}/pages-deployment-binding-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.phase }}.json
+        PAGES_ARTIFACT_ID: ${{ inputs.uploaded_artifact_id }}
+        PAGES_ARTIFACT_READ_TIMEOUT_SECONDS: ${{ inputs.artifact_read_timeout_seconds }}
+        PAGES_ARTIFACT_READ_DEADLINE_EPOCH: ${{ inputs.artifact_read_deadline_epoch }}
       run: |
         set -euo pipefail
         timeout_seconds="$(( ${{ inputs.timeout }} / 1000 ))"
@@ -116,6 +143,9 @@ runs:
           --manifest "$PAGES_MANIFEST_PATH" \
           --phase "$PAGES_DEPLOYMENT_PHASE" \
           --run-attempt "${{ github.run_attempt }}" \
+          --expected-artifact-id "$PAGES_ARTIFACT_ID" \
+          --artifact-read-timeout-seconds "$PAGES_ARTIFACT_READ_TIMEOUT_SECONDS" \
+          --artifact-read-deadline-epoch "${PAGES_ARTIFACT_READ_DEADLINE_EPOCH:-0}" \
           --binding-path "$PAGES_DEPLOYMENT_BINDING_PATH" \
           --timeout-seconds "$timeout_seconds" >> "$GITHUB_OUTPUT"
 
@@ -142,6 +172,10 @@ runs:
         DEPLOY_STATUS_URL_SHAPE: ${{ steps.deployment.outputs.deployment_status_url_shape || '' }}
         DEPLOY_ARTIFACT_ID: ${{ steps.deployment.outputs.artifact_id || '' }}
         DEPLOY_ARTIFACT_DIGEST: ${{ steps.deployment.outputs.artifact_digest || '' }}
+        DEPLOY_ARTIFACT_READ_ATTEMPTS: ${{ steps.deployment.outputs.artifact_read_attempts || '0' }}
+        DEPLOY_ARTIFACT_READ_STATUS: ${{ steps.deployment.outputs.artifact_read_http_status || '0' }}
+        DEPLOY_ARTIFACT_READ_HOST: ${{ steps.deployment.outputs.artifact_read_response_host || 'unknown' }}
+        DEPLOY_ARTIFACT_READ_REQUEST_ID: ${{ steps.deployment.outputs.artifact_read_request_id || '' }}
         DEPLOY_MANIFEST_SHA256: ${{ steps.deployment.outputs.manifest_sha256 || '' }}
         DEPLOY_ARTIFACT_MANIFEST_SHA256: ${{ steps.deployment.outputs.artifact_manifest_sha256 || '' }}
         DEPLOY_ARTIFACT_MANIFEST_MATCHES: ${{ steps.deployment.outputs.artifact_manifest_matches_frozen || 'false' }}
@@ -177,6 +211,10 @@ runs:
         printf 'deployment_status_url_shape=%s\n' "${DEPLOY_STATUS_URL_SHAPE:-unknown}" >> "$GITHUB_OUTPUT"
         printf 'artifact_id=%s\n' "$DEPLOY_ARTIFACT_ID" >> "$GITHUB_OUTPUT"
         printf 'artifact_digest=%s\n' "$DEPLOY_ARTIFACT_DIGEST" >> "$GITHUB_OUTPUT"
+        printf 'artifact_read_attempts=%s\n' "$DEPLOY_ARTIFACT_READ_ATTEMPTS" >> "$GITHUB_OUTPUT"
+        printf 'artifact_read_http_status=%s\n' "$DEPLOY_ARTIFACT_READ_STATUS" >> "$GITHUB_OUTPUT"
+        printf 'artifact_read_response_host=%s\n' "$DEPLOY_ARTIFACT_READ_HOST" >> "$GITHUB_OUTPUT"
+        printf 'artifact_read_request_id=%s\n' "$DEPLOY_ARTIFACT_READ_REQUEST_ID" >> "$GITHUB_OUTPUT"
         printf 'manifest_sha256=%s\n' "$DEPLOY_MANIFEST_SHA256" >> "$GITHUB_OUTPUT"
         printf 'artifact_manifest_sha256=%s\n' "$DEPLOY_ARTIFACT_MANIFEST_SHA256" >> "$GITHUB_OUTPUT"
         printf 'artifact_manifest_matches_frozen=%s\n' "$DEPLOY_ARTIFACT_MANIFEST_MATCHES" >> "$GITHUB_OUTPUT"

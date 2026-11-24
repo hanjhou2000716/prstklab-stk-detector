@@ -30,6 +30,28 @@ def test_pages_deploy_wrapper_uses_exact_identity_and_fails_closed():
     assert "actions/deploy-pages@" not in action
 
 
+def test_scheduled_pages_deployment_is_bound_to_uploaded_artifact_and_original_deadline():
+    workflow = (WORKFLOWS / "scheduled-brief.yml").read_text(encoding="utf-8")
+    action = (
+        ROOT / ".github" / "actions" / "deploy-pages-retry" / "action.yml"
+    ).read_text(encoding="utf-8")
+    expression = chr(36) + "{{ "
+
+    assert "id: upload_pages_artifact" in workflow
+    assert "uploaded_artifact_id: " + expression + "steps.upload_pages_artifact.outputs.artifact_id }}" in workflow
+    assert "id: artifact_read_window" in workflow
+    assert "artifact_read_deadline_epoch: " + expression + "steps.artifact_read_window.outputs.deadline_epoch }}" in workflow
+    assert "steps.artifact_read_window.outputs.allowed == 'true'" in workflow
+    assert "id: upload_reconciled_pages_artifact" in workflow
+    assert "uploaded_artifact_id: " + expression + "steps.upload_reconciled_pages_artifact.outputs.artifact_id }}" in workflow
+    assert "artifact_read_deadline_epoch: " + expression + "steps.reconciled_artifact_read_window.outputs.deadline_epoch }}" in workflow
+    assert "steps.reconciled_artifact_read_window.outputs.allowed == 'true'" in workflow
+    assert "scheduled_delivery_deadline" in workflow
+    assert "min(30, remaining)" in workflow
+    assert "artifact_read_deadline_epoch" in action
+    assert "artifact_read_response_host" in action
+
+
 def test_all_pages_workflows_use_the_retry_wrapper_and_gate_delivery():
     pages_workflows = [
         "deploy-pages.yml",
