@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "market_snapshot_id": "b1883a9e2a39f7c9",
-  "snapshot_id": "news-2092f28aaffe8396",
+  "market_snapshot_id": "799f058b34b73f8a",
+  "snapshot_id": "news-d1d9f47989ccecbf",
   "provider_registry": [
     {
       "provider_id": "twse",
@@ -437,15 +437,15 @@
       ],
       "stories": [
         {
-          "story_id": "news-4b55ea46156ddaedb7cb",
+          "story_id": "news-2a37fcd07e5426efce19",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "【歐股盤後】收高",
-          "raw_title": "【歐股盤後】收高",
-          "normalized_fact": "（中央社台北2026年11月27日電）亞洲股市今天上漲後，歐洲主要股市也大幅走高，主因科技類股在美國感恩節長週末假期前回穩。華爾街股市今天則因感恩節休市。倫敦FTSE 100指數上漲182.36點或1。",
-          "market_topic": "company_industry",
+          "title": "台積電傳赴德州蓋2奈米廠 洩AI需求風向？華爾街點破關鍵訊號",
+          "raw_title": "台積電傳赴德州蓋2奈米廠 洩AI需求風向？華爾街點破關鍵訊號",
+          "normalized_fact": "台積電持續擴大美國布局，傳出已為計畫投資226億美元興建的德州晶圓廠申請租稅優惠，預計生產2奈米及更先進製程晶片。華爾街券商認為，台積電掌握終端市場需求的能力優於其他供應商，其擴產動作不僅反映需求持續。",
+          "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -453,11 +453,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "（中央社台北2026年11月27日電）亞洲股市今天上漲後，歐洲主要股市也大幅走高，主因科技類股在美國感恩節長週末假期前回穩。華爾街股市今天則因感恩節休市。倫敦FTSE 100指數上漲182.36點或1",
+          "summary": "台積電持續擴大美國布局，傳出已為計畫投資226億美元興建的德州晶圓廠申請租稅優惠，預計生產2奈米及更先進製程晶片。華爾街券商認為，台積電掌握終端市場需求的能力優於其他供應商，其擴產動作不僅反映需求持續",
           "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E8%82%A1%E7%9B%A4%E5%BE%8C-%E6%94%B6%E9%AB%98-173450957.html",
-          "url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E8%82%A1%E7%9B%A4%E5%BE%8C-%E6%94%B6%E9%AB%98-173450957.html",
-          "published_at": "2026-11-26T17:34:50+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E7%A9%8D%E9%9B%BB%E5%82%B3%E8%B5%B4%E5%BE%B7%E5%B7%9E%E8%93%8B2%E5%A5%88%E7%B1%B3%E5%BB%A0-%E6%B4%A9ai%E9%9C%80%E6%B1%82%E9%A2%A8%E5%90%91-%E8%8F%AF%E7%88%BE%E8%A1%97%E9%BB%9E%E7%A0%B4%E9%97%9C%E9%8D%B5%E8%A8%8A%E8%99%9F-210530975.html",
+          "url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E7%A9%8D%E9%9B%BB%E5%82%B3%E8%B5%B4%E5%BE%B7%E5%B7%9E%E8%93%8B2%E5%A5%88%E7%B1%B3%E5%BB%A0-%E6%B4%A9ai%E9%9C%80%E6%B1%82%E9%A2%A8%E5%90%91-%E8%8F%AF%E7%88%BE%E8%A1%97%E9%BB%9E%E7%A0%B4%E9%97%9C%E9%8D%B5%E8%A8%8A%E8%99%9F-210530975.html",
+          "published_at": "2026-11-26T21:05:30+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -467,20 +467,31 @@
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "2330",
+            "TSM"
+          ],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "ai"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
             "input_fields": [
               "description",
               "summary",
@@ -489,20 +500,25 @@
           },
           "relevance_reasons": [
             "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "中央社台北2026年11月27日電亞洲股市今天上漲後歐洲主要股市也大幅走高主因科技類股在美國感恩節長週末假期前回穩華爾街股市今天則因感恩節休市倫敦ftse100指數上漲18236點或1",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-11-26T17:00:00+00:00",
+          "dedupe_key": "台積電持續擴大美國布局傳出已為計畫投資226億美元興建的德州晶圓廠申請租稅優惠預計生產2奈米及更先進製程晶片華爾街券商認為台積電掌握終端市場需求的能力優於其他供應商其擴產動作不僅反映需求持續",
+          "event_cluster_key": "event-1c5535ef21e8793cbd2b",
+          "published_time_bucket": "2026-11-26T21:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -517,102 +533,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
-          "story_id": "news-2fa3a3d2ca3c8f1c34cf",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "iPhone、晶片暫列美301關稅豁免！台積電、輝達鬆口氣 越南製AirPods恐遭課最高35%",
-          "raw_title": "iPhone、晶片暫列美301關稅豁免！台積電、輝達鬆口氣 越南製AirPods恐遭課最高35%",
-          "normalized_fact": "川普政府公布301條款調查結果，擬對14個經濟體加徵關稅，台日韓瑞最高15%、越南35%。 伺服器、手機、PC、晶片及多數半導體設備列豁免，蘋果、美光、輝達、台積電等科技股受惠。 未豁免品項含AirPods、印表機、基地台等；美方明年1月徵詢、3月11日前定案。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "川普政府公布301條款調查結果，擬對14個經濟體加徵關稅，台日韓瑞最高15%、越南35%。 伺服器、手機、PC、晶片及多數半導體設備列豁免，蘋果、美光、輝達、台積電等科技股受惠。 未豁免品項含AirPods、印表機、基地台等；美方明年1月徵詢、3月11日前定案。",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6671885",
-          "url": "https://news.cnyes.com/news/id/6671885",
-          "published_at": "2026-11-25T23:50:05+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-26",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "NVDA",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [
-            "semiconductor",
-            "tariff"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "material_positive",
-            "reason": "material_positive_keyword",
-            "matched_terms": [
-              "關稅豁免"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:2330",
-            "tracked_ticker:NVDA",
-            "tracked_ticker:TSM",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "川普政府公布301條款調查結果擬對14個經濟體加徵關稅台日韓瑞最高15越南35伺服器手機pc晶片及多數半導體設備列豁免蘋果美光輝達台積電等科技股受惠未豁免品項含airpods印表機基地台等美方明年1月徵詢3月11日前定案",
-          "event_cluster_key": "event-2b4cd3fdd0135f96a2de",
-          "published_time_bucket": "2026-11-25T23:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "company_event",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜持股關聯",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 145
+          "ranking_score": 140
         },
         {
           "story_id": "news-c8952674a6347d675819",
@@ -711,6 +632,94 @@
           "ranking_score": 125
         },
         {
+          "story_id": "news-ab1204c08754619445e7",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈台股盤前要聞〉富邦006208分割投票開跑、華南金前10月獲利284億元超過去年",
+          "raw_title": "〈台股盤前要聞〉富邦006208分割投票開跑、華南金前10月獲利284億元超過去年",
+          "normalized_fact": "台股盤前要聞 1.富邦投信26日舉辦富邦台50 ETF(006208-TW)分割投票啟動記者會，宣布自11月27日至12月15日開放電子投票，並於12月18日以書面方式召開受益人會議，期盼透過分割降低。",
+          "market_topic": "taiwan_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "台股盤前要聞 1.富邦投信26日舉辦富邦台50 ETF(006208-TW)分割投票啟動記者會，宣布自11月27日至12月15日開放電子投票，並於12月18日以書面方式召開受益人會議，期盼透過分割降低",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E8%82%A1%E7%9B%A4%E5%89%8D%E8%A6%81%E8%81%9E-%E5%AF%8C%E9%82%A6006208%E5%88%86%E5%89%B2%E6%8A%95%E7%A5%A8%E9%96%8B%E8%B7%91-%E8%8F%AF%E5%8D%97%E9%87%91%E5%89%8D10%E6%9C%88%E7%8D%B2%E5%88%A9284%E5%84%84%E5%85%83%E8%B6%85%E9%81%8E%E5%8E%BB%E5%B9%B4-201004454.html",
+          "url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E8%82%A1%E7%9B%A4%E5%89%8D%E8%A6%81%E8%81%9E-%E5%AF%8C%E9%82%A6006208%E5%88%86%E5%89%B2%E6%8A%95%E7%A5%A8%E9%96%8B%E8%B7%91-%E8%8F%AF%E5%8D%97%E9%87%91%E5%89%8D10%E6%9C%88%E7%8D%B2%E5%88%A9284%E5%84%84%E5%85%83%E8%B6%85%E9%81%8E%E5%8E%BB%E5%B9%B4-201004454.html",
+          "published_at": "2026-11-26T20:10:04+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-27",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "TAIEX"
+          ],
+          "sectors": [],
+          "topics": [
+            "earnings"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan",
+            "tracked_ticker:006208",
+            "research_candidate:50"
+          ],
+          "freshness": "published",
+          "dedupe_key": "台股盤前要聞1富邦投信26日舉辦富邦台50etf006208tw分割投票啟動記者會宣布自11月27日至12月15日開放電子投票並於12月18日以書面方式召開受益人會議期盼透過分割降低",
+          "event_cluster_key": "event-1045d4954379e7a3b4a6",
+          "published_time_bucket": "2026-11-26T20:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "company_event",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 140
+        },
+        {
           "story_id": "news-dede016ae7739515cad9",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -807,14 +816,14 @@
           "ranking_score": 125
         },
         {
-          "story_id": "news-23747f643680a12b482d",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "黃仁勳重掌輝達，台股會漲幾天？AI大多頭回不來，供應鏈3大變局一次看 - 商業周刊",
-          "raw_title": "黃仁勳重掌輝達，台股會漲幾天？AI大多頭回不來，供應鏈3大變局一次看 - 商業周刊",
-          "normalized_fact": "黃仁勳重掌輝達，台股會漲幾天？AI大多頭回不來，供應鏈3大變局一次看 商業周刊。",
+          "story_id": "news-bcb7f9232ca404ae5538",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "物流科技募資熱潮回歸 投資人轉向緊盯AI實際省錢效益",
+          "raw_title": "物流科技募資熱潮回歸 投資人轉向緊盯AI實際省錢效益",
+          "normalized_fact": "圖／本報資料庫商傳媒｜葉安庭／綜合外電報導全球供應鏈與物流科技領域在 2026 年迎來強勁的資金反彈，但隨著市場預期 2027 年貨運市況可能趨緩，投資人與企業買家的評估標準正在快速轉變——不再為單純。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -823,24 +832,21 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "黃仁勳重掌輝達，台股會漲幾天？AI大多頭回不來，供應鏈3大變局一次看 商業周刊",
+          "summary": "圖／本報資料庫商傳媒｜葉安庭／綜合外電報導全球供應鏈與物流科技領域在 2026 年迎來強勁的資金反彈，但隨著市場預期 2027 年貨運市況可能趨緩，投資人與企業買家的評估標準正在快速轉變——不再為單純",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiYkFVX3lxTE5TUUoxUjhITE1QdEtzWUdNUzFSWHRQRTB5bUhPZUtKd3otd2xDOGNkUFAzbkJhZUhWMGZ2aFdwazF5V1N2U0VSNmhLazJRUFEyaDlhY2ZUNmwzZUlmSVF2RFJB",
-          "url": "https://news.google.com/rss/articles/CBMiYkFVX3lxTE5TUUoxUjhITE1QdEtzWUdNUzFSWHRQRTB5bUhPZUtKd3otd2xDOGNkUFAzbkJhZUhWMGZ2aFdwazF5V1N2U0VSNmhLazJRUFEyaDlhY2ZUNmwzZUlmSVF2RFJB",
-          "published_at": "2026-11-24T14:19:54+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%89%A9%E6%B5%81%E7%A7%91%E6%8A%80%E5%8B%9F%E8%B3%87%E7%86%B1%E6%BD%AE%E5%9B%9E%E6%AD%B8-%E6%8A%95%E8%B3%87%E4%BA%BA%E8%BD%89%E5%90%91%E7%B7%8A%E7%9B%AFai%E5%AF%A6%E9%9A%9B%E7%9C%81%E9%8C%A2%E6%95%88%E7%9B%8A-200804311.html",
+          "url": "https://tw.stock.yahoo.com/news/%E7%89%A9%E6%B5%81%E7%A7%91%E6%8A%80%E5%8B%9F%E8%B3%87%E7%86%B1%E6%BD%AE%E5%9B%9E%E6%AD%B8-%E6%8A%95%E8%B3%87%E4%BA%BA%E8%BD%89%E5%90%91%E7%B7%8A%E7%9B%AFai%E5%AF%A6%E9%9A%9B%E7%9C%81%E9%8C%A2%E6%95%88%E7%9B%8A-200804311.html",
+          "published_at": "2026-11-26T20:08:04+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
+          "date_eligibility_status": "current",
           "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 4,
-          "published_local_date": "2026-11-24",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-27",
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [
-            "NVDA",
-            "TAIEX"
-          ],
+          "entities": [],
           "sectors": [],
           "topics": [
             "ai"
@@ -869,13 +875,12 @@
             ]
           },
           "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:NVDA"
+            "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "黃仁勳重掌輝達台股會漲幾天ai大多頭回不來供應鏈3大變局一次看商業周刊",
-          "event_cluster_key": "event-af3bf3f36d8eacdb5185",
-          "published_time_bucket": "2026-11-24T14:00:00+00:00",
+          "dedupe_key": "圖本報資料庫商傳媒葉安庭綜合外電報導全球供應鏈與物流科技領域在2026年迎來強勁的資金反彈但隨著市場預期2027年貨運市況可能趨緩投資人與企業買家的評估標準正在快速轉變不再為單純",
+          "event_cluster_key": "event-13e9a852be5ba565eb68",
+          "published_time_bucket": "2026-11-26T20:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
@@ -892,7 +897,7 @@
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Google News｜台股線索",
+          "source": "Yahoo Taiwan Finance",
           "evidence_state": "observation",
           "confirmation_required": true,
           "selection_lane": "current",
@@ -901,20 +906,20 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 120
+          "ranking_score": 130
         }
       ],
       "editorial_candidates": [
         {
-          "story_id": "news-4b55ea46156ddaedb7cb",
+          "story_id": "news-2a37fcd07e5426efce19",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "【歐股盤後】收高",
-          "raw_title": "【歐股盤後】收高",
-          "normalized_fact": "（中央社台北2026年11月27日電）亞洲股市今天上漲後，歐洲主要股市也大幅走高，主因科技類股在美國感恩節長週末假期前回穩。華爾街股市今天則因感恩節休市。倫敦FTSE 100指數上漲182.36點或1。",
-          "market_topic": "company_industry",
+          "title": "台積電傳赴德州蓋2奈米廠 洩AI需求風向？華爾街點破關鍵訊號",
+          "raw_title": "台積電傳赴德州蓋2奈米廠 洩AI需求風向？華爾街點破關鍵訊號",
+          "normalized_fact": "台積電持續擴大美國布局，傳出已為計畫投資226億美元興建的德州晶圓廠申請租稅優惠，預計生產2奈米及更先進製程晶片。華爾街券商認為，台積電掌握終端市場需求的能力優於其他供應商，其擴產動作不僅反映需求持續。",
+          "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -922,11 +927,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "（中央社台北2026年11月27日電）亞洲股市今天上漲後，歐洲主要股市也大幅走高，主因科技類股在美國感恩節長週末假期前回穩。華爾街股市今天則因感恩節休市。倫敦FTSE 100指數上漲182.36點或1",
+          "summary": "台積電持續擴大美國布局，傳出已為計畫投資226億美元興建的德州晶圓廠申請租稅優惠，預計生產2奈米及更先進製程晶片。華爾街券商認為，台積電掌握終端市場需求的能力優於其他供應商，其擴產動作不僅反映需求持續",
           "description": "",
-          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E8%82%A1%E7%9B%A4%E5%BE%8C-%E6%94%B6%E9%AB%98-173450957.html",
-          "url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E8%82%A1%E7%9B%A4%E5%BE%8C-%E6%94%B6%E9%AB%98-173450957.html",
-          "published_at": "2026-11-26T17:34:50+00:00",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E7%A9%8D%E9%9B%BB%E5%82%B3%E8%B5%B4%E5%BE%B7%E5%B7%9E%E8%93%8B2%E5%A5%88%E7%B1%B3%E5%BB%A0-%E6%B4%A9ai%E9%9C%80%E6%B1%82%E9%A2%A8%E5%90%91-%E8%8F%AF%E7%88%BE%E8%A1%97%E9%BB%9E%E7%A0%B4%E9%97%9C%E9%8D%B5%E8%A8%8A%E8%99%9F-210530975.html",
+          "url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E7%A9%8D%E9%9B%BB%E5%82%B3%E8%B5%B4%E5%BE%B7%E5%B7%9E%E8%93%8B2%E5%A5%88%E7%B1%B3%E5%BB%A0-%E6%B4%A9ai%E9%9C%80%E6%B1%82%E9%A2%A8%E5%90%91-%E8%8F%AF%E7%88%BE%E8%A1%97%E9%BB%9E%E7%A0%B4%E9%97%9C%E9%8D%B5%E8%A8%8A%E8%99%9F-210530975.html",
+          "published_at": "2026-11-26T21:05:30+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -936,20 +941,31 @@
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "2330",
+            "TSM"
+          ],
           "sectors": [],
-          "topics": [],
+          "topics": [
+            "ai"
+          ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
             "input_fields": [
               "description",
               "summary",
@@ -958,20 +974,25 @@
           },
           "relevance_reasons": [
             "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:TSM",
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "中央社台北2026年11月27日電亞洲股市今天上漲後歐洲主要股市也大幅走高主因科技類股在美國感恩節長週末假期前回穩華爾街股市今天則因感恩節休市倫敦ftse100指數上漲18236點或1",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-11-26T17:00:00+00:00",
+          "dedupe_key": "台積電持續擴大美國布局傳出已為計畫投資226億美元興建的德州晶圓廠申請租稅優惠預計生產2奈米及更先進製程晶片華爾街券商認為台積電掌握終端市場需求的能力優於其他供應商其擴產動作不僅反映需求持續",
+          "event_cluster_key": "event-1c5535ef21e8793cbd2b",
+          "published_time_bucket": "2026-11-26T21:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "market_context",
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -986,102 +1007,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 130
-        },
-        {
-          "story_id": "news-2fa3a3d2ca3c8f1c34cf",
-          "provider": "anue",
-          "provider_name": "Anue",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "iPhone、晶片暫列美301關稅豁免！台積電、輝達鬆口氣 越南製AirPods恐遭課最高35%",
-          "raw_title": "iPhone、晶片暫列美301關稅豁免！台積電、輝達鬆口氣 越南製AirPods恐遭課最高35%",
-          "normalized_fact": "川普政府公布301條款調查結果，擬對14個經濟體加徵關稅，台日韓瑞最高15%、越南35%。 伺服器、手機、PC、晶片及多數半導體設備列豁免，蘋果、美光、輝達、台積電等科技股受惠。 未豁免品項含AirPods、印表機、基地台等；美方明年1月徵詢、3月11日前定案。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "川普政府公布301條款調查結果，擬對14個經濟體加徵關稅，台日韓瑞最高15%、越南35%。 伺服器、手機、PC、晶片及多數半導體設備列豁免，蘋果、美光、輝達、台積電等科技股受惠。 未豁免品項含AirPods、印表機、基地台等；美方明年1月徵詢、3月11日前定案。",
-          "description": "",
-          "canonical_url": "https://news.cnyes.com/news/id/6671885",
-          "url": "https://news.cnyes.com/news/id/6671885",
-          "published_at": "2026-11-25T23:50:05+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-26",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "NVDA",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [
-            "semiconductor",
-            "tariff"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "material_positive",
-            "reason": "material_positive_keyword",
-            "matched_terms": [
-              "關稅豁免"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:2330",
-            "tracked_ticker:NVDA",
-            "tracked_ticker:TSM",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "川普政府公布301條款調查結果擬對14個經濟體加徵關稅台日韓瑞最高15越南35伺服器手機pc晶片及多數半導體設備列豁免蘋果美光輝達台積電等科技股受惠未豁免品項含airpods印表機基地台等美方明年1月徵詢3月11日前定案",
-          "event_cluster_key": "event-2b4cd3fdd0135f96a2de",
-          "published_time_bucket": "2026-11-25T23:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "company_event",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "鉅亨網｜持股關聯",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 145
+          "ranking_score": 140
         },
         {
           "story_id": "news-c8952674a6347d675819",
@@ -1178,6 +1104,187 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 125
+        },
+        {
+          "story_id": "news-ab1204c08754619445e7",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "〈台股盤前要聞〉富邦006208分割投票開跑、華南金前10月獲利284億元超過去年",
+          "raw_title": "〈台股盤前要聞〉富邦006208分割投票開跑、華南金前10月獲利284億元超過去年",
+          "normalized_fact": "台股盤前要聞 1.富邦投信26日舉辦富邦台50 ETF(006208-TW)分割投票啟動記者會，宣布自11月27日至12月15日開放電子投票，並於12月18日以書面方式召開受益人會議，期盼透過分割降低。",
+          "market_topic": "taiwan_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "台股盤前要聞 1.富邦投信26日舉辦富邦台50 ETF(006208-TW)分割投票啟動記者會，宣布自11月27日至12月15日開放電子投票，並於12月18日以書面方式召開受益人會議，期盼透過分割降低",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E8%82%A1%E7%9B%A4%E5%89%8D%E8%A6%81%E8%81%9E-%E5%AF%8C%E9%82%A6006208%E5%88%86%E5%89%B2%E6%8A%95%E7%A5%A8%E9%96%8B%E8%B7%91-%E8%8F%AF%E5%8D%97%E9%87%91%E5%89%8D10%E6%9C%88%E7%8D%B2%E5%88%A9284%E5%84%84%E5%85%83%E8%B6%85%E9%81%8E%E5%8E%BB%E5%B9%B4-201004454.html",
+          "url": "https://tw.stock.yahoo.com/news/%E5%8F%B0%E8%82%A1%E7%9B%A4%E5%89%8D%E8%A6%81%E8%81%9E-%E5%AF%8C%E9%82%A6006208%E5%88%86%E5%89%B2%E6%8A%95%E7%A5%A8%E9%96%8B%E8%B7%91-%E8%8F%AF%E5%8D%97%E9%87%91%E5%89%8D10%E6%9C%88%E7%8D%B2%E5%88%A9284%E5%84%84%E5%85%83%E8%B6%85%E9%81%8E%E5%8E%BB%E5%B9%B4-201004454.html",
+          "published_at": "2026-11-26T20:10:04+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-27",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "TAIEX"
+          ],
+          "sectors": [],
+          "topics": [
+            "earnings"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan",
+            "tracked_ticker:006208",
+            "research_candidate:50"
+          ],
+          "freshness": "published",
+          "dedupe_key": "台股盤前要聞1富邦投信26日舉辦富邦台50etf006208tw分割投票啟動記者會宣布自11月27日至12月15日開放電子投票並於12月18日以書面方式召開受益人會議期盼透過分割降低",
+          "event_cluster_key": "event-1045d4954379e7a3b4a6",
+          "published_time_bucket": "2026-11-26T20:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "company_event",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 140
+        },
+        {
+          "story_id": "news-bcb7f9232ca404ae5538",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "物流科技募資熱潮回歸 投資人轉向緊盯AI實際省錢效益",
+          "raw_title": "物流科技募資熱潮回歸 投資人轉向緊盯AI實際省錢效益",
+          "normalized_fact": "圖／本報資料庫商傳媒｜葉安庭／綜合外電報導全球供應鏈與物流科技領域在 2026 年迎來強勁的資金反彈，但隨著市場預期 2027 年貨運市況可能趨緩，投資人與企業買家的評估標準正在快速轉變——不再為單純。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "圖／本報資料庫商傳媒｜葉安庭／綜合外電報導全球供應鏈與物流科技領域在 2026 年迎來強勁的資金反彈，但隨著市場預期 2027 年貨運市況可能趨緩，投資人與企業買家的評估標準正在快速轉變——不再為單純",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E7%89%A9%E6%B5%81%E7%A7%91%E6%8A%80%E5%8B%9F%E8%B3%87%E7%86%B1%E6%BD%AE%E5%9B%9E%E6%AD%B8-%E6%8A%95%E8%B3%87%E4%BA%BA%E8%BD%89%E5%90%91%E7%B7%8A%E7%9B%AFai%E5%AF%A6%E9%9A%9B%E7%9C%81%E9%8C%A2%E6%95%88%E7%9B%8A-200804311.html",
+          "url": "https://tw.stock.yahoo.com/news/%E7%89%A9%E6%B5%81%E7%A7%91%E6%8A%80%E5%8B%9F%E8%B3%87%E7%86%B1%E6%BD%AE%E5%9B%9E%E6%AD%B8-%E6%8A%95%E8%B3%87%E4%BA%BA%E8%BD%89%E5%90%91%E7%B7%8A%E7%9B%AFai%E5%AF%A6%E9%9A%9B%E7%9C%81%E9%8C%A2%E6%95%88%E7%9B%8A-200804311.html",
+          "published_at": "2026-11-26T20:08:04+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-27",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "semiconductor",
+            "reason": "semiconductor_subject_action",
+            "matched_terms": [
+              "ai",
+              "供應"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "ai",
+              "供應"
+            ],
+            "matched_subject": "ai",
+            "matched_action": "供應",
+            "matched_market_object": "ai",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "圖本報資料庫商傳媒葉安庭綜合外電報導全球供應鏈與物流科技領域在2026年迎來強勁的資金反彈但隨著市場預期2027年貨運市況可能趨緩投資人與企業買家的評估標準正在快速轉變不再為單純",
+          "event_cluster_key": "event-13e9a852be5ba565eb68",
+          "published_time_bucket": "2026-11-26T20:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "ai",
+            "供應"
+          ],
+          "matched_subject": "ai",
+          "matched_action": "供應",
+          "matched_market_object": "ai",
+          "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 130
         },
         {
           "story_id": "news-dede016ae7739515cad9",
@@ -1355,104 +1462,6 @@
           "matched_subject": "ai",
           "matched_action": "供應",
           "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 120
-        },
-        {
-          "story_id": "news-2ed1963f10b099daedfb",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "AI晶片王者遭質疑、華為急起直追：Nvidia治理風暴掀人工智慧供應鏈新戰局 - 美股放大鏡",
-          "raw_title": "AI晶片王者遭質疑、華為急起直追：Nvidia治理風暴掀人工智慧供應鏈新戰局 - 美股放大鏡",
-          "normalized_fact": "AI晶片王者遭質疑、華為急起直追：Nvidia治理風暴掀人工智慧供應鏈新戰局 美股放大鏡。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "AI晶片王者遭質疑、華為急起直追：Nvidia治理風暴掀人工智慧供應鏈新戰局 美股放大鏡",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxPNUZrUnhTY1E0S3Iwa09hNjFGWFhZUXRpXzdwd1dBUzJ1WEgtbFBTSS1nRlNhTVVOT3RJRHhDcW1VMEJid0d5OV9uOVV1Y2l1MUpxUGFiaHNoOHdUYkRGdkt3N1l4Y09YVTIyTHdlNjFEVUl4N2NscHQtOVdDTTlKMHJDZFRvVjRpbkVFa0w2bTUtaTdY",
-          "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxPNUZrUnhTY1E0S3Iwa09hNjFGWFhZUXRpXzdwd1dBUzJ1WEgtbFBTSS1nRlNhTVVOT3RJRHhDcW1VMEJid0d5OV9uOVV1Y2l1MUpxUGFiaHNoOHdUYkRGdkt3N1l4Y09YVTIyTHdlNjFEVUl4N2NscHQtOVdDTTlKMHJDZFRvVjRpbkVFa0w2bTUtaTdY",
-          "published_at": "2026-11-26T11:00:39+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-26",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [
-            "ai",
-            "semiconductor"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "nvidia",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "nvidia",
-              "供應"
-            ],
-            "matched_subject": "nvidia",
-            "matched_action": "供應",
-            "matched_market_object": "nvidia",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:NVDA",
-            "market:taiwan"
-          ],
-          "freshness": "published",
-          "dedupe_key": "ai晶片王者遭質疑華為急起直追nvidia治理風暴掀人工智慧供應鏈新戰局美股放大鏡",
-          "event_cluster_key": "event-aa8eaff57713249c5b08",
-          "published_time_bucket": "2026-11-26T11:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "nvidia",
-            "供應"
-          ],
-          "matched_subject": "nvidia",
-          "matched_action": "供應",
-          "matched_market_object": "nvidia",
           "decision_value_class": "semiconductor_ai",
           "quality_flags": [],
           "eligibility_reasons": [
@@ -1943,14 +1952,14 @@
           "ranking_score": 115
         },
         {
-          "story_id": "news-e46b5a49ee50a3a43ee4",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "卡巴斯基盤點2027年七大供應鏈資安風險，企業防護範圍從開源軟體擴及AI模型與代理 - iThome",
-          "raw_title": "卡巴斯基盤點2027年七大供應鏈資安風險，企業防護範圍從開源軟體擴及AI模型與代理 - iThome",
-          "normalized_fact": "卡巴斯基盤點2027年七大供應鏈資安風險，企業防護範圍從開源軟體擴及AI模型與代理 iThome。",
+          "story_id": "news-2fa3a3d2ca3c8f1c34cf",
+          "provider": "anue",
+          "provider_name": "Anue",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "iPhone、晶片暫列美301關稅豁免！台積電、輝達鬆口氣 越南製AirPods恐遭課最高35%",
+          "raw_title": "iPhone、晶片暫列美301關稅豁免！台積電、輝達鬆口氣 越南製AirPods恐遭課最高35%",
+          "normalized_fact": "川普政府公布301條款調查結果，擬對14個經濟體加徵關稅，台日韓瑞最高15%、越南35%。 伺服器、手機、PC、晶片及多數半導體設備列豁免，蘋果、美光、輝達、台積電等科技股受惠。 未豁免品項含AirPods、印表機、基地台等；美方明年1月徵詢、3月11日前定案。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -1959,11 +1968,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "卡巴斯基盤點2027年七大供應鏈資安風險，企業防護範圍從開源軟體擴及AI模型與代理 iThome",
+          "summary": "川普政府公布301條款調查結果，擬對14個經濟體加徵關稅，台日韓瑞最高15%、越南35%。 伺服器、手機、PC、晶片及多數半導體設備列豁免，蘋果、美光、輝達、台積電等科技股受惠。 未豁免品項含AirPods、印表機、基地台等；美方明年1月徵詢、3月11日前定案。",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMiTkFVX3lxTE1oOURzUzlqemNBNnZFeXBoSnlBSndLa3hhdzE1NW1meGlScXhSRzUtNmM0NGFHbVNrbHRLY0EyZmE4OU1GQUlobnAydHF3QQ",
-          "url": "https://news.google.com/rss/articles/CBMiTkFVX3lxTE1oOURzUzlqemNBNnZFeXBoSnlBSndLa3hhdzE1NW1meGlScXhSRzUtNmM0NGFHbVNrbHRLY0EyZmE4OU1GQUlobnAydHF3QQ",
-          "published_at": "2026-11-26T00:15:20+00:00",
+          "canonical_url": "https://news.cnyes.com/news/id/6671885",
+          "url": "https://news.cnyes.com/news/id/6671885",
+          "published_at": "2026-11-25T23:50:05+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "recent_reference",
@@ -1973,28 +1982,29 @@
           "market": "taiwan",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "2330",
+            "NVDA",
+            "TSM"
+          ],
           "sectors": [],
           "topics": [
-            "ai"
+            "semiconductor",
+            "tariff"
           ],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
+            "category": "material_positive",
+            "reason": "material_positive_keyword",
             "matched_terms": [
-              "ai",
-              "供應"
+              "關稅豁免"
             ],
             "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "供應"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "供應",
-            "matched_market_object": "ai",
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
             "input_fields": [
               "description",
               "summary",
@@ -2002,38 +2012,39 @@
             ]
           },
           "relevance_reasons": [
+            "market:cross_market",
+            "tracked_ticker:2330",
+            "tracked_ticker:NVDA",
+            "tracked_ticker:TSM",
             "market:taiwan"
           ],
           "freshness": "published",
-          "dedupe_key": "卡巴斯基盤點2027年七大供應鏈資安風險企業防護範圍從開源軟體擴及ai模型與代理ithome",
-          "event_cluster_key": "event-689d7c05acb7d6b9ca07",
-          "published_time_bucket": "2026-11-26T00:00:00+00:00",
+          "dedupe_key": "川普政府公布301條款調查結果擬對14個經濟體加徵關稅台日韓瑞最高15越南35伺服器手機pc晶片及多數半導體設備列豁免蘋果美光輝達台積電等科技股受惠未豁免品項含airpods印表機基地台等美方明年1月徵詢3月11日前定案",
+          "event_cluster_key": "event-2b4cd3fdd0135f96a2de",
+          "published_time_bucket": "2026-11-25T23:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "供應"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "供應",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "company_event",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
           ],
           "exclusion_reason": null,
-          "source": "Google News｜台股線索",
+          "source": "鉅亨網｜持股關聯",
           "evidence_state": "observation",
           "confirmation_required": true,
-          "selection_lane": "current",
-          "inventory_used": false,
-          "inventory_age_trading_sessions": null,
-          "inventory_saved_at": null,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 2,
+          "inventory_saved_at": "2026-11-26T17:56:50.957890+00:00",
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 115
+          "ranking_score": 42
         },
         {
           "story_id": "news-0b1f3cedcd67b2340809",
@@ -2134,6 +2145,89 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 22
+        },
+        {
+          "story_id": "news-4b55ea46156ddaedb7cb",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "【歐股盤後】收高",
+          "raw_title": "【歐股盤後】收高",
+          "normalized_fact": "（中央社台北2026年11月27日電）亞洲股市今天上漲後，歐洲主要股市也大幅走高，主因科技類股在美國感恩節長週末假期前回穩。華爾街股市今天則因感恩節休市。倫敦FTSE 100指數上漲182.36點或1。",
+          "market_topic": "company_industry",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "（中央社台北2026年11月27日電）亞洲股市今天上漲後，歐洲主要股市也大幅走高，主因科技類股在美國感恩節長週末假期前回穩。華爾街股市今天則因感恩節休市。倫敦FTSE 100指數上漲182.36點或1",
+          "description": "",
+          "canonical_url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E8%82%A1%E7%9B%A4%E5%BE%8C-%E6%94%B6%E9%AB%98-173450957.html",
+          "url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E8%82%A1%E7%9B%A4%E5%BE%8C-%E6%94%B6%E9%AB%98-173450957.html",
+          "published_at": "2026-11-26T17:34:50+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-27",
+          "market": "taiwan",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:cross_market",
+            "market:taiwan"
+          ],
+          "freshness": "published",
+          "dedupe_key": "中央社台北2026年11月27日電亞洲股市今天上漲後歐洲主要股市也大幅走高主因科技類股在美國感恩節長週末假期前回穩華爾街股市今天則因感恩節休市倫敦ftse100指數上漲18236點或1",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-11-26T17:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Taiwan Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-11-26T17:56:50.957890+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 30
         },
         {
           "story_id": "news-23badd47e09e1ae0f297",
@@ -4528,102 +4622,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 24
-        },
-        {
-          "story_id": "news-625981e8bf3109845f96",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "台積電表揚35家優良供應商 日企包辦14家成最大贏家 - 商傳媒",
-          "raw_title": "台積電表揚35家優良供應商 日企包辦14家成最大贏家 - 商傳媒",
-          "normalized_fact": "台積電表揚35家優良供應商 日企包辦14家成最大贏家 商傳媒。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "台積電表揚35家優良供應商 日企包辦14家成最大贏家 商傳媒",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMi6AJBVV95cUxNc1d6YWl0ZkRwZzNmU1hrSVJ5VzVCdTVSd3VBZ3loRnd1bVdtOVFzWm1RV2lxTlVfUk1hdEtKRUhqSGt6bUFCOEwweURlNG5HdlVOV2lsSVhVSnhDTUxvWWJrODc0eGxFZXluNVpaVnFIREdnX3gyYVNvT1dlUmdfcU1aQkRjWlFveURIZnJ0WUFXMDdKNDZOcGVYYXVSejd5dzQwMGpRUXZtNEZDU3VIT0NjNnhxV1duRTBHeEsxc2pqZC1iWWJacHloZ3dGWHF1Z2Y0WUJ4MFROUVRRM0c2dmVCR2hTbjd0RFB5dmFmXzdzSVhzRm5teDlJdng1NDRhYnJyWExxU0NoZUFnaVVrXzBSeUpwa3pHRUZSUGVNWThZcE5JVlQ3aW1HeXZ5cmp2UXhCWVdBcGI0dVRkY0F2cUR6TFphMmJPZjJ4OXAta2Y4amlPYWlxVlhrTVJMTjEyMlRaZkx2WHE",
-          "url": "https://news.google.com/rss/articles/CBMi6AJBVV95cUxNc1d6YWl0ZkRwZzNmU1hrSVJ5VzVCdTVSd3VBZ3loRnd1bVdtOVFzWm1RV2lxTlVfUk1hdEtKRUhqSGt6bUFCOEwweURlNG5HdlVOV2lsSVhVSnhDTUxvWWJrODc0eGxFZXluNVpaVnFIREdnX3gyYVNvT1dlUmdfcU1aQkRjWlFveURIZnJ0WUFXMDdKNDZOcGVYYXVSejd5dzQwMGpRUXZtNEZDU3VIT0NjNnhxV1duRTBHeEsxc2pqZC1iWWJacHloZ3dGWHF1Z2Y0WUJ4MFROUVRRM0c2dmVCR2hTbjd0RFB5dmFmXzdzSVhzRm5teDlJdng1NDRhYnJyWExxU0NoZUFnaVVrXzBSeUpwa3pHRUZSUGVNWThZcE5JVlQ3aW1HeXZ5cmp2UXhCWVdBcGI0dVRkY0F2cUR6TFphMmJPZjJ4OXAta2Y4amlPYWlxVlhrTVJMTjEyMlRaZkx2WHE",
-          "published_at": "2026-11-26T00:13:28+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-26",
-          "market": "taiwan",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "2330",
-            "TSM"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "台積電",
-              "供應"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "台積電",
-              "供應"
-            ],
-            "matched_subject": "台積電",
-            "matched_action": "供應",
-            "matched_market_object": "台積電",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:taiwan",
-            "tracked_ticker:2330",
-            "tracked_ticker:TSM"
-          ],
-          "freshness": "published",
-          "dedupe_key": "台積電表揚35家優良供應商日企包辦14家成最大贏家商傳媒",
-          "event_cluster_key": "event-8db301a22af33eb6feab",
-          "published_time_bucket": "2026-11-26T00:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "台積電",
-            "供應"
-          ],
-          "matched_subject": "台積電",
-          "matched_action": "供應",
-          "matched_market_object": "台積電",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜台股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-11-26T00:49:24.575444+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 22
         }
       ],
       "source_diversity": {
@@ -4631,15 +4629,13 @@
         "status": "multi_source",
         "cross_checked": true,
         "minimum_required": 2,
-        "independent_source_count": 3,
-        "provider_count": 3,
+        "independent_source_count": 2,
+        "provider_count": 2,
         "provider_ids": [
-          "anue",
           "google_news",
           "yahoo_finance"
         ],
         "source_domains": [
-          "news.cnyes.com",
           "news.google.com",
           "tw.stock.yahoo.com"
         ],
@@ -4651,10 +4647,11 @@
       "interest_graph": {
         "ticker_interest": {
           "2330": 16,
-          "NVDA": 18,
           "TSM": 16,
           "006208": 2,
-          "50": 1
+          "50": 3,
+          "NVDA": 16,
+          "3017": 1
         },
         "sector_interest": {},
         "topic_interest": {
@@ -4662,7 +4659,7 @@
           "原油": 1
         },
         "market_interest": {
-          "taiwan": 114
+          "taiwan": 107
         },
         "context": {
           "tracked_tickers": [
@@ -4752,12 +4749,13 @@
         "source_interest": {
           "tracked_ticker": {
             "2330": 16,
-            "NVDA": 18,
             "TSM": 16,
-            "006208": 2
+            "006208": 2,
+            "NVDA": 16
           },
           "research_candidate": {
-            "50": 1
+            "50": 3,
+            "3017": 1
           },
           "tracked_sector": {},
           "active_event": {
@@ -4767,56 +4765,57 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 31,
+      "excluded_count": 29,
       "exclusion_reasons": {
-        "insufficient_market_relevance": 28,
-        "outside_calendar_window": 15,
+        "insufficient_market_relevance": 18,
+        "non_investment_content": 2,
+        "outside_calendar_window": 17,
         "outside_trading_session_window": 2
       },
       "status": "ready",
-      "collection_state": "ready",
-      "source_failure_count": 0,
+      "collection_state": "degraded",
+      "source_failure_count": 1,
       "scan_summary": {
         "provider_count": 5,
-        "successful_provider_count": 5,
-        "failed_provider_count": 0,
+        "successful_provider_count": 4,
+        "failed_provider_count": 1,
         "disabled_provider_count": 0,
-        "fetched": 43,
-        "normalized": 43,
-        "eligible": 12,
-        "excluded": 31,
-        "date_eligible_current": 26,
-        "date_excluded_current": 17,
+        "fetched": 40,
+        "normalized": 40,
+        "eligible": 11,
+        "excluded": 29,
+        "date_eligible_current": 21,
+        "date_excluded_current": 19,
         "date_exclusion_reasons_current": {
-          "outside_calendar_window": 15,
+          "outside_calendar_window": 17,
           "outside_trading_session_window": 2
         },
-        "date_eligible_inventory": 71,
+        "date_eligible_inventory": 67,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-11-26T17:56:50.957890+00:00",
-        "deduped": 12,
+        "reference_time": "2026-11-26T22:03:34.871330+00:00",
+        "deduped": 11,
         "publicly_ranked": 5,
-        "current_eligible": 12,
-        "inventory_considered": 71,
+        "current_eligible": 11,
+        "inventory_considered": 67,
         "inventory_eligible": 57,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 31,
-        "fetched_story_count": 43,
-        "normalized_story_count": 43,
-        "eligible_story_count": 12,
-        "deduped_story_count": 12,
+        "filtered_story_count": 29,
+        "fetched_story_count": 40,
+        "normalized_story_count": 40,
+        "eligible_story_count": 11,
+        "deduped_story_count": 11,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 71,
+        "considered": 67,
         "eligible": 57,
         "selected": 0,
         "target_count": 5,
@@ -4829,8 +4828,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 43,
-          "checked_at": "2026-11-26T17:56:50.957930+00:00"
+          "item_count": 40,
+          "checked_at": "2026-11-26T22:03:34.871373+00:00"
         },
         {
           "provider": "twse",
@@ -4841,10 +4840,10 @@
           "source_tier": "official",
           "source_url": "https://openapi.twse.com.tw/v1/news/newsList",
           "item_count": 0,
-          "checked_at": "2026-11-26T17:56:50.957930+00:00",
+          "checked_at": "2026-11-26T22:03:34.871373+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-26T17:56:50.957930+00:00",
+          "last_success_at": "2026-11-26T22:03:34.871373+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -4865,15 +4864,16 @@
           "key": "news_taiwan_mops",
           "legacy_key": "official_news_taiwan_mops",
           "label": "mops official news",
-          "status": "no_event",
+          "status": "failed",
           "source_tier": "official",
           "source_url": "https://mops.twse.com.tw/mops/api/t05st02",
           "item_count": 0,
-          "checked_at": "2026-11-26T17:56:50.957930+00:00",
+          "checked_at": "2026-11-26T22:03:34.871373+00:00",
+          "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-26T17:56:50.957930+00:00",
-          "last_failure_at": null,
+          "last_success_at": null,
+          "last_failure_at": "2026-11-26T22:03:34.871373+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -4893,30 +4893,28 @@
           "key": "news_taiwan_anue",
           "legacy_key": "official_news_taiwan_anue",
           "label": "anue market news",
-          "status": "healthy",
+          "status": "no_event",
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/tw_stock_news",
-          "item_count": 1,
-          "checked_at": "2026-11-26T17:56:50.957930+00:00",
+          "item_count": 0,
+          "checked_at": "2026-11-26T22:03:34.871373+00:00",
+          "data_gap": "filtered_no_market_match",
           "raw_item_count": 5,
-          "filtered_item_count": 1,
-          "last_success_at": "2026-11-26T17:56:50.957930+00:00",
+          "filtered_item_count": 0,
+          "last_success_at": "2026-11-26T22:03:34.871373+00:00",
           "last_failure_at": null,
-          "stories_ingested": 3,
-          "stories_deduped": 1,
-          "ranked_count": 1,
-          "relevance_distribution": {
-            "market": 3,
-            "tracked_ticker": 2
-          },
+          "stories_ingested": 0,
+          "stories_deduped": 0,
+          "ranked_count": 0,
+          "relevance_distribution": {},
           "funnel": {
-            "fetched_count": 3,
-            "normalized_count": 3,
-            "market_compatible_count": 3,
-            "eligible_count": 1,
-            "excluded_count": 2,
-            "deduped_count": 1,
-            "ranked_count": 1
+            "fetched_count": 0,
+            "normalized_count": 0,
+            "market_compatible_count": 0,
+            "eligible_count": 0,
+            "excluded_count": 0,
+            "deduped_count": 0,
+            "ranked_count": 0
           }
         },
         {
@@ -4927,26 +4925,28 @@
           "status": "healthy",
           "source_tier": "market",
           "source_url": "https://tw.stock.yahoo.com/rss?category=news",
-          "item_count": 1,
-          "checked_at": "2026-11-26T17:56:50.957930+00:00",
+          "item_count": 3,
+          "checked_at": "2026-11-26T22:03:34.871373+00:00",
           "raw_item_count": 10,
-          "filtered_item_count": 1,
-          "last_success_at": "2026-11-26T17:56:50.957930+00:00",
+          "filtered_item_count": 3,
+          "last_success_at": "2026-11-26T22:03:34.871373+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
-          "stories_deduped": 1,
-          "ranked_count": 1,
+          "stories_deduped": 3,
+          "ranked_count": 3,
           "relevance_distribution": {
-            "market": 10
+            "market": 10,
+            "research_candidate": 1,
+            "tracked_ticker": 2
           },
           "funnel": {
             "fetched_count": 10,
             "normalized_count": 10,
             "market_compatible_count": 10,
-            "eligible_count": 1,
-            "excluded_count": 9,
-            "deduped_count": 1,
-            "ranked_count": 1
+            "eligible_count": 3,
+            "excluded_count": 7,
+            "deduped_count": 3,
+            "ranked_count": 3
           }
         },
         {
@@ -4957,88 +4957,88 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1+OR+%E5%8F%B0%E7%A9%8D%E9%9B%BB+OR+%E5%8F%B0%E6%8C%87+OR+%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8&hl=zh-TW&gl=TW&ceid=TW%3Azh-Hant",
-          "item_count": 3,
-          "checked_at": "2026-11-26T17:56:50.957930+00:00",
+          "item_count": 2,
+          "checked_at": "2026-11-26T22:03:34.871373+00:00",
           "raw_item_count": 30,
-          "filtered_item_count": 3,
-          "last_success_at": "2026-11-26T17:56:50.957930+00:00",
+          "filtered_item_count": 2,
+          "last_success_at": "2026-11-26T22:03:34.871373+00:00",
           "last_failure_at": null,
           "stories_ingested": 30,
-          "stories_deduped": 10,
-          "ranked_count": 3,
+          "stories_deduped": 8,
+          "ranked_count": 2,
           "relevance_distribution": {
             "market": 30,
-            "tracked_ticker": 8
+            "research_candidate": 1,
+            "tracked_ticker": 9
           },
           "funnel": {
             "fetched_count": 30,
             "normalized_count": 30,
             "market_compatible_count": 30,
-            "eligible_count": 10,
-            "excluded_count": 20,
-            "deduped_count": 10,
-            "ranked_count": 3
+            "eligible_count": 8,
+            "excluded_count": 22,
+            "deduped_count": 8,
+            "ranked_count": 2
           }
         }
       ],
       "observability": {
-        "stories_ingested": 43,
-        "stories_deduped": 12,
+        "stories_ingested": 40,
+        "stories_deduped": 11,
         "ranked_count": 5,
         "relevance_distribution": {
-          "market": 43,
-          "tracked_ticker": 10
+          "market": 40,
+          "research_candidate": 2,
+          "tracked_ticker": 11
         },
         "providers": [
           {
             "provider": "anue",
-            "status": "healthy",
-            "last_success_at": "2026-11-26T17:56:50.957930+00:00",
+            "status": "no_event",
+            "last_success_at": "2026-11-26T22:03:34.871373+00:00",
             "last_failure_at": null,
-            "stories_ingested": 3,
-            "stories_deduped": 1,
-            "ranked_count": 1,
-            "relevance_distribution": {
-              "market": 3,
-              "tracked_ticker": 2
-            },
+            "stories_ingested": 0,
+            "stories_deduped": 0,
+            "ranked_count": 0,
+            "relevance_distribution": {},
             "funnel": {
-              "fetched_count": 3,
-              "normalized_count": 3,
-              "market_compatible_count": 3,
-              "eligible_count": 1,
-              "excluded_count": 2,
-              "deduped_count": 1,
-              "ranked_count": 1
+              "fetched_count": 0,
+              "normalized_count": 0,
+              "market_compatible_count": 0,
+              "eligible_count": 0,
+              "excluded_count": 0,
+              "deduped_count": 0,
+              "ranked_count": 0
             }
           },
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-11-26T17:56:50.957930+00:00",
+            "last_success_at": "2026-11-26T22:03:34.871373+00:00",
             "last_failure_at": null,
             "stories_ingested": 30,
-            "stories_deduped": 10,
-            "ranked_count": 3,
+            "stories_deduped": 8,
+            "ranked_count": 2,
             "relevance_distribution": {
               "market": 30,
-              "tracked_ticker": 8
+              "research_candidate": 1,
+              "tracked_ticker": 9
             },
             "funnel": {
               "fetched_count": 30,
               "normalized_count": 30,
               "market_compatible_count": 30,
-              "eligible_count": 10,
-              "excluded_count": 20,
-              "deduped_count": 10,
-              "ranked_count": 3
+              "eligible_count": 8,
+              "excluded_count": 22,
+              "deduped_count": 8,
+              "ranked_count": 2
             }
           },
           {
             "provider": "mops",
-            "status": "no_event",
-            "last_success_at": "2026-11-26T17:56:50.957930+00:00",
-            "last_failure_at": null,
+            "status": "failed",
+            "last_success_at": null,
+            "last_failure_at": "2026-11-26T22:03:34.871373+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -5056,7 +5056,7 @@
           {
             "provider": "twse",
             "status": "no_event",
-            "last_success_at": "2026-11-26T17:56:50.957930+00:00",
+            "last_success_at": "2026-11-26T22:03:34.871373+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -5075,22 +5075,24 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-11-26T17:56:50.957930+00:00",
+            "last_success_at": "2026-11-26T22:03:34.871373+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
-            "stories_deduped": 1,
-            "ranked_count": 1,
+            "stories_deduped": 3,
+            "ranked_count": 3,
             "relevance_distribution": {
-              "market": 10
+              "market": 10,
+              "research_candidate": 1,
+              "tracked_ticker": 2
             },
             "funnel": {
               "fetched_count": 10,
               "normalized_count": 10,
               "market_compatible_count": 10,
-              "eligible_count": 1,
-              "excluded_count": 9,
-              "deduped_count": 1,
-              "ranked_count": 1
+              "eligible_count": 3,
+              "excluded_count": 7,
+              "deduped_count": 3,
+              "ranked_count": 3
             }
           }
         ]
@@ -5315,15 +5317,15 @@
       ],
       "stories": [
         {
-          "story_id": "news-04facc759ceb545690c3",
+          "story_id": "news-e18077a538f964814b89",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "AppLovin’s (APP) E-Commerce Bet Is Paying Off—And Ad Prices Prove It",
-          "raw_title": "AppLovin’s (APP) E-Commerce Bet Is Paying Off—And Ad Prices Prove It",
-          "normalized_fact": "Hayden Capital, an investment management firm, released its third-quarter 2026 investment letter. The letter can be downloaded here. In the third quarter, the portfolio fell 0.4%, bringing its year-to-date loss to 23.6%, versus gains of 2.3% and 12.7% for the S&P 500, and 1.2% and 12.9% for MSCI World. The letter acknowledges a difficult year […]。",
-          "market_topic": "global_market",
+          "title": "Jensen Huang’s Return Doesn’t Make Nvidia Stock (NVDA) a Buy",
+          "raw_title": "Jensen Huang’s Return Doesn’t Make Nvidia Stock (NVDA) a Buy",
+          "normalized_fact": "Jensen Huang’s return as CEO doesn’t make Nvidia (NVDA) stock a Buy, despite the market’s positive reaction. Shares of the leading semiconductor manufacturer jumped roughly 31.5% on November 23 after Nvidia’s board unanimously reinstated Huang with immediate effect. Yet the stock remains down roughly 31% over the past month following a steep sell-off. Although Nvidia enjoys a long runway for growth, I believe investors should closely watch the regulatory scrutiny still surrounding the company. I。",
+          "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5331,11 +5333,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "Hayden Capital, an investment management firm, released its third-quarter 2026 investment letter. The letter can be downloaded here. In the third quarter, the portfolio fell 0.4%, bringing its year-to-date loss to 23.6%, versus gains of 2.3% and 12.7% for the S&P 500, and 1.2% and 12.9% for MSCI World. The letter acknowledges a difficult year […]",
+          "summary": "Jensen Huang’s return as CEO doesn’t make Nvidia (NVDA) stock a Buy, despite the market’s positive reaction. Shares of the leading semiconductor manufacturer jumped roughly 31.5% on November 23 after Nvidia’s board unanimously reinstated Huang with immediate effect. Yet the stock remains down roughly 31% over the past month following a steep sell-off. Although Nvidia enjoys a long runway for growth, I believe investors should closely watch the regulatory scrutiny still surrounding the company. I",
           "description": "",
-          "canonical_url": "https://finance.yahoo.com/media-advertising/articles/applovin-app-e-commerce-bet-170610809.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/media-advertising/articles/applovin-app-e-commerce-bet-170610809.html?.tsrc=rss",
-          "published_at": "2026-11-26T17:06:10+00:00",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/jensen-huang-return-doesn-t-212200380.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/jensen-huang-return-doesn-t-212200380.html?.tsrc=rss",
+          "published_at": "2026-11-26T21:22:00+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -5345,26 +5347,22 @@
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "NVDA"
+          ],
           "sectors": [],
           "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "market",
-            "reason": "market_subject_action",
-            "matched_terms": [
-              "s&p 500",
-              "fell"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "s&p 500",
-              "fell"
-            ],
-            "matched_subject": "s&p 500",
-            "matched_action": "fell",
-            "matched_market_object": "s&p 500",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
             "input_fields": [
               "description",
               "summary",
@@ -5373,23 +5371,20 @@
           },
           "relevance_reasons": [
             "market:us",
-            "research_candidate:APP"
+            "tracked_ticker:NVDA"
           ],
           "freshness": "published",
-          "dedupe_key": "haydencapitalaninvestmentmanagementfirmreleaseditsthirdquarter2026investmentletterthelettercanbedownloadedhereinthethirdquartertheportfoliofell04bringingitsyeartodatelossto236versusgainsof23and127forthesp500and12and129formsciworldtheletteracknowledgesadifficultyear",
-          "event_cluster_key": "event-e827e1f9d17dc2b9807d",
-          "published_time_bucket": "2026-11-26T17:00:00+00:00",
+          "dedupe_key": "jensenhuangsreturnasceodoesntmakenvidianvdastockabuydespitethemarketspositivereactionsharesoftheleadingsemiconductormanufacturerjumpedroughly315onnovember23afternvidiasboardunanimouslyreinstatedhuangwithimmediateeffectyetthestockremainsdownroughly31overthepastmonthfollowingasteepselloffalthoughnvidiaenjoysalongrunwayforgrowthibelieveinvestorsshouldcloselywatchtheregulatoryscrutinystillsurroundingthecompanyi",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-11-26T21:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [
-            "s&p 500",
-            "fell"
-          ],
-          "matched_subject": "s&p 500",
-          "matched_action": "fell",
-          "matched_market_object": "s&p 500",
-          "decision_value_class": "company_event",
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -5404,17 +5399,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 135,
-          "supporting_sources": [
-            {
-              "provider": "yahoo_finance",
-              "url": "https://finance.yahoo.com/markets/stocks/articles/nu-holdings-nu-why-investors-170952971.html?.tsrc=rss"
-            },
-            {
-              "provider": "yahoo_finance",
-              "url": "https://finance.yahoo.com/markets/stocks/articles/sea-ltd-se-high-reinvestment-170315251.html?.tsrc=rss"
-            }
-          ]
+          "ranking_score": 135
         },
         {
           "story_id": "news-9c62155047a657f3621c",
@@ -5606,14 +5591,14 @@
           "ranking_score": 120
         },
         {
-          "story_id": "news-6b71df3520e362624f99",
+          "story_id": "news-57618d5fba4317af5056",
           "provider": "google_news",
           "provider_name": "Google News",
           "source_tier": "discovery",
           "authority_tier": "discovery",
-          "title": "Nvidia Reportedly Halts AI Server Shipments to Four Southeast Asian Countries Amid Tighter US Export Controls - Yahoo Finance",
-          "raw_title": "Nvidia Reportedly Halts AI Server Shipments to Four Southeast Asian Countries Amid Tighter US Export Controls - Yahoo Finance",
-          "normalized_fact": "Nvidia Reportedly Halts AI Server Shipments to Four Southeast Asian Countries Amid Tighter US Export Controls Yahoo Finance。",
+          "title": "California companies owned by Chinese firms are scooping up Nvidia’s most advanced AI chips: report - New York Post",
+          "raw_title": "California companies owned by Chinese firms are scooping up Nvidia’s most advanced AI chips: report - New York Post",
+          "normalized_fact": "California companies owned by Chinese firms are scooping up Nvidia’s most advanced AI chips: report New York Post。",
           "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
@@ -5622,11 +5607,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "Nvidia Reportedly Halts AI Server Shipments to Four Southeast Asian Countries Amid Tighter US Export Controls Yahoo Finance",
+          "summary": "California companies owned by Chinese firms are scooping up Nvidia’s most advanced AI chips: report New York Post",
           "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMingFBVV95cUxOV3dMNG5nSXB6aWtwVVpJSTc5SU5ST0l3MjZkdUtVOGhHalBMaGFBaWVHT1UxM3dLTXd3QlhmaW5iV2dxQ0N6R1F3R3Zwd0p2cjQzajM5NUVuRDhnallFMHpGa1VObVZvb0pfaWRlX3ZuQTF5RVYxOWV1ZzRZQ0IybVlUZWIwM0xOb2RnRWh4MWF1a1BmMzRXNEdSaUl6dw",
-          "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxOV3dMNG5nSXB6aWtwVVpJSTc5SU5ST0l3MjZkdUtVOGhHalBMaGFBaWVHT1UxM3dLTXd3QlhmaW5iV2dxQ0N6R1F3R3Zwd0p2cjQzajM5NUVuRDhnallFMHpGa1VObVZvb0pfaWRlX3ZuQTF5RVYxOWV1ZzRZQ0IybVlUZWIwM0xOb2RnRWh4MWF1a1BmMzRXNEdSaUl6dw",
-          "published_at": "2026-11-26T10:59:10+00:00",
+          "canonical_url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxQc1NqSGpiN2IzRzMtNnFlTHg0QVg1Nkw2UjRvUVlGY29oMnV0enQ1ZndsNElEa2ExT2lfSWVhMlpBMjlvb3FxQTFRU0NHTVRiem9IYTJkazNSY3FIRGwtb1VhVVlzSTJZbmxpOFhVZXhwUXBxT0pCaGRuckFyTEhJdXVNd3laczhTWS1XeXk2VWpiRVhIaTJCLVI0cmFuc3YtQW85T0lJRDM5TFlXOTZERGEwY3ktUQ",
+          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxQc1NqSGpiN2IzRzMtNnFlTHg0QVg1Nkw2UjRvUVlGY29oMnV0enQ1ZndsNElEa2ExT2lfSWVhMlpBMjlvb3FxQTFRU0NHTVRiem9IYTJkazNSY3FIRGwtb1VhVVlzSTJZbmxpOFhVZXhwUXBxT0pCaGRuckFyTEhJdXVNd3laczhTWS1XeXk2VWpiRVhIaTJCLVI0cmFuc3YtQW85T0lJRDM5TFlXOTZERGEwY3ktUQ",
+          "published_at": "2026-11-26T20:41:00+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -5646,20 +5631,14 @@
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "nvidia",
-              "export control"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "nvidia",
-              "export control"
-            ],
-            "matched_subject": "nvidia",
-            "matched_action": "export control",
-            "matched_market_object": "nvidia",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
             "input_fields": [
               "description",
               "summary",
@@ -5671,20 +5650,17 @@
             "tracked_ticker:NVDA"
           ],
           "freshness": "published",
-          "dedupe_key": "nvidiareportedlyhaltsaiservershipmentstofoursoutheastasiancountriesamidtighterusexportcontrolsyahoofinance",
-          "event_cluster_key": "event-ff2b6033a43831808652",
-          "published_time_bucket": "2026-11-26T10:00:00+00:00",
+          "dedupe_key": "californiacompaniesownedbychinesefirmsarescoopingupnvidiasmostadvancedaichipsreportnewyorkpost",
+          "event_cluster_key": "event-4c23c92cc678106ba4dc",
+          "published_time_bucket": "2026-11-26T20:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [
-            "nvidia",
-            "export control"
-          ],
-          "matched_subject": "nvidia",
-          "matched_action": "export control",
-          "matched_market_object": "nvidia",
-          "decision_value_class": "semiconductor_ai",
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "company_event",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -5799,15 +5775,15 @@
       ],
       "editorial_candidates": [
         {
-          "story_id": "news-04facc759ceb545690c3",
+          "story_id": "news-e18077a538f964814b89",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
           "source_tier": "market",
           "authority_tier": "market",
-          "title": "AppLovin’s (APP) E-Commerce Bet Is Paying Off—And Ad Prices Prove It",
-          "raw_title": "AppLovin’s (APP) E-Commerce Bet Is Paying Off—And Ad Prices Prove It",
-          "normalized_fact": "Hayden Capital, an investment management firm, released its third-quarter 2026 investment letter. The letter can be downloaded here. In the third quarter, the portfolio fell 0.4%, bringing its year-to-date loss to 23.6%, versus gains of 2.3% and 12.7% for the S&P 500, and 1.2% and 12.9% for MSCI World. The letter acknowledges a difficult year […]。",
-          "market_topic": "global_market",
+          "title": "Jensen Huang’s Return Doesn’t Make Nvidia Stock (NVDA) a Buy",
+          "raw_title": "Jensen Huang’s Return Doesn’t Make Nvidia Stock (NVDA) a Buy",
+          "normalized_fact": "Jensen Huang’s return as CEO doesn’t make Nvidia (NVDA) stock a Buy, despite the market’s positive reaction. Shares of the leading semiconductor manufacturer jumped roughly 31.5% on November 23 after Nvidia’s board unanimously reinstated Huang with immediate effect. Yet the stock remains down roughly 31% over the past month following a steep sell-off. Although Nvidia enjoys a long runway for growth, I believe investors should closely watch the regulatory scrutiny still surrounding the company. I。",
+          "market_topic": "semiconductor_ai",
           "actor_role": "",
           "actor_name": "",
           "headline_actor": "",
@@ -5815,11 +5791,11 @@
           "publisher_removed": false,
           "normalization_ruleset": "market_headline_normalizer_v1",
           "normalization_complete": true,
-          "summary": "Hayden Capital, an investment management firm, released its third-quarter 2026 investment letter. The letter can be downloaded here. In the third quarter, the portfolio fell 0.4%, bringing its year-to-date loss to 23.6%, versus gains of 2.3% and 12.7% for the S&P 500, and 1.2% and 12.9% for MSCI World. The letter acknowledges a difficult year […]",
+          "summary": "Jensen Huang’s return as CEO doesn’t make Nvidia (NVDA) stock a Buy, despite the market’s positive reaction. Shares of the leading semiconductor manufacturer jumped roughly 31.5% on November 23 after Nvidia’s board unanimously reinstated Huang with immediate effect. Yet the stock remains down roughly 31% over the past month following a steep sell-off. Although Nvidia enjoys a long runway for growth, I believe investors should closely watch the regulatory scrutiny still surrounding the company. I",
           "description": "",
-          "canonical_url": "https://finance.yahoo.com/media-advertising/articles/applovin-app-e-commerce-bet-170610809.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/media-advertising/articles/applovin-app-e-commerce-bet-170610809.html?.tsrc=rss",
-          "published_at": "2026-11-26T17:06:10+00:00",
+          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/jensen-huang-return-doesn-t-212200380.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/jensen-huang-return-doesn-t-212200380.html?.tsrc=rss",
+          "published_at": "2026-11-26T21:22:00+00:00",
           "publication_time_supplied": true,
           "publication_time_invalid": false,
           "date_eligibility_status": "current",
@@ -5829,26 +5805,22 @@
           "market": "us",
           "market_compatible": true,
           "tickers": [],
-          "entities": [],
+          "entities": [
+            "NVDA"
+          ],
           "sectors": [],
           "topics": [],
           "event_classification": {
             "schema_version": "1.0",
             "classifier": "src.event_classifier.classify_event_fields",
-            "category": "market",
-            "reason": "market_subject_action",
-            "matched_terms": [
-              "s&p 500",
-              "fell"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "s&p 500",
-              "fell"
-            ],
-            "matched_subject": "s&p 500",
-            "matched_action": "fell",
-            "matched_market_object": "s&p 500",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
             "input_fields": [
               "description",
               "summary",
@@ -5857,23 +5829,20 @@
           },
           "relevance_reasons": [
             "market:us",
-            "research_candidate:APP"
+            "tracked_ticker:NVDA"
           ],
           "freshness": "published",
-          "dedupe_key": "haydencapitalaninvestmentmanagementfirmreleaseditsthirdquarter2026investmentletterthelettercanbedownloadedhereinthethirdquartertheportfoliofell04bringingitsyeartodatelossto236versusgainsof23and127forthesp500and12and129formsciworldtheletteracknowledgesadifficultyear",
-          "event_cluster_key": "event-e827e1f9d17dc2b9807d",
-          "published_time_bucket": "2026-11-26T17:00:00+00:00",
+          "dedupe_key": "jensenhuangsreturnasceodoesntmakenvidianvdastockabuydespitethemarketspositivereactionsharesoftheleadingsemiconductormanufacturerjumpedroughly315onnovember23afternvidiasboardunanimouslyreinstatedhuangwithimmediateeffectyetthestockremainsdownroughly31overthepastmonthfollowingasteepselloffalthoughnvidiaenjoysalongrunwayforgrowthibelieveinvestorsshouldcloselywatchtheregulatoryscrutinystillsurroundingthecompanyi",
+          "event_cluster_key": "",
+          "published_time_bucket": "2026-11-26T21:00:00+00:00",
           "public_safe": true,
           "public_news_eligible": true,
           "decision_value_eligible": true,
-          "classification_evidence": [
-            "s&p 500",
-            "fell"
-          ],
-          "matched_subject": "s&p 500",
-          "matched_action": "fell",
-          "matched_market_object": "s&p 500",
-          "decision_value_class": "company_event",
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "market_context",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -5888,17 +5857,7 @@
           "inventory_saved_at": null,
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
-          "ranking_score": 135,
-          "supporting_sources": [
-            {
-              "provider": "yahoo_finance",
-              "url": "https://finance.yahoo.com/markets/stocks/articles/nu-holdings-nu-why-investors-170952971.html?.tsrc=rss"
-            },
-            {
-              "provider": "yahoo_finance",
-              "url": "https://finance.yahoo.com/markets/stocks/articles/sea-ltd-se-high-reinvestment-170315251.html?.tsrc=rss"
-            }
-          ]
+          "ranking_score": 135
         },
         {
           "story_id": "news-9c62155047a657f3621c",
@@ -6073,6 +6032,93 @@
           "matched_action": "export control",
           "matched_market_object": "nvidia",
           "decision_value_class": "semiconductor_ai",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 120
+        },
+        {
+          "story_id": "news-57618d5fba4317af5056",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "California companies owned by Chinese firms are scooping up Nvidia’s most advanced AI chips: report - New York Post",
+          "raw_title": "California companies owned by Chinese firms are scooping up Nvidia’s most advanced AI chips: report - New York Post",
+          "normalized_fact": "California companies owned by Chinese firms are scooping up Nvidia’s most advanced AI chips: report New York Post。",
+          "market_topic": "semiconductor_ai",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "California companies owned by Chinese firms are scooping up Nvidia’s most advanced AI chips: report New York Post",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxQc1NqSGpiN2IzRzMtNnFlTHg0QVg1Nkw2UjRvUVlGY29oMnV0enQ1ZndsNElEa2ExT2lfSWVhMlpBMjlvb3FxQTFRU0NHTVRiem9IYTJkazNSY3FIRGwtb1VhVVlzSTJZbmxpOFhVZXhwUXBxT0pCaGRuckFyTEhJdXVNd3laczhTWS1XeXk2VWpiRVhIaTJCLVI0cmFuc3YtQW85T0lJRDM5TFlXOTZERGEwY3ktUQ",
+          "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxQc1NqSGpiN2IzRzMtNnFlTHg0QVg1Nkw2UjRvUVlGY29oMnV0enQ1ZndsNElEa2ExT2lfSWVhMlpBMjlvb3FxQTFRU0NHTVRiem9IYTJkazNSY3FIRGwtb1VhVVlzSTJZbmxpOFhVZXhwUXBxT0pCaGRuckFyTEhJdXVNd3laczhTWS1XeXk2VWpiRVhIaTJCLVI0cmFuc3YtQW85T0lJRDM5TFlXOTZERGEwY3ktUQ",
+          "published_at": "2026-11-26T20:41:00+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-26",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [
+            "NVDA"
+          ],
+          "sectors": [],
+          "topics": [
+            "ai"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": null,
+            "reason": "keyword_no_match",
+            "matched_terms": [],
+            "decision_value_eligible": false,
+            "classification_evidence": [],
+            "matched_subject": "",
+            "matched_action": "",
+            "matched_market_object": "",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "tracked_ticker:NVDA"
+          ],
+          "freshness": "published",
+          "dedupe_key": "californiacompaniesownedbychinesefirmsarescoopingupnvidiasmostadvancedaichipsreportnewyorkpost",
+          "event_cluster_key": "event-4c23c92cc678106ba4dc",
+          "published_time_bucket": "2026-11-26T20:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [],
+          "matched_subject": "",
+          "matched_action": "",
+          "matched_market_object": "",
+          "decision_value_class": "company_event",
           "quality_flags": [],
           "eligibility_reasons": [
             "public_market_news_gate"
@@ -6278,6 +6324,99 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 120
+        },
+        {
+          "story_id": "news-4491901bb6c26e8a6aa1",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "US Inflation Hits 3.8%: Will the Fed Raise Interest Rates Again in December? - CryptoRank",
+          "raw_title": "US Inflation Hits 3.8%: Will the Fed Raise Interest Rates Again in December? - CryptoRank",
+          "normalized_fact": "US Inflation Hits 3.8%: Will the Fed Raise Interest Rates Again in December? CryptoRank。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "US Inflation Hits 3.8%: Will the Fed Raise Interest Rates Again in December? CryptoRank",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxPckJoTzRUZlhpcnZBcjBQUDdDWGEzMmdPOGJVVjZLOFFmaDZOY0pJN1I1MGo3VEgyb1l2eE9RRzFhOFM0ekNfV3VqdE01UHBxX0pQMGtqT1JJTWZLbEE5czVWYXpOSm93bGxCWVRuNU1QSmh4d0NBdUVGWTVuNFcxc0FMY0NCZHJXa1lBRGp4Ym42U3FJckFBQjFGZzlPMEwwYnphal9sa1UwQ05lNTlMRA",
+          "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxPckJoTzRUZlhpcnZBcjBQUDdDWGEzMmdPOGJVVjZLOFFmaDZOY0pJN1I1MGo3VEgyb1l2eE9RRzFhOFM0ekNfV3VqdE01UHBxX0pQMGtqT1JJTWZLbEE5czVWYXpOSm93bGxCWVRuNU1QSmh4d0NBdUVGWTVuNFcxc0FMY0NCZHJXa1lBRGp4Ym42U3FJckFBQjFGZzlPMEwwYnphal9sa1UwQ05lNTlMRA",
+          "published_at": "2026-11-26T21:11:03+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-26",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "rates"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "rates"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "rates",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "usinflationhits38willthefedraiseinterestratesagainindecembercryptorank",
+          "event_cluster_key": "event-b87163cb3dd2de281f9e",
+          "published_time_bucket": "2026-11-26T21:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "rates"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "rates",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
         },
         {
           "story_id": "news-f9337fe0a790da5d5795",
@@ -6810,6 +6949,284 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 115
+        },
+        {
+          "story_id": "news-aae4149d2012980bbceb",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "How Yield Curve Flattening Reflects Fed Rate Expectations - StoneX",
+          "raw_title": "How Yield Curve Flattening Reflects Fed Rate Expectations - StoneX",
+          "normalized_fact": "How Yield Curve Flattening Reflects Fed Rate Expectations StoneX。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "How Yield Curve Flattening Reflects Fed Rate Expectations StoneX",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxNSm5BYmtHam9RWXB5YmpKTTdOdG41cFdLcHN0OEJXa2ZaRzVkaUNjMUpRd0oyNXdodXpVdFV5SDEtOFExVzVNVlBlVzZQckF5VjBRdWpsd3FqZm9hcUptMFJBcHFsVWhtMnB3RFF2dVR0T2JzQnFidG50OUszTGxCUnZCTE0wMjhJaU95b1pLOVIzaDJtc09DVFFKSFE",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxNSm5BYmtHam9RWXB5YmpKTTdOdG41cFdLcHN0OEJXa2ZaRzVkaUNjMUpRd0oyNXdodXpVdFV5SDEtOFExVzVNVlBlVzZQckF5VjBRdWpsd3FqZm9hcUptMFJBcHFsVWhtMnB3RFF2dVR0T2JzQnFidG50OUszTGxCUnZCTE0wMjhJaU95b1pLOVIzaDJtc09DVFFKSFE",
+          "published_at": "2026-11-24T17:31:28+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 2,
+          "published_local_date": "2026-11-24",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "rate"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "rate"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "rate",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "howyieldcurveflatteningreflectsfedrateexpectationsstonex",
+          "event_cluster_key": "event-7832aa509d45a4d6384a",
+          "published_time_bucket": "2026-11-24T17:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "rate"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "rate",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
+          "story_id": "news-e9a96fbf815d5d6f8cfc",
+          "provider": "google_news",
+          "provider_name": "Google News",
+          "source_tier": "discovery",
+          "authority_tier": "discovery",
+          "title": "The Fed is likely to raise rates in December. What it means for your holiday spending - CNBC",
+          "raw_title": "The Fed is likely to raise rates in December. What it means for your holiday spending - CNBC",
+          "normalized_fact": "The Fed is likely to raise rates in December. What it means for your holiday spending CNBC。",
+          "market_topic": "rates_fx",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "The Fed is likely to raise rates in December. What it means for your holiday spending CNBC",
+          "description": "",
+          "canonical_url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxQc0h0TTRUOFV1ZTFHUWNqN1NsaFprZ1g4MFpBQjlMbWtoSUhqOWdoZnVqd0JycGNhblNYQjFBR2VHNEZXWm54cW5DTllHM1dGZFB4V3FJZm9GQWZfOHBfdTRKelVsZUx0NFFKZERLbmpsUDhJYkdEMDdIWWxmdlFFTdIBhgFBVV95cUxNcUNWNGtHTEVhRzVaSy0yajdKRl9yQ1Q5Y1JqR0VMRE9hd19rUUIxdDBBWFQ1a3lMYlc2dkhwV0dmSUpWOXUzMi1vQXlEVjk2ZU9NMnFiN3RncThRWk9zT0ltNXdEZnlxMHpscXVhbGhCU1FuT3BUWTVZWG9Td0dxUklwazNndw",
+          "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxQc0h0TTRUOFV1ZTFHUWNqN1NsaFprZ1g4MFpBQjlMbWtoSUhqOWdoZnVqd0JycGNhblNYQjFBR2VHNEZXWm54cW5DTllHM1dGZFB4V3FJZm9GQWZfOHBfdTRKelVsZUx0NFFKZERLbmpsUDhJYkdEMDdIWWxmdlFFTdIBhgFBVV95cUxNcUNWNGtHTEVhRzVaSy0yajdKRl9yQ1Q5Y1JqR0VMRE9hd19rUUIxdDBBWFQ1a3lMYlc2dkhwV0dmSUpWOXUzMi1vQXlEVjk2ZU9NMnFiN3RncThRWk9zT0ltNXdEZnlxMHpscXVhbGhCU1FuT3BUWTVZWG9Td0dxUklwazNndw",
+          "published_at": "2026-11-25T13:15:01+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "recent_reference",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-25",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [
+            "rates"
+          ],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "fed",
+            "reason": "fed_subject_action",
+            "matched_terms": [
+              "fed",
+              "rates"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "fed",
+              "rates"
+            ],
+            "matched_subject": "fed",
+            "matched_action": "rates",
+            "matched_market_object": "fed",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us"
+          ],
+          "freshness": "published",
+          "dedupe_key": "thefedislikelytoraiseratesindecemberwhatitmeansforyourholidayspendingcnbc",
+          "event_cluster_key": "event-8f0345de6d39f073ae00",
+          "published_time_bucket": "2026-11-25T13:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "fed",
+            "rates"
+          ],
+          "matched_subject": "fed",
+          "matched_action": "rates",
+          "matched_market_object": "fed",
+          "decision_value_class": "macro",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Google News｜美股線索",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "current",
+          "inventory_used": false,
+          "inventory_age_trading_sessions": null,
+          "inventory_saved_at": null,
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 115
+        },
+        {
+          "story_id": "news-04facc759ceb545690c3",
+          "provider": "yahoo_finance",
+          "provider_name": "Yahoo Taiwan Finance",
+          "source_tier": "market",
+          "authority_tier": "market",
+          "title": "AppLovin’s (APP) E-Commerce Bet Is Paying Off—And Ad Prices Prove It",
+          "raw_title": "AppLovin’s (APP) E-Commerce Bet Is Paying Off—And Ad Prices Prove It",
+          "normalized_fact": "Hayden Capital, an investment management firm, released its third-quarter 2026 investment letter. The letter can be downloaded here. In the third quarter, the portfolio fell 0.4%, bringing its year-to-date loss to 23.6%, versus gains of 2.3% and 12.7% for the S&P 500, and 1.2% and 12.9% for MSCI World. The letter acknowledges a difficult year […]。",
+          "market_topic": "global_market",
+          "actor_role": "",
+          "actor_name": "",
+          "headline_actor": "",
+          "byline_removed": false,
+          "publisher_removed": false,
+          "normalization_ruleset": "market_headline_normalizer_v1",
+          "normalization_complete": true,
+          "summary": "Hayden Capital, an investment management firm, released its third-quarter 2026 investment letter. The letter can be downloaded here. In the third quarter, the portfolio fell 0.4%, bringing its year-to-date loss to 23.6%, versus gains of 2.3% and 12.7% for the S&P 500, and 1.2% and 12.9% for MSCI World. The letter acknowledges a difficult year […]",
+          "description": "",
+          "canonical_url": "https://finance.yahoo.com/media-advertising/articles/applovin-app-e-commerce-bet-170610809.html?.tsrc=rss",
+          "url": "https://finance.yahoo.com/media-advertising/articles/applovin-app-e-commerce-bet-170610809.html?.tsrc=rss",
+          "published_at": "2026-11-26T17:06:10+00:00",
+          "publication_time_supplied": true,
+          "publication_time_invalid": false,
+          "date_eligibility_status": "current",
+          "date_eligibility_reason": "",
+          "publication_age_trading_sessions": 1,
+          "published_local_date": "2026-11-26",
+          "market": "us",
+          "market_compatible": true,
+          "tickers": [],
+          "entities": [],
+          "sectors": [],
+          "topics": [],
+          "event_classification": {
+            "schema_version": "1.0",
+            "classifier": "src.event_classifier.classify_event_fields",
+            "category": "market",
+            "reason": "market_subject_action",
+            "matched_terms": [
+              "s&p 500",
+              "fell"
+            ],
+            "decision_value_eligible": true,
+            "classification_evidence": [
+              "s&p 500",
+              "fell"
+            ],
+            "matched_subject": "s&p 500",
+            "matched_action": "fell",
+            "matched_market_object": "s&p 500",
+            "input_fields": [
+              "description",
+              "summary",
+              "title"
+            ]
+          },
+          "relevance_reasons": [
+            "market:us",
+            "research_candidate:APP"
+          ],
+          "freshness": "published",
+          "dedupe_key": "haydencapitalaninvestmentmanagementfirmreleaseditsthirdquarter2026investmentletterthelettercanbedownloadedhereinthethirdquartertheportfoliofell04bringingitsyeartodatelossto236versusgainsof23and127forthesp500and12and129formsciworldtheletteracknowledgesadifficultyear",
+          "event_cluster_key": "event-e827e1f9d17dc2b9807d",
+          "published_time_bucket": "2026-11-26T17:00:00+00:00",
+          "public_safe": true,
+          "public_news_eligible": true,
+          "decision_value_eligible": true,
+          "classification_evidence": [
+            "s&p 500",
+            "fell"
+          ],
+          "matched_subject": "s&p 500",
+          "matched_action": "fell",
+          "matched_market_object": "s&p 500",
+          "decision_value_class": "company_event",
+          "quality_flags": [],
+          "eligibility_reasons": [
+            "public_market_news_gate"
+          ],
+          "exclusion_reason": null,
+          "source": "Yahoo Finance",
+          "evidence_state": "observation",
+          "confirmation_required": true,
+          "selection_lane": "inventory",
+          "inventory_used": true,
+          "inventory_age_trading_sessions": 1,
+          "inventory_saved_at": "2026-11-26T17:56:50.957890+00:00",
+          "eligibility_ruleset": "public_market_news_gate_v2",
+          "relevance_class": "contextual",
+          "ranking_score": 35
         },
         {
           "story_id": "news-4640e4d390b62f83d36c",
@@ -7714,269 +8131,6 @@
           "ranking_score": 29
         },
         {
-          "story_id": "news-31dbc46075f5bf8eea76",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "A tale of two Nvidias",
-          "raw_title": "A tale of two Nvidias",
-          "normalized_fact": "We got two very different pictures of Nvidia — the company’s latest earnings report vs. the tech executives loudly calling for Jensen Huang’s return。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "We got two very different pictures of Nvidia — the company’s latest earnings report vs. the tech executives loudly calling for Jensen Huang’s return.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/tale-two-nvidias-210742550.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/tale-two-nvidias-210742550.html?.tsrc=rss",
-          "published_at": "2026-11-21T21:07:42+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 4,
-          "published_local_date": "2026-11-21",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "nvidia",
-              "earnings"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "nvidia",
-              "earnings"
-            ],
-            "matched_subject": "nvidia",
-            "matched_action": "earnings",
-            "matched_market_object": "nvidia",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:NVDA"
-          ],
-          "freshness": "published",
-          "dedupe_key": "wegottwoverydifferentpicturesofnvidiathecompanyslatestearningsreportvsthetechexecutivesloudlycallingforjensenhuangsreturn",
-          "event_cluster_key": "event-3eb1c9461a2b8c5c25ff",
-          "published_time_bucket": "2026-11-21T21:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "nvidia",
-            "earnings"
-          ],
-          "matched_subject": "nvidia",
-          "matched_action": "earnings",
-          "matched_market_object": "nvidia",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 4,
-          "inventory_saved_at": "2026-11-21T22:46:54.373300+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 26
-        },
-        {
-          "story_id": "news-67d23d81e38032f48bce",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Nvidia Can Rebound to $200, Analyst Says. Plus, L3Harris and 4 More Stocks.",
-          "raw_title": "Nvidia Can Rebound to $200, Analyst Says. Plus, L3Harris and 4 More Stocks.",
-          "normalized_fact": "Analysts report on Nvidia, L3Harris, Viking Holdings, Dolby Laboratories, Microsoft, Nvidia, and Lowe’s。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Analysts report on Nvidia, L3Harris, Viking Holdings, Dolby Laboratories, Microsoft, Nvidia, and Lowe’s.",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/m/d30b4016-add4-3d50-90e3-6716f9e7de29/nvidia-can-rebound-to-%24200%2C.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/m/d30b4016-add4-3d50-90e3-6716f9e7de29/nvidia-can-rebound-to-%24200%2C.html?.tsrc=rss",
-          "published_at": "2026-11-20T23:25:00+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 4,
-          "published_local_date": "2026-11-20",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us",
-            "tracked_ticker:NVDA"
-          ],
-          "freshness": "published",
-          "dedupe_key": "analystsreportonnvidial3harrisvikingholdingsdolbylaboratoriesmicrosoftnvidiaandlowes",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-11-20T23:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "company_event",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 4,
-          "inventory_saved_at": "2026-11-21T00:24:43.832458+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 26
-        },
-        {
-          "story_id": "news-b13d69afb7e24a189ee4",
-          "provider": "yahoo_finance",
-          "provider_name": "Yahoo Taiwan Finance",
-          "source_tier": "market",
-          "authority_tier": "market",
-          "title": "Trump Reportedly Traded Over $97 Million Worth of Nvidia Stock in 2 Years — Elizabeth Warren Wants Congress to Force Him to ‘Divest’ (UPDATED)",
-          "raw_title": "Trump Reportedly Traded Over $97 Million Worth of Nvidia Stock in 2 Years — Elizabeth Warren Wants Congress to Force Him to ‘Divest’ (UPDATED)",
-          "normalized_fact": "Editor’s note: The story has been updated to include a comment from the White House. Sen. Elizabeth Warren (D-Mass.) criticized President Donald Trump‘s reported trading of Nvidia Corp. stock, urging lawmakers to force him to divest from his positions in。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "Editor’s note: The story has been updated to include a comment from the White House. Sen. Elizabeth Warren (D-Mass.) criticized President Donald Trump‘s reported trading of Nvidia Corp. stock, urging lawmakers to force him to divest from his positions in...",
-          "description": "",
-          "canonical_url": "https://finance.yahoo.com/markets/stocks/articles/trump-reportedly-traded-over-97-230005028.html?.tsrc=rss",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/trump-reportedly-traded-over-97-230005028.html?.tsrc=rss",
-          "published_at": "2026-11-20T23:00:05+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 4,
-          "published_local_date": "2026-11-20",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [
-            "NVDA"
-          ],
-          "sectors": [],
-          "topics": [],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": null,
-            "reason": "keyword_no_match",
-            "matched_terms": [],
-            "decision_value_eligible": false,
-            "classification_evidence": [],
-            "matched_subject": "",
-            "matched_action": "",
-            "matched_market_object": "",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:cross_market",
-            "tracked_ticker:NVDA",
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "editorsnotethestoryhasbeenupdatedtoincludeacommentfromthewhitehousesenelizabethwarrendmasscriticizedpresidentdonaldtrumpsreportedtradingofnvidiacorpstockurginglawmakerstoforcehimtodivestfromhispositionsin",
-          "event_cluster_key": "",
-          "published_time_bucket": "2026-11-20T23:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [],
-          "matched_subject": "",
-          "matched_action": "",
-          "matched_market_object": "",
-          "decision_value_class": "company_event",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Yahoo Finance",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 4,
-          "inventory_saved_at": "2026-11-21T00:24:43.832458+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 26
-        },
-        {
           "story_id": "news-b830787540429053c502",
           "provider": "yahoo_finance",
           "provider_name": "Yahoo Taiwan Finance",
@@ -8840,99 +8994,6 @@
           "ranking_score": 15
         },
         {
-          "story_id": "news-e9a96fbf815d5d6f8cfc",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "The Fed is likely to raise rates in December. What it means for your holiday spending - CNBC",
-          "raw_title": "The Fed is likely to raise rates in December. What it means for your holiday spending - CNBC",
-          "normalized_fact": "The Fed is likely to raise rates in December. What it means for your holiday spending CNBC。",
-          "market_topic": "rates_fx",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "The Fed is likely to raise rates in December. What it means for your holiday spending CNBC",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxQc0h0TTRUOFV1ZTFHUWNqN1NsaFprZ1g4MFpBQjlMbWtoSUhqOWdoZnVqd0JycGNhblNYQjFBR2VHNEZXWm54cW5DTllHM1dGZFB4V3FJZm9GQWZfOHBfdTRKelVsZUx0NFFKZERLbmpsUDhJYkdEMDdIWWxmdlFFTdIBhgFBVV95cUxNcUNWNGtHTEVhRzVaSy0yajdKRl9yQ1Q5Y1JqR0VMRE9hd19rUUIxdDBBWFQ1a3lMYlc2dkhwV0dmSUpWOXUzMi1vQXlEVjk2ZU9NMnFiN3RncThRWk9zT0ltNXdEZnlxMHpscXVhbGhCU1FuT3BUWTVZWG9Td0dxUklwazNndw",
-          "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxQc0h0TTRUOFV1ZTFHUWNqN1NsaFprZ1g4MFpBQjlMbWtoSUhqOWdoZnVqd0JycGNhblNYQjFBR2VHNEZXWm54cW5DTllHM1dGZFB4V3FJZm9GQWZfOHBfdTRKelVsZUx0NFFKZERLbmpsUDhJYkdEMDdIWWxmdlFFTdIBhgFBVV95cUxNcUNWNGtHTEVhRzVaSy0yajdKRl9yQ1Q5Y1JqR0VMRE9hd19rUUIxdDBBWFQ1a3lMYlc2dkhwV0dmSUpWOXUzMi1vQXlEVjk2ZU9NMnFiN3RncThRWk9zT0ltNXdEZnlxMHpscXVhbGhCU1FuT3BUWTVZWG9Td0dxUklwazNndw",
-          "published_at": "2026-11-25T13:15:01+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 1,
-          "published_local_date": "2026-11-25",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "rates"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "fed",
-            "reason": "fed_subject_action",
-            "matched_terms": [
-              "fed",
-              "rates"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "fed",
-              "rates"
-            ],
-            "matched_subject": "fed",
-            "matched_action": "rates",
-            "matched_market_object": "fed",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "thefedislikelytoraiseratesindecemberwhatitmeansforyourholidayspendingcnbc",
-          "event_cluster_key": "event-8f0345de6d39f073ae00",
-          "published_time_bucket": "2026-11-25T13:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "fed",
-            "rates"
-          ],
-          "matched_subject": "fed",
-          "matched_action": "rates",
-          "matched_market_object": "fed",
-          "decision_value_class": "macro",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 1,
-          "inventory_saved_at": "2026-11-25T18:10:15.415404+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 15
-        },
-        {
           "story_id": "news-f742e8536143b02c72d3",
           "provider": "google_news",
           "provider_name": "Google News",
@@ -9299,99 +9360,6 @@
           "eligibility_ruleset": "public_market_news_gate_v2",
           "relevance_class": "contextual",
           "ranking_score": 12
-        },
-        {
-          "story_id": "news-a99948a6df7778609077",
-          "provider": "google_news",
-          "provider_name": "Google News",
-          "source_tier": "discovery",
-          "authority_tier": "discovery",
-          "title": "T. Rowe Price 2027 Outlook: AI & Bonds Compete for Capital - ETF Database",
-          "raw_title": "T. Rowe Price 2027 Outlook: AI & Bonds Compete for Capital - ETF Database",
-          "normalized_fact": "T. Rowe Price 2027 Outlook: AI & Bonds Compete for Capital ETF Database。",
-          "market_topic": "semiconductor_ai",
-          "actor_role": "",
-          "actor_name": "",
-          "headline_actor": "",
-          "byline_removed": false,
-          "publisher_removed": false,
-          "normalization_ruleset": "market_headline_normalizer_v1",
-          "normalization_complete": true,
-          "summary": "T. Rowe Price 2027 Outlook: AI & Bonds Compete for Capital ETF Database",
-          "description": "",
-          "canonical_url": "https://news.google.com/rss/articles/CBMidkFVX3lxTE03MDJyNFd4ODljQ3FaQ2E0elZZSVJKajB6NFlGaDhzYXhZMDdSR2FQZm9sRUlfWG5SYWR1WDIwcy00ZUdhaFQyeWVhUU1nVmRFWlBHRlAwelI2a29ERkM2ald2cGtQM0lRVUJzOEpEbVhlM1Q5Mnc",
-          "url": "https://news.google.com/rss/articles/CBMidkFVX3lxTE03MDJyNFd4ODljQ3FaQ2E0elZZSVJKajB6NFlGaDhzYXhZMDdSR2FQZm9sRUlfWG5SYWR1WDIwcy00ZUdhaFQyeWVhUU1nVmRFWlBHRlAwelI2a29ERkM2ald2cGtQM0lRVUJzOEpEbVhlM1Q5Mnc",
-          "published_at": "2026-11-24T14:49:37+00:00",
-          "publication_time_supplied": true,
-          "publication_time_invalid": false,
-          "date_eligibility_status": "recent_reference",
-          "date_eligibility_reason": "",
-          "publication_age_trading_sessions": 2,
-          "published_local_date": "2026-11-24",
-          "market": "us",
-          "market_compatible": true,
-          "tickers": [],
-          "entities": [],
-          "sectors": [],
-          "topics": [
-            "ai"
-          ],
-          "event_classification": {
-            "schema_version": "1.0",
-            "classifier": "src.event_classifier.classify_event_fields",
-            "category": "semiconductor",
-            "reason": "semiconductor_subject_action",
-            "matched_terms": [
-              "ai",
-              "outlook"
-            ],
-            "decision_value_eligible": true,
-            "classification_evidence": [
-              "ai",
-              "outlook"
-            ],
-            "matched_subject": "ai",
-            "matched_action": "outlook",
-            "matched_market_object": "ai",
-            "input_fields": [
-              "description",
-              "summary",
-              "title"
-            ]
-          },
-          "relevance_reasons": [
-            "market:us"
-          ],
-          "freshness": "published",
-          "dedupe_key": "troweprice2027outlookaibondscompeteforcapitaletfdatabase",
-          "event_cluster_key": "event-f87bedc7dbeafc6eeaf3",
-          "published_time_bucket": "2026-11-24T14:00:00+00:00",
-          "public_safe": true,
-          "public_news_eligible": true,
-          "decision_value_eligible": true,
-          "classification_evidence": [
-            "ai",
-            "outlook"
-          ],
-          "matched_subject": "ai",
-          "matched_action": "outlook",
-          "matched_market_object": "ai",
-          "decision_value_class": "semiconductor_ai",
-          "quality_flags": [],
-          "eligibility_reasons": [
-            "public_market_news_gate"
-          ],
-          "exclusion_reason": null,
-          "source": "Google News｜美股線索",
-          "evidence_state": "observation",
-          "confirmation_required": true,
-          "selection_lane": "inventory",
-          "inventory_used": true,
-          "inventory_age_trading_sessions": 2,
-          "inventory_saved_at": "2026-11-24T19:10:29.759486+00:00",
-          "eligibility_ruleset": "public_market_news_gate_v2",
-          "relevance_class": "contextual",
-          "ranking_score": 12
         }
       ],
       "source_diversity": {
@@ -9411,7 +9379,7 @@
           "news.cnyes.com",
           "news.google.com"
         ],
-        "supporting_source_count": 2,
+        "supporting_source_count": 0,
         "inventory_only": false,
         "current_story_count": 5,
         "inventory_story_count": 0
@@ -9419,23 +9387,22 @@
       "interest_graph": {
         "ticker_interest": {
           "2330": 2,
-          "NVDA": 38,
+          "NVDA": 31,
           "TSM": 2,
-          "ARM": 2,
-          "APP": 1,
-          "AAPL": 2
+          "AAPL": 2,
+          "APP": 1
         },
         "sector_interest": {},
         "topic_interest": {
+          "oil": 11,
           "gold": 6,
           "iran": 2,
-          "oil": 11,
           "war": 4,
           "hormuz": 2,
           "sanctions": 1
         },
         "market_interest": {
-          "us": 147
+          "us": 134
         },
         "context": {
           "tracked_tickers": [
@@ -9525,19 +9492,18 @@
         "source_interest": {
           "tracked_ticker": {
             "2330": 2,
-            "NVDA": 38,
+            "NVDA": 31,
             "TSM": 2
           },
           "research_candidate": {
-            "ARM": 2,
-            "APP": 1,
-            "AAPL": 2
+            "AAPL": 2,
+            "APP": 1
           },
           "tracked_sector": {},
           "active_event": {
+            "oil": 11,
             "gold": 6,
             "iran": 2,
-            "oil": 11,
             "war": 4,
             "hormuz": 2,
             "sanctions": 1
@@ -9545,14 +9511,14 @@
           "creator_mentioned": {}
         }
       },
-      "excluded_count": 47,
+      "excluded_count": 42,
       "exclusion_reasons": {
         "generic_official_filing": 20,
-        "incomplete_normalized_fact": 22,
+        "incomplete_normalized_fact": 10,
         "insufficient_market_relevance": 10,
         "listicle_or_selection": 2,
         "market_scope_mismatch": 6,
-        "outside_calendar_window": 14,
+        "outside_calendar_window": 15,
         "outside_trading_session_window": 3
       },
       "status": "ready",
@@ -9563,43 +9529,43 @@
         "successful_provider_count": 4,
         "failed_provider_count": 1,
         "disabled_provider_count": 1,
-        "fetched": 60,
-        "normalized": 60,
-        "eligible": 13,
-        "excluded": 47,
-        "date_eligible_current": 43,
-        "date_excluded_current": 17,
+        "fetched": 57,
+        "normalized": 57,
+        "eligible": 15,
+        "excluded": 42,
+        "date_eligible_current": 39,
+        "date_excluded_current": 18,
         "date_exclusion_reasons_current": {
-          "outside_calendar_window": 14,
+          "outside_calendar_window": 15,
           "outside_trading_session_window": 3
         },
-        "date_eligible_inventory": 87,
+        "date_eligible_inventory": 77,
         "date_excluded_inventory": 0,
         "date_exclusion_reasons_inventory": {},
-        "reference_time": "2026-11-26T17:56:50.957890+00:00",
-        "deduped": 11,
+        "reference_time": "2026-11-26T22:03:34.871330+00:00",
+        "deduped": 15,
         "publicly_ranked": 5,
-        "current_eligible": 13,
-        "inventory_considered": 87,
-        "inventory_eligible": 57,
+        "current_eligible": 15,
+        "inventory_considered": 77,
+        "inventory_eligible": 53,
         "inventory_selected": 0,
         "final_public_count": 5,
         "target_count": 5,
         "shortfall_count": 0,
         "shortfall_reason": null,
-        "filtered_story_count": 47,
-        "fetched_story_count": 60,
-        "normalized_story_count": 60,
-        "eligible_story_count": 13,
-        "deduped_story_count": 11,
+        "filtered_story_count": 42,
+        "fetched_story_count": 57,
+        "normalized_story_count": 57,
+        "eligible_story_count": 15,
+        "deduped_story_count": 15,
         "ranked_story_count": 5
       },
       "inventory": {
         "enabled": true,
         "retention_trading_sessions": 5,
         "max_calendar_days": 10,
-        "considered": 87,
-        "eligible": 57,
+        "considered": 77,
+        "eligible": 53,
         "selected": 0,
         "target_count": 5,
         "shortfall_count": 0
@@ -9611,8 +9577,8 @@
           "status": "healthy",
           "source_tier": "discovery",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
-          "item_count": 60,
-          "checked_at": "2026-11-26T17:56:50.957930+00:00"
+          "item_count": 57,
+          "checked_at": "2026-11-26T22:03:34.871373+00:00"
         },
         {
           "provider": "sec",
@@ -9623,10 +9589,10 @@
           "source_tier": "official",
           "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-k&count=100&output=atom",
           "item_count": 0,
-          "checked_at": "2026-11-26T17:56:50.957930+00:00",
+          "checked_at": "2026-11-26T22:03:34.871373+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-26T17:56:50.957930+00:00",
+          "last_success_at": "2026-11-26T22:03:34.871373+00:00",
           "last_failure_at": null,
           "stories_ingested": 10,
           "stories_deduped": 0,
@@ -9654,12 +9620,12 @@
           "source_tier": "official",
           "source_url": "https://www.federalreserve.gov/feeds/press_all.xml",
           "item_count": 0,
-          "checked_at": "2026-11-26T17:56:50.957930+00:00",
+          "checked_at": "2026-11-26T22:03:34.871373+00:00",
           "data_gap": "failed",
           "raw_item_count": 0,
           "filtered_item_count": 0,
           "last_success_at": null,
-          "last_failure_at": "2026-11-26T17:56:50.957930+00:00",
+          "last_failure_at": "2026-11-26T22:03:34.871373+00:00",
           "stories_ingested": 0,
           "stories_deduped": 0,
           "ranked_count": 0,
@@ -9682,10 +9648,10 @@
           "status": "disabled",
           "source_tier": "market",
           "item_count": 0,
-          "checked_at": "2026-11-26T17:56:50.957930+00:00",
+          "checked_at": "2026-11-26T22:03:34.871373+00:00",
           "raw_item_count": 0,
           "filtered_item_count": 0,
-          "last_success_at": "2026-11-26T17:56:50.957930+00:00",
+          "last_success_at": "2026-11-26T22:03:34.871373+00:00",
           "last_failure_at": null,
           "stories_ingested": 0,
           "stories_deduped": 0,
@@ -9710,10 +9676,10 @@
           "source_tier": "market",
           "source_url": "https://news.cnyes.com/news/cat/us_stock",
           "item_count": 2,
-          "checked_at": "2026-11-26T17:56:50.957930+00:00",
+          "checked_at": "2026-11-26T22:03:34.871373+00:00",
           "raw_item_count": 5,
           "filtered_item_count": 2,
-          "last_success_at": "2026-11-26T17:56:50.957930+00:00",
+          "last_success_at": "2026-11-26T22:03:34.871373+00:00",
           "last_failure_at": null,
           "stories_ingested": 2,
           "stories_deduped": 2,
@@ -9741,25 +9707,24 @@
           "source_tier": "market",
           "source_url": "https://finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,NVDA,TSM",
           "item_count": 1,
-          "checked_at": "2026-11-26T17:56:50.957930+00:00",
+          "checked_at": "2026-11-26T22:03:34.871373+00:00",
           "raw_item_count": 10,
           "filtered_item_count": 1,
-          "last_success_at": "2026-11-26T17:56:50.957930+00:00",
+          "last_success_at": "2026-11-26T22:03:34.871373+00:00",
           "last_failure_at": null,
-          "stories_ingested": 5,
+          "stories_ingested": 2,
           "stories_deduped": 1,
           "ranked_count": 1,
           "relevance_distribution": {
-            "market": 5,
-            "research_candidate": 1,
-            "tracked_ticker": 1
+            "market": 2,
+            "tracked_ticker": 2
           },
           "funnel": {
-            "fetched_count": 8,
-            "normalized_count": 5,
-            "market_compatible_count": 5,
-            "eligible_count": 3,
-            "excluded_count": 2,
+            "fetched_count": 5,
+            "normalized_count": 2,
+            "market_compatible_count": 2,
+            "eligible_count": 1,
+            "excluded_count": 1,
             "deduped_count": 1,
             "ranked_count": 1
           }
@@ -9773,46 +9738,46 @@
           "source_tier": "discovery",
           "source_url": "https://news.google.com/rss/search?q=Nasdaq+OR+%22S%26P+500%22+OR+%22Federal+Reserve%22+OR+Nvidia+OR+%22US+stocks%22&hl=en-US&gl=US&ceid=US%3Aen",
           "item_count": 2,
-          "checked_at": "2026-11-26T17:56:50.957930+00:00",
+          "checked_at": "2026-11-26T22:03:34.871373+00:00",
           "raw_item_count": 40,
           "filtered_item_count": 2,
-          "last_success_at": "2026-11-26T17:56:50.957930+00:00",
+          "last_success_at": "2026-11-26T22:03:34.871373+00:00",
           "last_failure_at": null,
           "stories_ingested": 40,
-          "stories_deduped": 8,
+          "stories_deduped": 12,
           "ranked_count": 2,
           "relevance_distribution": {
-            "active_event": 9,
+            "active_event": 10,
             "market": 40,
             "research_candidate": 1,
-            "tracked_ticker": 8
+            "tracked_ticker": 7
           },
           "funnel": {
             "fetched_count": 40,
             "normalized_count": 40,
             "market_compatible_count": 40,
-            "eligible_count": 8,
-            "excluded_count": 32,
-            "deduped_count": 8,
+            "eligible_count": 12,
+            "excluded_count": 28,
+            "deduped_count": 12,
             "ranked_count": 2
           }
         }
       ],
       "observability": {
-        "stories_ingested": 60,
-        "stories_deduped": 11,
+        "stories_ingested": 57,
+        "stories_deduped": 15,
         "ranked_count": 5,
         "relevance_distribution": {
-          "active_event": 9,
-          "market": 60,
-          "research_candidate": 3,
-          "tracked_ticker": 13
+          "active_event": 10,
+          "market": 57,
+          "research_candidate": 1,
+          "tracked_ticker": 11
         },
         "providers": [
           {
             "provider": "anue",
             "status": "healthy",
-            "last_success_at": "2026-11-26T17:56:50.957930+00:00",
+            "last_success_at": "2026-11-26T22:03:34.871373+00:00",
             "last_failure_at": null,
             "stories_ingested": 2,
             "stories_deduped": 2,
@@ -9835,7 +9800,7 @@
             "provider": "fed",
             "status": "failed",
             "last_success_at": null,
-            "last_failure_at": "2026-11-26T17:56:50.957930+00:00",
+            "last_failure_at": "2026-11-26T22:03:34.871373+00:00",
             "stories_ingested": 0,
             "stories_deduped": 0,
             "ranked_count": 0,
@@ -9853,31 +9818,31 @@
           {
             "provider": "google_news",
             "status": "healthy",
-            "last_success_at": "2026-11-26T17:56:50.957930+00:00",
+            "last_success_at": "2026-11-26T22:03:34.871373+00:00",
             "last_failure_at": null,
             "stories_ingested": 40,
-            "stories_deduped": 8,
+            "stories_deduped": 12,
             "ranked_count": 2,
             "relevance_distribution": {
-              "active_event": 9,
+              "active_event": 10,
               "market": 40,
               "research_candidate": 1,
-              "tracked_ticker": 8
+              "tracked_ticker": 7
             },
             "funnel": {
               "fetched_count": 40,
               "normalized_count": 40,
               "market_compatible_count": 40,
-              "eligible_count": 8,
-              "excluded_count": 32,
-              "deduped_count": 8,
+              "eligible_count": 12,
+              "excluded_count": 28,
+              "deduped_count": 12,
               "ranked_count": 2
             }
           },
           {
             "provider": "nasdaq",
             "status": "disabled",
-            "last_success_at": "2026-11-26T17:56:50.957930+00:00",
+            "last_success_at": "2026-11-26T22:03:34.871373+00:00",
             "last_failure_at": null,
             "stories_ingested": 0,
             "stories_deduped": 0,
@@ -9896,7 +9861,7 @@
           {
             "provider": "sec",
             "status": "healthy",
-            "last_success_at": "2026-11-26T17:56:50.957930+00:00",
+            "last_success_at": "2026-11-26T22:03:34.871373+00:00",
             "last_failure_at": null,
             "stories_ingested": 10,
             "stories_deduped": 0,
@@ -9924,8 +9889,7 @@
             "ranked_count": 0,
             "relevance_distribution": {
               "market": 3,
-              "research_candidate": 1,
-              "tracked_ticker": 3
+              "tracked_ticker": 1
             },
             "funnel": {
               "fetched_count": 3,
@@ -9940,22 +9904,21 @@
           {
             "provider": "yahoo_finance",
             "status": "healthy",
-            "last_success_at": "2026-11-26T17:56:50.957930+00:00",
+            "last_success_at": "2026-11-26T22:03:34.871373+00:00",
             "last_failure_at": null,
-            "stories_ingested": 5,
+            "stories_ingested": 2,
             "stories_deduped": 1,
             "ranked_count": 1,
             "relevance_distribution": {
-              "market": 5,
-              "research_candidate": 1,
-              "tracked_ticker": 1
+              "market": 2,
+              "tracked_ticker": 2
             },
             "funnel": {
-              "fetched_count": 8,
-              "normalized_count": 5,
-              "market_compatible_count": 5,
-              "eligible_count": 3,
-              "excluded_count": 2,
+              "fetched_count": 5,
+              "normalized_count": 2,
+              "market_compatible_count": 2,
+              "eligible_count": 1,
+              "excluded_count": 1,
               "deduped_count": 1,
               "ranked_count": 1
             }
