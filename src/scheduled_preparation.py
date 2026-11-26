@@ -16,7 +16,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from src.market_source_watch import watch_quotes_supersede_snapshot
+from src.market_source_watch import TAIPEI, prepared_close_dates, read_prepared_close_rows, watch_quote_updates
 
 SCHEMA_VERSION = "scheduled-preparation-v1"
 
@@ -138,10 +138,11 @@ def coordinate_preparation(
     window = preparation_window(slot, scheduled_for, started_at)
     source_process: subprocess.Popen[Any] | None = None
     source_path: Path | None = None
-    override_path: Path | None = None
     temp_paths: list[Path] = []
     stage = "initialize"
     stage_started_at = started_at
+    stage_deadline = window.first_attempt_deadline
+    stage_attempt = 0
     stage_history: list[dict[str, Any]] = []
     attempt = 0
     rebuild_reason = "none"
@@ -150,32 +151,65 @@ def coordinate_preparation(
     current_sha = ""
     latest_values: dict[str, str] = {}
     source_result: dict[str, Any] | None = None
-    source_rebuild_count = 0
+    source_probe: dict[str, Any] = {}
+    source_updates: dict[str, Any] = {}
+    overrides: dict[str, Any] = {}
+    unapplied_source_updates: dict[str, Any] = {}
+    source_conflicts: list[dict[str, Any]] = []
+    regressed_closes: dict[str, str | None] = {}
+    first_current_closes: set[str] = set()
+    market_now = datetime.fromtimestamp(started_at, TAIPEI)
+    market_date = market_now.date().isoformat()
+    first_candidate: dict[str, str] = {}
+    first_revalidated_base_sha = ""
     failure_reason = ""
+    legacy_outer_annotation = ""
 
-    def enter_stage(name: str) -> None:
-        nonlocal stage, stage_started_at
-        current = clock()
-        stage_history.append({
+    def close_stage(current: float) -> None:
+        record = {
             "stage": stage,
             "started_at": _utc_timestamp(stage_started_at),
             "finished_at": _utc_timestamp(current),
             "duration_seconds": max(0, round(current - stage_started_at, 3)),
-        })
-        stage = name
-        stage_started_at = current
+        }
+        if slot == "post_close":
+            record.update({
+                "attempt": stage_attempt,
+                "deadline_at": _utc_timestamp(stage_deadline),
+                "starting_budget_seconds": max(0, int(stage_deadline - stage_started_at)),
+                "remaining_budget_seconds": max(0, int(stage_deadline - current)),
+            })
+        stage_history.append(record)
 
-    def close_stage() -> None:
+    def enter_stage(name: str, deadline: float) -> None:
+        nonlocal stage, stage_started_at, stage_deadline, stage_attempt
         current = clock()
-        stage_history.append({
-            "stage": stage,
-            "started_at": _utc_timestamp(stage_started_at),
-            "finished_at": _utc_timestamp(current),
-            "duration_seconds": max(0, round(current - stage_started_at, 3)),
-        })
+        close_stage(current)
+        stage, stage_started_at, stage_deadline, stage_attempt = name, current, deadline, attempt
 
-    def result_context() -> dict[str, Any]:
+    def run_before_deadline(
+        command: Sequence[str], deadline: float, *, command_env: dict[str, str] = env,
+    ) -> subprocess.CompletedProcess[str]:
+        remaining = _remaining(deadline, clock)
+        if slot == "post_close" and remaining <= 0:
+            raise subprocess.TimeoutExpired(command, 0)
+        result = _run_command(command, timeout_seconds=remaining, env=command_env, run=run)
+        if slot == "post_close" and clock() >= deadline:
+            raise subprocess.TimeoutExpired(command, remaining)
+        return result
+
+    def source_check_context() -> dict[str, Any]:
         return {
+            "rebuild_reason": rebuild_reason,
+            "source_check_status": source_status,
+            "source_check_changed_candidate": bool(source_updates),
+            "source_check_evidence_sha256": hashlib.sha256(
+                json.dumps(source_result, sort_keys=True, ensure_ascii=False).encode("utf-8")
+            ).hexdigest() if source_result else "",
+        }
+
+    def result_context(*, ready: bool = False) -> dict[str, Any]:
+        context = {
             "started_at": _utc_timestamp(started_at),
             "finished_at": _utc_timestamp(clock()),
             "source_check_deadline": _utc_timestamp(window.source_check_deadline),
@@ -189,6 +223,21 @@ def coordinate_preparation(
             },
             "stage_history": list(stage_history),
         }
+        if ready or slot == "post_close":
+            context.update(source_check_context())
+        if slot == "post_close":
+            context.update({
+                "preparation_deadline": _utc_timestamp(window.overall_deadline),
+                "source_probe_checked_at": source_probe.get("checked_at"),
+                "source_updates": source_updates,
+                "unapplied_source_updates": unapplied_source_updates,
+                "source_conflicts": source_conflicts,
+                "first_current_close_tickers": sorted(first_current_closes),
+                "regressed_close_dates": regressed_closes,
+                "first_candidate_identity": first_candidate,
+                "first_revalidated_base_sha": first_revalidated_base_sha,
+            })
+        return context
 
     if slot == "post_close" and initial_source_status != "both_official_closes_available":
         source_file = tempfile.NamedTemporaryFile(prefix="prstk-final-source-", suffix=".json", delete=False)
@@ -216,36 +265,41 @@ def coordinate_preparation(
     try:
         for attempt in (1, 2):
             deadline = window.first_attempt_deadline if attempt == 1 else window.overall_deadline
-            if attempt == 2:
-                deadline = window.overall_deadline
-            enter_stage("budget_check")
-            remaining = _remaining(deadline, clock)
-            if remaining <= 0:
+            if attempt == 2 and slot == "post_close":
+                latest_values = {}
+                base_sha = current_sha = ""
+            enter_stage("budget_check", deadline)
+            if _remaining(deadline, clock) <= 0:
                 failure_reason = "prepare_budget_exhausted_reserve_required"
                 break
 
-            enter_stage("restore")
-            restored = _run_command(
+            enter_stage("restore", deadline)
+            restored = run_before_deadline(
                 [sys.executable, "-m", "src.data_release", "--restore", "--branch", data_release_branch,
-                 "--include", "site/data"],
-                timeout_seconds=_remaining(deadline, clock), env=env, run=run,
+                 "--include", "site/data"], deadline,
             )
             if restored.returncode != 0:
                 failure_reason = "data_release_restore_failed"
                 break
+            if slot == "post_close":
+                try:
+                    restore_result = json.loads(restored.stdout or "")
+                except ValueError:
+                    restore_result = None
+                if not isinstance(restore_result, dict) or restore_result.get("restored") is not True:
+                    failure_reason = "data_release_restore_failed"
+                    break
 
-            enter_stage("base_lookup")
-            fetched = _run_command(
-                ["git", "fetch", "--no-tags", "origin", f"refs/heads/{data_release_branch}:refs/remotes/origin/{data_release_branch}"],
-                timeout_seconds=_remaining(deadline, clock), env=env, run=run,
-            )
-            if fetched.returncode != 0:
+            enter_stage("base_lookup", deadline)
+            remote_ref = f"refs/remotes/origin/{data_release_branch}"
+            fetch_command = ["git", "fetch", "--no-tags", "origin", f"refs/heads/{data_release_branch}:{remote_ref}"]
+            resolve_command = ["git", "rev-parse", remote_ref]
+            # Restore already fetched and checked out this ref. Pin its SHA
+            # before any further fetch can move the ref past the restored data.
+            if slot != "post_close" and run_before_deadline(fetch_command, deadline).returncode != 0:
                 failure_reason = "data_release_base_lookup_failed"
                 break
-            resolved = _run_command(
-                ["git", "rev-parse", f"refs/remotes/origin/{data_release_branch}"],
-                timeout_seconds=_remaining(deadline, clock), env=env, run=run,
-            )
+            resolved = run_before_deadline(resolve_command, deadline)
             base_sha = _resolved_commit(resolved)
             if resolved.returncode != 0:
                 failure_reason = "data_release_base_lookup_failed"
@@ -254,7 +308,7 @@ def coordinate_preparation(
                 failure_reason = "data_release_base_lookup_output_invalid"
                 break
 
-            enter_stage("prepare")
+            enter_stage("prepare", deadline)
             output_file = tempfile.NamedTemporaryFile(prefix="prstk-prepare-output-", delete=False)
             output_file.close()
             output_path = Path(output_file.name)
@@ -266,15 +320,16 @@ def coordinate_preparation(
                 "--slot-context", slot_context, "--notification-requested", notification_requested,
                 "--snapshot", snapshot_path,
             ]
-            if attempt == 2 and source_rebuild_count and override_path is not None:
-                command.extend(["--official-close-overrides", str(override_path)])
-            try:
-                prepared = _run_command(
-                    command, timeout_seconds=_remaining(deadline, clock), env=child_env, run=run,
+            if attempt == 2 and overrides:
+                override_file = tempfile.NamedTemporaryFile(
+                    prefix="prstk-official-close-overrides-", suffix=".json", delete=False,
                 )
-            except subprocess.TimeoutExpired:
-                failure_reason = "prepare_timeout_budget_exhausted"
-                break
+                override_file.close()
+                override_path = Path(override_file.name)
+                temp_paths.append(override_path)
+                override_path.write_text(json.dumps(overrides, ensure_ascii=False), encoding="utf-8")
+                command.extend(["--official-close-overrides", str(override_path)])
+            prepared = run_before_deadline(command, deadline, command_env=child_env)
             latest_values = _read_key_values(output_path)
             if prepared.returncode != 0 or latest_values.get("prepared") != "true":
                 failure_reason = latest_values.get("reason") or "scheduled_delivery_prepare_contract_failed"
@@ -283,8 +338,11 @@ def coordinate_preparation(
                 failure_reason = "prepared_snapshot_identity_missing"
                 break
 
+            if attempt == 1:
+                first_candidate = {"snapshot_id": latest_values["snapshot_id"], "data_release_sha": base_sha}
+
             if attempt == 1 and source_process is not None:
-                enter_stage("final_source_check")
+                enter_stage("final_source_check", window.overall_deadline)
                 # Keep the final watcher alive through its fixed anchor +20m
                 # request-start cutoff, even when the first preparation ends
                 # early. Its bounded source requests may finish up to 45s
@@ -303,41 +361,67 @@ def coordinate_preparation(
                 else:
                     if source_path and source_path.is_file():
                         try:
-                            source_result = json.loads(source_path.read_text(encoding="utf-8"))
+                            parsed = json.loads(source_path.read_text(encoding="utf-8"))
+                            if not isinstance(parsed, dict):
+                                raise ValueError("source_watch_result_invalid")
+                            source_result = parsed
                             source_status = str(source_result.get("status") or "unknown")
                             probe = source_result.get("last_probe")
                             if isinstance(probe, dict):
-                                override_file = tempfile.NamedTemporaryFile(
-                                    prefix="prstk-official-close-overrides-", suffix=".json", delete=False,
-                                )
-                                override_file.write(json.dumps({
-                                    "cash_quote": probe.get("cash_quote"),
-                                    "futures_quote": probe.get("futures_quote"),
-                                }, ensure_ascii=False).encode("utf-8"))
-                                override_file.close()
-                                override_path = Path(override_file.name)
-                                temp_paths.append(override_path)
+                                source_probe = probe
                         except (OSError, ValueError):
                             source_status = "source_watch_result_invalid"
                     else:
                         source_status = "source_watch_result_missing"
 
-            source_changed = False
-            if attempt == 1 and source_result is not None and source_path is not None:
-                source_changed = watch_quotes_supersede_snapshot(source_result, snapshot_path)
+            if slot == "post_close":
+                enter_stage("source_comparison", window.overall_deadline)
+                if attempt == 1:
+                    futures_attempts = source_probe.get("futures_attempts")
+                    if isinstance(futures_attempts, list):
+                        source_conflicts = [
+                            item for item in futures_attempts
+                            if isinstance(item, dict) and item.get("source") == "taifex_official_comparison"
+                            and item.get("outcome") == "same_day_official_conflict"
+                            and item.get("observed_date") == market_date
+                        ]
+                    if source_conflicts:
+                        failure_reason = "official_close_source_conflict"
+                        break
+                try:
+                    close_rows = read_prepared_close_rows(snapshot_path)
+                except (OSError, ValueError):
+                    failure_reason = "prepared_snapshot_unreadable"
+                    break
+                close_dates = prepared_close_dates(close_rows)
+                if attempt == 1:
+                    first_current_closes = {
+                        ticker for ticker, observed_date in close_dates.items() if observed_date == market_date
+                    }
+                    overrides, source_updates = watch_quote_updates(source_probe, close_rows, now=market_now)
+                else:
+                    regressed_closes = {
+                        ticker: close_dates.get(ticker) or None for ticker in sorted(first_current_closes)
+                        if close_dates.get(ticker) != market_date
+                    }
+                    # Validate all verified watcher closes, including siblings
+                    # that matched attempt one and did not cause its rebuild.
+                    _, unapplied_source_updates = watch_quote_updates(
+                        source_probe, close_rows, now=market_now, require_complete=True,
+                    )
+                    if regressed_closes:
+                        failure_reason = "prepared_close_regressed_after_rebuild"
+                        break
+                    if unapplied_source_updates:
+                        failure_reason = "prepared_source_superseded_after_rebuild"
+                        break
 
-            enter_stage("base_revalidation")
+            enter_stage("base_revalidation", window.overall_deadline)
             if _remaining(window.overall_deadline, clock) <= 0:
                 failure_reason = "prepare_budget_exhausted_reserve_required"
                 break
-            fetched = _run_command(
-                ["git", "fetch", "--no-tags", "origin", f"refs/heads/{data_release_branch}:refs/remotes/origin/{data_release_branch}"],
-                timeout_seconds=_remaining(window.overall_deadline, clock), env=env, run=run,
-            )
-            resolved = _run_command(
-                ["git", "rev-parse", f"refs/remotes/origin/{data_release_branch}"],
-                timeout_seconds=_remaining(window.overall_deadline, clock), env=env, run=run,
-            )
+            fetched = run_before_deadline(fetch_command, window.overall_deadline)
+            resolved = run_before_deadline(resolve_command, window.overall_deadline)
             current_sha = _resolved_commit(resolved)
             if fetched.returncode != 0 or resolved.returncode != 0:
                 failure_reason = "data_release_base_lookup_failed"
@@ -347,37 +431,36 @@ def coordinate_preparation(
                 break
 
             base_changed = current_sha != base_sha
-            if source_changed or base_changed:
-                if attempt == 1 and _remaining(window.overall_deadline, clock) > 0:
-                    rebuild_reason = "source_update_and_base_update" if source_changed and base_changed else (
-                        "verified_source_update" if source_changed else "release_base_update"
-                    )
-                    source_rebuild_count = int(source_changed)
-                    continue
-                failure_reason = "prepared_base_changed_twice_during_prepare" if base_changed else "prepared_source_superseded_after_rebuild"
+            if attempt == 1:
+                first_revalidated_base_sha = current_sha
+            if attempt == 1 and (overrides or base_changed) and (
+                slot == "post_close" or _remaining(window.overall_deadline, clock) > 0
+            ):
+                rebuild_reason = "source_update_and_base_update" if overrides and base_changed else (
+                    "verified_source_update" if overrides else "release_base_update"
+                )
+                continue
+            if base_changed:
+                failure_reason = "prepared_base_changed_twice_during_prepare"
                 break
 
-            enter_stage("complete")
-            close_stage()
+            enter_stage("complete", window.overall_deadline)
+            close_stage(clock())
             latest_values.update({
                 "prepared": "true", "data_release_sha": base_sha,
                 "data_release_base_sha": base_sha, "data_release_current_sha": current_sha,
                 "base_current": "true", "preparation_stage": "complete",
                 "preparation_attempts": str(attempt), "rebuild_attempts": str(attempt - 1),
-                "source_rebuild_attempts": str(source_rebuild_count),
+                "source_rebuild_attempts": str(int(attempt == 2 and bool(overrides))),
             })
             latest_values.pop("reason", None)
             latest_values.pop("prepare_failure_reason", None)
             _append_output(env.get("GITHUB_OUTPUT", ""), latest_values)
             result = {
-                **result_context(),
+                **result_context(ready=True),
                 "schema_version": SCHEMA_VERSION, "status": "ready", "reason": "prepared_release_current",
-                "slot": slot, "attempts": attempt, "rebuild_reason": rebuild_reason,
+                "slot": slot, "attempts": attempt,
                 "base_sha": base_sha, "snapshot_id": latest_values["snapshot_id"],
-                "source_check_status": source_status, "source_check_changed_candidate": source_changed,
-                "source_check_evidence_sha256": hashlib.sha256(
-                    json.dumps(source_result, sort_keys=True, ensure_ascii=False).encode("utf-8")
-                ).hexdigest() if source_result else "",
                 "remaining_seconds": _remaining(window.overall_deadline, clock),
             }
             _append_summary(env.get("GITHUB_STEP_SUMMARY", ""), result, source_result)
@@ -386,45 +469,14 @@ def coordinate_preparation(
 
         if not failure_reason:
             failure_reason = "scheduled_prepare_state_machine_exhausted"
-        close_stage()
-        failed_values = {
-            **latest_values,
-            "prepared": "false", "reason": failure_reason,
-            "prepare_failure_reason": failure_reason, "preparation_stage": stage,
-            "preparation_attempts": str(attempt), "data_release_base_sha": base_sha or "unknown",
-            "data_release_current_sha": current_sha or "unknown", "base_current": "false",
-            "notification_expected": latest_values.get("notification_expected", "true"),
-        }
-        _append_output(env.get("GITHUB_OUTPUT", ""), failed_values)
-        print(f"::error::scheduled_prepare_failed:{failure_reason}")
-        result = {
-            **result_context(),
-            "schema_version": SCHEMA_VERSION, "status": "failed", "reason": failure_reason,
-            "stage": stage, "attempts": attempt, "base_sha": base_sha or "unknown",
-            "current_sha": current_sha or "unknown", "source_check_status": source_status,
-            "remaining_seconds": _remaining(window.overall_deadline, clock),
-        }
-        _append_summary(env.get("GITHUB_STEP_SUMMARY", ""), result, source_result)
-        _persist_result(env.get("PREPARATION_RESULT_PATH", ""), result)
-        return result, 1
     except subprocess.TimeoutExpired as exc:
+        if slot != "post_close" and stage != "prepare":
+            legacy_outer_annotation = f" ({type(exc).__name__})"
         failure_reason = "prepare_timeout_budget_exhausted" if stage == "prepare" else f"{stage}_timeout"
-        close_stage()
-        failed_values = {
-            **latest_values, "prepared": "false", "reason": failure_reason,
-            "prepare_failure_reason": failure_reason, "preparation_stage": stage,
-            "preparation_attempts": str(attempt), "data_release_base_sha": base_sha or "unknown",
-            "data_release_current_sha": current_sha or "unknown", "base_current": "false",
-        }
-        _append_output(env.get("GITHUB_OUTPUT", ""), failed_values)
-        print(f"::error::scheduled_prepare_failed:{failure_reason} ({type(exc).__name__})")
-        result = {
-            **result_context(), "schema_version": SCHEMA_VERSION, "status": "failed",
-            "reason": failure_reason, "stage": stage,
-        }
-        _append_summary(env.get("GITHUB_STEP_SUMMARY", ""), result, source_result)
-        _persist_result(env.get("PREPARATION_RESULT_PATH", ""), result)
-        return result, 1
+    except OSError:
+        if slot != "post_close":
+            raise
+        failure_reason = f"{stage}_io_error"
     finally:
         if source_process is not None and source_process.poll() is None:
             source_process.terminate()
@@ -435,6 +487,34 @@ def coordinate_preparation(
                 source_process.wait(timeout=2)
         for path in temp_paths:
             path.unlink(missing_ok=True)
+
+    close_stage(clock())
+    failed_values = {
+        **latest_values,
+        "prepared": "false", "reason": failure_reason,
+        "prepare_failure_reason": failure_reason, "preparation_stage": stage,
+        "preparation_attempts": str(attempt), "data_release_base_sha": base_sha or "unknown",
+        "data_release_current_sha": current_sha or "unknown", "base_current": "false",
+    }
+    if not legacy_outer_annotation:
+        failed_values["notification_expected"] = latest_values.get("notification_expected", "true")
+    _append_output(env.get("GITHUB_OUTPUT", ""), failed_values)
+    print(f"::error::scheduled_prepare_failed:{failure_reason}{legacy_outer_annotation}")
+    result = {
+        **result_context(),
+        "schema_version": SCHEMA_VERSION, "status": "failed", "reason": failure_reason, "stage": stage,
+    }
+    if not legacy_outer_annotation:
+        result.update({
+            "attempts": attempt, "base_sha": base_sha or "unknown",
+            "current_sha": current_sha or "unknown", "source_check_status": source_status,
+            "remaining_seconds": _remaining(window.overall_deadline, clock),
+        })
+    if slot == "post_close":
+        result["slot"] = slot
+    _append_summary(env.get("GITHUB_STEP_SUMMARY", ""), result, source_result)
+    _persist_result(env.get("PREPARATION_RESULT_PATH", ""), result)
+    return result, 1
 
 
 def main() -> int:

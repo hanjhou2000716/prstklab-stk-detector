@@ -1,10 +1,15 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+import pytest
+
+from src import market_data, taifex_daily, taiwan_market_statistics
 from src.market_data import build_market_snapshot
+from src.market_source_watch import TAIPEI, watch_quote_updates
 
 
-def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatch):
+@pytest.fixture
+def offline_market_snapshot(monkeypatch):
     monkeypatch.setattr(
         "src.market_data.get_quote",
         lambda item, session=None: {
@@ -72,7 +77,12 @@ def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatc
         }],
     })
 
+    return captured_news
+
+
+def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(offline_market_snapshot):
     snapshot = build_market_snapshot()
+    captured_news = offline_market_snapshot
 
     assert captured_news["official_events"]["items"][0]["topic_key"] == "fed"
 
@@ -106,3 +116,120 @@ def test_risk_source_failure_is_not_labeled_as_a_market_quote_failure(monkeypatc
     candidate = snapshot["research_report"]["candidates"][0]
     assert candidate["ticker"] == "2330"
     assert "reference_close" not in candidate
+
+
+@pytest.mark.parametrize(
+    ("scenario", "expected_cash", "expected_txf", "expected_requests"),
+    [
+        ("verified", 39151.81, 39200, []),
+        ("stale_reread", 39151.81, 39200, ["txf"]),
+        ("taifex_conflict", 39151.81, None, ["txf", "backup"]),
+        ("stale_watch", 39151.81, 38062, ["txf"]),
+        ("expired_contract", 39151.81, 38062, ["txf"]),
+        ("missing_date", 38195.43, 38062, ["txf", "cash"]),
+        ("partial_cash", 39151.81, 39200, ["cash"]),
+    ],
+)
+def test_post_close_watcher_reuses_only_verified_quotes_and_preserves_conflict_checks(
+    monkeypatch, offline_market_snapshot, scenario,
+    expected_cash, expected_txf, expected_requests,
+):
+    today = "2026-11-26"
+    yesterday = "2026-11-25"
+    now = datetime(2026, 11, 26, 14, 40, tzinfo=TAIPEI)
+
+    class FixedDatetime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return now.astimezone(tz) if tz is not None else now.replace(tzinfo=None)
+
+    monkeypatch.setattr(market_data, "datetime", FixedDatetime)
+    monkeypatch.setattr(market_data, "_latest_completed_session_date", lambda _quote, _now: now.date())
+
+    def evidence(source, *, observed=today, outcome="verified"):
+        return {"source": source, "outcome": outcome, "target_date": today, "observed_date": observed}
+
+    cash = {
+        "ticker": "TAIEX", "quote_date": today, "quote_time": f"{today}T13:30:00+08:00",
+        "price": 39151.81, "change": 956.38, "change_percent": 2.50,
+        "instrument_id": "twse:taiex", "quote_basis": "TWSE_TAIEX_DAILY_CLOSE", "source_tier": "official",
+        "source_url": "https://www.twse.com.tw/exchangeReport/MI_INDEX",
+        "source_attempts": [evidence("twse_mi_index_json")],
+    }
+    txf = {
+        "ticker": "TXF", "quote_date": today, "quote_time": f"{today}T13:45:00+08:00",
+        "price": 39200, "change": 1138, "change_percent": 2.99, "freshness": "recent_close",
+        "contract_month": "202612", "session": "regular", "source_tier": "official",
+        "instrument_id": "market:txf:taifex:202612:regular",
+        "quote_basis": "TAIFEX_TXF_DAY|contract=202612|session=regular",
+        "source_url": taifex_daily.TAIFEX_DAILY_API,
+        "source_attempts": [
+            evidence("taifex_openapi"), evidence("taifex_daily_table"),
+            evidence("taifex_selection", outcome="selected:taifex_openapi"),
+        ],
+    }
+    older_txf = {**txf, "quote_date": yesterday, "quote_time": f"{yesterday}T13:45:00+08:00", "price": 38062}
+    if scenario in {"stale_reread", "taifex_conflict"}:
+        txf["source_attempts"].pop(1)
+    if scenario == "stale_watch":
+        txf = older_txf
+    if scenario == "expired_contract":
+        txf.update(
+            contract_month="202611",
+            instrument_id="market:txf:taifex:202611:regular",
+            quote_basis="TAIFEX_TXF_DAY|contract=202611|session=regular",
+        )
+    if scenario == "missing_date":
+        cash.pop("quote_date")
+        txf.pop("quote_date")
+
+    if scenario == "partial_cash":
+        cash.pop("change_percent")
+    calls = []
+
+    def fetch_txf(*, diagnostics, **_kwargs):
+        calls.append("txf")
+        if scenario == "taifex_conflict":
+            diagnostics.append(evidence("taifex_official_comparison", outcome="same_day_official_conflict"))
+            return None
+        return dict(older_txf)
+
+    def fallback_txf(*_args, excluded_observed_dates, **_kwargs):
+        calls.append("backup")
+        assert excluded_observed_dates == {today}
+        return None
+
+    def fetch_cash(**_kwargs):
+        calls.append("cash")
+        if scenario == "partial_cash":
+            return {**cash, "change_percent": 2.50}
+        return {**cash, "quote_date": yesterday, "price": 38195.43}
+
+    monkeypatch.setattr(taifex_daily, "fetch_latest_verified_txf", fetch_txf)
+    monkeypatch.setattr(taifex_daily, "validated_txf_backup", fallback_txf)
+    monkeypatch.setattr(taiwan_market_statistics, "fetch_twse_taiex_recent_close", fetch_cash)
+    monkeypatch.setattr(taiwan_market_statistics, "fetch_twse_market_statistics", lambda **_kwargs: {
+        "status": "complete",
+        "turnover": {
+            "source_url": taiwan_market_statistics.TWSE_FMTQIK_URL, "is_proxy": False,
+            "observed_date": None if scenario in {"missing_date", "partial_cash"} else today,
+            "taiex": 39150, "change": 954.57,
+        },
+    })
+    overrides = {"cash_quote": cash, "futures_quote": txf}
+    if scenario in {"stale_watch", "expired_contract", "partial_cash"}:
+        updated, _ = watch_quote_updates(overrides, {}, now=now)
+        assert "cash_quote" in updated
+        assert ("futures_quote" in updated) is (scenario == "partial_cash")
+
+    snapshot = build_market_snapshot(official_close_overrides=overrides)
+    rows = {row["ticker"]: row for row in snapshot["indices"]}
+    assert calls == expected_requests
+    assert rows["TAIEX"]["price"] == expected_cash
+    assert snapshot["taiwan_market_statistics"]["turnover"]["taiex"] == 39150
+    assert rows.get("TXF", {}).get("price") == expected_txf
+    if scenario in {"verified", "stale_reread"}:
+        assert any(
+            row.get("outcome") == "selected:taifex_openapi" and row.get("observed_date") == today
+            for row in rows["TXF"]["source_attempts"]
+        )

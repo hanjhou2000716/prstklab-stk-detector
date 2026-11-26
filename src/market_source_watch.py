@@ -7,7 +7,7 @@ import json
 import os
 import time
 from collections.abc import Callable
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from datetime import time as wall_time
 from pathlib import Path
 from typing import Any
@@ -84,7 +84,7 @@ def _probe(
         if not quote:
             return None
         fields = (
-            "ticker", "quote_date", "price", "change", "change_percent",
+            "ticker", "name", "market", "currency", "quote_date", "price", "change", "change_percent",
             "previous_close", "quote_time", "quote_basis", "instrument_id", "freshness",
             "data_status", "source", "source_tier", "quote_source", "source_label", "source_url",
             "contract_month", "session", "contract_basis", "quote_delayed", "backup_used",
@@ -110,60 +110,79 @@ def _probe(
     }
 
 
-def watch_quotes_supersede_snapshot(watch_result: dict[str, Any], snapshot_path: str) -> bool:
-    """Return whether the final official probe contains a newer/different quote."""
-    try:
-        snapshot = json.loads(Path(snapshot_path).read_text(encoding="utf-8"))
-    except (OSError, ValueError, TypeError):
-        return False
+def _snapshot_quote_date(row: dict[str, Any]) -> str:
+    for field in ("quote_date", "quote_time"):
+        try:
+            return date.fromisoformat(str(row.get(field) or "")[:10]).isoformat()
+        except ValueError:
+            continue
+    return ""
+
+
+def read_prepared_close_rows(snapshot_path: str) -> dict[str, dict[str, Any]]:
+    snapshot = json.loads(Path(snapshot_path).read_text(encoding="utf-8"))
     rows = snapshot.get("indices") if isinstance(snapshot, dict) else None
     if not isinstance(rows, list):
-        return False
-    probe = watch_result.get("last_probe")
-    if isinstance(probe, dict):
-        watch_result = probe
-    existing = {
-        str(row.get("ticker") or "").upper(): row
-        for row in rows if isinstance(row, dict)
+        raise ValueError("prepared_snapshot_indices_missing")
+    return {
+        str(row["ticker"]).upper(): row for row in rows
+        if isinstance(row, dict) and str(row.get("ticker") or "").upper() in {"TAIEX", "TXF"}
     }
+
+
+def prepared_close_dates(rows: dict[str, dict[str, Any]]) -> dict[str, str]:
+    from src.market_data import close_number
+
+    return {
+        ticker: _snapshot_quote_date(row) for ticker, row in rows.items()
+        if (close_number(row.get("price")) or 0) > 0
+        and (ticker != "TXF" or row.get("session") == "regular")
+    }
+
+
+def watch_quote_updates(
+    probe: dict[str, Any], existing: dict[str, dict[str, Any]], *, now: datetime,
+    require_complete: bool = False,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return verified same-day overrides and the fields justifying each one."""
+    from src.market_data import close_number, verified_same_day_close
+
+    overrides: dict[str, Any] = {}
+    updates: dict[str, Any] = {}
     for ticker, key in (("TAIEX", "cash_quote"), ("TXF", "futures_quote")):
-        candidate = watch_result.get(key)
-        previous = existing.get(ticker)
-        if not isinstance(candidate, dict) or not isinstance(previous, dict):
-            if isinstance(candidate, dict) and candidate.get("quote_date"):
-                return True
+        candidate = verified_same_day_close(probe.get(key), ticker, now=now)
+        if candidate is None:
             continue
-        candidate_date = str(candidate.get("quote_date") or "")[:10]
-        previous_date = str(previous.get("quote_date") or "")[:10]
-        if not candidate_date:
+        previous = existing.get(ticker, {})
+        candidate_date = candidate["quote_date"]
+        previous_date = _snapshot_quote_date(previous)
+        if previous_date > candidate_date and not require_complete:
             continue
-        if not previous_date or candidate_date > previous_date:
-            return True
-        if candidate_date < previous_date:
-            continue
-        quote_fields = ("price", "change", "change_percent")
-        for field in quote_fields:
-            candidate_value = _rounded_number(candidate.get(field))
-            previous_value = _rounded_number(previous.get(field))
-            if candidate_value is not None and candidate_value != previous_value:
-                return True
-        if ticker == "TXF" and any(
-            candidate.get(field)
-            and str(candidate.get(field)) != str(previous.get(field) or "")
-            for field in ("contract_month", "session")
-        ):
-            return True
-    return False
-
-
-def _rounded_number(value: Any) -> float | None:
-    try:
-        parsed = float(value)
-    except (TypeError, ValueError, OverflowError):
-        return None
-    if not (parsed == parsed and abs(parsed) != float("inf")):
-        return None
-    return round(parsed, 2)
+        differences: dict[str, Any] = {}
+        if previous_date != candidate_date:
+            differences["quote_date"] = {"before": previous_date or None, "after": candidate_date}
+        for field in ("price", "change", "change_percent"):
+            before = close_number(previous.get(field))
+            after = close_number(candidate.get(field))
+            # A same-close provider can omit calculated changes. An absent
+            # price is distinct because the snapshot lacks the close itself.
+            if after is not None and before != after and (before is not None or field == "price" or require_complete):
+                differences[field] = {"before": before, "after": after}
+        if ticker == "TXF":
+            for field in ("contract_month", "session"):
+                before = str(previous.get(field) or "")
+                after = str(candidate.get(field) or "")
+                if before != after:
+                    differences[field] = {"before": before or None, "after": after}
+        if differences:
+            overrides[key] = candidate
+            updates[ticker] = {
+                "quote_date": candidate_date,
+                "quote_time": candidate.get("quote_time"),
+                "source_attempts": candidate["source_attempts"],
+                "changed_fields": differences,
+            }
+    return overrides, updates
 
 
 def watch_until(
