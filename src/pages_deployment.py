@@ -114,6 +114,12 @@ def _safe_error_detail(raw: bytes, secrets: tuple[str, ...] = ()) -> str:
     return detail[:240]
 
 
+def _safe_github_request_id(value: Any) -> str:
+    """Return a bounded GitHub request ID without logging arbitrary headers."""
+    text = str(value or "").strip()
+    return text if len(text) <= 128 and re.fullmatch(r"[A-Za-z0-9:._-]{1,128}", text) else ""
+
+
 def _safe_status_url_shape(
     value: str, *, api_url: str, repository: str, deployment_id: str,
 ) -> str:
@@ -293,6 +299,11 @@ def _request_json(
         message = f"GitHub Pages request returned HTTP {status}"
         if detail:
             message = f"{message}: {detail}"
+        request_id = _safe_github_request_id(
+            exc.headers.get("X-GitHub-Request-Id") if exc.headers is not None else "",
+        )
+        if request_id:
+            message = f"{message} (GitHub request ID: {request_id})"
         raise PagesDeploymentError(
             message,
             retryable=retryable,
