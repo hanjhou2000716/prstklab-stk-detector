@@ -1,10 +1,11 @@
-import json
 from datetime import datetime, timedelta
+
+import pytest
 
 from src.market_source_watch import (
     TAIPEI,
     run_watch,
-    watch_quotes_supersede_snapshot,
+    watch_quote_updates,
     watch_until,
 )
 
@@ -121,23 +122,66 @@ def test_run_watch_uses_independent_calendars_and_fixed_anchor(monkeypatch):
     assert result["cutoff_at"] == "2026-10-05T14:32:00+08:00"
 
 
-def test_final_watch_rebuilds_only_when_official_values_supersede_snapshot(tmp_path):
-    snapshot = tmp_path / "market.json"
-    snapshot.write_text(json.dumps({"indices": [
-        {"ticker": "TAIEX", "quote_date": "2026-10-02", "price": 48475.74, "change": 123.0, "change_percent": 0.25},
-        {"ticker": "TXF", "quote_date": "2026-10-02", "price": 48671.0, "change": -30.0, "change_percent": -0.06, "contract_month": "202610", "session": "regular"},
-    ]}), encoding="utf-8")
-    result = {"last_probe": {
-        "cash_quote": {"quote_date": "2026-10-05", "price": 49712.04, "change": 1236.3, "change_percent": 2.55},
-        "futures_quote": {"quote_date": "2026-10-05", "price": 49949.0, "change": 1280.0, "change_percent": 2.63, "contract_month": "202610", "session": "regular"},
-    }}
-    assert watch_quotes_supersede_snapshot(result, str(snapshot)) is True
+@pytest.mark.parametrize(
+    ("previous_fields", "expected_changes"),
+    [
+        ({"quote_date": "2026-11-25", "price": 38195.43}, {"quote_date", "price"}),
+        ({"quote_date": "2026-11-26", "price": 39150}, {"price"}),
+        ({"quote_date": "2026-11-25", "price": 39151.81, "change": 956.38, "change_percent": 2.50}, {"quote_date"}),
+        ({"price": 39151.81, "quote_time": "2026-11-26T13:30:00+08:00"}, set()),
+        ({"price": "39151.811", "quote_date": "2026-11-26", "source": "TWSE FMTQIK"}, set()),
+        ({"price": 39151.81}, {"quote_date"}),
+        ({"quote_date": "2026-11-26", "price": None}, {"price"}),
+        ({"quote_date": "2026-11-26", "price": 39151.81, "change_percent": 2.49}, {"change_percent"}),
+    ],
+)
+def test_final_watch_compares_normalized_close_and_uses_quote_time_for_missing_date(
+    previous_fields, expected_changes,
+):
+    now = datetime(2026, 11, 26, 14, 39, tzinfo=TAIPEI)
+    snapshot = {"TAIEX": {"ticker": "TAIEX", **previous_fields}}
+    candidate = {
+        "ticker": "TAIEX", "quote_date": "2026-11-26", "quote_time": "2026-11-26T13:30:00+08:00",
+        "instrument_id": "twse:taiex", "quote_basis": "TWSE_TAIEX_DAILY_CLOSE", "source_tier": "official",
+        "price": 39151.81, "change": 956.38, "change_percent": 2.50,
+        "source_url": "https://www.twse.com.tw/exchangeReport/MI_INDEX",
+        "source_attempts": [{"source": "twse_mi_index_json", "outcome": "verified",
+                             "target_date": "2026-11-26", "observed_date": "2026-11-26"}],
+    }
+    overrides, updates = watch_quote_updates({"cash_quote": candidate}, snapshot, now=now)
+    assert bool(overrides) is bool(expected_changes)
+    assert set(updates.get("TAIEX", {}).get("changed_fields", {})) == expected_changes
 
-    same_day = {"cash_quote": {"quote_date": "2026-10-02", "price": 48475.74, "change": 123.0, "change_percent": 0.25}}
-    assert watch_quotes_supersede_snapshot(same_day, str(snapshot)) is False
 
-    corrected = {"cash_quote": {"quote_date": "2026-10-02", "price": 48476.0, "change": 123.0, "change_percent": 0.25}}
-    assert watch_quotes_supersede_snapshot(corrected, str(snapshot)) is True
-
-    incomplete = {"cash_quote": {"quote_date": "2026-10-02", "price": 48475.74}}
-    assert watch_quotes_supersede_snapshot(incomplete, str(snapshot)) is False
+@pytest.mark.parametrize(
+    ("field", "old_value"),
+    [("quote_date", "2026-11-25"), ("contract_month", "202701"), ("session", "night"), ("change", 1137)],
+)
+def test_equal_price_txf_changes_still_require_the_verified_observation(field, old_value):
+    now = datetime(2026, 11, 26, 14, 39, tzinfo=TAIPEI)
+    today = now.date().isoformat()
+    candidate = {
+        "ticker": "TXF", "quote_date": today, "quote_time": f"{today}T13:45:00+08:00",
+        "price": 39200, "change": 1138, "change_percent": 2.99, "freshness": "recent_close",
+        "contract_month": "202612", "session": "regular", "source_tier": "official",
+        "instrument_id": "market:txf:taifex:202612:regular",
+        "quote_basis": "TAIFEX_TXF_DAY|contract=202612|session=regular",
+        "source_url": "https://openapi.taifex.com.tw/v1/DailyMarketReportFut",
+        "source_attempts": [
+            {"source": source, "outcome": outcome, "target_date": today, "observed_date": today}
+            for source, outcome in (
+                ("taifex_openapi", "verified"), ("taifex_daily_table", "verified"),
+                ("taifex_selection", "selected:taifex_openapi"),
+            )
+        ],
+    }
+    previous = {**candidate, field: old_value}
+    if field == "quote_date":
+        previous["quote_time"] = f"{old_value}T13:45:00+08:00"
+    if field in {"contract_month", "session"}:
+        previous["instrument_id"] = f"market:txf:taifex:{previous['contract_month']}:{previous['session']}"
+        previous["quote_basis"] = f"TAIFEX_TXF_DAY|contract={previous['contract_month']}|session={previous['session']}"
+    overrides, updates = watch_quote_updates({"futures_quote": candidate}, {"TXF": previous}, now=now)
+    assert overrides == {"futures_quote": candidate}
+    assert updates["TXF"]["changed_fields"] == {field: {"before": old_value, "after": candidate[field]}}
+    assert watch_quote_updates(overrides, {"TXF": candidate}, now=now, require_complete=True) == ({}, {})

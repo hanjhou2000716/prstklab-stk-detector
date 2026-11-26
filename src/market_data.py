@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import json
-from datetime import date, datetime, timedelta
+import math
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -1118,41 +1119,84 @@ def _replace_with_verified_taiex_close(
     return result
 
 
-def _official_close_override(
-    overrides: dict[str, Any] | None, ticker: str, *, now: datetime,
-) -> dict[str, Any] | None:
-    if not isinstance(overrides, dict):
+def close_number(value: Any) -> float | None:
+    """Normalize a finite exchange quote field for exact two-decimal comparison."""
+    if isinstance(value, bool):
         return None
-    quote = overrides.get("cash_quote" if ticker == "TAIEX" else "futures_quote")
-    if not isinstance(quote, dict) or str(quote.get("ticker") or "").upper() != ticker:
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
         return None
-    attempts = quote.get("source_attempts")
-    if not isinstance(attempts, list) or not attempts:
-        return None
-    observed = str(quote.get("quote_date") or "")[:10]
-    if not observed or observed > now.date().isoformat():
-        return None
-    if ticker == "TXF":
-        from src.taifex_daily import qualify_txf_quote_for_display
+    return round(number, 2) if math.isfinite(number) else None
 
-        qualification = qualify_txf_quote_for_display(quote, now=now)
-        if qualification.get("verified") is not True:
-            return None
-        return {**quote, "source_attempts": attempts}
-    source = urlparse(str(quote.get("source_url") or ""))
+
+def verified_same_day_close(
+    quote: Any, ticker: str, *, now: datetime,
+) -> dict[str, Any] | None:
+    """Qualify the watcher's dated official close for comparison."""
+    local_now = now.astimezone(ZoneInfo("Asia/Taipei"))
+    observed = local_now.date().isoformat()
     if (
-        source.scheme != "https" or source.hostname not in {"www.twse.com.tw", "openapi.twse.com.tw"}
-        or quote.get("source_tier") != "official" or quote.get("quote_basis") != "TWSE_TAIEX_DAILY_CLOSE"
-        or not any(
-            isinstance(item, dict) and item.get("outcome") == "verified"
-            and str(item.get("observed_date") or "") == observed
-            for item in attempts
-        )
+        not isinstance(quote, dict)
+        or quote.get("ticker") != ticker
+        or quote.get("quote_date") != observed
+        or quote.get("source_tier") != "official"
+        or quote.get("backup_used")
     ):
         return None
-    if any(quote.get(field) is None for field in ("price", "change", "change_percent")):
+    attempts = quote.get("source_attempts")
+    if not isinstance(attempts, list):
         return None
-    return {**quote, "source_attempts": attempts}
+    if any(
+        isinstance(row, dict) and row.get("outcome") == "same_day_official_conflict"
+        and row.get("observed_date") == observed for row in attempts
+    ):
+        return None
+    verified_sources = _verified_close_sources(quote)
+    if (close_number(quote.get("price")) or 0) <= 0:
+        return None
+    if ticker == "TXF":
+        if any(close_number(quote.get(field)) is None for field in ("change", "change_percent")):
+            return None
+        from src.taifex_daily import qualify_txf_quote_for_display
+
+        selections = {
+            f"selected:{source}" for source in verified_sources & {"taifex_openapi", "taifex_daily_table"}
+        }
+        if quote.get("quote_time") != f"{observed}T13:45:00+08:00" or not any(
+            isinstance(row, dict) and row.get("source") == "taifex_selection"
+            and row.get("observed_date") == observed and row.get("target_date") == observed
+            and row.get("outcome") in selections for row in attempts
+        ):
+            return None
+        qualification = qualify_txf_quote_for_display(quote, now=now)
+        return quote if qualification.get("display_state") == "recent_close" else None
+    try:
+        source = urlparse(str(quote.get("source_url") or ""))
+        host = source.hostname
+    except ValueError:
+        return None
+    if (
+        source.scheme != "https" or host not in {"www.twse.com.tw", "openapi.twse.com.tw"}
+        or quote.get("quote_basis") != "TWSE_TAIEX_DAILY_CLOSE"
+        or quote.get("instrument_id") != "twse:taiex"
+        or quote.get("quote_time") != f"{observed}T13:30:00+08:00"
+        or local_now.time() < time(13, 30)
+        or not verified_sources.intersection({
+            "twse_mi_index_json", "twse_mi_index_html", "twse_taiex_history",
+        })
+    ):
+        return None
+    return quote
+
+
+def _verified_close_sources(quote: dict[str, Any]) -> set[str]:
+    observed = quote["quote_date"]
+    return {
+        str(row.get("source") or "") for row in quote["source_attempts"]
+        if isinstance(row, dict) and row.get("outcome") == "verified"
+        and row.get("observed_date") == observed and row.get("target_date") == observed
+    }
 
 
 def build_market_snapshot(*, official_close_overrides: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -1248,26 +1292,38 @@ def build_market_snapshot(*, official_close_overrides: dict[str, Any] | None = N
     )
     errors.extend(crosscheck_errors)
     taipei_now = datetime.now(ZoneInfo("Asia/Taipei"))
+    watch_closes = official_close_overrides if isinstance(official_close_overrides, dict) else {}
     if taifex_status.get("calendar_status") in {"confirmed_open", "confirmed_closed"}:
         try:
             from src.taifex_daily import fetch_latest_verified_txf, validated_txf_backup
 
             txf_attempts: list[dict[str, str]] = []
-            txf = fetch_latest_verified_txf(now=taipei_now, diagnostics=txf_attempts)
-            if txf is None:
+            watched_txf = verified_same_day_close(watch_closes.get("futures_quote"), "TXF", now=taipei_now)
+            # Reuse the watcher's selection only when both official sources
+            # agreed on this date. Otherwise run the normal cross-check.
+            if watched_txf is not None and {"taifex_openapi", "taifex_daily_table"} <= _verified_close_sources(watched_txf):
+                txf = dict(watched_txf)
+                txf_attempts.extend(watched_txf["source_attempts"])
+            else:
+                txf = fetch_latest_verified_txf(now=taipei_now, diagnostics=txf_attempts)
                 taifex_conflicted_dates = {
                     attempt.get("observed_date", "")
                     for attempt in txf_attempts
                     if attempt.get("outcome") == "same_day_official_conflict"
                     and attempt.get("observed_date")
                 }
+                if (
+                    watched_txf is not None
+                    and watched_txf["quote_date"] not in taifex_conflicted_dates
+                    and str((txf or {}).get("quote_date") or "") < watched_txf["quote_date"]
+                ):
+                    txf = dict(watched_txf)
+                    txf_attempts.extend(watched_txf["source_attempts"])
+            if txf is None:
                 txf = validated_txf_backup(
                     backup_store, now=taipei_now, diagnostics=txf_attempts,
                     excluded_observed_dates=taifex_conflicted_dates,
                 )
-            final_txf = _official_close_override(official_close_overrides, "TXF", now=taipei_now)
-            if final_txf is not None:
-                txf = final_txf
             indices = [item for item in indices if str(item.get("ticker") or "") != "TXF"]
             if txf is not None:
                 txf["source_attempts"] = txf_attempts
@@ -1419,14 +1475,20 @@ def build_market_snapshot(*, official_close_overrides: dict[str, Any] | None = N
         "checked_at": datetime.now(ZoneInfo("Asia/Taipei")).isoformat(),
         "outcome": fmtqik_outcome,
     }]
+    # FMTQIK is also collected for turnover and breadth. A verified watcher
+    # update supplied by the coordinator takes precedence for the close.
+    if expected_taiex_date == taipei_now.date().isoformat():
+        final_taiex = verified_same_day_close(watch_closes.get("cash_quote"), "TAIEX", now=taipei_now)
+        if final_taiex is not None and all(
+            close_number(final_taiex.get(field)) is not None for field in ("change", "change_percent")
+        ):
+            official_taiex = dict(final_taiex)
+            taiex_source_attempts.extend(final_taiex["source_attempts"])
     if official_taiex is None:
         official_taiex = fetch_twse_taiex_recent_close(
             target_date=expected_taiex_date,
             diagnostics=taiex_source_attempts,
         )
-    final_taiex = _official_close_override(official_close_overrides, "TAIEX", now=taipei_now)
-    if final_taiex is not None:
-        official_taiex = final_taiex
     if official_taiex is None:
         official_taiex = _verified_taiex_backup(
             backup_store,
